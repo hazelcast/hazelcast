@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,11 +49,11 @@ public class CheckLightJobsOperation extends Operation implements IdentifiedData
 
     @Override
     public Object getResponse() {
-        return getJetService().getJobCoordinationService().findUnknownExecutions(executionIds);
+        return getJetServiceBackend().getJobCoordinationService().findUnknownExecutions(executionIds);
     }
 
-    protected JetService getJetService() {
-        assert getServiceName().equals(JetService.SERVICE_NAME) : "Service is not Jet Service";
+    protected JetServiceBackend getJetServiceBackend() {
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not JetServiceBackend";
         return getService();
     }
 

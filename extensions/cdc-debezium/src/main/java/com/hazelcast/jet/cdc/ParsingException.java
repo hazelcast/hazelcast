@@ -21,7 +21,7 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 /**
  * Exception to indicate that parsing CDC JSON data has failed irrecoverably.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public class ParsingException extends Exception {

@@ -32,7 +32,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Implements the {@link TestSources#longStream} source.
  *
- * @since 4.3
+ * @since Jet 4.3
  */
 public class LongStreamSourceP extends AbstractProcessor {
 

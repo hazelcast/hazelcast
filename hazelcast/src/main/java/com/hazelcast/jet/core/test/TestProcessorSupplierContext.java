@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -33,7 +33,7 @@ import java.util.Map;
  * Implementation of {@link ProcessorSupplier.Context} suitable to be used
  * in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class TestProcessorSupplierContext
         extends TestProcessorMetaSupplierContext
@@ -49,8 +49,8 @@ public class TestProcessorSupplierContext
     }
 
     @Nonnull @Override
-    public TestProcessorSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        return (TestProcessorSupplierContext) super.setJetInstance(jetInstance);
+    public TestProcessorSupplierContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
+        return (TestProcessorSupplierContext) super.setHazelcastInstance(instance);
     }
 
     @Nonnull @Override
@@ -78,9 +78,14 @@ public class TestProcessorSupplierContext
         return (TestProcessorSupplierContext) super.setProcessingGuarantee(processingGuarantee);
     }
 
-    @NotNull @Override
+    @Nonnull @Override
     public TestProcessorSupplierContext setIsLightJob(boolean isLightJob) {
         return (TestProcessorSupplierContext) super.setIsLightJob(isLightJob);
+    }
+
+    @Nonnull @Override
+    public TestProcessorSupplierContext setPartitionAssignment(Map<Address, int[]> partitionAssignment) {
+        return (TestProcessorSupplierContext) super.setPartitionAssignment(partitionAssignment);
     }
 
     @Override

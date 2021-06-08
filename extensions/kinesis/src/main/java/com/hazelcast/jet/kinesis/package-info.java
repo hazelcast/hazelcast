@@ -17,6 +17,6 @@
 /**
  * Amazon Kinesis Data Streams producer/consumer support for Hazelcast Jet.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 package com.hazelcast.jet.kinesis;

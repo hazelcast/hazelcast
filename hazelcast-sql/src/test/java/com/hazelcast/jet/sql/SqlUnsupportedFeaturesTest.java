@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
@@ -86,5 +89,45 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT MAP[1, 2] FROM b"))
                 .hasMessageContaining("MAP VALUE CONSTRUCTOR not supported");
+    }
+
+    @Test
+    public void test_insert() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO b VALUES(1)"))
+                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+    }
+
+    @Test
+    public void test_sink() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO b VALUES(1)"))
+                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+    }
+
+    @Test
+    public void test_delete_noDeleteProcessor() {
+        sqlService.execute("CREATE MAPPING b ("
+                + "__key INT"
+                + ", this INT"
+                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='int'"
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("DELETE FROM b WHERE v=1"))
+                .hasMessageContaining("DELETE not supported by connector: Kafka");
+    }
+
+    @Test
+    public void test_delete_noPrimaryKey() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("DELETE FROM b WHERE v=1"))
+                .hasMessageContaining("DELETE not supported by connector: TestBatch");
     }
 }

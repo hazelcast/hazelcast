@@ -18,6 +18,6 @@
  * Contains connectors for change data capture events from PostgreSQL
  * databases.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 package com.hazelcast.jet.cdc.postgres;

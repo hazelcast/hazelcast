@@ -20,7 +20,7 @@ import com.hazelcast.config.MetricsConfig;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.core.Processor;
@@ -57,7 +57,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Contains the configuration specific to one Hazelcast Jet job.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class JobConfig implements IdentifiedDataSerializable {
 
@@ -91,7 +91,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Sets the name of the job. There can be at most one active job in the cluster
      * with particular name, however, the name can be reused after the previous job
-     * with that name completed or failed. See {@link JetInstance#newJobIfAbsent}.
+     * with that name completed or failed. See {@link JetService#newJobIfAbsent}.
      * An active job is a job that is running, suspended or waiting to be run.
      * <p>
      * The job name is printed in logs and is visible in Management Center.
@@ -99,7 +99,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * The default value is {@code null}.
      *
      * @return {@code this} instance for fluent API
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public JobConfig setName(@Nullable String name) {
@@ -193,7 +193,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *
      * @return {@code this} instance for fluent API
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     public JobConfig setSuspendOnFailure(boolean suspendOnFailure) {
         this.suspendOnFailure = suspendOnFailure;
@@ -204,7 +204,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Returns whether the job will be suspended on failure, see
      * {@link #setSuspendOnFailure(boolean)}.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     public boolean isSuspendOnFailure() {
         return suspendOnFailure;
@@ -299,7 +299,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     public JobConfig addPackage(@Nonnull String... packages) {
@@ -395,7 +395,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull URL url) {
@@ -420,7 +420,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull File file) {
@@ -446,7 +446,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig addJarsInZip(@Nonnull String path) {
@@ -585,7 +585,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url) {
@@ -610,7 +610,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull URL url, @Nonnull String id) {
@@ -636,7 +636,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull File file) {
@@ -661,7 +661,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull File file, @Nonnull String id) {
@@ -688,7 +688,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull String path) {
@@ -713,7 +713,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachFile(@Nonnull String path, @Nonnull String id) {
@@ -740,7 +740,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull URL url) {
@@ -766,7 +766,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull URL url, @Nonnull String id) {
@@ -795,7 +795,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull String path) {
@@ -821,7 +821,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull String path, @Nonnull String id) {
@@ -847,7 +847,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull File file) {
@@ -873,7 +873,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *           copies inside the cluster(primary + backup replica).
      *
      * @return {@code this} instance for fluent API
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public JobConfig attachDirectory(@Nonnull File file, @Nonnull String id) {
@@ -977,7 +977,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @param clazz           class to register serializer for
      * @param serializerClass class of the serializer to be registered
      * @return {@code this} instance for fluent API
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     @EvolvingApi
@@ -1086,7 +1086,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @param initialSnapshotName the snapshot name given to
      *                            {@link Job#exportSnapshot(String)}
      * @return {@code this} instance for fluent API
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public JobConfig setInitialSnapshotName(@Nullable String initialSnapshotName) {
@@ -1101,7 +1101,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Metrics for running jobs can be queried using {@link Job#getMetrics()} It's
      * enabled by default.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @Nonnull
     public JobConfig setMetricsEnabled(boolean enabled) {
@@ -1112,7 +1112,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Returns if metrics collection is enabled for the job.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public boolean isMetricsEnabled() {
         return enableMetrics;
@@ -1127,7 +1127,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * It's disabled by default.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public boolean isStoreMetricsAfterJobCompletion() {
         return storeMetricsAfterJobCompletion;
@@ -1146,7 +1146,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * It's disabled by default.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     public JobConfig setStoreMetricsAfterJobCompletion(boolean storeMetricsAfterJobCompletion) {
         this.storeMetricsAfterJobCompletion = storeMetricsAfterJobCompletion;

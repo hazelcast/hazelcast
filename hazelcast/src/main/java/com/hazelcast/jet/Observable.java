@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.impl.observer.BlockingIteratorObserver;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
@@ -65,7 +66,7 @@ import java.util.stream.StreamSupport;
  * The lifecycle of the {@code Ringbuffer} is decoupled from the lifecycle
  * of the job. The {@code Ringbuffer} is created either when the user
  * gets a reference to its equivalent {@code Observable} (through
- * {@link JetInstance#getObservable(String) JetInstance.getObservable()})
+ * {@link JetService#getObservable(String) JetService.getObservable()})
  * and registers the first {@link Observer} on it (through
  * {@link Observable#addObserver(Observer) Observable.addObserver()})
  * or when the job containing the sink for it starts executing.
@@ -89,7 +90,7 @@ import java.util.stream.StreamSupport;
  *
  * @param <T> type of the values in the sequence
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 public interface Observable<T> extends Iterable<T> {
 

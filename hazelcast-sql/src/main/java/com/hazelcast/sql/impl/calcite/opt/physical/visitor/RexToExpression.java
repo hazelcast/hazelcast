@@ -306,6 +306,11 @@ public final class RexToExpression {
             case CASE:
                 return CaseExpression.create(operands);
 
+            case COALESCE:
+                return CaseExpression.coalesce(operands);
+            case NULLIF:
+                return CaseExpression.nullif(operands[0], operands[1]);
+
             case OTHER:
                 if (operator == HazelcastSqlOperatorTable.CONCAT) {
                     assert operands.length == 2;

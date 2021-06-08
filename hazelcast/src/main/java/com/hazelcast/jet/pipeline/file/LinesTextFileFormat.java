@@ -27,7 +27,7 @@ import static java.util.Objects.requireNonNull;
  * {@link FileFormat} for text files where each line is a {@code String}
  * data item. See {@link FileFormat#lines} for more details.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public class LinesTextFileFormat implements FileFormat<String> {
 

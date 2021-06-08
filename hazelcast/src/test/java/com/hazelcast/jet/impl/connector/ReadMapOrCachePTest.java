@@ -28,11 +28,11 @@ import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -59,7 +59,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     public void test_whenEmpty() {
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(randomMapName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(emptyList());
@@ -76,7 +76,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -98,7 +98,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Projection<Entry<Integer, String>, String> projection = toProjection(Entry::getValue);
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName(), predicate, projection)))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -135,7 +135,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     private static final class CheckItemsP extends AbstractProcessor {
         static BitSet received;
         @Override
-        protected boolean tryProcess0(@NotNull Object item) {
+        protected boolean tryProcess0(@Nonnull Object item) {
             @SuppressWarnings("unchecked")
             int value = ((Entry<Integer, Integer>) item).getValue();
             assertFalse(received.get(value));
@@ -154,7 +154,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .jetInstance(instance())
+                .hazelcastInstance(instance().getHazelcastInstance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker((expected, actual) -> 2 == actual.size())

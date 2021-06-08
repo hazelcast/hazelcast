@@ -22,13 +22,16 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
@@ -137,7 +140,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static boolean isObjectIdentifier(SqlIdentifier identifier) {
-        return identifier.isSimple() && SqlColumnType.OBJECT.name().equalsIgnoreCase(identifier.getSimple());
+        return identifier.isSimple() && equalsIgnoreCase(SqlColumnType.OBJECT.name(), identifier.getSimple());
     }
 
     /**
@@ -283,7 +286,7 @@ public final class HazelcastTypeUtils {
         return precedence1 > precedence2 ? type1 : type2;
     }
 
-    private static int precedenceOf(RelDataType type) {
+    public static int precedenceOf(RelDataType type) {
         SqlTypeName typeName = type.getSqlTypeName();
 
         if (YEAR_INTERVAL_TYPES.contains(typeName)) {
@@ -327,5 +330,9 @@ public final class HazelcastTypeUtils {
         QueryDataType queryTo = toHazelcastType(targetType.getSqlTypeName());
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
+    }
+
+    public static boolean hasParameters(SqlCallBinding binding) {
+        return binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
     }
 }

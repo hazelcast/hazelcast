@@ -196,10 +196,10 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
-            justification = "jetInstance() can be null in TestProcessorContext")
+            justification = "hazelcastInstance() can be null in TestProcessorContext")
     private ILogger getLogger(@Nonnull Context context) {
-        return context.jetInstance() != null
-                ? context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(getClass())
+        return context.hazelcastInstance() != null
+                ? context.hazelcastInstance().getLoggingService().getLogger(getClass())
                 : Logger.getLogger(getClass());
     }
 

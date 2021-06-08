@@ -17,6 +17,7 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -140,7 +141,7 @@ public final class DeclarativeConfigUtil {
      * the accepted list, {@code false} otherwise
      */
     public static boolean isAcceptedSuffixConfigured(String configFile, Collection<String> acceptedSuffixes) {
-        String configFileLower = configFile.toLowerCase();
+        String configFileLower = StringUtil.lowerCaseInternal(configFile);
         int lastDotIndex = configFileLower.lastIndexOf('.');
         if (lastDotIndex == -1) {
             return false;

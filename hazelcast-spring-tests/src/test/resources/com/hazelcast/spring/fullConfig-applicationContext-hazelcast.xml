@@ -1008,7 +1008,7 @@
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
             </hz:sql>
 
-            <hz:jet>
+            <hz:jet enabled="true" resource-upload-enabled="true">
                 <hz:instance>
                     <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
                     <hz:backup-count>2</hz:backup-count>
@@ -1058,7 +1058,7 @@
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>
     <hz:PNCounter id="pnCounter" instance-ref="instance" name="pnCounter"/>
-    <hz:jet id="jetInstance" instance-ref="instance"/>
+    <hz:jet id="jetService" instance-ref="instance"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

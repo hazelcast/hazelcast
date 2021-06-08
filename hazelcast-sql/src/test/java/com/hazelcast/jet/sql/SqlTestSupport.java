@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -236,7 +237,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static String hadoopNonExistingPath() {
-        return System.getProperty("os.name").toLowerCase().contains("windows")
+        return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows")
                 ? "c:\\non\\existing\\path"
                 : "/non/existing/path";
     }
@@ -264,6 +265,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         public Row(Object... values) {
             this.values = values;
+        }
+
+        public Object[] getValues() {
+            return values;
         }
 
         @Override

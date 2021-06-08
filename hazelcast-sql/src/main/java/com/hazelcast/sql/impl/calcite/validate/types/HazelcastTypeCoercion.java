@@ -157,12 +157,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         switch (query.getKind()) {
             case SELECT:
                 SqlSelect selectNode = (SqlSelect) query;
-                SqlValidatorScope scope1 = validator.getSelectScope(selectNode);
-                if (!rowTypeElementCoercion(scope1, selectNode.getSelectList().get(columnIndex), targetType,
+                SqlValidatorScope selectScope = validator.getSelectScope(selectNode);
+                if (!rowTypeElementCoercion(selectScope, selectNode.getSelectList().get(columnIndex), targetType,
                         newNode -> selectNode.getSelectList().set(columnIndex, newNode))) {
                     return false;
                 }
-                updateInferredColumnType(scope1, query, columnIndex, targetType);
+                updateInferredColumnType(selectScope, query, columnIndex, targetType);
                 return true;
             case VALUES:
                 for (SqlNode rowConstructor : ((SqlCall) query).getOperandList()) {

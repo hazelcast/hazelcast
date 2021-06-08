@@ -219,6 +219,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
@@ -1221,7 +1222,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     private static Method getMethod(Object target, String methodName, boolean requiresArg) {
         Method[] methods = target.getClass().getMethods();
         for (Method method : methods) {
-            if (method.getName().equalsIgnoreCase(methodName)) {
+            if (equalsIgnoreCase(method.getName(), methodName)) {
                 if (!requiresArg) {
                     return method;
                 }
@@ -1252,6 +1253,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (c == '_' || c == '-' || c == '.') {
                 upper = true;
             } else if (upper) {
+                // Character.toUpperCase is not Locale dependant, so we're safe here.
                 sb.append(Character.toUpperCase(c));
                 upper = false;
             } else {
@@ -1360,7 +1362,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         NamedNodeMap attributes = node.getAttributes();
         for (int a = 0; a < attributes.getLength(); a++) {
             Node att = attributes.item(a);
-            if (matches("enabled", att.getNodeName().toLowerCase())) {
+            if (matches("enabled", lowerCaseInternal(att.getNodeName()))) {
                 config.setEnabled(getBooleanValue(getTextContent(att)));
             } else if (matches(att.getNodeName(), "connection-timeout-seconds")) {
                 config.setProperty("connection-timeout-seconds", getTextContent(att));
@@ -2898,6 +2900,19 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void handleJet(Node node) {
         JetConfig jetConfig = config.getJetConfig();
+
+        NamedNodeMap attributes = node.getAttributes();
+        for (int a = 0; a < attributes.getLength(); a++) {
+            Node attribute = attributes.item(a);
+            if (matches("enabled", attribute.getNodeName())) {
+                boolean enabled = getBooleanValue(getAttribute(node, "enabled"));
+                jetConfig.setEnabled(enabled);
+            } else if (matches("resource-upload-enabled", attribute.getNodeName())) {
+                boolean resourceUploadEnabled = getBooleanValue(getAttribute(node, "resource-upload-enabled"));
+                jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
+            }
+        }
+
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("instance", nodeName)) {

@@ -52,7 +52,7 @@ import static java.util.Objects.requireNonNull;
  * {@link #searchRequestFn(SupplierEx)} and {@link #mapToItemFn(FunctionEx)}.
  *
  * @param <T> type of the output of the mapping function from {@link SearchHit} -> T
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class ElasticSourceBuilder<T> {
 

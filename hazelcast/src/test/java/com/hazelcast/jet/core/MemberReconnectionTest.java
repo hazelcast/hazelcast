@@ -40,8 +40,8 @@ public class MemberReconnectionTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.setClusterName(randomName());
 
-        JetInstance inst1 = Hazelcast.newHazelcastInstance(config).getJetInstance();
-        JetInstance inst2 = Hazelcast.newHazelcastInstance(config).getJetInstance();
+        JetInstance inst1 = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
+        JetInstance inst2 = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
 
         try {
             DAG dag = new DAG();

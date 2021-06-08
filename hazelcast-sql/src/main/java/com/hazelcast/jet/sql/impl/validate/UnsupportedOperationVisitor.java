@@ -63,8 +63,6 @@ import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
-    public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
-
     /**
      * A set of {@link SqlKind} values that are supported without any additional validation.
      */
@@ -144,6 +142,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.COLLECTION_TABLE);
         SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
 
+        // Ordering
+        SUPPORTED_KINDS.add(SqlKind.NULLS_FIRST);
+        SUPPORTED_KINDS.add(SqlKind.NULLS_LAST);
+        SUPPORTED_KINDS.add(SqlKind.DESCENDING);
+
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
 
@@ -205,8 +208,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
     }
 
-    private UnsupportedOperationVisitor() {
-    }
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
 
     @Override
     public Void visit(SqlCall call) {
@@ -265,6 +268,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 
+        if (HazelcastTypeUtils.isIntervalType(typeName)) {
+            return null;
+        }
+
         switch (typeName) {
             case BOOLEAN:
             case TINYINT:
@@ -279,6 +286,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 // string literals to be of CHAR type, not VARCHAR. Validated type
                 // of string literals is still VARCHAR in HazelcastSqlValidator.
             case CHAR:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_LOCAL_TIME_ZONE:
+            case DATE:
+            case TIME:
             case ANY:
             case NULL:
                 return null;
@@ -340,18 +351,26 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
 
+            case DELETE:
+                break;
+
             default:
                 throw unsupported(call, kind);
         }
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.hasOrderBy()) {
-            throw unsupported(select.getOrderList(), SqlKind.ORDER_BY);
-        }
-
         if (select.getOffset() != null) {
             throw unsupported(select.getOffset(), "OFFSET");
+        }
+
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
+            }
         }
     }
 
@@ -396,7 +415,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         return error(node, ValidatorResource.RESOURCE.notSupported(name));
     }
 
-    private CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
+    private static CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
         return SqlUtil.newContextException(node.getParserPosition(), error);
+    }
+
+    public static CalciteContextException error(SqlNode node, String name) {
+        return error(node, RESOURCE.error(name));
     }
 }

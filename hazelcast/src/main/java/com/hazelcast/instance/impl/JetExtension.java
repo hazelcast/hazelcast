@@ -22,9 +22,9 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -47,13 +47,13 @@ public class JetExtension {
 
     private final Node node;
     private final ILogger logger;
-    private final JetService jetService;
+    private final JetServiceBackend jetServiceBackend;
     private volatile boolean activated;
 
-    public JetExtension(Node node, JetService jetService) {
+    public JetExtension(Node node, JetServiceBackend jetServiceBackend) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
-        this.jetService = jetService;
+        this.jetServiceBackend = jetServiceBackend;
         this.activated = false;
     }
 
@@ -96,7 +96,7 @@ public class JetExtension {
     public void afterStart() {
         if (node.isRunning() && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
             activated = true;
-            jetService.getJobCoordinationService().startScanningForJobs();
+            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
             logger.info("Jet extension is enabled");
         } else {
             logger.info("Jet extension is disabled due to current cluster version being less than 5.0.");
@@ -110,7 +110,7 @@ public class JetExtension {
         logger.info("Jet is preparing to enter the PASSIVE cluster state");
         NodeEngineImpl ne = node.nodeEngine;
         try {
-            ne.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
+            ne.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
                     new PrepareForPassiveClusterOperation(), ne.getMasterAddress())
               .invoke().get();
         } catch (InterruptedException | ExecutionException e) {
@@ -120,43 +120,43 @@ public class JetExtension {
 
     public void onClusterStateChange(ClusterState ignored) {
         if (activated) {
-            jetService.getJobCoordinationService().clusterChangeDone();
+            jetServiceBackend.getJobCoordinationService().clusterChangeDone();
         }
     }
 
     public void onClusterVersionChange(Version newVersion) {
         if (!activated && newVersion.isGreaterOrEqual(Versions.V5_0)) {
             activated = true;
-            jetService.getJobCoordinationService().startScanningForJobs();
+            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
             logger.info("Jet extension is enabled after the cluster version upgrade.");
         }
     }
 
     public void beforeShutdown(boolean terminate) {
         if (!terminate && activated) {
-            jetService.shutDownJobs();
+            jetServiceBackend.shutDownJobs();
         }
     }
 
     public void handlePacket(Packet packet) {
-        jetService.handlePacket(packet);
+        jetServiceBackend.handlePacket(packet);
     }
 
     public Map<String, Object> createExtensionServices() {
         Map<String, Object> extensionServices = new HashMap<>();
 
-        extensionServices.put(JetService.SERVICE_NAME, jetService);
+        extensionServices.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
 
-        if (jetService.getSqlCoreBackend() != null) {
-            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetService.getSqlCoreBackend());
+        if (jetServiceBackend.getSqlCoreBackend() != null) {
+            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetServiceBackend.getSqlCoreBackend());
         }
 
         return extensionServices;
     }
 
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         if (activated) {
-            return jetService.getJetInstance();
+            return jetServiceBackend.getJet();
         } else {
             throw new IllegalArgumentException("Jet is disabled because the current cluster version is less than 5.0");
         }

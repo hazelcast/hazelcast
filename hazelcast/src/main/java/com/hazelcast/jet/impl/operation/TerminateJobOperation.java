@@ -24,28 +24,36 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
 /**
  * Operation sent from client to coordinator member to terminate particular
  * job. See also {@link TerminateExecutionOperation}, which is sent from
  * coordinator to members to terminate execution.
- * <p>
- * Not used for light jobs, see {@link CancelLightJobOperation}.
  */
 public class TerminateJobOperation extends AsyncJobOperation {
 
     private TerminationMode terminationMode;
+    private boolean isLightJob;
 
     public TerminateJobOperation() {
     }
 
-    public TerminateJobOperation(long jobId, TerminationMode mode) {
+    public TerminateJobOperation(long jobId, TerminationMode mode, boolean isLightJob) {
         super(jobId);
         this.terminationMode = mode;
+        this.isLightJob = isLightJob;
+        assert !isLightJob || terminationMode == TerminationMode.CANCEL_FORCEFUL;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().terminateJob(jobId(), terminationMode);
+        if (isLightJob) {
+            getJobCoordinationService().terminateLightJob(jobId());
+            return completedFuture(null);
+        } else {
+            return getJobCoordinationService().terminateJob(jobId(), terminationMode);
+        }
     }
 
     @Override
@@ -57,11 +65,13 @@ public class TerminateJobOperation extends AsyncJobOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeByte(terminationMode.ordinal());
+        out.writeBoolean(isLightJob);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         terminationMode = TerminationMode.values()[in.readByte()];
+        isLightJob = in.readBoolean();
     }
 }

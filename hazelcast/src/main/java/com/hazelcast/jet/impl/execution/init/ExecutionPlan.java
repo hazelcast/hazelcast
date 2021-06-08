@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -25,14 +26,13 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -86,7 +86,6 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -102,7 +101,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private static final int SNAPSHOT_QUEUE_SIZE = DEFAULT_QUEUE_SIZE;
 
     /** Snapshot of partition table used to route items on partitioned edges */
-    private Address[] partitionOwners;
+    private Map<Address, int[]> partitionAssignment;
 
     private JobConfig jobConfig;
     private List<VertexDef> vertices = new ArrayList<>();
@@ -135,17 +134,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // list of unique remote members
     private final transient Supplier<Set<Address>> remoteMembers = memoize(() ->
-            Arrays.stream(partitionOwners)
+            partitionAssignment.keySet().stream()
                   .filter(a -> !a.equals(nodeEngine.getThisAddress()))
-                  .collect(Collectors.toSet())
-    );
+                  .collect(Collectors.toSet()));
 
     ExecutionPlan() {
     }
 
-    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId,
+    ExecutionPlan(Map<Address, int[]> partitionAssignment, JobConfig jobConfig, long lastSnapshotId,
                   int memberIndex, int memberCount, boolean isLightJob) {
-        this.partitionOwners = partitionOwners;
+        this.partitionAssignment = partitionAssignment;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
         this.memberIndex = memberIndex;
@@ -169,8 +167,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
 
-        this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
-        JetInstance instance = getJetInstance(nodeEngine);
+        this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
+        HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
@@ -181,7 +179,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
             // create StoreSnapshotTasklet and the queues to it
             ConcurrentConveyor<Object> ssConveyor = null;
-            if (snapshotContext.processingGuarantee() != ProcessingGuarantee.NONE) {
+            if (!isLightJob) {
+                // Note that we create the snapshot queues for all non-light jobs, even if they don't have
+                // processing guarantee enabled, because in EE one can request a snapshot also for
+                // non-snapshotted jobs.
                 @SuppressWarnings("unchecked")
                 QueuedPipe<Object>[] snapshotQueues = new QueuedPipe[vertex.localParallelism()];
                 Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
@@ -201,7 +202,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 String processorPrefix = prefix(jobConfig.getName(), jobId, vertex.name(), globalProcessorIndex);
                 ILogger logger = prefixedLogger(nodeEngine.getLogger(processor.getClass()), processorPrefix);
                 ProcCtx context = new ProcCtx(
-                        instance,
+                        hazelcastInstance,
                         jobId,
                         executionId,
                         getJobConfig(),
@@ -210,6 +211,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         localProcessorIdx,
                         globalProcessorIndex,
                         isLightJob,
+                        partitionAssignment,
                         vertex.localParallelism(),
                         memberIndex,
                         memberCount,
@@ -288,11 +290,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         writeList(out, vertices);
-        out.writeInt(partitionOwners.length);
         out.writeLong(lastSnapshotId);
-        for (Address address : partitionOwners) {
-            out.writeObject(address);
-        }
+        out.writeObject(partitionAssignment);
         out.writeBoolean(isLightJob);
         if (!isLightJob) {
             out.writeObject(jobConfig);
@@ -304,12 +303,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         vertices = readList(in);
-        int len = in.readInt();
-        partitionOwners = new Address[len];
         lastSnapshotId = in.readLong();
-        for (int i = 0; i < len; i++) {
-            partitionOwners[i] = in.readObject();
-        }
+        partitionAssignment = in.readObject();
         isLightJob = in.readBoolean();
         jobConfig = isLightJob ? LIGHT_JOB_CONFIG : in.readObject();
         memberIndex = in.readInt();
@@ -321,7 +316,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initProcSuppliers(long jobId,
                                    ConcurrentHashMap<String, File> tempDirectories,
                                    InternalSerializationService jobSerializationService) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
         for (VertexDef vertex : vertices) {
             ProcessorSupplier supplier = vertex.processorSupplier();
@@ -329,7 +324,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
             try {
                 supplier.init(new ProcSupplierCtx(
-                        service.getJetInstance(),
+                        nodeEngine.getHazelcastInstance(),
                         jobId,
                         executionId,
                         jobConfig,
@@ -340,6 +335,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         isLightJob,
+                        partitionAssignment,
                         tempDirectories,
                         jobSerializationService
                 ));
@@ -638,7 +634,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            ReceiverTasklet receiverTasklet = new ReceiverTasklet(
                                    collector, jobSerializationService,
                                    edge.getConfig().getReceiveWindowMultiplier(),
-                                   getConfig().getInstanceConfig().getFlowControlPeriodMs(),
+                                   getJetConfig().getInstanceConfig().getFlowControlPeriodMs(),
                                    nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
                                    memberConnections.get(addr), jobPrefix);
                            addrToTasklet.put(addr, receiverTasklet);
@@ -647,9 +643,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                    });
     }
 
-    private JetConfig getConfig() {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        return service.getJetInstance().getConfig();
+    private JetConfig getJetConfig() {
+        return nodeEngine.getConfig().getJetConfig();
     }
 
     private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int localProcessorIdx,

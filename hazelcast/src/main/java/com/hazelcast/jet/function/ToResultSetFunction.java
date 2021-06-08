@@ -27,7 +27,7 @@ import java.sql.SQLException;
  * This result set should return a part of the whole result set specific to
  * this processor.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface ToResultSetFunction extends Serializable {

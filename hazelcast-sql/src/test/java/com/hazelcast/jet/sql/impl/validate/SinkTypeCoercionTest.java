@@ -652,7 +652,6 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
         logger.info(sql);
         sqlService.execute(sql);
         try {
-            // TODO [viliam] remove the cast
             sql = "SINK INTO target SELECT 0, " + testParams.valueLiteral + ", 0 FROM src";
             logger.info(sql);
             sqlService.execute(sql);

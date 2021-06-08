@@ -19,8 +19,10 @@ package com.hazelcast.jet.aggregate;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -43,7 +45,7 @@ import static java.util.stream.IntStream.range;
  * AggregateOperations#coAggregateOperationBuilder()}. and refer to that
  * method's Javadoc for further details.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class CoAggregateOperationBuilder {
 

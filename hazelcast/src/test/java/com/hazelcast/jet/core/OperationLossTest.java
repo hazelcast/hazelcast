@@ -20,14 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
@@ -78,21 +77,21 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_initExecutionOperationLost_then_jobRestarts_lightJob() {
+    public void when_initExecutionOperationLost_then_initRetried_lightJob() {
         PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", () -> new MockP().streaming());
+        Vertex v1 = dag.newVertex("v1", () -> new NoOutputSourceP());
         Vertex v2 = dag.newVertex("v2", mapP(identity())).localParallelism(1);
         dag.edge(between(v1, v2).distributed());
 
-        LightJob job = instance().newLightJob(dag);
+        Job job = instance().newLightJob(dag);
         // we assert that the PMS is initialized, but the PS isn't
         JobExecutionService jobExecutionService = getNodeEngineImpl(instances()[1])
-                .<JetService>getService(JetService.SERVICE_NAME)
+                .<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME)
                 .getJobExecutionService();
         // assert that the execution doesn't start on the 2nd member. For light jobs, jobId == executionId
-        assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 2);
+        assertTrueAllTheTime(() -> assertNull(jobExecutionService.getExecutionContext(job.getId())), 1);
 
         // now allow the job to complete normally
         PacketFiltersUtil.resetPacketFiltersFrom(instance().getHazelcastInstance());
@@ -101,7 +100,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_initExecutionOperationLost_then_jobRestarts_normalJob() {
+    public void when_initExecutionOperationLost_then_initOpRetried_normalJob() {
         when_operationLost_then_jobRestarts(JetInitDataSerializerHook.INIT_EXECUTION_OP, STARTING);
     }
 
@@ -143,7 +142,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(100));
         assertJobStatusEventually(job, RUNNING);
-        JobRepository jobRepository = new JobRepository(instance());
+        JobRepository jobRepository = new JobRepository(instance().getHazelcastInstance());
         assertTrueEventually(() -> {
             JobExecutionRecord record = jobRepository.getJobExecutionRecord(job.getId());
             assertNotNull("null JobExecutionRecord", record);
@@ -172,7 +171,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP()).localParallelism(1);
         Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP());
         dag.edge(between(source, sink).distributed());
-        LightJob job = useLightJob ? instance().newLightJob(dag) : instance().newJob(dag);
+        Job job = useLightJob ? instance().newLightJob(dag) : instance().newJob(dag);
         assertTrueEventually(() -> assertEquals(2, NoOutputSourceP.initCount.get()));
 
         Connection connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(instance()), getAddress(instances()[1]));
@@ -219,7 +218,7 @@ public class OperationLossTest extends SimpleTestInClusterSupport {
     public void lightJob_when_terminateExecutionOperationLost_then_jobTerminates() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new MockP().streaming());
-        LightJob job = instance().newLightJob(dag);
+        Job job = instance().newLightJob(dag);
 
         // When
         PacketFiltersUtil.dropOperationsFrom(instance().getHazelcastInstance(), JetInitDataSerializerHook.FACTORY_ID,

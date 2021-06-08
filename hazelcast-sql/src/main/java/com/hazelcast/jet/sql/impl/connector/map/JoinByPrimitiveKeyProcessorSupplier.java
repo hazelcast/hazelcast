@@ -40,7 +40,6 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.jet.Traversers.singleton;
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -82,7 +81,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public void init(@Nonnull Context context) {
-        map = context.jetInstance().getMap(mapName);
+        map = context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -129,7 +128,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             return null;
         }
 
-        Object[] right = rightRowProjector.project(entry(key, value));
+        Object[] right = rightRowProjector.project(key, value);
         if (right == null) {
             return null;
         }

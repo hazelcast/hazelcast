@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
 
@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  * GeneralStage#writeTo(Sink) stage.writeTo(sink)}, which will attach a
  * {@link SinkStage}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Stage {
     /**
@@ -55,7 +55,7 @@ public interface Stage {
      * member.
      * <p>
      * The default value is {@value
-     * ProcessorMetaSupplier#LOCAL_PARALLELISM_USE_DEFAULT} and it signals
+     * Vertex#LOCAL_PARALLELISM_USE_DEFAULT} and it signals
      * to Jet to figure out a default value. Jet will determine the vertex's local
      * parallelism during job initialization from the global default and the
      * processor meta-supplier's preferred value.

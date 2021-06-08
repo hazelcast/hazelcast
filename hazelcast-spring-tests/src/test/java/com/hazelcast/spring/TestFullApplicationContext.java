@@ -127,7 +127,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -208,8 +208,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
-    @Resource(name = "jetInstance")
-    private JetInstance jet;
+    @Resource(name = "jetService")
+    private JetService jet;
 
     @Resource(name = "map1")
     private IMap<Object, Object> map1;
@@ -1500,6 +1500,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testJetConfig() {
         JetConfig jetConfig = config.getJetConfig();
+        assertTrue(jetConfig.isEnabled());
+        assertTrue(jetConfig.isResourceUploadEnabled());
 
         InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
         assertEquals(4, instanceConfig.getCooperativeThreadCount());

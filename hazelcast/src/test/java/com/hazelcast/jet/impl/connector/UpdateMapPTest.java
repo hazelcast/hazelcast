@@ -132,7 +132,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
         TestSupport
             .verifyProcessor(sup)
-            .jetInstance(jet)
+            .hazelcastInstance(jet.getHazelcastInstance())
             .input(input)
             .disableSnapshots()
             .disableLogging()

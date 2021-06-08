@@ -251,7 +251,7 @@ public class TcpServerConnection implements ServerConnection {
             logger.warning(e);
         }
 
-        lifecycleListener.onConnectionClose(this, null, false);
+        lifecycleListener.onConnectionClose(this, cause, false);
 
         serverContext.onDisconnect(addressAliases(), cause);
 

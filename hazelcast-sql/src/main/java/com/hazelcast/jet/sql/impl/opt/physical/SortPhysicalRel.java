@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -29,6 +30,9 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class SortPhysicalRel extends Sort implements PhysicalRel {
 
@@ -61,7 +65,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        throw new UnsupportedOperationException();
+        return visitor.onSort(this);
     }
 
     @Override
@@ -72,5 +76,10 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     @Override
     protected RelDataType deriveRowType() {
         return rowType;
+    }
+
+    public List<FieldCollation> getCollations() {
+        return getCollation().getFieldCollations()
+                .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 }

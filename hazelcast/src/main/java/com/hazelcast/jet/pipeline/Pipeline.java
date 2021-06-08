@@ -41,14 +41,14 @@ import java.io.Serializable;
  * (e.g., a cascade of map/filter/flatMap stages can be fused into one
  * vertex).
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Pipeline extends Serializable {
 
     /**
      * Creates a new, empty pipeline.
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     static Pipeline create() {
@@ -57,7 +57,7 @@ public interface Pipeline extends Serializable {
 
     /**
      * Returns the preserve order property of this pipeline
-     * @since 4.4
+     * @since Jet 4.4
      */
     boolean isPreserveOrder();
 
@@ -78,7 +78,7 @@ public interface Pipeline extends Serializable {
      * The default value is false.
      *
      * @return {@code this}, for fluent API
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     Pipeline setPreserveOrder(boolean value);
@@ -124,7 +124,7 @@ public interface Pipeline extends Serializable {
     /**
      * Transforms the pipeline into a Jet DAG, which can be submitted for
      * execution to a Jet instance.
-     * @deprecated since 4.3, Jet performs this transformation on the server-side.
+     * @deprecated since Jet 4.3, Jet performs this transformation on the server-side.
      */
     @Nonnull
     @Deprecated()
@@ -139,7 +139,7 @@ public interface Pipeline extends Serializable {
     /**
      * Returns {@code true} if there are no stages in the pipeline.
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     boolean isEmpty();
 }

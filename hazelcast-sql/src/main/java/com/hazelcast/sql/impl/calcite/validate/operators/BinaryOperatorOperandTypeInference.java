@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
@@ -39,7 +39,7 @@ public final class BinaryOperatorOperandTypeInference implements SqlOperandTypeI
         assert operandTypes.length == 2;
         assert binding.getOperandCount() == 2;
 
-        boolean hasParameters = binding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
+        boolean hasParameters = HazelcastTypeUtils.hasParameters(binding);
 
         int knownTypeOperandIndex = -1;
         RelDataType knownType = null;

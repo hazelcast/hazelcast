@@ -99,7 +99,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
     @Override
     public void init(@Nonnull Context context) {
-        map = (MapProxyImpl<Object, Object>) context.jetInstance().getMap(mapName);
+        map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -167,7 +167,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     ) {
         List<Object[]> rows = new ArrayList<>();
         for (Entry<Object, Object> entry : entries) {
-            Object[] right = rightRowProjector.project(entry);
+            Object[] right = rightRowProjector.project(entry.getKey(), entry.getValue());
             if (right == null) {
                 continue;
             }
@@ -236,7 +236,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
         @Override
         public void init(@Nonnull Context context) {
-            this.partitionService = context.jetInstance().getHazelcastInstance().getPartitionService();
+            this.partitionService = context.hazelcastInstance().getPartitionService();
         }
 
         @Nonnull

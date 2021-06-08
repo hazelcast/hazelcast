@@ -104,6 +104,19 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isZero();
     }
 
+    @Test
+    public void test_dmlCaching() {
+        createMapping("map", "m", "id", PersonId.class, "varchar");
+        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        sqlService.execute("DELETE FROM map WHERE id = 0");
+        assertThat(planCache(instance()).size()).isEqualTo(2);
+
+        sqlService.execute("DROP MAPPING map");
+        assertThat(planCache(instance()).size()).isZero();
+    }
+
     @SuppressWarnings("SameParameterValue")
     private static void createMapping(
             String name,

@@ -1,0 +1,49 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "user-code-deployment": {
+        "unknown": null,
+        "enabled": "On",
+        "jarPaths": {
+          "hello.jar": "/path"
+        },
+        "classNames": "com.example.MyClass"
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientUserCodeDeployment",
+    "pointerToViolation": "#/hazelcast-client/user-code-deployment",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment",
+        "pointerToViolation": "#/hazelcast-client/user-code-deployment",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/classNames",
+        "pointerToViolation": "#/hazelcast-client/user-code-deployment/classNames",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/enabled",
+        "pointerToViolation": "#/hazelcast-client/user-code-deployment/enabled",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientUserCodeDeployment/properties/jarPaths",
+        "pointerToViolation": "#/hazelcast-client/user-code-deployment/jarPaths",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: JSONObject"
+      }
+    ],
+    "message": "4 schema violations found"
+  }
+}

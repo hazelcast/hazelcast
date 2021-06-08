@@ -17,16 +17,22 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 public class JoinSubmittedJobOperation extends AsyncJobOperation {
 
+    private boolean isLightJob;
+
     public JoinSubmittedJobOperation() {
     }
 
-    public JoinSubmittedJobOperation(long jobId) {
+    public JoinSubmittedJobOperation(long jobId, boolean isLightJob) {
         super(jobId);
+        this.isLightJob = isLightJob;
     }
 
     @Override
@@ -37,5 +43,17 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
     @Override
     public int getClassId() {
         return JetInitDataSerializerHook.JOIN_SUBMITTED_JOB;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(isLightJob);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        isLightJob = in.readBoolean();
     }
 }

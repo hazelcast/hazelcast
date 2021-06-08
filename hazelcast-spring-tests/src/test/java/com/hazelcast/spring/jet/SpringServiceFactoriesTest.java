@@ -17,7 +17,7 @@
 package com.hazelcast.spring.jet;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
@@ -46,7 +46,7 @@ import static org.junit.Assert.fail;
 public class SpringServiceFactoriesTest {
 
     @Resource(name = "jet")
-    private JetInstance jetInstance;
+    private JetService jet;
 
     @BeforeClass
     @AfterClass
@@ -61,7 +61,7 @@ public class SpringServiceFactoriesTest {
                 .mapUsingService(bean("calculator"), Calculator::multiply)
                 .writeTo(assertAnyOrder(asList(-1L, -2L, -3L, -4L, -5L, -6L)));
 
-        jetInstance.newJob(pipeline).join();
+        jet.newJob(pipeline).join();
     }
 
     @Test
@@ -71,7 +71,7 @@ public class SpringServiceFactoriesTest {
                 .filterUsingService(bean("calculator"), Calculator::filter)
                 .writeTo(assertAnyOrder(asList(2L, 4L, 6L)));
 
-        jetInstance.newJob(pipeline).join();
+        jet.newJob(pipeline).join();
     }
 
     @Test
@@ -86,7 +86,7 @@ public class SpringServiceFactoriesTest {
                     c.forEach(i -> assertTrue(i <= 0));
                 }));
 
-        Job job = jetInstance.newJob(pipeline);
+        Job job = jet.newJob(pipeline);
         assertJobCompleted(job);
     }
 
@@ -102,7 +102,7 @@ public class SpringServiceFactoriesTest {
                     c.forEach(i -> assertEquals(0, i % 2));
                 }));
 
-        Job job = jetInstance.newJob(pipeline);
+        Job job = jet.newJob(pipeline);
         assertJobCompleted(job);
     }
 

@@ -302,9 +302,13 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                 }
             }
 
-            serverContext.onFailedConnection(remoteAddress);
-            if (!silent && plane != null) {
-                getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
+            long lastReadTime = connection.getChannel().lastReadTimeMillis();
+            boolean hadNoDataTraffic = lastReadTime < 0;
+            if (hadNoDataTraffic) {
+                serverContext.onFailedConnection(remoteAddress);
+                if (!silent && plane != null) {
+                    getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
+                }
             }
         }
     }

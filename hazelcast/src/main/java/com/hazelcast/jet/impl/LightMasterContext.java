@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -70,31 +71,29 @@ public class LightMasterContext {
     };
 
     private final NodeEngine nodeEngine;
-    private final DAG dag;
     private final long jobId;
 
     private final ILogger logger;
     private final String jobIdString;
+    private final long startTime = System.nanoTime();
 
-    private Map<MemberInfo, ExecutionPlan> executionPlanMap;
+    private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
-    private Set<Vertex> vertices;
+    private final Set<Vertex> vertices;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
         this.nodeEngine = nodeEngine;
-        this.dag = dag;
         this.jobId = jobId;
 
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
-    }
 
-    public CompletableFuture<Void> start() {
         MembersView membersView = getMembersView();
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
-            logFine(logger, "Start executing light %s, execution graph in DOT format:\n%s"
+            logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
             logFine(logger, "Building execution plan for %s", jobIdString);
@@ -102,12 +101,15 @@ public class LightMasterContext {
 
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
+        Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
         } catch (Throwable e) {
+            executionPlanMap = null;
             finalizeJob(e);
-            return jobCompletionFuture;
+            return;
         }
+        executionPlanMap = executionPlanMapTmp;
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
@@ -118,19 +120,20 @@ public class LightMasterContext {
                 responses -> finalizeJob(findError(responses)),
                 error -> cancelInvocations()
         );
-        return jobCompletionFuture;
+    }
+
+    public long getJobId() {
+        return jobId;
     }
 
     private void finalizeJob(@Nullable Throwable failure) {
         // close ProcessorMetaSuppliers
-        if (vertices != null) {
-            for (Vertex vertex : vertices) {
-                try {
-                    vertex.getMetaSupplier().close(failure);
-                } catch (Throwable e) {
-                    logger.severe(jobIdString
-                            + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
-                }
+        for (Vertex vertex : vertices) {
+            try {
+                vertex.getMetaSupplier().close(failure);
+            } catch (Throwable e) {
+                logger.severe(jobIdString
+                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
             }
         }
 
@@ -156,7 +159,7 @@ public class LightMasterContext {
                 // CheckLightJobsOperation.
                 TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
                 nodeEngine.getOperationService()
-                        .createInvocationBuilder(JetService.SERVICE_NAME, op, memberInfo.getAddress())
+                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, memberInfo.getAddress())
                         .invoke();
             }
         }
@@ -195,7 +198,7 @@ public class LightMasterContext {
             AtomicInteger remainingCount
     ) {
         InvocationFuture<Object> future = nodeEngine.getOperationService()
-                                                    .createInvocationBuilder(JetService.SERVICE_NAME, op, address)
+                                                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, address)
                                                     .invoke();
 
         future.whenComplete((r, throwable) -> {
@@ -242,6 +245,14 @@ public class LightMasterContext {
                 result = (Throwable) response;
             }
         }
+        if (result != null
+                && !(result instanceof CancellationException)
+                && !(result instanceof JobTerminateRequestedException)) {
+            // We must wrap the exception. Otherwise the error will become the error of the SubmitJobOp. And
+            // if the error is, for example, MemberLeftException, the job will be resubmitted even though it
+            // was already running. Fixes https://github.com/hazelcast/hazelcast/issues/18844
+            result = new JetException("Execution on a member failed: " + result, result);
+        }
         return result;
     }
 
@@ -251,5 +262,13 @@ public class LightMasterContext {
 
     public boolean isCancelled() {
         return invocationsCancelled.get();
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public CompletableFuture<Void> getCompletionFuture() {
+        return jobCompletionFuture;
     }
 }

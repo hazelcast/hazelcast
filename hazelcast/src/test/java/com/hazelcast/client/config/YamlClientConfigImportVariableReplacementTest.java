@@ -22,6 +22,7 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.helpers.DeclarativeConfigFileHelper;
 import com.hazelcast.config.replacer.EncryptionReplacer;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -40,7 +41,6 @@ import java.util.Set;
 import static com.hazelcast.client.config.YamlClientConfigBuilderTest.buildConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -62,7 +62,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
     }
 
     @Override
-    @Test
+    @Test(expected = SchemaViolationConfigurationException.class)
     public void testImportElementOnlyAppearsInTopLevel() throws IOException {
         String config1Yaml = ""
                 + "hazelcast-client:\n"
@@ -74,29 +74,7 @@ public class YamlClientConfigImportVariableReplacementTest extends AbstractClien
                 + "    import:\n"
                 + "      - " + configPath + "\"";
 
-        ClientConfig clientConfig = buildConfig(yaml);
-
-        // verify that instance-name is not set, because the import is not
-        // processed when defined at this level
-        assertNull(clientConfig.getInstanceName());
-    }
-
-    @Test
-    public void testImportNoHazelcastClientRootNode() throws Exception {
-        String importedYaml = ""
-                + "properties:\n"
-                + "  prop1: value1\n"
-                + "  prop2: value2\n";
-        String configPath = helper.givenConfigFileInWorkDir("foo.bar", importedYaml).getAbsolutePath();
-
-        String yaml = ""
-                + "import:\n"
-                + "  - " + "${file}\n"
-                + "instance-name: my-instance";
-        ClientConfig clientConfig = buildConfig(yaml, "file", configPath);
-        assertEquals("my-instance", clientConfig.getInstanceName());
-        assertEquals("value1", clientConfig.getProperty("prop1"));
-        assertEquals("value2", clientConfig.getProperty("prop2"));
+        buildConfig(yaml);
     }
 
     @Override

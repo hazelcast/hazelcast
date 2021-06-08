@@ -43,7 +43,7 @@ import static java.util.Objects.requireNonNull;
  * To create an instance, use {@link FileSources#files(String)}.
  *
  * @param <T> the type of items a source using this file format will emit
- * @since 4.4
+ * @since Jet 4.4
  */
 public class FileSourceBuilder<T> {
 

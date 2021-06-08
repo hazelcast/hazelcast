@@ -47,6 +47,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
@@ -100,7 +101,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = Hazelcast.newHazelcastInstance(config).getJetInstance();
+            instance = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
         }
         logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
         generateMockInput();
@@ -258,7 +259,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public void accumulate(Entry<Integer, String> input) {
-            String text = input.getValue().toLowerCase();
+            String text = input.getValue().toLowerCase(Locale.ROOT);
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
                 accumulate(m.group(), 1L);
@@ -291,7 +292,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public boolean tryProcess(int ordinal, @Nonnull Object item) {
-            String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
+            String text = ((Entry<Integer, String>) item).getValue().toLowerCase(Locale.ROOT);
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
                 accumulate(m.group());

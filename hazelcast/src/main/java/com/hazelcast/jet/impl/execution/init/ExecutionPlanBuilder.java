@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.IPartitionService;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -42,14 +43,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
 
@@ -61,21 +66,32 @@ public final class ExecutionPlanBuilder {
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
         assert !isLightJob || jobConfig == LIGHT_JOB_CONFIG;
-        final JetInstance instance = getJetInstance(nodeEngine);
-        final int defaultParallelism = instance.getConfig().getInstanceConfig().getCooperativeThreadCount();
+        final HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
+        final int defaultParallelism = hazelcastInstance.getConfig().getJetConfig()
+                .getInstanceConfig().getCooperativeThreadCount();
+        final Map<Address, int[]> partitionAssignment = getPartitionAssignment(nodeEngine);
         final Set<MemberInfo> members = new HashSet<>(membersView.size());
-        final Address[] partitionOwners = new Address[nodeEngine.getPartitionService().getPartitionCount()];
-        initPartitionOwnersAndMembers(nodeEngine, membersView, members, partitionOwners);
+        Map<Address, MemberInfo> membersMap =
+                membersView.getMembers().stream().collect(toMap(MemberInfo::getAddress, identity()));
+        for (Address address : partitionAssignment.keySet()) {
+            MemberInfo member = membersMap.get(address);
+            if (member == null) {
+                // Address in partition table doesn't exist in member list,
+                // it has just joined the cluster.
+                throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
+            }
+            members.add(member);
+        }
 
         final List<Address> addresses = toList(members, MemberInfo::getAddress);
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
-        final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
+        final EdgeConfig defaultEdgeConfig = hazelcastInstance.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : members) {
             plans.put(member,
-                    new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
+                    new ExecutionPlan(partitionAssignment, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
@@ -95,8 +111,8 @@ public final class ExecutionPlanBuilder {
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
             try {
-                metaSupplier.init(new MetaSupplierCtx(instance, jobId, executionId, jobConfig, logger,
-                        vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob));
+                metaSupplier.init(new MetaSupplierCtx(hazelcastInstance, jobId, executionId, jobConfig, logger,
+                        vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob, partitionAssignment));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }
@@ -137,25 +153,23 @@ public final class ExecutionPlanBuilder {
         return list;
     }
 
+    public static Map<Address, int[]> getPartitionAssignment(NodeEngine nodeEngine) {
+        final Address[] partitionOwners = new Address[nodeEngine.getPartitionService().getPartitionCount()];
+        initPartitionOwnersAndMembers(nodeEngine, partitionOwners);
+        return IntStream.range(0, partitionOwners.length)
+                .mapToObj(i -> tuple2(partitionOwners[i], i))
+                .collect(Collectors.groupingBy(Tuple2::f0,
+                        Collectors.mapping(Tuple2::f1,
+                                Collectors.collectingAndThen(Collectors.<Integer>toList(),
+                                        intList -> intList.stream().mapToInt(Integer::intValue).toArray()))));
+    }
+
     private static void initPartitionOwnersAndMembers(NodeEngine nodeEngine,
-                                                      MembersView membersView,
-                                                      Set<MemberInfo> members,
                                                       Address[] partitionOwners) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
-        Set<Address> addresses = new HashSet<>(membersView.size());
         for (int partitionId = 0; partitionId < partitionOwners.length; partitionId++) {
             Address address = partitionService.getPartitionOwnerOrWait(partitionId);
             partitionOwners[partitionId] = address;
-            addresses.add(address);
-        }
-        for (Address address : addresses) {
-            MemberInfo member = membersView.getMember(address);
-            if (member == null) {
-                // Address in partition table doesn't exist in member list,
-                // it has just joined the cluster.
-                throw new TopologyChangedException("Topology changed, " + address + " is not in original member list");
-            }
-            members.add(member);
         }
     }
 }

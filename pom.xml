@@ -140,7 +140,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.14.3</testcontainers.version>
+        <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
@@ -1422,13 +1422,6 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
             <version>${jsr107.api.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

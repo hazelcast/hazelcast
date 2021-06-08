@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -38,10 +39,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -64,7 +63,12 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -79,9 +83,6 @@ public class JobTest extends SimpleTestInClusterSupport {
     private static final int LOCAL_PARALLELISM = 1;
     private static final int TOTAL_PARALLELISM = NODE_COUNT * LOCAL_PARALLELISM;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig();
@@ -95,16 +96,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSubmittedFromNonMaster_then_jobStatusShouldBeStarting() {
-        testJobStatusDuringStart(instances()[1]);
+    public void when_jobSubmitted_then_jobStatusIsStarting_member() {
+        when_jobSubmitted_then_jobStatusIsStarting(instances()[1]);
     }
 
     @Test
-    public void when_jobIsSubmittedFromClient_then_jobStatusShouldBeStarting() {
-        testJobStatusDuringStart(client());
+    public void when_jobSubmitted_then_jobStatusIsStarting_client() {
+        when_jobSubmitted_then_jobStatusIsStarting(client());
     }
 
-    private void testJobStatusDuringStart(JetInstance submitter) {
+    private void when_jobSubmitted_then_jobStatusIsStarting(JetService submitter) {
         PSThatWaitsOnInit.initLatch = new CountDownLatch(1);
         DAG dag = new DAG().vertex(new Vertex("test", new PSThatWaitsOnInit(Identity::new)));
 
@@ -121,16 +122,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting_fromNonMaster() {
+    public void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting_nonMaster() {
         when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting(instances()[1]);
     }
 
     @Test
-    public void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting_fromClient() {
+    public void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting_client() {
         when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting(client());
     }
 
-    private void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting(JetInstance submitter) {
+    private void when_jobSubmittedWithNewJobIfAbsent_then_jobStatusIsStarting(JetService submitter) {
         PSThatWaitsOnInit.initLatch = new CountDownLatch(1);
         DAG dag = new DAG().vertex(new Vertex("test", new PSThatWaitsOnInit(Identity::new)));
 
@@ -147,7 +148,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsCancelled_then_jobStatusIsCompletedEventually() throws InterruptedException {
+    public void when_jobCancelled_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -163,7 +164,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
+    public void when_jobFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
                 () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
@@ -181,7 +182,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSubmitted_then_trackedJobCanQueryJobStatus() throws InterruptedException {
+    public void when_jobSubmitted_then_trackedJobCanQueryJobStatus() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -190,7 +191,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
@@ -199,7 +201,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSubmittedWithNewJobIfAbsent_then_trackedJobCanQueryJobStatus() throws InterruptedException {
+    public void when_jobSubmittedWithNewJobIfAbsent_then_trackedJobCanQueryStatus() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -208,7 +210,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
@@ -217,7 +220,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_namedJobIsSubmittedWithNewJobIfAbsent_then_trackedJobCanQueryJobStatus() throws InterruptedException {
+    public void when_namedJobSubmittedWithNewJobIfAbsent_then_trackedJobCanQueryStatus() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         JobConfig config = new JobConfig()
@@ -228,7 +231,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         // Then
         assertJobStatusEventually(trackedJob, RUNNING);
@@ -237,7 +241,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsCompleted_then_trackedJobCanQueryJobResult() throws InterruptedException {
+    public void when_jobCompleted_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -246,7 +250,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         NoOutputSourceP.proceedLatch.countDown();
 
@@ -257,7 +262,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsCancelled_then_trackedJobCanQueryJobResult() throws InterruptedException {
+    public void when_jobCancelled_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -266,7 +271,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         submittedJob.cancel();
 
@@ -278,7 +284,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsFailed_then_trackedJobCanQueryJobResult() throws InterruptedException {
+    public void when_jobFailed_then_trackedJobCanQueryResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((SupplierEx<Processor>)
                 () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
@@ -287,7 +293,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         Job submittedJob = instance().newJob(dag);
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         // Then
         try {
@@ -306,7 +313,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         Job submittedJob = instance().newJob(dag);
 
         Collection<Job> trackedJobs = instances()[1].getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         // When
         trackedJob.cancel();
@@ -322,7 +330,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsCompleted_then_trackedJobCanQueryJobResultFromClient() throws InterruptedException {
+    public void when_jobCompleted_then_trackedJobCanQueryResultFromClient() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -331,7 +339,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         Collection<Job> trackedJobs = client().getJobs();
-        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().get();
+        Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
+        assertNotNull(trackedJob);
 
         NoOutputSourceP.proceedLatch.countDown();
 
@@ -342,16 +351,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsRunning_then_itIsQueriedByName() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(instances()[1]);
+    public void when_jobIsRunning_then_itIsQueriedByName_member() throws InterruptedException {
+        when_jobIsRunning_then_itIsQueriedByName(instances()[1]);
     }
 
     @Test
-    public void when_jobIsRunning_then_itIsQueriedByNameFromClient() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(client());
+    public void when_jobIsRunning_then_itIsQueriedByName_client() throws InterruptedException {
+        when_jobIsRunning_then_itIsQueriedByName(client());
     }
 
-    private void testGetJobByNameWhenJobIsRunning(JetInstance instance) throws InterruptedException {
+    private void when_jobIsRunning_then_itIsQueriedByName(JetService instance) throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         JobConfig config = new JobConfig();
@@ -384,7 +393,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         testGetJobByIdWhenJobIsRunning(client());
     }
 
-    private void testGetJobByIdWhenJobIsRunning(JetInstance instance) throws InterruptedException {
+    private void testGetJobByIdWhenJobIsRunning(JetService instance) throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
@@ -443,26 +452,26 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsQueriedByInvalidId_then_noJobIsReturned() {
+    public void when_jobIsQueriedByInvalidId_then_noJobIsReturned_member() {
         assertNull(instance().getJob(0));
     }
 
     @Test
-    public void when_jobIsQueriedByInvalidIdFromClient_then_noJobIsReturned() {
+    public void when_jobIsQueriedByInvalidId_then_noJobIsReturned_client() {
         assertNull(client().getJob(0));
     }
 
     @Test
-    public void when_namedJobIsRunning_then_newNamedSubmitJoinsToExistingJob_member() {
-        when_namedJobIsRunning_then_newNamedSubmitJoinsToExistingJob(instance());
+    public void when_namedJobIsRunning_then_newNamedSubmitJoinsExisting_member() {
+        when_namedJobIsRunning_then_newNamedSubmitJoinsExisting(instance());
     }
 
     @Test
-    public void when_namedJobIsRunning_then_newNamedSubmitJoinsToExistingJob_client() {
-        when_namedJobIsRunning_then_newNamedSubmitJoinsToExistingJob(client());
+    public void when_namedJobIsRunning_then_newNamedSubmitJoinsExisting_client() {
+        when_namedJobIsRunning_then_newNamedSubmitJoinsExisting(client());
     }
 
-    private void when_namedJobIsRunning_then_newNamedSubmitJoinsToExistingJob(JetInstance instance) {
+    private void when_namedJobIsRunning_then_newNamedSubmitJoinsExisting(JetService instance) {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig config = new JobConfig()
@@ -488,8 +497,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         stressTest_parallelNamedJobSubmission(client());
     }
 
-    private void stressTest_parallelNamedJobSubmission(JetInstance instance) throws Exception {
-        final int nThreads = 3;
+    private void stressTest_parallelNamedJobSubmission(JetService instance) throws Exception {
+        final int nThreads = 5;
         ExecutorService executor = Executors.newFixedThreadPool(nThreads);
         String randomPrefix = randomName();
         try {
@@ -507,7 +516,7 @@ public class JobTest extends SimpleTestInClusterSupport {
             }
         } finally {
             executor.shutdownNow();
-            executor.awaitTermination(1, TimeUnit.MINUTES);
+            assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
         }
     }
 
@@ -521,7 +530,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         when_namedJobIsRunning_then_newNamedJobFails(client());
     }
 
-    private void when_namedJobIsRunning_then_newNamedJobFails(JetInstance instance) {
+    private void when_namedJobIsRunning_then_newNamedJobFails(JetService instance) {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig config = new JobConfig()
@@ -532,12 +541,12 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> assertEquals(RUNNING, job1.getStatus()));
 
         // Then
-        expectedException.expect(JobAlreadyExistsException.class);
-        instance.newJob(dag, config);
+        assertThatThrownBy(() -> instance.newJob(dag, config))
+                .isInstanceOf(JobAlreadyExistsException.class);
     }
 
     @Test
-    public void when_namedJobHasCompletedAndAnotherWasSubmitted_then_runningOneIsQueriedByName() {
+    public void when_namedJobCompletedAndAnotherSubmitted_then_runningOneIsQueriedByName() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig config = new JobConfig();
@@ -564,7 +573,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_namedJobHasCompletedAndAnotherWasSubmitted_then_bothAreQueriedByName() {
+    public void when_namedJobCompletedAndAnotherSubmitted_then_bothAreQueriedByName() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig config = new JobConfig();
@@ -614,7 +623,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobsAreCompleted_then_theyAreQueriedByName() {
+    public void when_jobsCompleted_then_theyAreQueriedByName() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
         JobConfig config = new JobConfig()
@@ -633,6 +642,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         job2.join();
 
         // Then
+        assertNotNull(config.getName());
         List<Job> jobs = instance().getJobs(config.getName());
         assertEquals(2, jobs.size());
 
@@ -680,8 +690,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertJobStatusEventually(job1, SUSPENDED);
 
         // Then
-        expectedException.expect(JobAlreadyExistsException.class);
-        instances()[1].newJob(dag, config);
+        assertThatThrownBy(() -> instances()[1].newJob(dag, config))
+                .isInstanceOf(JobAlreadyExistsException.class);
     }
 
     @Test
@@ -702,16 +712,16 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried() throws InterruptedException {
-        testJobSubmissionTimeWhenJobIsRunning(instance());
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_member() throws InterruptedException {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(instance());
     }
 
     @Test
-    public void when_jobIsRunning_then_jobSubmissionTimeIsQueriedFromClient() throws InterruptedException {
-        testJobSubmissionTimeWhenJobIsRunning(client());
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_client() throws InterruptedException {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(client());
     }
 
-    private void testJobSubmissionTimeWhenJobIsRunning(JetInstance instance) throws InterruptedException {
+    private void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(JetService instance) throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         JobConfig config = new JobConfig();
@@ -768,6 +778,165 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertJobStatusEventually(job, COMPLETED);
     }
 
+    @Test
+    public void when_jobWithSameNameManyTimes_then_queryResultSortedBySubmission() {
+        DAG batchDag = new DAG();
+        batchDag.newVertex("v", MockP::new);
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
+
+        List<Long> jobIds = new ArrayList<>();
+
+        // When
+        for (int i = 0; i < 10; i++) {
+            Job job = instance().newJob(batchDag, new JobConfig().setName("foo"));
+            jobIds.add(0, job.getId());
+            job.cancel();
+            joinAndExpectCancellation(job);
+        }
+        Job activeJob = instance().newJob(streamingDag, new JobConfig().setName("foo"));
+        jobIds.add(0, activeJob.getId());
+
+        // Then
+        List<Job> actualJobs = instance().getJobs("foo");
+        assertThat(toList(actualJobs, Job::getId))
+                .containsExactlyElementsOf(jobIds);
+    }
+
+    @Test
+    public void test_manyJobs_member() {
+        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        JetInstance inst = createJetMember();
+        createJetMember();
+
+        test_manyJobs(inst);
+    }
+
+    @Test
+    public void test_manyJobs_client() {
+        // we use a standalone cluster here - this test looks at all the jobs and it must not see completed jobs from other tests
+        createJetMember();
+        createJetMember();
+        JetInstance client = createJetClient();
+
+        test_manyJobs(client);
+    }
+
+    private void test_manyJobs(JetInstance inst) {
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
+
+        DAG batchDag = new DAG();
+        batchDag.newVertex("v", MockP::new);
+
+        // normal streaming job
+        Job streamingJob = inst.newJob(streamingDag);
+        assertJobStatusEventually(streamingJob, RUNNING);
+
+        // two normal batch job
+        Job batchJob1 = inst.newJob(batchDag);
+        batchJob1.join();
+        Job batchJob2 = inst.newJob(batchDag);
+        batchJob2.join();
+
+        // named streaming job name1
+        Job namedStreamingJob1 = inst.newJob(streamingDag, new JobConfig().setName("name1"));
+        assertJobStatusEventually(namedStreamingJob1, RUNNING);
+
+        // named streaming job name2, cancelled
+        Job namedStreamingJob2 = inst.newJob(streamingDag, new JobConfig().setName("name2"));
+        namedStreamingJob2.cancel();
+        joinAndExpectCancellation(namedStreamingJob2);
+
+        // named streaming job name2, again, not cancelled
+        Job namedStreamingJob2_1 = inst.newJob(streamingDag, new JobConfig().setName("name2"));
+        assertJobStatusEventually(namedStreamingJob2_1, RUNNING);
+
+        // light streaming job
+        Job lightStreamingJob = inst.newLightJob(streamingDag);
+
+        // light streaming job, cancelled
+        Job lightStreamingJobCancelled = inst.newLightJob(streamingDag);
+        lightStreamingJobCancelled.cancel();
+        joinAndExpectCancellation(lightStreamingJobCancelled);
+
+        // two light batch jobs
+        Job lightBatchJob1 = inst.newLightJob(batchDag);
+        Job lightBatchJob2 = inst.newLightJob(batchDag);
+        lightBatchJob1.join();
+        lightBatchJob2.join();
+
+        List<Job> allJobsExceptCompletedLightJobs =
+                asList(streamingJob, batchJob1, batchJob2, namedStreamingJob1, namedStreamingJob2, namedStreamingJob2_1, lightStreamingJob);
+
+        List<Job> allJobs = new ArrayList<>();
+        allJobs.addAll(allJobsExceptCompletedLightJobs);
+        allJobs.add(lightStreamingJobCancelled);
+        allJobs.add(lightBatchJob1);
+        allJobs.add(lightBatchJob2);
+
+        // Then
+        // getJobs must include all submitted all jobs, except for the light batch jobs that are done
+        assertThat(toList(inst.getJobs(), this::jobEqualityString))
+                .containsExactlyInAnyOrderElementsOf(toList(allJobsExceptCompletedLightJobs, this::jobEqualityString));
+
+        for (Job job : allJobs) {
+            Job trackedJobById = inst.getJob(job.getId());
+            Job trackedJobByName = job.getName() != null ? inst.getJob(job.getName()) : null;
+
+            if (allJobsExceptCompletedLightJobs.contains(job)) {
+                assertEquals(jobEqualityString(job), jobEqualityString(trackedJobById));
+                if (job.getName() != null && job != namedStreamingJob2) {
+                    assertEquals(jobEqualityString(job), jobEqualityString(trackedJobByName));
+                }
+            } else {
+                assertNull(trackedJobById);
+                assertNull(trackedJobByName);
+            }
+        }
+
+        assertThat(toList(inst.getJobs("name1"), this::jobEqualityString))
+                .containsExactlyElementsOf(toList(singletonList(namedStreamingJob1), this::jobEqualityString));
+
+        assertThat(toList(inst.getJobs("name2"), this::jobEqualityString))
+                .containsExactlyElementsOf(toList(asList(namedStreamingJob2_1, namedStreamingJob2), this::jobEqualityString));
+    }
+
+    /**
+     * Converts {@link Job} to a string. Used for comparing two Job instances.
+     */
+    private String jobEqualityString(Job job) {
+        if (job == null) {
+            return null;
+        }
+        return "id=" + job.getIdString() +
+                ", name=" + job.getName() +
+                ", light=" + job.isLightJob() +
+                ", submissionTime=" + job.getSubmissionTime() +
+                ", status=" + job.getStatus();
+    }
+
+    // ### Tests for light jobs
+
+    @Test
+    public void when_lightJob_then_unsupportedMethodsThrow() {
+        DAG streamingDag = new DAG();
+        streamingDag.newVertex("v", () -> new MockP().streaming());
+
+        // When
+        Job job = instance().newLightJob(streamingDag);
+
+        // Then
+        assertThatThrownBy(job::getConfig).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::getSuspensionCause).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::getMetrics).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::restart).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::suspend).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(job::resume).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> job.cancelAndExportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> job.exportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
+    }
+
     private void joinAndExpectCancellation(Job job) {
         try {
             job.join();
@@ -794,7 +963,6 @@ public class JobTest extends SimpleTestInClusterSupport {
         @Override
         public Collection<? extends Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());
-
         }
     }
 
@@ -819,7 +987,7 @@ public class JobTest extends SimpleTestInClusterSupport {
             output.writeInt(value.value);
         }
 
-        @Override
+        @Override @Nonnull
         public Value read(ObjectDataInput input) throws IOException {
             return new Value(input.readInt());
         }

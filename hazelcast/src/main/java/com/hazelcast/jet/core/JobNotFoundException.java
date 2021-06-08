@@ -22,7 +22,7 @@ import com.hazelcast.jet.Util;
 /**
  * Thrown when a job could not be found on the master node
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class JobNotFoundException extends JetException {
 

@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
  * A pipeline stage that doesn't allow any downstream stages to be attached
  * to it. Corresponds to a data sink.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface SinkStage extends Stage {
 

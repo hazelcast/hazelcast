@@ -408,11 +408,11 @@ public class SinksTest extends PipelineTestSupport {
         ProcessorMetaSupplier metaSupplier = adaptSupplier(SinkProcessors.<Entry<String, Integer>, String,
                 Integer>mergeMapP(sinkName, Entry::getKey, Entry::getValue, Integer::sum));
 
-        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setJetInstance(member);
+        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext().setHazelcastInstance(member.getHazelcastInstance());
         Processor p = TestSupport.supplierFrom(metaSupplier, psContext).get();
 
         TestOutbox outbox = new TestOutbox();
-        p.init(outbox, new TestProcessorContext().setJetInstance(member));
+        p.init(outbox, new TestProcessorContext().setHazelcastInstance(member.getHazelcastInstance()));
         TestInbox inbox = new TestInbox();
         inbox.add(entry("k", 1));
         inbox.add(entry("k", 2));

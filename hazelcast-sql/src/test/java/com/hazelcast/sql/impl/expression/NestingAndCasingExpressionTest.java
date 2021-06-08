@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
 
@@ -456,14 +457,24 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                 LocalDateTime.now(), LocalDateTime.now());
     }
 
+    @Test
+    public void test_NULLIF() {
+        check(sql("NULLIF(1, ?) || NULLIF(1, ?)"), 1, 2);
+    }
+
+    @Test
+    public void test_COALESCE() {
+        check(sql("COALESCE('1', ?) || COALESCE('2', ?)"), "1", "2");
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
-        checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
+        checkValue0(lowerCaseInternal(sql), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
     }
 
     private void check(String sql, SqlColumnType type, Object... params) {
         checkValue0(sql, type, SKIP_VALUE_CHECK, params);
-        checkValue0(sql.toLowerCase(), type, SKIP_VALUE_CHECK, params);
+        checkValue0(lowerCaseInternal(sql), type, SKIP_VALUE_CHECK, params);
     }
 
     private String sql(String expression) {

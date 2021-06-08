@@ -31,7 +31,7 @@ import java.io.Serializable;
  *
  * @param <T> the type of the data associated with the tag
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @SerializableByConvention
 public final class Tag<T> implements Comparable<Tag<?>>, Serializable {

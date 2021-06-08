@@ -154,7 +154,9 @@
             <property name="excludes" value="java.awt,javax.swing"/>
         </module>
         <!-- defaults to sun.* packages -->
-        <module name="IllegalImport"/>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="sun,org.jetbrains.annotations"/>
+        </module>
         <module name="RedundantImport"/>
         <module name="UnusedImports">
             <property name="processJavadoc" value="true"/>

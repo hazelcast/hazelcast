@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
 /**
  * Contains factory methods for Apache Avro sinks.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class AvroSinks {
 

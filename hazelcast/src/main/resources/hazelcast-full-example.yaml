@@ -3489,6 +3489,11 @@ hazelcast:
   #  ===== HAZELCAST JET CONFIGURATION =====
   #
   #  Configuration element's name is <jet>.
+  #  It has the following attributes:
+  #  - enabled:
+  #    Enables or disables Jet Service.
+  #  - resource-upload-enabled
+  #    Enables or disables resource uploading for Jet jobs.
   #
   #    It has the following sub-elements:
   #
@@ -3593,6 +3598,8 @@ hazelcast:
   #  the last acked byte.
   #  This setting has no effect on a non-distributed edge.
   jet:
+    enabled: true
+    resource-upload-enabled: true
     instance:
       cooperative-thread-count: 4
       flow-control-period: 100

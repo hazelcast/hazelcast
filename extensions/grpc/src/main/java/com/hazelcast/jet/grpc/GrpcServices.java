@@ -46,7 +46,7 @@ import java.util.concurrent.ForkJoinPool;
  *     bidirectionalStreaming}</li>
  * </ul>
  *
- * @since 4.1
+ * @since Jet 4.1
  */
 public final class GrpcServices {
 

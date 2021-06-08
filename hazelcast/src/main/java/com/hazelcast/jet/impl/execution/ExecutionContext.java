@@ -30,7 +30,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
@@ -55,6 +55,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -113,6 +114,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile RawJobMetrics jobMetrics = RawJobMetrics.empty();
 
     private InternalSerializationService serializationService;
+    private final AtomicBoolean executionCompleted = new AtomicBoolean();
 
     public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
@@ -148,8 +150,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
-        JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-        serializationService = jetService.createSerializationService(jobConfig.getSerializerConfigs());
+        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService);
@@ -199,10 +201,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
         synchronized (executionLock) {
             if (executionFuture != null) {
                 // beginExecution was already called or execution was cancelled before it started.
+                LoggingUtil.logFine(logger, "%s: execution started after cancelled", jobNameAndExecutionId());
                 return executionFuture;
             } else {
                 // begin job execution
-                JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+                JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
@@ -229,6 +232,10 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public void completeExecution(Throwable error) {
         assert executionFuture == null || executionFuture.isDone()
                 : "If execution was begun, then completeExecution() should not be called before execution is done.";
+
+        if (!executionCompleted.compareAndSet(false, true)) {
+            return;
+        }
 
         for (Tasklet tasklet : tasklets) {
             try {

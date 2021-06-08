@@ -51,7 +51,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Defines the name and default value for Hazelcast properties.
  */
-@SuppressWarnings({"checkstyle:javadocvariable", "checkstyle:magicnumber"})
+@SuppressWarnings({"checkstyle:magicnumber"})
 public final class ClusterProperty {
     /*
      * NETWORKING / TCP PROPERTIES
@@ -374,6 +374,22 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty TCP_JOIN_PORT_TRY_COUNT
             = new HazelcastProperty("hazelcast.tcp.join.port.try.count", 3);
+
+    /**
+     * Allows explicitly control if the {@link java.net.MulticastSocket#setInterface(java.net.InetAddress)} method is called in
+     * the Hazelcast multicast discovery service. This configuration may affect the multicast behavior on some platforms. The
+     * default value is not specified here and in such case Hazelcast multicast service itself decides if the
+     * {@code setInterface()} call should be called.
+     */
+    public static final HazelcastProperty MULTICAST_SOCKET_SET_INTERFACE
+            = new HazelcastProperty("hazelcast.multicast.socket.set.interface");
+
+    /**
+     * IP address of a multicast group. If not set, then the configuration is read from the
+     * {@link com.hazelcast.config.MulticastConfig} configuration.
+     */
+    public static final HazelcastProperty MULTICAST_GROUP
+            = new HazelcastProperty("hazelcast.multicast.group");
 
     /**
      * Timeout to connect all other cluster members when a member is joining to a cluster.

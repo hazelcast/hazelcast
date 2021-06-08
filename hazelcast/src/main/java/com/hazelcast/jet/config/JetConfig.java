@@ -23,18 +23,50 @@ import javax.annotation.Nonnull;
 /**
  * Configuration object for a Jet instance.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class JetConfig {
 
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
+    private boolean enabled = true;
+    private boolean resourceUploadEnabled;
 
     /**
      * Creates a new, empty {@code JetConfig} with the default configuration.
      * Doesn't consider any configuration XML files.
      */
     public JetConfig() {
+    }
+
+    /**
+     * Returns if Jet is enabled
+     */
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Sets if Jet is enabled
+     */
+    public JetConfig setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    /**
+     * Returns if uploading resources when submitting the job enabled
+     */
+    public boolean isResourceUploadEnabled() {
+        return resourceUploadEnabled;
+    }
+
+    /**
+     * Sets if uploading resources when submitting the job enabled
+     */
+    public JetConfig setResourceUploadEnabled(boolean resourceUploadEnabled) {
+        this.resourceUploadEnabled = resourceUploadEnabled;
+        return this;
     }
 
     /**
@@ -85,6 +117,12 @@ public class JetConfig {
 
         JetConfig jetConfig = (JetConfig) o;
 
+        if (enabled != jetConfig.enabled) {
+            return false;
+        }
+        if (resourceUploadEnabled != jetConfig.resourceUploadEnabled) {
+            return false;
+        }
         if (!instanceConfig.equals(jetConfig.instanceConfig)) {
             return false;
         }
@@ -95,6 +133,8 @@ public class JetConfig {
     public int hashCode() {
         int result = instanceConfig.hashCode();
         result = 31 * result + defaultEdgeConfig.hashCode();
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + (resourceUploadEnabled ? 1 : 0);
         return result;
     }
 }

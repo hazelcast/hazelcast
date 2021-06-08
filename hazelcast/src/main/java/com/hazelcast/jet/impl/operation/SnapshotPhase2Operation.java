@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -50,7 +50,7 @@ public class SnapshotPhase2Operation extends AsyncJobOperation {
 
     @Override
     protected CompletableFuture<Void> doRun() {
-        JetService service = getService();
+        JetServiceBackend service = getService();
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, getClass().getSimpleName()
         );

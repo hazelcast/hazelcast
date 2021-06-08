@@ -42,7 +42,7 @@ import javax.annotation.Nonnull;
  * queue, add to it in the callback and drain it in e.g. {@link
  * Processor#tryProcess()}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Outbox {
 

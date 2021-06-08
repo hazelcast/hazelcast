@@ -18,6 +18,7 @@ package com.hazelcast.jet.aggregate;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.core.Processor;
 
 import javax.annotation.Nonnull;
 import java.util.stream.Collector;
@@ -37,7 +38,7 @@ import java.util.stream.Collector;
  * @param <A> the type of the accumulator
  * @param <R> the type of the aggregation result
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
 

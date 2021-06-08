@@ -38,7 +38,7 @@ import javax.annotation.Nonnull;
  *
  * @param <T0> the type of the stream-0 item
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class WindowAggregateBuilder1<T0> {
     @Nonnull

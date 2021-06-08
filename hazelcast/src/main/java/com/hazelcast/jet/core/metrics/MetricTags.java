@@ -17,6 +17,8 @@
 package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.internal.metrics.ProbeUnit;
+import com.hazelcast.jet.Util;
+import com.hazelcast.jet.core.Processor;
 
 /**
  * Metric descriptors are formed from a comma separated list of {@code
@@ -24,7 +26,7 @@ import com.hazelcast.internal.metrics.ProbeUnit;
  * tag names that are used in Jet. See individual descriptions for the
  * meaning of information carried by each tag.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class MetricTags {
 
@@ -118,7 +120,7 @@ public final class MetricTags {
      * Boolean flag which is true if the metric is user-defined (as opposed to
      * built-in).
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static final String USER = "user";
 

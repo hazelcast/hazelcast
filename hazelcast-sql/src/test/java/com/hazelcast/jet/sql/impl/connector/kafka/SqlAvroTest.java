@@ -54,8 +54,6 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
@@ -263,8 +261,7 @@ public class SqlAvroTest extends SqlTestSupport {
 
     @Test
     public void when_createMappingNoColumns_then_fail() {
-        assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + randomName() + ' '
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING kafka "
                         + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ('valueFormat'='avro')"))
                 .hasMessage("Column list is required for Avro format");
@@ -281,9 +278,8 @@ public class SqlAvroTest extends SqlTestSupport {
     }
 
     private void when_explicitTopLevelField_then_fail(String field, String otherField) {
-        String name = randomName();
         assertThatThrownBy(() ->
-                sqlService.execute("CREATE MAPPING " + name + " ("
+                sqlService.execute("CREATE MAPPING kafka ("
                         + field + " VARCHAR"
                         + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
                         + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
@@ -295,31 +291,6 @@ public class SqlAvroTest extends SqlTestSupport {
                         + ")"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Cannot use the '" + field + "' field with Avro serialization");
-    }
-
-    @Test
-    public void test_valueFieldMappedUnderTopLevelKeyName() {
-        String name = createRandomTopic();
-        sqlService.execute("CREATE MAPPING " + name + "(\n"
-                + "__key INT EXTERNAL NAME id\n"
-                + ", name VARCHAR\n"
-                + ')' + "TYPE " + KafkaSqlConnector.TYPE_NAME + " \n"
-                + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
-                + ", '" + OPTION_KEY_CLASS + "'='" + String.class.getName() + "'\n"
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + AVRO_FORMAT + "'\n"
-                + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "'\n"
-                + ", 'schema.registry.url'='" + schemaRegistry.getURI() + "'\n"
-                + ", 'auto.offset.reset'='earliest'"
-                + ")"
-        );
-
-        sqlService.execute("INSERT INTO " + name + " VALUES(123, 'foo')");
-
-        assertRowsEventuallyInAnyOrder(
-                "select __key, name from " + name,
-                singletonList(new Row(123, "foo"))
-        );
     }
 
     @Test

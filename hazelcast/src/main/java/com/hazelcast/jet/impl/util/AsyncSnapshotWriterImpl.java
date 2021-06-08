@@ -23,7 +23,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
@@ -114,11 +114,11 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
                 useBigEndian);
 
         buffers = createAndInitBuffers(chunkSize, partitionService.getPartitionCount(), serializedByteArrayHeader);
-        JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-        this.partitionKeys = jetService.getSharedPartitionKeys();
+        JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        this.partitionKeys = jetServiceBackend.getSharedPartitionKeys();
         this.partitionSequence = memberIndex;
 
-        this.numConcurrentAsyncOps = jetService.numConcurrentAsyncOps();
+        this.numConcurrentAsyncOps = jetServiceBackend.numConcurrentAsyncOps();
 
         byte[] valueTerminatorWithHeader = serializationService.toData(SnapshotDataValueTerminator.INSTANCE).toByteArray();
         valueTerminator = Arrays.copyOfRange(valueTerminatorWithHeader, HeapData.TYPE_OFFSET,
@@ -245,7 +245,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
             return false;
         }
 
-        if (!Util.tryIncrement(numConcurrentAsyncOps, 1, JetService.MAX_PARALLEL_ASYNC_OPS)) {
+        if (!Util.tryIncrement(numConcurrentAsyncOps, 1, JetServiceBackend.MAX_PARALLEL_ASYNC_OPS)) {
             return false;
         }
         try {

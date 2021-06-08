@@ -20,6 +20,6 @@
  * {@link com.hazelcast.jet.pipeline Pipeline API} and to the Reference
  * Manual.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 package com.hazelcast.jet;

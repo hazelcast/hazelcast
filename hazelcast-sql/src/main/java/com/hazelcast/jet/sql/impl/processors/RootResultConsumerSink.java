@@ -52,7 +52,7 @@ public final class RootResultConsumerSink implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        NodeEngineImpl nodeEngine = getNodeEngine(context.jetInstance());
+        NodeEngineImpl nodeEngine = getNodeEngine(context.hazelcastInstance());
         JetSqlCoreBackendImpl jetSqlCoreBackend = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;
