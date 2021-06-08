@@ -131,7 +131,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onIndexScan(this);
+       throw new UnsupportedOperationException("Index scan has not supported yet for Jet SQL engine.");
     }
 
     @Override
