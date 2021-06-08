@@ -34,6 +34,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getTextContent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
@@ -338,17 +339,15 @@ public final class IndexUtils {
     }
 
     public static IndexType getIndexTypeFromXmlName(String typeStr) {
-        if (typeStr == null || typeStr.isEmpty()) {
+        if (isNullOrEmpty(typeStr)) {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
         }
 
-        typeStr = typeStr.toLowerCase();
-
-        if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
+        if (equalsIgnoreCase(typeStr, IndexType.SORTED.name())) {
             return IndexType.SORTED;
-        } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
+        } else if (equalsIgnoreCase(typeStr, IndexType.HASH.name())) {
             return IndexType.HASH;
-        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
+        } else if (equalsIgnoreCase(typeStr, IndexType.BITMAP.name())) {
             return IndexType.BITMAP;
         } else {
             throw new IllegalArgumentException("Unsupported index type: " + typeStr);
@@ -370,19 +369,7 @@ public final class IndexUtils {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
         }
 
-        typeStr = typeStr.toLowerCase();
-
-        IndexType type;
-
-        if (typeStr.equals(IndexType.SORTED.name().toLowerCase())) {
-            type = IndexType.SORTED;
-        } else if (typeStr.equals(IndexType.HASH.name().toLowerCase())) {
-            type = IndexType.HASH;
-        } else if (typeStr.equals(IndexType.BITMAP.name().toLowerCase())) {
-            type = IndexType.BITMAP;
-        } else {
-            throw new IllegalArgumentException("Unsupported index type: " + typeStr);
-        }
+        IndexType type = getIndexTypeFromXmlName(typeStr);
 
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 

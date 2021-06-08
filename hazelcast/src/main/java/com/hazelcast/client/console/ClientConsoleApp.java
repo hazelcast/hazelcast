@@ -68,6 +68,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
@@ -318,7 +319,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleSetRemoveMany(args);
         } else if (first.equals("m.replace")) {
             handleMapReplace(args);
-        } else if (first.equalsIgnoreCase("m.putIfAbsent")) {
+        } else if (equalsIgnoreCase(first, "m.putIfAbsent")) {
             handleMapPutIfAbsent(args);
         } else if (first.equals("m.putAsync")) {
             handleMapPutAsync(args);
@@ -328,7 +329,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMapPut(args);
         } else if (first.equals("m.get")) {
             handleMapGet(args);
-        } else if (first.equalsIgnoreCase("m.getMapEntry")) {
+        } else if (equalsIgnoreCase(first, "m.getMapEntry")) {
             handleMapGetMapEntry(args);
         } else if (first.equals("m.remove")) {
             handleMapRemove(args);
@@ -336,15 +337,15 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMapDelete(args);
         } else if (first.equals("m.evict")) {
             handleMapEvict(args);
-        } else if (first.equals("m.putmany") || first.equalsIgnoreCase("m.putAll")) {
+        } else if (first.equals("m.putmany") || equalsIgnoreCase(first, "m.putAll")) {
             handleMapPutMany(args);
         } else if (first.equals("m.getmany")) {
             handleMapGetMany(args);
         } else if (first.equals("m.removemany")) {
             handleMapRemoveMany(args);
-        } else if (command.equalsIgnoreCase("m.localKeys")) {
+        } else if (equalsIgnoreCase(command, "m.localKeys")) {
             handleMapLocalKeys();
-        } else if (command.equalsIgnoreCase("m.localSize")) {
+        } else if (equalsIgnoreCase(command, "m.localSize")) {
             handleMapLocalSize();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
@@ -354,7 +355,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMapEntries();
         } else if (first.equals("m.lock")) {
             handleMapLock(args);
-        } else if (first.equalsIgnoreCase("m.tryLock")) {
+        } else if (equalsIgnoreCase(first, "m.tryLock")) {
             handleMapTryLock(args);
         } else if (first.equals("m.unlock")) {
             handleMapUnlock(args);
@@ -376,7 +377,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMultiMapEntries();
         } else if (first.equals("mm.lock")) {
             handleMultiMapLock(args);
-        } else if (first.equalsIgnoreCase("mm.tryLock")) {
+        } else if (equalsIgnoreCase(first, "mm.tryLock")) {
             handleMultiMapTryLock(args);
         } else if (first.equals("mm.unlock")) {
             handleMultiMapUnlock(args);
@@ -402,25 +403,15 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             execute(args);
         } else if (first.equals("partitions")) {
             handlePartitions(args);
-//        } else if (first.equals("txn")) {
-//            hazelcast.getTransaction().begin();
-//        } else if (first.equals("commit")) {
-//            hazelcast.getTransaction().commit();
-//        } else if (first.equals("rollback")) {
-//            hazelcast.getTransaction().rollback();
-        } else if (first.equalsIgnoreCase("executeOnKey")) {
+        } else if (equalsIgnoreCase(first, "executeOnKey")) {
             executeOnKey(args);
-        } else if (first.equalsIgnoreCase("executeOnMember")) {
+        } else if (equalsIgnoreCase(first, "executeOnMember")) {
             executeOnMember(args);
-        } else if (first.equalsIgnoreCase("executeOnMembers")) {
+        } else if (equalsIgnoreCase(first, "executeOnMembers")) {
             executeOnMembers(args);
-            // } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
-            //     executeLongTaskOnOtherMember(args);
-            //} else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
-            //    executeLong(args);
-        } else if (first.equalsIgnoreCase("instances")) {
+        } else if (equalsIgnoreCase(first, "instances")) {
             handleInstances(args);
-        } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
+        } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")) {
             System.exit(0);
         } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
             handleExecutorSimulate(args);
@@ -952,13 +943,13 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         String lockStr = args[0];
         String key = args[1];
         Lock lock = hazelcast.getCPSubsystem().getLock(key);
-        if (lockStr.equalsIgnoreCase("lock")) {
+        if (equalsIgnoreCase(lockStr, "lock")) {
             lock.lock();
             println("true");
-        } else if (lockStr.equalsIgnoreCase("unlock")) {
+        } else if (equalsIgnoreCase(lockStr, "unlock")) {
             lock.unlock();
             println("true");
-        } else if (lockStr.equalsIgnoreCase("trylock")) {
+        } else if (equalsIgnoreCase(lockStr, "trylock")) {
             String timeout = args.length > 2 ? args[2] : null;
             if (timeout == null) {
                 println(lock.tryLock());

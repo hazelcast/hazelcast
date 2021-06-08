@@ -72,11 +72,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
@@ -204,7 +204,7 @@ public class JobRepository {
      * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
-    long uploadJobResources(long jobId, JobConfig jobConfig) {
+    void uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
@@ -253,7 +253,6 @@ public class JobRepository {
                 throw new JetException("Job resource upload failed", e);
             }
         }
-        return jobId;
     }
 
     private Path validateAndGetDirectoryPath(ResourceConfig rc) throws URISyntaxException, IOException {
@@ -284,7 +283,7 @@ public class JobRepository {
                 if (zipEntry.isDirectory()) {
                     continue;
                 }
-                if (zipEntry.getName().toLowerCase().endsWith(".jar")) {
+                if (lowerCaseInternal(zipEntry.getName()).endsWith(".jar")) {
                     loadJarFromInputStream(map, zis);
                 }
             }
@@ -490,7 +489,7 @@ public class JobRepository {
             jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
-                    .collect(Collectors.toList())
+                    .collect(toList())
                     .forEach(id -> {
                         jobMetrics.get().delete(id);
                         jobResults.get().delete(id);
@@ -578,9 +577,11 @@ public class JobRepository {
         return jobResults.get().values();
     }
 
-    List<JobResult> getJobResults(String name) {
-        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
-                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
+    /**
+     * Returns job results for jobs with the given name.
+     */
+    Collection<JobResult> getJobResults(@Nonnull String name) {
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name));
     }
 
     /**
@@ -752,6 +753,4 @@ public class JobRepository {
             name = in.readUTF();
         }
     }
-
-
 }

@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.map.impl.iterator.MapQueryIterator;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -49,7 +49,7 @@ public class ClientMapQueryIterable<K, V, R> implements Iterable<R> {
         this.projection = projection;
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public Iterator<R> iterator() {
         return new ClientMapQueryIterator<>(clientMapProxy, fetchSize, partitionCount, projection, predicate);

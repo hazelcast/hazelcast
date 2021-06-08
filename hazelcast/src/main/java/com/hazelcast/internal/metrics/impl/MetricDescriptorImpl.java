@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -223,7 +224,7 @@ public final class MetricDescriptorImpl implements MetricDescriptor {
         }
 
         if (unit != null) {
-            sb.append("unit=").append(unit.name().toLowerCase()).append(',');
+            sb.append("unit=").append(lowerCaseInternal(unit.name())).append(',');
         }
 
         if (metric != null) {

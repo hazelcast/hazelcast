@@ -41,7 +41,7 @@ import static java.util.stream.Collectors.groupingBy;
  * An immutable collection of job-specific metrics, pairs of metric names
  * and sets of associated {@link Measurement}s.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 public final class JobMetrics implements IdentifiedDataSerializable {
 

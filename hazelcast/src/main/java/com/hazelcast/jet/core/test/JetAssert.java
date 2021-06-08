@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * Assert methods that throw exceptions similar to those thrown by JUnit.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class JetAssert {
 

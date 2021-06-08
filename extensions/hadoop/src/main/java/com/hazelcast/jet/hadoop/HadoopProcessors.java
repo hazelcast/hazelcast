@@ -36,7 +36,7 @@ import javax.annotation.Nonnull;
  * Static utility class with factories of Apache Hadoop Hadoop source and sink
  * processors.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class HadoopProcessors {
 

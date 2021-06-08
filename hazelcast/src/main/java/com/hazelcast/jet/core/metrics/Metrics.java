@@ -26,7 +26,7 @@ import com.hazelcast.jet.impl.metrics.MetricsImpl;
  * things. A code submitted to Jet can use them to publish any custom run-time
  * values.
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 public final class Metrics {
 

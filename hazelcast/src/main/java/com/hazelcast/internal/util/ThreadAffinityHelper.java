@@ -28,6 +28,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.copy;
 import static com.hazelcast.internal.nio.IOUtil.getFileFromResourcesAsStream;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 
 /**
  * Affinity helper class that uses a Hazelcast developed affinity
@@ -117,7 +118,7 @@ public final class ThreadAffinityHelper {
 
     static {
         boolean hzAffinityLibLoaded = false;
-        boolean libDisabled = "true".equalsIgnoreCase(System.getProperty(AFFINITY_LIB_DISABLED));
+        boolean libDisabled = equalsIgnoreCase("true", System.getProperty(AFFINITY_LIB_DISABLED));
         if (!libDisabled && OsHelper.isLinux() && !JVMUtil.is32bitJVM()) {
             try {
                 System.load(extractBundledLib());

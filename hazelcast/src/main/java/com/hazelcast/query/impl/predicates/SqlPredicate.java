@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.PREDICATE_DS_FACTORY_ID;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.ilike;
@@ -189,25 +190,25 @@ public class SqlPredicate
                         createComparison(mapPhrases, tokens, i, LESS_EQUAL_FACTORY);
                     } else if ("<".equals(token)) {
                         createComparison(mapPhrases, tokens, i, LESS_THAN_FACTORY);
-                    } else if ("LIKE".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("LIKE", token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, like((String) first, (String) second));
-                    } else if ("ILIKE".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("ILIKE", token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, ilike((String) first, (String) second));
-                    } else if ("REGEX".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("REGEX", token)) {
                         int position = (i - 2);
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, regex((String) first, (String) second));
-                    } else if ("IN".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("IN", token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
                         String exp = (String) toValue(tokens.remove(position), mapPhrases);
@@ -219,25 +220,25 @@ public class SqlPredicate
                         } else {
                             setOrAdd(tokens, position, Predicates.in(exp, values));
                         }
-                    } else if ("NOT".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("NOT", token)) {
                         int position = i - 1;
                         validateOperandPosition(position);
                         Object exp = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, Predicates.not(eval(exp)));
-                    } else if ("BETWEEN".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("BETWEEN", token)) {
                         int position = i - 3;
                         validateOperandPosition(position);
                         Object expression = tokens.remove(position);
                         Object from = toValue(tokens.remove(position), mapPhrases);
                         Object to = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, between((String) expression, (Comparable) from, (Comparable) to));
-                    } else if ("AND".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("AND", token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
                         Object second = toValue(tokens.remove(position), mapPhrases);
                         setOrAdd(tokens, position, flattenCompound(eval(first), eval(second), AndPredicate.class));
-                    } else if ("OR".equalsIgnoreCase(token)) {
+                    } else if (equalsIgnoreCase("OR", token)) {
                         int position = i - 2;
                         validateOperandPosition(position);
                         Object first = toValue(tokens.remove(position), mapPhrases);
@@ -287,7 +288,7 @@ public class SqlPredicate
         final String value = phrases.get(key);
         if (value != null) {
             return value;
-        } else if (key instanceof String && ("null".equalsIgnoreCase((String) key))) {
+        } else if (key instanceof String && (equalsIgnoreCase("null", (String) key))) {
             return null;
         } else {
             return key;

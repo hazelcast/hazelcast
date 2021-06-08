@@ -32,7 +32,7 @@ import static com.hazelcast.jet.impl.util.ReflectionUtils.toClassResourceId;
 /**
  * Describes a single resource to deploy to the Jet cluster.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @PrivateApi
 public class ResourceConfig implements IdentifiedDataSerializable {

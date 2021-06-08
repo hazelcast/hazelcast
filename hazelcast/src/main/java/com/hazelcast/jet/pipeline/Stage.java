@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  * GeneralStage#writeTo(Sink) stage.writeTo(sink)}, which will attach a
  * {@link SinkStage}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Stage {
     /**

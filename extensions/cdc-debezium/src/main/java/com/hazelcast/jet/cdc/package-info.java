@@ -19,6 +19,6 @@
  * events from various databases as well as a generic connector for Debezium
  * CDC sources.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 package com.hazelcast.jet.cdc;

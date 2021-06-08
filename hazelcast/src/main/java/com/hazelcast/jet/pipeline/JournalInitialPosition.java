@@ -30,7 +30,7 @@ package com.hazelcast.jet.pipeline;
  *     <li>{@link Sources#remoteCacheJournal}
  * </ul>
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public enum JournalInitialPosition {
 

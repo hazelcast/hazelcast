@@ -20,7 +20,7 @@
  * function. See {@link com.hazelcast.jet.python.PythonServiceConfig} for
  * more details.
  *
- * @since 4.0
+ * @since Jet 4.0
  */
 @EvolvingApi
 package com.hazelcast.jet.python;

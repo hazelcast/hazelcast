@@ -207,7 +207,7 @@ import static java.util.Collections.singletonList;
  * Tumbling window is a special case of sliding window with sliding step =
  * window size.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class Processors {
 
@@ -977,7 +977,7 @@ public final class Processors {
      * Edge#allToOne allToOne} so it preserves the ordering when merging
      * the data from all upstream processors.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public static <T> SupplierEx<Processor> sortP(Comparator<T> comparator) {

@@ -51,7 +51,7 @@ import static java.util.stream.Stream.concat;
  *
  * @param <T0> the type of the items in the primary stage
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @SuppressWarnings("rawtypes")
 public abstract class GeneralHashJoinBuilder<T0> {
@@ -98,7 +98,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
      * @param <T1> the type of result after applying the projecting transformation
      *             to the contributing stage's data
      * @return the tag that refers to the contributing stage
-     * @since 4.1
+     * @since Jet 4.1
      */
     public <K, T1_IN, T1> Tag<T1> addInner(BatchStage<T1_IN> stage, JoinClause<K, T0, T1_IN, T1> joinClause) {
         Tag<T1> tag = tag(clauses.size());

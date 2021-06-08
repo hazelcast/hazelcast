@@ -217,7 +217,7 @@ public final class S3Sources {
      *                       line. Gets the object name and line as parameters
      * @param <T>            the type of the items the source emits
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public static <I, T> BatchSource<T> s3(

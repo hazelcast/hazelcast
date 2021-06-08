@@ -42,7 +42,7 @@ import static com.hazelcast.jet.impl.util.ImdgUtil.wrapImdgPredicate;
 /**
  * Miscellaneous utility methods useful in DAG building logic.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class Util {
 
@@ -174,7 +174,7 @@ public final class Util {
      * @param resourcePath the pathname of the classpath resource
      * @return a {@code Path} pointing to the project directory corresponding to the
      *         pathname
-     * @since 4.0
+     * @since Jet 4.0
      */
     public static Path getFilePathOfClasspathResource(String resourcePath) {
         ClassLoader cl = Util.class.getClassLoader();

@@ -43,6 +43,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.impl.util.Util.addClamped;
 import static com.hazelcast.jet.impl.util.Util.addOrIncrementIndexInName;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
+import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.gcd;
@@ -300,5 +301,14 @@ public class UtilTest {
                         new int[]{4},
                         new int[]{6}},
                 distributeObjects(3, new int[]{2, 4, 6, 8}));
+    }
+
+    @Test
+    public void test_distinctBy() {
+        List<String> list = asList("alice", "adela", "ben");
+        List<String> actual = list.stream()
+                .filter(distinctBy(s -> s.charAt(0)))
+                .collect(Collectors.toList());
+        assertEquals(asList("alice", "ben"), actual);
     }
 }
