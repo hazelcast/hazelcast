@@ -128,8 +128,11 @@ public class SqlMappingColumn extends SqlCall {
             if (type() != QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME) {
                 throw validator.newValidationError(type, RESOURCE.invalidWatermarkColumnType());
             }
+            if (limitingLag.getTypeName().getFamily() != SqlTypeFamily.INTERVAL_DAY_TIME) {
+                throw validator.newValidationError(type, RESOURCE.invalidLagInterval(limitingLag.getTypeName()));
+            }
             if (limitingLag.getValueAs(BigDecimal.class).longValueExact() < 0) {
-                throw validator.newValidationError(type, RESOURCE.invalidLag());
+                throw validator.newValidationError(type, RESOURCE.negativeLag());
             }
         }
     }

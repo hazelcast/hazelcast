@@ -104,7 +104,7 @@ SqlMappingColumn MappingColumn() :
         <WATERMARK>
         <LAG>
         <LPAREN>
-        limitingLag = DayTimeIntervalLiteral()
+        limitingLag = IntervalLiteral()
         <RPAREN>
     ]
     {
@@ -528,72 +528,4 @@ boolean HazelcastTimeZoneOpt() :
     <WITH> <TIME> <ZONE> { return true; }
 |
     { return false; }
-}
-
-/**
- * Parses INTERVAL_DAY_TIME interval literal.
- */
-SqlLiteral DayTimeIntervalLiteral() :
-{
-    Span span;
-
-    String value;
-    SqlIntervalQualifier intervalQualifier;
-}
-{
-    <INTERVAL> { span = span(); }
-    <QUOTED_STRING> { value = token.image; }
-    intervalQualifier = DayTimeIntervalQualifier() {
-        return SqlParserUtil.parseIntervalLiteral(span.end(intervalQualifier), 1, value, intervalQualifier);
-    }
-}
-
-SqlIntervalQualifier DayTimeIntervalQualifier() :
-{
-    TimeUnit start;
-    TimeUnit end = null;
-    int startPrec = RelDataType.PRECISION_NOT_SPECIFIED;
-    int secondFracPrec = RelDataType.PRECISION_NOT_SPECIFIED;
-}
-{
-    (
-        start = Day() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
-        [ LOOKAHEAD(2) <TO>
-            (
-                end = Hour()
-            |
-                end = Minute()
-            |
-                end = Second()
-                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
-            )
-        ]
-    |
-        start = Hour() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
-        [ LOOKAHEAD(2) <TO>
-            (
-                end = Minute()
-            |
-                end = Second()
-                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
-            )
-        ]
-    |
-        start = Minute() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
-        [ LOOKAHEAD(2) <TO>
-            (
-                end = Second()
-                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
-            )
-        ]
-    |
-        start = Second()
-        [   <LPAREN> startPrec = UnsignedIntLiteral()
-            [ <COMMA> secondFracPrec = UnsignedIntLiteral() ]
-            <RPAREN>
-        ]
-    )
-    {
-        return new SqlIntervalQualifier(start, startPrec, end, secondFracPrec, getPos());
-    }
 }

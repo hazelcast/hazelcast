@@ -175,7 +175,15 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_invalidValueUsedForWatermarkLag_then_fail() {
+    public void when_invalidIntervalUsedForWatermarkLag_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t ("
+                + "a TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '1' MONTH)) "
+                + "TYPE TestBatch"
+        )).hasMessageContaining("Lag cannot be expressed as 'INTERVAL_MONTH'");
+    }
+
+    @Test
+    public void when_negativeValueUsedForWatermarkLag_then_fail() {
         assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t ("
                 + "a TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '-1' SECOND)) "
                 + "TYPE TestBatch"

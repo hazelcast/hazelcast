@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.parse;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.runtime.Resources.BaseMessage;
 import org.apache.calcite.runtime.Resources.ExInst;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
 public interface ParserResource {
@@ -43,8 +44,11 @@ public interface ParserResource {
     @BaseMessage("WATERMARK column must be of TIMESTAMP WITH TIME ZONE type")
     Resources.ExInst<SqlValidatorException> invalidWatermarkColumnType();
 
+    @BaseMessage("Lag cannot be expressed as ''{0}''")
+    Resources.ExInst<SqlValidatorException> invalidLagInterval(SqlTypeName typeName);
+
     @BaseMessage("Lag must not be negative")
-    Resources.ExInst<SqlValidatorException> invalidLag();
+    Resources.ExInst<SqlValidatorException> negativeLag();
 
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
