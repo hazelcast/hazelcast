@@ -199,11 +199,18 @@ public class HazelcastCommandLine implements Runnable {
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
-    @Command(description = "Starts the demo console application to demonstrate a Hazelcast data structures.")
-    public void consoleapp(@Mixin(name = "verbosity") Verbosity verbosity,
-                           @Mixin(name = "targets") TargetsMixin targets
+    @Command(
+            name = "console-app",
+            description = "Starts the console application for trying out in-memory data structures of Hazelcast."
+                    + "It is not recommended for use in production.")
+    public void consoleApp(@Mixin(name = "verbosity") Verbosity verbosity,
+                           @Mixin(name = "targets") TargetsMixin targets,
+                           @Parameters(index = "0..*",
+                                   paramLabel = "<arguments>",
+                                   description = "Arguments to pass to the client console application"
+                           ) List<String> params
     ) {
-        runWithHazelcast(targets, verbosity, true, client -> ClientConsoleApp.run(client, new String[]{""}));
+        runWithHazelcast(targets, verbosity, true, client -> ClientConsoleApp.run(client, params));
     }
 
     @Command(description = "Suspends a running job")

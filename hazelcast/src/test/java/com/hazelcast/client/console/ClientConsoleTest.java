@@ -95,7 +95,7 @@ public class ClientConsoleTest {
         try {
             LineEndingsInputStream bqIn = new LineEndingsInputStream();
             System.setIn(bqIn);
-            tp.execute(() -> ClientConsoleApp.run(null));
+            tp.execute(() -> ClientConsoleApp.run(HazelcastClient.newHazelcastClient(), null));
             assertTrueEventually(() -> assertFalse(hz.getClientService().getConnectedClients().isEmpty()));
             HazelcastInstance client = HazelcastClient.getHazelcastClientByName("clientConsoleApp");
             assertNotNull(client);

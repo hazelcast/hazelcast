@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.console;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
@@ -48,11 +47,13 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.topic.MessageListener;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.jline.reader.EndOfFileException;
+import org.jline.reader.History;
 import org.jline.reader.LineReader;
 import org.jline.reader.LineReaderBuilder;
 import org.jline.reader.UserInterruptException;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
+import org.jline.utils.InfoCmp;
 
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
@@ -67,6 +68,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -183,7 +185,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         running = false;
     }
 
-    public void start(String[] args) {
+    public void start(List<String> params) {
         getMap().size();
         getList().size();
         getSet().size();
@@ -203,8 +205,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 handleCommand(command);
             } catch (EndOfFileException | IOError e) {
                 // Ctrl+D, and kill signals result in exit
-//                writer.println(Constants.EXIT_PROMPT);
-                writer.flush();
+                println("Exiting from the client console application.");
+                this.writer.flush();
                 break;
             } catch (UserInterruptException e) {
                 // Ctrl+C cancels the not-yet-submitted query
@@ -297,10 +299,29 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
+        } else if (equalsIgnoreCase(first, "clear")) {
+            lineReader.getTerminal().puts(InfoCmp.Capability.clear_screen);
+        } else if (equalsIgnoreCase(first, "history")) {
+            History hist = lineReader.getHistory();
+            ListIterator<History.Entry> iterator = hist.iterator();
+            while (iterator.hasNext()) {
+                History.Entry entry = iterator.next();
+                if (iterator.hasNext()) {
+                    String entryLine = new AttributedStringBuilder()
+                            .append(String.valueOf(entry.index() + 1))
+                            .append(" - ")
+                            .append(entry.line())
+                            .toAnsi();
+                    writer.println(entryLine);
+                    writer.flush();
+                } else {
+                    // remove the "history" command from the history
+                    iterator.remove();
+                    hist.resetIndex();
+                }
+            }
         } else if ("ns".equals(first)) {
             handleNamespace(args);
-        } else if ("whoami".equals(first)) {
-            handleWhoami();
         } else if ("who".equals(first)) {
             handleWho();
         } else if ("jvm".equals(first)) {
@@ -438,6 +459,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         } else if (equalsIgnoreCase(first, "instances")) {
             handleInstances(args);
         } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")) {
+            println("Exiting from the client console application.");
+            writer.flush();
             System.exit(0);
         } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
             handleExecutorSimulate(args);
@@ -560,10 +583,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("JVM: " + ManagementFactory.getRuntimeMXBean().getVmVendor() + " "
                 + ManagementFactory.getRuntimeMXBean().getVmName() + " "
                 + ManagementFactory.getRuntimeMXBean().getVmVersion());
-    }
-
-    private void handleWhoami() {
-        println(client.getCluster().getLocalMember());
     }
 
     private void handleWho() {
@@ -1414,6 +1433,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private void printGeneralCommands() {
         println("-- General commands");
         println("echo true|false                      //turns on/off echo of commands (default false)");
+        println("clear                                //clears the terminal screen");
+        println("exit                                 //exits from the client console app.");
         println("silent true|false                    //turns on/off silent of command output (default false)");
         println("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current "
                 + "iteration (0..<number-1>)");
@@ -1422,9 +1443,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("     When using #x or &x, is is advised to use silent true as well.");
         println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
                 + "start key index is specified");
+        println("history                              //shows the command history of the current session");
         println("jvm                                  //displays info about the runtime");
         println("who                                  //displays info about the cluster");
-        println("whoami                               //displays info about this cluster member");
         println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list "
                 + "<string> (defaults to \"default\"");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
@@ -1549,13 +1570,19 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     public void println(Object obj) {
         if (!silent) {
-            writer.println(obj);
+            writer.println(new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(String.valueOf(obj))
+                    .toAnsi());
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            writer.print(obj);
+            writer.print(new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append(String.valueOf(obj))
+                    .toAnsi());
         }
     }
 
@@ -1568,6 +1595,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         Set<Member> members = cluster.getMembers();
         String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
         return new AttributedStringBuilder()
+                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                 .append("Connected to ")
                 .append(versionString)
                 .append(" at ")
@@ -1580,11 +1608,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     /**
-     * Starts the test application. It loads the client configuration using the resolution logic as described in
-     * {@link HazelcastClient#newHazelcastClient()}.
+     * Starts the test application.
      */
-    public static void run(HazelcastInstance client, String[] args) {
+    public static void run(HazelcastInstance client, List<String> params) {
         ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
-        clientConsoleApp.start(args);
+        clientConsoleApp.start(params);
     }
 }
