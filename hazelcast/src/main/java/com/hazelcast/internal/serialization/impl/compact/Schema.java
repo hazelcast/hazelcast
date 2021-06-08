@@ -58,7 +58,7 @@ public class Schema implements IdentifiedDataSerializable {
         for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
             FieldType fieldType = descriptor.getType();
             if (FieldType.BOOLEAN.equals(fieldType)) {
-                if (numberOfBooleans % 8 == 0) {
+                if (numberOfBooleans % Byte.SIZE == 0) {
                     primitivesLength++;
                 }
                 numberOfBooleans++;

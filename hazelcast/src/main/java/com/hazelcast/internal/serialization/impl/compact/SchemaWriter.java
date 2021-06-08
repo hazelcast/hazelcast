@@ -47,13 +47,13 @@ public final class SchemaWriter implements CompactWriter {
         int bitOffset = 0;
         for (FieldDescriptor fieldDefinition : booleanFieldsList) {
             fieldDefinition.setOffset(offset);
-            fieldDefinition.setBitOffset((byte) (bitOffset % 8));
+            fieldDefinition.setBitOffset((byte) (bitOffset % Byte.SIZE));
             bitOffset++;
-            if (bitOffset % 8 == 0) {
+            if (bitOffset % Byte.SIZE == 0) {
                 offset += 1;
             }
         }
-        if (bitOffset % 8 != 0) {
+        if (bitOffset % Byte.SIZE != 0) {
             offset++;
         }
 
