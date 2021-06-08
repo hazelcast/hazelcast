@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -66,7 +66,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
 
     private void runTest(List<Long> sourceItems, Long expectedOutput)
             throws Exception {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
 
         AggregateOperation1<Long, ?, Long> summingOp = summingLong((Long l) -> l);
 
@@ -90,7 +90,7 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
                     .edge(between(combine, sink).isolated());
         }
 
-        instance.newJob(dag).join();
+        instance.getJet().newJob(dag).join();
 
         IList<Long> sinkList = instance.getList("sink");
 

@@ -189,7 +189,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
                                              .build(TEXT_MESSAGE_FN);
         p.readFrom(source).withoutTimestamps().writeTo(Sinks.logger());
 
-        Job job = instance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         sendMessages(true);
         try {
             job.join();
@@ -218,9 +218,9 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
          .withoutTimestamps()
          .writeTo(Sinks.logger());
 
-        Job job = instance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(10));
         assertJobStatusEventually(job, RUNNING);
-        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
+        JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 5, true);
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 1);
     }
@@ -327,7 +327,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
                  })
          .writeTo(Sinks.logger());
 
-        Job job = instance().newJob(p, new JobConfig()
+        Job job = instance().getJet().newJob(p, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50));
         assertJobStatusEventually(job, RUNNING);
@@ -352,7 +352,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
         });
 
         int iteration = 0;
-        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
+        JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, true);
         while (!producerFuture.isDone()) {
             Thread.sleep(ThreadLocalRandom.current().nextInt(200));
@@ -407,7 +407,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
          .writeTo(Sinks.list(sinkList));
 
         long endTime = System.nanoTime() + MILLISECONDS.toNanos(idleTimeout);
-        instance().newJob(p);
+        instance().getJet().newJob(p);
         for (;;) {
             boolean empty = sinkList.isEmpty();
             if (System.nanoTime() >= endTime) {
@@ -439,7 +439,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
          .peek()
          .writeTo(Sinks.noop());
 
-        Job job = instance().newJob(p, new JobConfig()
+        Job job = instance().getJet().newJob(p, new JobConfig()
                 .setProcessingGuarantee(xa ? EXACTLY_ONCE : AT_LEAST_ONCE)
                 .setSnapshotIntervalMillis(100_000_000));
 
@@ -465,7 +465,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
     }
 
     private void startJob() {
-        Job job = instance().newJob(p);
+        Job job = instance().getJet().newJob(p);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
     }
 

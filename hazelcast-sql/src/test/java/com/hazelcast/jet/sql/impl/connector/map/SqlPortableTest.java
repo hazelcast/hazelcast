@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.map.impl.MapService;
@@ -97,7 +97,7 @@ public class SqlPortableTest extends SqlTestSupport {
         initialize(1, null);
         sqlService = instance().getSql();
 
-        serializationService = ((HazelcastInstanceImpl) instance().getHazelcastInstance()).getSerializationService();
+        serializationService = Util.getSerializationService(instance());
 
         personIdClassDefinition =
                 new ClassDefinitionBuilder(PERSON_ID_FACTORY_ID, PERSON_ID_CLASS_ID, PERSON_ID_CLASS_VERSION)
@@ -606,7 +606,7 @@ public class SqlPortableTest extends SqlTestSupport {
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
     private static Entry<Data, Data> randomEntryFrom(String mapName) {
-        NodeEngine engine = getNodeEngine(instance().getHazelcastInstance());
+        NodeEngine engine = getNodeEngine(instance());
         MapService service = engine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
 

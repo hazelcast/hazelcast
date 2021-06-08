@@ -69,7 +69,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
         //Then
         stage.writeTo(sink);
         execute();
-        List<String> paths = new ArrayList<>(jet().getList(listName));
+        List<String> paths = new ArrayList<>(hz().getList(listName));
         long count = paths.stream().map(Paths::get)
                           .flatMap(path -> uncheckCall(() -> Files.list(path)))
                           .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))

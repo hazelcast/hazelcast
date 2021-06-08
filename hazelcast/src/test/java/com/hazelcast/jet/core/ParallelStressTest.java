@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -53,11 +53,11 @@ public class ParallelStressTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("p", TestProcessors.ListSource.supplier(Arrays.asList(1, 2, 3)));
 
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         ExecutorService executor = Executors.newFixedThreadPool(8);
         List<Future<Job>> futures = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            futures.add(executor.submit(() -> instance.newJob(dag)));
+            futures.add(executor.submit(() -> instance.getJet().newJob(dag)));
         }
         for (Future<Job> future : futures) {
             future.get().join();
@@ -75,12 +75,12 @@ public class ParallelStressTest extends JetTestSupport {
          */
         DAG dag = new DAG();
         dag.newVertex("p", TestProcessors.DummyStatefulP::new);
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         JobConfig jobConfig = new JobConfig();
         jobConfig.setSnapshotIntervalMillis(0).setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         List<Job> jobs = new ArrayList<>();
         for (int i = 0; i < 30; i++) {
-            jobs.add(instance.newJob(dag, jobConfig));
+            jobs.add(instance.getJet().newJob(dag, jobConfig));
         }
         sleepSeconds(3);
         for (Job job : jobs) {

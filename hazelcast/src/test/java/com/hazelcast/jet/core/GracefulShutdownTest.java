@@ -18,9 +18,9 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -68,26 +68,26 @@ public class GracefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
 
-    private JetInstance[] instances;
-    private JetInstance client;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance client;
 
     /**
      * If {@code true} shutdown HazelcastInstance otherwise shutdown
-     * JetInstance. See {@link #shutdown(JetInstance)}.
+     * JetInstance. See {@link #shutdown(HazelcastInstance)}.
      */
     @Parameter
-    public boolean shutdownHazelcastInstance;
+    public boolean gracefulShutdown;
 
-    @Parameters(name = "shutdownHazelcastInstance: {0}")
-    public static Collection<Boolean> shutdownFns() {
+    @Parameters(name = "gracefulShutdown: {0}")
+    public static Collection<Boolean> gracefulShutdownFns() {
         return Arrays.asList(true, false);
     }
 
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        instances = createJetMembers(NODE_COUNT);
-        client = createJetClient();
+        instances = createHazelcastInstances(NODE_COUNT);
+        client = createHazelcastClient();
         EmitIntegersP.savedCounters.clear();
     }
 
@@ -118,7 +118,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
 
-        Job job = client.newJob(dag, new JobConfig()
+        Job job = client.getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1)));
         assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -161,10 +161,10 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_liteMemberShutDown_then_jobKeepsRunning() throws Exception {
         Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
-        JetInstance liteMember = createJetMember(liteMemberConfig);
+        HazelcastInstance liteMember = createHazelcastInstance(liteMemberConfig);
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJet().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> shutdown(liteMember));
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
@@ -175,10 +175,10 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_nonParticipatingMemberShutDown_then_jobKeepsRunning() throws Exception {
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJet().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
-            JetInstance nonParticipatingMember = createJetMember();
+            HazelcastInstance nonParticipatingMember = createHazelcastInstance();
             sleepSeconds(1);
             shutdown(nonParticipatingMember);
         });
@@ -192,7 +192,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                 .setClassName(BlockingMapStore.class.getName())
                 .setEnabled(true);
-        Config config = instances[0].getHazelcastInstance().getConfig();
+        Config config = instances[0].getConfig();
         ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
@@ -203,7 +203,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
-        Job job = instances[0].newJob(dag, new JobConfig()
+        Job job = instances[0].getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(2000));
 
@@ -235,11 +235,11 @@ public class GracefulShutdownTest extends JetTestSupport {
         assertEquals(expected, actual);
     }
 
-    private void shutdown(JetInstance jetInstance) {
-        if (shutdownHazelcastInstance) {
-            jetInstance.getHazelcastInstance().shutdown();
+    private void shutdown(HazelcastInstance instance) {
+        if (gracefulShutdown) {
+            instance.shutdown();
         } else {
-            jetInstance.shutdown();
+            instance.getLifecycleService().terminate();
         }
     }
 

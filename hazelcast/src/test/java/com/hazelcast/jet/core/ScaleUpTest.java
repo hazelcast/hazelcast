@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -41,7 +41,7 @@ public class ScaleUpTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
 
-    private JetInstance[] instances;
+    private HazelcastInstance[] instances;
     private DAG dag;
     private Config config;
 
@@ -51,58 +51,58 @@ public class ScaleUpTest extends JetTestSupport {
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
-        instances = createJetMembers(config, NODE_COUNT);
+        instances = createHazelcastInstances(config, NODE_COUNT);
     }
 
     @Test
     public void when_memberAdded_then_jobScaledUp() {
         setup(1000);
-        instances[0].newJob(dag);
+        instances[0].getJet().newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        createJetMember(config);
+        createHazelcastInstance(config);
         assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 1, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndAutoScalingDisabled_then_jobNotRestarted() {
         setup(1000);
-        instances[0].newJob(dag, new JobConfig().setAutoScaling(false));
+        instances[0].getJet().newJob(dag, new JobConfig().setAutoScaling(false));
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        createJetMember(config);
+        createHazelcastInstance(config);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 
     @Test
     public void when_liteMemberAdded_then_jobNotRestarted() {
         setup(1000);
-        instances[0].newJob(dag);
+        instances[0].getJet().newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        createJetMember(smallInstanceConfig().setLiteMember(true));
+        createHazelcastInstance(smallInstanceConfig().setLiteMember(true));
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndAnotherAddedBeforeDelay_then_jobRestartedOnce() {
         setup(10_000);
-        instances[0].newJob(dag);
+        instances[0].getJet().newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        createJetMember(config);
+        createHazelcastInstance(config);
         sleepSeconds(1);
-        createJetMember(config);
+        createHazelcastInstance(config);
         assertTrueEventually(() -> assertEquals(NODE_COUNT * 2 + 2, MockPS.initCount.get()));
     }
 
     @Test
     public void when_memberAddedAndRemovedBeforeDelay_then_jobNotRestarted() {
         setup(12_000);
-        instances[0].newJob(dag);
+        instances[0].getJet().newJob(dag);
         assertTrueEventually(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()));
 
-        JetInstance addedMember = createJetMember(config);
+        HazelcastInstance addedMember = createHazelcastInstance(config);
         sleepSeconds(1);
         addedMember.shutdown();
         assertTrueAllTheTime(() -> assertEquals(NODE_COUNT, MockPS.initCount.get()), 15);
@@ -117,13 +117,13 @@ public class ScaleUpTest extends JetTestSupport {
         JobConfig jobConfig = new JobConfig()
                 .setMetricsEnabled(false);
         for (int i = 0; i < Runtime.getRuntime().availableProcessors() * 4; i++) {
-            jobs.add(instances[0].newJob(dag, jobConfig));
+            jobs.add(instances[0].getJet().newJob(dag, jobConfig));
         }
         for (Job job : jobs) {
             assertJobStatusEventually(job, RUNNING);
         }
         logger.info(jobs.size() + " jobs are running, adding a member");
-        createJetMember(config);
+        createHazelcastInstance(config);
         sleepSeconds(2);
         for (Job job : jobs) {
             assertJobStatusEventually(job, RUNNING, 30);

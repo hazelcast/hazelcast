@@ -141,6 +141,6 @@ public class ShowStatementTest extends SqlTestSupport {
     private void createJobInJava(String jobName) {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-        instance().newJob(dag, new JobConfig().setName(jobName));
+        instance().getJet().newJob(dag, new JobConfig().setName(jobName));
     }
 }

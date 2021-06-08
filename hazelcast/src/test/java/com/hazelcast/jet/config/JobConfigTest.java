@@ -109,7 +109,7 @@ public class JobConfigTest extends JetTestSupport {
         // Then
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Lossless Restart requires Hazelcast Enterprise Edition");
-        createJetMember(config);
+        createHazelcastInstance(config);
     }
 
     @Test

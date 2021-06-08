@@ -149,7 +149,7 @@ public class AsyncTransformUsingServiceBatchP_IntegrationTest extends SimpleTest
         dag.edge(between(source, map).setConfig(edgeToMapperConfig))
            .edge(between(map, sink).setConfig(edgeFromMapperConfig));
 
-        Job job = instance().newJob(dag, jobConfig);
+        Job job = instance().getJet().newJob(dag, jobConfig);
         for (int i = 0; restart && i < 5; i++) {
             assertNotNull(job);
             assertTrueEventually(() -> {
@@ -176,7 +176,7 @@ public class AsyncTransformUsingServiceBatchP_IntegrationTest extends SimpleTest
          .setLocalParallelism(2)
          .writeTo(Sinks.list(sinkList));
 
-        instance().newJob(p, jobConfig);
+        instance().getJet().newJob(p, jobConfig);
         assertResult(i -> Stream.of(i + "-1"), NUM_ITEMS);
     }
 

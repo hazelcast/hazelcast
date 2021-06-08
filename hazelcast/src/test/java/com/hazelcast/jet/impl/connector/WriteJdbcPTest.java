@@ -97,7 +97,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  }
          ));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
@@ -110,7 +110,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  failTwiceDataSourceSupplier(), failOnceBindFn()
          ));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
     }
 
@@ -126,7 +126,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  }
          ));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test

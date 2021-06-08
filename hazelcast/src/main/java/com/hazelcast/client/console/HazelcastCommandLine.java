@@ -23,6 +23,7 @@ import com.hazelcast.client.config.YamlClientConfigBuilder;
 import com.hazelcast.client.console.HazelcastCommandLine.HazelcastVersionProvider;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
 import com.hazelcast.client.impl.spi.ClientClusterService;
@@ -166,7 +167,7 @@ public class HazelcastCommandLine implements Runnable {
 
     public static void main(String[] args) {
         runCommandLine(
-                config -> (HazelcastInstance) HazelcastClient.newHazelcastClient(config).getJet(),
+                HazelcastClient::newHazelcastClient,
                 System.out,
                 System.err,
                 true,
@@ -528,7 +529,7 @@ public class HazelcastCommandLine implements Runnable {
             @Mixin(name = "targets") TargetsMixin targets
     ) {
         runWithHazelcast(targets, verbosity, false, hz -> {
-            HazelcastClientInstanceImpl hazelcastClientImpl = (HazelcastClientInstanceImpl) hz;
+            HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
             ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
             MCClusterMetadata clusterMetadata =
                     FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
@@ -698,7 +699,7 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     private String sqlStartingPrompt(HazelcastInstance hz) {
-        HazelcastClientInstanceImpl hazelcastClientImpl = (HazelcastClientInstanceImpl) hz;
+        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
         ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
         MCClusterMetadata clusterMetadata =
                 FutureUtil.getValue(getClusterMetadata(hazelcastClientImpl, clientClusterService.getMasterMember()));
@@ -719,7 +720,7 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     private String helpPrompt(HazelcastInstance hz) {
-        HazelcastClientInstanceImpl hazelcastClientImpl = (HazelcastClientInstanceImpl) hz;
+        HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
         ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
         AttributedStringBuilder builder = new AttributedStringBuilder()
                 .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
@@ -815,6 +816,17 @@ public class HazelcastCommandLine implements Runnable {
 
     private static boolean isActive(JobStatus status) {
         return status != JobStatus.FAILED && status != JobStatus.COMPLETED;
+    }
+
+    private static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+        if (client instanceof HazelcastClientProxy) {
+            return ((HazelcastClientProxy) client).client;
+        } else if (client instanceof HazelcastClientInstanceImpl) {
+            return ((HazelcastClientInstanceImpl) client);
+        } else {
+            throw new IllegalArgumentException("This method can be called only with client"
+                    + " instances such as HazelcastClientProxy and HazelcastClientInstanceImpl.");
+        }
     }
 
     private static int[] determineColumnWidths(SqlRowMetadata metadata) {

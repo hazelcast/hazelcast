@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cdc.mysql;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -234,12 +234,12 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         try {
             //then
-            assertEqualsEventually(() -> jet.getMap(SINK_MAP_NAME).size(), expectedInitialOps);
+            assertEqualsEventually(() -> hz.getMap(SINK_MAP_NAME).size(), expectedInitialOps);
 
             //when
             executeStatementsOnDb(1);
@@ -247,7 +247,7 @@ public class MySqlCdcWhiteBlackListIntegrationTest extends AbstractMySqlCdcInteg
             executeStatementsOnDb(3);
 
             //then
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);

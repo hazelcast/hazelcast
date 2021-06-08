@@ -108,7 +108,7 @@ public class FileNotFoundReadHadoopPTest extends HadoopTestSupport {
          .writeTo(Sinks.logger());
 
         // Should just pass, no need to check results as there are none
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -119,7 +119,7 @@ public class FileNotFoundReadHadoopPTest extends HadoopTestSupport {
          .setLocalParallelism(1)
          .writeTo(Sinks.logger());
 
-        assertThatThrownBy(() -> instance().newJob(p).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(p).join())
                 .hasRootCauseInstanceOf(JetException.class)
                 .hasMessageContaining("matches no files");
     }

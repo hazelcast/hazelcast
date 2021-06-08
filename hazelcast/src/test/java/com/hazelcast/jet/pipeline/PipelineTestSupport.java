@@ -69,13 +69,13 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     @Before
     public void beforePipelineTestSupport() {
         p = Pipeline.create();
-        srcMap = jet().getMap(srcName);
-        srcCache = jet().getCacheManager().getCache(srcName);
-        srcList = jet().getList(srcName);
+        srcMap = hz().getMap(srcName);
+        srcCache = hz().getCacheManager().getCache(srcName);
+        srcList = hz().getList(srcName);
         source = Sources.list(srcName);
 
         sink = Sinks.list(sinkName);
-        sinkList = jet().getList(sinkName);
+        sinkList = hz().getList(sinkName);
     }
 
     protected Job execute() {
@@ -95,7 +95,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     }
 
     protected Job start() {
-        return jet().newJob(p);
+        return hz().getJet().newJob(p);
     }
 
     protected BatchStage<Integer> batchStageFromList(List<Integer> input) {

@@ -66,7 +66,7 @@ public class StreamSourceTest extends PipelineTestSupport {
          .aggregate(counting())
          .writeTo(sink);
 
-        Job job = allJetInstances()[0].newJob(p);
+        Job job = allHazelcastInstances()[0].getJet().newJob(p);
 
         if (idleTimeout > 10_000) {
             assertTrueAllTheTime(() -> assertEquals("unexpected sink size", 0, sinkList.size()), 5);

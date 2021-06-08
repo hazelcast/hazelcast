@@ -44,10 +44,10 @@ public class JetTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.getMapConfig("default")
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
-        JetInstance instance = createJetMember(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         // Then
-        int actualTTL = instance.getHazelcastInstance().getConfig()
+        int actualTTL = instance.getConfig()
                 .findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap").getTimeToLiveSeconds();
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, actualTTL);
     }
@@ -66,7 +66,7 @@ public class JetTest extends JetTestSupport {
     @Test
     public void when_resourceUploadDisabled_and_submitJobWithResource_then_jobFails() {
         // When
-        JetInstance jet = createJetMember();
+        HazelcastInstance hz = createHazelcastInstance();
 
         JobConfig jobConfig = new JobConfig().addClass(JetTest.class);
         Pipeline p = Pipeline.create();
@@ -74,7 +74,7 @@ public class JetTest extends JetTestSupport {
                 .writeTo(Sinks.noop());
 
         // Then
-        assertThrows(JetException.class, () -> jet.newJob(p, jobConfig));
+        assertThrows(JetException.class, () -> hz.getJet().newJob(p, jobConfig));
     }
 
 }

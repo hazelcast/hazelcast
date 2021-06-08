@@ -21,7 +21,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JobConfig;
@@ -65,8 +65,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
@@ -75,8 +75,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(10);
-        instance1 = createJetMember(config);
-        instance2 = createJetMember(config);
+        instance1 = createHazelcastInstance(config);
+        instance2 = createHazelcastInstance(config);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
                 .setName("job1");
 
         // When
-        Job job1 = instance1.newJob(dag, config);
+        Job job1 = instance1.getJet().newJob(dag, config);
         assertJobStatusEventually(job1, RUNNING);
         job1.suspend();
         assertJobStatusEventually(job1, SUSPENDED);
@@ -96,7 +96,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         // Then
         expectedException.expect(JobAlreadyExistsException.class);
-        instance2.newJob(dag, config);
+        instance2.getJet().newJob(dag, config);
     }
 
     @Test
@@ -106,10 +106,10 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         int timeoutSecs = 1;
         ClientConfig config = new ClientConfig()
                 .setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), Integer.toString(timeoutSecs));
-        JetInstance client = createJetClient(config);
+        HazelcastInstance client = createHazelcastClient(config);
 
         // join request is sent along with job submission
-        Job job = client.newJob(dag);
+        Job job = client.getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
 
         // wait for join invocation to timeout
@@ -117,7 +117,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         // When
         NoOutputSourceP.initCount.set(0);
-        instance1.getHazelcastInstance().getLifecycleService().terminate();
+        instance1.getLifecycleService().terminate();
         // wait for job to be restarted on remaining node
         assertTrueEventually(() -> assertEquals(LOCAL_PARALLELISM, NoOutputSourceP.initCount.get()));
 
@@ -141,10 +141,10 @@ public class Job_SeparateClusterTest extends JetTestSupport {
                         .setSmartRouting(false)
                         .addAddress(address.getHost() + ":" + address.getPort())
                 );
-        JetInstance client = createJetClient(config);
+        HazelcastInstance client = createHazelcastClient(config);
 
         // join request is sent along with job submission
-        Job job = client.newJob(dag);
+        Job job = client.getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
 
         // wait for join invocation to timeout
@@ -152,7 +152,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         // When
         NoOutputSourceP.initCount.set(0);
-        instance1.getHazelcastInstance().getLifecycleService().terminate();
+        instance1.getLifecycleService().terminate();
         // wait for job to be restarted on remaining node
         assertTrueEventually(() -> assertEquals(LOCAL_PARALLELISM, NoOutputSourceP.initCount.get()));
 
@@ -166,7 +166,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
     @Test
     public void stressTest_getJobStatus_client() throws Exception {
-        JetInstance client = createJetClient();
+        HazelcastInstance client = createHazelcastClient();
         stressTest_getJobStatus(() -> client);
     }
 
@@ -176,9 +176,9 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         stressTest_getJobStatus(() -> instance1);
     }
 
-    private void stressTest_getJobStatus(Supplier<JetInstance> submitterSupplier) throws Exception {
+    private void stressTest_getJobStatus(Supplier<HazelcastInstance> submitterSupplier) throws Exception {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT * 2)));
-        AtomicReference<Job> job = new AtomicReference<>(submitterSupplier.get().newJob(dag));
+        AtomicReference<Job> job = new AtomicReference<>(submitterSupplier.get().getJet().newJob(dag));
 
         AtomicBoolean done = new AtomicBoolean();
         List<Runnable> actions = asList(
@@ -197,13 +197,13 @@ public class Job_SeparateClusterTest extends JetTestSupport {
 
         for (int i = 0; i < 5; i++) {
             instance1.shutdown();
-            instance1 = createJetMember();
-            job.set(submitterSupplier.get().getJob(job.get().getId()));
+            instance1 = createHazelcastInstance();
+            job.set(submitterSupplier.get().getJet().getJob(job.get().getId()));
             assertJobStatusEventually(job.get(), RUNNING);
 
             instance2.shutdown();
-            instance2 = createJetMember();
-            job.set(submitterSupplier.get().getJob(job.get().getId()));
+            instance2 = createHazelcastInstance();
+            job.set(submitterSupplier.get().getJet().getJob(job.get().getId()));
             assertJobStatusEventually(job.get(), RUNNING);
 
             sleepSeconds(1);

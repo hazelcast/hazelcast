@@ -220,7 +220,7 @@ public class RoutingPolicyTest extends SimpleTestInClusterSupport {
     }
 
     private void execute(DAG dag) throws Throwable {
-        executeAndPeel(instance().newJob(dag));
+        executeAndPeel(instance().getJet().newJob(dag));
     }
 
     private Vertex consumer(int localParallelism) {

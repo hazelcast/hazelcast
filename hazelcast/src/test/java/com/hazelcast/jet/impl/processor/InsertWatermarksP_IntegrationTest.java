@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -44,11 +44,11 @@ import static org.junit.Assert.assertArrayEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void before() {
-        instance = super.createJetMember();
+        instance = super.createHazelcastInstance();
     }
 
     @Test
@@ -66,7 +66,7 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
            .edge(between(iwm, mapWmToStr))
            .edge(between(mapWmToStr, sink));
 
-        instance.newJob(dag).join();
+        instance.getJet().newJob(dag).join();
 
         Object[] actual = instance.getList("list").toArray();
         assertArrayEquals(Arrays.toString(actual), new Object[]{"wm(0)", 111L, "wm(100)", 222L, "wm(200)", 333L}, actual);

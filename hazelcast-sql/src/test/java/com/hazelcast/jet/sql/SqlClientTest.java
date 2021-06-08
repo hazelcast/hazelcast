@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
@@ -46,7 +46,7 @@ public class SqlClientTest extends SqlTestSupport {
 
     @Test
     public void test_jetJobReturnRowsToClientFrom() {
-        JetInstance client = factory().newClient();
+        HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
         int itemCount = 10_000;
@@ -65,7 +65,7 @@ public class SqlClientTest extends SqlTestSupport {
 
     @Test
     public void when_clientDisconnects_then_jobCancelled() {
-        JetInstance client = factory().newClient();
+        HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
         sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(100))");
@@ -79,7 +79,7 @@ public class SqlClientTest extends SqlTestSupport {
 
     @Test
     public void when_jobFails_then_clientFindsOut() {
-        JetInstance client = factory().newClient();
+        HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
         sqlService.execute("CREATE MAPPING t TYPE " + TestFailingSqlConnector.TYPE_NAME);
@@ -99,7 +99,7 @@ public class SqlClientTest extends SqlTestSupport {
         There was an issue that RootResultConsumerSink didn't check for failures, unless
         it had some items in the inbox.
          */
-        JetInstance client = factory().newClient();
+        HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
         logger.info("before select");
@@ -113,10 +113,10 @@ public class SqlClientTest extends SqlTestSupport {
         assertJobStatusEventually(job, FAILED);
     }
 
-    private static Job awaitSingleRunningJob(JetInstance jet) {
+    private static Job awaitSingleRunningJob(HazelcastInstance hz) {
         AtomicReference<Job> job = new AtomicReference<>();
         assertTrueEventually(() -> {
-            List<Job> jobs = jet.getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
+            List<Job> jobs = hz.getJet().getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
             assertEquals(1, jobs.size());
             job.set(jobs.get(0));
         });

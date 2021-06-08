@@ -17,7 +17,7 @@
 package com.hazelcast.jet.avro;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.avro.generated.SpecificUser;
 import com.hazelcast.jet.avro.model.User;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -55,15 +55,15 @@ public class AvroSinkTest extends JetTestSupport {
 
     private static final int TOTAL_RECORD_COUNT = 20;
 
-    private JetInstance jet;
+    private HazelcastInstance hz;
     private File directory;
     private IList<User> list;
 
     @Before
     public void setup() throws Exception {
-        jet = createJetMember();
+        hz = createHazelcastInstance();
         directory = createTempDirectory();
-        list = jet.getList("writer");
+        list = hz.getList("writer");
         IntStream.range(0, TOTAL_RECORD_COUNT)
                  .mapToObj(i -> new User("name-" + i, i))
                  .forEach(user -> list.add(user));
@@ -86,7 +86,7 @@ public class AvroSinkTest extends JetTestSupport {
         p.readFrom(Sources.list(list))
          .writeTo(AvroSinks.files(directory.getPath(), User.class, User.classSchema()));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         checkFileContent(new ReflectDatumReader<>(User.class));
     }
@@ -98,7 +98,7 @@ public class AvroSinkTest extends JetTestSupport {
          .map(user -> new SpecificUser(user.getName(), user.getFavoriteNumber()))
          .writeTo(AvroSinks.files(directory.getPath(), SpecificUser.class, SpecificUser.getClassSchema()));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         checkFileContent(new SpecificDatumReader<>(SpecificUser.class));
     }
@@ -110,7 +110,7 @@ public class AvroSinkTest extends JetTestSupport {
          .map(AvroSinkTest::toRecord)
          .writeTo(AvroSinks.files(directory.getPath(), User.classSchema()));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         checkFileContent(new GenericDatumReader<>());
     }

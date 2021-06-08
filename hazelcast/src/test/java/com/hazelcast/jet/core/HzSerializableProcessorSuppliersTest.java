@@ -74,6 +74,6 @@ public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSup
     private void submitJob() {
         JobConfig config = new JobConfig();
         config.addJar(url);
-        instances()[1].newJob(dag, config).join();
+        instances()[1].getJet().newJob(dag, config).join();
     }
 }

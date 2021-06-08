@@ -39,6 +39,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -164,7 +165,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
         if (!isRemoteReader) {
             // try to serde projection/predicate to fail fast if they aren't known to IMDG
-            HazelcastInstanceImpl hzInstance = (HazelcastInstanceImpl) context.hazelcastInstance();
+            HazelcastInstanceImpl hzInstance = Util.getHazelcastInstanceImpl(context.hazelcastInstance());
             InternalSerializationService ss = hzInstance.getSerializationService();
             try {
                 deserializeWithCustomClassLoader(ss, hzInstance.getClass().getClassLoader(), ss.toData(predicate));

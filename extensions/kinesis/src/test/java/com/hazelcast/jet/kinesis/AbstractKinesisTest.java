@@ -19,7 +19,7 @@ import com.amazonaws.services.kinesis.AmazonKinesisAsync;
 import com.amazonaws.services.kinesis.model.MergeShardsRequest;
 import com.amazonaws.services.kinesis.model.Shard;
 import com.amazonaws.services.kinesis.model.SplitShardRequest;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.kinesis.impl.AwsConfig;
@@ -72,7 +72,7 @@ class AbstractKinesisTest extends JetTestSupport {
     private final AmazonKinesisAsync kinesis;
     private final KinesisTestHelper helper;
 
-    private JetInstance[] cluster;
+    private HazelcastInstance[] cluster;
 
     AbstractKinesisTest(AwsConfig awsConfig, AmazonKinesisAsync kinesis, KinesisTestHelper helper) {
         this.awsConfig = awsConfig;
@@ -84,8 +84,8 @@ class AbstractKinesisTest extends JetTestSupport {
     public void before() {
         helper.deleteStream();
 
-        cluster = createJetMembers(MEMBER_COUNT);
-        results = jet().getMap(RESULTS);
+        cluster = createHazelcastInstances(MEMBER_COUNT);
+        results = hz().getMap(RESULTS);
     }
 
     @After
@@ -98,7 +98,7 @@ class AbstractKinesisTest extends JetTestSupport {
         results.destroy();
     }
 
-    protected JetInstance jet() {
+    protected HazelcastInstance hz() {
         return cluster[0];
     }
 
@@ -137,7 +137,7 @@ class AbstractKinesisTest extends JetTestSupport {
         pipeline.readFrom(source)
                 .writeTo(sink);
 
-        jet().newJob(pipeline);
+        hz().getJet().newJob(pipeline);
 
         return toMap(msgEntryList);
     }
