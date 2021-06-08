@@ -436,11 +436,8 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
 
         @Override
         public Object call() throws Exception {
-            return new NonSerializableResponse();
+            return new Object();
         }
     }
 
-    private static class NonSerializableResponse {
-
-    }
 }

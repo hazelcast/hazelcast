@@ -808,7 +808,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
-        assumeThat(statisticsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled, is(true));
 
         HazelcastInstance instance = getInstance();
 
