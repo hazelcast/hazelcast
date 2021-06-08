@@ -26,9 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Comparator;
-import java.util.List;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public final class SchemaWriter implements CompactWriter {
 
@@ -40,40 +38,6 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     public Schema build() {
-        List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
-                .collect(Collectors.toList());
-        int offset = 0;
-        int bitOffset = 0;
-        for (FieldDescriptor fieldDefinition : booleanFieldsList) {
-            fieldDefinition.setOffset(offset);
-            fieldDefinition.setBitOffset((byte) (bitOffset % Byte.SIZE));
-            bitOffset++;
-            if (bitOffset % Byte.SIZE == 0) {
-                offset += 1;
-            }
-        }
-        if (bitOffset % Byte.SIZE != 0) {
-            offset++;
-        }
-
-        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
-                .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
-        for (FieldDescriptor fieldDefinition : definiteSizedList) {
-            fieldDefinition.setOffset(offset);
-            offset += fieldDefinition.getType().getTypeSize();
-        }
-
-        int index = 0;
-        List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().hasDefiniteSize())
-                .collect(Collectors.toList());
-
-        for (FieldDescriptor fieldDefinition : varSizeList) {
-            fieldDefinition.setIndex(index++);
-        }
         return new Schema(className, fieldDefinitionMap);
     }
 

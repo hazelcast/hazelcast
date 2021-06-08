@@ -532,7 +532,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return idMap.get(typeId);
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public SerializerAdapter serializerFor(final Object object, boolean includeSchema) {
+        if (!active) {
+            throw notActiveExceptionSupplier.get();
+        }
+
         // Searches for a serializer for the provided object
         // Serializers will be  searched in this order;
         //
@@ -555,7 +560,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         //3-Custom registered types by user
         if (serializer == null || allowOverrideDefaultSerializers) {
-            serializer = lookupCustomSerializer(type);
+            SerializerAdapter customSerializer = lookupCustomSerializer(type);
+            if (customSerializer != null) {
+                serializer = customSerializer;
+            }
         }
 
         //4-JDK serialization ( Serializable and Externalizable )
@@ -574,11 +582,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         if (serializer == null) {
-            if (active) {
-                throw new HazelcastSerializationException("There is no suitable serializer for " + type);
-            }
-            throw notActiveExceptionSupplier.get();
+            throw new HazelcastSerializationException("There is no suitable serializer for " + type);
         }
+
         return serializer;
     }
 
