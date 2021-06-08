@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,16 +31,16 @@ import java.util.Objects;
 /**
  * An object stored in the internal storage for mappings created using DDL.
  */
-public class Mapping implements DataSerializable {
+public class Mapping implements IdentifiedDataSerializable {
 
     private String name;
     private String externalName;
     private String type;
-    private List<MappingField> mappingFields;
+    private List<MappingField> fields;
+    private EventTimePolicySupplier eventTimePolicySupplier;
     private Map<String, String> options;
 
-    @SuppressWarnings("unused")
-    private Mapping() {
+    public Mapping() {
     }
 
     public Mapping(
@@ -46,12 +48,14 @@ public class Mapping implements DataSerializable {
             String externalName,
             String type,
             List<MappingField> fields,
+            EventTimePolicySupplier eventTimePolicySupplier,
             Map<String, String> options
     ) {
         this.name = name;
         this.externalName = externalName;
         this.type = type;
-        this.mappingFields = fields;
+        this.fields = fields;
+        this.eventTimePolicySupplier = eventTimePolicySupplier;
         this.options = options;
     }
 
@@ -68,7 +72,11 @@ public class Mapping implements DataSerializable {
     }
 
     public List<MappingField> fields() {
-        return Collections.unmodifiableList(mappingFields);
+        return Collections.unmodifiableList(fields);
+    }
+
+    public EventTimePolicySupplier evenTimePolicySupplier() {
+        return eventTimePolicySupplier;
     }
 
     public Map<String, String> options() {
@@ -76,11 +84,22 @@ public class Mapping implements DataSerializable {
     }
 
     @Override
+    public int getFactoryId() {
+        return JetSqlSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetSqlSerializerHook.MAPPING;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(name);
         out.writeString(externalName);
         out.writeString(type);
-        out.writeObject(mappingFields);
+        out.writeObject(fields);
+        out.writeObject(eventTimePolicySupplier);
         out.writeObject(options);
     }
 
@@ -89,7 +108,8 @@ public class Mapping implements DataSerializable {
         name = in.readString();
         externalName = in.readString();
         type = in.readString();
-        mappingFields = in.readObject();
+        fields = in.readObject();
+        eventTimePolicySupplier = in.readObject();
         options = in.readObject();
     }
 
@@ -105,12 +125,13 @@ public class Mapping implements DataSerializable {
         return Objects.equals(name, mapping.name) &&
                 Objects.equals(externalName, mapping.externalName) &&
                 Objects.equals(type, mapping.type) &&
-                Objects.equals(mappingFields, mapping.mappingFields) &&
+                Objects.equals(fields, mapping.fields) &&
+                Objects.equals(eventTimePolicySupplier, mapping.eventTimePolicySupplier) &&
                 Objects.equals(options, mapping.options);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, type, mappingFields, options);
+        return Objects.hash(name, externalName, type, fields, eventTimePolicySupplier, options);
     }
 }

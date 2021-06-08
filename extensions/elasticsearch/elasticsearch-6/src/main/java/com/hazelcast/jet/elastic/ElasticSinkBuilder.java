@@ -59,7 +59,7 @@ import static java.util.Objects.requireNonNull;
  * Requires {@link #clientFn(SupplierEx)} and {@link #mapToRequestFn(FunctionEx)}.
  *
  * @param <T>
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class ElasticSinkBuilder<T> implements Serializable {
 

@@ -37,6 +37,15 @@ public interface ParserResource {
     @BaseMessage("Column ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateColumn(String columnName);
 
+    @BaseMessage("WATERMARK column specified more than once")
+    Resources.ExInst<SqlValidatorException> multipleWatermarkColumns();
+
+    @BaseMessage("WATERMARK column must be of TIMESTAMP WITH TIME ZONE type")
+    Resources.ExInst<SqlValidatorException> invalidWatermarkColumnType();
+
+    @BaseMessage("Lag must not be negative")
+    Resources.ExInst<SqlValidatorException> invalidLag();
+
     @BaseMessage("Option ''{0}'' specified more than once")
     ExInst<SqlValidatorException> duplicateOption(String optionName);
 

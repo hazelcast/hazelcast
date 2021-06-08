@@ -18,7 +18,9 @@ package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -167,16 +169,18 @@ public interface SqlConnector {
      * the user can see it by listing the catalog. Jet will later pass it to
      * {@link #createTable}.
      *
-     * @param nodeEngine an instance of {@link NodeEngine}
-     * @param options    user-provided options
-     * @param userFields user-provided list of fields, possibly empty
+     * @param nodeEngine              an instance of {@link NodeEngine}
+     * @param options                 user-provided options
+     * @param userFields              user-provided list of fields, possibly empty
+     * @param eventTimePolicySupplier supplier of {@link EventTimePolicy}
      * @return final field list, must not be empty
      */
     @Nonnull
     List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     );
 
     /**
@@ -186,10 +190,11 @@ public interface SqlConnector {
      * <p>
      * Jet calls this method for each statement execution and for each mapping.
      *
-     * @param nodeEngine     an instance of {@link NodeEngine}
-     * @param options        connector specific options
-     * @param resolvedFields list of fields as returned from {@link
-     *                       #resolveAndValidateFields}
+     * @param nodeEngine              an instance of {@link NodeEngine}
+     * @param options                 connector specific options
+     * @param resolvedFields          list of fields as returned from {@link
+     *                                #resolveAndValidateFields}
+     * @param eventTimePolicySupplier supplier of {@link EventTimePolicy}
      */
     @Nonnull
     Table createTable(
@@ -198,7 +203,8 @@ public interface SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     );
 
     /**

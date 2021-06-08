@@ -80,7 +80,7 @@ public class MappingCatalogTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.evenTimePolicySupplier()))
                 .willThrow(new RuntimeException("expected test exception"));
 
         // when
@@ -98,7 +98,7 @@ public class MappingCatalogTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.evenTimePolicySupplier()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
         given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -116,7 +116,7 @@ public class MappingCatalogTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.evenTimePolicySupplier()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
         given(storage.putIfAbsent(eq(mapping.name()), isA(Mapping.class))).willReturn(false);
 
@@ -133,7 +133,7 @@ public class MappingCatalogTest {
         Mapping mapping = mapping();
 
         given(connectorCache.forType(mapping.type())).willReturn(connector);
-        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields()))
+        given(connector.resolveAndValidateFields(nodeEngine, mapping.options(), mapping.fields(), mapping.evenTimePolicySupplier()))
                 .willReturn(singletonList(new MappingField("field_name", QueryDataType.INT)));
 
         // when
@@ -186,6 +186,6 @@ public class MappingCatalogTest {
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "external_name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "external_name", "type", emptyList(), null, emptyMap());
     }
 }

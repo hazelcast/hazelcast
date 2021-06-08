@@ -63,7 +63,7 @@ public final class ElasticClients {
      * http://elastic-host:9200}</pre>
      *
      * @see HttpHost#create(String)
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public static RestClientBuilder client(@Nonnull String location) {

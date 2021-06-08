@@ -29,7 +29,7 @@ import java.util.Objects;
  * the form of {@link BigInteger} and the finished value is a {@code
  * double}-valued linear coefficient.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class LinTrendAccumulator {
     private static final int MAX_BIGINT_LEN = 255;

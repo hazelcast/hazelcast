@@ -43,6 +43,7 @@ public class MappingsTableTest {
                 "table-external-name",
                 "table-type",
                 emptyList(),
+                null,
                 singletonMap("key", "value")
         );
 

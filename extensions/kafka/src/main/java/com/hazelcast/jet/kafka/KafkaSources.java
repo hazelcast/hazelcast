@@ -36,7 +36,7 @@ import static com.hazelcast.jet.pipeline.Sources.streamFromProcessorWithWatermar
 /**
  * Contains factory methods for Apache Kafka sources.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class KafkaSources {
 

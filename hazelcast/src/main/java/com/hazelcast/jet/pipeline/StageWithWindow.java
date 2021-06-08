@@ -39,7 +39,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation
  *
  * @param <T> type of the input item
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface StageWithWindow<T> {
 

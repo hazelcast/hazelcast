@@ -121,12 +121,6 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_badType_then_fail() {
-        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TooBad"))
-                .hasMessageContaining("Unknown connector type: TooBad");
-    }
-
-    @Test
     public void test_alias_int_integer() {
         test_alias(Integer.class.getName(), "int", "integer");
     }
@@ -161,6 +155,37 @@ public class SqlMappingTest extends SqlTestSupport {
         while (iterator.hasNext()) {
             assertThat(iterator.next()).isEqualToIgnoringGivenFields(firstMapping, "name", "externalName");
         }
+    }
+
+    @Test
+    public void when_multipleWatermarkColumns_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t ("
+                + "a TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '1' SECOND)"
+                + ", b TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '1' SECOND)"
+                + ") TYPE TestBatch")
+        ).hasMessageContaining("WATERMARK column specified more than once");
+    }
+
+    @Test
+    public void when_invalidTypeUsedForWatermarkColumn_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t ("
+                + "a INT WATERMARK LAG(INTERVAL '1' SECOND)"
+                + ") TYPE TestBatch"
+        )).hasMessageContaining("WATERMARK column must be of TIMESTAMP WITH TIME ZONE type");
+    }
+
+    @Test
+    public void when_invalidValueUsedForWatermarkLag_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING t ("
+                + "a TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '-1' SECOND)) "
+                + "TYPE TestBatch"
+        )).hasMessageContaining("Lag must not be negative");
+    }
+
+    @Test
+    public void when_badType_then_fail() {
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING m TYPE TooBad"))
+                .hasMessageContaining("Unknown connector type: TooBad");
     }
 
     @Test

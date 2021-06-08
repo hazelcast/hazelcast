@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  * See {@link AppendableTraverser} if you have more items to traverse.
  * @param <T> item type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T> {
     private T item;

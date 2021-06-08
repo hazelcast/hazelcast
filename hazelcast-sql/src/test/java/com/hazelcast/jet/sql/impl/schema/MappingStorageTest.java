@@ -92,6 +92,6 @@ public class MappingStorageTest extends SimpleTestInClusterSupport {
     }
 
     private static Mapping mapping(String name, String type) {
-        return new Mapping(name, name, type, emptyList(), emptyMap());
+        return new Mapping(name, name, type, emptyList(), null, emptyMap());
     }
 }

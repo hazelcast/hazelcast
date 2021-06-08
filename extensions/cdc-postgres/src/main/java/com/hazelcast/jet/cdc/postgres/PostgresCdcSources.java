@@ -39,7 +39,7 @@ import java.util.Properties;
  * Contains factory methods for creating change data capture sources
  * based on PostgreSQL databases.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public final class PostgresCdcSources {
@@ -434,7 +434,7 @@ public final class PostgresCdcSources {
          * <p>
          * Defaults to {@link CdcSourceP#DEFAULT_COMMIT_PERIOD_MS}.
          *
-         * @since 4.4.1
+         * @since Jet 4.4.1
          */
         @Nonnull
         public Builder setCommitPeriod(long milliseconds) {

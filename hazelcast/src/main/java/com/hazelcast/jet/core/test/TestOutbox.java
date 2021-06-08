@@ -42,7 +42,7 @@ import static com.hazelcast.jet.Util.entry;
 /**
  * {@code Outbox} implementation suitable to be used in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class TestOutbox implements OutboxInternal {
 

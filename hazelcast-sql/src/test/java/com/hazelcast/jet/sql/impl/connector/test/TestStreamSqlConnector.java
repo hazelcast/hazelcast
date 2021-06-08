@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -72,7 +73,8 @@ public class TestStreamSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         if (userFields.size() > 0) {
             throw QueryException.error("Don't specify external fields, they are fixed");
@@ -87,7 +89,8 @@ public class TestStreamSqlConnector implements SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         return new TestStreamTable(
                 this,

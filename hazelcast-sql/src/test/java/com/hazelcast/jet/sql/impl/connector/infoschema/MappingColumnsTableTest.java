@@ -44,6 +44,7 @@ public class MappingColumnsTableTest {
                 "table-external-name",
                 "table-type",
                 singletonList(new MappingField("table-field-name", INT, "table-field-external-name")),
+                null,
                 emptyMap()
         );
         MappingColumnsTable mappingColumnsTable =

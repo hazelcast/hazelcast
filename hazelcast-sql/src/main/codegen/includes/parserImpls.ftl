@@ -92,6 +92,7 @@ SqlMappingColumn MappingColumn() :
     SqlIdentifier name;
     SqlDataType type;
     SqlIdentifier externalName = null;
+    SqlLiteral limitingLag = null;
 }
 {
     name = SimpleIdentifier() { span = span(); }
@@ -99,8 +100,15 @@ SqlMappingColumn MappingColumn() :
     [
         <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
     ]
+    [
+        <WATERMARK>
+        <LAG>
+        <LPAREN>
+        limitingLag = DayTimeIntervalLiteral()
+        <RPAREN>
+    ]
     {
-        return new SqlMappingColumn(name, type, externalName, span.end(this));
+        return new SqlMappingColumn(name, type, externalName, limitingLag, span.end(this));
     }
 }
 
@@ -522,3 +530,73 @@ boolean HazelcastTimeZoneOpt() :
     { return false; }
 }
 
+/**
+ * Parses INTERVAL_DAY_TIME interval literal.
+ */
+SqlLiteral DayTimeIntervalLiteral() :
+{
+    Span span;
+
+    String value;
+    SqlIntervalQualifier intervalQualifier;
+}
+{
+    <INTERVAL> { span = span(); }
+    <QUOTED_STRING> { value = token.image; }
+    intervalQualifier = DayTimeIntervalQualifier() {
+        return SqlParserUtil.parseIntervalLiteral(span.end(intervalQualifier), 1, value, intervalQualifier);
+    }
+}
+
+/**
+ * Parses INTERVAL_DAY_TIME interval literal.
+ */
+SqlIntervalQualifier DayTimeIntervalQualifier() :
+{
+    TimeUnit start;
+    TimeUnit end = null;
+    int startPrec = RelDataType.PRECISION_NOT_SPECIFIED;
+    int secondFracPrec = RelDataType.PRECISION_NOT_SPECIFIED;
+}
+{
+    (
+        start = Day() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
+        [ LOOKAHEAD(2) <TO>
+            (
+                end = Hour()
+            |
+                end = Minute()
+            |
+                end = Second()
+                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
+            )
+        ]
+    |
+        start = Hour() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
+        [ LOOKAHEAD(2) <TO>
+            (
+                end = Minute()
+            |
+                end = Second()
+                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
+            )
+        ]
+    |
+        start = Minute() [ <LPAREN> startPrec = UnsignedIntLiteral() <RPAREN> ]
+        [ LOOKAHEAD(2) <TO>
+            (
+                end = Second()
+                [ <LPAREN> secondFracPrec = UnsignedIntLiteral() <RPAREN> ]
+            )
+        ]
+    |
+        start = Second()
+        [   <LPAREN> startPrec = UnsignedIntLiteral()
+            [ <COMMA> secondFracPrec = UnsignedIntLiteral() ]
+            <RPAREN>
+        ]
+    )
+    {
+        return new SqlIntervalQualifier(start, startPrec, end, secondFracPrec, getPos());
+    }
+}

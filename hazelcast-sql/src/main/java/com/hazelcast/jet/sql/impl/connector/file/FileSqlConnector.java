@@ -21,7 +21,9 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
 
@@ -66,8 +68,12 @@ public class FileSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
+        if (eventTimePolicySupplier != null) {
+            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+        }
         return resolveAndValidateFields(options, userFields);
     }
 
@@ -87,7 +93,8 @@ public class FileSqlConnector implements SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         Metadata metadata = METADATA_RESOLVERS.resolveMetadata(resolvedFields, options);
 

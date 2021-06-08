@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier.LagEventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -31,6 +32,7 @@ import org.apache.calcite.sql.parser.SqlParser.Config;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,6 +62,7 @@ public class JetSqlParserTest {
                 + (ifNotExists ? "IF NOT EXISTS " : "")
                 + "mapping_name ("
                 + "column_name INT EXTERNAL NAME \"external.column.name\""
+                + ", watermark_column_name TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '0.1' SECOND)"
                 + ")"
                 + "TYPE mapping_type "
                 + "OPTIONS("
@@ -72,11 +75,17 @@ public class JetSqlParserTest {
         // then
         assertThat(node.nameWithoutSchema()).isEqualTo("mapping_name");
         assertThat(node.externalName()).isEqualTo("mapping_name");
+        assertThat(node.columns().map(column -> new Object[]{column.name(), column.type(), column.externalName(), column.eventTimePolicySupplier()}))
+                .containsExactly(
+                        new Object[]{"column_name", QueryDataType.INT, "external.column.name", null},
+                        new Object[]{
+                                "watermark_column_name",
+                                TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME,
+                                null,
+                                new LagEventTimePolicySupplier("watermark_column_name", 100L)
+                        }
+                );
         assertThat(node.type()).isEqualTo("mapping_type");
-        assertThat(node.columns().findFirst())
-                .isNotEmpty().get()
-                .extracting(column -> new Object[]{column.name(), column.type(), column.externalName()})
-                .isEqualTo(new Object[]{"column_name", QueryDataType.INT, "external.column.name"});
         assertThat(node.options()).isEqualTo(ImmutableMap.of("option.key", "option.value"));
         assertThat(node.getReplace()).isEqualTo(replace);
         assertThat(node.ifNotExists()).isEqualTo(ifNotExists);

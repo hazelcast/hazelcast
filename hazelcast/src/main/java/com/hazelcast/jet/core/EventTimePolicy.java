@@ -61,7 +61,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <T> event type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class EventTimePolicy<T> implements Serializable {
 

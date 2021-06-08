@@ -30,7 +30,7 @@ import javax.annotation.Nonnull;
  * Provides factory methods for Elasticsearch sources.
  * Alternatively you can use {@link ElasticSourceBuilder}
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class ElasticSources {
 

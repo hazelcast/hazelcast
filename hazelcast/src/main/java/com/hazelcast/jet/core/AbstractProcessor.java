@@ -63,7 +63,7 @@ import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
  *     {@link #flatMapper(Function) flatMapper(...)}.
  * </li></ol>
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public abstract class AbstractProcessor implements Processor {
 

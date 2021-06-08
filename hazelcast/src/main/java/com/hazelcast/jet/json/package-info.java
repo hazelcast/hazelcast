@@ -17,6 +17,6 @@
 /**
  * Utility classes for JSON parsing and serialization.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 package com.hazelcast.jet.json;

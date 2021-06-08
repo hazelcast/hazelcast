@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
@@ -204,6 +205,6 @@ public abstract class ReadHdfsMetaSupplierBase<R> implements ProcessorMetaSuppli
         if (hostName == null) {
             return false;
         }
-        return splitLocations.stream().anyMatch(hostName::equalsIgnoreCase);
+        return splitLocations.stream().anyMatch(l -> equalsIgnoreCase(l, hostName));
     }
 }

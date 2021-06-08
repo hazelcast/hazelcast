@@ -32,10 +32,11 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.junit.Assert.assertFalse;
@@ -160,7 +161,7 @@ public class LikePredicateTest {
         assertTrue(new LikePredicate("this", "sub\\_string%").isIndexed(queryContext));
     }
 
-    @NotNull
+    @Nonnull
     private Index createIndex(IndexType indexType) {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
         Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();

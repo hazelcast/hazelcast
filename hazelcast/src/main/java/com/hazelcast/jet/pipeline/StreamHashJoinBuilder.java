@@ -36,7 +36,7 @@ import com.hazelcast.jet.impl.pipeline.StreamStageImpl;
  *
  * @param <T0> the type of the items in the primary stage
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class StreamHashJoinBuilder<T0> extends GeneralHashJoinBuilder<T0> {
 

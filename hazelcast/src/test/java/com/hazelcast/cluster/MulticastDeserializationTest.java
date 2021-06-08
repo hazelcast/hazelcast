@@ -44,7 +44,6 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -67,7 +66,7 @@ public class MulticastDeserializationTest {
 
     @Rule
     public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
-            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
+            .clear(ClusterProperty.MULTICAST_GROUP.getName());
 
     @Before
     public void before() {

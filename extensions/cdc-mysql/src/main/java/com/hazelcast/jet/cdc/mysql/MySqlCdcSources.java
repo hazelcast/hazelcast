@@ -39,7 +39,7 @@ import static com.hazelcast.jet.cdc.impl.CdcSourceP.RECONNECT_BEHAVIOR_PROPERTY;
  * Contains factory methods for creating change data capture sources
  * based on MySQL databases.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public final class MySqlCdcSources {

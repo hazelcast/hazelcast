@@ -115,7 +115,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             }
         }
 
-        return Stream.of(new MappingField(name, type, externalName));
+        return userField != null ? Stream.of(userField) : Stream.of(new MappingField(name, type, externalName));
     }
 
     private Stream<MappingField> resolveObjectSchema(

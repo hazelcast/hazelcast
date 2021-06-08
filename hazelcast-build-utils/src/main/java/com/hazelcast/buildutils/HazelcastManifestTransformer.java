@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -95,7 +96,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
     @Override
     public boolean canTransformResource(String resource) {
-        return JarFile.MANIFEST_NAME.equalsIgnoreCase(resource);
+        return JarFile.MANIFEST_NAME.equals(resource.toUpperCase(Locale.ROOT));
     }
 
     @Override
@@ -372,7 +373,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         private boolean findResolutionConstraint(String[] tokens) {
             for (String token : tokens) {
                 if (token.startsWith(RESOLUTION_PREFIX)) {
-                    return token.equalsIgnoreCase("resolution:=optional");
+                    return token.toLowerCase(Locale.ROOT).equals("resolution:=optional");
                 }
             }
             return false;

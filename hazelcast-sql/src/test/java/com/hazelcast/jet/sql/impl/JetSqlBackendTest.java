@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier.LagEventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -31,7 +32,10 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlIntervalLiteral;
+import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
@@ -44,9 +48,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
@@ -76,7 +81,10 @@ public class JetSqlBackendTest {
         SqlCreateMapping node = new SqlCreateMapping(
                 identifier("mapping_name"),
                 identifier("external_mapping_name"),
-                nodeList(column("column_name", INT, "external_column_name")),
+                nodeList(
+                        column("column_name", INT, "external_column_name", null),
+                        column("watermark_column_name", TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, null, 1L)
+                ),
                 identifier("mapping_type"),
                 nodeList(option("option_key", "option_value")),
                 replace,
@@ -92,8 +100,11 @@ public class JetSqlBackendTest {
         assertThat(plan.mapping().name()).isEqualTo("mapping_name");
         assertThat(plan.mapping().externalName()).isEqualTo("external_mapping_name");
         assertThat(plan.mapping().type()).isEqualTo("mapping_type");
-        assertThat(plan.mapping().fields())
-                .isEqualTo(singletonList(new MappingField("column_name", INT, "external_column_name")));
+        assertThat(plan.mapping().fields()).containsExactly(
+                new MappingField("column_name", INT, "external_column_name"),
+                new MappingField("watermark_column_name", TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, null)
+        );
+        assertThat(plan.mapping().evenTimePolicySupplier()).isEqualTo(new LagEventTimePolicySupplier("watermark_column_name", 1000L));
         assertThat(plan.mapping().options()).isEqualTo(ImmutableMap.of("option_key", "option_value"));
         assertThat(plan.replace()).isEqualTo(replace);
         assertThat(plan.ifNotExists()).isEqualTo(ifNotExists);
@@ -125,17 +136,27 @@ public class JetSqlBackendTest {
         return new SqlNodeList(asList(nodes), SqlParserPos.ZERO);
     }
 
-    private static SqlMappingColumn column(String name, QueryDataType type, String externalName) {
+    private static SqlMappingColumn column(String name, QueryDataType type, String externalName, Long lagInSeconds) {
         return new SqlMappingColumn(
                 identifier(name),
                 new SqlDataType(type, SqlParserPos.ZERO),
-                identifier(externalName),
+                externalName == null ? null : identifier(externalName),
+                lagInSeconds == null ? null : intervalLiteral(lagInSeconds),
                 SqlParserPos.ZERO
         );
     }
 
     private static OptimizationTask task() {
         return new OptimizationTask("", emptyList(), emptyList(), null);
+    }
+
+    private static SqlIntervalLiteral intervalLiteral(long lagInSeconds) {
+        return SqlLiteral.createInterval(
+                1,
+                String.valueOf(lagInSeconds),
+                new SqlIntervalQualifier(SECOND, RelDataType.PRECISION_NOT_SPECIFIED, null, RelDataType.PRECISION_NOT_SPECIFIED, SqlParserPos.ZERO),
+                SqlParserPos.ZERO
+        );
     }
 
     private static SqlOption option(String key, String value) {

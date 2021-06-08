@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
@@ -31,8 +33,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 class KafkaTable extends JetTable {
+
+    private final EventTimePolicySupplier eventTimePolicySupplier;
 
     private final QueryTargetDescriptor keyQueryDescriptor;
     private final UpsertTargetDescriptor keyUpsertDescriptor;
@@ -49,6 +55,7 @@ class KafkaTable extends JetTable {
             String schemaName,
             String name,
             List<TableField> fields,
+            EventTimePolicySupplier eventTimePolicySupplier,
             TableStatistics statistics,
             String topicName,
             Map<String, String> options,
@@ -58,6 +65,8 @@ class KafkaTable extends JetTable {
             UpsertTargetDescriptor valueUpsertDescriptor
     ) {
         super(sqlConnector, fields, schemaName, name, statistics);
+
+        this.eventTimePolicySupplier = eventTimePolicySupplier;
 
         this.keyQueryDescriptor = keyQueryDescriptor;
         this.keyUpsertDescriptor = keyUpsertDescriptor;
@@ -95,6 +104,17 @@ class KafkaTable extends JetTable {
 
     UpsertTargetDescriptor valueUpsertDescriptor() {
         return valueUpsertDescriptor;
+    }
+
+    EventTimePolicy<Object[]> eventTimePolicy() {
+        Function<String, Integer> fieldIndexResolver = fieldName -> IntStream.range(0, getFieldCount())
+                .filter(index -> getField(index).getName().equals(fieldName))
+                .findFirst()
+                .orElse(-1);
+
+        return eventTimePolicySupplier == null
+                ? EventTimePolicy.noEventTime()
+                : eventTimePolicySupplier.eventTimePolicy(fieldIndexResolver);
     }
 
     QueryPath[] paths() {
