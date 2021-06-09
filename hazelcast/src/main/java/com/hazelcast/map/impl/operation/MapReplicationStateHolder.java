@@ -16,9 +16,12 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -27,15 +30,17 @@ import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.StoreAdapter;
+import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStoreAdapter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
@@ -50,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 
@@ -135,7 +141,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity",
+            "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
 
@@ -174,18 +181,34 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
                 long nowInMillis = Clock.currentTimeMillis();
 
+                long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
+                EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
+                boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
+                        && evictionConfig.getMaxSizePolicy() == PER_NODE;
+
                 for (int i = 0; i < keyRecord.size(); i += 2) {
                     Data dataKey = (Data) keyRecord.get(i);
                     Record record = (Record) keyRecord.get(i + 1);
 
-                    recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
-
-                    if (recordStore.shouldEvict()) {
-                        // No need to continue replicating records anymore.
-                        // We are already over eviction threshold, each put record will cause another eviction.
-                        recordStore.evictEntries(dataKey);
-                        break;
+                    if (perNodeEvictionConfigured) {
+                        if (ownedEntryCountOnThisNode >= evictionConfig.getSize()) {
+                            if (operation.getReplicaIndex() == 0) {
+                                recordStore.doPostEvictionOperations(dataKey, record);
+                            }
+                        } else {
+                            recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                            ownedEntryCountOnThisNode++;
+                        }
+                    } else {
+                        recordStore.putReplicatedRecord(dataKey, record, nowInMillis, populateIndexes);
+                        if (recordStore.shouldEvict()) {
+                            // No need to continue replicating records anymore.
+                            // We are already over eviction threshold, each put record will cause another eviction.
+                            recordStore.evictEntries(dataKey);
+                            break;
+                        }
                     }
+
                     recordStore.disposeDeferredBlocks();
                 }
 
@@ -194,6 +217,32 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 }
             }
         }
+    }
+
+    // owned or backup
+    private long entryCountOnThisNode(MapContainer mapContainer) {
+        int replicaIndex = operation.getReplicaIndex();
+        long owned = 0;
+        if (mapContainer.getEvictor() != Evictor.NULL_EVICTOR
+                && PER_NODE == mapContainer.getMapConfig().getEvictionConfig().getMaxSizePolicy()) {
+
+            MapService mapService = operation.getService();
+            MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+            IPartitionService partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+            int partitionCount = partitionService.getPartitionCount();
+
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                if (replicaIndex == 0 ? partitionService.isPartitionOwner(partitionId)
+                        : !partitionService.isPartitionOwner(partitionId)) {
+                    RecordStore store = mapServiceContext.getExistingRecordStore(partitionId, mapContainer.getName());
+                    if (store != null) {
+                        owned += store.size();
+                    }
+                }
+            }
+        }
+
+        return owned;
     }
 
     private void applyIndexesState() {
