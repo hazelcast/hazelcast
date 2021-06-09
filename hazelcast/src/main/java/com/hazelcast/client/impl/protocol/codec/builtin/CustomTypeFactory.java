@@ -221,14 +221,9 @@ public final class CustomTypeFactory {
         return new SqlColumnMetadata(name, sqlColumnType, true);
     }
 
-    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type, int index, int offset,
-                                                        byte bitOffset) {
+    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
         FieldType fieldType = FieldType.get((byte) type);
-        FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
-        descriptor.setOffset(offset);
-        descriptor.setIndex(index);
-        descriptor.setBitOffset(bitOffset);
-        return descriptor;
+        return new FieldDescriptor(fieldName, fieldType);
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {

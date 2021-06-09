@@ -24,13 +24,10 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("8731ffbea4ef00110e54e6f340181a66")
+@Generated("9f09c70d6c3b390d1ac8d7beccc69fb9")
 public final class FieldDescriptorCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
-    private static final int INDEX_FIELD_OFFSET = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int OFFSET_FIELD_OFFSET = INDEX_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int BIT_OFFSET_FIELD_OFFSET = OFFSET_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int INITIAL_FRAME_SIZE = BIT_OFFSET_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private FieldDescriptorCodec() {
     }
@@ -40,9 +37,6 @@ public final class FieldDescriptorCodec {
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getType());
-        encodeInt(initialFrame.content, INDEX_FIELD_OFFSET, fieldDescriptor.getIndex());
-        encodeInt(initialFrame.content, OFFSET_FIELD_OFFSET, fieldDescriptor.getOffset());
-        encodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET, fieldDescriptor.getBitOffset());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, fieldDescriptor.getFieldName());
@@ -56,14 +50,11 @@ public final class FieldDescriptorCodec {
 
         ClientMessage.Frame initialFrame = iterator.next();
         int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
-        int index = decodeInt(initialFrame.content, INDEX_FIELD_OFFSET);
-        int offset = decodeInt(initialFrame.content, OFFSET_FIELD_OFFSET);
-        byte bitOffset = decodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET);
 
         java.lang.String fieldName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createFieldDescriptor(fieldName, type, index, offset, bitOffset);
+        return CustomTypeFactory.createFieldDescriptor(fieldName, type);
     }
 }

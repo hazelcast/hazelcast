@@ -53,6 +53,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
@@ -61,7 +62,6 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.partition.MigrationState;
-import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -84,7 +84,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.UUID;
 
 public class ReferenceObjects {
@@ -655,7 +654,7 @@ public class ReferenceObjects {
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
-    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt, anInt ,anInt, aByte);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
     public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
     public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
     public static List<Map.Entry<Long, Schema>> aMapOfLongToSchema
@@ -750,6 +749,7 @@ public class ReferenceObjects {
         aBitmapIndexOptions.setUniqueKey(aString);
         aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
     }
+
     public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
