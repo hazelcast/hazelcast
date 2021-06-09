@@ -26,6 +26,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -1376,13 +1377,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    " + mapName + ":\n"
                 + "      wan-replication-ref:\n"
                 + "        test:\n"
-                + "          merge-policy-class-name: TestMergePolicy\n"
+                + "          merge-policy-class-name: LatestUpdateMergePolicy\n"
                 + "          filters:\n"
                 + "            - com.example.SampleFilter\n";
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig(mapName);
         WanReplicationRef wanRef = mapConfig.getWanReplicationRef();
+        mapConfig.setPerEntryStatsEnabled(false);
+
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
 
         assertEquals(refName, wanRef.getName());
         assertEquals(mergePolicy, wanRef.getMergePolicyClassName());

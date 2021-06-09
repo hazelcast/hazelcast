@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.core.EntryEventType.MERGED;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 
 /**
  * Contains multiple merge entries for split-brain
@@ -77,6 +78,9 @@ public class MergeOperation extends MapOperation
 
     @Override
     protected void runInternal() {
+        checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
+                getNodeEngine().getSplitBrainMergePolicyProvider());
+
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled()
                 && !disableWanReplicationEvent;
