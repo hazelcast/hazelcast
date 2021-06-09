@@ -202,7 +202,7 @@ public class HazelcastCommandLine implements Runnable {
     @Command(
             name = "console-app",
             description = "Starts the console application for trying out in-memory data structures of Hazelcast."
-                    + "It is not recommended for use in production.")
+                    + " It is not recommended for use in production.")
     public void consoleApp(
             @Mixin(name = "verbosity") Verbosity verbosity,
             @Mixin(name = "targets") TargetsMixin targets
