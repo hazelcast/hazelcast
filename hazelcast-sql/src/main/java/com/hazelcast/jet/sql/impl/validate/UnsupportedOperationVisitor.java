@@ -360,10 +360,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
-        }
-
         if (topLevelSelect == null) {
             topLevelSelect = select;
         } else {

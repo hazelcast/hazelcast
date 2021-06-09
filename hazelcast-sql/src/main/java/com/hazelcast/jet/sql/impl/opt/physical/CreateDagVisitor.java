@@ -264,10 +264,10 @@ public class CreateDagVisitor {
     public Vertex onRoot(JetRootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
+        Expression<?> offset;
 
         if (input instanceof SortPhysicalRel) {
             SortPhysicalRel sortRel = (SortPhysicalRel) input;
-            assert sortRel.offset == null : "Offset is not supported";
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -275,16 +275,23 @@ public class CreateDagVisitor {
                 fetch = sortRel.fetch(parameterMetadata);
             }
 
+            if (sortRel.offset == null) {
+                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+            } else {
+                offset = sortRel.offset(parameterMetadata);
+            }
+
             if (sortRel.collation.getFieldCollations().isEmpty()) {
                 input = sortRel.getInput();
             }
         } else {
             fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
         }
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.

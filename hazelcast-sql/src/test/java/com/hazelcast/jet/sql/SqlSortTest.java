@@ -205,6 +205,103 @@ public class SqlSortTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_sortWithLimit() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2", tableName),
+                asList(
+                        new Row("A", 3),
+                        new Row("B", 2)
+                )
+        );
+    }
+
+    @Test
+    public void test_sortWithLimitAndOffset() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2 OFFSET 2", tableName),
+                asList(
+                        new Row("C", 1),
+                        new Row("B", 1)
+                )
+        );
+    }
+
+    @Test
+    public void whenOffsetEqualsZero_thenNoOffset() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2 OFFSET 0", tableName),
+                asList(
+                        new Row("A", 3),
+                        new Row("B", 2)
+                )
+        );
+    }
+
+    @Test
+    public void whenOffsetMoreThanSize_thenItShouldCompleteWithNoOutput() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"C", "1"}
+        );
+
+        assertRowsAnyOrder(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET 100", tableName),
+                asList()
+        );
+    }
+
+    @Test
+    public void whenOffsetIsNegativeOrNull_thenFails() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"}
+        );
+
+        assertThatThrownBy(() ->
+                sqlService.execute(
+                        String.format(
+                                "SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET -1",
+                                tableName
+                        )
+                ))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"-\" at line 1, column 108");
+
+        assertThatThrownBy(() ->
+                sqlService.execute(
+                        String.format(
+                                "SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET NULL",
+                                tableName
+                        )
+                ))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"NULL\" at line 1, column 108.");
+    }
+
+    @Test
     public void whenOrderByOnStreamingData_thenFails() {
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM TABLE(GENERATE_STREAM(1)) ORDER BY 1"))
                 .isInstanceOf(HazelcastSqlException.class)
