@@ -607,9 +607,9 @@ public class SqlOrderByTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
 
-        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName() + " FETCH 1)";
+        String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName() + " LIMIT 1)";
 
-        assertThatThrownBy(() -> query(sql))
+        assertThatThrownBy(() -> query(sqlLimit))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
@@ -824,7 +824,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         }
     }
 
-    private SqlResult query(String sql) {
+    protected SqlResult query(String sql) {
         return getTarget().getSql().execute(sql);
     }
 
