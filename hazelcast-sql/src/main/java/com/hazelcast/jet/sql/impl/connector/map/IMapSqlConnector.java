@@ -20,7 +20,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -37,7 +39,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -57,6 +58,7 @@ import java.util.Map;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.sql.impl.connector.SqlProcessors.rowProjector;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -145,17 +147,29 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
-        MapScanMetadata mapScanMetadata = new MapScanMetadata(
-                table.getMapName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                table.fieldPaths(),
-                table.types(),
-                projection,
-                filter
+
+        List<TableField> fields = table.getFields();
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+
+        Vertex vStart = dag.newUniqueVertex(
+                toString(table),
+                SourceProcessors.readMapP(table.getMapName()));
+
+        Vertex vEnd = dag.newUniqueVertex(
+                "Project(" + toString(table) + ")",
+                rowProjector(
+                        paths,
+                        types,
+                        table.getKeyDescriptor(),
+                        table.getValueDescriptor(),
+                        filter,
+                        projection
+                )
         );
 
-        return dag.newUniqueVertex(toString(table), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+        dag.edge(Edge.from(vStart).to(vEnd).isolated());
+        return vEnd;
     }
 
     @Nonnull
