@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.contrib.mongodb;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -39,7 +39,7 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
     public MongoDBContainer mongoContainer = new MongoDBContainer().withReplicaSetName("rs0");
 
     MongoClient mongo;
-    JetInstance jet;
+    HazelcastInstance hz;
     BsonTimestamp startAtOperationTime;
 
 
@@ -56,7 +56,7 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
 
-        jet = createJetMember();
+        hz = createHazelcastInstance();
     }
 
     MongoCollection<Document> collection() {

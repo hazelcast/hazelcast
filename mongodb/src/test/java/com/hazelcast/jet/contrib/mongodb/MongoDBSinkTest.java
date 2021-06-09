@@ -37,7 +37,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test() {
-        IList<Integer> list = jet.getList("list");
+        IList<Integer> list = hz.getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
@@ -49,7 +49,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
          .map(i -> new Document("key", i))
          .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, COL_NAME));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         MongoCollection<Document> collection = collection();
         assertEquals(100, collection.countDocuments());
@@ -60,7 +60,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.connectionString();
         mongoContainer.close();
 
-        IList<Integer> list = jet.getList("list");
+        IList<Integer> list = hz.getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
@@ -79,7 +79,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
          .writeTo(sink);
 
         try {
-            jet.newJob(p).join();
+            hz.getJet().newJob(p).join();
             fail();
         } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof JetException);

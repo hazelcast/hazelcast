@@ -18,7 +18,7 @@ package com.hazelcast.jet.contrib.mongodb;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.ISet;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -53,12 +53,12 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenServerDown() {
-        JetInstance serverToShutdown = createJetMember();
+        HazelcastInstance serverToShutdown = createHazelcastInstance();
 
         int itemCount = 40_000;
 
         Sink<Integer> setSink = SinkBuilder
-                .sinkBuilder("set", c -> c.jetInstance().getHazelcastInstance().getSet("set"))
+                .sinkBuilder("set", c -> c.hazelcastInstance().getSet("set"))
                 .<Integer>receiveFn(Set::add)
                 .build();
 
@@ -72,8 +72,8 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                  .setSnapshotIntervalMillis(2000);
-        Job job = jet.newJob(p, jobConfig);
-        ISet<Integer> set = jet.getHazelcastInstance().getSet("set");
+        Job job = hz.getJet().newJob(p, jobConfig);
+        ISet<Integer> set = hz.getSet("set");
 
         spawn(() -> {
             for (int i = 0; i < itemCount; i++) {
@@ -96,7 +96,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     @Test
     public void testBatch() {
 
-        IList<Document> list = jet.getList("list");
+        IList<Document> list = hz.getList("list");
 
         List<Document> documents = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
@@ -113,7 +113,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
                 new Document("val", 1).append("_id", 0)))
          .writeTo(Sinks.list(list));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         assertEquals(90, list.size());
         Document actual = list.get(0);
@@ -124,7 +124,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream() {
-        IList<Document> list = jet.getList("list");
+        IList<Document> list = hz.getList("list");
 
         StreamSource<? extends Document> streamSource =
                 streamSource(
@@ -138,7 +138,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
          .withNativeTimestamps(0)
          .writeTo(Sinks.list(list));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
 
 
         collection().insertOne(new Document("val", 1));
@@ -167,7 +167,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenWatchDatabase() {
-        IList<Document> list = jet.getList("list");
+        IList<Document> list = hz.getList("list");
 
         String connectionString = mongoContainer.connectionString();
         long value = startAtOperationTime.getValue();
@@ -194,7 +194,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
          .withNativeTimestamps(0)
          .writeTo(Sinks.list(list));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
 
         MongoCollection<Document> col1 = collection("col1");
         MongoCollection<Document> col2 = collection("col2");
@@ -234,7 +234,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenWatchAll() {
-        IList<Document> list = jet.getList("list");
+        IList<Document> list = hz.getList("list");
 
         String connectionString = mongoContainer.connectionString();
         long value = startAtOperationTime.getValue();
@@ -259,7 +259,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
          .withNativeTimestamps(0)
          .writeTo(Sinks.list(list));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
 
         MongoCollection<Document> col1 = collection("db1", "col1");
         MongoCollection<Document> col2 = collection("db1", "col2");

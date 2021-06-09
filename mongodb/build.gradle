@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     compile 'org.mongodb:mongodb-driver-sync:3.12.2'
-    testCompile "org.testcontainers:testcontainers:1.11.2"
+    testCompile "org.testcontainers:testcontainers:${testContainersVersion}"
 }
 
 
@@ -15,7 +15,7 @@ jar {
 
 shadowJar {
     dependencies {
-        exclude(dependency('com.hazelcast.jet:hazelcast-jet'))
+        exclude(dependency('com.hazelcast:hazelcast'))
     }
 }
 
