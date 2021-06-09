@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
@@ -106,14 +108,30 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
         return newJobInt(jobId, pipeline, config, false);
     }
 
-    private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nullable JobConfig config, boolean isLightJob) {
-        if (config != null) {
-            if (jobDefinition instanceof PipelineImpl) {
-                config = config.attachAll(((PipelineImpl) jobDefinition).attachedFiles());
-            }
+    private Job newJobInt(long jobId, @Nonnull Object jobDefinition, @Nonnull JobConfig config, boolean isLightJob) {
+        if (isLightJob) {
+            validateConfigForLightJobs(config);
+        }
+        if (jobDefinition instanceof PipelineImpl) {
+            config = config.attachAll(((PipelineImpl) jobDefinition).attachedFiles());
+        }
+        if (!config.getResourceConfigs().isEmpty()) {
             uploadResources(jobId, config);
         }
         return newJobProxy(jobId, isLightJob, jobDefinition, config);
+    }
+
+    protected static void validateConfigForLightJobs(JobConfig config) {
+        Preconditions.checkTrue(config.getName() == null,
+                "JobConfig.name not supported for light jobs");
+        Preconditions.checkTrue(config.getResourceConfigs().isEmpty(),
+                "Resources (jars, classes, attached files) not supported for light jobs");
+        Preconditions.checkTrue(config.getProcessingGuarantee() == ProcessingGuarantee.NONE,
+                "A processing guarantee not supported for light jobs");
+        Preconditions.checkTrue(config.getClassLoaderFactory() == null,
+                "JobConfig.classLoaderFactory not supported for light jobs");
+        Preconditions.checkTrue(config.getInitialSnapshotName() == null,
+                "JobConfig.initialSnapshotName not supported for light jobs");
     }
 
     private Job newJobIfAbsent(@Nonnull Object jobDefinition, @Nonnull JobConfig config) {
@@ -148,13 +166,18 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     @Nonnull @Override
-    public Job newLightJob(Pipeline pipeline) {
-        return newJobInt(newJobId(), pipeline, null, true);
+    public Job newLightJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
+        return newJobInt(newJobId(), pipeline, config, true);
     }
 
     @Nonnull @Override
-    public Job newLightJob(DAG dag) {
-        return newJobInt(newJobId(), dag, null, true);
+    public Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
+        return newJobInt(newJobId(), dag, config, true);
+    }
+
+    @Nonnull
+    public Job newLightJob(long jobId, @Nonnull DAG dag, @Nonnull JobConfig config) {
+        return newJobInt(jobId, dag, config, true);
     }
 
     @Nonnull @Override
@@ -308,7 +331,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     /**
      * Submit a new job and return the job proxy.
      */
-    public abstract Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config);
+    public abstract Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config);
 
     public abstract Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId);
 
