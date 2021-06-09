@@ -25,6 +25,7 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 @Generated("9f09c70d6c3b390d1ac8d7beccc69fb9")
 public final class FieldDescriptorCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
@@ -38,6 +39,12 @@ public final class FieldDescriptorCodec {
     private static final int BIT_OFFSET_FIELD_OFFSET = OFFSET_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = BIT_OFFSET_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 >>>>>>> 1ed047ddbe (Simplified the way we handled the boolean as bits.)
+=======
+@Generated("9f09c70d6c3b390d1ac8d7beccc69fb9")
+public final class FieldDescriptorCodec {
+    private static final int TYPE_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+>>>>>>> 4af1de5d48 (Fixes protocol related tests)
 
     private FieldDescriptorCodec() {
     }
@@ -48,11 +55,14 @@ public final class FieldDescriptorCodec {
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getType());
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         encodeInt(initialFrame.content, INDEX_FIELD_OFFSET, fieldDescriptor.getIndex());
         encodeInt(initialFrame.content, OFFSET_FIELD_OFFSET, fieldDescriptor.getOffset());
         encodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET, fieldDescriptor.getBitOffset());
 >>>>>>> 1ed047ddbe (Simplified the way we handled the boolean as bits.)
+=======
+>>>>>>> 4af1de5d48 (Fixes protocol related tests)
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, fieldDescriptor.getFieldName());
@@ -67,20 +77,27 @@ public final class FieldDescriptorCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         int type = decodeInt(initialFrame.content, TYPE_FIELD_OFFSET);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
         int index = decodeInt(initialFrame.content, INDEX_FIELD_OFFSET);
         int offset = decodeInt(initialFrame.content, OFFSET_FIELD_OFFSET);
         byte bitOffset = decodeByte(initialFrame.content, BIT_OFFSET_FIELD_OFFSET);
 >>>>>>> 1ed047ddbe (Simplified the way we handled the boolean as bits.)
+=======
+>>>>>>> 4af1de5d48 (Fixes protocol related tests)
 
         java.lang.String fieldName = StringCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         return CustomTypeFactory.createFieldDescriptor(fieldName, type);
 =======
         return CustomTypeFactory.createFieldDescriptor(fieldName, type, index, offset, bitOffset);
 >>>>>>> 1ed047ddbe (Simplified the way we handled the boolean as bits.)
+=======
+        return CustomTypeFactory.createFieldDescriptor(fieldName, type);
+>>>>>>> 4af1de5d48 (Fixes protocol related tests)
     }
 }

@@ -346,6 +346,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
             cache.put(2, 2);
             fail("Operation on cache must fails because owner instance is not active!");
         } catch (Throwable t) {
+            t.printStackTrace();
             Class<? extends Exception> expectedExceptionType = getInstanceNotActiveExceptionType();
             Class<? extends Throwable> actualExceptionType = t.getClass();
             if (!expectedExceptionType.isAssignableFrom(actualExceptionType)) {

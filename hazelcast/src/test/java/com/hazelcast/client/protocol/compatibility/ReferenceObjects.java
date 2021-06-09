@@ -84,7 +84,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.TreeMap;
 import java.util.UUID;
 
 public class ReferenceObjects {
@@ -655,7 +654,7 @@ public class ReferenceObjects {
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
-    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt, anInt ,anInt, aByte);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
     public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
     public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
     public static List<Map.Entry<Long, Schema>> aMapOfLongToSchema
