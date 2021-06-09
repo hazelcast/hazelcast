@@ -203,14 +203,11 @@ public class HazelcastCommandLine implements Runnable {
             name = "console-app",
             description = "Starts the console application for trying out in-memory data structures of Hazelcast."
                     + "It is not recommended for use in production.")
-    public void consoleApp(@Mixin(name = "verbosity") Verbosity verbosity,
-                           @Mixin(name = "targets") TargetsMixin targets,
-                           @Parameters(index = "0..*",
-                                   paramLabel = "<arguments>",
-                                   description = "Arguments to pass to the client console application"
-                           ) List<String> params
+    public void consoleApp(
+            @Mixin(name = "verbosity") Verbosity verbosity,
+            @Mixin(name = "targets") TargetsMixin targets
     ) {
-        runWithHazelcast(targets, verbosity, true, client -> ClientConsoleApp.run(client, params));
+        runWithHazelcast(targets, verbosity, true, ClientConsoleApp::run);
     }
 
     @Command(description = "Suspends a running job")

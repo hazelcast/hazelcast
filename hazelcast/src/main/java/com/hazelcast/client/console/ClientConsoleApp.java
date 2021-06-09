@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.console;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.management.MCClusterMetadata;
 import com.hazelcast.client.impl.spi.ClientClusterService;
@@ -103,8 +104,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int BYTE_TO_BIT = 8;
     private static final int LENGTH_BORDER = 4;
 
-    private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
-    private static final int SECONDARY_COLOR = 12;
+    private static final int COLOR = 12;
 
     private IQueue<Object> queue;
     private ITopic<Object> topic;
@@ -134,7 +134,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         this.client = client;
         lineReader = LineReaderBuilder.builder()
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
-                        .style(AttributedStyle.BOLD.foreground(SECONDARY_COLOR)).append("%M%P > ").toAnsi())
+                        .style(AttributedStyle.BOLD.foreground(COLOR)).append("%M%P > ").toAnsi())
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
                 .appName("hazelcast-client-console-app")
@@ -185,20 +185,20 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         running = false;
     }
 
-    public void start(List<String> params) {
+    public void start() {
         getMap().size();
         getList().size();
         getSet().size();
         getQueue().size();
         getMultiMap().size();
 
-        writer.println(startPrompt(client));
+        println(startPrompt(client));
         writer.flush();
         running = true;
         while (running) {
             try {
                 final String command = lineReader.readLine(
-                        new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(SECONDARY_COLOR))
+                        new AttributedStringBuilder().style(AttributedStyle.DEFAULT.foreground(COLOR))
                                 .append("hazelcast[")
                                 .append(namespace)
                                 .append("] > ").toAnsi());
@@ -206,7 +206,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             } catch (EndOfFileException | IOError e) {
                 // Ctrl+D, and kill signals result in exit
                 println("Exiting from the client console application.");
-                this.writer.flush();
+                writer.flush();
                 break;
             } catch (UserInterruptException e) {
                 // Ctrl+C cancels the not-yet-submitted query
@@ -308,6 +308,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 History.Entry entry = iterator.next();
                 if (iterator.hasNext()) {
                     String entryLine = new AttributedStringBuilder()
+                            .style(AttributedStyle.BOLD)
                             .append(String.valueOf(entry.index() + 1))
                             .append(" - ")
                             .append(entry.line())
@@ -326,7 +327,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleWho();
         } else if ("jvm".equals(first)) {
             handleJvm();
-        } else if (first.contains("ock") && !first.contains(".")) {
+        } else if (first.contains("lock") && !first.contains(".")) {
             handleLock(args);
         } else if (first.contains(".size")) {
             handleSize(args);
@@ -986,8 +987,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "squid:S2222"})
     protected void handleLock(String[] args) {
         String lockStr = args[0];
-        String key = args[1];
-        Lock lock = client.getCPSubsystem().getLock(key);
+        String name = args[1];
+        Lock lock = client.getCPSubsystem().getLock(name);
         if (equalsIgnoreCase(lockStr, "lock")) {
             lock.lock();
             println("true");
@@ -1431,147 +1432,153 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printGeneralCommands() {
-        println("-- General commands");
-        println("echo true|false                      //turns on/off echo of commands (default false)");
-        println("clear                                //clears the terminal screen");
-        println("exit                                 //exits from the client console app.");
-        println("silent true|false                    //turns on/off silent of command output (default false)");
-        println("#<number> <command>                  //repeats <number> time <command>, replace $i in <command> with current "
-                + "iteration (0..<number-1>)");
-        println("&<number> <command>                  //forks <number> threads to execute <command>, "
-                + "replace $t in <command> with current thread number (0..<number-1>");
-        println("     When using #x or &x, is is advised to use silent true as well.");
-        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
-                + "start key index is specified");
-        println("history                              //shows the command history of the current session");
-        println("jvm                                  //displays info about the runtime");
-        println("who                                  //displays info about the cluster");
-        println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list "
-                + "<string> (defaults to \"default\"");
-        println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
+        println("General commands:");
+        println("  echo true|false                         turns on/off echo of commands (default false)");
+        println("  clear                                   clears the terminal screen");
+        println("  exit                                    exits from the client console app.");
+        println("  silent true|false                       turns on/off silent of command output (default false)");
+        println("  #<number> <command>                     repeats <number> time <command>, replace $i in\n"
+                + "<command> with current iteration (0..<number-1>)");
+        println("  &<number> <command>                     forks <number> threads to execute <command>,");
+        println("replace $t in <command> with current thread number (0..<number-1>");
+        println("When using #x or &x, is is advised to use silent true as well.");
+        println("When using &x with m.putmany and m.removemany, each thread will get a different");
+        println("share of keys unless a start key index is specified\n");
+        println("  history                                 shows the command history of the current session");
+        println("  jvm                                     displays info about the runtime");
+        println("  who                                     displays info about the cluster");
+        println("  ns <string>                             switch the namespace for using the distributed\n"
+                + " queue/map/set/list <string> (defaults to \"default\"");
+        println("  @<file>                                 executes the given <file> script. Use '//' for\n"
+                + " comments in the script");
         println("");
     }
 
     private void printQueueCommands() {
-        println("-- Queue commands");
-        println("q.offer <string>                     //adds a string object to the queue");
-        println("q.poll                               //takes an object from the queue");
-        println("q.offermany <number> [<size>]        //adds indicated number of string objects to the queue ('obj<i>' or "
+        println("Queue commands:");
+        println("  q.offer <string>                        adds a string object to the queue");
+        println("  q.poll                                  takes an object from the queue");
+        println("  q.offermany <number> [<size>]           adds indicated number of string objects to the queue ('obj<i>' or "
                 + "byte[<size>]) ");
-        println("q.pollmany <number>                  //takes indicated number of objects from the queue");
-        println("q.iterator [remove]                  //iterates the queue, remove if specified");
-        println("q.size                               //size of the queue");
-        println("q.clear                              //clears the queue");
+        println("  q.pollmany <number>                     takes indicated number of objects from the queue");
+        println("  q.iterator [remove]                     iterates the queue, remove if specified");
+        println("  q.size                                  size of the queue");
+        println("  q.clear                                 clears the queue");
         println("");
     }
 
     private void printSetCommands() {
-        println("-- Set commands");
-        println("s.add <string>                       //adds a string object to the set");
-        println("s.remove <string>                    //removes the string object from the set");
-        println("s.addmany <number>                   //adds indicated number of string objects to the set ('obj<i>')");
-        println("s.removemany <number>                //takes indicated number of objects from the set");
-        println("s.iterator [remove]                  //iterates the set, removes if specified");
-        println("s.size                               //size of the set");
-        println("s.clear                              //clears the set");
+        println("Set commands:");
+        println("  s.add <string>                          adds a string object to the set");
+        println("  s.remove <string>                       removes the string object from the set");
+        println("  s.addmany <number>                      adds indicated number of string objects to the set ('obj<i>')");
+        println("  s.removemany <number>                   takes indicated number of objects from the set");
+        println("  s.iterator [remove]                     iterates the set, removes if specified");
+        println("  s.size                                  size of the set");
+        println("  s.clear                                 clears the set");
         println("");
     }
 
     private void printLockCommands() {
-        println("-- Lock commands");
-        println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
-        println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
-        println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
-        println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
+        println("Lock commands:");
+        println("These lock commands demonstrate the usage of Hazelcast's linearizable, distributed, and reentrant");
+        println("implementation of Lock.");
+        println("For more information, see `com.hazelcast.cp.lock.FencedLock`");
+        println(" lock <name>                               acquires the lock with the given name");
+        println(" tryLock <name>                            acquires the lock only if it is free at the time\n"
+                + "of invocation");
+        println(" tryLock <name> <time>                     acquires the lock if it is free within the given\n"
+                + "waiting time");
+        println(" unlock <name>                             releases the lock if the lock is currently held\n"
+                + "by the current thread");
         println("");
     }
 
     private void printMapCommands() {
-        println("-- Map commands");
-        println("m.put <key> <value>                  //puts an entry to the map");
-        println("m.remove <key>                       //removes the entry of given key from the map");
-        println("m.get <key>                          //returns the value of given key from the map");
-        println("m.putmany <number> [<size>] [<index>]//puts indicated number of entries to the map ('key<i>':byte[<size>], "
-                + "<index>+(0..<number>)");
-        println("m.removemany <number> [<index>]      //removes indicated number of entries from the map ('key<i>', "
-                + "<index>+(0..<number>)");
-        println("     When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
+        println("Map commands:");
+        println("  m.put <key> <value>                     puts an entry to the map");
+        println("  m.remove <key>                          removes the entry of given key from the map");
+        println("  m.get <key>                             returns the value of given key from the map");
+        println("  m.putmany <number> [<size>] [<index>]   puts indicated number of entries to the map:");
+        println("('key<i>':byte[<size>], <index>+(0..<number>)");
+        println("  m.removemany <number> [<index>]         removes indicated number of entries from the map");
+        println("('key<i>', <index>+(0..<number>)");
+        println("When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
                 + "start key <index> is specified");
-        println("m.keys                               //iterates the keys of the map");
-        println("m.values                             //iterates the values of the map");
-        println("m.entries                            //iterates the entries of the map");
-        println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
-        println("m.size                               //size of the map");
-        println("m.localSize                          //local size of the map");
-        println("m.clear                              //clears the map");
-        println("m.destroy                            //destroys the map");
-        println("m.lock <key>                         //locks the key");
-        println("m.tryLock <key>                      //tries to lock the key and returns immediately");
-        println("m.tryLock <key> <time>               //tries to lock the key within given seconds");
-        println("m.unlock <key>                       //unlocks the key");
-        println("m.stats                              //shows the local stats of the map");
+        println("  m.keys                                  iterates the keys of the map");
+        println("  m.values                                iterates the values of the map");
+        println("  m.entries                               iterates the entries of the map");
+        println("  m.iterator [remove]                     iterates the keys of the map, remove if specified");
+        println("  m.size                                  size of the map");
+        println("  m.localSize                             local size of the map");
+        println("  m.clear                                 clears the map");
+        println("  m.destroy                               destroys the map");
+        println("  m.lock <key>                            locks the key");
+        println("  m.tryLock <key>                         tries to lock the key and returns immediately");
+        println("  m.tryLock <key> <time>                  tries to lock the key within given seconds");
+        println("  m.unlock <key>                          unlocks the key");
+        println("  m.stats                                 shows the local stats of the map");
         println("");
     }
 
     private void printMulitiMapCommands() {
-        println("-- MultiMap commands");
-        println("mm.put <key> <value>                  //puts an entry to the multimap");
-        println("mm.get <key>                          //returns the value of given key from the multimap");
-        println("mm.remove <key>                       //removes the entry of given key from the multimap");
-        println("mm.size                               //size of the multimap");
-        println("mm.clear                              //clears the multimap");
-        println("mm.destroy                            //destroys the multimap");
-        println("mm.iterator [remove]                  //iterates the keys of the multimap, remove if specified");
-        println("mm.keys                               //iterates the keys of the multimap");
-        println("mm.values                             //iterates the values of the multimap");
-        println("mm.entries                            //iterates the entries of the multimap");
-        println("mm.lock <key>                         //locks the key");
-        println("mm.tryLock <key>                      //tries to lock the key and returns immediately");
-        println("mm.tryLock <key> <time>               //tries to lock the key within given seconds");
-        println("mm.unlock <key>                       //unlocks the key");
-        println("mm.stats                              //shows the local stats of the multimap");
+        println("MultiMap commands:");
+        println("  mm.put <key> <value>                    puts an entry to the multimap");
+        println("  mm.get <key>                            returns the value of given key from the multimap");
+        println("  mm.remove <key>                         removes the entry of given key from the multimap");
+        println("  mm.size                                 size of the multimap");
+        println("  mm.clear                                clears the multimap");
+        println("  mm.destroy                              destroys the multimap");
+        println("  mm.iterator [remove]                    iterates the keys of the multimap, remove if specified");
+        println("  mm.keys                                 iterates the keys of the multimap");
+        println("  mm.values                               iterates the values of the multimap");
+        println("  mm.entries                              iterates the entries of the multimap");
+        println("  mm.lock <key>                           locks the key");
+        println("  mm.tryLock <key>                        tries to lock the key and returns immediately");
+        println("  mm.tryLock <key> <time>                 tries to lock the key within given seconds");
+        println("  mm.unlock <key>                         unlocks the key");
+        println("  mm.stats                                shows the local stats of the multimap");
         println("");
     }
 
     private void printExecutorServiceCommands() {
-        println("-- Executor Service commands:");
-        println("execute <echo-input>                            //executes an echo task on random member");
-        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
-        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
-        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
-        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number "
-                + "of thread (e1..e16)");
-
+        println("Executor Service commands:");
+        println("  execute <echo-input>                           executes an echo task on random member");
+        println("  executeOnKey <echo-input> <key>                executes an echo task on the member that owns the given key");
+        println("  executeOnMembers <echo-input>                  executes an echo task on all of the members");
+        println("  executeOnMembers <echo-input> <memberIndex>    executes an echo task on the member with given index");
+        println("  e<threadcount>.simulateLoad <task-count> <delaySeconds>     simulates load on executor with given");
+        println("number of thread (e1..e16)");
         println("");
     }
 
     private void printAtomicLongCommands() {
-        println("-- IAtomicLong commands:");
-        println("a.get");
-        println("a.set <long>");
-        println("a.inc");
-        println("a.dec");
+        println("IAtomicLong commands:");
+        println("  a.get");
+        println("  a.set <long>");
+        println("  a.inc");
+        println("  a.dec");
         print("");
     }
 
     private void printListCommands() {
-        println("-- List commands:");
-        println("l.add <string>");
-        println("l.add <index> <string>");
-        println("l.contains <string>");
-        println("l.remove <string>");
-        println("l.remove <index>");
-        println("l.set <index> <string>");
-        println("l.iterator [remove]");
-        println("l.size");
-        println("l.clear");
+        println("List commands:");
+        println("  l.add <string>");
+        println("  l.add <index> <string>");
+        println("  l.contains <string>");
+        println("  l.remove <string>");
+        println("  l.remove <index>");
+        println("  l.set <index> <string>");
+        println("  l.iterator [remove]");
+        println("  l.size");
+        println("  l.clear");
         print("");
     }
 
     public void println(Object obj) {
         if (!silent) {
             writer.println(new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .style(AttributedStyle.BOLD)
                     .append(String.valueOf(obj))
                     .toAnsi());
         }
@@ -1580,7 +1587,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     public void print(Object obj) {
         if (!silent) {
             writer.print(new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .style(AttributedStyle.BOLD)
                     .append(String.valueOf(obj))
                     .toAnsi());
         }
@@ -1595,7 +1602,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         Set<Member> members = cluster.getMembers();
         String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
         return new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                .style(AttributedStyle.BOLD)
+                .append("Hazelcast Console Application has started.\n")
                 .append("Connected to ")
                 .append(versionString)
                 .append(" at ")
@@ -1608,10 +1616,17 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     /**
-     * Starts the test application.
+     * Starts the hazelcast console application.
      */
-    public static void run(HazelcastInstance client, List<String> params) {
+    public static void run(HazelcastInstance client) {
         ClientConsoleApp clientConsoleApp = new ClientConsoleApp(client);
-        clientConsoleApp.start(params);
+        clientConsoleApp.start();
+    }
+
+    /**
+     * This main function should only be used for test runs
+     */
+    public static void main(String[] args) {
+        run(HazelcastClient.newHazelcastClient());
     }
 }
