@@ -83,7 +83,7 @@ public class CompactWithSchemaStreamSerializerTest {
 
         Data data = serializationService.toDataWithSchema(expected);
 
-        // Create a second schema service so that schemas are not shared accross these two
+        // Create a second schema service so that schemas are not shared across these two
         // This is to make sure that toObject call will use the schema in the data
         SchemaService schemaService2 = CompactTestUtil.createInMemorySchemaService();
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder()

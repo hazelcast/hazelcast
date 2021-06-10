@@ -17,52 +17,19 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.SerializerAdapter;
+import com.hazelcast.internal.serialization.impl.StreamSerializerAdapter;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Serializer;
 
-import java.io.IOException;
 import java.util.Objects;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT_WITH_SCHEMA;
-
 /**
- * SerializerAdapter for Compact format where the schema is included in the data.
+ * Differently than StreamSerializerAdapter this implementation checks if the input buffer should be returned to pool
+ * or not according to returned object.
  */
-public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapter {
+public class CompactStreamSerializerAdapter extends StreamSerializerAdapter {
 
-    private final CompactStreamSerializer serializer;
-
-    public CompactWithSchemaStreamSerializerAdapter(CompactStreamSerializer compactStreamSerializer) {
-        this.serializer = compactStreamSerializer;
-    }
-
-    @Override
-    public void write(ObjectDataOutput out, Object object) throws IOException {
-        serializer.write((BufferObjectDataOutput) out, object, true);
-    }
-
-    @Override
-    public Object read(ObjectDataInput in) throws IOException {
-        return serializer.read((BufferObjectDataInput) in, true);
-    }
-
-    @Override
-    public int getTypeId() {
-        return TYPE_COMPACT_WITH_SCHEMA;
-    }
-
-    @Override
-    public void destroy() {
-        serializer.destroy();
-    }
-
-    @Override
-    public Serializer getImpl() {
-        return serializer;
+    public CompactStreamSerializerAdapter(CompactStreamSerializer compactStreamSerializer) {
+        super(compactStreamSerializer);
     }
 
     @Override
@@ -74,7 +41,7 @@ public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapt
 
     @Override
     public String toString() {
-        return "CompactWithSchemaStreamSerializerAdapter{serializer=" + serializer + '}';
+        return "CompactStreamSerializerAdapter{serializer=" + serializer + '}';
     }
 
     @Override
@@ -86,7 +53,7 @@ public class CompactWithSchemaStreamSerializerAdapter implements SerializerAdapt
             return false;
         }
 
-        CompactWithSchemaStreamSerializerAdapter that = (CompactWithSchemaStreamSerializerAdapter) o;
+        CompactStreamSerializerAdapter that = (CompactStreamSerializerAdapter) o;
 
         return Objects.equals(serializer, that.serializer);
     }
