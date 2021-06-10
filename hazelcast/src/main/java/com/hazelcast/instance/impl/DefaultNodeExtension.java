@@ -132,7 +132,7 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     private static final String PLATFORM_LOGO
-            = "\t+       +  o    o     o    o---o  o----o o      o---o     o     o----o o--o--o\n"
+            = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
             + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
             + "\t+ + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |   \n"
             + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
