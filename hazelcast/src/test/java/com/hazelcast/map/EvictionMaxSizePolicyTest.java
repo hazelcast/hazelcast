@@ -91,7 +91,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
     public void testPerNodePolicy_afterGracefulShutdown() {
         int nodeCount = 3;
         int perNodeMaxSize = 1000;
-        int numberOfPuts = 3000;
+        int numberOfPuts = 5000;
 
         // eviction takes place if a partitions size exceeds this number
         // see EvictionChecker#toPerPartitionMaxSize
@@ -132,8 +132,32 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                             + (PARTITION_COUNT / nodeCount) >= currentMapSize);
                 }
             }
+
+            // check also backup entry count is around perNodeMaxSize.
+            IMap<Object, Object> map1 = nodes.get(1).getMap(mapName);
+            IMap<Object, Object> map2 = nodes.get(2).getMap(mapName);
+            long totalBackupEntryCount = getTotalBackupEntryCount(map1, map2);
+            assertTrue("totalBackupEntryCount=" + totalBackupEntryCount, ((nodeCount - 1) * perNodeMaxSize)
+                    + (PARTITION_COUNT / nodeCount) >= totalBackupEntryCount);
         });
     }
+
+    private static long getTotalOwnedEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            total += map.getLocalMapStats().getOwnedEntryCount();
+        }
+        return total;
+    }
+
+    private static long getTotalBackupEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            total += map.getLocalMapStats().getBackupEntryCount();
+        }
+        return total;
+    }
+
 
     /**
      * Eviction starts if a partitions' size exceeds this number:
@@ -423,6 +447,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 
         MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(1);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
         evictionConfig.setMaxSizePolicy(maxSizePolicy);
