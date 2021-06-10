@@ -135,6 +135,14 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         });
     }
 
+    private static long getTotalBackupEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            total += map.getLocalMapStats().getBackupEntryCount();
+        }
+        return total;
+    }
+
     /**
      * Eviction starts if a partitions' size exceeds this number:
      *
