@@ -113,18 +113,6 @@ public class QueryParserTest {
         verifyNoMoreInteractions(jetSqlBackend);
     }
 
-    @Test(expected = QueryException.class)
-    public void when_imdgCantHandleSqlAndJetIsNotAvailable_then_throwsException() {
-        // given
-        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, emptyList(), sqlBackend, null);
-
-        given(sqlValidator.validate(isA(SqlNode.class))).willThrow(new CalciteException("expected test exception", null));
-
-        // when
-        // then
-        parser.parse("SELECT * FROM t");
-    }
-
     @Test
     public void when_imdgCantHandleSqlButJetCan() {
         // given
