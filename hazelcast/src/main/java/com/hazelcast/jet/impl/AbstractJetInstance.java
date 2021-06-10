@@ -28,6 +28,7 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
@@ -53,6 +54,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 import static java.util.stream.Collectors.toList;
@@ -169,9 +172,37 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Nullable @Override
     public Job getJob(long jobId) {
+        // In the split-brain scenarios, we cannot get the normal jobs
+        // from a member of the sub brain which doesn't contain old
+        // master (master before split-brain) using getJobsInt() since
+        // we try to get them from masterContexts which are not
+        // replicated across members.
+        // For the light jobs, only the jobs whose coordinators are
+        // members in the sub brain where this getJob(long) is called
+        // can be fetched.
         List<Job> jobs = mergeJobIdsResults(getJobsInt(null, jobId));
         assert jobs.size() <= 1;
-        return jobs.isEmpty() ? null : jobs.get(0);
+        if (!jobs.isEmpty()) {
+            return jobs.get(0);
+        } else {
+            // We also try to get the normal job creating a new job proxy
+            // and checking the status of this job proxy. It is necessary for
+            // getting normal jobs in split-brain conditions. For light jobs,
+            // there is nothing we can do in these split brain scenarios.
+            //
+            try {
+                Job job = newJobProxy(jobId, null);
+                // get the status for the side-effect of throwing an exception
+                // if the jobId is invalid
+                job.getStatus();
+                return job;
+            } catch (Throwable t) {
+                if (peel(t) instanceof JobNotFoundException) {
+                    return null;
+                }
+                throw rethrow(t);
+            }
+        }
     }
 
     @Nonnull
