@@ -142,14 +142,6 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         });
     }
 
-    private static long getTotalOwnedEntryCount(IMap... maps) {
-        long total = 0;
-        for (IMap map : maps) {
-            total += map.getLocalMapStats().getOwnedEntryCount();
-        }
-        return total;
-    }
-
     private static long getTotalBackupEntryCount(IMap... maps) {
         long total = 0;
         for (IMap map : maps) {
