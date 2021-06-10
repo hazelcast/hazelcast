@@ -87,8 +87,6 @@ public class QueryParser {
     }
 
     private QueryParseResult parse(String sql, SqlBackend sqlBackend) throws SqlParseException {
-        assert sqlBackend != null;
-
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
         SqlNode topNode = parser.parseStmt();
