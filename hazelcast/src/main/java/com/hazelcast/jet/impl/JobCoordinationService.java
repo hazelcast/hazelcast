@@ -104,6 +104,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -459,7 +460,8 @@ public class JobCoordinationService {
                 if (lightMasterContexts.get(onlyJobId) != null) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
-                if (isMaster() && (masterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null)) {
+                if (isMaster()
+                        && callWithJob(onlyJobId, mc -> true, jobResult -> true, jobRecord -> true, null).get() == TRUE) {
                     return new GetJobIdsResult(onlyJobId, false);
                 }
                 return GetJobIdsResult.EMPTY;
