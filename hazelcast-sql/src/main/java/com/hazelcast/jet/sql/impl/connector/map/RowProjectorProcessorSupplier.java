@@ -26,7 +26,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -80,5 +84,17 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, D
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         projectorSupplier = in.readObject();
+    }
+
+    public static ProcessorSupplier rowProjector(
+            QueryPath[] paths,
+            QueryDataType[] types,
+            QueryTargetDescriptor keyDescriptor,
+            QueryTargetDescriptor valueDescriptor,
+            Expression<Boolean> predicate,
+            List<Expression<?>> projection
+    ) {
+        return new RowProjectorProcessorSupplier(
+                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projection));
     }
 }

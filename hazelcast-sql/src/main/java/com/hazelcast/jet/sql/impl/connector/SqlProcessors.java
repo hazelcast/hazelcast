@@ -20,12 +20,8 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTarget;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
@@ -49,17 +45,5 @@ public final class SqlProcessors {
                 nonSharedService(ctx -> new RowProjector(paths, types, targetSupplier.get(), predicate, projection,
                         SimpleExpressionEvalContext.from(ctx)));
         return mapUsingServiceP(service, RowProjector::project);
-    }
-
-    public static ProcessorSupplier rowProjector(
-            QueryPath[] paths,
-            QueryDataType[] types,
-            QueryTargetDescriptor keyDescriptor,
-            QueryTargetDescriptor valueDescriptor,
-            Expression<Boolean> predicate,
-            List<Expression<?>> projection
-    ) {
-        return new RowProjectorProcessorSupplier(
-                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projection));
     }
 }
