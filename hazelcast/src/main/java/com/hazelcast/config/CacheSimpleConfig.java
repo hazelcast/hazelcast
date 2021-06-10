@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.nio.ObjectDataInput;
@@ -102,6 +103,8 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
+
     /**
      * Disables invalidation events for per entry but full-flush invalidation events are still enabled.
      * Full-flush invalidation means the invalidation of events for all entries when clear is called.
@@ -136,6 +139,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 : new ArrayList<>(cacheSimpleConfig.partitionLostListenerConfigs);
         this.splitBrainProtectionName = cacheSimpleConfig.splitBrainProtectionName;
         this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
+        this.merkleTreeConfig = new MerkleTreeConfig(cacheSimpleConfig.merkleTreeConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
@@ -699,6 +703,27 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         return this;
     }
 
+    /**
+     * Gets the {@code MerkleTreeConfig} for this {@code CacheSimpleConfig}
+     *
+     * @return merkle tree config
+     */
+    public @Nonnull
+    MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code CacheSimpleConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setMerkleTreeConfig(@Nonnull MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "MerkleTreeConfig cannot be null");
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -735,6 +760,10 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            out.writeObject(merkleTreeConfig);
+        }
     }
 
     @Override
@@ -763,6 +792,10 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         mergePolicyConfig = in.readObject();
         hotRestartConfig = in.readObject();
         eventJournalConfig = in.readObject();
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            merkleTreeConfig = in.readObject();
+        }
     }
 
     @Override
@@ -843,6 +876,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         if (!Objects.equals(mergePolicyConfig, that.mergePolicyConfig)) {
             return false;
         }
+        if (!Objects.equals(merkleTreeConfig, that.merkleTreeConfig)) {
+            return false;
+        }
         if (!Objects.equals(eventJournalConfig, that.eventJournalConfig)) {
             return false;
         }
@@ -873,6 +909,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + (partitionLostListenerConfigs != null ? partitionLostListenerConfigs.hashCode() : 0);
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
+        result = 31 * result + (merkleTreeConfig != null ? merkleTreeConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
         result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
@@ -903,6 +940,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 + ", splitBrainProtectionName=" + splitBrainProtectionName
                 + ", partitionLostListenerConfigs=" + partitionLostListenerConfigs
                 + ", mergePolicyConfig=" + mergePolicyConfig
+                + ", merkleTreeConfig=" + merkleTreeConfig
                 + ", hotRestartConfig=" + hotRestartConfig
                 + ", eventJournal=" + eventJournalConfig
                 + '}';
