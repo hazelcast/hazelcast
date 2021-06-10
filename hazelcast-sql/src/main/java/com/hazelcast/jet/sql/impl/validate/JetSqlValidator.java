@@ -93,6 +93,12 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             deriveType(scope, fetch);
             fetch.validate(this, getEmptyScope());
         }
+
+        SqlNode offset = select.getOffset();
+        if (offset != null) {
+            deriveType(scope, offset);
+            offset.validate(this, getEmptyScope());
+        }
     }
 
     @Override
