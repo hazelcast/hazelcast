@@ -163,9 +163,10 @@ config.getNetworkConfig().getJoin().getKubernetesConfig().setEnabled(true)
       .setProperty("service-dns", "MY-SERVICE-DNS-NAME");
 ```
 
-There are 2 properties to configure the plugin:
+There are 3 properties to configure the plugin:
  * `service-dns` (required): service DNS, usually in the form of `SERVICE-NAME.NAMESPACE.svc.cluster.local`
  * `service-dns-timeout` (optional): custom time for how long the DNS Lookup is checked
+ * `service-port` (optional): the Hazelcast port; if specified with a value greater than 0, it overrides the default (default port = `5701`)
 
 **Note**: In this README, only YAML configurations are presented, however you can achieve exactly the same effect using 
 XML or Java-based configurations.
