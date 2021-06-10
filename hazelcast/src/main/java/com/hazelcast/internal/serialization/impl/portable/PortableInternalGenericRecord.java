@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.nio.PortableUtil;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
@@ -29,6 +28,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -92,6 +92,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         in.position(finalPosition);
     }
 
+    @Override
     public ClassDefinition getClassDefinition() {
         return cd;
     }
@@ -227,22 +228,22 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime getTime(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIME, PortableUtil::readLocalTime);
+        return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
     }
 
     @Override
     public LocalDate getDate(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.DATE, PortableUtil::readLocalDate);
+        return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIMESTAMP, PortableUtil::readLocalDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, PortableUtil::readOffsetDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
     private boolean isNullOrEmpty(int pos) {
@@ -443,23 +444,22 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, PortableUtil::readLocalTime);
+        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, PortableUtil::readLocalDate);
+        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, PortableUtil::readLocalDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
-                PortableUtil::readOffsetDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
     private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
@@ -525,10 +525,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
-        return readNestedArray(fieldName, GenericRecord[]::new, true);
+        return readNestedArray(fieldName, GenericRecord[]::new, false);
     }
 
-    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asGenericRecord) {
+    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asPortable) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -560,10 +560,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    if (asGenericRecord) {
-                        portables[i] = serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
+                    if (asPortable) {
+                        portables[i] = serializer.readAsObject(in, factoryId, classId);
                     } else {
-                        portables[i] = serializer.read(in, factoryId, classId);
+                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
                     }
                 }
             }
@@ -577,10 +577,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return readNested(fieldName, true);
+        return readNested(fieldName, false);
     }
 
-    private <T> T readNested(@Nonnull String fieldName, boolean asGenericRecord) {
+    private <T> T readNested(@Nonnull String fieldName, boolean asPortable) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -601,10 +601,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                if (asGenericRecord) {
-                    return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
+                if (asPortable) {
+                    return serializer.readAsObject(in, factoryId, classId);
                 } else {
-                    return serializer.read(in, factoryId, classId);
+                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
                 }
             }
             return null;
@@ -759,15 +759,15 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, true);
+        return readNestedFromArray(fieldName, index, false);
     }
 
     @Override
     public Object getObjectFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, false);
+        return readNestedFromArray(fieldName, index, true);
     }
 
-    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, boolean asGenericRecord) {
+    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, boolean asPortable) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -795,10 +795,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             int offset = in.position();
             int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
             in.position(start);
-            if (asGenericRecord) {
-                return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
+            if (asPortable) {
+                return serializer.readAsObject(in, factoryId, classId);
             } else {
-                return serializer.read(in, factoryId, classId);
+                return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
             }
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -840,36 +840,32 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIME_ARRAY, PortableUtil::readLocalTime, index);
+        return readObjectFromArrayField(fieldName, TIME_ARRAY, IOUtil::readLocalTime, index);
     }
 
     @Override
     public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, DATE_ARRAY, PortableUtil::readLocalDate, index);
+        return readObjectFromArrayField(fieldName, DATE_ARRAY, IOUtil::readLocalDate, index);
     }
 
     @Override
     public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIMESTAMP_ARRAY, PortableUtil::readLocalDateTime, index);
+        return readObjectFromArrayField(fieldName, TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
     }
 
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, PortableUtil::readOffsetDateTime, index);
+        return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
     }
 
     @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
+    public <T> T[] getObjectArray(@Nonnull String fieldName) {
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(Portable.class, length), true);
     }
 
     @Override
     public Object getObject(@Nonnull String fieldName) {
-        return readNested(fieldName, false);
+        return readNested(fieldName, true);
     }
 
-    @Override
-    protected Object getClassIdentifier() {
-        return cd;
-    }
 }

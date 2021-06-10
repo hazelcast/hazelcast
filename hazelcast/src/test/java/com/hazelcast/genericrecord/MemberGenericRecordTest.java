@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class GenericRecordTest extends AbstractGenericRecordTest {
+public class MemberGenericRecordTest extends AbstractGenericRecordTest {
 
     private TestHazelcastInstanceFactory factory;
 
