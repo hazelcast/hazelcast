@@ -29,8 +29,8 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImp
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.CompactWithSchemaStreamSerializerAdapter;
-import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
@@ -118,7 +118,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
                 managedContext, builder.schemaService, classLoader, this::createObjectDataInput, this::createObjectDataOutput);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
-        this.compactSerializerAdapter = createSerializerAdapter(compactStreamSerializer);
+        this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
     }
 
     // used by jet
@@ -241,18 +241,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataInput in = pool.takeInputBuffer(data);
+        ClassLocator.onStartDeserialization();
+        final int typeId = data.getType();
+        final SerializerAdapter serializer = serializerFor(typeId);
+        if (serializer == null) {
+            if (active) {
+                throw newHazelcastSerializationException(typeId);
+            }
+            throw notActiveExceptionSupplier.get();
+        }
         Object obj = null;
         try {
-            ClassLocator.onStartDeserialization();
-            final int typeId = data.getType();
-            final SerializerAdapter serializer = serializerFor(typeId);
-            if (serializer == null) {
-                if (active) {
-                    throw newHazelcastSerializationException(typeId);
-                }
-                throw notActiveExceptionSupplier.get();
-            }
-
             obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
@@ -262,11 +261,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw handleException(e);
         } finally {
             ClassLocator.onFinishDeserialization();
-            //TODO sancar try wrapping pooling logic to SerializerAdapters to get rid of ref to DefaultCompactReader
-            //TODO Compact will have its own special SerializerAdapter which does this check
-            if (!(obj instanceof DefaultCompactReader)) {
-                pool.returnInputBuffer(in);
-            }
+            serializer.conditionallyReturnInputBufferToPool(obj, in, pool);
         }
     }
 
@@ -318,9 +313,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (obj instanceof Data) {
             throw new HazelcastSerializationException("Cannot write a Data instance, use writeData() instead");
         }
+        // We don't expect obj being compact serializable is a common usage.
+        // (ObjectDataOutput.writeObject(somethingCompactSerializable) ).
+        // If obj is compact serializable, we include the schema always to be on the safe side.
+        // Otherwise, if this API is used and the data is stored on HotRestart or send via WAN, we couldn't reach the schema.
+        SerializerAdapter serializer = serializerFor(obj, true);
         try {
-            //TODO sancar should nested fields  carry `includeSchema` information?
-            SerializerAdapter serializer = serializerFor(obj, false);
             out.writeInt(serializer.getTypeId());
             serializer.write(out, obj);
         } catch (Throwable e) {

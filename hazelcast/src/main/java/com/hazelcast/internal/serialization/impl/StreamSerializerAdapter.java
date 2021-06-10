@@ -25,11 +25,11 @@ import com.hazelcast.nio.serialization.TypedStreamDeserializer;
 
 import java.io.IOException;
 
-class StreamSerializerAdapter implements SerializerAdapter {
+public class StreamSerializerAdapter implements SerializerAdapter {
 
     protected final StreamSerializer serializer;
 
-    StreamSerializerAdapter(StreamSerializer serializer) {
+    public StreamSerializerAdapter(StreamSerializer serializer) {
         this.serializer = serializer;
     }
 

@@ -30,7 +30,7 @@ public interface FieldTypeBasedOperations {
 
     /**
      * For primitives serialized form is same as readObject.
-     * This method will be overriden for Portable and Compact and will return GenericRecord representation of objects
+     * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
      */
     default Object readInSerializedForm(GenericRecord genericRecord, String fieldName) {
         return readObject(genericRecord, fieldName);
