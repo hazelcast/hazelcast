@@ -61,7 +61,6 @@ public class DefaultPortableReader implements PortableReader {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
-
         int fieldCount;
         try {
             // final position after portable is read
@@ -237,10 +236,6 @@ public class DefaultPortableReader implements PortableReader {
     @Nullable
     @SuppressWarnings("unchecked")
     public Portable readPortable(@Nonnull String fieldName) throws IOException {
-        return readNested(fieldName, true, false);
-    }
-
-    public <T> T readNested(@Nonnull String fieldName, boolean asPortable, boolean readGenericLazy) throws IOException {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -261,11 +256,7 @@ public class DefaultPortableReader implements PortableReader {
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                if (asPortable) {
-                    return serializer.readAsObject(in, factoryId, classId);
-                } else {
-                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
-                }
+                return serializer.readAsObject(in, factoryId, classId);
             }
             return null;
         } finally {
@@ -356,12 +347,6 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public Portable[] readPortableArray(@Nonnull String fieldName) throws IOException {
-        return readNestedArray(fieldName, Portable[]::new, true, false);
-    }
-
-    public <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asPortable,
-                                   boolean readGenericLazy)
-            throws IOException {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -387,17 +372,13 @@ public class DefaultPortableReader implements PortableReader {
 
             checkFactoryAndClass(fd, factoryId, classId);
 
-            T[] portables = constructor.apply(len);
+            Portable[] portables = new Portable[len];
             if (len > 0) {
                 int offset = in.position();
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    if (asPortable) {
-                        portables[i] = serializer.readAsObject(in, factoryId, classId);
-                    } else {
-                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
-                    }
+                    portables[i] = serializer.readAsObject(in, factoryId, classId);
                 }
             }
             return portables;
@@ -406,7 +387,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    public void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
+    private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
         if (factoryId != fd.getFactoryId()) {
             throw new IllegalArgumentException("Invalid factoryId! Expected: "
                     + fd.getFactoryId() + ", Current: " + factoryId);
@@ -478,7 +459,7 @@ public class DefaultPortableReader implements PortableReader {
         return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
-    public int readPosition(@Nonnull String fieldName, FieldType fieldType) throws IOException {
+    private int readPosition(@Nonnull String fieldName, FieldType fieldType) throws IOException {
         if (raw) {
             throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
@@ -497,7 +478,7 @@ public class DefaultPortableReader implements PortableReader {
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
 
-    public int readPosition(FieldDefinition fd) throws IOException {
+    private int readPosition(FieldDefinition fd) throws IOException {
         int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
         short len = in.readShort(pos);
         // name + len + type

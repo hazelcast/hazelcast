@@ -31,13 +31,16 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
@@ -53,18 +56,14 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
-/**
- * Can't be accessed concurrently.
- * Reimplementation of DefaultPortableReader to make it conform InternalGenericRecord.
- * It adds functionality of reading from indexes of  an array to DefaultPortableReader
- */
 public class PortableInternalGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
     private final BufferObjectDataInput in;
+    private final int offset;
     private final boolean readGenericLazy;
-    private final DefaultPortableReader reader;
+    private final int finalPosition;
 
     PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
                                   ClassDefinition cd, boolean readGenericLazy) {
@@ -72,11 +71,24 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         this.serializer = serializer;
         this.cd = cd;
         this.readGenericLazy = readGenericLazy;
-        this.reader = new DefaultPortableReader(serializer, in, cd);
+
+        int fieldCount;
+        try {
+            // final position after portable is read
+            finalPosition = in.readInt();
+            // field count
+            fieldCount = in.readInt();
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
+        if (fieldCount != cd.getFieldCount()) {
+            throw new IllegalStateException("Field count[" + fieldCount + "] in stream does not match " + cd);
+        }
+        this.offset = in.position();
     }
 
     public final void end() {
-        reader.end();
+        in.position(finalPosition);
     }
 
     public ClassDefinition getClassDefinition() {
@@ -101,7 +113,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public boolean getBoolean(@Nonnull String fieldName) {
         try {
-            return reader.readBoolean(fieldName);
+            return in.readBoolean(readPosition(fieldName, FieldType.BOOLEAN));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -110,7 +122,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public byte getByte(@Nonnull String fieldName) {
         try {
-            return reader.readByte(fieldName);
+            return in.readByte(readPosition(fieldName, FieldType.BYTE));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -119,7 +131,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public char getChar(@Nonnull String fieldName) {
         try {
-            return reader.readChar(fieldName);
+            return in.readChar(readPosition(fieldName, FieldType.CHAR));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -128,7 +140,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public double getDouble(@Nonnull String fieldName) {
         try {
-            return reader.readDouble(fieldName);
+            return in.readDouble(readPosition(fieldName, FieldType.DOUBLE));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -137,7 +149,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public float getFloat(@Nonnull String fieldName) {
         try {
-            return reader.readFloat(fieldName);
+            return in.readFloat(readPosition(fieldName, FieldType.FLOAT));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -146,7 +158,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public int getInt(@Nonnull String fieldName) {
         try {
-            return reader.readInt(fieldName);
+            return in.readInt(readPosition(fieldName, FieldType.INT));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -155,7 +167,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public long getLong(@Nonnull String fieldName) {
         try {
-            return reader.readLong(fieldName);
+            return in.readLong(readPosition(fieldName, FieldType.LONG));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -164,7 +176,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public short getShort(@Nonnull String fieldName) {
         try {
-            return reader.readShort(fieldName);
+            return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
@@ -172,10 +184,15 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public String getString(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readString(fieldName);
+            int pos = readPosition(fieldName, FieldType.UTF);
+            in.position(pos);
+            return in.readString();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
@@ -184,50 +201,47 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         R read(T t) throws IOException;
     }
 
+    @Nullable
+    private <T> T readNullableField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader) {
+        int currentPos = in.position();
+        try {
+            int pos = readPosition(fieldName, fieldType);
+            in.position(pos);
+            boolean isNull = in.readBoolean();
+            if (isNull) {
+                return null;
+            }
+            return reader.read(in);
+        } catch (IOException e) {
+            throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
 
     @Override
     public BigDecimal getDecimal(@Nonnull String fieldName) {
-        try {
-            return reader.readDecimal(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNullableField(fieldName, FieldType.DECIMAL, IOUtil::readBigDecimal);
     }
 
     @Override
     public LocalTime getTime(@Nonnull String fieldName) {
-        try {
-            return reader.readTime(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
     }
 
     @Override
     public LocalDate getDate(@Nonnull String fieldName) {
-        try {
-            return reader.readDate(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
-        try {
-            return reader.readTimestamp(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
-        try {
-            return reader.readTimestampWithTimezone(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
     private boolean isNullOrEmpty(int pos) {
@@ -236,128 +250,237 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public boolean[] getBooleanArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readBooleanArray(fieldName);
+            int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readBooleanArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public byte[] getByteArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readByteArray(fieldName);
+            int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readByteArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
+
     }
 
     @Override
     public char[] getCharArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readCharArray(fieldName);
+            int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readCharArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public double[] getDoubleArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readDoubleArray(fieldName);
+            int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readDoubleArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public float[] getFloatArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readFloatArray(fieldName);
+            int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readFloatArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public int[] getIntArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readIntArray(fieldName);
+            int position = readPosition(fieldName, FieldType.INT_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readIntArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public long[] getLongArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readLongArray(fieldName);
+            int position = readPosition(fieldName, FieldType.LONG_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readLongArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public short[] getShortArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readShortArray(fieldName);
+            int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readShortArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public String[] getStringArray(@Nonnull String fieldName) {
+        int currentPos = in.position();
         try {
-            return reader.readStringArray(fieldName);
+            int position = readPosition(fieldName, FieldType.UTF_ARRAY);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            return in.readStringArray();
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
+        }
+    }
+
+
+    private <T> T[] readObjectArrayField(@Nonnull String fieldName, FieldType fieldType, Function<Integer, T[]> constructor,
+                                         Reader<ObjectDataInput, T> reader) {
+        int currentPos = in.position();
+        try {
+            int position = readPosition(fieldName, fieldType);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            int len = in.readInt();
+
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
+
+            T[] values = constructor.apply(len);
+            if (len > 0) {
+                int offset = in.position();
+                for (int i = 0; i < len; i++) {
+                    int pos = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                    in.position(pos);
+                    values[i] = reader.read(in);
+                }
+            }
+            return values;
+        } catch (IOException e) {
+            throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public BigDecimal[] getDecimalArray(@Nonnull String fieldName) {
-        try {
-            return reader.readDecimalArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readObjectArrayField(fieldName, DECIMAL_ARRAY, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
     @Override
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        try {
-            return reader.readTimeArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
     @Override
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        try {
-            return reader.readDateArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        try {
-            return reader.readTimestampArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        try {
-            return reader.readTimestampWithTimezoneArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+    }
+
+    private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
+        if (factoryId != fd.getFactoryId()) {
+            throw new IllegalArgumentException("Invalid factoryId! Expected: "
+                    + fd.getFactoryId() + ", Current: " + factoryId);
         }
+        if (classId != fd.getClassId()) {
+            throw new IllegalArgumentException("Invalid classId! Expected: "
+                    + fd.getClassId() + ", Current: " + classId);
+        }
+    }
+
+
+    private int readPosition(@Nonnull String fieldName, FieldType fieldType) {
+        FieldDefinition fd = cd.getField(fieldName);
+        if (fd == null) {
+            throw newUnknownFieldException(fieldName);
+        }
+        if (fd.getType() != fieldType) {
+            throw new HazelcastSerializationException("Not a '" + fieldType + "' field: " + fieldName);
+        }
+        return readPosition(fd);
     }
 
     private IllegalStateException newIllegalStateException(IOException e) {
@@ -367,6 +490,17 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     private HazelcastSerializationException newUnknownFieldException(@Nonnull String fieldName) {
         return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
+    }
+
+    private int readPosition(FieldDefinition fd) {
+        try {
+            int pos = in.readInt(offset + fd.getIndex() * Bits.INT_SIZE_IN_BYTES);
+            short len = in.readShort(pos);
+            // name + len + type
+            return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
+        } catch (IOException e) {
+            throw newIllegalStateException(e);
+        }
     }
 
     @Nonnull
@@ -389,37 +523,93 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
+        return readNestedArray(fieldName, GenericRecord[]::new, false);
+    }
+
+    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asPortable) {
+        int currentPos = in.position();
         try {
-            return reader.readNestedArray(fieldName, GenericRecord[]::new, false, readGenericLazy);
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw newUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != FieldType.PORTABLE_ARRAY) {
+                throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
+            }
+
+            int position = readPosition(fd);
+            if (isNullOrEmpty(position)) {
+                return null;
+            }
+            in.position(position);
+            int len = in.readInt();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            if (len == Bits.NULL_ARRAY_LENGTH) {
+                return null;
+            }
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            T[] portables = constructor.apply(len);
+            if (len > 0) {
+                int offset = in.position();
+                for (int i = 0; i < len; i++) {
+                    int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
+                    in.position(start);
+                    if (asPortable) {
+                        portables[i] = serializer.readAsObject(in, factoryId, classId);
+                    } else {
+                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                    }
+                }
+            }
+            return portables;
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        try {
-            return reader.readNested(fieldName, false, readGenericLazy);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
+        return readNested(fieldName, false);
     }
 
-    @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
+    private <T> T readNested(@Nonnull String fieldName, boolean asPortable) {
+        int currentPos = in.position();
         try {
-            return (T[]) reader.readPortableArray(fieldName);
-        } catch (IOException e) {
-            throw newIllegalStateException(e);
-        }
-    }
+            FieldDefinition fd = cd.getField(fieldName);
+            if (fd == null) {
+                throw newUnknownFieldException(fieldName);
+            }
+            if (fd.getType() != FieldType.PORTABLE) {
+                throw new HazelcastSerializationException("Not a Portable field: " + fieldName);
+            }
 
-    @Override
-    public <T> T getObject(@Nonnull String fieldName) {
-        try {
-            return (T) reader.readPortable(fieldName);
+            int pos = readPosition(fd);
+            in.position(pos);
+
+            boolean isNull = in.readBoolean();
+            int factoryId = in.readInt();
+            int classId = in.readInt();
+
+            checkFactoryAndClass(fd, factoryId, classId);
+
+            if (!isNull) {
+                if (asPortable) {
+                    return serializer.readAsObject(in, factoryId, classId);
+                } else {
+                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                }
+            }
+            return null;
         } catch (IOException e) {
             throw newIllegalStateException(e);
+        } finally {
+            in.position(currentPos);
         }
     }
 
@@ -435,11 +625,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Byte getByteFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.BYTE_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.BYTE_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readByte(INT_SIZE_IN_BYTES + position + (index * BYTE_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -449,11 +639,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
     @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.BOOLEAN_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readBoolean(INT_SIZE_IN_BYTES + position + (index * BOOLEAN_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -462,11 +652,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.CHAR_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.CHAR_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readChar(INT_SIZE_IN_BYTES + position + (index * CHAR_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -475,11 +665,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Double getDoubleFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.DOUBLE_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.DOUBLE_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readDouble(INT_SIZE_IN_BYTES + position + (index * DOUBLE_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -488,11 +678,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Float getFloatFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.FLOAT_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.FLOAT_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readFloat(INT_SIZE_IN_BYTES + position + (index * FLOAT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -501,11 +691,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Integer getIntFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.INT_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.INT_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readInt(INT_SIZE_IN_BYTES + position + (index * INT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -514,11 +704,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Long getLongFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.LONG_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.LONG_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readLong(INT_SIZE_IN_BYTES + position + (index * LONG_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -527,11 +717,11 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Short getShortFromArray(@Nonnull String fieldName, int index) {
+        int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
+        if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
+            return null;
+        }
         try {
-            int position = reader.readPosition(fieldName, FieldType.SHORT_ARRAY);
-            if (isNullOrEmpty(position) || doesNotHaveIndex(position, index)) {
-                return null;
-            }
             return in.readShort(INT_SIZE_IN_BYTES + position + (index * SHORT_SIZE_IN_BYTES));
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -542,7 +732,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     public String getStringFromArray(@Nonnull String fieldName, int index) {
         int currentPos = in.position();
         try {
-            int pos = reader.readPosition(fieldName, FieldType.UTF_ARRAY);
+            int pos = readPosition(fieldName, FieldType.UTF_ARRAY);
             in.position(pos);
             int length = in.readInt();
             if (length <= index) {
@@ -586,7 +776,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 throw new HazelcastSerializationException("Not a Portable array field: " + fieldName);
             }
 
-            int position = reader.readPosition(fd);
+            int position = readPosition(fd);
             if (isNullOrEmpty(position)) {
                 return null;
             }
@@ -598,7 +788,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             int factoryId = in.readInt();
             int classId = in.readInt();
 
-            reader.checkFactoryAndClass(fd, factoryId, classId);
+            checkFactoryAndClass(fd, factoryId, classId);
 
             int offset = in.position();
             int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
@@ -615,11 +805,12 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         }
     }
 
+
     private <T> T readObjectFromArrayField(@Nonnull String fieldName, FieldType fieldType,
-                                           Reader<ObjectDataInput, T> fieldReader, int index) {
+                                           Reader<ObjectDataInput, T> reader, int index) {
         int currentPos = in.position();
         try {
-            int position = reader.readPosition(fieldName, fieldType);
+            int position = readPosition(fieldName, fieldType);
             if (isNullOrEmpty(position)) {
                 return null;
             }
@@ -632,7 +823,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             int offset = in.position();
             int pos = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
             in.position(pos);
-            return fieldReader.read(in);
+            return reader.read(in);
         } catch (IOException e) {
             throw newIllegalStateException(e);
         } finally {
@@ -663,6 +854,16 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+    }
+
+    @Override
+    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
+        return readNestedArray(fieldName, length -> (T[]) Array.newInstance(componentType, length), true);
+    }
+
+    @Override
+    public Object getObject(@Nonnull String fieldName) {
+        return readNested(fieldName, true);
     }
 
     @Override
