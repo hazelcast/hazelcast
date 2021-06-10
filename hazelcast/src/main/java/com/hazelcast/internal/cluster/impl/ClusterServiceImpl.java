@@ -77,6 +77,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.impl.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
@@ -378,8 +379,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         try {
             if (!checkValidMaster(callerAddresses)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not finalizing join because caller: " + callerAddresses.get(0) + " is not known master: "
-                            + getMasterAddress());
+                    logger.fine("Not finalizing join because none of the caller's addresses ("
+                            + callerAddresses.stream().map(Address::toString).collect(Collectors.joining(", "))
+                            + ") matches the known master: " + getMasterAddress());
                 }
                 MembersViewMetadata membersViewMetadata = new MembersViewMetadata(callerAddresses.get(0), callerUuid,
                         callerAddresses.get(0), membersView.getVersion());

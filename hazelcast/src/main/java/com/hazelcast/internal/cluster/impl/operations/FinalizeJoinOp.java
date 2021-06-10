@@ -24,6 +24,7 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -36,9 +37,11 @@ import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
@@ -81,14 +84,20 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        List<Address> callerAddresses = getAllKnownAliases(getConnectionEndpointOrThisAddress());
+
+        Address callerAddress = getConnectionEndpointOrThisAddress();
+        List<Address> callerAliases = new ArrayList<>();
+        callerAliases.add(callerAddress);
+        callerAliases.addAll(AddressUtil.getAliases(callerAddress.getInetSocketAddress())
+                .stream().filter(a -> !a.equals(callerAddress)).collect(Collectors.toSet()));
+
         UUID callerUuid = getCallerUuid();
         UUID targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddresses, callerUuid, targetUuid, clusterId,
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAliases, callerUuid, targetUuid, clusterId,
                 clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {

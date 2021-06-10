@@ -139,7 +139,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             });
             if (isNotYetInProgress.get()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
+                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet in progress");
                 }
             } else {
                 if (logger.isFineEnabled()) {
@@ -364,7 +364,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
         Plane plane = getPlane(streamId);
         try {
-            Future<Void> future = plane.getconnectionInProgress(address);
+            Future<Void> future = plane.getConnectionInProgress(address);
             if (future != null) {
                 future.get(millis, TimeUnit.MILLISECONDS);
                 return future.isDone();

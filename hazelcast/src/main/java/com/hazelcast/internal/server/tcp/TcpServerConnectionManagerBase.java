@@ -197,7 +197,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             return connectionsInProgress.containsKey(address);
         }
 
-        public Future<Void> getconnectionInProgress(Address address) {
+        public Future<Void> getConnectionInProgress(Address address) {
             return connectionsInProgress.get(address);
         }
 
