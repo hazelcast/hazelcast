@@ -190,11 +190,13 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             shadedManifest = new Manifest();
         }
 
-        precompileOverrideInstructions();
-
         Attributes attributes = shadedManifest.getMainAttributes();
-        attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
-        attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+
+        if (overrideInstructions != null) {
+            precompileOverrideInstructions();
+            attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
+            attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+        }
 
         attributes.putValue("Created-By", "HazelcastManifestTransformer through Shade Plugin");
 
