@@ -76,8 +76,7 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        while (inbox.peek() != null && offset > 0) {
-            inbox.remove();
+        while (offset > 0 && inbox.poll() != null) {
             offset--;
         }
 
