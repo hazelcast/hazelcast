@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
@@ -137,11 +138,15 @@ public interface MapOperationProvider {
      */
     MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize);
 
+    /**
+     * Creates an operation for fetching entries using an index.
+     */
     MapOperation createFetchIndexOperation(String name,
                                            String indexName,
                                            IndexFilter indexFilter,
-                                           boolean descending,
-                                           PartitionIdSet partitionIdSet);
+                                           IndexIterationPointer[] pointers,
+                                           PartitionIdSet partitionIdSet,
+                                           int fetchLimit);
 
     /**
      * Creates an operation for fetching a segment of a query result from a

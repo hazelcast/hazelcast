@@ -21,11 +21,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -221,6 +223,19 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         boolean toInclusive0 = descending ? fromInclusive : toInclusive;
         return new IndexEntryFlatteningIterator(
             navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).values().iterator());
+    }
+
+    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive, boolean descending) {
+        ConcurrentNavigableMap<Comparable, Map<Data, QueryableEntry>> navigableMap = descending ? recordMap.descendingMap() : recordMap;
+        Comparable from0 = descending ? to : from;
+        boolean fromInclusive0 = descending ? toInclusive : fromInclusive;
+        Comparable to0 = descending ? from : to;
+        boolean toInclusive0 = descending ? fromInclusive : toInclusive;
+
+        return navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).entrySet()
+                .stream()
+                .map((Entry<Comparable, Map<Data, QueryableEntry>> es) -> new IndexValueBatch(es.getKey(), new ArrayList<>(es.getValue().values())))
+                .iterator();
     }
 
     @Override
