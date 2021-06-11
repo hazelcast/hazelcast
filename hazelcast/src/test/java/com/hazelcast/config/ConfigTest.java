@@ -22,17 +22,26 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.ProtocolType.WAN;
+
+import static java.io.File.createTempFile;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+@SuppressWarnings("checkstyle:Indentation")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ConfigTest extends HazelcastTestSupport {
@@ -74,6 +83,74 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 5, objectMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
+    }
+
+
+    @Test
+    public void testLoadOverridesUsingExternalVariables() {
+        String clusterName = randomName();
+        System.setProperty("hz.cluster-name", clusterName);
+        Config cfg = Config.load();
+
+        assertEquals("load must apply external configuration (system / env. variable) overrides",
+                clusterName, cfg.getClusterName());
+    }
+
+    @Test
+    public void testLoadDefaultDoNotOverrideFromSystemVariables() {
+        String clusterName = randomName();
+        System.setProperty("hz.cluster-name", clusterName);
+        Config cfg = Config.loadDefault();
+
+        assertNotEquals(clusterName, cfg.getClusterName());
+    }
+
+    @Test
+    public void testLoadYamlFromString() {
+        String yaml = getSimpleYamlConfigStr(
+                "instance-name", "hz-instance-name",
+                "cluster-name", "${cluster.name}"
+        );
+
+        Properties properties = new Properties();
+        properties.setProperty("cluster.name", "hz-cluster-name");
+
+        Config cfg = Config.loadYamlFromString(yaml, properties);
+
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+        assertEquals("hz-cluster-name", cfg.getClusterName());
+    }
+
+    @Test
+    public void testLoadXmlFromString() {
+        String xml = getSimpleXmlConfigStr(
+                "instance-name", "hz-instance-name",
+                "cluster-name", "${cluster.name}"
+        );
+
+        Properties properties = new Properties();
+        properties.setProperty("cluster.name", "hz-cluster-name");
+
+        Config cfg = Config.loadXmlFromString(xml, properties);
+
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+        assertEquals("hz-cluster-name", cfg.getClusterName());
+    }
+
+    @Test
+    public void testLoadFromFile() throws IOException {
+        File file = createTempFile("foo", "cfg.xml");
+        file.deleteOnExit();
+
+        String randStr = randomString();
+        String xml = getSimpleXmlConfigStr("license-key", randStr);
+
+        Writer writer = new PrintWriter(file, "UTF-8");
+        writer.write(xml);
+        writer.close();
+
+        Config cfg = Config.loadFromFile(file);
+        assertEquals(randStr, cfg.getLicenseKey());
     }
 
     @Test
@@ -124,5 +201,33 @@ public class ConfigTest extends HazelcastTestSupport {
         Config config = new Config();
         assertNull(config.getConfigurationUrl());
         assertNull(config.getConfigurationFile());
+    }
+
+    private static String getSimpleXmlConfigStr(String ...tagAndVal) {
+        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
+            throw new IllegalArgumentException("provide one or more tag and value pairs");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n");
+
+        for (int i = 0; i < tagAndVal.length - 1; i += 2) {
+            sb.append("<" + tagAndVal[i] + ">" + tagAndVal[i + 1] + "</" + tagAndVal[i] + ">\n");
+        }
+        sb.append("</hazelcast>\n");
+        return sb.toString();
+    }
+
+    private static String getSimpleYamlConfigStr(String ...tagAndVal) {
+        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
+            throw new IllegalArgumentException("provide one or more tag and value pairs");
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("hazelcast:\n");
+
+        for (int i = 0; i < tagAndVal.length - 1; i += 2) {
+            sb.append("  " + tagAndVal[i] + ": " + tagAndVal[i + 1] + "\n");
+        }
+        return sb.toString();
     }
 }

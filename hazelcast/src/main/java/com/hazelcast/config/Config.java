@@ -54,8 +54,11 @@ import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
-import javax.annotation.Nonnull;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.EventListener;
 import java.util.LinkedList;
@@ -65,13 +68,17 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
  * Contains all the configuration to start a
@@ -207,10 +214,14 @@ public class Config {
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config load() {
-        return new ExternalConfigurationOverride().overwriteMemberConfig(loadFromFile());
+        return new ExternalConfigurationOverride().overwriteMemberConfig(load(System.getProperties()));
     }
 
-    private static Config loadFromFile() {
+    private static Config load(Properties properties) {
+        return loadFromFile(properties);
+    }
+
+    private static Config loadFromFile(Properties properties) {
         validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
 
         XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
@@ -218,21 +229,239 @@ public class Config {
 
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
             // 2. Try loading YAML config from the configuration provided in system property
-            return new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
-            return new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         }
+    }
+
+    /**
+     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration
+     * file, except it does not override configuration properties using the environment variables
+     * or system properties.
+     *
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config loadDefault() {
+        return load(System.getProperties());
+    }
+
+    /**
+     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration file,
+     * except it does not override configuration properties using the environment variables
+     * or system properties.
+     *
+     * @param properties properties to resolve variables in the XML or YAML
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config loadDefault(Properties properties) {
+        return load(properties);
+    }
+
+    /**
+     * Creates a Config which is loaded from a classpath resource. The System.properties are used for
+     * variable resolution in the configuration file
+     *
+     * @param classLoader the ClassLoader used to load the resource
+     * @param resource the resource, an XML or YAML configuration file from
+     *                 the classpath, without the "classpath:" prefix
+     * @throws IllegalArgumentException if classLoader or resource is {@code null},
+     *                                  or if the resource is not found
+     * @throws InvalidConfigurationException if the resource content is invalid
+     * @return Config created from the resource
+     */
+    public static Config loadFromClasspath(ClassLoader classLoader, String resource) {
+        return loadFromClasspath(classLoader, resource, System.getProperties());
+    }
+
+    /**
+     * Creates a Config which is loaded from a classpath resource. Uses the
+     * given {@code properties} to resolve the variables in the resource.
+     *
+     * @param classLoader the ClassLoader used to load the resource
+     * @param resource    the resource, an XML or YAML configuration file from
+     *                    the classpath, without the "classpath:" prefix
+     * @param properties  the properties used to resolve variables in the resource
+     * @throws IllegalArgumentException      if classLoader or resource is {@code null},
+     *                                       or if the resource is not found
+     * @throws InvalidConfigurationException if the resource content is invalid
+     * @return Config created from the resource
+     */
+    public static Config loadFromClasspath(ClassLoader classLoader, String resource, Properties properties) {
+        checkTrue(classLoader != null, "classLoader can't be null");
+        checkTrue(resource != null, "resource can't be null");
+        checkTrue(properties != null, "properties can't be null");
+
+        InputStream in = classLoader.getResourceAsStream(resource);
+        checkTrue(in != null, "Specified resource '" + resource + "' could not be found!");
+
+        if (resource.endsWith(".xml")) {
+            return loadXmlFromStream(in, properties);
+        }
+        if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
+            return loadYamlFromStream(in, properties);
+        }
+
+        throw new IllegalArgumentException("Unknown configuration file extension");
+    }
+
+    /**
+     * Creates a Config based on a the provided configuration file (XML or YAML)
+     * and uses the System.properties to resolve variables in the file.
+     *
+     * @param configFile the path of the configuration file
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the file content is invalid
+     * @return Config created from the configFile
+     */
+    public static Config loadFromFile(File configFile) throws FileNotFoundException {
+        return loadFromFile(configFile, System.getProperties());
+    }
+
+    /**
+     * Creates a Config based on a the provided configuration file (XML or YAML)
+     * and uses the System.properties to resolve variables in the file.
+     *
+     * @param configFile the path of the configuration file
+     * @param properties properties to use for variable resolution in the file
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the file content is invalid
+     * @return Config created from the configFile
+     */
+    public static Config loadFromFile(File configFile, Properties properties) throws FileNotFoundException {
+        checkTrue(configFile != null, "configFile can't be null");
+        checkTrue(properties != null, "properties can't be null");
+
+        String path = configFile.getPath();
+        InputStream in = new FileInputStream(configFile);
+        if (path.endsWith(".xml")) {
+            return loadXmlFromStream(in, properties);
+        }
+        if (path.endsWith(".yaml") || path.endsWith(".yml")) {
+            return loadYamlFromStream(in, properties);
+        }
+
+        throw new IllegalArgumentException("Unknown configuration file extension");
+    }
+
+    /**
+     * Creates a Config using the supplied stream. System.properties is used
+     * for variable resolution in the XML file.
+     * @param configStream the stream to load config from
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @return Config created from the stream
+     */
+    public static Config loadXmlFromStream(InputStream configStream) {
+        return loadXmlFromStream(configStream, System.getProperties());
+    }
+
+    /**
+     * Creates a Config using the supplied stream. The provided properties are used
+     * for variable resolution in the XML file.
+     * @param configStream the stream to load config from
+     * @param properties properties to use for variable resolution
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @return Config created from the stream
+     */
+    public static Config loadXmlFromStream(InputStream configStream, Properties properties) {
+        return new XmlConfigBuilder(configStream).setProperties(properties).build();
+    }
+
+    /**
+     * Creates a Config from the provided XML string and uses the
+     * System.properties to resolve variables in the XML.
+     *
+     * @param xml the XML content
+     * @throws IllegalArgumentException      if the XML is null or empty
+     * @throws InvalidConfigurationException if the XML content is invalid
+     * @return Config created from the XML string
+     */
+    public static Config loadXmlFromString(String xml) {
+        return loadXmlFromString(xml, System.getProperties());
+    }
+
+    /**
+     * Creates a Config from the provided XML string and uses the
+     * provided properties to resolve variables in the XML.
+     *
+     * @param xml the XML content
+     * @param properties properties to use for variable resolution in the XML string
+     * @throws IllegalArgumentException      if the XML is null or empty
+     * @throws InvalidConfigurationException if the XML content is invalid
+     * @return Config created from the XML string
+     */
+    public static Config loadXmlFromString(String xml, Properties properties) {
+        if (isNullOrEmptyAfterTrim(xml)) {
+            throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
+        }
+        checkTrue(properties != null, "properties can't be null");
+        InputStream in = new ByteArrayInputStream(stringToBytes(xml));
+        return new XmlConfigBuilder(in).setProperties(properties).build();
+    }
+
+    /**
+     * Creates a Config using the supplied stream. System.properties is used
+     * for variable resolution in the YAML file.
+     * @param configStream the stream to load config from
+     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @return Config created from the stream
+     */
+    public static Config loadYamlFromStream(InputStream configStream) {
+        return loadYamlFromStream(configStream, System.getProperties());
+    }
+
+    /**
+     * Creates a Config using the supplied stream. The provided properties are used
+     * for variable resolution in the YAML file.
+     * @param configStream the stream to load config from
+     * @param properties properties to use for variable resolution
+     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @return Config created from the stream
+     */
+    public static Config loadYamlFromStream(InputStream configStream, Properties properties) {
+        return new YamlConfigBuilder(configStream).setProperties(properties).build();
+    }
+
+    /**
+     * Creates a Config from the provided YAML string and uses the
+     * System.properties to resolve variables in the YAML.
+     *
+     * @param yaml the YAML content
+     * @throws IllegalArgumentException      if the YAML is null or empty
+     * @throws InvalidConfigurationException if the YAML content is invalid
+     * @return Config created from the YAML string
+     */
+    public static Config loadYamlFromString(String yaml) {
+        return loadYamlFromString(yaml, System.getProperties());
+    }
+
+    /**
+     * Creates a Config from the provided YAML string and uses the
+     * provided properties to resolve variables in the YAML.
+     *
+     * @param yaml the YAML content
+     * @throws IllegalArgumentException      if the YAML is null or empty
+     * @throws InvalidConfigurationException if the YAML content is invalid
+     * @return Config created from the YAML string
+     */
+    public static Config loadYamlFromString(String yaml, Properties properties) {
+        if (isNullOrEmptyAfterTrim(yaml)) {
+            throw new IllegalArgumentException("YAML configuration is null or empty! Please use a well-structured YAML.");
+        }
+        checkTrue(properties != null, "properties can't be null");
+        InputStream in = new ByteArrayInputStream(stringToBytes(yaml));
+        return new YamlConfigBuilder(in).setProperties(properties).build();
     }
 
     /**
