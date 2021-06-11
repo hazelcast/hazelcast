@@ -17,10 +17,8 @@
 package com.hazelcast.internal.tstore;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-// TODO: per thread machines?
 public final class State {
 
     public static final long PHASE_REST = 0;
@@ -39,14 +37,18 @@ public final class State {
     private static final AtomicLongFieldUpdater<State> STATE = AtomicLongFieldUpdater.newUpdater(State.class, "state");
     private static final AtomicIntegerFieldUpdater<State> ACTIVE = AtomicIntegerFieldUpdater.newUpdater(State.class, "active");
 
-    private final AtomicLongArray threadStates;
+    // each individual thread state is accessed only by the owning thread
+    private final ThreadRecord[] threadRecords;
 
     private volatile long state = INITIAL;
     private volatile int active;
     private volatile State.Machine machine = NullStateMachine.INSTANCE;
 
     public State(int maxThreads) {
-        this.threadStates = new AtomicLongArray(maxThreads);
+        this.threadRecords = new ThreadRecord[maxThreads];
+        for (int i = 0; i < maxThreads; ++i) {
+            threadRecords[i] = new ThreadRecord();
+        }
     }
 
     public static long phase(long state) {
@@ -69,12 +71,17 @@ public final class State {
         return state | INTERMEDIATE_MASK;
     }
 
-    public interface Listener {
+    private static boolean isStable(long state) {
+        return (state & INTERMEDIATE_MASK) == 0;
+    }
+
+    public interface Participant {
 
         void globalEntering(long next, long current);
 
         void globalEntered(long current, long previous);
 
+        // TODO: should this method and the next one be combined together?
         void threadEntering(long next, long current);
 
         void threadEntered(long current, long previous);
@@ -83,10 +90,10 @@ public final class State {
 
     public abstract static class Machine {
 
-        private final Listener[] listeners;
+        private final Participant[] participants;
 
-        public Machine(State.Listener... listeners) {
-            this.listeners = listeners;
+        public Machine(Participant... participants) {
+            this.participants = participants;
         }
 
         /**
@@ -104,29 +111,38 @@ public final class State {
          * This method should NOT have any side effects, it should be
          * a pure stateless function.
          */
-        public abstract long cycleStart(long current);
+        public abstract long startState(long current);
+
+        /**
+         * Returns a rest state right after this machine last non-rest
+         * state given its current state.
+         * <p>
+         * This method should NOT have any side effects, it should be
+         * a pure stateless function.
+         */
+        public abstract long endState(long current);
 
         public void globalEntering(long next, long current) {
-            for (State.Listener listener : listeners) {
-                listener.globalEntering(next, current);
+            for (Participant participant : participants) {
+                participant.globalEntering(next, current);
             }
         }
 
         public void globalEntered(long current, long previous) {
-            for (State.Listener listener : listeners) {
-                listener.globalEntered(current, previous);
+            for (Participant participant : participants) {
+                participant.globalEntered(current, previous);
             }
         }
 
         public void threadEntering(long next, long current) {
-            for (State.Listener listener : listeners) {
-                listener.threadEntering(next, current);
+            for (Participant participant : participants) {
+                participant.threadEntering(next, current);
             }
         }
 
         public void threadEntered(long current, long previous) {
-            for (State.Listener listener : listeners) {
-                listener.threadEntered(current, previous);
+            for (Participant participant : participants) {
+                participant.threadEntered(current, previous);
             }
         }
 
@@ -149,27 +165,21 @@ public final class State {
         }
         state = stable(state);
 
+        // Step the current thread to sync with the current global state.
+
+        ThreadRecord threadRecord = threadRecords[threadIndex];
+        assert threadRecord.machine == NullStateMachine.INSTANCE && threadRecord.state == DETACHED;
+        threadRecord.machine = machine;
+
         if (phase(state) == PHASE_REST) {
             // the current machine reached its end or isn't started yet
-            threadStates.set(threadIndex, state);
+            threadRecord.state = state;
             return state;
         }
 
-        // Step the current thread until the current global state reached.
-
-        long current = machine.cycleStart(state);
-        assert current == stable(current) && phase(current) == PHASE_REST;
-        long next;
-        do {
-            next = machine.nextState(current);
-            assert next == stable(next);
-
-            machine.threadEntering(next, current);
-            threadStates.set(threadIndex, next);
-            machine.threadEntered(next, current);
-
-            current = next;
-        } while (next != state);
+        long start = machine.startState(state);
+        assert isStable(start) && phase(start) == PHASE_REST;
+        step(threadRecord, machine, start, state);
 
         return state;
     }
@@ -177,8 +187,8 @@ public final class State {
     /**
      * Starts the given state machine on this state instance.
      * <p>
-     * Each passed machine instance should be a new instance, so we can
-     * always distinguish one machine from another.
+     * Each passed machine instance should be a new instance, so one
+     * machine can always be distinguished from another.
      */
     public boolean start(int threadIndex, State.Machine machine) {
         if (!ACTIVE.compareAndSet(this, 0, 1)) {
@@ -198,8 +208,10 @@ public final class State {
 
         long oldState = this.state;
         assert phase(oldState) == PHASE_REST;
+
         long newState = machine.nextState(oldState);
-        assert newState == stable(newState) && version(newState) >= version(oldState);
+        assert isStable(newState) && version(newState) >= version(oldState);
+
         if (phase(newState) == PHASE_REST) {
             // machine decided to abort itself
             ACTIVE.set(this, 0);
@@ -219,10 +231,25 @@ public final class State {
         STATE.set(this, newState);
         machine.globalEntered(newState, oldState);
 
-        long threadState = threadStates.get(threadIndex);
-        assert threadState == stable(threadState) && threadState != DETACHED;
+        // If needed, step the current thread until its machine ends.
+
+        ThreadRecord threadRecord = threadRecords[threadIndex];
+        long threadState = threadRecord.state;
+        assert isStable(threadState) && threadState != DETACHED;
+
+        if (phase(threadState) != PHASE_REST) {
+            State.Machine threadMachine = threadRecord.machine;
+            long end = threadMachine.endState(threadState);
+            assert isStable(end) && phase(end) == PHASE_REST;
+            step(threadRecord, threadMachine, threadState, end);
+            threadState = end;
+        }
+
+        // Start the machine for the current thread.
+
+        threadRecord.machine = machine;
         machine.threadEntering(newState, threadState);
-        threadStates.set(threadIndex, newState);
+        threadRecord.state = newState;
         machine.threadEntered(newState, threadState);
 
         return true;
@@ -232,16 +259,16 @@ public final class State {
      * Steps the active state machine from the given expected state to
      * the next one provided by the machine.
      */
-    public void step(int threadIndex, long expectedState) {
-        assert expectedState == stable(expectedState) && expectedState != PHASE_REST;
+    public boolean step(int threadIndex, long expectedState) {
+        assert isStable(expectedState) && expectedState != PHASE_REST;
 
         if (!STATE.compareAndSet(this, expectedState, intermediate(expectedState))) {
             // some other thread has changed the state
-            return;
+            return false;
         }
 
-        // At this point the state is marked as intermediate, so no other
-        // threads can step the machine.
+        // Step the machine: at this point the state is marked as intermediate,
+        // so no other threads can step the machine.
 
         State.Machine machine = this.machine;
         long newState = machine.nextState(expectedState);
@@ -249,16 +276,31 @@ public final class State {
         STATE.set(this, newState);
         machine.globalEntered(newState, expectedState);
 
-        long threadState = threadStates.get(threadIndex);
-        assert threadState == stable(threadState) && threadState != DETACHED;
-        machine.threadEntering(newState, threadState);
-        threadStates.set(threadIndex, newState);
-        machine.threadEntered(newState, threadState);
-
         if (phase(newState) == PHASE_REST) {
             // machine has ended
             ACTIVE.set(this, 0);
         }
+
+        // Step the current thread.
+
+        ThreadRecord threadRecord = threadRecords[threadIndex];
+        long threadState = threadRecord.state;
+        assert isStable(threadState) && threadState != DETACHED;
+
+        State.Machine threadMachine = threadRecord.machine;
+        if (threadMachine != machine) {
+            if (phase(threadState) != PHASE_REST) {
+                long end = threadMachine.endState(threadState);
+                assert isStable(end) && phase(end) == PHASE_REST;
+                step(threadRecord, threadMachine, threadState, end);
+            }
+
+            threadRecord.machine = machine;
+            threadState = machine.startState(expectedState);
+        }
+
+        step(threadRecord, machine, threadState, newState);
+        return true;
     }
 
     /**
@@ -278,29 +320,27 @@ public final class State {
         }
         state = stable(state);
 
-        // Check for changes.
+        // Step the current thread.
 
-        long threadState = threadStates.get(threadIndex);
-        assert threadState == stable(threadState) && threadState != DETACHED;
-        if (threadState == state) {
-            // nothing changed
-            return state;
+        ThreadRecord threadRecord = threadRecords[threadIndex];
+        State.Machine threadMachine = threadRecord.machine;
+        long threadState = threadRecord.state;
+        assert isStable(threadState) && threadState != DETACHED;
+
+        if (threadMachine != machine) {
+            if (phase(threadState) != PHASE_REST) {
+                long end = threadMachine.endState(threadState);
+                assert isStable(end) && phase(end) == PHASE_REST;
+                step(threadRecord, threadMachine, threadState, end);
+            }
+
+            threadRecord.machine = machine;
+            threadState = machine.startState(state);
         }
 
-        // Step the current thread until the current global state reached.
-
-        long current = threadState;
-        long next;
-        do {
-            next = machine.nextState(current);
-            assert next == stable(next);
-
-            machine.threadEntering(next, current);
-            threadStates.set(threadIndex, next);
-            machine.threadEntered(next, current);
-
-            current = next;
-        } while (next != state);
+        if (threadState != state) {
+            step(threadRecord, machine, threadState, state);
+        }
 
         return state;
     }
@@ -310,7 +350,24 @@ public final class State {
      * in this state instance.
      */
     public void unregister(int threadIndex) {
-        threadStates.set(threadIndex, DETACHED);
+        ThreadRecord threadRecord = threadRecords[threadIndex];
+        assert threadRecord.state != DETACHED;
+        threadRecord.machine = NullStateMachine.INSTANCE;
+        threadRecord.state = DETACHED;
+    }
+
+    private static void step(ThreadRecord threadRecord, State.Machine machine, long state, long end) {
+        long newState;
+        do {
+            newState = machine.nextState(state);
+            assert isStable(newState);
+
+            machine.threadEntering(newState, state);
+            threadRecord.state = newState;
+            machine.threadEntered(newState, state);
+
+            state = newState;
+        } while (newState != end);
     }
 
     private static final class NullStateMachine extends State.Machine {
@@ -324,10 +381,25 @@ public final class State {
         }
 
         @Override
-        public long cycleStart(long current) {
+        public long startState(long current) {
             assert false;
             return 0;
         }
+
+        @Override
+        public long endState(long current) {
+            assert false;
+            return 0;
+        }
+
+    }
+
+    // accessed only by the owning thread
+    private static final class ThreadRecord {
+
+        State.Machine machine = NullStateMachine.INSTANCE;
+
+        long state = DETACHED;
 
     }
 
