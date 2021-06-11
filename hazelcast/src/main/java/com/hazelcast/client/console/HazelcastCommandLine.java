@@ -200,7 +200,7 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     @Command(
-            name = "console-app",
+            name = "console",
             description = "Starts the console application for trying out in-memory data structures of Hazelcast."
                     + " It is not recommended for use in production.")
     public void consoleApp(

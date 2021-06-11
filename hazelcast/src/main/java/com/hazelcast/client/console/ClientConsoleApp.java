@@ -137,7 +137,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                         .style(AttributedStyle.BOLD.foreground(COLOR)).append("%M%P > ").toAnsi())
                 .variable(LineReader.INDENTATION, 2)
                 .option(LineReader.Option.DISABLE_EVENT_EXPANSION, true)
-                .appName("hazelcast-client-console-app")
+                .appName("hazelcast-console-app")
                 .build();
         if (writer == null) {
             this.writer = lineReader.getTerminal().writer();
@@ -209,7 +209,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 writer.flush();
                 break;
             } catch (UserInterruptException e) {
-                // Ctrl+C cancels the not-yet-submitted query
+                // Ctrl+C cancels the not-yet-submitted command
                 continue;
             }
             running = running && client.getLifecycleService().isRunning();
@@ -307,12 +307,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             while (iterator.hasNext()) {
                 History.Entry entry = iterator.next();
                 if (iterator.hasNext()) {
-                    String entryLine = new AttributedStringBuilder()
-                            .style(AttributedStyle.BOLD)
-                            .append(String.valueOf(entry.index() + 1))
+                    String entryLine = new StringBuilder()
+                            .append(entry.index() + 1)
                             .append(" - ")
                             .append(entry.line())
-                            .toAnsi();
+                            .toString();
                     writer.println(entryLine);
                     writer.flush();
                 } else {
@@ -443,9 +442,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleAtomicNumberGet(args);
         } else if ("a.set".equals(first)) {
             handleAtomicNumberSet(args);
-        } else if ("a.inc".equals(first)) {
+        } else if ("a.incrementAndGet".equals(first)) {
             handleAtomicNumberInc(args);
-        } else if ("a.dec".equals(first)) {
+        } else if ("a.decrementAndGet".equals(first)) {
             handleAtomicNumberDec(args);
         } else if (first.equals("execute")) {
             execute(args);
@@ -1416,13 +1415,13 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     protected void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;
-        println("Commands:");
+        printlnBold("Commands:");
 
         printGeneralCommands();
+        printMapCommands();
         printQueueCommands();
         printSetCommands();
         printLockCommands();
-        printMapCommands();
         printMulitiMapCommands();
         printListCommands();
         printAtomicLongCommands();
@@ -1432,34 +1431,35 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printGeneralCommands() {
-        println("General commands:");
+        printlnBold("General commands:");
         println("  echo true|false                         turns on/off echo of commands (default false)");
         println("  clear                                   clears the terminal screen");
         println("  exit                                    exits from the client console app.");
         println("  silent true|false                       turns on/off silent of command output (default false)");
-        println("  #<number> <command>                     repeats <number> time <command>, replace $i in\n"
-                + "<command> with current iteration (0..<number-1>)");
-        println("  &<number> <command>                     forks <number> threads to execute <command>,");
-        println("replace $t in <command> with current thread number (0..<number-1>");
-        println("When using #x or &x, is is advised to use silent true as well.");
-        println("When using &x with m.putmany and m.removemany, each thread will get a different");
-        println("share of keys unless a start key index is specified\n");
+        println("  #<number> <command>                     repeats <number> time <command>, replace $i in");
+        println("                                            <command> with current iteration (0..<number-1>)");
+        println("  &<number> <command>                     forks <number> threads to execute <command>, replace");
+        println("                                            $t in <command> with current thread number (0..<number-1>).");
+        println("                                            When using #x or &x, is is advised to use silent true");
+        println("                                            as well. When using &x with m.putmany and m.removemany,");
+        println("                                            each thread will get a different share of keys unless");
+        println("                                            a start key index is specified.");
         println("  history                                 shows the command history of the current session");
         println("  jvm                                     displays info about the runtime");
         println("  who                                     displays info about the cluster");
-        println("  ns <string>                             switch the namespace for using the distributed\n"
-                + " queue/map/set/list <string> (defaults to \"default\"");
-        println("  @<file>                                 executes the given <file> script. Use '//' for\n"
-                + " comments in the script");
+        println("  ns <string>                             switch the namespace for using the distributed");
+        println("                                            queue/map/set/list <string> (defaults to \"default\")");
+        println("  @<file>                                 executes the given <file> script. Use '//' for");
+        println("                                            comments in the script");
         println("");
     }
 
     private void printQueueCommands() {
-        println("Queue commands:");
+        printlnBold("Queue commands:");
         println("  q.offer <string>                        adds a string object to the queue");
         println("  q.poll                                  takes an object from the queue");
-        println("  q.offermany <number> [<size>]           adds indicated number of string objects to the queue ('obj<i>' or "
-                + "byte[<size>]) ");
+        println("  q.offermany <number> [<size>]           adds indicated number of string objects to the");
+        println("                                            queue ('obj<i>' or  byte[<size>]) ");
         println("  q.pollmany <number>                     takes indicated number of objects from the queue");
         println("  q.iterator [remove]                     iterates the queue, remove if specified");
         println("  q.size                                  size of the queue");
@@ -1468,10 +1468,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printSetCommands() {
-        println("Set commands:");
+        printlnBold("Set commands:");
         println("  s.add <string>                          adds a string object to the set");
         println("  s.remove <string>                       removes the string object from the set");
-        println("  s.addmany <number>                      adds indicated number of string objects to the set ('obj<i>')");
+        println("  s.addmany <number>                      adds indicated number of string objects");
+        println("                                            to the set ('obj<i>')");
         println("  s.removemany <number>                   takes indicated number of objects from the set");
         println("  s.iterator [remove]                     iterates the set, removes if specified");
         println("  s.size                                  size of the set");
@@ -1480,31 +1481,31 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printLockCommands() {
-        println("Lock commands:");
-        println("These lock commands demonstrate the usage of Hazelcast's linearizable, distributed, and reentrant");
-        println("implementation of Lock.");
-        println("For more information, see `com.hazelcast.cp.lock.FencedLock`");
-        println(" lock <name>                               acquires the lock with the given name");
-        println(" tryLock <name>                            acquires the lock only if it is free at the time\n"
-                + "of invocation");
-        println(" tryLock <name> <time>                     acquires the lock if it is free within the given\n"
-                + "waiting time");
-        println(" unlock <name>                             releases the lock if the lock is currently held\n"
-                + "by the current thread");
+        printlnBold("Lock commands:");
+        println("  These lock commands demonstrate the usage of Hazelcast's linearizable, distributed, and reentrant");
+        println("  implementation of Lock. For more information, see `com.hazelcast.cp.lock.FencedLock`.");
+        println("  lock <name>                             acquires the lock with the given name");
+        println("  tryLock <name>                          acquires the lock only if it is free at the time");
+        println("                                            of invocation");
+        println("  tryLock <name> <time>                   acquires the lock if it is free within the given");
+        println("                                            waiting time");
+        println("  unlock <name>                           releases the lock if the lock is currently held");
+        println("                                            by the current thread");
         println("");
     }
 
     private void printMapCommands() {
-        println("Map commands:");
+        printlnBold("Map commands:");
         println("  m.put <key> <value>                     puts an entry to the map");
         println("  m.remove <key>                          removes the entry of given key from the map");
         println("  m.get <key>                             returns the value of given key from the map");
         println("  m.putmany <number> [<size>] [<index>]   puts indicated number of entries to the map:");
-        println("('key<i>':byte[<size>], <index>+(0..<number>)");
+        println("                                            ('key<i>':byte[<size>], <index>+(0..<number>)");
         println("  m.removemany <number> [<index>]         removes indicated number of entries from the map");
-        println("('key<i>', <index>+(0..<number>)");
-        println("When using &x with m.putmany and m.removemany, each thread will get a different share of keys unless a "
-                + "start key <index> is specified");
+        println("                                            ('key<i>', <index>+(0..<number>)");
+        println("                                            When using &x with m.putmany and m.removemany, each");
+        println("                                            thread will get a different share of keys unless a");
+        println("                                            start key <index> is specified");
         println("  m.keys                                  iterates the keys of the map");
         println("  m.values                                iterates the values of the map");
         println("  m.entries                               iterates the entries of the map");
@@ -1522,7 +1523,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printMulitiMapCommands() {
-        println("MultiMap commands:");
+        printlnBold("MultiMap commands:");
         println("  mm.put <key> <value>                    puts an entry to the multimap");
         println("  mm.get <key>                            returns the value of given key from the multimap");
         println("  mm.remove <key>                         removes the entry of given key from the multimap");
@@ -1542,51 +1543,60 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     private void printExecutorServiceCommands() {
-        println("Executor Service commands:");
-        println("  execute <echo-input>                           executes an echo task on random member");
-        println("  executeOnKey <echo-input> <key>                executes an echo task on the member that owns the given key");
-        println("  executeOnMembers <echo-input>                  executes an echo task on all of the members");
-        println("  executeOnMembers <echo-input> <memberIndex>    executes an echo task on the member with given index");
-        println("  e<threadcount>.simulateLoad <task-count> <delaySeconds>     simulates load on executor with given");
-        println("number of thread (e1..e16)");
+        printlnBold("Executor Service commands:");
+        println("  execute <echo-input>                    executes an echo task on random member");
+        println("  executeOnKey <echo-input> <key>         executes an echo task on the member that");
+        println("                                            owns the given key");
+        println("  executeOnMembers <echo-input>           executes an echo task on all of the members");
+        println("  executeOnMembers <echo-input>");
+        println("                      <memberIndex>       executes an echo task on the member with given index");
+        println("  e<threadcount>.simulateLoad");
+        println("           <task-count> <delaySeconds>    simulates load on executor with given number of");
+        println("                                            thread (e1..e16)");
         println("");
     }
 
     private void printAtomicLongCommands() {
-        println("IAtomicLong commands:");
-        println("  a.get");
-        println("  a.set <long>");
-        println("  a.inc");
-        println("  a.dec");
-        print("");
+        printlnBold("IAtomicLong commands:");
+        println("  a.get                                   gets the current value of atomic long");
+        println("  a.set <long>                            atomically sets the given value");
+        println("  a.incrementAndGet                       atomically increment the current value by one and");
+        println("                                            then gets the resulting value");
+        println("  a.decrementAndGet                       atomically decrement the current value by one and");
+        println("                                            then gets the resulting value");
+        println("");
     }
 
     private void printListCommands() {
-        println("List commands:");
-        println("  l.add <string>");
-        println("  l.add <index> <string>");
-        println("  l.contains <string>");
-        println("  l.remove <string>");
-        println("  l.remove <index>");
-        println("  l.set <index> <string>");
-        println("  l.iterator [remove]");
-        println("  l.size");
-        println("  l.clear");
-        print("");
+        printlnBold("List commands:");
+        println("  l.add <string>                          adds the given string object to the end of the list");
+        println("  l.add <index> <string>                  adds the given string object to the specified position");
+        println("                                            in the list");
+        println("  l.contains <string>                     checks whether if the given string presents in the list");
+        println("  l.remove <string>                       removes the first occurrence of the given string");
+        println("  l.remove <index>                        removes the string from the specified position of the list");
+        println("  l.set <index> <string>                  replaces the element at the specified pos. with given string");
+        println("  l.iterator [remove]                     iterates over the items of the list, remove if specified");
+        println("  l.size                                  returns the number of element in the list");
+        println("  l.clear                                 removes all items from the list");
+        println("");
     }
 
     public void println(Object obj) {
         if (!silent) {
-            writer.println(new AttributedStringBuilder()
-                    .style(AttributedStyle.BOLD)
-                    .append(String.valueOf(obj))
-                    .toAnsi());
+            writer.println(obj);
         }
     }
 
     public void print(Object obj) {
         if (!silent) {
-            writer.print(new AttributedStringBuilder()
+            writer.print(obj);
+        }
+    }
+
+    public void printlnBold(Object obj) {
+        if (!silent) {
+            writer.println(new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD)
                     .append(String.valueOf(obj))
                     .toAnsi());
@@ -1601,18 +1611,16 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         Cluster cluster = hazelcastClientImpl.getCluster();
         Set<Member> members = cluster.getMembers();
         String versionString = "Hazelcast " + clusterMetadata.getMemberVersion();
-        return new AttributedStringBuilder()
-                .style(AttributedStyle.BOLD)
+        return new StringBuilder()
                 .append("Hazelcast Console Application has started.\n")
                 .append("Connected to ")
                 .append(versionString)
                 .append(" at ")
                 .append(members.iterator().next().getAddress().toString())
                 .append(" (+")
-                .append(String.valueOf(members.size() - 1))
+                .append(members.size() - 1)
                 .append(" more)\n")
-                .append("Type 'help' for instructions")
-                .toAnsi();
+                .append("Type 'help' for instructions").toString();
     }
 
     /**
