@@ -44,9 +44,6 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -74,8 +71,7 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(
-            new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
+    private static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     @Override
     public String typeName() {
@@ -220,13 +216,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public SqlNodeList getPrimaryKey(Table table0) {
-        return KEY_NODE_LIST;
-    }
-
-    @Nonnull
-    @Override
-    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex delete(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(
@@ -236,6 +226,12 @@ public class IMapSqlConnector implements SqlConnector {
                     assert row.length == 1;
                     return row[0];
                 }, (v, t) -> null));
+    }
+
+    @Nonnull
+    @Override
+    public List<String> getPrimaryKey(Table table0) {
+        return PRIMARY_KEY_LIST;
     }
 
     private static String toString(PartitionedMapTable table) {

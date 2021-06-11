@@ -338,6 +338,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processSelect((SqlSelect) call);
                 break;
 
+            case DELETE:
+                break;
+
             case JOIN:
                 processJoin((SqlJoin) call);
                 break;
@@ -349,9 +352,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
             case OTHER_DDL:
                 processOtherDdl(call);
-                break;
-
-            case DELETE:
                 break;
 
             default:
