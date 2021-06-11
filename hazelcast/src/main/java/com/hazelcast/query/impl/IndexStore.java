@@ -172,7 +172,13 @@ public interface IndexStore {
     Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive,
                                                   Comparable to, boolean toInclusive, boolean descending);
 
-    Iterator<IndexValueBatch> getSqlRecordIteratorBatch(Comparable convert, boolean fromInclusive, Comparable convert1, boolean toInclusive, boolean descending);
+    Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    );
 
     /**
      * Obtains entries that have indexed attribute value equal to the given

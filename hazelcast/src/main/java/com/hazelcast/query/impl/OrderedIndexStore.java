@@ -225,8 +225,19 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).values().iterator());
     }
 
-    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(Comparable from, boolean fromInclusive, Comparable to, boolean toInclusive, boolean descending) {
-        ConcurrentNavigableMap<Comparable, Map<Data, QueryableEntry>> navigableMap = descending ? recordMap.descendingMap() : recordMap;
+    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        if (Comparables.compare(from, to) > 0) {
+            return emptyIterator();
+        }
+
+        ConcurrentNavigableMap<Comparable, Map<Data, QueryableEntry>> navigableMap =
+                descending ? recordMap.descendingMap() : recordMap;
         Comparable from0 = descending ? to : from;
         boolean fromInclusive0 = descending ? toInclusive : fromInclusive;
         Comparable to0 = descending ? from : to;
@@ -234,7 +245,8 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
         return navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).entrySet()
                 .stream()
-                .map((Entry<Comparable, Map<Data, QueryableEntry>> es) -> new IndexValueBatch(es.getKey(), new ArrayList<>(es.getValue().values())))
+                .map((Entry<Comparable, Map<Data, QueryableEntry>> es) ->
+                        new IndexValueBatch(es.getKey(), new ArrayList<>(es.getValue().values())))
                 .iterator();
     }
 

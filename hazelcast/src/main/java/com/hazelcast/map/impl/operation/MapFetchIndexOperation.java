@@ -86,14 +86,18 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             throw new QueryException("Index name does not exist");
         }
 
-        MapFetchIndexOperationResultInternal result = null;
+        MapFetchIndexOperationResultInternal result;
         switch (index.getConfig().getType()) {
             case HASH:
                 result = runInternalHash(index, pointers, fetchLimit);
+                break;
             case SORTED:
                 result = runInternalSorted(index, pointers, fetchLimit);
+                break;
             case BITMAP:
                 throw new UnsupportedOperationException("BITMAP scan is not implemented");
+            default:
+                throw new UnsupportedOperationException("Unknown index type:" + index.getConfig().getType().name());
         }
 
         List<QueryableEntry> entries = result.getResult();
@@ -122,7 +126,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         response = new MapFetchIndexOperationResult(entries, migratedPartitionIds, newPointers);
     }
 
-    private MapFetchIndexOperationResultInternal runInternalSorted(InternalIndex index, IndexIterationPointer[] pointers, int fetchLimit) {
+    private MapFetchIndexOperationResultInternal runInternalSorted(
+            InternalIndex index,
+            IndexIterationPointer[] pointers,
+            int fetchLimit
+    ) {
         List<QueryableEntry> entries = new ArrayList<>();
         int totalFetched = 0;
         Comparable lastValueRead = null;
@@ -225,14 +233,14 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     public static class MapFetchIndexOperationResult {
-        private Set<Integer> migratedPartitionIds;
-        private MapFetchIndexOperationResultInternal inner;
+        private final Set<Integer> migratedPartitionIds;
+        private final MapFetchIndexOperationResultInternal inner;
 
         public MapFetchIndexOperationResult(
                 List<QueryableEntry> result,
                 Set<Integer> migratedPartitionIds,
                 IndexIterationPointer[] pointers
-        ){
+        ) {
             this.migratedPartitionIds = migratedPartitionIds;
             this.inner = new MapFetchIndexOperationResultInternal(result, pointers);
         }
@@ -250,9 +258,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
-    private static class MapFetchIndexOperationResultInternal {
-        private List<QueryableEntry> result;
-        private IndexIterationPointer[] pointers;
+    private static final class MapFetchIndexOperationResultInternal {
+        private final List<QueryableEntry> result;
+        private final IndexIterationPointer[] pointers;
 
         private MapFetchIndexOperationResultInternal(
                 List<QueryableEntry> result,
