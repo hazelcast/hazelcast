@@ -58,7 +58,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-class AbstractKinesisTest extends JetTestSupport {
+public abstract class AbstractKinesisTest extends JetTestSupport {
 
     protected static final int KEYS = 250;
     protected static final int MEMBER_COUNT = 2;
