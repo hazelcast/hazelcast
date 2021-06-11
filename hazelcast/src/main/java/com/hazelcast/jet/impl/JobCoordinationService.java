@@ -469,7 +469,7 @@ public class JobCoordinationService {
                         if (e.getCause() instanceof JobNotFoundException) {
                             return GetJobIdsResult.EMPTY;
                         }
-                        else throw e;
+                        throw e;
                     }
                     return new GetJobIdsResult(onlyJobId, false);
                 }
