@@ -49,7 +49,7 @@ public class ClientJmxMetricsTest extends HazelcastTestSupport {
 
     @Test
     public void testNoMBeanLeak() {
-        helper.assertNoMBeans();
+        helper.clearMBeans();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getMetricsConfig()
@@ -62,11 +62,6 @@ public class ClientJmxMetricsTest extends HazelcastTestSupport {
         assertTrueEventually(() -> helper.assertMBeanContains(expectedObjectName));
 
         client.shutdown();
-        // if failing, grep for "test-jvm"
-        // there should be a Metric[com.hazelcast:type=Metrics,instance=$CLIENT_NAME,prefix=test-jvm-$JVM_NAME] metric if the
-        // client was created with TestHazelcastFactory
-        // $JVM_NAME contains the PID, so $CLIENT_NAME + $JVM_NAME together helps identifying the test left the given metric
-        // around
         helper.assertNoMBeans();
     }
 }
