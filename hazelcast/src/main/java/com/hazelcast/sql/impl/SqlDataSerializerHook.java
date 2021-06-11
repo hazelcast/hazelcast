@@ -200,7 +200,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_EXTRACT = 72;
 
 //    Reserved
-//    public static final int MAP_INDEX_SCAN_METADATA = 73;
 
     public static final int LEN = EXPRESSION_EXTRACT + 1;
 
