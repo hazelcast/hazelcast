@@ -582,6 +582,12 @@ public class MasterJobContext {
                     // have to use Async version, the future is completed inside a synchronized block
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
+            if (error instanceof ExecutionNotFoundException) {
+                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
+                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
+                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
+                error = new JobTerminateRequestedException(requestedTerminationMode);
+            }
             finalizeJob(error);
         }
     }
