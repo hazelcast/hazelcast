@@ -234,7 +234,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -247,17 +246,9 @@
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
-                                <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
-                                    <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
-                                    <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
-                                    <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
-                                    <include>org.snakeyaml:snakeyaml-engine</include>
-                                    <include>io.github.classgraph:classgraph</include>
-                                    <include>com.github.erosb:everit-json-schema</include>
-                                    <include>org.json:json</include>
-                                </includes>
+                                <excludes>
+                                    <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                </excludes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
@@ -304,7 +295,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.snakeyaml:*</artifact>
+                                    <artifact>org.*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -319,6 +310,12 @@
                                     <artifact>com.github.erosb:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>**/module-info.class</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
