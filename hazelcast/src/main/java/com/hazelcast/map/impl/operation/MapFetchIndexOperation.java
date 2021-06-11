@@ -86,7 +86,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             throw new QueryException("Index name does not exist");
         }
 
-        Object[] result = null;
+        MapFetchIndexOperationResultInternal result = null;
         switch (index.getConfig().getType()) {
             case HASH:
                 result = runInternalHash(index, pointers, fetchLimit);
@@ -96,8 +96,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 throw new UnsupportedOperationException("BITMAP scan is not implemented");
         }
 
-        List<QueryableEntry> entries = (List<QueryableEntry>) result[0];
-        IndexIterationPointer[] newPointers = (IndexIterationPointer[]) result[1];
+        List<QueryableEntry> entries = result.getResult();
+        IndexIterationPointer[] newPointers = result.getPointers();
 
         // After materialization, we will check whether any partitions are migrated.
         // If it is case, we need to prune migrated data.
@@ -122,50 +122,61 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         response = new MapFetchIndexOperationResult(entries, migratedPartitionIds, newPointers);
     }
 
-    private Object[] runInternalSorted(InternalIndex index, IndexIterationPointer[] pointers, int fetchLimit) {
-        assert pointers.length == 1;
-        IndexIterationPointer pointer = pointers[0];
-
-        Iterator<IndexValueBatch> entryIterator = index.getSqlRecordIteratorBatch(
-                pointer.getFrom(),
-                pointer.isFromInclusive(),
-                pointer.getTo(),
-                pointer.isToInclusive(),
-                pointer.isDescending()
-        );
-
+    private MapFetchIndexOperationResultInternal runInternalSorted(InternalIndex index, IndexIterationPointer[] pointers, int fetchLimit) {
         List<QueryableEntry> entries = new ArrayList<>();
         int totalFetched = 0;
         Comparable lastValueRead = null;
+        boolean done = false;
 
-        while (entryIterator.hasNext()) {
-            IndexValueBatch indexValueBatch = entryIterator.next();
-            lastValueRead = indexValueBatch.getValue();
-            entries.addAll(indexValueBatch.getEntries());
-            totalFetched += indexValueBatch.getEntries().size();
+        IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
 
-            if (totalFetched >= fetchLimit) {
-                break;
+        for (int i = 0; i < pointers.length; i++) {
+            if (done) {
+                newPointers[i] = pointers[i];
+                continue;
             }
-        }
 
-        IndexIterationPointer newPointer;
-        if (totalFetched < fetchLimit) {
-            newPointer = null;
-        } else {
-            newPointer = new IndexIterationPointer(
+            IndexIterationPointer pointer = pointers[i];
+
+            Iterator<IndexValueBatch> entryIterator = index.getSqlRecordIteratorBatch(
+                    pointer.getFrom(),
+                    pointer.isFromInclusive(),
+                    pointer.getTo(),
+                    pointer.isToInclusive(),
+                    pointer.isDescending()
+            );
+
+            while (entryIterator.hasNext()) {
+                IndexValueBatch indexValueBatch = entryIterator.next();
+                lastValueRead = indexValueBatch.getValue();
+                entries.addAll(indexValueBatch.getEntries());
+                totalFetched += indexValueBatch.getEntries().size();
+
+                if (totalFetched >= fetchLimit) {
+                    done = true;
+                    break;
+                }
+            }
+
+            newPointers[i] = (totalFetched < fetchLimit)
+                    ? null
+                    : new IndexIterationPointer(
                     pointer.isDescending() ? pointer.getFrom() : lastValueRead,
                     pointer.isDescending() ? pointer.isFromInclusive() : false,
                     pointer.isDescending() ? lastValueRead : pointer.getTo(),
                     pointer.isToInclusive() ? false : pointer.isToInclusive(),
-                    pointer.isDescending()
-            );
+                    pointer.isDescending());
+
         }
 
-        return new Object[] { entries, new IndexIterationPointer[] { newPointer } };
+        return new MapFetchIndexOperationResultInternal(entries, newPointers);
     }
 
-    private Object[] runInternalHash(InternalIndex index, IndexIterationPointer[] pointers, int fetchLimit) {
+    private MapFetchIndexOperationResultInternal runInternalHash(
+            InternalIndex index,
+            IndexIterationPointer[] pointers,
+            int fetchLimit
+    ) {
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
         List<QueryableEntry> entries = new ArrayList<>();
         boolean done = false;
@@ -184,7 +195,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             }
         }
 
-        return new Object[] { entries, newPointers };
+        return new MapFetchIndexOperationResultInternal(entries, newPointers);
     }
 
     @Override
@@ -214,22 +225,20 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     public static class MapFetchIndexOperationResult {
-        private List<QueryableEntry> result;
         private Set<Integer> migratedPartitionIds;
-        private IndexIterationPointer[] continuationPointers;
+        private MapFetchIndexOperationResultInternal inner;
 
         public MapFetchIndexOperationResult(
                 List<QueryableEntry> result,
                 Set<Integer> migratedPartitionIds,
                 IndexIterationPointer[] pointers
         ){
-            this.result = result;
             this.migratedPartitionIds = migratedPartitionIds;
-            this.continuationPointers = pointers;
+            this.inner = new MapFetchIndexOperationResultInternal(result, pointers);
         }
 
         public List<QueryableEntry> getResult() {
-            return result;
+            return inner.getResult();
         }
 
         public Set<Integer> getMigratedPartitionIds() {
@@ -237,7 +246,28 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
 
         public IndexIterationPointer[] getContinuationPointers() {
-            return continuationPointers;
+            return inner.getPointers();
+        }
+    }
+
+    private static class MapFetchIndexOperationResultInternal {
+        private List<QueryableEntry> result;
+        private IndexIterationPointer[] pointers;
+
+        private MapFetchIndexOperationResultInternal(
+                List<QueryableEntry> result,
+                IndexIterationPointer[] pointers
+        ) {
+            this.result = result;
+            this.pointers = pointers;
+        }
+
+        private List<QueryableEntry> getResult() {
+            return result;
+        }
+
+        private IndexIterationPointer[] getPointers() {
+            return pointers;
         }
     }
 }
