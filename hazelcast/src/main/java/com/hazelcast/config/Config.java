@@ -214,11 +214,11 @@ public class Config {
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config load() {
-        return new ExternalConfigurationOverride().overwriteMemberConfig(load(System.getProperties()));
+        return applyEnvAndSystemVariableOverrides(loadFromFile(System.getProperties()));
     }
 
-    private static Config load(Properties properties) {
-        return loadFromFile(properties);
+    private static Config applyEnvAndSystemVariableOverrides(Config cfg) {
+        return new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
     }
 
     private static Config loadFromFile(Properties properties) {
@@ -247,26 +247,23 @@ public class Config {
     }
 
     /**
-     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration
-     * file, except it does not override configuration properties using the environment variables
-     * or system properties.
+     * Same as {@link #load() load()}, i.e., loads Config using the default lookup mechanism
      *
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config loadDefault() {
-        return load(System.getProperties());
+        return load();
     }
 
     /**
-     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration file,
-     * except it does not override configuration properties using the environment variables
-     * or system properties.
+     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration file
+     * and applies variable resolution from the provided properties.
      *
      * @param properties properties to resolve variables in the XML or YAML
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config loadDefault(Properties properties) {
-        return load(properties);
+        return applyEnvAndSystemVariableOverrides(loadFromFile(properties));
     }
 
     /**
@@ -375,7 +372,8 @@ public class Config {
      * @return Config created from the stream
      */
     public static Config loadXmlFromStream(InputStream configStream, Properties properties) {
-        return new XmlConfigBuilder(configStream).setProperties(properties).build();
+        return applyEnvAndSystemVariableOverrides(
+                new XmlConfigBuilder(configStream).setProperties(properties).build());
     }
 
     /**
@@ -407,7 +405,8 @@ public class Config {
         }
         checkTrue(properties != null, "properties can't be null");
         InputStream in = new ByteArrayInputStream(stringToBytes(xml));
-        return new XmlConfigBuilder(in).setProperties(properties).build();
+        return applyEnvAndSystemVariableOverrides(
+                new XmlConfigBuilder(in).setProperties(properties).build());
     }
 
     /**
@@ -430,7 +429,8 @@ public class Config {
      * @return Config created from the stream
      */
     public static Config loadYamlFromStream(InputStream configStream, Properties properties) {
-        return new YamlConfigBuilder(configStream).setProperties(properties).build();
+        return applyEnvAndSystemVariableOverrides(
+                new YamlConfigBuilder(configStream).setProperties(properties).build());
     }
 
     /**
@@ -461,7 +461,8 @@ public class Config {
         }
         checkTrue(properties != null, "properties can't be null");
         InputStream in = new ByteArrayInputStream(stringToBytes(yaml));
-        return new YamlConfigBuilder(in).setProperties(properties).build();
+        return applyEnvAndSystemVariableOverrides(
+                new YamlConfigBuilder(in).setProperties(properties).build());
     }
 
     /**

@@ -97,15 +97,6 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLoadDefaultDoNotOverrideFromSystemVariables() {
-        String clusterName = randomName();
-        System.setProperty("hz.cluster-name", clusterName);
-        Config cfg = Config.loadDefault();
-
-        assertNotEquals(clusterName, cfg.getClusterName());
-    }
-
-    @Test
     public void testLoadYamlFromString() {
         String yaml = getSimpleYamlConfigStr(
                 "instance-name", "hz-instance-name",
