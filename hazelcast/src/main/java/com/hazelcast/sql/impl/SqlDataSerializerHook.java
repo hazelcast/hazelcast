@@ -34,8 +34,8 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
-import com.hazelcast.sql.impl.expression.math.DoubleFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
+import com.hazelcast.sql.impl.expression.math.DoubleFunction;
 import com.hazelcast.sql.impl.expression.math.FloorCeilFunction;
 import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
@@ -78,7 +78,6 @@ import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
-import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
@@ -200,11 +199,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_EXTRACT = 72;
 
-    public static final int MAP_SCAN_METADATA = 73;
 //    Reserved
-//    public static final int MAP_INDEX_SCAN_METADATA = 74;
 
-    public static final int LEN = MAP_SCAN_METADATA + 1;
+    public static final int LEN = EXPRESSION_EXTRACT + 1;
 
     @Override
     public int getFactoryId() {
@@ -308,8 +305,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
-
-        constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
 
         return new ArrayDataSerializableFactory(constructors);
     }
