@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -75,6 +76,11 @@ public final class MapSampleMetadataResolver {
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
+            } else if (target instanceof PortableGenericRecord) {
+                // We get PortableGenericRecord here when in memory format is Object and
+                // the cluster does not have PortableFactory configuration for Portable
+                // PortableGetter can handle PortableGenericRecord to extract fields.
+                return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key, jetMapMetadataResolver);
             } else {
                 return resolveClass(target.getClass(), key, jetMapMetadataResolver);
             }

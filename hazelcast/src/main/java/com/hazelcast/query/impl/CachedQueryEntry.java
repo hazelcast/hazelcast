@@ -188,6 +188,10 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
                 if (valueObject instanceof Portable) {
                     targetObject = getValueData();
                 } else {
+                    // Note that targetObject could be PortableGenericRecord
+                    // And it will be handled on PortableGetter for query.
+                    // We get PortableGenericRecord here when in memory format is Object and
+                    // the cluster does not have PortableFactory configuration for Portable
                     targetObject = getValue();
                 }
             }
