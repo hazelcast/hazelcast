@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,14 +34,22 @@ public class SubmitJobOperation extends AsyncJobOperation {
     private Data config;
     private boolean isLightJob;
 
+    private transient Endpoint endpoint;
+
     public SubmitJobOperation() {
     }
 
     public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob) {
+        this(jobId, jobDefinition, config, isLightJob, null);
+    }
+
+    public SubmitJobOperation(
+            long jobId, Data jobDefinition, Data config, boolean isLightJob, ClientEndpoint endpoint) {
         super(jobId);
         this.jobDefinition = jobDefinition;
         this.config = config;
         this.isLightJob = isLightJob;
+        this.endpoint = endpoint;
     }
 
     @Override
@@ -48,7 +58,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
             assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
             return getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
         } else {
-            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
+            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config, endpoint);
         }
     }
 

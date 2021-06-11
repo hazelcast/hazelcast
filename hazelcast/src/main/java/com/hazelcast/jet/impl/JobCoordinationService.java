@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
@@ -196,7 +197,9 @@ public class JobCoordinationService {
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
-    public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, Data serializedConfig) {
+    public CompletableFuture<Void> submitJob(
+            long jobId, Data serializedJobDefinition, Data serializedConfig, Endpoint endpoint
+    ) {
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -214,7 +217,8 @@ public class JobCoordinationService {
                             + jobResult);
                     return;
                 }
-                if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
+                if (endpoint != null &&
+                        !config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
                     throw new JetException("The JobConfig contains resources to upload, but the resource upload " +
                             "is disabled. Either remove the resources from the job config or enabled resource " +
                             "uploading, see JetConfig#setResourceUploadEnabled.");
