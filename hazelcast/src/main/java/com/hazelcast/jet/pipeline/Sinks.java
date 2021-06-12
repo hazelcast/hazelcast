@@ -847,7 +847,7 @@ public final class Sinks {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
                 ctx -> ctx.hazelcastInstance().getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
-                .permissionFn(() -> new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
+                .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
                 .build();
     }
 

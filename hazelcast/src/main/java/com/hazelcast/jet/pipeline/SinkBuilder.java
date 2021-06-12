@@ -45,10 +45,10 @@ public final class SinkBuilder<C, T> {
 
     private final FunctionEx<? super Context, ? extends C> createFn;
     private final String name;
+    private Permission permission;
     private BiConsumerEx<? super C, ? super T> receiveFn;
     private ConsumerEx<? super C> flushFn = ConsumerEx.noop();
     private ConsumerEx<? super C> destroyFn = ConsumerEx.noop();
-    private SupplierEx<? extends Permission> permissionFn = SupplierEx.noop();
     private int preferredLocalParallelism = 1;
 
     private SinkBuilder(
@@ -170,9 +170,18 @@ public final class SinkBuilder<C, T> {
         return this;
     }
 
-    public SinkBuilder<C, T> permissionFn(@Nonnull SupplierEx<? extends Permission> permissionFn) {
-        checkSerializable(permissionFn, "permissionFn");
-        this.permissionFn = permissionFn;
+    /**
+     * Sets the the permission required to use this sink when the
+     * security is enabled. The default value is {@code null} which
+     * means there is no restriction to use this sink. Security is an
+     * enterprise feature.
+     *
+     * @param permission the required permission to use this sink when
+     *     security is enabled.
+     */
+    public SinkBuilder<C, T> permission(@Nonnull Permission permission) {
+        checkSerializable(permission, "permission");
+        this.permission = permission;
         return this;
     }
 
@@ -201,7 +210,7 @@ public final class SinkBuilder<C, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn, permissionFn);
+        SupplierEx<Processor> supplier = writeBufferedP(permission, createFn, receiveFn, flushFn, destroyFn);
         return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, supplier));
     }
 }

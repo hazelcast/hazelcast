@@ -51,8 +51,10 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -167,13 +169,16 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         private Configuration configuration;
         private final ConsumerEx<Configuration> configureFn;
         private final BiFunctionEx<K, V, R> projectionFn;
+        private final Permission permission;
 
         private transient Map<Address, List<IndexedInputSplit>> assigned;
 
         public MetaSupplier(
+                @Nullable Permission permission,
                 @Nonnull Configuration configuration,
                 @Nonnull ConsumerEx<Configuration> configureFn,
                 @Nonnull BiFunctionEx<K, V, R> projectionFn) {
+            this.permission = permission;
             this.configuration = configuration;
             this.configureFn = configureFn;
             this.projectionFn = projectionFn;
@@ -214,6 +219,11 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
 
         private void updateConfiguration() {
             configureFn.accept(configuration);
+        }
+
+        @Override
+        public Permission getRequiredPermission() {
+            return permission;
         }
     }
 

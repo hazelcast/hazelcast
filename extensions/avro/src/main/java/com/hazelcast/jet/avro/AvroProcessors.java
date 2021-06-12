@@ -82,12 +82,12 @@ public final class AvroProcessors {
     ) {
         String jsonSchema = schema.toString();
         return preferLocalParallelismOne(WriteBufferedP.<DataFileWriter<D>, D>supplier(
+                        ConnectorPermission.file(directoryName, ACTION_WRITE),
                         context -> createWriter(Paths.get(directoryName), context.globalProcessorIndex(),
                                 jsonSchema, datumWriterSupplier),
                         DataFileWriter::append,
                         DataFileWriter::flush,
-                        DataFileWriter::close,
-                        () -> ConnectorPermission.file(directoryName, ACTION_WRITE)
+                        DataFileWriter::close
                 ));
     }
 

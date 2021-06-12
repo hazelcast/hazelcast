@@ -269,6 +269,7 @@ public final class SinkProcessors {
 
         String charsetName = charset.name();
         return preferLocalParallelismOne(writeBufferedP(
+                ConnectorPermission.socket(host + ':' + port, ACTION_WRITE),
                 index -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
                 (bufferedWriter, item) -> {
                     @SuppressWarnings("unchecked")
@@ -277,8 +278,7 @@ public final class SinkProcessors {
                     bufferedWriter.write('\n');
                 },
                 BufferedWriter::flush,
-                BufferedWriter::close,
-                () -> ConnectorPermission.socket(host + ':' + port, ACTION_WRITE)
+                BufferedWriter::close
         ));
     }
 
@@ -301,8 +301,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Shortcut for {@link #writeBufferedP(FunctionEx,
-     * BiConsumerEx, ConsumerEx, ConsumerEx, SupplierEx)} with
+     * Shortcut for {@link #writeBufferedP(Permission, FunctionEx,
+     * BiConsumerEx, ConsumerEx, ConsumerEx)} with
      * a no-op {@code destroyFn}.
      */
     @Nonnull
@@ -311,7 +311,7 @@ public final class SinkProcessors {
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn
     ) {
-        return writeBufferedP(createFn, onReceiveFn, flushFn, ConsumerEx.noop(), SupplierEx.noop());
+        return writeBufferedP(null, createFn, onReceiveFn, flushFn, ConsumerEx.noop());
     }
 
     /**
@@ -336,13 +336,13 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <W, T> SupplierEx<Processor> writeBufferedP(
+            @Nullable Permission permission,
             @Nonnull FunctionEx<? super Context, ? extends W> createFn,
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn,
-            @Nonnull ConsumerEx<? super W> destroyFn,
-            @Nonnull SupplierEx<? extends Permission> permissionFn
+            @Nonnull ConsumerEx<? super W> destroyFn
     ) {
-        return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn, permissionFn);
+        return WriteBufferedP.supplier(permission, createFn, onReceiveFn, flushFn, destroyFn);
     }
 
     /**
