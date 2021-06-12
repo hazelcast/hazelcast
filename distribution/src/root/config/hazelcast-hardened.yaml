@@ -37,7 +37,7 @@ hazelcast:
       # The TCP-IP discovery directly lists explicitly cluster member addresses.
       tcp-ip:
         enabled: true
-        # Use the member addresses including the port numbers, so Hazelcast won't try another socket addresses as a fallback.'
+        # Use the member addresses including the port numbers, so Hazelcast won't try other socket addresses as a fallback.'
         member-list:
           - 192.168.1.101:15701
           - 192.168.1.102:15701
@@ -55,8 +55,8 @@ hazelcast:
     # The following part defines different kind of endpoints (protocols) each with its own socket address and configuration.'
     # Enable only endpoints (protocols) you will need!
     # For each endpoint only bind to interface with minimal scope access.
-    # The Member endpoint is used for the member-to-member communication. You can increase the enpoint protection
-    # by configuring firewall rules in such a way only access from other member IP addresses will be allowed.
+    # The Member endpoint is used for the member-to-member communication. You can increase the endpoint protection
+    # by configuring firewall rules in such a way that only access from other member IP addresses will be allowed.
     member-server-socket-endpoint-config:
       interfaces:
         enabled: true
@@ -65,7 +65,7 @@ hazelcast:
       port:
         # use the explicit port number without fallback
         auto-increment: false
-        # using a non-default port number can prevent attacker to identify the scanned open port
+        # using a non-default port number can prevent an attacker to identify the scanned open port
         port: 15701
       # If you have an Enterprise license, you can enable the TLS (SSL) to secure the communication between members.
       ssl:
@@ -87,7 +87,7 @@ hazelcast:
           # explicit ciphersuites specification prevents defaulting to platform configured ones which may be weak
           ciphersuites: TLS_AES_128_GCM_SHA256
           # If your PKI infrastructure supports it, enable the identity validation. In such case the client side of
-          # a TLS connection will verify the server's IP address matches the ones listed in the server's' certificat.
+          # a TLS connection will verify the server's IP address matches the ones listed in the server's' certificate.
           validateIdentity: false
     # If you use client-server Hazelcast deployment mode, you'll probably use more clients and the access restrictions
     # to the client endpoint won't be so strict.
@@ -117,7 +117,7 @@ hazelcast:
     rest-server-socket-endpoint-config:
       interfaces:
         enabled: true
-        # if you want to allow REST cluster management operations, it's good idea to allow access from the localhost only.
+        # if you want to allow REST cluster management operations, it's a good idea to allow access from the localhost only.
         interfaces:
           - 127.0.0.1
       port:
@@ -165,8 +165,8 @@ hazelcast:
     enabled: false
     # The realms are named security configuration definitions which can be referred from other parts of the
     # configuration. The realms may contain authentication and identity part. The authentication defines how
-    # authentication requests from outside are verified. The identity defines the member own identity in given
-    # realm.
+    # authentication requests from outside are verified. The identity defines the member own identity in a 
+    # given realm.
     realms:
       # In this sample configuration we use a simple username/password authentication between cluster members.
       # All members share the same identity defined here. We don't need to add authentication section here, because
