@@ -34,18 +34,8 @@
     <suppress checks="Header" files="TopologicalSorter"/>
     <suppress checks="Header" files="generated"/>
 
-    <!-- Exclude these packages from JavaDoc checks -->
-    <suppress checks="JavadocMethod" files="JetException\.java"/>
-    <suppress checks="JavadocMethod" files="RestartableException\.java"/>
-    <suppress checks="JavadocMethod" files="JobNotFoundException\.java"/>
-    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
+    <!-- Exclude internal, implementation and template packages from JavaDoc checks -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/](impl|internal)[\\/]"/>
-
-    <!-- Exclude command line classes from Javadoc checks -->
-    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]server[\\/]" />
-
-    <!-- Exclude variations of JDK classes from Javadoc checks -->
-    <suppress checks="Javadoc(Type|Method|Variable)" files="com[\\/]hazelcast[\\/]jet[\\/]function" />
 
     <!-- Generated code in Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
