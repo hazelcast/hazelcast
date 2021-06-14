@@ -75,15 +75,11 @@ public final class ToTimestampTzFunction extends UniExpressionWithType<OffsetDat
     }
 
     private TemporalUnit getChronoUnit(final long unixTimestamp) {
-        // -Long.MIN_VALUE returns Long.MIN_VALUE, probably because an absolute value of that is Long.MAX_VALUE + 1.
-        final long absTimestamp = unixTimestamp == Long.MIN_VALUE
-                ? Long.MAX_VALUE
-                : Math.abs(unixTimestamp);
-        if (absTimestamp < YEAR_MILLISECONDS) {
+        if (unixTimestamp < YEAR_MILLISECONDS) {
             return ChronoUnit.SECONDS;
-        } else if (absTimestamp < YEAR_MICROSECONDS) {
+        } else if (unixTimestamp < YEAR_MICROSECONDS) {
             return ChronoUnit.MILLIS;
-        } else if (absTimestamp < YEAR_NANOSECONDS) {
+        } else if (unixTimestamp < YEAR_NANOSECONDS) {
             return ChronoUnit.MICROS;
         } else {
             return ChronoUnit.NANOS;

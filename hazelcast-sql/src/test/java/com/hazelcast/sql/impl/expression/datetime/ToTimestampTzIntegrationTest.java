@@ -62,7 +62,6 @@ public class ToTimestampTzIntegrationTest extends ExpressionTestSupport {
         checkColumn(MICROSECONDS, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(MICROSECONDS, ChronoUnit.MICROS));
         checkColumn(NANOSECONDS, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(NANOSECONDS, ChronoUnit.NANOS));
         checkColumn(Long.MAX_VALUE, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(Long.MAX_VALUE, ChronoUnit.NANOS));
-        checkColumn(Long.MIN_VALUE, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(Long.MIN_VALUE, ChronoUnit.NANOS));
 
         checkColumnFailure("'1'", SqlErrorCode.PARSING, signatureError(SqlColumnType.VARCHAR));
         checkColumnFailure(BigDecimal.valueOf(1.0), SqlErrorCode.PARSING, signatureError(SqlColumnType.DECIMAL));
@@ -94,7 +93,6 @@ public class ToTimestampTzIntegrationTest extends ExpressionTestSupport {
         checkLiteral(NANOSECONDS, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(NANOSECONDS, ChronoUnit.NANOS));
         checkLiteral("-10000", TIMESTAMP_WITH_TIME_ZONE, fromEpoch(-10000L, ChronoUnit.SECONDS));
         checkLiteral("0", TIMESTAMP_WITH_TIME_ZONE, fromEpoch(0L, ChronoUnit.SECONDS));
-        checkLiteral("-9223372036854775808", TIMESTAMP_WITH_TIME_ZONE, fromEpoch(-9223372036854775808L, ChronoUnit.NANOS));
         checkLiteral("9223372036854775807", TIMESTAMP_WITH_TIME_ZONE, fromEpoch(9223372036854775807L, ChronoUnit.NANOS));
         checkLiteral("null", TIMESTAMP_WITH_TIME_ZONE, null);
 
@@ -113,7 +111,6 @@ public class ToTimestampTzIntegrationTest extends ExpressionTestSupport {
         checkParameter(MICROSECONDS, fromEpoch(MICROSECONDS, ChronoUnit.MICROS));
         checkParameter(NANOSECONDS, fromEpoch(NANOSECONDS, ChronoUnit.NANOS));
         checkParameter(Long.MAX_VALUE, fromEpoch(Long.MAX_VALUE, ChronoUnit.NANOS));
-        checkParameter(Long.MIN_VALUE, fromEpoch(Long.MIN_VALUE, ChronoUnit.NANOS));
         checkParameter(null, null);
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, BIGINT, VARCHAR), "foo");
