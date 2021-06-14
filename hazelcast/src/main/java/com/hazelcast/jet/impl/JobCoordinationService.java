@@ -79,6 +79,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -459,7 +460,17 @@ public class JobCoordinationService {
                 if (lightMasterContexts.get(onlyJobId) != null) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
-                if (isMaster() && (masterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null)) {
+
+                if (isMaster()) {
+                    try {
+                        callWithJob(onlyJobId, mc -> null, jobResult -> null, jobRecord -> null, null)
+                                .get();
+                    } catch (ExecutionException e) {
+                        if (e.getCause() instanceof JobNotFoundException) {
+                            return GetJobIdsResult.EMPTY;
+                        }
+                        throw e;
+                    }
                     return new GetJobIdsResult(onlyJobId, false);
                 }
                 return GetJobIdsResult.EMPTY;
