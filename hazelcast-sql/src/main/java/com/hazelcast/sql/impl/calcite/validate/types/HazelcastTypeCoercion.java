@@ -29,7 +29,6 @@ import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
@@ -63,12 +62,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.operand(index);
         return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
-    }
-
-    @Override
-    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
-        SqlNode node = nodeList.get(index);
-        return coerceNode(scope, node, targetType, cast -> nodeList.set(index, cast));
     }
 
     private boolean coerceNode(
@@ -157,7 +150,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
      * needed for {@link #querySourceCoercion} method, which calls this method.
      *
      * @return True, if the source column can now be assigned to {@code
-     * targetType}
+     *      targetType}
      */
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
@@ -232,9 +225,18 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
     private static boolean targetIsTemporalAndSourceIsVarcharLiteral(QueryDataType targetHzType,
                                                                      QueryDataType sourceHzType, SqlNode sourceNode) {
-        return targetHzType.getTypeFamily().isTemporal()
-                && sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                && sourceNode instanceof SqlLiteral;
+        SqlKind sourceKind = sourceNode.getKind();
+        if (sourceKind == SqlKind.AS) {
+            return targetIsTemporalAndSourceIsVarcharLiteral(
+                    targetHzType,
+                    sourceHzType,
+                    ((SqlBasicCall) sourceNode).operand(0)
+            );
+        } else {
+            return targetHzType.getTypeFamily().isTemporal()
+                    && sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                    && sourceKind == SqlKind.LITERAL;
+        }
     }
 
     @Override
@@ -343,27 +345,21 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         switch (query.getKind()) {
             case INSERT:
                 SqlInsert insert = (SqlInsert) query;
-                return coerceSourceRowType(sourceScope,
-                        insert.getSource(),
-                        columnIndex,
-                        totalColumns,
-                        targetType
-                );
+                return coerceSourceRowType(sourceScope, insert.getSource(), columnIndex, totalColumns, targetType);
             case UPDATE:
+                // trailing elements of selectList are equal to elements of sourceExpressionList
+                // see JetSqlValidator.validateUpdate()
                 SqlUpdate update = (SqlUpdate) query;
-                if (update.getSourceExpressionList() != null) {
-                    SqlNodeList sourceExpressionList = update.getSourceExpressionList();
-                    coerceColumnType(sourceScope, sourceExpressionList, columnIndex, targetType);
-
-                    SqlNodeList selectList = update.getSourceSelect().getSelectList();
-                    coerceColumnType(sourceScope, selectList, selectList.size() - totalColumns + columnIndex, targetType);
-
-                    return true; // TODO: ???
-                } else {
-                    return coerceSourceRowType(sourceScope, update.getSourceSelect(), columnIndex, totalColumns, targetType);
-                }
+                SqlNodeList selectList = update.getSourceSelect().getSelectList();
+                return coerceColumnType(sourceScope, selectList, selectList.size() - totalColumns + columnIndex, targetType);
             default:
                 return rowTypeCoercion(sourceScope, query, columnIndex, targetType);
         }
+    }
+
+    @Override
+    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
+        SqlNode node = nodeList.get(index);
+        return rowTypeElementCoercion(scope, node, targetType, cast -> nodeList.set(index, cast));
     }
 }

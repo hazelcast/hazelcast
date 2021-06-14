@@ -107,7 +107,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         return ctx.ref.submitToKey(
                 key,
                 new UpdatingEntryProcessor(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
-        ).toCompletableFuture();
+        ).toCompletableFuture().whenComplete((r, t) -> {}); // TODO: for some reason without whenComplete() exception is not propagated...
     }
 
     @Override

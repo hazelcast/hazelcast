@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
@@ -81,7 +80,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
         testMap.put(1, new Value(100, 200L, "300"));
 
-        checkUpdateCount("UPDATE test_map SET field3 = 200, field1 = 400, field2 = '600' WHERE __key = 1", 0);
+        checkUpdateCount("UPDATE test_map SET field3 = '200', field1 = 400, field2 = 600 WHERE __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(400, 600L, "200"));
     }
 
@@ -92,6 +91,15 @@ public class SqlUpdateTest extends SqlTestSupport {
 
         checkUpdateCount("UPDATE test_map SET field2 = 4 * field1 WHERE __key = 1", 0);
         assertThat(testMap.get(1)).isEqualTo(new Value(100, 400L, "300"));
+    }
+
+    @Test
+    public void update_selfReferentialCast() {
+        IMap<Object, Object> testMap = instance().getMap("test_map");
+        testMap.put(1, new Value(100, 200L, "300"));
+
+        checkUpdateCount("UPDATE test_map SET field1 = CAST(field3 AS INT) WHERE __key = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(new Value(300, 200L, "300"));
     }
 
     @Test
@@ -139,7 +147,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         IMap<Object, Object> testMap = instance().getMap("test_map");
         testMap.put(new Key(1), new Value(100, 200L, "300"));
 
-        checkUpdateCount("UPDATE test_map SET field3 = 3 + keyField, field2 = 2 + 1, field1 = 1 WHERE keyField = 1", 0);
+        checkUpdateCount("UPDATE test_map SET field3 = CAST(3 + keyField AS VARCHAR), field2 = 2 + 1, field1 = 1 WHERE keyField = 1", 0);
         assertThat(testMap.get(new Key(1))).isEqualTo(new Value(1, 3L, "4"));
     }
 
@@ -175,10 +183,12 @@ public class SqlUpdateTest extends SqlTestSupport {
     @Test
     public void update_allWithAlwaysTrueCondition() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(new Key(1), new Value(100, 200L, "300"));
+        testMap.put(1, 1);
+        testMap.put(2, 2);
 
-        checkUpdateCount("UPDATE test_map SET field1 = field3, field2 = field3 WHERE 1 = 1", 0);
-        assertThat(testMap.get(new Key(1))).isEqualTo(new Value(300, 300L, "300"));
+        checkUpdateCount("UPDATE test_map SET this = 100 WHERE 1 = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(100);
+        assertThat(testMap.get(2)).isEqualTo(100);
     }
 
     @Test

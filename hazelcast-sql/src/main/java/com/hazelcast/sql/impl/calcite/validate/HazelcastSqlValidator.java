@@ -72,6 +72,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     /** Parameter values. */
     private final List<Object> arguments;
 
+    protected boolean isUpdate;
+
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
             HazelcastTypeFactory typeFactory,
@@ -117,7 +119,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             SelectScope scope,
             boolean includeSystemVars
     ) {
-        if (isHiddenColumn(exp, scope)) {
+        if (isHiddenColumn(exp, scope) && !isUpdate) {
             return;
         }
 

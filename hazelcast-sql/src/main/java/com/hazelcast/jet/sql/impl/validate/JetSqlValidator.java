@@ -38,7 +38,6 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
-import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -178,38 +177,25 @@ public class JetSqlValidator extends HazelcastSqlValidator {
 
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
-        SqlNode sourceTable = call.getTargetTable();
-        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
+        isUpdate = true;
 
-        SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
-        if (validatorTable != null) {
-            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
-            table.getFields().forEach(field -> selectList.add(new SqlIdentifier(field.getName(), SqlParserPos.ZERO)));
-        }
-
-        int ordinal = 0;
-        for (SqlNode exp : call.getSourceExpressionList()) {
-            // Force unique aliases to avoid a duplicate for Y with
-            // SET X=Y
-            String alias = SqlUtil.deriveAliasFromOrdinal(ordinal);
-            selectList.add(SqlValidatorUtil.addAlias(exp, alias));
-            ++ordinal;
-        }
-
-        if (call.getAlias() != null) {
-            sourceTable = SqlValidatorUtil.addAlias(sourceTable, call.getAlias().getSimple());
-        }
-        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-                call.getCondition(), null, null, null, null, null, null, null);
+        return super.createSourceSelectForUpdate(call);
     }
 
     @Override
     public void validateUpdate(SqlUpdate update) {
         super.validateUpdate(update);
 
+        // hack around Calcite deficiency (?) of not deriving types for sourceExpressionList
+        SqlNodeList selectList = update.getSourceSelect().getSelectList();
+        SqlNodeList sourceExpressionList = update.getSourceExpressionList();
+        for (int i = 0; i < sourceExpressionList.size(); i++) {
+            update.getSourceExpressionList().set(i, selectList.get(selectList.size() - sourceExpressionList.size() + i));
+        }
+
+        // do not allow updating hidden fields, i.e. __key, this
         SqlNode sourceTable = update.getTargetTable();
         SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
-
         if (validatorTable != null) {
             Set<String> targetColumnNames = update.getTargetColumnList().getList().stream()
                     .map(node -> ((SqlIdentifier) node).getSimple())
@@ -223,7 +209,8 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             }
         }
 
-        // UPDATE FROM SELECT is transformed into join:
+        // UPDATE FROM SELECT is transformed into join (which is not supported yet):
+        // UPDATE m1 SET __key = m2.this FROM m2 WHERE m1.__key = m2.__key
         // update m1 set __key = (select this from m2) where __key = 1
         // update m1 set __key = (select m2.this from m2 where m1.__key = m2.__key)
         update.getSourceSelect().getSelectList().accept(new SqlBasicVisitor<Void>() {
