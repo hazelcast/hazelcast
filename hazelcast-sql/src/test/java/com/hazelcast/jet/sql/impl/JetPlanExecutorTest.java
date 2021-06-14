@@ -135,7 +135,7 @@ public class JetPlanExecutorTest {
         );
 
         given(hazelcastInstance.getJet()).willReturn(jet);
-        given(jet.newJob(eq(dag), isA(JobConfig.class))).willReturn(job);
+        given(jet.newLightJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
         SqlResult result = planExecutor.execute(plan, queryId, emptyList());
