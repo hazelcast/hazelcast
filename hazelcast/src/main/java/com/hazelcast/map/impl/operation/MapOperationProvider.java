@@ -144,7 +144,7 @@ public interface MapOperationProvider {
                                            String indexName,
                                            IndexIterationPointer[] pointers,
                                            PartitionIdSet partitionIdSet,
-                                           int fetchLimit);
+                                           int sizeHint);
 
     /**
      * Creates an operation for fetching a segment of a query result from a

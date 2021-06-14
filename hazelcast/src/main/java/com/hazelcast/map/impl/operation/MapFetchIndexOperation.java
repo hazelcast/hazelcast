@@ -59,7 +59,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     private int sizeHint;
 
     private transient MapFetchIndexOperationResult response;
-    private final transient IPartitionService partitionService = getNodeEngine().getPartitionService();
+    private transient IPartitionService partitionService;
 
     public MapFetchIndexOperation() { }
 
@@ -79,6 +79,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     protected void runInternal() {
+        partitionService = getNodeEngine().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         Address currentAddress = getNodeEngine().getLocalMember().getAddress();
 

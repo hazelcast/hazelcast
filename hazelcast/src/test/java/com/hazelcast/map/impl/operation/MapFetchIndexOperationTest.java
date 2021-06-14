@@ -16,51 +16,163 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapFetchIndexOperationTest extends HazelcastTestSupport {
+    private static final String mapName = "map1";
+    private static final String orderedIndexName = "index_age_sorted";
+
+    private static HazelcastInstance instance1;
+
+    private static IMap<String, Person> map;
+
+    @Before
+    public void setup() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        Config config = smallInstanceConfig();
+        instance1 = factory.newHazelcastInstance(config);
+
+        map = instance1.getMap(mapName);
+
+        map.addIndex(new IndexConfig(IndexType.SORTED, "age").setName(orderedIndexName));
+
+        List<Person> people = new ArrayList<>(
+                Arrays.asList(
+                        new Person("person1", 45),
+                        new Person("person2", 39),
+                        new Person("person3", 60),
+                        new Person("person4", 45),
+                        new Person("person5", 43)
+                )
+        );
+
+        insertIntoMap(map, people);
+    }
 
     @Test
-    public void testNoMigration() {
-        String mapName = "map1";
+    public void testMultipleRanges() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance1);
 
-        Config config = smallInstanceConfig();
+        IndexIterationPointer[] pointers = new IndexIterationPointer[2];
+        pointers[0] = new IndexIterationPointer(30, true, 40, true, false);
+        pointers[1] = new IndexIterationPointer(50, true, 60, true, false);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance1);
 
-        IMap<String, Person> map = h1.getMap(mapName);
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
-        map.addIndex(IndexType.SORTED, "age");
 
-        map.put("person1", new Person("person1", 45));
-        map.put("person2", new Person("person2", 39));
+        assertContainsSorted(result, Arrays.asList(
+                new Person("person2", 39),
+                new Person("person3", 60)
+        ));
+    }
 
-        Person p = map.get("person2");
+    @Test
+    public void whenMultipleObjectsHasSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance1);
 
-        assertEquals(39, p.getAge());
-        assertEquals("person2", p.getName());
+        IndexIterationPointer[] pointers = new IndexIterationPointer[1];
+        pointers[0] = new IndexIterationPointer(30, true, 60, true, false);
 
-        getOperationService(h1);
+        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 3);
+
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance1);
+
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+
+        assertContainsSorted(result, Arrays.asList(
+                new Person("person2", 39),
+                new Person("person5", 43),
+                new Person("person4", 45),
+                new Person("person1", 45)
+        ));
+    }
+
+    private MapOperationProvider getOperationProvider()  {
+        MapProxyImpl mapProxy = (MapProxyImpl) map;
+        MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
+        return mapServiceContext.getMapOperationProvider(mapProxy.getName());
+    }
+
+    private static PartitionIdSet getLocalPartitions(HazelcastInstance member) {
+        PartitionService partitionService = member.getPartitionService();
+
+        PartitionIdSet res = new PartitionIdSet(partitionService.getPartitions().size());
+
+        for (Partition partition : partitionService.getPartitions()) {
+            if (partition.getOwner().localMember()) {
+                res.add(partition.getPartitionId());
+            }
+        }
+
+        return res;
+    }
+
+    private static void insertIntoMap(IMap<String, Person> map, List<Person> peopleList) {
+        peopleList.forEach(p -> map.put(p.getName(), p));
+    }
+
+    private static void assertContainsSorted(MapFetchIndexOperationResult result, List<Person> orderedPeopleList) {
+        List<QueryableEntry> entries = result.getResult();
+        assertEquals(entries.size(), orderedPeopleList.size());
+
+        Iterator<QueryableEntry> entriesIterator = entries.iterator();
+        Iterator<Person> expectedIterator = orderedPeopleList.iterator();
+
+        while (entriesIterator.hasNext()) {
+            QueryableEntry entry = entriesIterator.next();
+            Person expected = expectedIterator.next();
+
+            assertEquals(expected.getName(), entry.getKey());
+            assertEquals(expected, entry.getValue());
+        }
     }
 
     static class Person implements Serializable {
@@ -86,6 +198,31 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         public void setAge(int age) {
             this.age = age;
+        }
+
+        @Override
+        public String toString() {
+            return "Person{"
+                    + "name='" + name + '\''
+                    + ", age=" + age
+                    + '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Person person = (Person) o;
+            return age == person.age && name.equals(person.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, age);
         }
     }
 }
