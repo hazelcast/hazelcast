@@ -39,18 +39,18 @@ final class InsertLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify tableModify = (TableModify) rel;
+        TableModify insert = (TableModify) rel;
 
         return new InsertLogicalRel(
-                tableModify.getCluster(),
-                OptUtils.toLogicalConvention(tableModify.getTraitSet()),
-                tableModify.getTable(),
-                tableModify.getCatalogReader(),
-                OptUtils.toLogicalInput(tableModify.getInput()),
-                tableModify.getOperation(),
-                tableModify.getUpdateColumnList(),
-                tableModify.getSourceExpressionList(),
-                tableModify.isFlattened()
+                insert.getCluster(),
+                OptUtils.toLogicalConvention(insert.getTraitSet()),
+                insert.getTable(),
+                insert.getCatalogReader(),
+                OptUtils.toLogicalInput(insert.getInput()),
+                insert.getOperation(),
+                insert.getUpdateColumnList(),
+                insert.getSourceExpressionList(),
+                insert.isFlattened()
         );
     }
 }
