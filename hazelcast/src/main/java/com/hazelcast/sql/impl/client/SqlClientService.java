@@ -189,10 +189,7 @@ public class SqlClientService implements SqlService {
         ClientConnection connection = client.getConnectionManager().getConnectionForSql();
 
         if (connection == null) {
-            throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client is not connected to topology"
-            ));
+            throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
         }
 
         return connection;

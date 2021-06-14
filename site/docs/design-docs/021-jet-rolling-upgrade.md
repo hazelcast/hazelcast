@@ -123,3 +123,29 @@ same-version subset. This is most important for non-smart clients
 executing SQL to ensure that they're not executed by the smaller
 same-version group. This wil also address the current limitation that
 sql queries can't be submitted from lite members.
+
+### LoadBalancer changes
+
+`com.hazelcast.client.LoadBalancer` is public API. Has 3
+implementations: `StaticLB`, `RoundRobinLB` and `RandomLB`. The
+`AbstractLoadBalancer` base implementation is also public API.
+
+In 4.2 `LoadBalancer.nextDataMember()` method was added that throws
+`UnsupportedOperationException` in the default implementation. In 4.2,
+the SQL API required that the query was submitted to a data member. If
+the user had he's own LB implementation, SQL won't work from clients at
+all unless the LB was modified too.
+
+Due to rolling upgrades, we need another strategy to choosing the target
+member: any data member from the larger same-version group. It's not
+possible to add this without requiring a non-trivial implementation from
+the users in their LB implementations. Therefore we decided to not use
+the `LoadBalancer` interface for choosing the member for executing SQL.
+Instead, we'll manually choose a random member from the desired group.
+
+We'll also deprecate the `LB.nextDataMember()` method and mark it as
+unused.
+
+`LoadBalancer` is used only for smart clients. Non-smart clients connect
+directly to just one member which needs to forward the request if it's
+not from the SQL group.

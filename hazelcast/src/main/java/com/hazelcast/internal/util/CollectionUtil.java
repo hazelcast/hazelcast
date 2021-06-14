@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
@@ -190,5 +192,9 @@ public final class CollectionUtil {
     /** Returns an empty Collection if argument is null. **/
     public static <T> Collection<T> nullToEmpty(Collection<T> collection) {
         return collection == null ? Collections.<T>emptyList() : collection;
+    }
+
+    public static <T> Collector<T, ?, List<T>> toUnmodifiableList() {
+        return Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList);
     }
 }

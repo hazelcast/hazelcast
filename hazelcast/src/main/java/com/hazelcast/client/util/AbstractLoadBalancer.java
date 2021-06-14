@@ -23,16 +23,11 @@ import com.hazelcast.cluster.InitialMembershipEvent;
 import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * An abstract {@link LoadBalancer} implementation.
@@ -63,8 +58,8 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
         return membersRef.get().getMembers();
     }
 
-    protected Member[] getSqlMembers() {
-        return membersRef.get().getSqlMembers();
+    protected Member[] getDataMembers() {
+        return membersRef.get().getDataMembers();
     }
 
     @Override
@@ -82,15 +77,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
         setMembersRef();
     }
 
-    private static Member[] sqlMembers(Member[] members) {
-        List<Member> sqlMembers = Stream.of(members)
-                .collect(Collectors.groupingBy(m -> m.getVersion().asVersion()))
-                .entrySet().stream()
-                .max(Comparator.<Entry<Version, List<Member>>, Integer>comparing(en -> en.getValue().size())
-                        .thenComparing(Entry::getKey))
-                .map(Entry::getValue)
-                .orElse(null);
-
+    private static Member[] dataMembers(Member[] members) {
         List<Member> dataMembers = new ArrayList<>(members.length);
 
         for (Member member : members) {
@@ -109,19 +96,19 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
     private static final class Members {
 
         private final Member[] members;
-        private final Member[] sqlMembers;
+        private final Member[] dataMembers;
 
-        private Members(Member[] members, Member[] sqlMembers) {
+        private Members(Member[] members, Member[] dataMembers) {
             this.members = members;
-            this.sqlMembers = sqlMembers;
+            this.dataMembers = dataMembers;
         }
 
         private Member[] getMembers() {
             return members;
         }
 
-        private Member[] getSqlMembers() {
-            return sqlMembers;
+        private Member[] getDataMembers() {
+            return dataMembers;
         }
     }
 }

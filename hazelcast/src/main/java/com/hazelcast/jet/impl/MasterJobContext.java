@@ -51,6 +51,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -223,14 +224,15 @@ public class MasterJobContext {
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
+                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(), dag, mc.jobId(),
                                 mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false)));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
                 Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), participants,
-                                mc.nodeEngine().getSerializationService().toData(plan), false);
+                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
                 mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
             } catch (Throwable e) {
                 finalizeJob(e);
