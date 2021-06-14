@@ -150,6 +150,15 @@ public interface JetService {
     Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
+     * Submits a new light job with a default config. See {@link
+     * #newLightJob(Pipeline, JobConfig)}.
+     */
+    @Nonnull
+    default Job newLightJob(@Nonnull Pipeline p) {
+        return newLightJob(p, new JobConfig());
+    }
+
+    /**
      * Submits a light job for execution. This kind of job is focused on
      * reducing the job startup and teardown time: only a single operation is
      * used to deploy the job instead of 2 for normal jobs. Unlike normal jobs,
@@ -158,8 +167,9 @@ public interface JetService {
      * <p>
      * Limitations of light jobs:
      * <ul>
-     *     <li>no job configuration, that means no processing guarantee, no custom
+     *     <li>very limited job configuration: no processing guarantee, no custom
      *         classes or job resources - all job code must be available in the cluster.
+     *         Refer to {@link JobConfig} for details.
      *
      *     <li>metrics not available through {@link Job#getMetrics()}. However,
      *         light jobs are included in member metrics accessed through other means.
@@ -178,16 +188,24 @@ public interface JetService {
      * A light job will not be cancelled if the client disconnects. It's
      * potential failure will be only logged in member logs.
      */
+    Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config);
+
+    /**
+     * Submits a job defined in the Core API with a default config.
+     * <p>
+     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
+     */
     @Nonnull
-    Job newLightJob(Pipeline p);
+    default Job newLightJob(@Nonnull DAG dag) {
+        return newLightJob(dag, new JobConfig());
+    }
 
     /**
      * Submits a job defined in the Core API.
      * <p>
-     * See {@link #newLightJob(Pipeline)} for more information.
+     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
      */
-    @Nonnull
-    Job newLightJob(DAG dag);
+    Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

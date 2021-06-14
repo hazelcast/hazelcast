@@ -65,7 +65,13 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
         super(client, jobId, coordinator);
     }
 
-    ClientJobProxy(JetClientInstanceImpl client, long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+    ClientJobProxy(
+            JetClientInstanceImpl client,
+            long jobId,
+            boolean isLightJob,
+            @Nonnull Object jobDefinition,
+            @Nonnull JobConfig config
+    ) {
         super(client, jobId, isLightJob, jobDefinition, config);
     }
 

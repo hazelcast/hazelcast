@@ -33,7 +33,11 @@ import java.time.format.SignStyle;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 
 /**
@@ -43,6 +47,7 @@ public abstract class AbstractStringConverter extends Converter {
     private static final int MIN_YEAR_SYMBOLS = 4;
     private static final int MAX_YEAR_SYMBOLS = 10;
 
+    // region date-time formatters
     static final DateTimeFormatter STANDARD_DATE_FORMAT = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
             .appendValue(YEAR, MIN_YEAR_SYMBOLS, MAX_YEAR_SYMBOLS, SignStyle.EXCEEDS_PAD)
@@ -51,6 +56,32 @@ public abstract class AbstractStringConverter extends Converter {
             .appendLiteral('-')
             .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NEVER)
             .toFormatter();
+
+    @SuppressWarnings({"checkstyle:MagicNumber", "checkstyle:DeclarationOrder"})
+    static final DateTimeFormatter STANDARD_TIME_FORMAT = new DateTimeFormatterBuilder()
+            .appendValue(HOUR_OF_DAY, 1, 2, SignStyle.NEVER)
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 1, 2, SignStyle.NEVER)
+            .optionalStart()
+            .appendLiteral(':')
+            .appendValue(SECOND_OF_MINUTE, 1, 2, SignStyle.NEVER)
+            .optionalStart()
+            .appendFraction(NANO_OF_SECOND, 0, 9, true)
+            .toFormatter();
+
+    static final DateTimeFormatter STANDARD_DATE_TIME_FORMAT = new DateTimeFormatterBuilder()
+            .append(STANDARD_DATE_FORMAT)
+            .appendPattern("['T'][' ']")
+            .append(STANDARD_TIME_FORMAT)
+            .toFormatter();
+
+    static final DateTimeFormatter STANDARD_OFFSET_DATE_TIME_FORMAT = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .append(STANDARD_DATE_TIME_FORMAT)
+            .appendOffsetId()
+            .toFormatter();
+
+    //endregion
 
     protected AbstractStringConverter(int id) {
         super(id, QueryDataTypeFamily.VARCHAR);
@@ -154,7 +185,7 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final LocalTime asTime(Object val) {
         try {
-            return LocalTime.parse(cast(val));
+            return LocalTime.parse(cast(val), STANDARD_TIME_FORMAT);
         } catch (DateTimeParseException e) {
             throw cannotParseError(QueryDataTypeFamily.TIME);
         }
@@ -163,7 +194,7 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final LocalDateTime asTimestamp(Object val) {
         try {
-            return LocalDateTime.parse(cast(val));
+            return LocalDateTime.parse(cast(val), STANDARD_DATE_TIME_FORMAT);
         } catch (DateTimeParseException e) {
             throw cannotParseError(QueryDataTypeFamily.TIMESTAMP);
         }
@@ -172,7 +203,7 @@ public abstract class AbstractStringConverter extends Converter {
     @Override
     public final OffsetDateTime asTimestampWithTimezone(Object val) {
         try {
-            return OffsetDateTime.parse(cast(val));
+            return OffsetDateTime.parse(cast(val), STANDARD_OFFSET_DATE_TIME_FORMAT);
         } catch (DateTimeParseException e) {
             throw cannotParseError(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
         }

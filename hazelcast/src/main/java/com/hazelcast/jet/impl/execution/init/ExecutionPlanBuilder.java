@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -65,7 +64,6 @@ public final class ExecutionPlanBuilder {
             NodeEngine nodeEngine, Collection<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
-        assert !isLightJob || jobConfig == LIGHT_JOB_CONFIG;
         final HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
         final int defaultParallelism = hazelcastInstance.getConfig().getJetConfig()
                 .getInstanceConfig().getCooperativeThreadCount();

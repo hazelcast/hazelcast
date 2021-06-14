@@ -143,7 +143,7 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Vertex sink(
+    public Vertex sinkProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table0
     ) {

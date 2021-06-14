@@ -155,16 +155,19 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         // LocalTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIME), TIME, null);
         putAndCheckValue(LOCAL_TIME_VAL.toString(), sql("this", TIME), TIME, LOCAL_TIME_VAL);
+        putAndCheckValue(STANDARD_LOCAL_TIME_VAL, sql("this", TIME), TIME, LOCAL_TIME_VAL);
         putAndCheckFailure("bad", sql("this", TIME), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIME");
 
         // LocalDateTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIMESTAMP), TIMESTAMP, null);
         putAndCheckValue(LOCAL_DATE_TIME_VAL.toString(), sql("this", TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
+        putAndCheckValue(STANDARD_LOCAL_DATE_TIME_VAL, sql("this", TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
         putAndCheckFailure("bad", sql("this", TIMESTAMP), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP");
 
         // OffsetDateTime
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, null);
         putAndCheckValue(OFFSET_DATE_TIME_VAL.toString(), sql("this", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
+        putAndCheckValue(STANDARD_LOCAL_OFFSET_TIME_VAL, sql("this", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
         putAndCheckFailure("bad", sql("this", TIMESTAMP_WITH_TIME_ZONE), DATA_EXCEPTION, "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
 
         // Object
@@ -261,18 +264,24 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql(stringLiteral("false"), DOUBLE), PARSING, "CAST function cannot convert literal 'false' to type DOUBLE: Cannot parse VARCHAR value to DOUBLE");
 
         // VARCHAR -> DATE
+        checkValue0(sql(stringLiteral("2020-1-01"), DATE), DATE, LocalDate.parse("2020-01-01"));
+        checkValue0(sql(stringLiteral("2020-9-1"), DATE), DATE, LocalDate.parse("2020-09-01"));
         checkValue0(sql(stringLiteral("2020-01-01"), DATE), DATE, LocalDate.parse("2020-01-01"));
         checkFailure0(sql(stringLiteral("foo"), DATE), PARSING, "CAST function cannot convert literal 'foo' to type DATE: Cannot parse VARCHAR value to DATE");
 
         // VARCHAR -> TIME
         checkValue0(sql(stringLiteral("00:00"), TIME), TIME, LocalTime.parse("00:00"));
+        checkValue0(sql(stringLiteral("0:0"), TIME), TIME, LocalTime.parse("00:00"));
+        checkValue0(sql(stringLiteral("9:0"), TIME), TIME, LocalTime.parse("09:00"));
         checkValue0(sql(stringLiteral("00:01"), TIME), TIME, LocalTime.parse("00:01"));
+        checkValue0(sql(stringLiteral("00:1"), TIME), TIME, LocalTime.parse("00:01"));
         checkValue0(sql(stringLiteral("02:01"), TIME), TIME, LocalTime.parse("02:01"));
         checkValue0(sql(stringLiteral("00:00:00"), TIME), TIME, LocalTime.parse("00:00:00"));
         checkValue0(sql(stringLiteral("00:00:01"), TIME), TIME, LocalTime.parse("00:00:01"));
         checkValue0(sql(stringLiteral("00:02:01"), TIME), TIME, LocalTime.parse("00:02:01"));
         checkValue0(sql(stringLiteral("03:02:01"), TIME), TIME, LocalTime.parse("03:02:01"));
 
+        checkFailure0(sql(stringLiteral("9"), TIME), PARSING, "CAST function cannot convert literal '9' to type TIME: Cannot parse VARCHAR value to TIME");
         checkFailure0(sql(stringLiteral("00:60"), TIME), PARSING, "CAST function cannot convert literal '00:60' to type TIME: Cannot parse VARCHAR value to TIME");
         checkFailure0(sql(stringLiteral("00:00:60"), TIME), PARSING, "CAST function cannot convert literal '00:00:60' to type TIME: Cannot parse VARCHAR value to TIME");
         checkFailure0(sql(stringLiteral("25:00"), TIME), PARSING, "CAST function cannot convert literal '25:00' to type TIME: Cannot parse VARCHAR value to TIME");
