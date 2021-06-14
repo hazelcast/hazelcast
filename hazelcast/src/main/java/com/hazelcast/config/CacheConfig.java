@@ -26,6 +26,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -63,7 +64,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned {
 
     private String name;
     private String managerPrefix;
@@ -664,6 +665,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
                 + ", wanReplicationRef=" + wanReplicationRef
+                + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';
     }
 
