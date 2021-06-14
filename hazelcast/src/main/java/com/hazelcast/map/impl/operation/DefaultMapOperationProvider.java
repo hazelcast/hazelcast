@@ -33,7 +33,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 
 import java.util.List;
 import java.util.Set;
@@ -305,12 +304,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     public MapOperation createFetchIndexOperation(
             String name,
             String indexName,
-            IndexFilter indexFilter,
             IndexIterationPointer[] pointers,
             PartitionIdSet partitionIdSet,
-            int fetchLimit
+            int sizeHint
     ) {
-        return new MapFetchIndexOperation(name, indexName, indexFilter, pointers, partitionIdSet, fetchLimit);
+        return new MapFetchIndexOperation(name, indexName, pointers, partitionIdSet, sizeHint);
     }
 
     @Override

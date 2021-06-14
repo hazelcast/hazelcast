@@ -27,7 +27,6 @@ import com.hazelcast.query.impl.IndexValueBatch;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,10 +49,9 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX;
 public class MapFetchIndexOperation extends MapOperation implements ReadonlyOperation {
 
     private String indexName;
-    private IndexFilter indexFilter;
     private PartitionIdSet partitionIdSet;
     private IndexIterationPointer[] pointers;
-    private int fetchLimit;
+    private int sizeHint;
 
     private transient MapFetchIndexOperationResult response;
 
@@ -62,17 +60,15 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     public MapFetchIndexOperation(
             String name,
             String indexName,
-            IndexFilter indexFilter,
             IndexIterationPointer[] pointers,
             PartitionIdSet partitionIdSet,
-            int fetchLimit
+            int sizeHint
     ) {
         super(name);
         this.indexName = indexName;
-        this.indexFilter = indexFilter;
         this.partitionIdSet = partitionIdSet;
         this.pointers = pointers;
-        this.fetchLimit = fetchLimit;
+        this.sizeHint = sizeHint;
     }
 
     @Override
@@ -89,10 +85,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         MapFetchIndexOperationResultInternal result;
         switch (index.getConfig().getType()) {
             case HASH:
-                result = runInternalHash(index, pointers, fetchLimit);
+                result = runInternalHash(index, pointers, sizeHint);
                 break;
             case SORTED:
-                result = runInternalSorted(index, pointers, fetchLimit);
+                result = runInternalSorted(index, pointers, sizeHint);
                 break;
             case BITMAP:
                 throw new UnsupportedOperationException("BITMAP scan is not implemented");
@@ -215,16 +211,18 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         indexName = in.readString();
-        indexFilter = in.readObject();
         partitionIdSet = in.readObject();
+        pointers = in.readObject();
+        sizeHint = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeString(indexName);
-        out.writeObject(indexFilter);
         out.writeObject(partitionIdSet);
+        out.writeObject(pointers);
+        out.writeInt(sizeHint);
     }
 
     @Override
