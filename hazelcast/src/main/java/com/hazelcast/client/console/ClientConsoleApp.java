@@ -1423,7 +1423,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("                                            <command> with current iteration (0..<number-1>)");
         println("  &<number> <command>                     forks <number> threads to execute <command>, replace");
         println("                                            $t in <command> with current thread number (0..<number-1>).");
-        println("                                            When using #x or &x, is is advised to use silent true");
+        println("                                            When using #x or &x, it is advised to use silent true");
         println("                                            as well. When using &x with m.putmany and m.removemany,");
         println("                                            each thread will get a different share of keys unless");
         println("                                            a start key index is specified.");
