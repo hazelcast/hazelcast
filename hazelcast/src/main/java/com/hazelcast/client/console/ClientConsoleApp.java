@@ -56,6 +56,7 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
@@ -87,6 +88,8 @@ import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
+import static org.jline.utils.AttributedStyle.BLUE;
+import static org.jline.utils.AttributedStyle.BRIGHT;
 
 /**
  * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
@@ -104,15 +107,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     private static final int BYTE_TO_BIT = 8;
     private static final int LENGTH_BORDER = 4;
 
-    private static final int COLOR = 12;
-
-    private IQueue<Object> queue;
-    private ITopic<Object> topic;
-    private IMap<Object, Object> map;
-    private MultiMap<Object, Object> multiMap;
-    private ISet<Object> set;
-    private IList<Object> list;
-    private IAtomicLong atomicNumber;
+    private static final int COLOR = BLUE | BRIGHT;
 
     private String namespace = "default";
     private String executorNamespace = "Sample Executor";
@@ -126,11 +121,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     private final HazelcastInstance client;
 
-    public ClientConsoleApp(HazelcastInstance client) {
+    public ClientConsoleApp(@Nonnull HazelcastInstance client) {
        this(client, null);
     }
 
-    public ClientConsoleApp(HazelcastInstance client, @Nullable PrintWriter writer) {
+    public ClientConsoleApp(@Nonnull HazelcastInstance client, @Nullable PrintWriter writer) {
         this.client = client;
         lineReader = LineReaderBuilder.builder()
                 .variable(LineReader.SECONDARY_PROMPT_PATTERN, new AttributedStringBuilder()
@@ -147,38 +142,32 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     public IQueue<Object> getQueue() {
-        queue = client.getQueue(namespace);
-        return queue;
+        return client.getQueue(namespace);
     }
 
     public ITopic<Object> getTopic() {
-        topic = client.getTopic(namespace);
-        return topic;
+
+        return client.getTopic(namespace);
     }
 
     public IMap<Object, Object> getMap() {
-        map = client.getMap(namespace);
-        return map;
+        return client.getMap(namespace);
     }
 
     public MultiMap<Object, Object> getMultiMap() {
-        multiMap = client.getMultiMap(namespace);
-        return multiMap;
+        return client.getMultiMap(namespace);
     }
 
     public IAtomicLong getAtomicNumber() {
-        atomicNumber = client.getCPSubsystem().getAtomicLong(namespace);
-        return atomicNumber;
+        return client.getCPSubsystem().getAtomicLong(namespace);
     }
 
     public ISet<Object> getSet() {
-        set = client.getSet(namespace);
-        return set;
+        return client.getSet(namespace);
     }
 
     public IList<Object> getList() {
-        list = client.getList(namespace);
-        return list;
+        return client.getList(namespace);
     }
 
     public void stop() {
@@ -186,12 +175,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     public void start() {
-        getMap().size();
-        getList().size();
-        getSet().size();
-        getQueue().size();
-        getMultiMap().size();
-
         println(startPrompt(client));
         writer.flush();
         running = true;
@@ -252,8 +235,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         if (spaceIndex != -1) {
             first = args[0];
         }
-        if (command.startsWith("help")) {
-            handleHelp(command);
+        if (equalsIgnoreCase(first, "help")) {
+            handleHelp();
         } else if (first.startsWith("#") && first.length() > 1) {
             int repeat = Integer.parseInt(first.substring(1));
             long t0 = Clock.currentTimeMillis();
@@ -292,11 +275,9 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleAt(first);
         } else if (command.indexOf(';') != -1) {
             handleColon(command);
-        } else if ("silent".equals(first)) {
+        } else if (equalsIgnoreCase(first, "silent")) {
             silent = Boolean.parseBoolean(args[1]);
-        } else if ("shutdown".equals(first)) {
-            client.getLifecycleService().shutdown();
-        } else if ("echo".equals(first)) {
+        } else if (equalsIgnoreCase(first, "echo")) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
         } else if (equalsIgnoreCase(first, "clear")) {
@@ -320,11 +301,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                     hist.resetIndex();
                 }
             }
-        } else if ("ns".equals(first)) {
+        } else if (equalsIgnoreCase(first, "ns")) {
             handleNamespace(args);
-        } else if ("who".equals(first)) {
+        } else if (equalsIgnoreCase(first, "who")) {
             handleWho();
-        } else if ("jvm".equals(first)) {
+        } else if (equalsIgnoreCase(first, "jvm")) {
             handleJvm();
         } else if (first.contains("lock") && !first.contains(".")) {
             handleLock(args);
@@ -458,7 +439,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             executeOnMembers(args);
         } else if (equalsIgnoreCase(first, "instances")) {
             handleInstances(args);
-        } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")) {
+        } else if (equalsIgnoreCase(first, "quit") || equalsIgnoreCase(first, "exit")
+                || equalsIgnoreCase(first, "shutdown")) {
             println("Exiting from the client console application.");
             writer.flush();
             System.exit(0);
@@ -683,6 +665,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     }
 
     protected void handleListAddMany(String[] args) {
+        IList list = getList();
         int count = 1;
         if (args.length > 1) {
             count = Integer.parseInt(args[1]);
@@ -690,7 +673,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         int successCount = 0;
         long t0 = Clock.currentTimeMillis();
         for (int i = 0; i < count; i++) {
-            boolean success = getList().add("obj" + i);
+            boolean success = list.add("obj" + i);
             if (success) {
                 successCount++;
             }
@@ -1412,7 +1395,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
     /**
      * Handles the help command.
      */
-    protected void handleHelp(String command) {
+    protected void handleHelp() {
         boolean silentBefore = silent;
         silent = false;
         printlnBold("Commands:");
