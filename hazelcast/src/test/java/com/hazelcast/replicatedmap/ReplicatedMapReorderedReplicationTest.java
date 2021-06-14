@@ -40,9 +40,9 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.Random;
 
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -65,7 +65,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
         // if updateFactory() has been executed, field & replicatedMapDataSerializableFactory are populated
         if (replicatedMapDataSerializableFactory != null && field != null) {
             // restore original value of ReplicatedMapDataSerializerHook.FACTORY
-            field.set(null, replicatedMapDataSerializableFactory);
+            updateFactoryField(replicatedMapDataSerializableFactory);
         }
     }
 
@@ -151,17 +151,13 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
     }
 
     private void updateFactory() throws Exception {
+        // Get Field to manipulate and save it's old value to replicatedMapDataSerializableFactory
         field = ReplicatedMapDataSerializerHook.class.getDeclaredField("FACTORY");
-
-        // remove final modifier from field
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
         field.setAccessible(true);
         final DataSerializableFactory factory = (DataSerializableFactory) field.get(null);
         replicatedMapDataSerializableFactory = factory;
-        field.set(null, new TestReplicatedMapDataSerializerFactory(factory));
+
+        updateFactoryField(new TestReplicatedMapDataSerializerFactory(factory));
     }
 
     private static class TestReplicatedMapDataSerializerFactory implements DataSerializableFactory {
@@ -192,5 +188,17 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
             }
             super.run();
         }
+    }
+
+    private void updateFactoryField(DataSerializableFactory factory) throws Exception {
+        // Get Unsafe object
+        final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        final Unsafe unsafe = (Unsafe) unsafeField.get(null);
+
+        // Update the field
+        final Object staticFieldBase = unsafe.staticFieldBase(field);
+        final long staticFieldOffset = unsafe.staticFieldOffset(field);
+        unsafe.putObject(staticFieldBase, staticFieldOffset, factory);
     }
 }
