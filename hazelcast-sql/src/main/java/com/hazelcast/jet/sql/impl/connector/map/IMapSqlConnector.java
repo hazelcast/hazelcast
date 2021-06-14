@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -34,6 +35,8 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -44,12 +47,10 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlNodeList;
-import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,9 @@ import java.util.Map;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.sql.impl.extract.QueryPath.KEY_PATH;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -74,8 +77,7 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private static final SqlNodeList KEY_NODE_LIST = new SqlNodeList(singletonList(
-            new SqlIdentifier(QueryPath.KEY, SqlParserPos.ZERO)), SqlParserPos.ZERO);
+    private static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     @Override
     public String typeName() {
@@ -149,8 +151,8 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getMapName(),
                 table.getKeyDescriptor(),
                 table.getValueDescriptor(),
-                table.fieldPaths(),
-                table.types(),
+                asList(table.paths()),
+                asList(table.types()),
                 projection,
                 filter
         );
@@ -170,9 +172,8 @@ public class IMapSqlConnector implements SqlConnector {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         String name = table.getMapName();
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+        QueryPath[] paths = table.paths();
+        QueryDataType[] types = table.types();
         QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
         QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
 
@@ -195,15 +196,11 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-
         Vertex vStart = dag.newUniqueVertex(
                 "Project(" + toString(table) + ")",
                 KvProcessors.entryProjector(
-                        paths,
-                        types,
+                        table.paths(),
+                        table.types(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                         (UpsertTargetDescriptor) table.getValueJetMetadata()
                 )
@@ -220,13 +217,59 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public SqlNodeList getPrimaryKey(Table table0) {
-        return KEY_NODE_LIST;
+    public Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nonnull List<String> updatedFields,
+            @Nonnull List<Expression<?>> updates
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        QueryPath[] paths = table.paths();
+        QueryDataType[] types = table.types();
+
+        List<TableField> fields = table.getFields();
+        int keyIndex = -1;
+        List<Expression<?>> projections = new ArrayList<>(fields.size());
+        for (int i = 0; i < fields.size(); i++) {
+            MapTableField field = ((MapTableField) fields.get(i));
+
+            if (field.getPath().isKey() && updatedFields.contains(field.getName())) {
+                throw QueryException.error("Cannot update key");
+            }
+
+            if (field.getPath().equals(KEY_PATH)) {
+                assert keyIndex == -1;
+                keyIndex = i;
+            }
+
+            projections.add(ColumnExpression.create(i, field.getType()));
+        }
+
+        KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
+                paths,
+                types,
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                null,
+                projections
+        );
+        KvProjector.Supplier projectorSupplier = KvProjector.supplier(
+                paths,
+                types,
+                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                (UpsertTargetDescriptor) table.getValueJetMetadata()
+        );
+
+        return dag.newUniqueVertex(
+                "Update(" + toString(table) + ")",
+                new UpdateProcessorSupplier(table.getMapName(), keyIndex, rowProjectorSupplier, updates, projectorSupplier)
+        );
     }
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex delete(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(
@@ -236,6 +279,12 @@ public class IMapSqlConnector implements SqlConnector {
                     assert row.length == 1;
                     return row[0];
                 }, (v, t) -> null));
+    }
+
+    @Nonnull
+    @Override
+    public List<String> getPrimaryKey(Table table0) {
+        return PRIMARY_KEY_LIST;
     }
 
     private static String toString(PartitionedMapTable table) {

@@ -78,14 +78,6 @@ public class CreateDagVisitor {
         this.parameterMetadata = parameterMetadata;
     }
 
-    public Vertex onDelete(DeletePhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-
-        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
-        connectInput(rel.getInput(), vertex, null);
-        return vertex;
-    }
-
     public Vertex onValues(ValuesPhysicalRel rel) {
         List<ExpressionValues> values = rel.values();
 
@@ -109,6 +101,23 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         Vertex vertex = getJetSqlConnector(table).sink(dag, table);
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onUpdate(UpdatePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
+        Vertex vertex = getJetSqlConnector(table)
+                .updateProcessor(dag, table, rel.updatedFields(), rel.updates(parameterMetadata));
+        connectInput(rel.getInput(), vertex, null).localParallelism(1);
+        return vertex;
+    }
+
+    public Vertex onDelete(DeletePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
+        Vertex vertex = getJetSqlConnector(table).delete(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }

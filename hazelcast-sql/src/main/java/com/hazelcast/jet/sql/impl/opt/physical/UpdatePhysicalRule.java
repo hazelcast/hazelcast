@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.DeleteLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.UpdateLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
@@ -25,31 +25,32 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
-public final class DeletePhysicalRule extends ConverterRule {
+final class UpdatePhysicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new DeletePhysicalRule();
+    static final RelOptRule INSTANCE = new UpdatePhysicalRule();
 
-    private DeletePhysicalRule() {
+    private UpdatePhysicalRule() {
         super(
-                DeleteLogicalRel.class, LOGICAL, PHYSICAL,
-                DeletePhysicalRule.class.getSimpleName()
+                UpdateLogicalRel.class, LOGICAL, PHYSICAL,
+                UpdatePhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        DeleteLogicalRel logicalDelete = (DeleteLogicalRel) rel;
+        UpdateLogicalRel logicalUpdate = (UpdateLogicalRel) rel;
 
-        return new DeletePhysicalRel(
-                logicalDelete.getCluster(),
-                OptUtils.toPhysicalConvention(logicalDelete.getTraitSet()),
-                logicalDelete.getTable(),
-                logicalDelete.getCatalogReader(),
-                OptUtils.toPhysicalInput(logicalDelete.getInput()),
-                logicalDelete.getOperation(),
-                logicalDelete.getUpdateColumnList(),
-                logicalDelete.getSourceExpressionList(),
-                logicalDelete.isFlattened()
+        return new UpdatePhysicalRel(
+                logicalUpdate.getCluster(),
+                OptUtils.toPhysicalConvention(logicalUpdate.getTraitSet()),
+                logicalUpdate.getTable(),
+                logicalUpdate.getCatalogReader(),
+                OptUtils.toPhysicalInput(logicalUpdate.getInput()),
+                logicalUpdate.getOperation(),
+                logicalUpdate.getUpdateColumnList(),
+                logicalUpdate.getSourceExpressionList(),
+                logicalUpdate.isFlattened(),
+                logicalUpdate.projects()
         );
     }
 }

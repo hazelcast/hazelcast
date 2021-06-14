@@ -24,8 +24,11 @@ import org.junit.Test;
 import java.io.Serializable;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class SqlDeleteQueriesTest extends SqlTestSupport {
+// TODO: mote to map package
+public class SqlDeleteTest extends SqlTestSupport {
+
     @BeforeClass
     public static void setUpClass() {
         initialize(2, null);
@@ -94,7 +97,7 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
     }
 
     @Test
-    public void dontDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+    public void doNotDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
@@ -121,8 +124,27 @@ public class SqlDeleteQueriesTest extends SqlTestSupport {
         assertMapDoesNotContainKey(name, 1);
     }
 
-    private SqlResult execute(String sql) {
-        return instance().getSql().execute(sql);
+    @Test
+    public void deleteByDynamicParam() {
+        IMap<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        execute("delete from test_map where __key = ?", 2);
+        assertMapContainsKey(1);
+        assertMapDoesNotContainKey(2);
+        assertMapContainsKey(3);
+    }
+
+    @Test
+    public void when_deleteFromUnknownMapping_then_throws() {
+        assertThatThrownBy(() -> execute("delete from test_map where __key = 1"))
+                .hasMessageContaining("Object 'test_map' not found");
+    }
+
+    private SqlResult execute(String sql, Object... arguments) {
+        return instance().getSql().execute(sql, arguments);
     }
 
     private void checkUpdateCount(String sql, int expected) {

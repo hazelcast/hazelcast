@@ -25,7 +25,6 @@ import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
-import org.apache.calcite.sql.SqlNodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -305,12 +304,26 @@ public interface SqlConnector {
     }
 
     /**
+     * Returns the supplier for the update processor that will update given
+     * {@code table}.
+     */
+    @Nonnull
+    default Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull List<String> updatedFields,
+            @Nonnull List<Expression<?>> updates
+    ) {
+        throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
+    }
+
+    /**
      * Returns the supplier for the delete processor that will delete from the
      * given {@code table}. The input to the processor will be the fields
      * returned by {@link #getPrimaryKey(Table)}.
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex delete(@Nonnull DAG dag, @Nonnull Table table) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
     }
 
@@ -318,14 +331,14 @@ public interface SqlConnector {
      * Return the indexes of fields that are primary key. These fields will be
      * fed to the delete processor.
      * <p>
-     * Every connector that supports a {@link #deleteProcessor} should have a
-     * primary key on each table, otherwise deleting cannot work. If some table
+     * Every connector that supports a {@link #delete} should have a primary
+     * key on each table, otherwise deleting cannot work. If some table
      * doesn't have a primary key and an empty node list is returned from this
      * method, an error will be thrown.
      */
     @Nonnull
-    default SqlNodeList getPrimaryKey(Table table) {
-        throw new UnsupportedOperationException("DELETE not supported by connector: " + typeName());
+    default List<String> getPrimaryKey(Table table) {
+        throw new UnsupportedOperationException("PRIMARY KEY not supported by connector: " + typeName());
     }
 
     /**

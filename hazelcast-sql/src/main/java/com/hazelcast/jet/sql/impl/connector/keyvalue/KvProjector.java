@@ -38,8 +38,9 @@ import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConver
  * <p>
  * {@link KvRowProjector} does the reverse.
  */
-class KvProjector {
+public class KvProjector {
 
+    private final QueryPath[] paths;
     private final QueryDataType[] types;
 
     private final UpsertTarget keyTarget;
@@ -53,6 +54,7 @@ class KvProjector {
             UpsertTarget keyTarget,
             UpsertTarget valueTarget
     ) {
+        this.paths = paths;
         this.types = types;
 
         this.keyTarget = keyTarget;
@@ -75,14 +77,27 @@ class KvProjector {
         return injectors;
     }
 
-    Entry<Object, Object> project(Object[] row) {
+    public Entry<Object, Object> project(Object[] row) {
         keyTarget.init();
         valueTarget.init();
-        for (int i = 0; i < row.length; i++) {
+        for (int i = 0; i < injectors.length; i++) {
             Object value = getToConverter(types[i]).convert(row[i]);
             injectors[i].set(value);
         }
         return entry(keyTarget.conclude(), valueTarget.conclude());
+    }
+
+    public Object projectValue(Object[] row) {
+        valueTarget.init();
+        for (int i = 0; i < injectors.length; i++) {
+            if (paths[i].isKey()) {
+                continue;
+            }
+
+            Object value = getToConverter(types[i]).convert(row[i]);
+            injectors[i].set(value);
+        }
+        return valueTarget.conclude();
     }
 
     public static Supplier supplier(

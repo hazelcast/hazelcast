@@ -26,6 +26,7 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlDataTypeSpec;
+import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -62,6 +63,12 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     public boolean coerceOperandType(SqlValidatorScope scope, SqlCall call, int index, RelDataType targetType) {
         SqlNode operand = call.operand(index);
         return coerceNode(scope, operand, targetType, cast -> call.setOperand(index, cast));
+    }
+
+    @Override
+    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
+        SqlNode node = nodeList.get(index);
+        return coerceNode(scope, node, targetType, cast -> nodeList.set(index, cast));
     }
 
     private boolean coerceNode(
@@ -150,7 +157,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
      * needed for {@link #querySourceCoercion} method, which calls this method.
      *
      * @return True, if the source column can now be assigned to {@code
-     *      targetType}
+     * targetType}
      */
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
@@ -245,6 +252,11 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
     }
 
     @Override
+    public boolean userDefinedFunctionCoercion(SqlValidatorScope scope, SqlCall call, SqlFunction function) {
+        throw new UnsupportedOperationException("Should not be called");
+    }
+
+    @Override
     public boolean querySourceCoercion(
             SqlValidatorScope scope,
             RelDataType sourceRowType,
@@ -261,7 +273,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             RelDataType targetType = targetFields.get(i).getType();
             if (!SqlTypeUtil.equalSansNullability(validator.getTypeFactory(), sourceType, targetType)
                     && !HazelcastTypeUtils.canCast(sourceType, targetType)
-                    || !coerceSourceRowType(scope, query, i, targetType)) {
+                    || !coerceSourceRowType(scope, query, i, fieldCount, targetType)) {
                 SqlNode node = getNthExpr(query, i, fieldCount);
                 throw scope.getValidator().newValidationError(node,
                         RESOURCE.typeNotAssignable(
@@ -274,7 +286,6 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         // Instead, we throw the validation error ourselves above if we can't assign.
         return true;
     }
-
 
     /**
      * Copied from {@code org.apache.calcite.sql.validate.SqlValidatorImpl#getNthExpr()}.
@@ -321,29 +332,35 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
     }
 
-    // copied from TypeCoercionImpl
+    // originally copied from TypeCoercionImpl
     private boolean coerceSourceRowType(
             SqlValidatorScope sourceScope,
             SqlNode query,
             int columnIndex,
-            RelDataType targetType) {
+            int totalColumns,
+            RelDataType targetType
+    ) {
         switch (query.getKind()) {
             case INSERT:
                 SqlInsert insert = (SqlInsert) query;
                 return coerceSourceRowType(sourceScope,
                         insert.getSource(),
                         columnIndex,
-                        targetType);
+                        totalColumns,
+                        targetType
+                );
             case UPDATE:
                 SqlUpdate update = (SqlUpdate) query;
                 if (update.getSourceExpressionList() != null) {
-                    final SqlNodeList sourceExpressionList = update.getSourceExpressionList();
-                    return coerceColumnType(sourceScope, sourceExpressionList, columnIndex, targetType);
+                    SqlNodeList sourceExpressionList = update.getSourceExpressionList();
+                    coerceColumnType(sourceScope, sourceExpressionList, columnIndex, targetType);
+
+                    SqlNodeList selectList = update.getSourceSelect().getSelectList();
+                    coerceColumnType(sourceScope, selectList, selectList.size() - totalColumns + columnIndex, targetType);
+
+                    return true; // TODO: ???
                 } else {
-                    return coerceSourceRowType(sourceScope,
-                            update.getSourceSelect(),
-                            columnIndex,
-                            targetType);
+                    return coerceSourceRowType(sourceScope, update.getSourceSelect(), columnIndex, totalColumns, targetType);
                 }
             default:
                 return rowTypeCoercion(sourceScope, query, columnIndex, targetType);

@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -36,6 +37,8 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
+import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -45,9 +48,11 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
@@ -108,29 +113,11 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     @Override
-    public void validateInsert(SqlInsert insert) {
-        super.validateInsert(insert);
-
-        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
-            throw newValidationError(insert, RESOURCE.mustUseCreateJob());
-        }
-    }
-
-    @Override
     protected void validateGroupClause(SqlSelect select) {
         super.validateGroupClause(select);
 
         if (containsGroupingOrAggregation(select) && isInfiniteRows(select)) {
             throw newValidationError(select, RESOURCE.streamingAggregationsNotSupported());
-        }
-    }
-
-    @Override
-    protected void validateOrderList(SqlSelect select) {
-        super.validateOrderList(select);
-
-        if (select.hasOrderBy() && isInfiniteRows(select)) {
-            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
         }
     }
 
@@ -150,6 +137,140 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         }
 
         return false;
+    }
+
+    @Override
+    protected void validateOrderList(SqlSelect select) {
+        super.validateOrderList(select);
+
+        if (select.hasOrderBy() && isInfiniteRows(select)) {
+            throw newValidationError(select, RESOURCE.streamingSortingNotSupported());
+        }
+    }
+
+    @Override
+    protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
+        super.validateJoin(join, scope);
+
+        // the right side of a join must not be a subquery or a VALUES clause
+        join.getRight().accept(new SqlBasicVisitor<Void>() {
+            @Override
+            public Void visit(SqlCall call) {
+                if (call.getKind() == SqlKind.SELECT) {
+                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
+                } else if (call.getKind() == VALUES) {
+                    throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
+                }
+
+                return call.getOperator().acceptCall(this, call);
+            }
+        });
+    }
+
+    @Override
+    public void validateInsert(SqlInsert insert) {
+        super.validateInsert(insert);
+
+        if (!isCreateJob && isInfiniteRows(insert.getSource())) {
+            throw newValidationError(insert, RESOURCE.mustUseCreateJob());
+        }
+    }
+
+    @Override
+    protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
+        SqlNode sourceTable = call.getTargetTable();
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
+
+        SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
+        if (validatorTable != null) {
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+            table.getFields().forEach(field -> selectList.add(new SqlIdentifier(field.getName(), SqlParserPos.ZERO)));
+        }
+
+        int ordinal = 0;
+        for (SqlNode exp : call.getSourceExpressionList()) {
+            // Force unique aliases to avoid a duplicate for Y with
+            // SET X=Y
+            String alias = SqlUtil.deriveAliasFromOrdinal(ordinal);
+            selectList.add(SqlValidatorUtil.addAlias(exp, alias));
+            ++ordinal;
+        }
+
+        if (call.getAlias() != null) {
+            sourceTable = SqlValidatorUtil.addAlias(sourceTable, call.getAlias().getSimple());
+        }
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
+                call.getCondition(), null, null, null, null, null, null, null);
+    }
+
+    @Override
+    public void validateUpdate(SqlUpdate update) {
+        super.validateUpdate(update);
+
+        SqlNode sourceTable = update.getTargetTable();
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
+
+        if (validatorTable != null) {
+            Set<String> targetColumnNames = update.getTargetColumnList().getList().stream()
+                    .map(node -> ((SqlIdentifier) node).getSimple())
+                    .collect(toSet());
+
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+            for (TableField field : table.getFields()) {
+                if (field.isHidden() && targetColumnNames.contains(field.getName())) {
+                    throw QueryException.error("Cannot update '" + field.getName() + "' field");
+                }
+            }
+        }
+
+        // UPDATE FROM SELECT is transformed into join:
+        // update m1 set __key = (select this from m2) where __key = 1
+        // update m1 set __key = (select m2.this from m2 where m1.__key = m2.__key)
+        update.getSourceSelect().getSelectList().accept(new SqlBasicVisitor<Void>() {
+            @Override
+            public Void visit(SqlCall call) {
+                if (call.getKind() == SqlKind.SELECT) {
+                    throw newValidationError(update, RESOURCE.updateFromSelectNotSupported());
+                }
+
+                return call.getOperator().acceptCall(this, call);
+            }
+        });
+    }
+
+    @Override
+    protected SqlSelect createSourceSelectForDelete(SqlDelete call) {
+        SqlNode sourceTable = call.getTargetTable();
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
+
+        SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
+        if (validatorTable != null) {
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+            SqlConnector connector = getJetSqlConnector(table);
+
+            // We need to feed primary keys to the delete processor so that it can directly delete the records.
+            // Therefore we use the primary key for the select list.
+            connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
+            if (selectList.size() == 0) {
+                throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+            }
+        }
+
+        if (call.getAlias() != null) {
+            sourceTable = SqlValidatorUtil.addAlias(sourceTable, call.getAlias().getSimple());
+        }
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
+                call.getCondition(), null, null, null, null, null, null, null);
+    }
+
+    @Override
+    public boolean isInfiniteRows() {
+        return isInfiniteRows;
+    }
+
+    private boolean isInfiniteRows(SqlNode node) {
+        isInfiniteRows |= containsStreamingSource(node);
+        return isInfiniteRows;
     }
 
     /**
@@ -190,58 +311,5 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         FindStreamingTablesVisitor visitor = new FindStreamingTablesVisitor();
         node.accept(visitor);
         return visitor.found;
-    }
-
-    @Override
-    protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
-        super.validateJoin(join, scope);
-
-        // the right side of a join must not be a subquery or a VALUES clause
-        join.getRight().accept(new SqlBasicVisitor<Void>() {
-            @Override
-            public Void visit(SqlCall call) {
-                if (call.getKind() == SqlKind.SELECT) {
-                    throw newValidationError(join, RESOURCE.joiningSubqueryNotSupported());
-                } else if (call.getKind() == VALUES) {
-                    throw newValidationError(join, RESOURCE.joiningValuesNotSupported());
-                }
-
-                return call.getOperator().acceptCall(this, call);
-            }
-        });
-    }
-
-    @Override
-    public boolean isInfiniteRows() {
-        return isInfiniteRows;
-    }
-
-    private boolean isInfiniteRows(SqlNode node) {
-        isInfiniteRows |= containsStreamingSource(node);
-        return isInfiniteRows;
-    }
-
-    @Override
-    protected SqlSelect createSourceSelectForDelete(SqlDelete call) {
-        SqlNode sourceTable = call.getTargetTable();
-        Table table = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names).unwrap(HazelcastTable.class).getTarget();
-        SqlConnector connector = getJetSqlConnector(table);
-
-        // The Calcite default implementation selects all fields (using SELECT *). I'm not sure about how's this supposed
-        // to work. We need to feed primary keys to the delete processor so that it can directly delete the records.
-        // Therefore we use the primary key for the select list.
-        SqlNodeList selectList = connector.getPrimaryKey(table);
-        if (selectList.size() == 0) {
-            throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
-        }
-
-        if (call.getAlias() != null) {
-          sourceTable =
-              SqlValidatorUtil.addAlias(
-                  sourceTable,
-                  call.getAlias().getSimple());
-        }
-        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-            call.getCondition(), null, null, null, null, null, null, null);
     }
 }

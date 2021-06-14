@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -30,9 +26,11 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
-public class DeletePhysicalRel extends TableModify implements PhysicalRel {
+public class UpdateLogicalRel extends TableModify implements LogicalRel {
 
-    DeletePhysicalRel(
+    private final List<RexNode> projects;
+
+    UpdateLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -41,25 +39,21 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
             Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened
+            boolean flattened,
+            List<RexNode> projects
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation,
-                updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+
+        this.projects = projects;
     }
 
-    @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getTable());
-    }
-
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onDelete(this);
+    public List<RexNode> projects() {
+        return projects;
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeletePhysicalRel(
+        return new UpdateLogicalRel(
                 getCluster(),
                 traitSet,
                 getTable(),
@@ -68,7 +62,8 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
                 getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened()
+                isFlattened(),
+                projects
         );
     }
 }

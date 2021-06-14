@@ -19,7 +19,11 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -28,11 +32,14 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class DeletePhysicalRel extends TableModify implements PhysicalRel {
+public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
-    DeletePhysicalRel(
+    private final List<RexNode> projects;
+
+    UpdatePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -41,10 +48,41 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
             Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened
+            boolean flattened,
+            List<RexNode> projects
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation,
-                updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+
+        this.projects = projects;
+    }
+
+    public List<String> updatedFields() {
+        return getUpdateColumnList();
+    }
+
+    // input = all table fields + joined fields (if any)
+    // inputProjections = all table fields + joined fields (if any) + updated fields
+    public List<Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
+        int inputFieldCount = getInput().getRowType().getFieldCount();
+        PlanNodeSchema inputSchema = ((PhysicalRel) getInput()).schema(parameterMetadata);
+        List<Expression<?>> inputProjections = project(inputSchema, this.projects, parameterMetadata);
+
+        List<TableField> fields = getTable().unwrap(HazelcastTable.class).getTarget().getFields();
+
+        List<Expression<?>> updates = new ArrayList<>(fields.size());
+        for (int i = 0; i < fields.size(); i++) {
+            TableField field = fields.get(i);
+
+            int updatedColumnIndex = getUpdateColumnList().indexOf(field.getName());
+            if (updatedColumnIndex > -1) {
+                updates.add(inputProjections.get(inputFieldCount + updatedColumnIndex));
+            } else if (field.isHidden()) {
+                updates.add(ConstantExpression.create(null, field.getType()));
+            } else {
+                updates.add(inputProjections.get(i));
+            }
+        }
+        return updates;
     }
 
     @Override
@@ -54,12 +92,12 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onDelete(this);
+        return visitor.onUpdate(this);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeletePhysicalRel(
+        return new UpdatePhysicalRel(
                 getCluster(),
                 traitSet,
                 getTable(),
@@ -68,7 +106,8 @@ public class DeletePhysicalRel extends TableModify implements PhysicalRel {
                 getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened()
+                isFlattened(),
+                projects
         );
     }
 }
