@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.UniExpressionWithType;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -30,19 +30,19 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 
-public final class ToTimestampTzFunction extends UniExpressionWithType<OffsetDateTime> implements IdentifiedDataSerializable {
+public final class ToTimestampTzFunction extends UniExpression<OffsetDateTime> implements IdentifiedDataSerializable {
     private static final long YEAR_MILLISECONDS = 31536000000L;
     private static final long YEAR_MICROSECONDS = YEAR_MILLISECONDS * 1000L;
     private static final long YEAR_NANOSECONDS = YEAR_MICROSECONDS * 1000L;
 
     public ToTimestampTzFunction() { }
 
-    private ToTimestampTzFunction(Expression<?> operand, QueryDataType resultType) {
-        super(operand, resultType);
+    private ToTimestampTzFunction(Expression<?> operand) {
+        super(operand);
     }
 
-    public static ToTimestampTzFunction create(Expression<?> operand, QueryDataType resultType) {
-        return new ToTimestampTzFunction(operand, resultType);
+    public static ToTimestampTzFunction create(Expression<?> operand) {
+        return new ToTimestampTzFunction(operand);
     }
 
     @Override
@@ -57,12 +57,11 @@ public final class ToTimestampTzFunction extends UniExpressionWithType<OffsetDat
 
     @Override
     public OffsetDateTime eval(final Row row, final ExpressionEvalContext context) {
-        final Number value = (Number) this.operand.eval(row, context);
-        if (value == null) {
+        final Long unixTimestamp = (Long) this.operand.eval(row, context);
+        if (unixTimestamp == null) {
             return null;
         }
 
-        final long unixTimestamp = value.longValue();
         final TemporalUnit unit = getChronoUnit(unixTimestamp);
         final Instant instant = Instant.EPOCH.plus(unixTimestamp, unit);
 

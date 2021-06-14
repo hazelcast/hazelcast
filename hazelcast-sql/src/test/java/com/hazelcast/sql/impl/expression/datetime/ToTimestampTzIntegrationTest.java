@@ -56,6 +56,9 @@ public class ToTimestampTzIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testColumn() {
+        checkColumn((byte) 1, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(1L, ChronoUnit.SECONDS));
+        checkColumn((short) 1, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(1L, ChronoUnit.SECONDS));
+        checkColumn(1, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(1L, ChronoUnit.SECONDS));
         checkColumn(1L, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(1L, ChronoUnit.SECONDS));
         checkColumn(SECONDS, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(SECONDS, ChronoUnit.SECONDS));
         checkColumn(MILLISECONDS, TIMESTAMP_WITH_TIME_ZONE, fromEpoch(MILLISECONDS, ChronoUnit.MILLIS));
