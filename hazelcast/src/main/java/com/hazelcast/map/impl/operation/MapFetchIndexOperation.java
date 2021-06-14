@@ -24,12 +24,17 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.IndexValueBatch;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
+import com.hazelcast.spi.properties.ClusterProperty;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -54,6 +59,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     private int sizeHint;
 
     private transient MapFetchIndexOperationResult response;
+    private final transient IPartitionService partitionService = getNodeEngine().getPartitionService();
 
     public MapFetchIndexOperation() { }
 
@@ -73,69 +79,87 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     protected void runInternal() {
-        IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         Address currentAddress = getNodeEngine().getLocalMember().getAddress();
 
-        InternalIndex index = indexes.getIndex(indexName);
-        if (index == null) {
-            throw new QueryException("Index name does not exist");
+        Indexes indexes = mapContainer.getIndexes();
+        if (indexes == null) {
+            throw new QueryException("Cannot use the index \"" + indexName + "\" of the IMap \""
+                            + mapContainer.getName() + "\" because it is not global "
+                            + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
+                            + "\" is set to \"true\")");
         }
 
-        MapFetchIndexOperationResultInternal result;
+        InternalIndex index = indexes.getIndex(indexName);
+        if (index == null) {
+            throw new QueryException("Index name \"" + indexName + "\" does not exist");
+        }
+
+        if (!allIndexed(index, partitionIdSet)) {
+            throw new QueryException("Some of the partitions are not indexed in \"" + indexName + "\"");
+        }
+
+        int startMigrationTimestamp = getMigrationTimestamp();
+
+        ResultInternal result;
         switch (index.getConfig().getType()) {
             case HASH:
-                result = runInternalHash(index, pointers, sizeHint);
+                result = runInternalHash(index, pointers, partitionIdSet, sizeHint);
                 break;
             case SORTED:
-                result = runInternalSorted(index, pointers, sizeHint);
+                result = runInternalSorted(index, pointers, partitionIdSet, sizeHint);
                 break;
             case BITMAP:
-                throw new UnsupportedOperationException("BITMAP scan is not implemented");
+                throw new UnsupportedOperationException("BITMAP index scan is not implemented");
             default:
-                throw new UnsupportedOperationException("Unknown index type:" + index.getConfig().getType().name());
+                throw new UnsupportedOperationException(
+                        "Unknown index type: \"" + index.getConfig().getType().name() + "\"");
         }
 
         List<QueryableEntry> entries = result.getResult();
         IndexIterationPointer[] newPointers = result.getPointers();
 
-        // After materialization, we will check whether any partitions are migrated.
-        // If it is case, we need to prune migrated data.
-        List<Integer> currentPartitions = partitionService.getMemberPartitions(currentAddress);
-        PartitionIdSet currentPartitionIdSet = new PartitionIdSet(partitionCount, currentPartitions);
+        int endMigrationTimestamp = getMigrationTimestamp();
 
-        Set<Integer> migratedPartitionIds =
-                partitionIdSet
-                        .stream()
-                        .filter(id -> !currentPartitionIdSet.contains(id))
-                        .collect(Collectors.toSet());
+        // In case of migration, discard results, declare migrated partitions
+        // and return old pointers
+        if (endMigrationTimestamp != startMigrationTimestamp) {
+            List<Integer> currentPartitions = partitionService.getMemberPartitions(currentAddress);
+            PartitionIdSet currentPartitionIdSet = new PartitionIdSet(partitionCount, currentPartitions);
 
-        if (!migratedPartitionIds.isEmpty()) {
-            entries = entries.stream()
-                    .filter(entry -> {
-                        int partitionId = partitionService.getPartitionId(entry.getKeyData());
-                        return migratedPartitionIds.contains(partitionId);
-                    })
-                    .collect(Collectors.toList());
+            Set<Integer> migratedPartitionIds =
+                    partitionIdSet
+                            .stream()
+                            .filter(id -> !currentPartitionIdSet.contains(id))
+                            .collect(Collectors.toSet());
+
+            response = new MapFetchIndexOperationResult(Collections.emptyList(), migratedPartitionIds, pointers);
+            return;
         }
 
-        response = new MapFetchIndexOperationResult(entries, migratedPartitionIds, newPointers);
+        response = new MapFetchIndexOperationResult(entries, Collections.emptySet(), newPointers);
     }
 
-    private MapFetchIndexOperationResultInternal runInternalSorted(
+    private ResultInternal runInternalSorted(
             InternalIndex index,
             IndexIterationPointer[] pointers,
-            int fetchLimit
+            PartitionIdSet partitionIdSet,
+            int sizeHint
     ) {
         List<QueryableEntry> entries = new ArrayList<>();
-        int totalFetched = 0;
         Comparable lastValueRead = null;
-        boolean done = false;
+        boolean sizeHintReached = false;
 
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
 
         for (int i = 0; i < pointers.length; i++) {
-            if (done) {
+
+            if (pointers[i].isDone()) {
+                newPointers[i] = pointers[i];
+                continue;
+            }
+
+            if (sizeHintReached) {
                 newPointers[i] = pointers[i];
                 continue;
             }
@@ -153,53 +177,59 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             while (entryIterator.hasNext()) {
                 IndexValueBatch indexValueBatch = entryIterator.next();
                 lastValueRead = indexValueBatch.getValue();
-                entries.addAll(indexValueBatch.getEntries());
-                totalFetched += indexValueBatch.getEntries().size();
 
-                if (totalFetched >= fetchLimit) {
-                    done = true;
+                List<QueryableEntry> filteredEntries = getOwnedEntries(indexValueBatch.getEntries(), partitionIdSet);
+                entries.addAll(filteredEntries);
+
+                if (entries.size() >= sizeHint) {
+                    sizeHintReached = true;
                     break;
                 }
             }
 
-            newPointers[i] = (totalFetched < fetchLimit)
-                    ? null
-                    : new IndexIterationPointer(
-                    pointer.isDescending() ? pointer.getFrom() : lastValueRead,
-                    pointer.isDescending() ? pointer.isFromInclusive() : false,
-                    pointer.isDescending() ? lastValueRead : pointer.getTo(),
-                    pointer.isToInclusive() ? false : pointer.isToInclusive(),
-                    pointer.isDescending());
-
+            if (!entryIterator.hasNext()) {
+                newPointers[i] = IndexIterationPointer.createFinishedIterator();
+            } else {
+                newPointers[i] = new IndexIterationPointer(
+                        pointer.isDescending() ? pointer.getFrom() : lastValueRead,
+                        pointer.isDescending() ? pointer.isFromInclusive() : false,
+                        pointer.isDescending() ? lastValueRead : pointer.getTo(),
+                        pointer.isDescending() ? false : pointer.isToInclusive(),
+                        pointer.isDescending());
+            }
         }
 
-        return new MapFetchIndexOperationResultInternal(entries, newPointers);
+        return new ResultInternal(entries, newPointers);
     }
 
-    private MapFetchIndexOperationResultInternal runInternalHash(
+    private ResultInternal runInternalHash(
             InternalIndex index,
             IndexIterationPointer[] pointers,
-            int fetchLimit
+            PartitionIdSet partitionIdSet,
+            int sizeHint
     ) {
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
         List<QueryableEntry> entries = new ArrayList<>();
-        boolean done = false;
+        boolean sizeHintReached = false;
+
         for (int i = 0; i < pointers.length; i++) {
-            if (done) {
+            if (sizeHintReached || pointers[i].isDone()) {
                 newPointers[i] = pointers[i];
                 continue;
             }
 
             IndexIterationPointer pointer = pointers[i];
-            entries.addAll(index.getRecords(pointer.getFrom()));
-            newPointers[i] = null;
 
-            if (entries.size() >= fetchLimit) {
-                done = true;
+            List<QueryableEntry> filteredEntries = getOwnedEntries(index.getRecords(pointer.getFrom()), partitionIdSet);
+            entries.addAll(filteredEntries);
+            newPointers[i] = IndexIterationPointer.createFinishedIterator();
+
+            if (entries.size() >= sizeHint) {
+                sizeHintReached = true;
             }
         }
 
-        return new MapFetchIndexOperationResultInternal(entries, newPointers);
+        return new ResultInternal(entries, newPointers);
     }
 
     @Override
@@ -230,9 +260,37 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return MAP_FETCH_INDEX;
     }
 
+    private boolean allIndexed(InternalIndex index, PartitionIdSet partitionIdSet) {
+        return partitionIdSet.stream().allMatch(index::hasPartitionIndexed);
+    }
+
+    private int getMigrationTimestamp() {
+        return mapService.getMigrationStamp();
+    }
+
+    /**
+     *  Return only the {@code entries} from the partitions declared in {@code partitionIdSet}
+     *
+     * @param entries
+     * @param partitionIdSet
+     * @return list of entries belonging the given partitions
+     */
+    @Nonnull
+    private List<QueryableEntry> getOwnedEntries(
+            @Nonnull Collection<QueryableEntry> entries,
+            @Nonnull PartitionIdSet partitionIdSet
+    ) {
+        return entries.stream()
+                .filter(entry -> {
+                    int partitionId = partitionService.getPartitionId(entry.getKeyData());
+                    return partitionIdSet.contains(partitionId);
+                })
+                .collect(Collectors.toList());
+    }
+
     public static class MapFetchIndexOperationResult {
         private final Set<Integer> migratedPartitionIds;
-        private final MapFetchIndexOperationResultInternal inner;
+        private final ResultInternal inner;
 
         public MapFetchIndexOperationResult(
                 List<QueryableEntry> result,
@@ -240,7 +298,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 IndexIterationPointer[] pointers
         ) {
             this.migratedPartitionIds = migratedPartitionIds;
-            this.inner = new MapFetchIndexOperationResultInternal(result, pointers);
+            this.inner = new ResultInternal(result, pointers);
         }
 
         public List<QueryableEntry> getResult() {
@@ -256,11 +314,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
-    private static final class MapFetchIndexOperationResultInternal {
+    private static final class ResultInternal {
         private final List<QueryableEntry> result;
         private final IndexIterationPointer[] pointers;
 
-        private MapFetchIndexOperationResultInternal(
+        private ResultInternal(
                 List<QueryableEntry> result,
                 IndexIterationPointer[] pointers
         ) {

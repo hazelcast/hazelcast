@@ -35,6 +35,7 @@ public class IndexIterationPointer {
     private Comparable<?> from;
     private Comparable<?> to;
     private byte flags;
+    private boolean done;
 
     public IndexIterationPointer(
             Comparable<?> from,
@@ -49,6 +50,14 @@ public class IndexIterationPointer {
         flags = (byte) ((descending ? FLAG_DESCENDING : 0)
                 | (fromInclusive ? FLAG_FROM_INCLUSIVE : 0)
                 | (toInclusive ? FLAG_TO_INCLUSIVE : 0));
+    }
+
+    private IndexIterationPointer(boolean done) {
+        this.done = true;
+    }
+
+    public static IndexIterationPointer createFinishedIterator() {
+        return new IndexIterationPointer(true);
     }
 
     public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
@@ -97,5 +106,9 @@ public class IndexIterationPointer {
 
     public boolean isDescending() {
         return (flags & FLAG_DESCENDING) != 0;
+    }
+
+    public boolean isDone() {
+        return done;
     }
 }
