@@ -32,16 +32,24 @@ import com.hazelcast.internal.util.Clock;
 import java.util.Queue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
  * A simple container for a {@link BlockingOperation} that is added to the {@link WaitSet}.
  *
- * Each WaitSetEntry is put in a delay queue (part of the {@link OperationParkerImpl}) based on its expiration time.
+ * This operation is only executed when the inner BlockingOperation requires invalidation.
+ *
+ * WaitSetEntry may be put in a delay queue (part of the {@link OperationParkerImpl}) based on its wait timeout.
+ *
+ * @see Operation#getWaitTimeout()
+ * @see #needsInvalidation()
+ *
+ *
  */
-class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionAwareOperation, IdentifiedDataSerializable {
-
+class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionAwareOperation,
+        IdentifiedDataSerializable, OperationResponseHandler<WaitSetEntry> {
     final Queue<WaitSetEntry> queue;
     final Operation op;
     final BlockingOperation blockingOperation;
@@ -167,7 +175,14 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
     public void logError(Throwable e) {
         ILogger logger = getLogger();
         if (e instanceof RetryableException) {
-            logger.warning("Op: " + op + ", " + e.getClass().getName() + ": " + e.getMessage());
+            // When WaitSetEntry is still valid then it means the error happened before WaitSetEntry was executed.
+            // This can happen for example during partition migration. We log it into the FINE level only, because
+            // the operation still remains in the WaitSet and OperationParker will re-execute it eventually.
+
+            // We log into WARNING when the operation is no longer valid. This means WaitSetEntry was already executed
+            // and removed from the WaitSet -> It won't be re-executed.
+            Level level = isValid() ? Level.FINE : Level.WARNING;
+            logger.log(level, "Op: " + op + ", " + e.getClass().getName() + ": " + e.getMessage());
         } else if (e instanceof OutOfMemoryError) {
             try {
                 logger.severe(e.getMessage(), e);
@@ -209,5 +224,24 @@ class WaitSetEntry extends AbstractLocalOperation implements Delayed, PartitionA
         sb.append(", op=").append(op);
         sb.append(", expirationTimeMs=").append(expirationTimeMs);
         sb.append(", valid=").append(valid);
+    }
+
+    @Override
+    public void sendResponse(WaitSetEntry op, Object response) {
+        // WaitSetEntry operation should never send a normal (non-exceptional) response.
+        // It's because WaitSetEntry operation is only executed to notify the inner BlockingOperation about
+        // expiration/timeout/cancellation. Upon the notification the inner BlockingOperation will use its
+        // own logic and its own response handler to react on the event.
+
+        // WaitSetEntry operation may still receive an exceptional response. For example when there is a partition
+        // migration in progress. This is not a big deal as the OperationParker will eventually retry it anyway.
+        if (response instanceof Throwable) {
+            // we log on finest only, as it's meant for debugging only. See #logError for regular
+            // user-facing logging on errors.
+            getLogger().finest("Error while executing " + this, (Throwable) response);
+        } else {
+            getLogger().warning("Error while executing " + this + " and the response is NOT Throwable. This is "
+                    + "unexpected, please open an issue for this. Response: " + response);
+        }
     }
 }
