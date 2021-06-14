@@ -34,9 +34,12 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.plan.node.IndexSortMetadata;
+import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
@@ -156,6 +159,30 @@ public class IMapSqlConnector implements SqlConnector {
         );
 
         return dag.newUniqueVertex(toString(table), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+    }
+
+    @Nonnull
+    public Vertex indexScanReader(
+            @Nonnull DAG dag,
+            @Nonnull PartitionedMapTable table,
+            @Nonnull String indexName,
+            @Nonnull IndexFilter filter,
+            @Nonnull List<Expression<?>> projection,
+            @Nullable IndexSortMetadata indexSortMetadata
+    ) {
+        MapIndexScanMetadata mapScanMetadata = new MapIndexScanMetadata(
+                table.getMapName(),
+                indexName,
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                table.fieldPaths(),
+                table.types(),
+                projection,
+                filter,
+                indexSortMetadata
+        );
+
+        return dag.newUniqueVertex(toString(table), MapIndexScanP.readMapIndexSupplier(mapScanMetadata));
     }
 
     @Nonnull

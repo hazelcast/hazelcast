@@ -18,9 +18,20 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.index.JetIndexResolver;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
+import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
@@ -45,5 +56,40 @@ final class FullScanPhysicalRule extends ConverterRule {
                 OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),
                 logicalScan.getTable()
         );
+    }
+
+    @Override
+    public void onMatch(RelOptRuleCall call) {
+
+        RelNode rel = call.rel(0);
+        if (rel.getTraitSet().contains(getInTrait())) {
+            call.transformTo(convert(rel));
+
+            PartitionedMapTable table = (PartitionedMapTable) getTableUnwrapped(rel.getTable());
+            if (table.getIndexes().isEmpty()) {
+                return;
+            }
+
+            List<RelNode> transforms = new ArrayList<>();
+            List<MapTableIndex> indexes = table.getIndexes();
+            FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
+            Collection<RelNode> indexScans = JetIndexResolver.createIndexScans(logicalScan, indexes);
+            // TODO: HD indices will be added to this transforms list later.
+            //noinspection CollectionAddAllCanBeReplacedWithConstructor
+            transforms.addAll(indexScans);
+
+            // Produce simple map scan if Calcite haven't produce index scan.
+            if (transforms.isEmpty()) {
+                transforms.add(convert(rel));
+            }
+
+            for (RelNode transform : transforms) {
+                call.transformTo(transform);
+            }
+        }
+    }
+
+    private Table getTableUnwrapped(RelOptTable table) {
+        return table.unwrap(HazelcastTable.class).getTarget();
     }
 }
