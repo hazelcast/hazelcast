@@ -185,7 +185,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex sink(
+    public Vertex sinkProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table0
     ) {
@@ -216,7 +216,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex delete(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(
