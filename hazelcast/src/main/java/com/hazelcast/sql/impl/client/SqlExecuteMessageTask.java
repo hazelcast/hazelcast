@@ -57,6 +57,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
         SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
+        // TODO [viliam] make sure the light job is optimized locally
         return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
     }
 

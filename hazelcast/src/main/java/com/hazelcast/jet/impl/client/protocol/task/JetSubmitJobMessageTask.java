@@ -17,16 +17,31 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.jet.impl.AbstractJobProxy;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters, Void> {
     protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
                 o -> JetSubmitJobCodec.encodeResponse());
+    }
+
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation operation) {
+        if (parameters.isLightJob) {
+            Address targetAddress = AbstractJobProxy.findLightJobCoordinator(nodeEngine.getClusterService()).getAddress();
+            return nodeEngine.getOperationService()
+                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, targetAddress);
+        } else {
+            return super.getInvocationBuilder(operation);
+        }
     }
 
     @Override
@@ -43,5 +58,4 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     public Object[] getParameters() {
         return new Object[]{};
     }
-
 }

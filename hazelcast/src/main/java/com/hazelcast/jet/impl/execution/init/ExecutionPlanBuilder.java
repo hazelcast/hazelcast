@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -35,6 +34,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -62,7 +62,7 @@ public final class ExecutionPlanBuilder {
     }
 
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
-            NodeEngine nodeEngine, MembersView membersView, DAG dag, long jobId, long executionId,
+            NodeEngine nodeEngine, Collection<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
         assert !isLightJob || jobConfig == LIGHT_JOB_CONFIG;
@@ -70,9 +70,9 @@ public final class ExecutionPlanBuilder {
         final int defaultParallelism = hazelcastInstance.getConfig().getJetConfig()
                 .getInstanceConfig().getCooperativeThreadCount();
         final Map<Address, int[]> partitionAssignment = getPartitionAssignment(nodeEngine);
-        final Set<MemberInfo> members = new HashSet<>(membersView.size());
+        final Set<MemberInfo> members = new HashSet<>(memberInfos.size());
         Map<Address, MemberInfo> membersMap =
-                membersView.getMembers().stream().collect(toMap(MemberInfo::getAddress, identity()));
+                memberInfos.stream().collect(toMap(MemberInfo::getAddress, identity()));
         for (Address address : partitionAssignment.keySet()) {
             MemberInfo member = membersMap.get(address);
             if (member == null) {

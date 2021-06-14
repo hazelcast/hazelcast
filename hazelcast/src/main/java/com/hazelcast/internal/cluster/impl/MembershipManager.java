@@ -186,7 +186,6 @@ public class MembershipManager {
         return memberMapRef.get();
     }
 
-    // used in Jet, must be public
     public MembersView getMembersView() {
         return memberMapRef.get().toMembersView();
     }

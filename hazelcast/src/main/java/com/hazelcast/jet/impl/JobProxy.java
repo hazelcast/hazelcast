@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -43,9 +44,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -94,16 +93,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected Address findLightJobCoordinator() {
-        Address randomMember;
-        // if we're a lite member, forward to random data member. Otherwise use local member.
-        if (container().getLocalMember().isLiteMember()) {
-            Member[] members = container().getClusterService().getMembers(DATA_MEMBER_SELECTOR).toArray(new Member[0]);
-            randomMember = members[ThreadLocalRandom.current().nextInt(members.length)].getAddress();
-        } else {
-            randomMember = container().getThisAddress();
-        }
-        return randomMember;
+    protected Cluster getCluster() {
+        return container().getClusterService();
+    }
+
+    @Override
+    protected Address getIdFromMember(Member member) {
+        return member.getAddress();
     }
 
     @Override

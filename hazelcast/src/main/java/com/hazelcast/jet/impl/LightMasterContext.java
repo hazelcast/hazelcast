@@ -34,6 +34,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -90,7 +91,16 @@ public class LightMasterContext {
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
 
+        // find a subset of members with version equal to the coordinator version.
         MembersView membersView = getMembersView();
+        Address thisAddress = nodeEngine.getThisAddress();
+        Collection<MemberInfo> members = membersView.getMembers().stream()
+                .filter(m -> m.getAddress().equals(thisAddress))
+                .collect(Collectors.toList());
+        if (members.size() < membersView.size()) {
+            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members",
+                    idToString(jobId), members.size(), membersView.size());
+        }
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
@@ -103,7 +113,7 @@ public class LightMasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);
@@ -112,9 +122,11 @@ public class LightMasterContext {
         executionPlanMap = executionPlanMapTmp;
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
+        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants, serializedPlan, true);
+            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
+                    serializedPlan, true);
         };
         invokeOnParticipants(operationCtor,
                 responses -> finalizeJob(findError(responses)),

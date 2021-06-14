@@ -811,29 +811,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection(boolean dataMember) {
+    public ClientConnection getRandomConnection() {
         // Try getting the connection from the load balancer, if smart routing is enabled
         if (isSmartRoutingEnabled) {
-            ClientConnection connection = getConnectionFromLoadBalancer(dataMember);
+            ClientConnection connection = null;
+            Member member = loadBalancer.next();
+
+            // Failed to get a member
+            if (member != null) {
+                connection = activeConnections.get(member.getUuid());
+            }
 
             if (connection != null) {
                 return connection;
             }
         }
 
-        // Otherwise iterate over connections and return the very first valid
-
+        // Otherwise iterate over connections and return the very first valid one
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
-            if (dataMember) {
-                UUID memberId = connectionEntry.getKey();
-
-                Member member = client.getClientClusterService().getMember(memberId);
-
-                if (member == null || member.isLiteMember()) {
-                    continue;
-                }
-            }
-
             return connectionEntry.getValue();
         }
 
@@ -841,25 +836,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return null;
     }
 
-    private ClientConnection getConnectionFromLoadBalancer(boolean dataMember) {
-        Member member;
-
-        if (dataMember) {
-            if (loadBalancer.canGetNextDataMember()) {
-                member = loadBalancer.nextDataMember();
-            } else {
-                member = null;
-            }
-        } else {
-            member = loadBalancer.next();
-        }
-
-        // Failed to get member
-        if (member == null) {
-            return null;
-        }
-
-        return activeConnections.get(member.getUuid());
+    @Override
+    public ClientConnection getConnectionForSql() {
+        return null;
     }
 
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {

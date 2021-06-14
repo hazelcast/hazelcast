@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -45,7 +46,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -106,17 +106,13 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     }
 
     @Override
-    protected UUID findLightJobCoordinator() {
-        // find random non-lite member
-        Member[] members = container().getCluster().getMembers().toArray(new Member[0]);
-        int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
-        for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
-            randomMemberIndex++;
-            if (randomMemberIndex == members.length) {
-                randomMemberIndex = 0;
-            }
-        }
-        return members[randomMemberIndex].getUuid();
+    protected Cluster getCluster() {
+        return container().getCluster();
+    }
+
+    @Override
+    protected UUID getIdFromMember(Member member) {
+        return member.getUuid();
     }
 
     @Override

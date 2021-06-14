@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.impl.spi.ClientClusterService;
+import com.hazelcast.cluster.Cluster;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
@@ -30,15 +33,21 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
@@ -266,7 +275,36 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return lightJobCoordinator != null;
     }
 
-    protected abstract M findLightJobCoordinator();
+    private M findLightJobCoordinator() {
+        Member coordinatorMember = findLightJobCoordinator(getCluster());
+        return getIdFromMember(coordinatorMember);
+    }
+
+    public static Member findLightJobCoordinator(Cluster cluster) {
+        // group non-lite members by version and find the largest group
+        List<Member> largestGroup = cluster.getMembers().stream()
+                .filter(m -> !m.isLiteMember())
+                .collect(Collectors.groupingBy(m -> m.getVersion().asVersion()))
+                .entrySet().stream()
+                .max(Comparator.<Entry<Version, List<Member>>, Integer>comparing(en -> en.getValue().size())
+                        .thenComparing(Entry::getKey))
+                .map(Entry::getValue)
+                .orElse(null);
+        if (largestGroup == null) {
+            throw new IllegalStateException("No data members found");
+        }
+
+        // if the largest group contains this member, use that. Otherwise use a random member.
+        if (!(cluster instanceof ClientClusterService) && largestGroup.contains(cluster.getLocalMember())) {
+            return cluster.getLocalMember();
+        } else {
+            return largestGroup.get(ThreadLocalRandom.current().nextInt(largestGroup.size()));
+        }
+    }
+
+    protected abstract Cluster getCluster();
+
+    protected abstract M getIdFromMember(Member member);
 
     /**
      * Submit and join job with a given DAG and config
