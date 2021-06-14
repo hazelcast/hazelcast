@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
@@ -417,6 +418,8 @@ public final class RexToExpression {
                     return PositionFunction.create(operands[0], operands[1], start);
                 } else if (function == HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ) {
                     return ToTimestampTzFunction.create(operands[0], QueryDataType.TIMESTAMP_WITH_TZ_DATE);
+                } else if (function == HazelcastSqlOperatorTable.TO_EPOCH_MILLIS) {
+                    return ToEpochMillisFunction.create(operands[0], QueryDataType.BIGINT);
                 }
 
                 break;
