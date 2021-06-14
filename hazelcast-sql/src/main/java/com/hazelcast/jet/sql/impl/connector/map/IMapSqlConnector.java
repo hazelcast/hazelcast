@@ -20,7 +20,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -40,7 +42,6 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -58,9 +59,9 @@ import java.util.Map;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY_PATH;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -147,17 +148,26 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
-        MapScanMetadata mapScanMetadata = new MapScanMetadata(
-                table.getMapName(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                asList(table.paths()),
-                asList(table.types()),
-                projection,
-                filter
+
+        Vertex vStart = dag.newUniqueVertex(
+                toString(table),
+                SourceProcessors.readMapP(table.getMapName())
         );
 
-        return dag.newUniqueVertex(toString(table), OnHeapMapScanP.onHeapMapScanP(mapScanMetadata));
+        Vertex vEnd = dag.newUniqueVertex(
+                "Project(" + toString(table) + ")",
+                rowProjector(
+                        table.paths(),
+                        table.types(),
+                        table.getKeyDescriptor(),
+                        table.getValueDescriptor(),
+                        filter,
+                        projection
+                )
+        );
+
+        dag.edge(Edge.from(vStart).to(vEnd).isolated());
+        return vEnd;
     }
 
     @Nonnull
@@ -190,7 +200,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex sink(
+    public Vertex sinkProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table0
     ) {
@@ -269,7 +279,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex delete(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(

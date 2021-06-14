@@ -286,7 +286,7 @@ public interface SqlConnector {
      * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
      * INSERT INTO} statements.
      * <p>
-     * Unused for connectors that don't override {@link #sink}.
+     * Unused for connectors that don't override {@link #sinkProcessor}.
      */
     default boolean requiresSink() {
         return false;
@@ -296,7 +296,7 @@ public interface SqlConnector {
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sink(
+    default Vertex sinkProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table
     ) {
@@ -323,7 +323,7 @@ public interface SqlConnector {
      * returned by {@link #getPrimaryKey(Table)}.
      */
     @Nonnull
-    default Vertex delete(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
     }
 
@@ -331,7 +331,7 @@ public interface SqlConnector {
      * Return the indexes of fields that are primary key. These fields will be
      * fed to the delete processor.
      * <p>
-     * Every connector that supports a {@link #delete} should have a primary
+     * Every connector that supports a {@link #deleteProcessor} should have a primary
      * key on each table, otherwise deleting cannot work. If some table
      * doesn't have a primary key and an empty node list is returned from this
      * method, an error will be thrown.
