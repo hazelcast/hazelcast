@@ -1548,11 +1548,10 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         println("  executeOnKey <echo-input> <key>         executes an echo task on the member that");
         println("                                            owns the given key");
         println("  executeOnMembers <echo-input>           executes an echo task on all of the members");
-        println("  executeOnMembers <echo-input>");
-        println("                      <memberIndex>       executes an echo task on the member with given index");
-        println("  e<threadcount>.simulateLoad");
-        println("           <task-count> <delaySeconds>    simulates load on executor with given number of");
-        println("                                            thread (e1..e16)");
+        println("  executeOnMembers <echo-input>           executes an echo task on the member with");
+        println("                     <memberIndex>          given index");
+        println("  e<threadcount>.simulateLoad             simulates load on executor with given number");
+        println("          <task-count> <delaySeconds>       of thread (e1..e16)");
         println("");
     }
 
@@ -1560,23 +1559,28 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         printlnBold("IAtomicLong commands:");
         println("  a.get                                   gets the current value of atomic long");
         println("  a.set <long>                            atomically sets the given value");
-        println("  a.incrementAndGet                       atomically increment the current value by one and");
-        println("                                            then gets the resulting value");
-        println("  a.decrementAndGet                       atomically decrement the current value by one and");
-        println("                                            then gets the resulting value");
+        println("  a.incrementAndGet                       atomically increment the current value by");
+        println("                                            one and then gets the resulting value");
+        println("  a.decrementAndGet                       atomically decrement the current value by");
+        println("                                            one and then gets the resulting value");
         println("");
     }
 
     private void printListCommands() {
         printlnBold("List commands:");
-        println("  l.add <string>                          adds the given string object to the end of the list");
-        println("  l.add <index> <string>                  adds the given string object to the specified position");
+        println("  l.add <string>                          adds the given string object to the end of the");
+        println("                                            list");
+        println("  l.add <index> <string>                  adds the given string object to the specified");
+        println("                                             position in the list");
+        println("  l.contains <string>                     checks whether if the given string presents");
         println("                                            in the list");
-        println("  l.contains <string>                     checks whether if the given string presents in the list");
         println("  l.remove <string>                       removes the first occurrence of the given string");
-        println("  l.remove <index>                        removes the string from the specified position of the list");
-        println("  l.set <index> <string>                  replaces the element at the specified pos. with given string");
-        println("  l.iterator [remove]                     iterates over the items of the list, remove if specified");
+        println("  l.remove <index>                        removes the string element from the specified");
+        println("                                             position of the list");
+        println("  l.set <index> <string>                  replaces the element at the specified position");
+        println("                                            with given string");
+        println("  l.iterator [remove]                     iterates over the items of the list, remove");
+        println("                                            if specified");
         println("  l.size                                  returns the number of element in the list");
         println("  l.clear                                 removes all items from the list");
         println("");
