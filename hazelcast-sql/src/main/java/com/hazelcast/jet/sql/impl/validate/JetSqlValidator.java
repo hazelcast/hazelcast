@@ -186,7 +186,7 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     public void validateUpdate(SqlUpdate update) {
         super.validateUpdate(update);
 
-        // hack around Calcite deficiency (?) of not deriving types for sourceExpressionList
+        // hack around Calcite deficiency of not deriving types for sourceExpressionList...
         SqlNodeList selectList = update.getSourceSelect().getSelectList();
         SqlNodeList sourceExpressionList = update.getSourceExpressionList();
         for (int i = 0; i < sourceExpressionList.size(); i++) {
@@ -211,8 +211,8 @@ public class JetSqlValidator extends HazelcastSqlValidator {
 
         // UPDATE FROM SELECT is transformed into join (which is not supported yet):
         // UPDATE m1 SET __key = m2.this FROM m2 WHERE m1.__key = m2.__key
-        // update m1 set __key = (select this from m2) where __key = 1
-        // update m1 set __key = (select m2.this from m2 where m1.__key = m2.__key)
+        // UPDATE m1 SET __key = (SELECT this FROM m2) WHERE __key = 1
+        // UPDATE m1 SET __key = (SELECT m2.this FROM m2 WHERE m1.__key = m2.__key)
         update.getSourceSelect().getSelectList().accept(new SqlBasicVisitor<Void>() {
             @Override
             public Void visit(SqlCall call) {

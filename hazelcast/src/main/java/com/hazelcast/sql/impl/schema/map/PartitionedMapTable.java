@@ -51,15 +51,15 @@ public class PartitionedMapTable extends AbstractMapTable {
             boolean hd
     ) {
         super(
-                schemaName,
-                tableName,
-                mapName,
-                fields,
-                statistics,
-                keyDescriptor,
-                valueDescriptor,
-                keyJetMetadata,
-                valueJetMetadata
+            schemaName,
+            tableName,
+            mapName,
+            fields,
+            statistics,
+            keyDescriptor,
+            valueDescriptor,
+            keyJetMetadata,
+            valueJetMetadata
         );
 
         this.indexes = indexes;

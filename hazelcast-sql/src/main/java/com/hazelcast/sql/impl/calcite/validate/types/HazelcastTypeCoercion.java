@@ -311,15 +311,11 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                         sourceCount);
             }
         } else if (query instanceof SqlUpdate) {
+            // trailing elements of selectList are equal to elements of sourceExpressionList
+            // see JetSqlValidator.validateUpdate()
             SqlUpdate update = (SqlUpdate) query;
-            if (update.getSourceExpressionList() != null) {
-                return update.getSourceExpressionList().get(ordinal);
-            } else {
-                return getNthExpr(
-                        update.getSourceSelect(),
-                        ordinal,
-                        sourceCount);
-            }
+            SqlNodeList selectList = update.getSourceSelect().getSelectList();
+            return selectList.get(selectList.size() - sourceCount + ordinal);
         } else if (query instanceof SqlSelect) {
             SqlSelect select = (SqlSelect) query;
             if (select.getSelectList().size() == sourceCount) {
@@ -345,7 +341,11 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         switch (query.getKind()) {
             case INSERT:
                 SqlInsert insert = (SqlInsert) query;
-                return coerceSourceRowType(sourceScope, insert.getSource(), columnIndex, totalColumns, targetType);
+                return coerceSourceRowType(sourceScope,
+                        insert.getSource(),
+                        columnIndex,
+                        totalColumns,
+                        targetType);
             case UPDATE:
                 // trailing elements of selectList are equal to elements of sourceExpressionList
                 // see JetSqlValidator.validateUpdate()
