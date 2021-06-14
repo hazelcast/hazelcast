@@ -77,9 +77,7 @@ public abstract class AbstractStringConverter extends Converter {
 
     static final DateTimeFormatter STANDARD_OFFSET_DATE_TIME_FORMAT = new DateTimeFormatterBuilder()
             .parseCaseInsensitive()
-            .append(STANDARD_DATE_FORMAT)
-            .appendPattern("['T'][' ']")
-            .append(STANDARD_TIME_FORMAT)
+            .append(STANDARD_DATE_TIME_FORMAT)
             .appendOffsetId()
             .toFormatter();
 
