@@ -60,6 +60,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
+    protected boolean isUpdate;
+
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
 
@@ -71,8 +73,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     /** Parameter values. */
     private final List<Object> arguments;
-
-    protected boolean isUpdate;
 
     public HazelcastSqlValidator(
             SqlValidatorCatalogReader catalogReader,
