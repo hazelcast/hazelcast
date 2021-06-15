@@ -17,8 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Cluster;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -40,6 +38,7 @@ import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -99,13 +98,8 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected Cluster getCluster() {
-        return container().getClusterService();
-    }
-
-    @Override
-    protected Address getIdFromMember(Member member) {
-        return member.getAddress();
+    protected Address findLightJobCoordinator() {
+        return QueryUtils.findLightJobCoordinator(container());
     }
 
     @Override

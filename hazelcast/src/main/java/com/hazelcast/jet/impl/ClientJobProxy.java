@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
-import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -40,6 +40,7 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.util.UUID;
@@ -61,8 +62,11 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     private static final long RETRY_DELAY_NS = MILLISECONDS.toNanos(200);
     private static final long RETRY_TIME_NS = SECONDS.toNanos(60);
 
+    private final ClientClusterServiceImpl clusterService;
+
     ClientJobProxy(JetClientInstanceImpl client, long jobId, UUID coordinator) {
         super(client, jobId, coordinator);
+        clusterService = (ClientClusterServiceImpl) client.getHazelcastClient().getClientClusterService();
     }
 
     ClientJobProxy(
@@ -73,6 +77,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
             @Nonnull JobConfig config
     ) {
         super(client, jobId, isLightJob, jobDefinition, config);
+        clusterService = (ClientClusterServiceImpl) client.getHazelcastClient().getClientClusterService();
     }
 
     @Nonnull
@@ -112,13 +117,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     }
 
     @Override
-    protected Cluster getCluster() {
-        return container().getCluster();
-    }
-
-    @Override
-    protected UUID getIdFromMember(Member member) {
-        return member.getUuid();
+    protected UUID findLightJobCoordinator() {
+        return QueryUtils.findLightJobCoordinator(clusterService.getMemberList(), null).getUuid();
     }
 
     @Override

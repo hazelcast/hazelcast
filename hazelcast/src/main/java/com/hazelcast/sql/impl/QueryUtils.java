@@ -16,16 +16,20 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
@@ -166,5 +171,77 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
+    }
+
+    public static Address findLightJobCoordinator(NodeEngineImpl nodeEngine) {
+        return findLightJobCoordinator(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember()).getAddress();
+    }
+
+    /**
+     * Finds a larger same-version group of data members from a collection
+     * members; if {@code localMember} is from that group, return that.
+     * Otherwise return a random member from the group.
+     * <p>
+     * Used for SqlExecute and SubmitJob(light=true) messages.
+     *
+     * @param members list of all members
+     * @param localMember the local member, null for client instance
+     */
+    @Nonnull
+    public static Member findLightJobCoordinator(@Nonnull Collection<Member> members, @Nullable Member localMember) {
+        // The members should have at most 2 different version (ignoring the patch version).
+        // Find a random member from the larger same-version group.
+        Version[] versions = new Version[2];
+        int[] counts = new int[2];
+        int grossMajority = members.size() / 2;
+
+        for (Member m : members) {
+            if (m.isLiteMember()) {
+                continue;
+            }
+            Version v = m.getVersion().asVersion();
+            int index;
+            if (versions[0] == null || versions[0].equals(v)) {
+                index = 0;
+            } else if (versions[1] == null || versions[1].equals(v)) {
+                index = 1;
+            } else {
+                throw new RuntimeException("More than 2 distinct member versions found: " + versions[0] + ", " + versions[1] + ", " + v);
+            }
+            versions[index] = v;
+            counts[index]++;
+            // a shortcut - always taken if there are no lite members and the cluster size is odd
+            if (counts[index] > grossMajority) {
+                return m;
+            }
+        }
+
+        // no data members
+        if (counts[0] == 0) {
+            throw QueryException.error("No data member found");
+        }
+
+        int largerGroupIndex = counts[0] > counts[1] ? 0
+                : counts[1] > counts[0] ? 1
+                : versions[0].compareTo(versions[1]) > 0 ? 0 : 1;
+
+        // if the local member is data member and is from the larger group, use that
+        if (localMember != null && !localMember.isLiteMember()
+                && localMember.getVersion().asVersion().equals(versions[largerGroupIndex])) {
+            return localMember;
+        }
+
+        // otherwise return a random member from the larger group
+        int randomMemberIndex = ThreadLocalRandom.current().nextInt(counts[largerGroupIndex]);
+        for (Member m : members) {
+            if (!m.isLiteMember() && m.getVersion().asVersion().equals(versions[largerGroupIndex])) {
+                randomMemberIndex--;
+                if (randomMemberIndex < 0) {
+                    return m;
+                }
+            }
+        }
+
+        throw new RuntimeException("should never get here");
     }
 }
