@@ -39,13 +39,14 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      * <p>
-     * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
+     * The addMembershipListener method returns a registration ID. This ID is needed to remove the MembershipListener using the
      * {@link #removeMembershipListener(UUID)} method.
      * <p>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * The listener doesn't notify you when a lite member is promoted to a data member.
      *
      * @param listener membership listener
      * @return the registration ID
