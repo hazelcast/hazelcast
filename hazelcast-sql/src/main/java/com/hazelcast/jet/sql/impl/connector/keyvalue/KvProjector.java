@@ -77,7 +77,7 @@ public class KvProjector {
         return injectors;
     }
 
-    public Entry<Object, Object> project(Object[] row) {
+    Entry<Object, Object> project(Object[] row) {
         keyTarget.init();
         valueTarget.init();
         for (int i = 0; i < injectors.length; i++) {

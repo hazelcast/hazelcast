@@ -192,7 +192,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void updateKey() {
+    public void when_updateKey_then_throws() {
         instance().getMap("test_map").put(1, 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 2"))
@@ -200,7 +200,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void updateKeyField() {
+    public void when_updateKeyField_then_throws() {
         instance().getMap("test_map").put(new Key(1), 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET keyField = 2"))
@@ -208,7 +208,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void updateWholeValue() {
+    public void when_updateWholeValue_then_throws() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
         testMap.put(1, new Value(100, 200L, "300"));
 

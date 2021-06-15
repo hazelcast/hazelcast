@@ -49,8 +49,7 @@ final class UpdatePhysicalRule extends ConverterRule {
                 logicalUpdate.getOperation(),
                 logicalUpdate.getUpdateColumnList(),
                 logicalUpdate.getSourceExpressionList(),
-                logicalUpdate.isFlattened(),
-                logicalUpdate.projects()
+                logicalUpdate.isFlattened()
         );
     }
 }

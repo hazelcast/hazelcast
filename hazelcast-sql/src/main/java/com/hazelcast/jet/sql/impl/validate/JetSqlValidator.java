@@ -186,22 +186,28 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     public void validateUpdate(SqlUpdate update) {
         super.validateUpdate(update);
 
-        // hack around Calcite deficiency of not deriving types for sourceExpressionList...
+        // hack around Calcite deficiency of not deriving types for fields in sourceExpressionList...
+        // see HazelcastTypeCoercion.coerceSourceRowType()
         SqlNodeList selectList = update.getSourceSelect().getSelectList();
         SqlNodeList sourceExpressionList = update.getSourceExpressionList();
         for (int i = 0; i < sourceExpressionList.size(); i++) {
             update.getSourceExpressionList().set(i, selectList.get(selectList.size() - sourceExpressionList.size() + i));
         }
 
-        // do not allow updating hidden fields, i.e. __key, this
         SqlNode sourceTable = update.getTargetTable();
         SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
         if (validatorTable != null) {
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+
+            // only tables with primary keys can be updated
+            if (getJetSqlConnector(table).getPrimaryKey(table).isEmpty()) {
+                throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
+            }
+
+            // do not allow updating hidden fields, i.e. __key, this
             Set<String> targetColumnNames = update.getTargetColumnList().getList().stream()
                     .map(node -> ((SqlIdentifier) node).getSimple())
                     .collect(toSet());
-
-            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
             for (TableField field : table.getFields()) {
                 if (field.isHidden() && targetColumnNames.contains(field.getName())) {
                     throw QueryException.error("Cannot update '" + field.getName() + "' field");

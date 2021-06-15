@@ -52,7 +52,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     private static final int MAX_CONCURRENT_OPS = 8;
 
     private String mapName;
-    private int keyIndex;
     private KvRowProjector.Supplier rowProjectorSupplier;
     private List<Expression<?>> projections;
     private KvProjector.Supplier projectorSupplier;
@@ -66,13 +65,11 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     UpdateProcessorSupplier(
             String mapName,
-            int keyIndex,
             KvRowProjector.Supplier rowProjectorSupplier,
             List<Expression<?>> projections,
             KvProjector.Supplier projectorSupplier
     ) {
         this.mapName = mapName;
-        this.keyIndex = keyIndex;
         this.rowProjectorSupplier = rowProjectorSupplier;
         this.projections = projections;
         this.projectorSupplier = projectorSupplier;
@@ -103,17 +100,17 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     private CompletableFuture<?> update(Object[] row, TransientReference<IMap<Object, Object>> ctx) {
-        Object key = row[keyIndex];
+        assert row.length == 1;
+        Object key = row[0];
         return ctx.ref.submitToKey(
                 key,
-                new UpdatingEntryProcessor(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
-        ).toCompletableFuture().whenComplete((r, t) -> {}); // TODO: for some reason without whenComplete() exception is not propagated...
+                new ValueUpdater(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
+        ).toCompletableFuture();
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(mapName);
-        out.writeInt(keyIndex);
         out.writeObject(rowProjectorSupplier);
         out.writeObject(projections);
         out.writeObject(projectorSupplier);
@@ -122,13 +119,12 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readString();
-        keyIndex = in.readInt();
         rowProjectorSupplier = in.readObject();
         projections = in.readObject();
         projectorSupplier = in.readObject();
     }
 
-    private static final class UpdatingEntryProcessor
+    private static final class ValueUpdater
             implements EntryProcessor<Object, Object, Object>, SerializationServiceAware, DataSerializable {
 
         private KvRowProjector.Supplier rowProjector;
@@ -143,10 +139,10 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         private transient Function<Object[], Object[]> projectionFn;
 
         @SuppressWarnings("unused")
-        private UpdatingEntryProcessor() {
+        private ValueUpdater() {
         }
 
-        private UpdatingEntryProcessor(
+        private ValueUpdater(
                 KvRowProjector.Supplier rowProjector,
                 List<Expression<?>> projections,
                 KvProjector.Supplier projector,
@@ -163,7 +159,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             Object[] row = rowProjector.get(evalContext, extractors).project(originalEntry.getKey(), originalEntry.getValue());
             Object[] projected = projectionFn.apply(row);
             Object value = projector.get(serializationService).projectValue(projected);
-
             originalEntry.setValue(value);
             return 1;
         }

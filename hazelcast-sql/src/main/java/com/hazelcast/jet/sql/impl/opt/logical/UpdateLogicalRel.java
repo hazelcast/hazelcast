@@ -28,8 +28,6 @@ import java.util.List;
 
 public class UpdateLogicalRel extends TableModify implements LogicalRel {
 
-    private final List<RexNode> projects;
-
     UpdateLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
@@ -39,16 +37,9 @@ public class UpdateLogicalRel extends TableModify implements LogicalRel {
             Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened,
-            List<RexNode> projects
+            boolean flattened
     ) {
         super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
-
-        this.projects = projects;
-    }
-
-    public List<RexNode> projects() {
-        return projects;
     }
 
     @Override
@@ -62,8 +53,7 @@ public class UpdateLogicalRel extends TableModify implements LogicalRel {
                 getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened(),
-                projects
+                isFlattened()
         );
     }
 }

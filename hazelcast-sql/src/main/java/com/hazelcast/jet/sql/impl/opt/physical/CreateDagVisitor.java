@@ -110,7 +110,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = getJetSqlConnector(table)
                 .updateProcessor(dag, table, rel.updatedFields(), rel.updates(parameterMetadata));
-        connectInput(rel.getInput(), vertex, null).localParallelism(1);
+        connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
 

@@ -20,9 +20,9 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
@@ -30,14 +30,14 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
-
-    private final List<RexNode> projects;
 
     UpdatePhysicalRel(
             RelOptCluster cluster,
@@ -48,41 +48,37 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
-            boolean flattened,
-            List<RexNode> projects
+            boolean flattened
     ) {
         super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
-
-        this.projects = projects;
     }
 
     public List<String> updatedFields() {
         return getUpdateColumnList();
     }
 
-    // input = all table fields + joined fields (if any)
-    // inputProjections = all table fields + joined fields (if any) + updated fields
     public List<Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
-        int inputFieldCount = getInput().getRowType().getFieldCount();
-        PlanNodeSchema inputSchema = ((PhysicalRel) getInput()).schema(parameterMetadata);
-        List<Expression<?>> inputProjections = project(inputSchema, this.projects, parameterMetadata);
+        RexBuilder rexBuilder = getCluster().getRexBuilder();
 
-        List<TableField> fields = getTable().unwrap(HazelcastTable.class).getTarget().getFields();
+        HazelcastTable hazelcastTable = getTable().unwrap(HazelcastTable.class);
+        List<RelDataTypeField> hazelcastTableFields = hazelcastTable.getRowType(getCluster().getTypeFactory()).getFieldList();
+        Table table = hazelcastTable.getTarget();
 
-        List<Expression<?>> updates = new ArrayList<>(fields.size());
-        for (int i = 0; i < fields.size(); i++) {
-            TableField field = fields.get(i);
+        List<RexNode> updates = new ArrayList<>(table.getFieldCount());
+        for (int i = 0; i < table.getFieldCount(); i++) {
+            TableField field = table.getField(i);
 
             int updatedColumnIndex = getUpdateColumnList().indexOf(field.getName());
             if (updatedColumnIndex > -1) {
-                updates.add(inputProjections.get(inputFieldCount + updatedColumnIndex));
+                updates.add(getSourceExpressionList().get(updatedColumnIndex));
             } else if (field.isHidden()) {
-                updates.add(ConstantExpression.create(null, field.getType()));
+                updates.add(rexBuilder.makeNullLiteral(hazelcastTableFields.get(i).getType()));
             } else {
-                updates.add(inputProjections.get(i));
+                updates.add(rexBuilder.makeInputRef(hazelcastTableFields.get(i).getType(), i));
             }
         }
-        return updates;
+        PlanNodeSchema schema = OptUtils.schema(getTable());
+        return project(schema, updates, parameterMetadata);
     }
 
     @Override
@@ -106,8 +102,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
-                isFlattened(),
-                projects
+                isFlattened()
         );
     }
 }
