@@ -37,32 +37,32 @@ public class EventJournalRSMutationObserver implements CacheRSMutationObserver {
     }
 
     @Override
-    public void writeCreatedEvent(Data key, Object value) {
+    public void onCreate(Data key, Object value) {
         cacheService.eventJournal.writeCreatedEvent(eventJournalConfig, objectNamespace, partitionId, key, value);
     }
 
     @Override
-    public void writeRemoveEvent(Data key, Object value) {
+    public void onRemove(Data key, Object value) {
         cacheService.eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId, key, value);
     }
 
     @Override
-    public void writeUpdateEvent(Data key, Object oldDataValue, Object value) {
-        cacheService.eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId, key, oldDataValue, value);
+    public void onUpdate(Data key, Object oldValue, Object value) {
+        cacheService.eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId, key, oldValue, value);
     }
 
     @Override
-    public void writeEvictEvent(Data key, Object value) {
+    public void onEvict(Data key, Object value) {
         cacheService.eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, key, value);
     }
 
     @Override
-    public void writeExpiredEvent(Data key, Object value) {
+    public void onExpire(Data key, Object value) {
         cacheService.eventJournal.writeExpiredEvent(eventJournalConfig, objectNamespace, partitionId, key, value);
     }
 
     @Override
-    public void destroy() {
+    public void onDestroy() {
         cacheService.eventJournal.destroy(objectNamespace, partitionId);
     }
 }

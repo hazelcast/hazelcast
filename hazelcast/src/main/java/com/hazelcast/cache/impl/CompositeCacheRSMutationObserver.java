@@ -42,44 +42,44 @@ public class CompositeCacheRSMutationObserver implements CacheRSMutationObserver
     }
 
     @Override
-    public void writeCreatedEvent(Data key, Object value) {
+    public void onCreate(Data key, Object value) {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).writeCreatedEvent(key, value);
+            mutationObservers.get(i).onCreate(key, value);
         }
     }
 
     @Override
-    public void writeRemoveEvent(Data key, Object value) {
+    public void onRemove(Data key, Object value) {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).writeRemoveEvent(key, value);
+            mutationObservers.get(i).onRemove(key, value);
         }
     }
 
     @Override
-    public void writeUpdateEvent(Data key, Object oldDataValue, Object value) {
+    public void onUpdate(Data key, Object oldValue, Object value) {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).writeUpdateEvent(key, oldDataValue, value);
+            mutationObservers.get(i).onUpdate(key, oldValue, value);
         }
     }
 
     @Override
-    public void writeEvictEvent(Data key, Object value) {
+    public void onEvict(Data key, Object value) {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).writeEvictEvent(key, value);
+            mutationObservers.get(i).onEvict(key, value);
         }
     }
 
     @Override
-    public void writeExpiredEvent(Data key, Object value) {
+    public void onExpire(Data key, Object value) {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).writeExpiredEvent(key, value);
+            mutationObservers.get(i).onExpire(key, value);
         }
     }
 
     @Override
-    public void destroy() {
+    public void onDestroy() {
         for (int i = 0; i < mutationObservers.size(); i++) {
-            mutationObservers.get(i).destroy();
+            mutationObservers.get(i).onDestroy();
         }
     }
 }

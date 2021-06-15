@@ -559,9 +559,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void onEvict(Data key, R record, boolean wasExpired) {
         if (wasExpired) {
-            compositeCacheRSMutationObserver.writeExpiredEvent(key, record.getValue());
+            compositeCacheRSMutationObserver.onExpire(key, record.getValue());
         } else {
-            compositeCacheRSMutationObserver.writeEvictEvent(key, record.getValue());
+            compositeCacheRSMutationObserver.onEvict(key, record.getValue());
         }
         invalidateEntry(key);
     }
@@ -717,7 +717,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
             final R removed = records.remove(key);
             if (removed != null) {
-                compositeCacheRSMutationObserver.writeRemoveEvent(
+                compositeCacheRSMutationObserver.onRemove(
                         key, removed.getValue());
             }
             // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
@@ -768,7 +768,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
-        compositeCacheRSMutationObserver.writeUpdateEvent(key, oldDataValue, value);
+        compositeCacheRSMutationObserver.onUpdate(key, oldDataValue, value);
     }
 
     protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue,
@@ -1151,10 +1151,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         R oldRecord = records.put(key, record);
         if (updateJournal) {
             if (oldRecord != null) {
-                compositeCacheRSMutationObserver.writeUpdateEvent(
+                compositeCacheRSMutationObserver.onUpdate(
                         key, oldRecord.getValue(), record.getValue());
             } else {
-                compositeCacheRSMutationObserver.writeCreatedEvent(
+                compositeCacheRSMutationObserver.onCreate(
                         key, record.getValue());
             }
         }
@@ -1170,7 +1170,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected R doRemoveRecord(Data key, UUID source) {
         R removedRecord = records.remove(key);
         if (removedRecord != null) {
-            compositeCacheRSMutationObserver.writeRemoveEvent(
+            compositeCacheRSMutationObserver.onRemove(
                     key, removedRecord.getValue());
             invalidateEntry(key, source);
         }
@@ -1917,7 +1917,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void destroyEventJournal() {
-        compositeCacheRSMutationObserver.destroy();
+        compositeCacheRSMutationObserver.onDestroy();
     }
 
     @Override

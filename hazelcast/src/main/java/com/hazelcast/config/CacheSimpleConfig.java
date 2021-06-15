@@ -709,8 +709,8 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
      *
      * @return merkle tree config
      */
-    public @Nonnull
-    MerkleTreeConfig getMerkleTreeConfig() {
+    @Nonnull
+    public MerkleTreeConfig getMerkleTreeConfig() {
         return merkleTreeConfig;
     }
 

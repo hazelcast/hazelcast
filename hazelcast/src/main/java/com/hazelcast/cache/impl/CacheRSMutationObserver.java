@@ -18,17 +18,56 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.internal.serialization.Data;
 
+/**
+ * Main contract to observe mutation on a {@link ICacheRecordStore}.
+ * {@link CacheRSMutationObserver} is created per each partition hence
+ * they are accessed by only one thread along its lifecycle.
+ */
 public interface CacheRSMutationObserver {
 
-    void writeCreatedEvent(Data key, Object value);
+    /**
+     * Called when a new entry is created.
+     *
+     * @param key   the key
+     * @param value the value
+     */
+    void onCreate(Data key, Object value);
 
-    void writeRemoveEvent(Data key, Object value);
+    /**
+     * Called when an entry is removed.
+     *
+     * @param key   the key
+     * @param value the old value
+     */
+    void onRemove(Data key, Object value);
 
-    void writeUpdateEvent(Data key, Object oldDataValue, Object value);
+    /**
+     * Called when an entry is updated.
+     *
+     * @param key      the key
+     * @param oldValue the old value
+     * @param value    the new value
+     */
+    void onUpdate(Data key, Object oldValue, Object value);
 
-    void writeEvictEvent(Data key, Object value);
+    /**
+     * Called when an entry is evicted.
+     *
+     * @param key   the key
+     * @param value the old value
+     */
+    void onEvict(Data key, Object value);
 
-    void writeExpiredEvent(Data key, Object value);
+    /**
+     * Called when an entry is expired.
+     *
+     * @param key   the key
+     * @param value the old value
+     */
+    void onExpire(Data key, Object value);
 
-    void destroy();
+    /**
+     * Called when the observed {@link ICacheRecordStore} is destroyed.
+     */
+    void onDestroy();
 }
