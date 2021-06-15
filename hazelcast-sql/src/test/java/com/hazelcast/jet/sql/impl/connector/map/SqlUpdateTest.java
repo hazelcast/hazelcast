@@ -43,9 +43,13 @@ public class SqlUpdateTest extends SqlTestSupport {
     public void update() {
         IMap<Object, Object> testMap = instance().getMap("test_map");
         testMap.put(1, 1);
+        testMap.put(2, 2);
+        testMap.put(3, 3);
 
-        checkUpdateCount("UPDATE test_map SET this = 100 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(100);
+        checkUpdateCount("UPDATE test_map SET this = 100 WHERE __key = 2", 0);
+        assertThat(testMap.get(1)).isEqualTo(1);
+        assertThat(testMap.get(2)).isEqualTo(100);
+        assertThat(testMap.get(3)).isEqualTo(3);
     }
 
     @Test
