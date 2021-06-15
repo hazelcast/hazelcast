@@ -20,8 +20,19 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -31,12 +42,16 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,9 +65,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.Accessors.getOperationService;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -64,17 +82,20 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     private static final String orderedIndexName = "index_age_sorted";
     private static final String hashIndexName = "index_age_hash";
 
-    private static HazelcastInstance instance1;
+    private TestHazelcastInstanceFactory factory;
+    private HazelcastInstance instance;
+    private Config config;
 
-    private static IMap<String, Person> map;
+    private IMap<String, Person> map;
 
     @Before
     public void setup() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        Config config = smallInstanceConfig();
-        instance1 = factory.newHazelcastInstance(config);
+        factory = createHazelcastInstanceFactory(1);
 
-        map = instance1.getMap(mapName);
+        config = smallInstanceConfig();
+        instance = factory.newHazelcastInstance(config);
+
+        map = instance.getMap(mapName);
 
         map.addIndex(new IndexConfig(IndexType.SORTED, "age").setName(orderedIndexName));
         map.addIndex(new IndexConfig(IndexType.HASH, "age").setName(hashIndexName));
@@ -92,20 +113,25 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         insertIntoMap(map, people);
     }
 
+    @After
+    public void destroy() {
+        instance.shutdown();
+    }
+
     @Test
     public void testMultipleLookups() throws ExecutionException, InterruptedException {
-        PartitionIdSet partitions = getLocalPartitions(instance1);
+        PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[3];
         pointers[0] = new IndexIterationPointer(30, true, 30, true, false);
         pointers[1] = new IndexIterationPointer(39, true, 39, true, false);
         pointers[2] = new IndexIterationPointer(45, true, 45, true, false);
 
-        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 5);
 
-        Address address = instance1.getCluster().getLocalMember().getAddress();
-        OperationServiceImpl operationService = getOperationService(instance1);
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
@@ -120,17 +146,17 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
     @Test
     public void testMultipleRanges() throws ExecutionException, InterruptedException {
-        PartitionIdSet partitions = getLocalPartitions(instance1);
+        PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
         pointers[0] = new IndexIterationPointer(30, true, 40, true, false);
         pointers[1] = new IndexIterationPointer(50, true, 60, true, false);
 
-        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
-        Address address = instance1.getCluster().getLocalMember().getAddress();
-        OperationServiceImpl operationService = getOperationService(instance1);
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
@@ -144,17 +170,17 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenSizeHintIsSmall_thenFetchInMultipleOperations() throws ExecutionException, InterruptedException {
-        PartitionIdSet partitions = getLocalPartitions(instance1);
+        PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
         pointers[0] = new IndexIterationPointer(30, true, 40, true, false);
         pointers[1] = new IndexIterationPointer(50, true, 60, true, false);
 
-        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 1);
 
-        Address address = instance1.getCluster().getLocalMember().getAddress();
-        OperationServiceImpl operationService = getOperationService(instance1);
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
@@ -179,16 +205,16 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
     @Test
     public void whenMultipleObjectsHasSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
-        PartitionIdSet partitions = getLocalPartitions(instance1);
+        PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
         pointers[0] = new IndexIterationPointer(30, true, 60, true, false);
 
-        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 3);
 
-        Address address = instance1.getCluster().getLocalMember().getAddress();
-        OperationServiceImpl operationService = getOperationService(instance1);
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
@@ -202,7 +228,48 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         ));
     }
 
-    private MapOperationProvider getOperationProvider() {
+    // This test has different requirements, therefore depends on local variables.
+    // Before and After actions are dismissed.
+    @Test
+    public void testMigration() throws ExecutionException, InterruptedException {
+        HazelcastInstance instance = new CustomTestInstanceFactory().newHazelcastInstance(config);
+        PartitionIdSet partitions = getLocalPartitions(instance);
+
+        List<Person> people = new ArrayList<>(
+                Arrays.asList(
+                        new Person("person1", 45),
+                        new Person("person2", 39),
+                        new Person("person3", 60),
+                        new Person("person4", 45),
+                        new Person("person5", 43)
+                )
+        );
+        IMap<String, Person> map = instance.getMap(mapName);
+        map.addIndex(new IndexConfig(IndexType.SORTED, "age").setName(orderedIndexName));
+
+        insertIntoMap(map, people);
+
+        IndexIterationPointer[] pointers = new IndexIterationPointer[1];
+        pointers[0] = new IndexIterationPointer(10, true, 100, true, false);
+
+        MapOperationProvider operationProvider = getOperationProvider(map);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
+
+        InvocationFuture<MapFetchIndexOperationResult> future = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).invoke();
+
+
+        MapFetchIndexOperationResult result = future.get();
+        assertEquals(0, result.getResult().size());
+        assertArrayEquals(pointers, result.getContinuationPointers());
+
+        instance.shutdown();
+    }
+
+    private MapOperationProvider getOperationProvider(IMap map) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapProxy.getName());
@@ -302,4 +369,104 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             return Objects.hash(name, age);
         }
     }
+
+    // Classes needed to mock (modify) MapService
+
+    // Mocking for getMigrationStamp() method.
+    // Other overrides are required to prevent exceptions.
+    static class MockMapService extends MapService {
+        private final MapService delegate;
+        private int methodCalled = 0;
+
+        public MockMapService(MapService mapService) {
+            this.delegate = mapService;
+        }
+
+        @Override
+        public int getMigrationStamp() {
+            methodCalled++;
+            if (methodCalled == 2) {
+                return delegate.getMigrationStamp() + 1;
+            }
+            return delegate.getMigrationStamp();
+        }
+
+        @Override
+        public void init(NodeEngine nodeEngine, Properties properties) {
+            delegate.init(nodeEngine, properties);
+        }
+
+        @Override
+        public void shutdown(boolean terminate) {
+            delegate.shutdown(terminate);
+        }
+
+        @Override
+        public DistributedObject createDistributedObject(String objectName, UUID source, boolean local) {
+            return delegate.createDistributedObject(objectName, source, local);
+        }
+
+        @Override
+        public MapServiceContext getMapServiceContext() {
+            return delegate.getMapServiceContext();
+        }
+    }
+
+    private static class MockingNodeContext implements NodeContext {
+        private final NodeContext delegate;
+
+        public MockingNodeContext(NodeContext delegate) {
+            super();
+            this.delegate = delegate;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return new CustomMapServiceNodeExtension(node);
+        }
+
+        @Override
+        public AddressPicker createAddressPicker(Node node) {
+            return delegate.createAddressPicker(node);
+        }
+
+        @Override
+        public Joiner createJoiner(Node node) {
+            return delegate.createJoiner(node);
+        }
+
+        @Override
+        public Server createServer(Node node, ServerSocketRegistry registry) {
+            return delegate.createServer(node, registry);
+        }
+    }
+
+    private static class CustomMapServiceNodeExtension extends DefaultNodeExtension {
+        public CustomMapServiceNodeExtension(Node node) {
+            super(node);
+        }
+
+        @Override
+        public <T> T createService(Class<T> clazz) {
+            return clazz.isAssignableFrom(MapService.class)
+                    ? (T) new MockMapService((MapService) super.createService(clazz)) : super.createService(clazz);
+        }
+    }
+
+    private static class CustomTestInstanceFactory extends TestHazelcastInstanceFactory {
+
+        @Override
+        public HazelcastInstance newHazelcastInstance(Config config) {
+            String instanceName = config != null ? config.getInstanceName() : null;
+            NodeContext nodeContext;
+            if (TestEnvironment.isMockNetwork()) {
+                config = initOrCreateConfig(config);
+                nodeContext = this.registry.createNodeContext(this.nextAddress(config.getNetworkConfig().getPort()));
+            } else {
+                nodeContext = new DefaultNodeContext();
+            }
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, new MockingNodeContext(nodeContext));
+        }
+    }
+
 }

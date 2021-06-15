@@ -268,7 +268,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return partitionIdSet.stream().allMatch(index::hasPartitionIndexed);
     }
 
-    private int getMigrationTimestamp() {
+    protected int getMigrationTimestamp() {
         return mapService.getMigrationStamp();
     }
 
