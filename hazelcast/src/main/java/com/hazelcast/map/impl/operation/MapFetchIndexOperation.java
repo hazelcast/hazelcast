@@ -221,6 +221,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
             IndexIterationPointer pointer = pointers[i];
 
+            // For hash lookups, pointer begin and end points will be the same
+            assert pointer.getFrom() == pointer.getTo();
+
             List<QueryableEntry> filteredEntries = getOwnedEntries(index.getRecords(pointer.getFrom()), partitionIdSet);
             entries.addAll(filteredEntries);
             newPointers[i] = IndexIterationPointer.createFinishedIterator();
