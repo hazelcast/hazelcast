@@ -142,6 +142,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return 0;
+        return MapDataSerializerHook.INDEX_ITERATION_POINTER;
     }
 }
