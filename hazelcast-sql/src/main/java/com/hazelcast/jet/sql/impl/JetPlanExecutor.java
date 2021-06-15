@@ -190,12 +190,12 @@ class JetPlanExecutor {
         JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
         JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
-        AbstractJetInstance jet = (AbstractJetInstance) hazelcastInstance.getJet();
+        AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         Long jobId = jet.newJobId();
         Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
-            Job job = jet.newJob(jobId, plan.getDag(), jobConfig);
+            Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
@@ -215,7 +215,7 @@ class JetPlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
 
-        Job job = hazelcastInstance.getJet().newJob(plan.getDag(), jobConfig);
+        Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
         return SqlResultImpl.createUpdateCountResult(0);

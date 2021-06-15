@@ -659,7 +659,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_jobStatusCompleting() {
-        assumeFalse(useLightJob); // test not applicable to light jobs
+        assumeFalse(useLightJob); // light jobs cannot be restarted
 
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
