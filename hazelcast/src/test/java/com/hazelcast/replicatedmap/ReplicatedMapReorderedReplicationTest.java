@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -40,7 +41,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.util.Random;
@@ -190,15 +190,9 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
         }
     }
 
-    private void updateFactoryField(DataSerializableFactory factory) throws Exception {
-        // Get Unsafe object
-        final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-        unsafeField.setAccessible(true);
-        final Unsafe unsafe = (Unsafe) unsafeField.get(null);
-
-        // Update the field
-        final Object staticFieldBase = unsafe.staticFieldBase(field);
-        final long staticFieldOffset = unsafe.staticFieldOffset(field);
-        unsafe.putObject(staticFieldBase, staticFieldOffset, factory);
+    private void updateFactoryField(DataSerializableFactory factory) {
+        final Object staticFieldBase = UnsafeUtil.UNSAFE.staticFieldBase(field);
+        final long staticFieldOffset = UnsafeUtil.UNSAFE.staticFieldOffset(field);
+        UnsafeUtil.UNSAFE.putObject(staticFieldBase, staticFieldOffset, factory);
     }
 }
