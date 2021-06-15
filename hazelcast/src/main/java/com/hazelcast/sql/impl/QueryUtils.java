@@ -191,8 +191,12 @@ public final class QueryUtils {
     public static Member findLightJobCoordinator(@Nonnull Collection<Member> members, @Nullable Member localMember) {
         // The members should have at most 2 different version (ignoring the patch version).
         // Find a random member from the larger same-version group.
-        Version[] versions = new Version[2];
-        int[] counts = new int[2];
+
+        // we don't use 2-element array to save on GC litter
+        Version version0 = null;
+        Version version1 = null;
+        int count0 = 0;
+        int count1 = 0;
         int grossMajority = members.size() / 2;
 
         for (Member m : members) {
@@ -200,41 +204,49 @@ public final class QueryUtils {
                 continue;
             }
             Version v = m.getVersion().asVersion();
-            int index;
-            if (versions[0] == null || versions[0].equals(v)) {
-                index = 0;
-            } else if (versions[1] == null || versions[1].equals(v)) {
-                index = 1;
+            int currentCount;
+            if (version0 == null || version0.equals(v)) {
+                version0 = v;
+                currentCount = ++count0;
+            } else if (version1 == null || version1.equals(v)) {
+                version1 = v;
+                currentCount = ++count1;
             } else {
-                throw new RuntimeException("More than 2 distinct member versions found: " + versions[0] + ", " + versions[1] + ", " + v);
+                throw new RuntimeException("More than 2 distinct member versions found: " + version0 + ", " + version1 + ", " + v);
             }
-            versions[index] = v;
-            counts[index]++;
-            // a shortcut - always taken if there are no lite members and the cluster size is odd
-            if (counts[index] > grossMajority) {
-                return m;
+            // a shortcut
+            if (currentCount > grossMajority && localMember != null && localMember.getVersion().asVersion().equals(v)) {
+                return localMember;
             }
         }
 
+        assert count1 == 0 || count0 > 0;
+
         // no data members
-        if (counts[0] == 0) {
+        if (count0 == 0) {
             throw QueryException.error("No data member found");
         }
 
-        int largerGroupIndex = counts[0] > counts[1] ? 0
-                : counts[1] > counts[0] ? 1
-                : versions[0].compareTo(versions[1]) > 0 ? 0 : 1;
+        int count;
+        Version version;
+        if (count0 > count1 || count0 == count1 && version0.compareTo(version1) > 0) {
+            count = count0;
+            version = version0;
+        } else {
+            count = count1;
+            version = version1;
+        }
 
         // if the local member is data member and is from the larger group, use that
         if (localMember != null && !localMember.isLiteMember()
-                && localMember.getVersion().asVersion().equals(versions[largerGroupIndex])) {
+                && localMember.getVersion().asVersion().equals(version)) {
             return localMember;
         }
 
         // otherwise return a random member from the larger group
-        int randomMemberIndex = ThreadLocalRandom.current().nextInt(counts[largerGroupIndex]);
+        int randomMemberIndex = ThreadLocalRandom.current().nextInt(count);
         for (Member m : members) {
-            if (!m.isLiteMember() && m.getVersion().asVersion().equals(versions[largerGroupIndex])) {
+            if (!m.isLiteMember() && m.getVersion().asVersion().equals(version)) {
                 randomMemberIndex--;
                 if (randomMemberIndex < 0) {
                     return m;
