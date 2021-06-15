@@ -18,32 +18,33 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.util.Properties;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.Properties;
+
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.instance.ProtocolType.WAN;
-
 import static java.io.File.createTempFile;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("checkstyle:Indentation")
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
     private Config config;
@@ -85,47 +86,82 @@ public class ConfigTest extends HazelcastTestSupport {
           InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
     }
 
-
     @Test
-    public void testLoadOverridesUsingExternalVariables() {
+    public void testExternalConfigOverrides() throws Exception {
         String clusterName = randomName();
+        String instanceName = randomName();
+
         System.setProperty("hz.cluster-name", clusterName);
-        Config cfg = Config.load();
 
-        assertEquals("load must apply external configuration (system / env. variable) overrides",
-                clusterName, cfg.getClusterName());
+        Config cfg = withEnvironmentVariable("HZ_INSTANCENAME", instanceName)
+                .and("HZ_NETWORK_PORT_PORT", "6731")
+                .execute(Config::load);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals(instanceName, cfg.getInstanceName());
+        assertEquals(6731, cfg.getNetworkConfig().getPort());
     }
 
     @Test
-    public void testLoadYamlFromString() {
-        String yaml = getSimpleYamlConfigStr(
-                "instance-name", "hz-instance-name",
-                "cluster-name", "${cluster.name}"
-        );
-
-        Properties properties = new Properties();
-        properties.setProperty("cluster.name", "hz-cluster-name");
-
-        Config cfg = Config.loadYamlFromString(yaml, properties);
-
-        assertEquals("hz-instance-name", cfg.getInstanceName());
-        assertEquals("hz-cluster-name", cfg.getClusterName());
-    }
-
-    @Test
-    public void testLoadXmlFromString() {
+    public void testLoadFromString() {
         String xml = getSimpleXmlConfigStr(
                 "instance-name", "hz-instance-name",
                 "cluster-name", "${cluster.name}"
         );
 
+        String yaml = getSimpleYamlConfigStr(
+                "instance-name", "hz-instance-name",
+                "cluster-name", "${cluster.name}"
+        );
+
+        String clusterName = randomName();
         Properties properties = new Properties();
-        properties.setProperty("cluster.name", "hz-cluster-name");
+        properties.setProperty("cluster.name", clusterName);
 
-        Config cfg = Config.loadXmlFromString(xml, properties);
+        Config cfg = Config.loadFromString(xml, properties);
 
+        assertEquals(clusterName, cfg.getClusterName());
         assertEquals("hz-instance-name", cfg.getInstanceName());
-        assertEquals("hz-cluster-name", cfg.getClusterName());
+
+        clusterName = randomName();
+        properties.setProperty("cluster.name", clusterName);
+        cfg = Config.loadFromString(yaml, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+    }
+
+    @Test
+    public void testLoadFromStream() {
+        InputStream xmlStream = new ByteArrayInputStream(
+                getSimpleXmlConfigStr(
+                        "instance-name", "hz-instance-name",
+                        "cluster-name", "${cluster.name}"
+                ).getBytes()
+        );
+
+        InputStream yamlStream = new ByteArrayInputStream(
+                getSimpleYamlConfigStr(
+                        "instance-name", "hz-instance-name",
+                        "cluster-name", "${cluster.name}"
+                ).getBytes()
+        );
+
+        String clusterName = randomName();
+        Properties properties = new Properties();
+        properties.setProperty("cluster.name", clusterName);
+
+        Config cfg = Config.loadFromStream(xmlStream, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        clusterName = randomName();
+        properties.setProperty("cluster.name", clusterName);
+        cfg = Config.loadFromStream(yamlStream, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
     }
 
     @Test

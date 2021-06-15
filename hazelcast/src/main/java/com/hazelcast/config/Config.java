@@ -31,6 +31,8 @@ import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
+import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
 import com.hazelcast.internal.config.QueueConfigReadOnly;
@@ -44,6 +46,7 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
@@ -54,6 +57,7 @@ import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -68,7 +72,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
@@ -76,9 +79,8 @@ import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffix
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
-import static com.hazelcast.internal.util.StringUtil.stringToBytes;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
  * Contains all the configuration to start a
@@ -300,14 +302,14 @@ public class Config {
         checkTrue(resource != null, "resource can't be null");
         checkTrue(properties != null, "properties can't be null");
 
-        InputStream in = classLoader.getResourceAsStream(resource);
-        checkTrue(in != null, "Specified resource '" + resource + "' could not be found!");
+        InputStream stream = classLoader.getResourceAsStream(resource);
+        checkTrue(stream != null, "Specified resource '" + resource + "' could not be found!");
 
         if (resource.endsWith(".xml")) {
-            return loadXmlFromStream(in, properties);
+            return new XmlConfigBuilder(stream).setProperties(properties).build();
         }
         if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
-            return loadYamlFromStream(in, properties);
+            return new YamlConfigBuilder(stream).setProperties(properties).build();
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
@@ -341,128 +343,101 @@ public class Config {
         checkTrue(properties != null, "properties can't be null");
 
         String path = configFile.getPath();
-        InputStream in = new FileInputStream(configFile);
+        InputStream stream = new FileInputStream(configFile);
         if (path.endsWith(".xml")) {
-            return loadXmlFromStream(in, properties);
+            return new XmlConfigBuilder(stream).setProperties(properties).build();
         }
         if (path.endsWith(".yaml") || path.endsWith(".yml")) {
-            return loadYamlFromStream(in, properties);
+            return new YamlConfigBuilder(stream).setProperties(properties).build();
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
     }
 
     /**
-     * Creates a Config using the supplied stream. System.properties is used
-     * for variable resolution in the XML file.
-     * @param configStream the stream to load config from
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
-     * @return Config created from the stream
+     * Creates a Config from the provided string (XML or YAML content) and uses the
+     * System.properties for variable resolution.
+     *
+     * @param source the XML or YAML content
+     * @throws IllegalArgumentException if the source is null or empty
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
+     * @return Config created from the string
      */
-    public static Config loadXmlFromStream(InputStream configStream) {
-        return loadXmlFromStream(configStream, System.getProperties());
+    public static Config loadFromString(String source) {
+        return loadFromString(source, System.getProperties());
     }
 
     /**
-     * Creates a Config using the supplied stream. The provided properties are used
-     * for variable resolution in the XML file.
-     * @param configStream the stream to load config from
+     * Creates a Config from the provided string (XML or YAML content).
+     *
+     * @param source the XML or YAML content
      * @param properties properties to use for variable resolution
-     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
-     * @return Config created from the stream
+     * @throws IllegalArgumentException if the source is null or empty
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
+     * @return Config created from the string
      */
-    public static Config loadXmlFromStream(InputStream configStream, Properties properties) {
-        return applyEnvAndSystemVariableOverrides(
-                new XmlConfigBuilder(configStream).setProperties(properties).build());
-    }
-
-    /**
-     * Creates a Config from the provided XML string and uses the
-     * System.properties to resolve variables in the XML.
-     *
-     * @param xml the XML content
-     * @throws IllegalArgumentException      if the XML is null or empty
-     * @throws InvalidConfigurationException if the XML content is invalid
-     * @return Config created from the XML string
-     */
-    public static Config loadXmlFromString(String xml) {
-        return loadXmlFromString(xml, System.getProperties());
-    }
-
-    /**
-     * Creates a Config from the provided XML string and uses the
-     * provided properties to resolve variables in the XML.
-     *
-     * @param xml the XML content
-     * @param properties properties to use for variable resolution in the XML string
-     * @throws IllegalArgumentException      if the XML is null or empty
-     * @throws InvalidConfigurationException if the XML content is invalid
-     * @return Config created from the XML string
-     */
-    public static Config loadXmlFromString(String xml, Properties properties) {
-        if (isNullOrEmptyAfterTrim(xml)) {
-            throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
+    public static Config loadFromString(String source, Properties properties) {
+        if (isNullOrEmptyAfterTrim(source)) {
+            throw new IllegalArgumentException("provided string configuration is null or empty! "
+                    + "Please use a well-structured content.");
         }
-        checkTrue(properties != null, "properties can't be null");
-        InputStream in = new ByteArrayInputStream(stringToBytes(xml));
-        return applyEnvAndSystemVariableOverrides(
-                new XmlConfigBuilder(in).setProperties(properties).build());
+        Config cfg;
+        try {
+            byte[] bytes = source.getBytes();
+            InputStream stream = new ByteArrayInputStream(bytes);
+            cfg = loadFromConfigStream(new ConfigStream(stream, bytes.length), properties);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return cfg;
     }
 
     /**
-     * Creates a Config using the supplied stream. System.properties is used
-     * for variable resolution in the YAML file.
-     * @param configStream the stream to load config from
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * Creates a Config from the provided stream (XML or YAML content) and uses the
+     * System.properties for variable resolution.
+     *
+     * @param source the XML or YAML stream
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
      * @return Config created from the stream
      */
-    public static Config loadYamlFromStream(InputStream configStream) {
-        return loadYamlFromStream(configStream, System.getProperties());
+    public static Config loadFromStream(InputStream source) {
+        return loadFromStream(source, System.getProperties());
     }
 
     /**
-     * Creates a Config using the supplied stream. The provided properties are used
-     * for variable resolution in the YAML file.
-     * @param configStream the stream to load config from
+     * Creates a Config from the provided stream (XML or YAML content).
+     *
+     * @param source the XML or YAML stream
      * @param properties properties to use for variable resolution
-     * @throws com.hazelcast.core.HazelcastException if the YAML content is invalid
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
      * @return Config created from the stream
      */
-    public static Config loadYamlFromStream(InputStream configStream, Properties properties) {
-        return applyEnvAndSystemVariableOverrides(
-                new YamlConfigBuilder(configStream).setProperties(properties).build());
-    }
-
-    /**
-     * Creates a Config from the provided YAML string and uses the
-     * System.properties to resolve variables in the YAML.
-     *
-     * @param yaml the YAML content
-     * @throws IllegalArgumentException      if the YAML is null or empty
-     * @throws InvalidConfigurationException if the YAML content is invalid
-     * @return Config created from the YAML string
-     */
-    public static Config loadYamlFromString(String yaml) {
-        return loadYamlFromString(yaml, System.getProperties());
-    }
-
-    /**
-     * Creates a Config from the provided YAML string and uses the
-     * provided properties to resolve variables in the YAML.
-     *
-     * @param yaml the YAML content
-     * @throws IllegalArgumentException      if the YAML is null or empty
-     * @throws InvalidConfigurationException if the YAML content is invalid
-     * @return Config created from the YAML string
-     */
-    public static Config loadYamlFromString(String yaml, Properties properties) {
-        if (isNullOrEmptyAfterTrim(yaml)) {
-            throw new IllegalArgumentException("YAML configuration is null or empty! Please use a well-structured YAML.");
+    public static Config loadFromStream(InputStream source, Properties properties) {
+        Config cfg = null;
+        try {
+            cfg = loadFromConfigStream(new ConfigStream(source), properties);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
-        checkTrue(properties != null, "properties can't be null");
-        InputStream in = new ByteArrayInputStream(stringToBytes(yaml));
-        return applyEnvAndSystemVariableOverrides(
-                new YamlConfigBuilder(in).setProperties(properties).build());
+        return cfg;
+    }
+
+    private static Config loadFromConfigStream(ConfigStream stream, Properties properties) throws Exception {
+        if (new MemberXmlConfigRootTagRecognizer().isRecognized(stream)) {
+            stream.reset();
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+        stream.reset();
+        if (new MemberYamlConfigRootTagRecognizer().isRecognized(stream)) {
+            stream.reset();
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+
+        throw new IllegalArgumentException("interpretation error: the resource is neither valid XML nor valid YAML");
     }
 
     /**
