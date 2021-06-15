@@ -351,14 +351,13 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                 // see JetSqlValidator.validateUpdate()
                 SqlUpdate update = (SqlUpdate) query;
                 SqlNodeList selectList = update.getSourceSelect().getSelectList();
-                return coerceColumnType(sourceScope, selectList, selectList.size() - totalColumns + columnIndex, targetType);
+                return coerceSourceRowType(sourceScope, selectList, selectList.size() - totalColumns + columnIndex, targetType);
             default:
                 return rowTypeCoercion(sourceScope, query, columnIndex, targetType);
         }
     }
 
-    @Override
-    protected boolean coerceColumnType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
+    private boolean coerceSourceRowType(SqlValidatorScope scope, SqlNodeList nodeList, int index, RelDataType targetType) {
         SqlNode node = nodeList.get(index);
         return rowTypeElementCoercion(scope, node, targetType, cast -> nodeList.set(index, cast));
     }
