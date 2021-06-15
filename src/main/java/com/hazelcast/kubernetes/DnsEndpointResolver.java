@@ -17,66 +17,50 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 
-import javax.naming.Context;
-import javax.naming.NameNotFoundException;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
+    // executor service for dns lookup calls
+    private static final ExecutorService DNS_LOOKUP_SERVICE = Executors.newCachedThreadPool();
 
     private final String serviceDns;
     private final int port;
-    private final DirContext dirContext;
+    private final int serviceDnsTimeout;
 
-    DnsEndpointResolver(ILogger logger, String serviceDns, int port, DirContext dirContext) {
+    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
         super(logger);
         this.serviceDns = serviceDns;
         this.port = port;
-        this.dirContext = dirContext;
-    }
-
-    DnsEndpointResolver(ILogger logger, String serviceDns, int port, int serviceDnsTimeout) {
-        this(logger, serviceDns, port, createDirContext(serviceDnsTimeout));
-
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private static DirContext createDirContext(int serviceDnsTimeout) {
-        Hashtable<String, String> env = new Hashtable<String, String>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
-        env.put(Context.PROVIDER_URL, "dns:");
-        env.put("com.sun.jndi.dns.timeout.initial", String.valueOf(serviceDnsTimeout * 1000L));
-        try {
-            return new InitialDirContext(env);
-        } catch (NamingException e) {
-            throw new HazelcastException("Error while initializing DirContext", e);
-        }
+        this.serviceDnsTimeout = serviceDnsTimeout;
     }
 
     List<DiscoveryNode> resolve() {
         try {
             return lookup();
-        } catch (NameNotFoundException e) {
-            logger.warning(String.format("DNS lookup for serviceDns '%s' failed: name not found", serviceDns));
+        } catch (TimeoutException e) {
+            logger.warning(String.format("DNS lookup for serviceDns '%s' failed: DNS resolution timeout", serviceDns));
+            return Collections.emptyList();
+        } catch (UnknownHostException e) {
+            logger.warning(String.format("DNS lookup for serviceDns '%s' failed: unknown host", serviceDns));
             return Collections.emptyList();
         } catch (Exception e) {
             logger.warning(String.format("DNS lookup for serviceDns '%s' failed", serviceDns), e);
@@ -85,20 +69,32 @@ final class DnsEndpointResolver
     }
 
     private List<DiscoveryNode> lookup()
-            throws NamingException, UnknownHostException {
+            throws UnknownHostException, InterruptedException, ExecutionException, TimeoutException {
         Set<String> addresses = new HashSet<String>();
-        Attributes attributes = dirContext.getAttributes(serviceDns, new String[]{"SRV"});
-        Attribute srvAttribute = attributes.get("srv");
-        if (srvAttribute != null) {
-            NamingEnumeration<?> servers = srvAttribute.getAll();
-            while (servers.hasMore()) {
-                String server = (String) servers.next();
-                String serverHost = extractHost(server);
-                InetAddress address = InetAddress.getByName(serverHost);
+
+        Future<InetAddress[]> future = DNS_LOOKUP_SERVICE.submit(new Callable<InetAddress[]>() {
+            @Override
+            public InetAddress[] call() throws Exception {
+                return getAllInetAddresses();
+            }
+        });
+
+        try {
+            for (InetAddress address : future.get(serviceDnsTimeout, TimeUnit.SECONDS)) {
                 if (addresses.add(address.getHostAddress()) && logger.isFinestEnabled()) {
                     logger.finest("Found node service with address: " + address);
                 }
             }
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof UnknownHostException) {
+                throw (UnknownHostException) e.getCause();
+            } else {
+                throw e;
+            }
+        } catch (TimeoutException e) {
+            // cancel DNS lookup
+            future.cancel(true);
+            throw e;
         }
 
         if (addresses.size() == 0) {
@@ -114,13 +110,12 @@ final class DnsEndpointResolver
     }
 
     /**
-     * Extracts host from the DNS record.
-     * <p>
-     * Sample record: "10 25 0 6235386366386436.my-release-hazelcast.default.svc.cluster.local".
+     * Do the actual lookup
+     * @return array of resolved inet addresses
+     * @throws UnknownHostException
      */
-    private static String extractHost(String server) {
-        String host = server.split(" ")[3];
-        return host.replaceAll("\\\\.$", "");
+    private InetAddress[] getAllInetAddresses() throws UnknownHostException {
+        return InetAddress.getAllByName(serviceDns);
     }
 
     private static int getHazelcastPort(int port) {
