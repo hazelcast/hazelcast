@@ -16,17 +16,21 @@
 
 package com.hazelcast.internal.iteration;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO add IdentifiedDataSerializable
-public class IndexIterationPointer {
+public class IndexIterationPointer implements IdentifiedDataSerializable {
 
     private static final int FLAG_DESCENDING = 1;
     private static final int FLAG_FROM_INCLUSIVE = 2;
@@ -36,6 +40,9 @@ public class IndexIterationPointer {
     private Comparable<?> to;
     private byte flags;
     private boolean done;
+
+    public IndexIterationPointer() {
+    }
 
     public IndexIterationPointer(
             Comparable<?> from,
@@ -53,7 +60,7 @@ public class IndexIterationPointer {
     }
 
     private IndexIterationPointer(boolean done) {
-        this.done = true;
+        this.done = done;
     }
 
     public static IndexIterationPointer createFinishedIterator() {
@@ -110,5 +117,31 @@ public class IndexIterationPointer {
 
     public boolean isDone() {
         return done;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(from);
+        out.writeObject(to);
+        out.writeByte(flags);
+        out.writeBoolean(done);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        from = in.readObject();
+        to = in.readObject();
+        flags = in.readByte();
+        done = in.readBoolean();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return 0;
     }
 }

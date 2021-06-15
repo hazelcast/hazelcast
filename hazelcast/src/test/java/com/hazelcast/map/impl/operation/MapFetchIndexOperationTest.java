@@ -52,6 +52,8 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -111,6 +113,41 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void whenSizeHintIsSmall_thenFetchInMultipleOperations() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance1);
+
+        IndexIterationPointer[] pointers = new IndexIterationPointer[2];
+        pointers[0] = new IndexIterationPointer(30, true, 40, true, false);
+        pointers[1] = new IndexIterationPointer(50, true, 60, true, false);
+
+        MapOperationProvider operationProvider = getOperationProvider();
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 1);
+
+        Address address = instance1.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance1);
+
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+
+        assertContainsSorted(result, Arrays.asList(new Person("person2", 39)));
+
+        assertTrue(result.getContinuationPointers()[0].isDone());
+        assertFalse(result.getContinuationPointers()[1].isDone());
+
+        operation = operationProvider.createFetchIndexOperation(
+                mapName, orderedIndexName, result.getContinuationPointers(), partitions, 4);
+
+        result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+        assertContainsSorted(result, Arrays.asList(new Person("person3", 60)));
+
+        assertTrue(result.getContinuationPointers()[0].isDone());
+        assertTrue(result.getContinuationPointers()[1].isDone());
+    }
+
+    @Test
     public void whenMultipleObjectsHasSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance1);
 
@@ -135,7 +172,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         ));
     }
 
-    private MapOperationProvider getOperationProvider()  {
+    private MapOperationProvider getOperationProvider() {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
         MapServiceContext mapServiceContext = ((MapService) mapProxy.getService()).getMapServiceContext();
         return mapServiceContext.getMapOperationProvider(mapProxy.getName());

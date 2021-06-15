@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
+import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
@@ -318,9 +319,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
     public static final int LOCAL_RECORD_STORE_STATS = 154;
     public static final int MAP_FETCH_INDEX = 155;
+    public static final int INDEX_ITERATION_POINTER = 156;
 
 
-    private static final int LEN = MAP_FETCH_INDEX + 1;
+    private static final int LEN = INDEX_ITERATION_POINTER + 1;
 
     @Override
     public int getFactoryId() {
@@ -483,6 +485,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
         constructors[MAP_FETCH_INDEX] = arg -> new MapFetchIndexOperation();
+        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
 
         return new ArrayDataSerializableFactory(constructors);
     }
