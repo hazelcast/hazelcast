@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperation;
 
 /**
  * Query operation to be executed. Could be either local (i.e. requested on the local member), or remote.

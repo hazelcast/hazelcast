@@ -22,8 +22,8 @@ import com.hazelcast.sql.impl.exec.IterationResult;
 import com.hazelcast.sql.impl.exec.io.InboundBatch;
 import com.hazelcast.sql.impl.exec.io.InboundHandler;
 import com.hazelcast.sql.impl.exec.io.OutboundHandler;
-import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.state.QueryStateCallback;
 
 import java.util.Collection;

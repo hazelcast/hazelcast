@@ -36,7 +36,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
         if (parameters.isLightJob) {
-            Address targetAddress = QueryUtils.findLightJobCoordinator(nodeEngine);
+            Address targetAddress = QueryUtils.memberOfLargerSameVersionGroup(nodeEngine);
             return nodeEngine.getOperationService()
                     .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, targetAddress);
         } else {

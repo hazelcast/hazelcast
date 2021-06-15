@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.operation.QueryCheckOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.coordinator.QueryCheckOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
 import java.util.ArrayList;

@@ -14,32 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl.operation.coordinator;
 
-import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.QueryResultProducer;
+import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.row.Row;
 
-import java.util.Collection;
+public class TestQueryResultProducer implements QueryResultProducer {
 
-/**
- * Operation to check whether the query is still active. Sent from participant to coordinator.
- */
-public class QueryCheckOperation extends QueryAbstractCheckOperation {
-    public QueryCheckOperation() {
-        // No-op.
-    }
+    public static final TestQueryResultProducer INSTANCE = new TestQueryResultProducer();
 
-    public QueryCheckOperation(Collection<QueryId> queryIds) {
-        super(queryIds);
+    private TestQueryResultProducer() {
+        // No-op
     }
 
     @Override
-    public boolean isSystem() {
-        return true;
+    public ResultIterator<Row> iterator() {
+        return null;
     }
 
     @Override
-    public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CHECK;
+    public void onError(QueryException error) {
+        // No-op
     }
 }

@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.sql.impl.QueryUtils.findLightJobCoordinator;
+import static com.hazelcast.sql.impl.QueryUtils.memberOfLargerSameVersionGroup;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -137,49 +137,49 @@ public class QueryUtilsTest extends SqlTestSupport {
         when(mv3.getVersion()).thenReturn(v3);
 
         // failing cases
-        assertThatThrownBy(() -> findLightJobCoordinator(emptyList(), null))
+        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(emptyList(), null))
                 .isInstanceOf(QueryException.class)
                 .hasMessage("No data member found");
-        assertThatThrownBy(() -> findLightJobCoordinator(singletonList(mv1_lite), null))
+        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), null))
                 .isInstanceOf(QueryException.class)
                 .hasMessage("No data member found");
-        assertThatThrownBy(() -> findLightJobCoordinator(singletonList(mv1_lite), mv1_lite))
+        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), mv1_lite))
                 .isInstanceOf(QueryException.class)
                 .hasMessage("No data member found");
-        assertThatThrownBy(() -> findLightJobCoordinator(asList(mv1, mv2, mv3), null))
+        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2, mv3), null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("More than 2 distinct member versions found: 0.1, 0.2, 0.3");
 
         // one member in the cluster
-        assertSame(mv1, findLightJobCoordinator(singletonList(mv1), mv1));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1), mv1));
 
         // two members with same ver - must choose the local one
-        assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_1), mv1));
-        assertSame(mv1, findLightJobCoordinator(asList(mv1_1, mv1), mv1));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv1));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1_1, mv1), mv1));
 
         // lite and non-lite same ver, must choose non-lite
-        assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_lite), mv1));
-        assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_lite), mv1_lite));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_lite), mv1_lite));
 
         // two versions, same count - must choose newer even if not local
-        assertSame(mv2, findLightJobCoordinator(asList(mv1, mv2), mv1));
-        assertSame(mv2, findLightJobCoordinator(asList(mv1, mv2), mv2));
+        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv1));
+        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2), mv2));
 
         // older version has bigger group - must use local
-        assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_1, mv2), mv1));
+        assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv1));
 
         // older group bigger, but all lite - choose newer
-        assertSame(mv2, findLightJobCoordinator(asList(mv1_lite, mv1_lite, mv2), null));
+        assertSame(mv2, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1_lite, mv1_lite, mv2), null));
 
         // test cases with random result
-        assertTrueEventuallyFast(() -> assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_1), null)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, findLightJobCoordinator(asList(mv1, mv1_1), null)));
-        assertTrueEventuallyFast(() -> assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_1), mv2)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, findLightJobCoordinator(asList(mv1, mv1_1), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), null)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1), mv2)));
 
         // older version group larger - must choose one of the older
-        assertTrueEventuallyFast(() -> assertSame(mv1, findLightJobCoordinator(asList(mv1, mv1_1, mv2), mv2)));
-        assertTrueEventuallyFast(() -> assertSame(mv1_1, findLightJobCoordinator(asList(mv1, mv1_1, mv2), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
+        assertTrueEventuallyFast(() -> assertSame(mv1_1, QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv1_1, mv2), mv2)));
     }
 
     private static void assertTrueEventuallyFast(Runnable r) {

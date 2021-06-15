@@ -173,22 +173,23 @@ public final class QueryUtils {
         return res;
     }
 
-    public static Address findLightJobCoordinator(NodeEngineImpl nodeEngine) {
-        return findLightJobCoordinator(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember()).getAddress();
+    public static Address memberOfLargerSameVersionGroup(NodeEngineImpl nodeEngine) {
+        return memberOfLargerSameVersionGroup(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember()).getAddress();
     }
 
     /**
      * Finds a larger same-version group of data members from a collection
-     * members; if {@code localMember} is from that group, return that.
+     * members and, if {@code localMember} is from that group, return that.
      * Otherwise return a random member from the group.
      * <p>
      * Used for SqlExecute and SubmitJob(light=true) messages.
      *
      * @param members list of all members
      * @param localMember the local member, null for client instance
+     * @return the chosen member or null, if no data member is found
      */
-    @Nonnull
-    public static Member findLightJobCoordinator(@Nonnull Collection<Member> members, @Nullable Member localMember) {
+    @Nullable
+    public static Member memberOfLargerSameVersionGroup(@Nonnull Collection<Member> members, @Nullable Member localMember) {
         // The members should have at most 2 different version (ignoring the patch version).
         // Find a random member from the larger same-version group.
 
@@ -224,7 +225,7 @@ public final class QueryUtils {
 
         // no data members
         if (count0 == 0) {
-            throw QueryException.error("No data member found");
+            return null;
         }
 
         int count;

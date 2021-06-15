@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.UpstreamExec;
 import com.hazelcast.sql.impl.exec.IterationResult;
-import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryBatchExchangeOperation;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;

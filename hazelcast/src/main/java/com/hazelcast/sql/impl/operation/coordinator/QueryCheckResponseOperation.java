@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl.operation.coordinator;
 
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.row.Row;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
-public class TestQueryResultProducer implements QueryResultProducer {
+import java.util.Collection;
 
-    public static final TestQueryResultProducer INSTANCE = new TestQueryResultProducer();
+/**
+ * Response to {@link QueryCheckOperation} operation. Sent from coordinator to participant.
+ */
+public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
+    public QueryCheckResponseOperation() {
+        // No-op.
+    }
 
-    private TestQueryResultProducer() {
-        // No-op
+    public QueryCheckResponseOperation(Collection<QueryId> queryIds) {
+        super(queryIds);
     }
 
     @Override
-    public ResultIterator<Row> iterator() {
-        return null;
+    public boolean isSystem() {
+        return true;
     }
 
     @Override
-    public void onError(QueryException error) {
-        // No-op
+    public int getClassId() {
+        return SqlDataSerializerHook.OPERATION_CHECK_RESPONSE;
     }
 }

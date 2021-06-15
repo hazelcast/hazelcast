@@ -43,10 +43,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.impl.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.InitialMembershipEvent;
-import com.hazelcast.cluster.InitialMembershipListener;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -72,7 +69,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.version.Version;
+import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
@@ -84,7 +81,6 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -100,7 +96,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
@@ -115,13 +110,9 @@ import static com.hazelcast.client.properties.ClientProperty.IO_WRITE_THROUGH_EN
 import static com.hazelcast.client.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CLUSTER;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
-import static com.hazelcast.internal.util.CollectionUtil.toUnmodifiableList;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -167,10 +158,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
-
-    // the outer list is sorted by the inner list's size. The inner list contains members with the same version.
-    // Therefore membersByVersion.get().get(0) contains the larger group of same-version members.
-    private final AtomicReference<List<List<Member>>> sqlMembersList = new AtomicReference<>();
 
     private enum ClientState {
         /**
@@ -226,79 +213,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
         this.asyncStart = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
         this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
-
-//        initializeMembershipListener();
-    }
-
-    private void initializeMembershipListener() {
-        client.getCluster().addMembershipListener(new InitialMembershipListener() {
-            private final Comparator<List<Member>> comparator =
-                    Comparator
-                            // first by the size of the list, reversed
-                            .<List<Member>, Integer>comparing(List::size).reversed()
-                            // then by the version of members in the group, reversed
-                            .thenComparing(Comparator.<List<Member>, Version>comparing(l -> l.get(0).getVersion().asVersion()).reversed());
-
-            @Override
-            public void init(InitialMembershipEvent event) {
-                assert sqlMembersList.get() == null;
-
-                List<List<Member>> newList = event.getMembers().stream()
-                        .filter(m -> !m.isLiteMember())
-                        .collect(groupingBy(m -> m.getVersion().asVersion(), toUnmodifiableList()))
-                        .values().stream()
-                        .sorted(comparator)
-                        .collect(toUnmodifiableList());
-                replaceList(null, newList);
-            }
-
-            @Override
-            public void memberAdded(MembershipEvent membershipEvent) {
-                Member addedMember = membershipEvent.getMember();
-                if (addedMember.isLiteMember()) {
-                    return;
-                }
-
-                List<List<Member>> origList = sqlMembersList.get();
-                for (int i = 0; i < origList.size(); i++) {
-                    if (origList.get(i).get(0).getVersion().asVersion().equals(addedMember.getVersion().asVersion())) {
-                        // the added member belongs to i-th group
-                        List<List<Member>> newOuter = new ArrayList<>(origList);
-                        List<Member> newInner = origList.get(i);
-                        newInner.add(addedMember);
-                        newOuter.set(i, unmodifiableList(newInner));
-                        newOuter.sort(comparator);
-                        replaceList(origList, unmodifiableList(newOuter));
-                    }
-                }
-
-                // the added member doesn't have a version of any current data member - create a new group
-                if (origList.size() == 2) {
-                    throw new RuntimeException("got members of 3 distinct versions: " + origList.get(0).get(0).getVersion().asVersion()
-                            + ", " + origList.get(1).get(0).getVersion().asVersion() + ", " + addedMember.getVersion().asVersion());
-                }
-                List<List<Member>> newList = new ArrayList<>(origList.size() + 1);
-                newList.addAll(origList);
-                newList.add(singletonList(addedMember));
-                newList.sort(comparator);
-                replaceList(origList, unmodifiableList(newList));
-            }
-
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                Member removedMember = membershipEvent.getMember();
-                if (removedMember.isLiteMember()) {
-
-                }
-            }
-
-            private void replaceList(List<List<Member>> origList, List<List<Member>> newList) {
-                boolean success = sqlMembersList.compareAndSet(origList, newList);
-                if (!success) {
-                    throw new RuntimeException("concurrent call of listener methods");
-                }
-            }
-        });
     }
 
     private int initConnectionTimeoutMillis() {
@@ -911,7 +825,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        // Otherwise iterate over connections and return the very first valid one
+        // Otherwise iterate over connections and return the very first one
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
             return connectionEntry.getValue();
         }
@@ -922,7 +836,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
     @Override
     public ClientConnection getConnectionForSql() {
-        return null; // TODO [viliam]
+        if (isSmartRoutingEnabled) {
+            Member member = QueryUtils.memberOfLargerSameVersionGroup(
+                    client.getClientClusterService().getMemberList(), null);
+            if (member != null) {
+                ClientConnection connection = activeConnections.get(member.getUuid());
+                if (connection != null) {
+                    return connection;
+                }
+            }
+        }
+
+        // Otherwise iterate over connections and return the very first one
+        for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
+            return connectionEntry.getValue();
+        }
+
+        // Failed to get a connection
+        return null;
     }
 
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {

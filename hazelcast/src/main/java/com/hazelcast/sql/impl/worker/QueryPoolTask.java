@@ -22,10 +22,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.impl.LocalMemberIdProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.operation.QueryCancelOperation;
-import com.hazelcast.sql.impl.operation.QueryOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationDeserializationException;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.coordinator.QueryCancelOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationDeserializationException;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
 
 import java.util.UUID;
 

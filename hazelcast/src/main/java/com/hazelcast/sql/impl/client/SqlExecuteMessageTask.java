@@ -26,6 +26,8 @@ import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.operation.coordinator.QueryAbstractIdAwareOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperation;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
@@ -35,9 +37,16 @@ import java.security.Permission;
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
+public class SqlExecuteMessageTask
+        extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters, SqlExecuteCodec.ResponseParameters> {
+
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected QueryAbstractIdAwareOperation prepareOperation() {
+        return new QueryExecuteOperation(parameters.queryId, parameters.);
     }
 
     @Override

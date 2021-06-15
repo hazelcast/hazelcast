@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.worker;
 
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
-import com.hazelcast.sql.impl.operation.QueryOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

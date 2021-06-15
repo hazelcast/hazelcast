@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.exec.io;
 
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.coordinator.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.row.RowBatch;

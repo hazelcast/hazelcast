@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.exec.io.flowcontrol;
 
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
 
 import java.util.UUID;
 

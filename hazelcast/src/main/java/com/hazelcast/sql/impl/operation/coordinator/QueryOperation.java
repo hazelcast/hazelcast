@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl.operation.coordinator;
 
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Base class for query operations.
+ * Base class for query operations. These operations are unrelated to
+ * {@link Operation} and are lighter.
  */
 public abstract class QueryOperation implements IdentifiedDataSerializable {
 

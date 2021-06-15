@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.operation.QueryOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperation;
+import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
 
 import java.util.ArrayList;
 import java.util.List;

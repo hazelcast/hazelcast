@@ -118,7 +118,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
 
     @Override
     protected UUID findLightJobCoordinator() {
-        return QueryUtils.findLightJobCoordinator(clusterService.getMemberList(), null).getUuid();
+        return QueryUtils.memberOfLargerSameVersionGroup(clusterService.getMemberList(), null).getUuid();
     }
 
     @Override

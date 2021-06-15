@@ -99,7 +99,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected Address findLightJobCoordinator() {
-        return QueryUtils.findLightJobCoordinator(container());
+        return QueryUtils.memberOfLargerSameVersionGroup(container());
     }
 
     @Override

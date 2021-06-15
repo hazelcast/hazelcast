@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation;
+package com.hazelcast.sql.impl.operation.coordinator;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -22,14 +22,14 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import java.util.Collection;
 
 /**
- * Response to {@link QueryCheckOperation} operation. Sent from coordinator to participant.
+ * Operation to check whether the query is still active. Sent from participant to coordinator.
  */
-public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
-    public QueryCheckResponseOperation() {
+public class QueryCheckOperation extends QueryAbstractCheckOperation {
+    public QueryCheckOperation() {
         // No-op.
     }
 
-    public QueryCheckResponseOperation(Collection<QueryId> queryIds) {
+    public QueryCheckOperation(Collection<QueryId> queryIds) {
         super(queryIds);
     }
 
@@ -40,6 +40,6 @@ public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CHECK_RESPONSE;
+        return SqlDataSerializerHook.OPERATION_CHECK;
     }
 }
