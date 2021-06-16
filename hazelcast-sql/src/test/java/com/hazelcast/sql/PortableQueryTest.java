@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql;
 
+import com.google.common.collect.Iterators;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -41,12 +42,10 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -101,10 +100,8 @@ public class PortableQueryTest extends HazelcastTestSupport {
         fillMap(map, 50, ChildPortable::new);
 
         SqlResult rows = client.getSql().execute("SELECT * FROM test WHERE i >= 45");
-        AtomicInteger integer = new AtomicInteger(0);
-        rows.iterator().forEachRemaining(sqlRow -> integer.incrementAndGet());
 
-        assertEquals(5, integer.get());
+        assertEquals(5, Iterators.size(rows.iterator()));
     }
 
     @Test
@@ -122,9 +119,7 @@ public class PortableQueryTest extends HazelcastTestSupport {
         SqlResult rows = clientSql.execute("SELECT sa FROM test WHERE c = ?", expected);
 
         Iterator<SqlRow> iterator = rows.iterator();
-        SqlRow row = iterator.next();
-        assertFalse(iterator.hasNext());
-
+        SqlRow row = Iterators.getOnlyElement(iterator);
         String[] rowObject = row.getObject("sa");
         assertEquals(String.valueOf(10), rowObject[0]);
     }
