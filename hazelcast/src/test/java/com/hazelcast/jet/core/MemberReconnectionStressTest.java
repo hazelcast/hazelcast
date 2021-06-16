@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.core.TestProcessors.MockP;
@@ -47,7 +46,6 @@ public class MemberReconnectionStressTest extends JetTestSupport {
     @After
     public void after() {
         terminated.set(true);
-        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -69,9 +67,8 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");
         config.setClusterName(randomName());
 
-        HazelcastInstance inst1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance inst2 = Hazelcast.newHazelcastInstance(config);
-
+        HazelcastInstance inst1 = createHazelcastInstance(config);
+        HazelcastInstance inst2 = createHazelcastInstance(config);
         logger.info("Instances started");
 
         new Thread(() -> {
