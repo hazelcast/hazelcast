@@ -144,6 +144,13 @@
             <version>${prometheus.version}</version>
         </dependency>
 
+        <!-- JCache API - needed server-side as we use and extend some classes -->
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${jsr107.api.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
