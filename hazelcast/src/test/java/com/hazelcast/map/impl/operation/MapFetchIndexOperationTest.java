@@ -38,6 +38,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MigrationDetectedException;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
@@ -70,7 +71,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.Accessors.getOperationService;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -188,19 +188,19 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         assertResultSorted(result, Arrays.asList(new Person("person2", 39)));
 
-        assertTrue(result.getContinuationPointers()[0].isDone());
-        assertFalse(result.getContinuationPointers()[1].isDone());
+        assertTrue(result.getPointers()[0].isDone());
+        assertFalse(result.getPointers()[1].isDone());
 
         operation = operationProvider.createFetchIndexOperation(
-                mapName, orderedIndexName, result.getContinuationPointers(), partitions, 4);
+                mapName, orderedIndexName, result.getPointers(), partitions, 4);
 
         result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(new Person("person3", 60)));
 
-        assertTrue(result.getContinuationPointers()[0].isDone());
-        assertTrue(result.getContinuationPointers()[1].isDone());
+        assertTrue(result.getPointers()[0].isDone());
+        assertTrue(result.getPointers()[1].isDone());
     }
 
     @Test
@@ -258,15 +258,15 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
 
-        InvocationFuture<MapFetchIndexOperationResult> future = operationService.createInvocationBuilder(
-                MapService.SERVICE_NAME, operation, address).invoke();
-
-
-        MapFetchIndexOperationResult result = future.get();
-        assertEquals(0, result.getResult().size());
-        assertArrayEquals(pointers, result.getContinuationPointers());
-
-        instance.shutdown();
+        try {
+            InvocationFuture<MapFetchIndexOperationResult> future = operationService.createInvocationBuilder(
+                    MapService.SERVICE_NAME, operation, address).invoke();
+            future.get();
+        } catch (Exception e) {
+            assertInstanceOf(MigrationDetectedException.class, e.getCause());
+        } finally {
+            instance.shutdown();
+        }
     }
 
     private MapOperationProvider getOperationProvider(IMap map) {
@@ -294,17 +294,17 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     private static void assertResult(MapFetchIndexOperationResult result, List<Person> peopleList) {
-        List<QueryableEntry> entries = result.getResult();
+        List<QueryableEntry> entries = result.getEntries();
         assertEquals(entries.size(), peopleList.size());
 
         Map<String, Person> m = new HashMap<>();
 
-        result.getResult().stream().forEach(e -> m.put((String) e.getKey(), (Person) e.getValue()));
+        result.getEntries().stream().forEach(e -> m.put((String) e.getKey(), (Person) e.getValue()));
         peopleList.stream().forEach(p -> assertEquals(m.get(p.name), p));
     }
 
     private static void assertResultSorted(MapFetchIndexOperationResult result, List<Person> orderedPeopleList) {
-        List<QueryableEntry> entries = result.getResult();
+        List<QueryableEntry> entries = result.getEntries();
         assertEquals(entries.size(), orderedPeopleList.size());
 
         Iterator<QueryableEntry> entriesIterator = entries.iterator();
@@ -378,7 +378,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         private final MapService delegate;
         private int methodCalled = 0;
 
-        public MockMapService(MapService mapService) {
+        MockMapService(MapService mapService) {
             this.delegate = mapService;
         }
 
@@ -415,7 +415,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     private static class MockingNodeContext implements NodeContext {
         private final NodeContext delegate;
 
-        public MockingNodeContext(NodeContext delegate) {
+        MockingNodeContext(NodeContext delegate) {
             super();
             this.delegate = delegate;
         }
@@ -442,7 +442,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     private static class CustomMapServiceNodeExtension extends DefaultNodeExtension {
-        public CustomMapServiceNodeExtension(Node node) {
+        CustomMapServiceNodeExtension(Node node) {
             super(node);
         }
 
