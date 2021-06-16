@@ -34,7 +34,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +56,6 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     private String mapName;
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
-    private transient IMap<Object, Object> map;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
@@ -81,7 +79,6 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public void init(@Nonnull Context context) {
-        map = context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -91,18 +88,18 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
+            String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
-            TransientReference<IMap<Object, Object>> context = new TransientReference<>(map);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> context),
+                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
-                    (TransientReference<IMap<Object, Object>> ctx, Object[] left) -> {
+                    (IMap<Object, Object> map, Object[] left) -> {
                         Object key = left[leftEquiJoinIndex];
                         if (key == null) {
                             return inner ? null : completedFuture(null);
                         }
-                        return ctx.ref.getAsync(key).toCompletableFuture();
+                        return map.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
                         Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition, evalContext);
@@ -152,23 +149,5 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
         condition = in.readObject();
         mapName = in.readObject();
         rightRowProjectorSupplier = in.readObject();
-    }
-
-    /**
-     * A reference to an object, which is serializable, but the reference is
-     * transient. Used to workaround the need for ServiceContext to be
-     * serializable, but never actually serialized.
-     */
-    @SuppressFBWarnings(
-            value = {"SE_TRANSIENT_FIELD_NOT_RESTORED"},
-            justification = "the class is never serialized"
-    )
-    private static final class TransientReference<T> implements Serializable {
-
-        private final transient T ref;
-
-        private TransientReference(T ref) {
-            this.ref = ref;
-        }
     }
 }
