@@ -66,7 +66,7 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_FLOW_CONTROL;
+        return SqlDataSerializerHook.QUERY_OPERATION_FLOW_CONTROL;
     }
 
     @Override

@@ -143,7 +143,7 @@ public class SqlExecuteMessageTask
             parameters.cursorBufferSize,
             parameters.schema,
             parameters.queryId
-        } ;
+        };
     }
 
     @Override

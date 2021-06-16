@@ -74,7 +74,7 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT;
+        return SqlDataSerializerHook.QUERY_OPERATION_EXECUTE_FRAGMENT;
     }
 
     @Override

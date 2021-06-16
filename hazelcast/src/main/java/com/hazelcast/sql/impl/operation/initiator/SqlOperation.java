@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.operation.initiator;
 
-import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
 import java.util.concurrent.CompletableFuture;
@@ -72,6 +72,6 @@ public abstract class SqlOperation extends Operation implements IdentifiedDataSe
 
     @Override
     public final int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 }
