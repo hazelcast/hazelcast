@@ -50,10 +50,10 @@ public class JsonQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createExtractor() {
-        return (boolean asDataIfNonPrimitive) -> json;
+        return () -> json;
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
-        return (boolean asDataIfNonPrimitive) -> type.convert(json.get(path));
+        return () -> type.convert(json.get(path));
     }
 }

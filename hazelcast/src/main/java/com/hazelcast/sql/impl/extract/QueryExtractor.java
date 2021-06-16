@@ -17,5 +17,5 @@
 package com.hazelcast.sql.impl.extract;
 
 public interface QueryExtractor {
-    Object get(boolean asDataIfNonPrimitive);
+    Object get();
 }

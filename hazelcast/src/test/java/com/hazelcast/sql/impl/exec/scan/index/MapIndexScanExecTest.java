@@ -522,7 +522,7 @@ public class MapIndexScanExecTest extends SqlTestSupport {
             RowBatch batch = exec.currentBatch();
 
             for (int i = 0; i < batch.getRowCount(); i++) {
-                Integer result = batch.getRow(i).get(0, false);
+                Integer result = batch.getRow(i).get(0);
 
                 results.add(result);
             }

@@ -87,8 +87,8 @@ public class ProjectExecTest extends SqlTestSupport {
         assertEquals(size, batch.getRowCount());
 
         for (int i = 0; i < size; i++) {
-            int value0 = batch.getRow(i).get(0, false);
-            int value1 = batch.getRow(i).get(1, false);
+            int value0 = batch.getRow(i).get(0);
+            int value1 = batch.getRow(i).get(1);
 
             assertEquals(startValue + i, value0);
             assertEquals(startValue + i, value1);

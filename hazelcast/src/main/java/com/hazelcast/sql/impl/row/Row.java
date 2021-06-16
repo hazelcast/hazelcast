@@ -32,7 +32,7 @@ public interface Row extends RowBatch {
         return 1;
     }
 
-    <T> T get(int index, boolean asDataIfNonPrimitive);
+    <T> T get(int index);
 
     int getColumnCount();
 }

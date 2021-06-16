@@ -19,6 +19,8 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -54,26 +56,21 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
-/**
- * This implementation of GenericRecord is the lazy one. It does not deserialize the subfields right away.
- * They are deserialized when related get* methods are called.
- * This implementation is created when the portable factory is missing and user is trying to read a Portable.
- * For example, map.get(), EntryProcessor can return this implementation instead of user class itself.
- * Queries done on the data will return this class for nested Portable fields.
- */
-public class PortableInternalGenericRecord extends AbstractPortableGenericRecord {
+public class PortableInternalGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
     private final BufferObjectDataInput in;
     private final int offset;
+    private final boolean readGenericLazy;
     private final int finalPosition;
 
     PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
-                                  ClassDefinition cd) {
+                                  ClassDefinition cd, boolean readGenericLazy) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
+        this.readGenericLazy = readGenericLazy;
 
         int fieldCount;
         try {
@@ -94,8 +91,6 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
         in.position(finalPosition);
     }
 
-    @Nonnull
-    @Override
     public ClassDefinition getClassDefinition() {
         return cd;
     }
@@ -566,7 +561,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
                     if (asPortable) {
                         portables[i] = serializer.readAsObject(in, factoryId, classId);
                     } else {
-                        portables[i] = (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
+                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
                     }
                 }
             }
@@ -607,7 +602,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
                 if (asPortable) {
                     return serializer.readAsObject(in, factoryId, classId);
                 } else {
-                    return (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
+                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
                 }
             }
             return null;
@@ -801,7 +796,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
             if (asPortable) {
                 return serializer.readAsObject(in, factoryId, classId);
             } else {
-                return (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
+                return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
             }
         } catch (IOException e) {
             throw newIllegalStateException(e);

@@ -192,7 +192,7 @@ public abstract class AbstractMapScanExec extends AbstractExec {
         HeapRow row = new HeapRow(projects.size());
 
         for (int j = 0; j < projects.size(); j++) {
-            Object projectRes = this.row.get(projects.get(j), true);
+            Object projectRes = this.row.get(projects.get(j));
 
             row.set(j, projectRes);
         }

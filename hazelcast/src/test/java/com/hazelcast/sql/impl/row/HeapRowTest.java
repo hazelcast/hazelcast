@@ -42,8 +42,8 @@ public class HeapRowTest extends SqlTestSupport {
         HeapRow row = new HeapRow(values);
 
         assertEquals(2, row.getColumnCount());
-        assertSame(values[0], row.get(0, false));
-        assertSame(values[1], row.get(1, false));
+        assertSame(values[0], row.get(0));
+        assertSame(values[1], row.get(1));
 
         row = new HeapRow(2);
 
@@ -51,8 +51,8 @@ public class HeapRowTest extends SqlTestSupport {
         row.set(1, values[1]);
 
         assertEquals(2, row.getColumnCount());
-        assertSame(values[0], row.get(0, false));
-        assertSame(values[1], row.get(1, false));
+        assertSame(values[0], row.get(0));
+        assertSame(values[1], row.get(1));
     }
 
     @Test

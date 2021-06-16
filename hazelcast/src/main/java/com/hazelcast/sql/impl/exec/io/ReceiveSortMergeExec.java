@@ -123,7 +123,7 @@ public class ReceiveSortMergeExec extends AbstractExec {
 
         for (int i = 0; i < columnIndexes.length; ++i) {
             int idx = columnIndexes[i];
-            key[i] = row.get(idx, false);
+            key[i] = row.get(idx);
         }
 
         return new SortKey(key, stripe);

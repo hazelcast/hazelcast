@@ -287,8 +287,8 @@ public class MapScanExecTest extends SqlTestSupport {
             RowBatch batch = exec.currentBatch();
 
             for (int i = 0; i < batch.getRowCount(); i++) {
-                int val1 = batch.getRow(i).get(0, false);
-                long val2 = batch.getRow(i).get(1, false);
+                int val1 = batch.getRow(i).get(0);
+                long val2 = batch.getRow(i).get(1);
 
                 assertEquals(val1, (int) val2);
 
@@ -688,7 +688,7 @@ public class MapScanExecTest extends SqlTestSupport {
 
         @Override
         public Boolean eval(Row row, ExpressionEvalContext context) {
-            return (Boolean) row.get(index, false);
+            return (Boolean) row.get(index);
         }
 
         @Override

@@ -119,7 +119,7 @@ public class KvRowProjectorTest {
 
         @Override
         public QueryExtractor createExtractor(String path, QueryDataType type) {
-            return (boolean asDataIfNonPrimitive) -> value;
+            return () -> value;
         }
     }
 }

@@ -123,7 +123,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertEquals(size, batch.getRowCount());
 
         for (int i = 0; i < size; i++) {
-            int value = batch.getRow(i).get(0, false);
+            int value = batch.getRow(i).get(0);
 
             assertEquals(startValue + i, value);
         }

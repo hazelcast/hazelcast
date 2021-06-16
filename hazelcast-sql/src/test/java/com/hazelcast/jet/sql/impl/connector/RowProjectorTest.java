@@ -93,7 +93,7 @@ public class RowProjectorTest {
 
         @Override
         public QueryExtractor createExtractor(String path, QueryDataType type) {
-            return (boolean asDataIfNonPrimitive) -> value;
+            return () -> value;
         }
     }
 }

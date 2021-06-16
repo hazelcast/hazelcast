@@ -651,8 +651,8 @@ public class SortExecTest extends SqlTestSupport {
     }
 
     private void assertBatch(List<Row> batch, int low, int high, boolean less) {
-        int actualLow = batch.get(0).get(0, false);
-        int actualHigh = batch.get(batch.size() - 1).get(0, false);
+        int actualLow = batch.get(0).get(0);
+        int actualHigh = batch.get(batch.size() - 1).get(0);
         assertEquals(low, actualLow);
         assertEquals(high, actualHigh);
 
@@ -660,9 +660,9 @@ public class SortExecTest extends SqlTestSupport {
         for (int i = 0; i < batch.size(); ++i) {
             if (prev == null) {
                 assertEquals(low, actualLow);
-                prev = batch.get(i).get(0, false);
+                prev = batch.get(i).get(0);
             } else {
-                int actual = batch.get(i).get(0, false);
+                int actual = batch.get(i).get(0);
                 int cmp = Integer.compare(prev, actual);
 
                 if (less) {
@@ -681,8 +681,8 @@ public class SortExecTest extends SqlTestSupport {
         if (batch.getRowCount() == 0) {
             return;
         }
-        int actualLow = batch.getRow(0).get(0, false);
-        int actualHigh = batch.getRow(batch.getRowCount() - 1).get(0, false);
+        int actualLow = batch.getRow(0).get(0);
+        int actualHigh = batch.getRow(batch.getRowCount() - 1).get(0);
         assertEquals(low, actualLow);
         assertEquals(high, actualHigh);
 
@@ -690,9 +690,9 @@ public class SortExecTest extends SqlTestSupport {
         for (int i = 0; i < batch.getRowCount(); ++i) {
             if (prev == null) {
                 assertEquals(low, actualLow);
-                prev = batch.getRow(i).get(0, false);
+                prev = batch.getRow(i).get(0);
             } else {
-                int actual = batch.getRow(i).get(0, false);
+                int actual = batch.getRow(i).get(0);
                 int cmp = Integer.compare(prev, actual);
 
                 if (less) {

@@ -275,8 +275,8 @@ public class QueryOperationsTest extends SqlTestSupport {
             assertEquals(row1.getColumnCount(), row2.getColumnCount());
 
             for (int j = 0; j < row1.getColumnCount(); j++) {
-                Object value1 = row1.get(j, false);
-                Object value2 = row2.get(j, false);
+                Object value1 = row1.get(j);
+                Object value2 = row2.get(j);
 
                 assertEquals(value1, value2);
             }

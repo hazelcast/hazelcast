@@ -107,7 +107,7 @@ public class ExpressionUtilTest {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"}, new Object[]{2, "c"});
 
         Expression<Boolean> predicate = new FunctionalPredicateExpression(row -> {
-            int value = row.get(0, false);
+            int value = row.get(0);
             return value != 1;
         });
 
@@ -134,7 +134,7 @@ public class ExpressionUtilTest {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"}, new Object[]{2, "c"});
 
         Expression<Boolean> predicate = new FunctionalPredicateExpression(row -> {
-            int value = row.get(0, false);
+            int value = row.get(0);
             return value != 1;
         });
         MultiplyFunction<?> projection =

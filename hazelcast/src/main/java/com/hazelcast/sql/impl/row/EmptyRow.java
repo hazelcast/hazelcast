@@ -41,7 +41,7 @@ public class EmptyRow implements Row, IdentifiedDataSerializable {
     }
 
     @Override
-    public <T> T get(int index, boolean asDataIfNonPrimitive) {
+    public <T> T get(int index) {
         throw new IndexOutOfBoundsException(getClass().getName() + " has no columns");
     }
 

@@ -42,11 +42,11 @@ public class AvroQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createExtractor() {
-        return (boolean asDataIfNonPrimitive) -> record;
+        return () -> record;
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
-        return (boolean asDataIfNonPrimitive) -> type.convert(extractValue(record, path));
+        return () -> type.convert(extractValue(record, path));
     }
 
     private static Object extractValue(GenericRecord record, String path) {

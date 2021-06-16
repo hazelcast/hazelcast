@@ -100,7 +100,7 @@ public class RootExecTest extends SqlTestSupport {
         assertEquals(expectedCount, rows.size());
 
         for (int i = 0; i < expectedCount; i++) {
-            int value = rows.get(i).get(0, false);
+            int value = rows.get(i).get(0);
 
             assertEquals(expectedStartCounter + i, value);
         }

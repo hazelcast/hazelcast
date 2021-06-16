@@ -86,8 +86,8 @@ public class RowProjector implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int index, boolean asDataIfNonPrimitive) {
-        return (T) extractors[index].get(asDataIfNonPrimitive);
+    public <T> T get(int index) {
+        return (T) extractors[index].get();
     }
 
     @Override

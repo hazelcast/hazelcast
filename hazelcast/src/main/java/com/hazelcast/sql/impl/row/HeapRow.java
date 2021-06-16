@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.row;
 
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -57,7 +55,7 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int index, boolean asDataIfNonPrimitive) {
+    public <T> T get(int index) {
         return (T) values[index];
     }
 
@@ -85,14 +83,7 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         out.writeInt(values.length);
 
         for (Object value : values) {
-            if (value instanceof Data) {
-                //Are we allowed to break the backward compatibility ?
-                out.writeBoolean(true);
-                IOUtil.writeData(out, (Data) value);
-            } else {
-                out.writeBoolean(false);
-                out.writeObject(value);
-            }
+            out.writeObject(value);
         }
     }
 
@@ -103,12 +94,7 @@ public class HeapRow implements Row, IdentifiedDataSerializable {
         values = new Object[len];
 
         for (int i = 0; i < len; i++) {
-            boolean isData = in.readBoolean();
-            if (isData) {
-                values[i] = IOUtil.readData(in);
-            } else {
-                values[i] = in.readObject();
-            }
+            values[i] = in.readObject();
         }
     }
 

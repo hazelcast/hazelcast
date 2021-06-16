@@ -74,7 +74,7 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private void read(String path, Consumer consumer) {
         try {
-            Object result = read(path, false);
+            Object result = read(path);
             if (result instanceof MultiResult) {
                 MultiResult multiResult = (MultiResult) result;
                 for (Object singleResult : multiResult.getResults()) {
@@ -91,10 +91,6 @@ public final class GenericRecordQueryReader implements ValueReader {
     }
 
     public Object read(String fieldPath) throws IOException {
-        return read(fieldPath, false);
-    }
-
-    public Object read(String fieldPath, boolean asGenericRecord) throws IOException {
         if (fieldPath == null) {
             throw new IllegalArgumentException("field path can not be null");
         }
@@ -103,7 +99,7 @@ public final class GenericRecordQueryReader implements ValueReader {
         }
 
         if (rootRecord.hasField(fieldPath)) {
-            return readLeaf(rootRecord, fieldPath, asGenericRecord);
+            return readLeaf(rootRecord, fieldPath);
         }
 
         LinkedList<Object> results = new LinkedList<>();
@@ -196,7 +192,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             // ex: attribute
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
-                Object leaf = readLeaf(record, fieldName, asGenericRecord);
+                Object leaf = readLeaf(record, fieldName);
                 iterator.set(leaf);
             }
         } else if (path.endsWith("[any]")) {
@@ -204,7 +200,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
                 iterator.remove();
-                Object leaves = readLeaf(record, fieldName, asGenericRecord);
+                Object leaves = readLeaf(record, fieldName);
                 if (leaves == null) {
                     multiResult.setNullOrEmptyTarget(true);
                 } else if (leaves instanceof Object[]) {
@@ -228,7 +224,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
             while (iterator.hasNext()) {
                 GenericRecord record = (GenericRecord) iterator.next();
-                Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index, asGenericRecord);
+                Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index);
                 iterator.set(leaf);
             }
         }
@@ -241,7 +237,7 @@ public final class GenericRecordQueryReader implements ValueReader {
         return multiResult;
     }
 
-    private Object readIndexed(InternalGenericRecord record, String path, int index, boolean asGenericRecord) {
+    private Object readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
         if (!record.hasField(path)) {
             return null;
         }
@@ -266,9 +262,6 @@ public final class GenericRecordQueryReader implements ValueReader {
             case UTF_ARRAY:
                 return record.getStringFromArray(path, index);
             case PORTABLE_ARRAY:
-                if (asGenericRecord) {
-                    return record.getGenericRecordFromArray(path, index);
-                }
                 return record.getObjectFromArray(path, index);
             case DECIMAL_ARRAY:
                 return record.getDecimalFromArray(path, index);
@@ -285,7 +278,7 @@ public final class GenericRecordQueryReader implements ValueReader {
         }
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path, boolean asGenericRecord) {
+    private Object readLeaf(InternalGenericRecord record, String path) throws IOException {
         if (!record.hasField(path)) {
             return null;
         }
@@ -328,14 +321,8 @@ public final class GenericRecordQueryReader implements ValueReader {
             case UTF_ARRAY:
                 return record.getStringArray(path);
             case PORTABLE:
-                if (asGenericRecord) {
-                    return record.getGenericRecord(path);
-                }
                 return record.getObject(path);
             case PORTABLE_ARRAY:
-                if (asGenericRecord) {
-                    return record.getGenericRecordArray(path);
-                }
                 return record.getObjectArray(path);
             case DECIMAL:
                 return record.getDecimal(path);

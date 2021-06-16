@@ -46,11 +46,11 @@ public class JoinRowTest extends SqlTestSupport {
         JoinRow joinRow = new JoinRow(row1, row2);
 
         assertEquals(5, joinRow.getColumnCount());
-        assertSame(row1.get(0, false), joinRow.get(0, false));
-        assertSame(row1.get(1, false), joinRow.get(1, false));
-        assertSame(row2.get(0, false), joinRow.get(2, false));
-        assertSame(row2.get(1, false), joinRow.get(3, false));
-        assertSame(row2.get(2, false), joinRow.get(4, false));
+        assertSame(row1.get(0), joinRow.get(0));
+        assertSame(row1.get(1), joinRow.get(1));
+        assertSame(row2.get(0), joinRow.get(2));
+        assertSame(row2.get(1), joinRow.get(3));
+        assertSame(row2.get(2), joinRow.get(4));
     }
 
     @Test

@@ -74,7 +74,7 @@ public class SqlRowImpl implements SqlRow {
 
     @SuppressWarnings("unchecked")
     private <T> T getObject0(int columnIndex, boolean deserialize) {
-        Object res = row.get(columnIndex, false);
+        Object res = row.get(columnIndex);
 
         if (res instanceof LazyTarget) {
             LazyTarget res0 = (LazyTarget) res;
@@ -123,7 +123,7 @@ public class SqlRowImpl implements SqlRow {
 
         for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
             SqlColumnMetadata columnMetadata = rowMetadata.getColumn(i);
-            Object columnValue = row.get(i, false);
+            Object columnValue = row.get(i);
 
             joiner.add(columnMetadata.getName() + ' ' + columnMetadata.getType() + '=' + columnValue);
         }

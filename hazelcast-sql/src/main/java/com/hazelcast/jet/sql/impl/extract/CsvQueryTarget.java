@@ -49,11 +49,11 @@ public class CsvQueryTarget implements QueryTarget {
     }
 
     private QueryExtractor createExtractor() {
-        return (boolean asDataIfNonPrimitive) -> entry;
+        return () -> entry;
     }
 
     private QueryExtractor createFieldExtractor(String path, QueryDataType type) {
         int fieldIndex = fieldList.indexOf(path);
-        return (boolean asDataIfNonPrimitive) -> type.convert(entry[fieldIndex]);
+        return () -> type.convert(entry[fieldIndex]);
     }
 }

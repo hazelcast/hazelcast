@@ -85,8 +85,8 @@ public final class MapScanRow implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int idx, boolean asDataIfNonPrimitive) {
-        return (T) fieldExtractors[idx].get(asDataIfNonPrimitive);
+    public <T> T get(int idx) {
+        return (T) fieldExtractors[idx].get();
     }
 
     @Override
