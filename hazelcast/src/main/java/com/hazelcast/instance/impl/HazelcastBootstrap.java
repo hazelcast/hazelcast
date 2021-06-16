@@ -245,6 +245,17 @@ public final class HazelcastBootstrap {
     }
 
     /**
+     * Sets the static instance supplier field to null. We have
+     * introduced this method to use only in test cleanup. We needed
+     * this because the lifetime of static fields spans many test
+     * classes run on the same JVM and we didn't want multiple
+     * test classes to interfere with each other.
+     */
+    protected static synchronized void cleanUpSupplier() {
+        supplier = null;
+    }
+
+    /**
      * Returns the bootstrapped {@code HazelcastInstance}. The instance will be
      * automatically shut down once the {@code main()} method of the JAR returns.
      */

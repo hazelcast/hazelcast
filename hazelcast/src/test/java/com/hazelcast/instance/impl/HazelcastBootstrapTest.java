@@ -55,13 +55,7 @@ public class HazelcastBootstrapTest {
         // HazelcastCommandLineTest to fail with "IllegalStateException:
         // Supplier of HazelcastInstance was already set.".
         // See: https://github.com/hazelcast/hazelcast/issues/18725
-
-        // Set HazelcastBootstrap.supplier to null
-        Field field = HazelcastBootstrap.class.getDeclaredField("supplier");
-        field.setAccessible(true);
-        final Object staticFieldBase = UnsafeUtil.UNSAFE.staticFieldBase(field);
-        final long staticFieldOffset = UnsafeUtil.UNSAFE.staticFieldOffset(field);
-        UnsafeUtil.UNSAFE.putObject(staticFieldBase, staticFieldOffset, null);
+        HazelcastBootstrap.cleanUpSupplier();
     }
 
     @Test
