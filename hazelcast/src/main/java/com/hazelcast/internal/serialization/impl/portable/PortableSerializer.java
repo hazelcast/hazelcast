@@ -27,7 +27,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -311,13 +310,14 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     <T> T readAsObject(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         Portable portable = createNewPortableInstance(factoryId, classId);
-        if (portable == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
-                    + ", class-id:" + classId);
+        if (portable != null) {
+            readPortable(in, factoryId, classId, portable);
+            final ManagedContext managedContext = context.getManagedContext();
+            return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
         }
-        readPortable(in, factoryId, classId, portable);
-        final ManagedContext managedContext = context.getManagedContext();
-        return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
+        GenericRecord genericRecord = readPortableGenericRecord(in, factoryId, classId);
+        assert genericRecord instanceof PortableGenericRecord;
+        return (T) genericRecord;
     }
 
     <T> T readAndInitialize(BufferObjectDataInput in, int factoryId, int classId,
