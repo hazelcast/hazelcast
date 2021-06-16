@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -90,7 +89,6 @@ public class SqlClientServerUseCaseTest {
     }
 
     @Test
-    @Ignore
     public void testNestedPortableOnTheQuery() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(1, new PortableFactory() {

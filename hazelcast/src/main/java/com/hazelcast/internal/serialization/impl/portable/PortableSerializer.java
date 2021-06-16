@@ -26,7 +26,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -99,8 +98,8 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         if (portable != null) {
             return readPortable(input, factoryId, classId, portable);
         }
-        GenericRecord genericRecord = readPortableGenericRecord(input, factoryId, classId);
-        assert genericRecord instanceof PortableGenericRecord;
+        GenericRecord genericRecord = readAsPortableGenericRecord(input, factoryId, classId);
+        assert genericRecord instanceof AbstractPortableGenericRecord;
         return genericRecord;
     }
 
@@ -136,11 +135,24 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput in) throws IOException {
         int factoryId = in.readInt();
         int classId = in.readInt();
-        int version = in.readInt();
+        return readAsPortableGenericRecord((BufferObjectDataInput) in, factoryId, classId);
+    }
 
-        BufferObjectDataInput input = (BufferObjectDataInput) in;
-        ClassDefinition cd = setupPositionAndDefinition(input, factoryId, classId, version);
-        return new PortableInternalGenericRecord(this, input, cd, true);
+    <T> T readAsObject(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+        Portable portable = createNewPortableInstance(factoryId, classId);
+        if (portable == null) {
+            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
+                    + ", class-id:" + classId);
+        }
+        readPortable(in, factoryId, classId, portable);
+        final ManagedContext managedContext = context.getManagedContext();
+        return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
+    }
+
+    InternalGenericRecord readAsPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+        int version = in.readInt();
+        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
+        return new PortableInternalGenericRecord(this, in, cd);
     }
 
     DefaultPortableReader createMorphingReader(BufferObjectDataInput in) throws IOException {
@@ -309,133 +321,5 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
-    <T> T readAsObject(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        Portable portable = createNewPortableInstance(factoryId, classId);
-        if (portable == null) {
-            throw new HazelcastSerializationException("Could not find PortableFactory for factory-id: " + factoryId
-                    + ", class-id:" + classId);
-        }
-        readPortable(in, factoryId, classId, portable);
-        final ManagedContext managedContext = context.getManagedContext();
-        return managedContext != null ? (T) managedContext.initialize(portable) : (T) portable;
-    }
-
-    <T> T readAndInitialize(BufferObjectDataInput in, int factoryId, int classId,
-                            boolean readGenericLazy) throws IOException {
-        if (readGenericLazy) {
-            int version = in.readInt();
-            ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-            PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, true);
-            return (T) reader;
-        }
-        return readPortableGenericRecord(in, factoryId, classId);
-    }
-
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
-    private <T> T readPortableGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
-        int version = in.readInt();
-        ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
-        PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd, false);
-        GenericRecordBuilder genericRecordBuilder = GenericRecordBuilder.portable(cd);
-        for (String fieldName : cd.getFieldNames()) {
-            switch (cd.getFieldType(fieldName)) {
-                case PORTABLE:
-                    genericRecordBuilder.setGenericRecord(fieldName, reader.getGenericRecord(fieldName));
-                    break;
-                case BYTE:
-                    genericRecordBuilder.setByte(fieldName, reader.getByte(fieldName));
-                    break;
-                case BOOLEAN:
-                    genericRecordBuilder.setBoolean(fieldName, reader.getBoolean(fieldName));
-                    break;
-                case CHAR:
-                    genericRecordBuilder.setChar(fieldName, reader.getChar(fieldName));
-                    break;
-                case SHORT:
-                    genericRecordBuilder.setShort(fieldName, reader.getShort(fieldName));
-                    break;
-                case INT:
-                    genericRecordBuilder.setInt(fieldName, reader.getInt(fieldName));
-                    break;
-                case LONG:
-                    genericRecordBuilder.setLong(fieldName, reader.getLong(fieldName));
-                    break;
-                case FLOAT:
-                    genericRecordBuilder.setFloat(fieldName, reader.getFloat(fieldName));
-                    break;
-                case DOUBLE:
-                    genericRecordBuilder.setDouble(fieldName, reader.getDouble(fieldName));
-                    break;
-                case UTF:
-                    genericRecordBuilder.setString(fieldName, reader.getString(fieldName));
-                    break;
-                case DECIMAL:
-                    genericRecordBuilder.setDecimal(fieldName, reader.getDecimal(fieldName));
-                    break;
-                case TIME:
-                    genericRecordBuilder.setTime(fieldName, reader.getTime(fieldName));
-                    break;
-                case DATE:
-                    genericRecordBuilder.setDate(fieldName, reader.getDate(fieldName));
-                    break;
-                case TIMESTAMP:
-                    genericRecordBuilder.setTimestamp(fieldName, reader.getTimestamp(fieldName));
-                    break;
-                case TIMESTAMP_WITH_TIMEZONE:
-                    genericRecordBuilder.setTimestampWithTimezone(fieldName, reader.getTimestampWithTimezone(fieldName));
-                    break;
-                case PORTABLE_ARRAY:
-                    genericRecordBuilder.setGenericRecordArray(fieldName, reader.getGenericRecordArray(fieldName));
-                    break;
-                case BYTE_ARRAY:
-                    genericRecordBuilder.setByteArray(fieldName, reader.getByteArray(fieldName));
-                    break;
-                case BOOLEAN_ARRAY:
-                    genericRecordBuilder.setBooleanArray(fieldName, reader.getBooleanArray(fieldName));
-                    break;
-                case CHAR_ARRAY:
-                    genericRecordBuilder.setCharArray(fieldName, reader.getCharArray(fieldName));
-                    break;
-                case SHORT_ARRAY:
-                    genericRecordBuilder.setShortArray(fieldName, reader.getShortArray(fieldName));
-                    break;
-                case INT_ARRAY:
-                    genericRecordBuilder.setIntArray(fieldName, reader.getIntArray(fieldName));
-                    break;
-                case LONG_ARRAY:
-                    genericRecordBuilder.setLongArray(fieldName, reader.getLongArray(fieldName));
-                    break;
-                case FLOAT_ARRAY:
-                    genericRecordBuilder.setFloatArray(fieldName, reader.getFloatArray(fieldName));
-                    break;
-                case DOUBLE_ARRAY:
-                    genericRecordBuilder.setDoubleArray(fieldName, reader.getDoubleArray(fieldName));
-                    break;
-                case UTF_ARRAY:
-                    genericRecordBuilder.setStringArray(fieldName, reader.getStringArray(fieldName));
-                    break;
-                case DECIMAL_ARRAY:
-                    genericRecordBuilder.setDecimalArray(fieldName, reader.getDecimalArray(fieldName));
-                    break;
-                case TIME_ARRAY:
-                    genericRecordBuilder.setTimeArray(fieldName, reader.getTimeArray(fieldName));
-                    break;
-                case DATE_ARRAY:
-                    genericRecordBuilder.setDateArray(fieldName, reader.getDateArray(fieldName));
-                    break;
-                case TIMESTAMP_ARRAY:
-                    genericRecordBuilder.setTimestampArray(fieldName, reader.getTimestampArray(fieldName));
-                    break;
-                case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                    genericRecordBuilder.setTimestampWithTimezoneArray(fieldName,
-                            reader.getTimestampWithTimezoneArray(fieldName));
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + cd.getFieldType(fieldName));
-            }
-        }
-        reader.end();
-        return (T) genericRecordBuilder.build();
-    }
 }
 

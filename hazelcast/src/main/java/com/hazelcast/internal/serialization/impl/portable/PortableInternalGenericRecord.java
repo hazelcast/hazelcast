@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -60,9 +59,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
  * They are deserialized when related get* methods are called.
  * This implementation is created when the portable factory is missing and user is trying to read a Portable.
  * For example, map.get(), EntryProcessor can return this implementation instead of user class itself.
- * Queries done on the data will return this class for nested Portable fields with `readGenericLazy` true.
- * This means that any nested object read via `readGenericRecod` will also be returned as `PortableInternalGenericRecord`
- * see {@link com.hazelcast.internal.serialization.InternalSerializationService#readAsInternalGenericRecord(Data)}
+ * Queries done on the data will return this class for nested Portable fields.
  */
 public class PortableInternalGenericRecord extends AbstractPortableGenericRecord {
     protected final ClassDefinition cd;
@@ -70,15 +67,13 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
 
     private final BufferObjectDataInput in;
     private final int offset;
-    private final boolean readGenericLazy;
     private final int finalPosition;
 
     PortableInternalGenericRecord(PortableSerializer serializer, BufferObjectDataInput in,
-                                  ClassDefinition cd, boolean readGenericLazy) {
+                                  ClassDefinition cd) {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
-        this.readGenericLazy = readGenericLazy;
 
         int fieldCount;
         try {
@@ -571,7 +566,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
                     if (asPortable) {
                         portables[i] = serializer.readAsObject(in, factoryId, classId);
                     } else {
-                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                        portables[i] = (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
                     }
                 }
             }
@@ -612,7 +607,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
                 if (asPortable) {
                     return serializer.readAsObject(in, factoryId, classId);
                 } else {
-                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                    return (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
                 }
             }
             return null;
@@ -806,7 +801,7 @@ public class PortableInternalGenericRecord extends AbstractPortableGenericRecord
             if (asPortable) {
                 return serializer.readAsObject(in, factoryId, classId);
             } else {
-                return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                return (T) serializer.readAsPortableGenericRecord(in, factoryId, classId);
             }
         } catch (IOException e) {
             throw newIllegalStateException(e);

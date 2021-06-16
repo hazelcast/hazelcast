@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.AbstractPortableGenericRecord;
@@ -41,7 +42,7 @@ final class PortableGetter extends Getter {
         }
         GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
         Object value = reader.read(fieldPath, asDataIfPossible);
-        if (asDataIfPossible && (value instanceof AbstractPortableGenericRecord || value instanceof Portable)) {
+        if (asDataIfPossible && (value instanceof AbstractGenericRecord || value instanceof Portable)) {
             return serializationService.toData(value);
         }
         return value;
