@@ -129,6 +129,8 @@ public class JetExtension {
 
     public void onClusterVersionChange(Version newVersion) {
         if (!activated && isAfterStartCalled && newVersion.isGreaterOrEqual(Versions.V5_0)) {
+            // Activate Jet after rolling upgrade in which the cluster
+            // version is upgraded from 4.x to 5.0
             activated = true;
             jetServiceBackend.getJobCoordinationService().startScanningForJobs();
             logger.info("Jet is enabled after the cluster version upgrade.");
