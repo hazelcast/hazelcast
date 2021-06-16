@@ -50,9 +50,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assume.assumeTrue;
 
 /**
- * Verifies that the member can handle queries on
- * PortableGenericRecords when it does not have the necessary
- * PortableFactory in its config.
+ * Verifies that the member can extract fields from PortableGenericRecords
+ * when it does not have the necessary PortableFactory in its config.
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -62,11 +61,11 @@ public class PortableQueryTest extends HazelcastTestSupport {
     public InMemoryFormat inMemoryFormat;
 
     @Parameterized.Parameter(1)
-    public boolean clusterHavePortableConfig;
+    public boolean clusterHasPortableConfig;
 
     public TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    @Parameterized.Parameters(name = "inMemoryFormat:{0}, clusterHavePortableConfig:{1}")
+    @Parameterized.Parameters(name = "inMemoryFormat:{0}, clusterHasPortableConfig:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {InMemoryFormat.BINARY, true},
@@ -82,7 +81,7 @@ public class PortableQueryTest extends HazelcastTestSupport {
         mapConfig.setInMemoryFormat(inMemoryFormat);
         Config config = smallInstanceConfig();
         config.addMapConfig(mapConfig);
-        if (clusterHavePortableConfig) {
+        if (clusterHasPortableConfig) {
             config.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
         }
         factory.newHazelcastInstance(config);
@@ -111,7 +110,7 @@ public class PortableQueryTest extends HazelcastTestSupport {
     @Test
     public void testQueryOnObject() {
         //To be able to run comparison methods on objects on the server we need the classes
-        assumeTrue(clusterHavePortableConfig);
+        assumeTrue(clusterHasPortableConfig);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);

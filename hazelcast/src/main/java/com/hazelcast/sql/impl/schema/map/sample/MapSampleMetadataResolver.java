@@ -77,9 +77,9 @@ public final class MapSampleMetadataResolver {
                     return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
             } else if (target instanceof PortableGenericRecord) {
-                // We get PortableGenericRecord here when in memory format is Object and
-                // the cluster does not have PortableFactory configuration for Portable
-                // PortableGetter can handle PortableGenericRecord to extract fields.
+                // We get PortableGenericRecord here when in-memory format is OBJECT and
+                // the cluster does not have PortableFactory configuration for this Portable.
+                // PortableGetter can extract fields PortableGenericRecord.
                 return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key, jetMapMetadataResolver);
             } else {
                 return resolveClass(target.getClass(), key, jetMapMetadataResolver);
