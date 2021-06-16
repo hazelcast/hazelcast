@@ -19,9 +19,9 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.internal.serialization.Data;
 
 /**
- * Main contract to observe mutation on a {@link ICacheRecordStore}.
- * {@link CacheRSMutationObserver} is created per each partition hence
- * they are accessed by only one thread along its lifecycle.
+ * Main contract to observe mutations on a {@link ICacheRecordStore}.
+ * {@link CacheRSMutationObserver} is created per each partition
+ * hence they are accessed by only one thread along its lifecycle.
  */
 public interface CacheRSMutationObserver {
 
