@@ -256,7 +256,6 @@
                                     <include>org.snakeyaml:snakeyaml-engine</include>
                                     <include>io.github.classgraph:classgraph</include>
                                     <include>com.github.erosb:everit-json-schema</include>
-                                    <include>com.damnhandy:handy-uri-templates</include>
                                     <include>org.json:json</include>
                                 </includes>
                             </artifactSet>
@@ -287,10 +286,6 @@
                                 <relocation>
                                     <pattern>org.everit.json.schema</pattern>
                                     <shadedPattern>${relocation.root}.org.everit.json.schema</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.damnhandy.uri.template</pattern>
-                                    <shadedPattern>${relocation.root}.com.damnhandy.uri.template</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.json</pattern>
@@ -433,11 +428,19 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.12.2</version>
+            <version>1.12.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
                     <artifactId>re2j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.damnhandy</groupId>
+                    <artifactId>handy-uri-templates</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-validator</groupId>
+                    <artifactId>commons-validator</artifactId>
                 </exclusion>
             </exclusions>
             <scope>compile</scope>
