@@ -39,6 +39,7 @@ import java.util.List;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -49,7 +50,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
-    private IMap<Object, Object> map;
+    private IMap<Integer, Object> map;
 
     @BeforeClass
     public static void beforeClass() {
@@ -63,42 +64,42 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     @Test
     public void test_update() {
-        List<Expression<?>> updates = asList(
-                ColumnExpression.create(0, INT),
-                PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT)
+        Object updated = executeUpdate(
+                INT,
+                1,
+                PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT),
+                emptyList()
         );
-
-        executeUpdate(updates, singletonList(new Object[]{1}), emptyList());
-
-        assertThat(map.get(1)).isEqualTo(2);
+        assertThat(updated).isEqualTo(2);
     }
 
     @Test
     public void test_updateWithDynamicParameter() {
-        List<Expression<?>> updates = asList(
-                ColumnExpression.create(0, INT),
-                PlusFunction.create(ColumnExpression.create(1, INT), ParameterExpression.create(0, INT), INT)
+        Object updated = executeUpdate(
+                BIGINT,
+                2L,
+                PlusFunction.create(ColumnExpression.create(1, BIGINT), ParameterExpression.create(0, BIGINT), BIGINT),
+                singletonList(2L)
         );
-
-        executeUpdate(updates, singletonList(new Object[]{1}), singletonList(2));
-
-        assertThat(map.get(1)).isEqualTo(3);
+        assertThat(updated).isEqualTo(4L);
     }
 
-    private void executeUpdate(
-            List<Expression<?>> updates,
-            List<Object[]> input,
+    @SuppressWarnings("SameParameterValue")
+    private Object executeUpdate(
+            QueryDataType type,
+            Object value,
+            Expression<?> update,
             List<Object> arguments
     ) {
         QueryPath[] paths = new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH};
-        QueryDataType[] types = new QueryDataType[]{INT, INT};
+        QueryDataType[] types = new QueryDataType[]{INT, type};
         KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 null,
-                asList(ColumnExpression.create(0, INT), ColumnExpression.create(1, INT))
+                asList(ColumnExpression.create(0, INT), ColumnExpression.create(1, type))
         );
         KvProjector.Supplier projectorSupplier = KvProjector.supplier(
                 paths,
@@ -107,6 +108,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 PrimitiveUpsertTargetDescriptor.INSTANCE
         );
 
+        List<Expression<?>> updates = asList(ColumnExpression.create(0, INT), update);
         UpdateProcessorSupplier processor = new UpdateProcessorSupplier(
                 MAP_NAME, rowProjectorSupplier, updates, projectorSupplier
         );
@@ -114,11 +116,13 @@ public class UpdateProcessorTest extends SqlTestSupport {
         TestSupport
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, arguments))
-                .executeBeforeEachRun(() -> map.put(1, 1))
-                .input(input)
+                .executeBeforeEachRun(() -> map.put(1, value))
+                .input(singletonList(new Object[]{1}))
                 .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()
                 .expectOutput(emptyList());
+
+        return map.get(1);
     }
 }
