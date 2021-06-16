@@ -39,7 +39,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +55,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     private List<Expression<?>> projections;
     private KvProjector.Supplier projectorSupplier;
 
-    private transient IMap<Object, Object> map;
     private transient ExpressionEvalContext evalContext;
 
     @SuppressWarnings("unused")
@@ -77,7 +75,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     @Override
     public void init(@Nonnull Context context) {
-        map = context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
     }
 
@@ -86,12 +83,12 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            TransientReference<IMap<Object, Object>> context = new TransientReference<>(map);
+            String localMapName = mapName;
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> context),
+                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(localMapName)),
                     null,
                     MAX_CONCURRENT_OPS,
-                    (TransientReference<IMap<Object, Object>> ctx, Object[] row) -> update(row, ctx),
+                    (IMap<Object, Object> ctx, Object[] row) -> update(row, ctx),
                     (row, numberOfUpdatedEntries) -> Traversers.singleton(numberOfUpdatedEntries)
             );
             processors.add(processor);
@@ -99,10 +96,10 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         return processors;
     }
 
-    private CompletableFuture<?> update(Object[] row, TransientReference<IMap<Object, Object>> ctx) {
+    private CompletableFuture<?> update(Object[] row, IMap<Object, Object> map) {
         assert row.length == 1;
         Object key = row[0];
-        return ctx.ref.submitToKey(
+        return map.submitToKey(
                 key,
                 new ValueUpdater(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
         ).toCompletableFuture();
@@ -185,20 +182,6 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             projections = in.readObject();
             projector = in.readObject();
             arguments = in.readObject();
-        }
-    }
-
-    /**
-     * A reference to an object, which is serializable, but the reference is
-     * transient. Used to workaround the need for ServiceContext to be
-     * serializable, but never actually serialized.
-     */
-    private static final class TransientReference<T> implements Serializable {
-
-        private final transient T ref;
-
-        private TransientReference(T ref) {
-            this.ref = ref;
         }
     }
 }
