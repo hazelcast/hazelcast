@@ -16,7 +16,9 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,6 +33,9 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 
 import static com.hazelcast.core.EntryEventType.MERGED;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
@@ -43,6 +48,8 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
  */
 public class MergeOperation extends MapOperation
         implements PartitionAwareOperation, BackupAwareOperation {
+
+    private static final long MERGE_POLICY_CHECK_PERIOD = TimeUnit.MINUTES.toMillis(1);
 
     private boolean disableWanReplicationEvent;
     private List<MapMergeTypes<Object, Object>> mergingEntries;
@@ -78,8 +85,15 @@ public class MergeOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
-                getNodeEngine().getSplitBrainMergePolicyProvider());
+        // Check once in a minute as earliest to avoid log bursts.
+        if (shouldCheckNow(mapContainer.getLastInvalidMergePolicyCheckTime())) {
+            try {
+                checkMapMergePolicy(mapContainer.getMapConfig(), mergePolicy.getClass().getName(),
+                        getNodeEngine().getSplitBrainMergePolicyProvider());
+            } catch (InvalidConfigurationException e) {
+                logger().log(Level.WARNING, e.getMessage(), e);
+            }
+        }
 
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = mapContainer.isWanReplicationEnabled()
@@ -102,6 +116,16 @@ public class MergeOperation extends MapOperation
             merge(mergingEntries.get(currentIndex));
             currentIndex++;
         }
+    }
+
+    private static boolean shouldCheckNow(AtomicLong lastLogTime) {
+        long now = Clock.currentTimeMillis();
+        long lastLogged = lastLogTime.get();
+        if (now - lastLogged >= MERGE_POLICY_CHECK_PERIOD) {
+            return lastLogTime.compareAndSet(lastLogged, now);
+        }
+
+        return false;
     }
 
     private void merge(MapMergeTypes<Object, Object> mergingEntry) {
