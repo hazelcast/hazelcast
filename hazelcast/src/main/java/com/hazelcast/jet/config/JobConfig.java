@@ -73,6 +73,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
     private long maxProcessorAccumulatedRecords = -1;
+    private long timeoutMillis = -1L;
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
@@ -1281,6 +1282,28 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns maximum execution time for the job in milliseconds.
+     *
+     * @since 5.0
+     */
+    public long getTimeoutMillis() {
+        return timeoutMillis;
+    }
+
+    /**
+     * Sets the maximum execution time for the job in milliseconds. If the execution time (counted from the actual start
+     * of the job), exceeds this value, the job is forcefully cancelled.
+     * The default value is {@code -1}.
+     *
+     * @since 5.0
+     */
+    public JobConfig setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -1307,6 +1330,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(enableMetrics);
         out.writeBoolean(storeMetricsAfterJobCompletion);
         out.writeLong(maxProcessorAccumulatedRecords);
+        out.writeLong(timeoutMillis);
     }
 
     @Override
@@ -1325,6 +1349,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         enableMetrics = in.readBoolean();
         storeMetricsAfterJobCompletion = in.readBoolean();
         maxProcessorAccumulatedRecords = in.readLong();
+        timeoutMillis = in.readLong();
     }
 
     @Override
@@ -1349,14 +1374,16 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
                 && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName)
-                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords;
+                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords
+                && timeoutMillis == jobConfig.timeoutMillis;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords);
+                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords,
+                timeoutMillis);
     }
 
     @Override
@@ -1368,6 +1395,6 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
                 ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
                 ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
-                maxProcessorAccumulatedRecords + "}";
+                maxProcessorAccumulatedRecords + ", timeoutMillis=" + timeoutMillis + "}";
     }
 }

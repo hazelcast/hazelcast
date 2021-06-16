@@ -310,6 +310,10 @@ public class JobCoordinationService {
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
+        if (jobConfig.getTimeoutMillis() > 0) {
+            scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
+        }
+
         return mc.getCompletionFuture()
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
@@ -1211,5 +1215,18 @@ public class JobCoordinationService {
             Object lmc = lightMasterContexts.get(key);
             return lmc == null || lmc instanceof LightMasterContext && ((LightMasterContext) lmc).isCancelled();
         }).toArray();
+    }
+
+    public void scheduleJobTimeout(final long jobId, final Long timeout) {
+        this.nodeEngine().getExecutionService().schedule(() -> {
+            final MasterContext mc = masterContexts.get(jobId);
+            final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
+
+            if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
+                mc.jobContext().terminate();
+            } else if (lightMc != null && !lightMc.isCancelled()) {
+                lightMc.requestTermination();
+            }
+        }, timeout, MILLISECONDS);
     }
 }

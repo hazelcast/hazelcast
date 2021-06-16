@@ -44,7 +44,7 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments);
+    abstract SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout);
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
@@ -99,7 +99,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
             return planExecutor.execute(this);
         }
@@ -151,7 +151,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("DROP MAPPING", arguments);
             return planExecutor.execute(this);
         }
@@ -216,7 +216,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             return planExecutor.execute(this, arguments);
         }
     }
@@ -267,7 +267,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("ALTER JOB", arguments);
             return planExecutor.execute(this);
         }
@@ -326,7 +326,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("DROP JOB", arguments);
             return planExecutor.execute(this);
         }
@@ -378,7 +378,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
@@ -430,7 +430,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
             return planExecutor.execute(this);
         }
@@ -475,7 +475,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
             return planExecutor.execute(this);
         }
@@ -550,8 +550,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
+            return planExecutor.execute(this, queryId, arguments, isStreaming ? -1 : timeout);
         }
     }
 
@@ -623,7 +623,7 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
             return planExecutor.execute(this, queryId, arguments);
         }
     }

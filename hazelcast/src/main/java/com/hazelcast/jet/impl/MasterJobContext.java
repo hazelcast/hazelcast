@@ -194,6 +194,11 @@ public class MasterJobContext {
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             executionStartTime = System.currentTimeMillis();
+
+            if (mc.jobConfig().getTimeoutMillis() > 0L) {
+                mc.coordinationService().scheduleJobTimeout(mc.jobId(), mc.jobConfig().getTimeoutMillis());
+            }
+
             try {
                 JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                 jobExecRec.markExecuted();
@@ -236,6 +241,10 @@ public class MasterJobContext {
                 finalizeJob(e);
             }
         });
+    }
+
+    public void terminate() {
+        this.requestTermination(CANCEL_FORCEFUL, false).getKey().join();
     }
 
     @Nullable
