@@ -19,10 +19,11 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceAware;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
+import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
@@ -41,14 +42,17 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
     private static final int MAX_CONCURRENT_OPS = 8;
+    private static final int MAX_BATCH_SIZE = 128;
 
     private String mapName;
     private KvRowProjector.Supplier rowProjectorSupplier;
@@ -83,26 +87,29 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            String localMapName = mapName;
-            Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(localMapName)),
+            String mapName = this.mapName;
+            Processor processor = new AsyncTransformUsingServiceBatchedP<>(
+                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
-                    (IMap<Object, Object> ctx, Object[] row) -> update(row, ctx),
-                    (row, numberOfUpdatedEntries) -> Traversers.singleton(numberOfUpdatedEntries)
+                    MAX_BATCH_SIZE,
+                    (IMap<Object, Object> map, List<Object[]> rows) -> update(rows, map)
             );
             processors.add(processor);
         }
         return processors;
     }
 
-    private CompletableFuture<?> update(Object[] row, IMap<Object, Object> map) {
-        assert row.length == 1;
-        Object key = row[0];
-        return map.submitToKey(
-                key,
+    private CompletableFuture<Traverser<Integer>> update(List<Object[]> rows, IMap<Object, Object> map) {
+        Set<Object> keys = new HashSet<>();
+        for (Object[] row : rows) {
+            assert row.length == 1;
+            keys.add(row[0]);
+        }
+        return map.submitToKeys(
+                keys,
                 new ValueUpdater(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
-        ).toCompletableFuture();
+        ).toCompletableFuture().thenApply(m -> Traversers.empty());
     }
 
     @Override

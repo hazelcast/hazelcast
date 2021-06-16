@@ -51,7 +51,7 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
     /**
      * Constructs a processor with the given mapping function.
      */
-    private AsyncTransformUsingServiceBatchedP(
+    public AsyncTransformUsingServiceBatchedP(
             @Nonnull ServiceFactory<C, S> serviceFactory,
             @Nullable C serviceContext,
             int maxConcurrentOps,
