@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,8 +42,26 @@ import java.util.List;
 public class HazelcastBootstrapTest {
 
     @AfterClass
-    public static void teardown() {
+    public static void teardown() throws NoSuchFieldException {
         Hazelcast.bootstrappedInstance().shutdown();
+        cleanUpHazelcastBootstrapSupplier();
+    }
+
+    private static void cleanUpHazelcastBootstrapSupplier() throws NoSuchFieldException {
+        // When HazelcastBootstrapTest and HazelcastCommandLineTest run
+        // on the same JVM and HazelcastBootstrapTest runs before
+        // HazelcastCommandLineTest, not cleaning HazelcastBootstrap.supplier
+        // static field after this test was causing job submission tests in
+        // HazelcastCommandLineTest to fail with "IllegalStateException:
+        // Supplier of HazelcastInstance was already set.".
+        // See: https://github.com/hazelcast/hazelcast/issues/18725
+
+        // Set HazelcastBootstrap.supplier to null
+        Field field = HazelcastBootstrap.class.getDeclaredField("supplier");
+        field.setAccessible(true);
+        final Object staticFieldBase = UnsafeUtil.UNSAFE.staticFieldBase(field);
+        final long staticFieldOffset = UnsafeUtil.UNSAFE.staticFieldOffset(field);
+        UnsafeUtil.UNSAFE.putObject(staticFieldBase, staticFieldOffset, null);
     }
 
     @Test
