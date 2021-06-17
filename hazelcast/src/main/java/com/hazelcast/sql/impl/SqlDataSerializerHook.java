@@ -75,6 +75,9 @@ import com.hazelcast.sql.impl.operation.coordinator.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.coordinator.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.operation.initiator.SqlCloseOperation;
+import com.hazelcast.sql.impl.operation.initiator.SqlExecuteOperation;
+import com.hazelcast.sql.impl.operation.initiator.SqlFetchOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
@@ -199,9 +202,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int OPERATION_EXECUTE = 73;
     public static final int OPERATION_FETCH = 74;
-    public static final int OPERATION_CANCEL = 75;
+    public static final int OPERATION_CLOSE = 75;
 
-    public static final int LEN = OPERATION_CANCEL + 1;
+    public static final int LEN = OPERATION_CLOSE + 1;
 
     @Override
     public int getFactoryId() {
@@ -305,6 +308,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
+
+        constructors[OPERATION_EXECUTE] = arg -> new SqlExecuteOperation();
+        constructors[OPERATION_FETCH] = arg -> new SqlFetchOperation();
+        constructors[OPERATION_CLOSE] = arg -> new SqlCloseOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

@@ -16,17 +16,30 @@
 
 package com.hazelcast.sql.impl.operation.initiator;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 
-public abstract class SqlOperation extends Operation implements IdentifiedDataSerializable {
+public abstract class SqlQueryOperation extends Operation implements IdentifiedDataSerializable {
+
+    private QueryId queryId;
+
+    public SqlQueryOperation() {
+    }
+
+    public SqlQueryOperation(QueryId queryId) {
+        this.queryId = queryId;
+    }
 
     @Override
     public void beforeRun() {
@@ -70,8 +83,24 @@ public abstract class SqlOperation extends Operation implements IdentifiedDataSe
         }
     }
 
+    public QueryId getQueryId() {
+        return queryId;
+    }
+
     @Override
     public final int getFactoryId() {
         return SqlDataSerializerHook.F_ID;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeObject(queryId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        queryId = in.readObject();
     }
 }

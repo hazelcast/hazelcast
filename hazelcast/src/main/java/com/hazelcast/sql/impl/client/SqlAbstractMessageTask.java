@@ -18,11 +18,11 @@ package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.operation.coordinator.QueryAbstractIdAwareOperation;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.sql.impl.operation.initiator.SqlQueryOperation;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -37,15 +37,13 @@ public abstract class SqlAbstractMessageTask<T, P> extends AbstractAsyncMessageT
 
     @Override
     protected CompletableFuture<P> processInternal() {
-        QueryAbstractIdAwareOperation op = prepareOperation();
-        UUID localId = endpoint.getUuid();
+        SqlQueryOperation op = prepareOperation();
         UUID targetId = op.getQueryId().getMemberId();
-        op.setCallerId(localId);
-        SqlInternalService service = getService(getServiceName());
-        if (!service.getOperationHandler().submit(localId, targetId, op)) {
-            throw QueryException.memberConnection(targetId);
-        }
+        Address targetAddress = nodeEngine.getClusterService().getMember(targetId).getAddress();
+        return nodeEngine.getOperationService()
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, targetAddress)
+                .invoke();
     }
 
-    protected abstract QueryAbstractIdAwareOperation prepareOperation();
+    protected abstract SqlQueryOperation prepareOperation();
 }

@@ -163,7 +163,7 @@ public interface JetService {
      * reducing the job startup and teardown time: only a single operation is
      * used to deploy the job instead of 2 for normal jobs. Unlike normal jobs,
      * they also run during rolling upgrade (enterprise feature), but they run
-     * only on the largr subset of members with equal major+minor version.
+     * only on the larger subset of members with equal major+minor version.
      * <p>
      * Limitations of light jobs:
      * <ul>

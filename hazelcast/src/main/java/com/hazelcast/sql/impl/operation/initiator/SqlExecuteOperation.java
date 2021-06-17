@@ -17,80 +17,86 @@
 package com.hazelcast.sql.impl.operation.initiator;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.client.SqlClientUtils;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.sql.impl.client.SqlClientUtils.expectedResultTypeToByte;
 import static com.hazelcast.sql.impl.client.SqlClientUtils.expectedResultTypeToEnum;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
-public class SqlExecuteOperation extends SqlOperation {
+public class SqlExecuteOperation extends SqlQueryOperation {
+
     private String sql;
-    private List<Object> arguments;
+    private List<Data> arguments;
     private long timeoutMillis;
     private int cursorBufferSize;
+    private String schema;
     private SqlExpectedResultType expectedResultType;
-    private QueryId queryId;
+    private Subject subject;
 
     public SqlExecuteOperation() {
     }
 
     public SqlExecuteOperation(
+            QueryId queryId,
             String sql,
-            List<Object> arguments,
+            List<Data> arguments,
             long timeoutMillis,
             int cursorBufferSize,
+            String schema,
             SqlExpectedResultType expectedResultType,
-            QueryId queryId
+            Subject subject
     ) {
+        super(queryId);
         this.sql = sql;
         this.arguments = arguments;
         this.timeoutMillis = timeoutMillis;
         this.cursorBufferSize = cursorBufferSize;
+        this.schema = schema;
         this.expectedResultType = expectedResultType;
-        this.queryId = queryId;
+        this.subject = subject;
     }
 
     @Override
     protected CompletableFuture<?> doRun() throws Exception {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
-
-        SqlStatement query = new SqlStatement(parameters.sql);
-
-        for (Data param : parameters.parameters) {
-            query.addParameter(serializationService.toObject(param));
+        SqlStatement query = new SqlStatement(sql);
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        for (Data arg : arguments) {
+            query.addParameter(serializationService.toObject(arg));
         }
+        query.setSchema(schema);
+        query.setTimeoutMillis(timeoutMillis);
+        query.setCursorBufferSize(cursorBufferSize);
+        query.setExpectedResultType(expectedResultType);
 
-        query.setSchema(parameters.schema);
-        query.setTimeoutMillis(parameters.timeoutMillis);
-        query.setCursorBufferSize(parameters.cursorBufferSize);
-        query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
+        SqlServiceImpl sqlService = getNodeEngine().getSqlService();
 
-        SqlServiceImpl sqlService = nodeEngine.getSqlService();
-
-        // TODO [viliam] make sure the light job is optimized locally
-        return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
+        return completedFuture(sqlService.execute(query, sqlSecurityContext, getQueryId()));
     }
 
     private SqlSecurityContext prepareSecurityContext() {
-        SecurityContext securityContext = clientEngine.getSecurityContext();
+        SecurityContext securityContext = ((NodeEngineImpl) getNodeEngine()).getNode().securityContext;
 
         if (securityContext == null) {
             return NoOpSqlSecurityContext.INSTANCE;
         } else {
-            return securityContext.createSqlContext(endpoint.getSubject());
+            return securityContext.createSqlContext(subject);
         }
     }
 
@@ -106,8 +112,9 @@ public class SqlExecuteOperation extends SqlOperation {
         out.writeObject(arguments);
         out.writeLong(timeoutMillis);
         out.writeInt(cursorBufferSize);
+        out.writeString(schema);
         out.writeByte(expectedResultTypeToByte(expectedResultType));
-        out.writeObject(queryId);
+        out.writeObject(subject);
     }
 
     @Override
@@ -117,7 +124,8 @@ public class SqlExecuteOperation extends SqlOperation {
         arguments = in.readObject();
         timeoutMillis = in.readLong();
         cursorBufferSize = in.readInt();
+        schema = in.readString();
         expectedResultType = expectedResultTypeToEnum(in.readByte());
-        queryId = in.readObject();
+        subject = in.readObject();
     }
 }

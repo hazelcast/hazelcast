@@ -149,3 +149,8 @@ unused.
 `LoadBalancer` is used only for smart clients. Non-smart clients connect
 directly to just one member which needs to forward the request if it's
 not from the SQL group.
+
+### Handling of client connections
+
+Queries submitted from a client should be cancelled when that client
+disconnects. Before, the client operation was always handled

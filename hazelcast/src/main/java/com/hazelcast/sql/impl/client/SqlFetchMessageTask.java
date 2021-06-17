@@ -21,6 +21,8 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.SqlInternalService;
+import com.hazelcast.sql.impl.operation.initiator.SqlFetchOperation;
+import com.hazelcast.sql.impl.operation.initiator.SqlQueryOperation;
 
 import java.security.AccessControlException;
 import java.security.Permission;
@@ -28,21 +30,15 @@ import java.security.Permission;
 /**
  * SQL query fetch task.
  */
-public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters> {
+public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.RequestParameters, SqlFetchCodec.ResponseParameters> {
 
     public SqlFetchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
-
-        return service.getClientStateRegistry().fetch(
-            parameters.queryId,
-            parameters.cursorBufferSize,
-            serializationService
-        );
+    protected SqlQueryOperation prepareOperation() {
+        return new SqlFetchOperation(parameters.queryId, parameters.cursorBufferSize);
     }
 
     @Override
@@ -70,11 +66,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         }
 
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
-
-        return SqlFetchCodec.encodeResponse(
-            null,
-            error
-        );
+        return SqlFetchCodec.encodeResponse(null, error);
     }
 
     @Override
@@ -94,7 +86,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.queryId, parameters.cursorBufferSize } ;
+        return new Object[]{parameters.queryId, parameters.cursorBufferSize};
     }
 
     @Override
