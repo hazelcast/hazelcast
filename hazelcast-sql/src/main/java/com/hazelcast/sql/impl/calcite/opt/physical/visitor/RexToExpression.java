@@ -417,9 +417,9 @@ public final class RexToExpression {
                     Expression<?> start = operands.length > 2 ? operands[2] : null;
                     return PositionFunction.create(operands[0], operands[1], start);
                 } else if (function == HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ) {
-                    return ToTimestampTzFunction.create(operands[0], QueryDataType.TIMESTAMP_WITH_TZ_DATE);
+                    return ToTimestampTzFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.TO_EPOCH_MILLIS) {
-                    return ToEpochMillisFunction.create(operands[0], QueryDataType.BIGINT);
+                    return ToEpochMillisFunction.create(operands[0]);
                 }
 
                 break;

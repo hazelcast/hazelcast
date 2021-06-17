@@ -20,21 +20,21 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.UniExpressionWithType;
+import com.hazelcast.sql.impl.expression.UniExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.time.OffsetDateTime;
 
-public final class ToEpochMillisFunction extends UniExpressionWithType<Long> implements IdentifiedDataSerializable {
+public final class ToEpochMillisFunction extends UniExpression<Long> implements IdentifiedDataSerializable {
     public ToEpochMillisFunction() { }
 
-    private ToEpochMillisFunction(Expression<?> operand, QueryDataType resultType) {
-        super(operand, resultType);
+    private ToEpochMillisFunction(Expression<?> operand) {
+        super(operand);
     }
 
-    public static ToEpochMillisFunction create(Expression<?> operand, QueryDataType resultType) {
-        return new ToEpochMillisFunction(operand, resultType);
+    public static ToEpochMillisFunction create(Expression<?> operand) {
+        return new ToEpochMillisFunction(operand);
     }
 
     @Override
