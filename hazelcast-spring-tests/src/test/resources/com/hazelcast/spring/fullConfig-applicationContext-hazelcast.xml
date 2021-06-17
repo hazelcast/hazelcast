@@ -374,7 +374,7 @@
                               implementation="dummyMapStore"
                               write-delay-seconds="0"
                               initial-mode="LAZY"/>
-                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"/>
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PutIfAbsentMergePolicy"/>
 
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
@@ -508,7 +508,7 @@
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
-                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PutIfAbsentMergePolicy"
                                         republishing-enabled="false">
                     <hz:filters>
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
