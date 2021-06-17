@@ -44,7 +44,7 @@ public final class ToEpochMillisFunction extends UniExpression<Long> implements 
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXPRESSION_TO_TIMESTAMP_TZ;
+        return SqlDataSerializerHook.EXPRESSION_TO_EPOCH_MILLIS;
     }
 
     @Override
