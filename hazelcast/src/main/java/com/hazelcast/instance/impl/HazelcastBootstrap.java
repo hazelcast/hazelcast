@@ -684,7 +684,7 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+        public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
             return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
         }
 

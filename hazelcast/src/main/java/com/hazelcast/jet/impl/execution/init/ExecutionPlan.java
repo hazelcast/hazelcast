@@ -32,7 +32,6 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -77,7 +76,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
-import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -293,9 +291,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         out.writeLong(lastSnapshotId);
         out.writeObject(partitionAssignment);
         out.writeBoolean(isLightJob);
-        if (!isLightJob) {
-            out.writeObject(jobConfig);
-        }
+        out.writeObject(jobConfig);
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
     }
@@ -306,7 +302,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         lastSnapshotId = in.readLong();
         partitionAssignment = in.readObject();
         isLightJob = in.readBoolean();
-        jobConfig = isLightJob ? LIGHT_JOB_CONFIG : in.readObject();
+        jobConfig = in.readObject();
         memberIndex = in.readInt();
         memberCount = in.readInt();
     }
@@ -316,8 +312,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initProcSuppliers(long jobId,
                                    ConcurrentHashMap<String, File> tempDirectories,
                                    InternalSerializationService jobSerializationService) {
-        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-
         for (VertexDef vertex : vertices) {
             ProcessorSupplier supplier = vertex.processorSupplier();
             String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");

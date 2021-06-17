@@ -453,7 +453,7 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                // Calcite incorrectly convers the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
+                // Calcite incorrectly converts the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
                 // We fix it here.
                 if (literal.getTypeName() == SqlTypeName.DECIMAL) {
                     value = literal.getValueAs(BigDecimal.class).longValue();

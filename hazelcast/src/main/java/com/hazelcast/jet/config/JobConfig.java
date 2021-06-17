@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.ReflectionUtils.Resources;
+import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -96,7 +97,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * The job name is printed in logs and is visible in Management Center.
      * <p>
-     * The default value is {@code null}.
+     * The default value is {@code null}. Must be set to {@code null} for
+     * {@linkplain JetService#newLightJob(Pipeline) light jobs}.
      *
      * @return {@code this} instance for fluent API
      * @since Jet 3.0
@@ -139,6 +141,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * If {@linkplain #setAutoScaling(boolean) auto scaling} is disabled and you
      * manually {@link Job#resume} the job, the job won't start executing until the
      * quorum is met, but will remain in the resumed state.
+     * <p>
+     * Ignored for {@linkplain JetService#newLightJob(Pipeline) light jobs}.
      *
      * @return {@code this} instance for fluent API
      */
@@ -150,7 +154,8 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets whether Jet will scale the job up or down when a member is added or
-     * removed from the cluster. Enabled by default.
+     * removed from the cluster. Enabled by default. Ignored for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}.
      *
      * <pre>
      * +--------------------------+-----------------------+----------------+
@@ -189,7 +194,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      *     deleted.
      * </ul>
      * <p>
-     * By default it's disabled.
+     * By default it's disabled. Ignored for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}.
      *
      * @return {@code this} instance for fluent API
      *
@@ -226,7 +232,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@link #setSnapshotIntervalMillis(long)}, otherwise it will default to 10
      * seconds.
      * <p>
-     * The default value is {@link ProcessingGuarantee#NONE}.
+     * The default value is {@link ProcessingGuarantee#NONE}. Must be set to
+     * {@code NONE} for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @return {@code this} instance for fluent API
      */
@@ -269,6 +277,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * the classes from the Jet instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -292,6 +303,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * the Jet instance's classpath.)
      * <p>
      * See also {@link #addJar} and {@link #addClasspathResource}.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -319,6 +333,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the JAR with a URL, which must contain at least one
      * path segment. The last path segment ("filename") will be used as the resource
      * ID, so two JARs with the same filename will be in conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -341,6 +358,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the JAR with a {@code File}. The filename part of the
      * path will be used as the resource ID, so two JARs with the same filename will
      * be in conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -364,6 +384,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the JAR with a path string. The filename part will be
      * used as the resource ID, so two JARs with the same filename will be in
      * conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -388,6 +411,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * resource ID, so two ZIPs with the same filename will be in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -413,6 +439,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -439,6 +468,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * in conflict.
      * <p>
      * The ZIP file should contain only JARs. Any other files will be ignored.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -460,6 +492,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * This variant identifies the resource with a URL, which must contain at least
      * one path segment. The last path segment ("filename") will be used as the
      * resource ID, so two resources with the same filename will be in conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -478,6 +513,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * code attached to the underlying pipeline or DAG will have access to it. The
      * supplied {@code id} becomes the path under which the resource is available
      * from the class loader.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -497,6 +535,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * it. The file will reside in the root of the classpath, under its own
      * filename. This means that two files with the same filename will be in
      * conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -516,6 +557,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * All the code attached to the underlying pipeline or DAG will have access to
      * it. The supplied {@code id} becomes the path under which the resource is
      * available from the class loader.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -535,6 +579,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * All the code attached to the underlying pipeline or DAG will have access to
      * it. It will reside in the root of the classpath, under its own filename. This
      * means that two files with the same filename will be in conflict.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -553,6 +600,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * All the code attached to the underlying pipeline or DAG will have access to
      * it. The supplied {@code id} becomes the path under which the resource is
      * available from the class loader.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -578,6 +628,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -603,6 +656,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -629,6 +685,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -654,6 +713,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -681,6 +743,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -706,6 +771,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * example, to {@link ServiceFactory#createContextFn()}. The file will have the
      * same name as the one supplied here, but it will be in a temporary directory
      * on the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -733,6 +801,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -759,6 +830,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -788,6 +862,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -814,6 +891,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -840,6 +920,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -866,6 +949,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@code ProcessorSupplier} context available, for example, to
      * {@link ServiceFactory#createContextFn()}. It will be a temporary directory on
      * the Jet server.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -885,6 +971,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@link #attachDirectory(File, String) attachDirectory(dir, id)} for every
      * entry that resolves to a directory and {@link #attachFile(File, String)
      * attachFile(file, id)} for every entry that resolves to a regular file.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @implNote Backing storage for this method is an {@link IMap} with a default
      *           backup count of 1. When adding big files as a resource, size the
@@ -973,6 +1062,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * serializer registered on the cluster level.
      * <p>
      * The serializer must have no-arg constructor.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @param clazz           class to register serializer for
      * @param serializerClass class of the serializer to be registered
@@ -1045,8 +1137,9 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets a custom {@link JobClassLoaderFactory} that will be used to load job
-     * classes and resources on Jet members.
+     * Sets a custom {@link JobClassLoaderFactory} that will be used to load
+     * job classes and resources on Jet members. Not supported for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}
      *
      * @return {@code this} instance for fluent API
      */
@@ -1082,6 +1175,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * The job will use the state even if
      * {@linkplain #setProcessingGuarantee(ProcessingGuarantee) processing
      * guarantee} is set to {@link ProcessingGuarantee#NONE}.
+     * <p>
+     * Cannot be used for {@linkplain JetService#newLightJob(Pipeline) light
+     * jobs}.
      *
      * @param initialSnapshotName the snapshot name given to
      *                            {@link Job#exportSnapshot(String)}
@@ -1098,8 +1194,9 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Sets whether metrics collection should be enabled for the job. Needs
      * {@link MetricsConfig#isEnabled()} to be on in order to function.
      * <p>
-     * Metrics for running jobs can be queried using {@link Job#getMetrics()} It's
-     * enabled by default.
+     * Metrics for running jobs can be queried using {@link Job#getMetrics()}
+     * It's enabled by default. Ignored for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}.
      *
      * @since Jet 3.2
      */
@@ -1144,7 +1241,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * {@link MetricsConfig#setEnabled global metrics collection} or
      * {@link JobConfig#isMetricsEnabled() per job metrics collection}.
      * <p>
-     * It's disabled by default.
+     * It's disabled by default. Ignored for {@linkplain
+     * JetService#newLightJob(Pipeline) light jobs}.
      *
      * @since Jet 3.2
      */
