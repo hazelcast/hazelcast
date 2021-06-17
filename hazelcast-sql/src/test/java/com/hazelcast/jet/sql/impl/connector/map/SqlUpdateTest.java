@@ -221,18 +221,17 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_updateUnknownMapping_then_throws() {
-        assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 1"))
-                .hasMessageContaining("Object 'test_map' not found");
+    public void when_updateValueToNull_then_throws() {
+        instance().getMap("test_map").put(1, 1);
+
+        assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))
+                .hasMessageContaining("Cannot assign null to value");
     }
 
     @Test
-    public void when_updateFromSelectIsUsed_then_throws() {
-        instance().getMap("m1").put(1, 1);
-        instance().getMap("m2").put(1, 2);
-
-        assertThatThrownBy(() -> execute("UPDATE m1 SET __key = (select m2.this from m2 WHERE m1.__key = m2.__key)"))
-                .hasMessageContaining("UPDATE FROM SELECT not supported");
+    public void when_updateUnknownMapping_then_throws() {
+        assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 1"))
+                .hasMessageContaining("Object 'test_map' not found");
     }
 
     private void checkUpdateCount(String sql, int expected, Object... params) {

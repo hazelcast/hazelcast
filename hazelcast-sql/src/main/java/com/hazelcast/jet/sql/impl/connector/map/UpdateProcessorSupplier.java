@@ -35,6 +35,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
@@ -163,6 +164,9 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             Object[] row = rowProjector.get(evalContext, extractors).project(originalEntry.getKey(), originalEntry.getValue());
             Object[] projected = projectionFn.apply(row);
             Object value = projector.get(serializationService).projectValue(projected);
+            if (value == null) {
+                throw QueryException.error("Cannot assign null to value");
+            }
             originalEntry.setValue(value);
             return 1;
         }
