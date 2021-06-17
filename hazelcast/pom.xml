@@ -147,6 +147,8 @@
                                     org.slf4j;resolution:=optional,
                                     org.codehaus.groovy.jsr223;resolution:=optional,
                                     org.jruby.embed.jsr223;resolution:=optional,
+                                    com.damnhandy.uri.template;resolution:=optional,
+                                    org.apache.commons.validator.routines;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
