@@ -22,20 +22,26 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
+
+import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
@@ -53,32 +59,25 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
         super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
     }
 
-    public List<String> updatedFields() {
-        return getUpdateColumnList();
-    }
-
-    public List<Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
+    public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
         RexBuilder rexBuilder = getCluster().getRexBuilder();
+        RelDataTypeFactory typeFactory = getCluster().getTypeFactory();
 
-        HazelcastTable hazelcastTable = getTable().unwrap(HazelcastTable.class);
-        List<RelDataTypeField> hazelcastTableFields = hazelcastTable.getRowType(getCluster().getTypeFactory()).getFieldList();
-        Table table = hazelcastTable.getTarget();
+        List<RelDataTypeField> fields = getTable().unwrap(HazelcastTable.class).getRowType(typeFactory).getFieldList();
+        List<RelDataType> fieldTypes = toList(fields, RelDataTypeField::getType);
+        List<String> fieldNames = toList(fields, RelDataTypeField::getName);
 
-        List<RexNode> updates = new ArrayList<>(table.getFieldCount());
-        for (int i = 0; i < table.getFieldCount(); i++) {
-            TableField field = table.getField(i);
+        List<RexNode> nodes = IntStream.range(0, fields.size())
+                .mapToObj(i -> {
+                    int updatedColumnIndex = getUpdateColumnList().indexOf(fieldNames.get(i));
+                    return updatedColumnIndex > -1
+                            ? getSourceExpressionList().get(updatedColumnIndex)
+                            : rexBuilder.makeInputRef(fieldTypes.get(i), i);
+                }).collect(toList());
+        List<Expression<?>> projections = project(OptUtils.schema(getTable()), nodes, parameterMetadata);
 
-            int updatedColumnIndex = getUpdateColumnList().indexOf(field.getName());
-            if (updatedColumnIndex > -1) {
-                updates.add(getSourceExpressionList().get(updatedColumnIndex));
-            } else if (field.isHidden()) {
-                updates.add(rexBuilder.makeNullLiteral(hazelcastTableFields.get(i).getType()));
-            } else {
-                updates.add(rexBuilder.makeInputRef(hazelcastTableFields.get(i).getType(), i));
-            }
-        }
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-        return project(schema, updates, parameterMetadata);
+        return getUpdateColumnList().stream()
+                .collect(toMap(identity(), fieldName -> projections.get(fieldNames.indexOf(fieldName))));
     }
 
     @Override

@@ -312,8 +312,7 @@ public interface SqlConnector {
     default Vertex updateProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table,
-            @Nonnull List<String> updatedFields,
-            @Nonnull List<Expression<?>> updates
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }

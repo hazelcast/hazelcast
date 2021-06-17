@@ -166,9 +166,10 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             Object value = projector.get(serializationService).projectValue(projected);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");
+            } else {
+                originalEntry.setValue(value);
+                return 1;
             }
-            originalEntry.setValue(value);
-            return 1;
         }
 
         @Override

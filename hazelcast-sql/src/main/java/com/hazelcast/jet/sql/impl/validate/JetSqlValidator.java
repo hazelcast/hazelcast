@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.TableField;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -47,11 +46,9 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 
 import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static java.util.stream.Collectors.toSet;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
@@ -202,16 +199,6 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             // only tables with primary keys can be updated
             if (getJetSqlConnector(table).getPrimaryKey(table).isEmpty()) {
                 throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
-            }
-
-            // do not allow updating hidden fields, i.e. __key, this
-            Set<String> targetColumnNames = update.getTargetColumnList().getList().stream()
-                    .map(node -> ((SqlIdentifier) node).getSimple())
-                    .collect(toSet());
-            for (TableField field : table.getFields()) {
-                if (field.isHidden() && targetColumnNames.contains(field.getName())) {
-                    throw QueryException.error("Cannot update '" + field.getName() + "' field");
-                }
             }
         }
 

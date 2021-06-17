@@ -39,6 +39,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
@@ -229,8 +230,7 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex updateProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table0,
-            @Nonnull List<String> updatedFields,
-            @Nonnull List<Expression<?>> updates
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
@@ -239,14 +239,27 @@ public class IMapSqlConnector implements SqlConnector {
 
         List<TableField> fields = table.getFields();
         List<Expression<?>> projections = new ArrayList<>(fields.size());
+        List<Expression<?>> updates = new ArrayList<>(fields.size());
         for (int i = 0; i < fields.size(); i++) {
             MapTableField field = ((MapTableField) fields.get(i));
 
-            if (field.getPath().isKey() && updatedFields.contains(field.getName())) {
+            if (field.getPath().isKey() && updatesByFieldNames.containsKey(field.getName())) {
                 throw QueryException.error("Cannot update key");
             }
 
+            if (!field.getPath().isKey() && field.isHidden() && updatesByFieldNames.containsKey(field.getName())) {
+                throw QueryException.error("Cannot update value");
+            }
+
             projections.add(ColumnExpression.create(i, field.getType()));
+
+            if (field.isHidden()) {
+                updates.add(ConstantExpression.create(null, field.getType()));
+            } else if (updatesByFieldNames.containsKey(field.getName())) {
+                updates.add(updatesByFieldNames.get(field.getName()));
+            } else {
+                updates.add(ColumnExpression.create(i, field.getType()));
+            }
         }
 
         KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(

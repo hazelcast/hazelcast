@@ -108,8 +108,7 @@ public class CreateDagVisitor {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        Vertex vertex = getJetSqlConnector(table)
-                .updateProcessor(dag, table, rel.updatedFields(), rel.updates(parameterMetadata));
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }

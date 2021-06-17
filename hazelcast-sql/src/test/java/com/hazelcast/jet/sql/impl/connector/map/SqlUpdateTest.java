@@ -217,7 +217,7 @@ public class SqlUpdateTest extends SqlTestSupport {
         testMap.put(1, new Value(100, 200L, "300"));
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))
-                .hasMessageContaining("Cannot update 'this' field");
+                .hasMessageContaining("Cannot update value");
     }
 
     @Test
