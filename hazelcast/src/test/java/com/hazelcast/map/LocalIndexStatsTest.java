@@ -337,7 +337,6 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertEquals(0, valueStats().getQueryCount());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testQueryCounting_WhenPartitionPredicateIsUsed() {
         addIndex(map, "this", false);
@@ -411,6 +410,37 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         }
         assertTrue(keyStats().getMemoryCost() > keyHalfFullCost);
         assertTrue(valueStats().getMemoryCost() > valueHalfFullCost);
+    }
+
+    @Test
+    public void testMemoryCostIsNotDrifting() {
+        addIndex(map, "__key", false);
+        addIndex(map, "this", true);
+
+        long keyEmptyCost = keyStats().getMemoryCost();
+        long valueEmptyCost = valueStats().getMemoryCost();
+        assertTrue(keyEmptyCost > 0);
+        assertTrue(valueEmptyCost > 0);
+
+        map.set(0, 0);
+        long keyPopulatedCost = keyStats().getMemoryCost();
+        long valuePopulatedCost = valueStats().getMemoryCost();
+        assertTrue(keyPopulatedCost > keyEmptyCost);
+        assertTrue(valuePopulatedCost > valueEmptyCost);
+
+        for (int i = 0; i < 100; ++i) {
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+
+            map.remove(0);
+            assertEquals(keyEmptyCost, keyStats().getMemoryCost());
+            assertEquals(valueEmptyCost, valueStats().getMemoryCost());
+
+            map.set(0, 0);
+            assertEquals(keyPopulatedCost, keyStats().getMemoryCost());
+            assertEquals(valuePopulatedCost, valueStats().getMemoryCost());
+        }
     }
 
     @Test
