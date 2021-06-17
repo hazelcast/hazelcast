@@ -146,7 +146,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity",
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength",
             "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
