@@ -77,17 +77,16 @@ public final class ToTimestampTzFunction extends UniExpression<OffsetDateTime> i
      * Returns TemporalUnit of the given unixTimestamp, using the magnitude of
      * the value to determine most likely unit.
      * <ol>
-     * <li>unixTimestamp < MILLISECONDS_IN_YEAR (365 * 86400 *
-     * 1000) - timestamp is in seconds
-     * <li>unixTimestamp >= MILLISECONDS_IN_YEAR (365 * 86400 * 1000)
-     * - timestamp is in milliseconds
-     * <li>unixTimestamp >= MICROSECONDS_IN_YEAR
-     * (365 * 86400 * 1000_000) - timestamp is in microseconds
-     * <li>unixTimestamp >= NANOSECONDS_IN_YEAR (365 * 86400
-     * * 1000_000_000) - timestamp is in nanoseconds
-     * <li>unixTimestamp < 0 - timestamp is in seconds
+     *      <li>unixTimestamp < MILLISECONDS_IN_YEAR (365 * 86400 * 1000)
+     *          - timestamp is in seconds
+     *      <li>unixTimestamp >= MILLISECONDS_IN_YEAR (365 * 86400 * 1000)
+     *          - timestamp is in milliseconds
+     *      <li>unixTimestamp >= MICROSECONDS_IN_YEAR (365 * 86400 * 1000_000)
+     *          - timestamp is in microseconds
+     *      <li>unixTimestamp >= NANOSECONDS_IN_YEAR (365 * 86400 * 1000_000_000)
+     *          - timestamp is in nanoseconds
+     *      <li>unixTimestamp < 0 - timestamp is in seconds
      * </ol>
-     *
      * <p>
      * Note that this also imposes limits on the possible max correctly
      * interpreted timestamp value, that would be otherwise correctly
@@ -99,7 +98,6 @@ public final class ToTimestampTzFunction extends UniExpression<OffsetDateTime> i
      * also imposes the min date possible to be interpreted in milliseconds,
      * microseconds and nanoseconds. Additionally any value less than 0 is
      * treated as seconds regardless of the magnitude.
-     *
      * <p>
      * Summary of Date limits (under which the
      * interpretation of the timestamp's unit is correct):
