@@ -81,6 +81,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -310,14 +311,17 @@ public class JobCoordinationService {
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
-        if (jobConfig.getTimeoutMillis() > 0) {
-            scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
-        }
+        final ScheduledFuture<?> timeoutFuture = jobConfig.getTimeoutMillis() > 0
+                ? scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis())
+                : null;
 
         return mc.getCompletionFuture()
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                    if (timeoutFuture != null) {
+                        timeoutFuture.cancel(false);
+                    }
                 });
     }
 
@@ -868,6 +872,11 @@ public class JobCoordinationService {
                     logger.severe("No master context found to complete " + masterContext.jobIdString());
                 }
             }
+            // TODO: isolate futures from the job contexts into their own separate storage by jobId?
+            final ScheduledFuture<?> timeoutFuture = masterContext.jobContext().getTimeoutFuture();
+            if (timeoutFuture != null && isMaster()) {
+                timeoutFuture.cancel(true);
+            }
         });
     }
 
@@ -1217,8 +1226,8 @@ public class JobCoordinationService {
         }).toArray();
     }
 
-    public void scheduleJobTimeout(final long jobId, final Long timeout) {
-        this.nodeEngine().getExecutionService().schedule(() -> {
+    public ScheduledFuture<?> scheduleJobTimeout(final long jobId, final Long timeout) {
+        return this.nodeEngine().getExecutionService().schedule(() -> {
             final MasterContext mc = masterContexts.get(jobId);
             final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
 
