@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.datetime;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
@@ -47,13 +47,6 @@ public final class HazelcastToEpochMillisFunction extends HazelcastFunction {
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
-        final RelDataType operandType = binding.getOperandType(0);
-        final boolean correct = SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE.equals(operandType.getSqlTypeName());
-
-        if (throwOnFailure && !correct) {
-            throw binding.newValidationSignatureError();
-        } else {
-            return correct;
-        }
+        return TypedOperandChecker.TIMESTAMP_WITH_LOCAL_TIME_ZONE.check(binding, throwOnFailure, 0);
     }
 }

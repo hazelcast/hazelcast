@@ -38,19 +38,22 @@ import java.time.temporal.ChronoUnit;
 
 import static com.hazelcast.sql.SqlColumnType.BIGINT;
 import static com.hazelcast.sql.SqlColumnType.BOOLEAN;
-import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
-import static com.hazelcast.sql.SqlColumnType.TIME;
-import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
+    private static final long SYSTEM_OFFSET_MILLIS = OffsetDateTime.now().getOffset().getTotalSeconds() * 1000L;
+    private static final long START_OF_DAY = OffsetDateTime.now()
+            .toLocalDate()
+            .atStartOfDay()
+            .atZone(ZoneOffset.systemDefault())
+            .toEpochSecond() * 1000L;
 
     @Test
     public void testColumn() {
@@ -59,14 +62,14 @@ public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
         checkColumn(fromEpochMillis(-1L), SqlColumnType.BIGINT, -1L);
         checkColumn(fromEpochMillis(1_000_000_000_000_000_000L), SqlColumnType.BIGINT, 1_000_000_000_000_000_000L);
         checkColumn(fromEpochMillis(-1_000_000_000_000_000_000L), SqlColumnType.BIGINT, -1_000_000_000_000_000_000L);
+        checkColumn(LocalDate.of(1970, 1, 1), BIGINT, -SYSTEM_OFFSET_MILLIS);
+        checkColumn(LocalTime.of(0, 0, 0), BIGINT, START_OF_DAY);
+        checkColumn(LocalDateTime.of(1970, 1, 1, 0, 0, 0), BIGINT, -SYSTEM_OFFSET_MILLIS);
 
         checkColumnFailure("null", SqlErrorCode.PARSING, signatureError(SqlColumnType.VARCHAR));
         checkColumnFailure(1.0f, SqlErrorCode.PARSING, signatureError(SqlColumnType.REAL));
         checkColumnFailure(1.0d, SqlErrorCode.PARSING, signatureError(SqlColumnType.DOUBLE));
         checkColumnFailure(BigDecimal.valueOf(1L), SqlErrorCode.PARSING, signatureError(SqlColumnType.DECIMAL));
-        checkColumnFailure(LocalDate.now(), SqlErrorCode.PARSING, signatureError(SqlColumnType.DATE));
-        checkColumnFailure(LocalTime.now(), SqlErrorCode.PARSING, signatureError(SqlColumnType.TIME));
-        checkColumnFailure(LocalDateTime.now(), SqlErrorCode.PARSING, signatureError(SqlColumnType.TIMESTAMP));
     }
 
     @Test
@@ -77,6 +80,9 @@ public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
         checkParameter(fromEpochMillis(-1L), -1L);
         checkParameter(fromEpochMillis(1_000_000_000_000_000_000L), 1_000_000_000_000_000_000L);
         checkParameter(fromEpochMillis(-1_000_000_000_000_000_000L), -1_000_000_000_000_000_000L);
+        checkParameter(LocalDate.of(1970, 1, 1), -SYSTEM_OFFSET_MILLIS);
+        checkParameter(LocalTime.of(0, 0, 0), START_OF_DAY);
+        checkParameter(LocalDateTime.of(1970, 1, 1, 0, 0, 0), -SYSTEM_OFFSET_MILLIS);
 
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, VARCHAR), "foo");
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, BOOLEAN), true);
@@ -84,9 +90,6 @@ public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, DECIMAL), BigDecimal.ZERO);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, REAL), 0.0f);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, DOUBLE), 0.0d);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, DATE), LOCAL_DATE_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, TIME), LOCAL_TIME_VAL);
-        checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP), LOCAL_DATE_TIME_VAL);
         checkFailure("?", SqlErrorCode.DATA_EXCEPTION, parameterError(0, TIMESTAMP_WITH_TIME_ZONE, OBJECT), OBJECT_VAL);
     }
 
@@ -97,6 +100,13 @@ public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
         checkLiteral("CAST('1970-01-01T00:00:01Z' AS TIMESTAMP WITH TIME ZONE)", BIGINT, 1000L);
         checkLiteral("CAST('1969-12-31T23:59:59Z' AS TIMESTAMP WITH TIME ZONE)", BIGINT, -1000L);
         checkLiteral("null", BIGINT, null);
+        checkLiteral("CAST(CAST('1970-01-01T00:00:01Z' AS TIMESTAMP WITH TIME ZONE) AS TIMESTAMP)", BIGINT,
+                1000L - SYSTEM_OFFSET_MILLIS);
+        checkLiteral("CAST(CAST('1970-01-01T00:00:01Z' AS TIMESTAMP WITH TIME ZONE) AS DATE)", BIGINT,
+                -SYSTEM_OFFSET_MILLIS);
+        checkLiteral("CAST(CAST('1970-01-01T00:00:01Z' AS TIMESTAMP WITH TIME ZONE) AS TIME)", BIGINT,
+                START_OF_DAY + 1000L);
+
 
         checkFailure("'1'", SqlErrorCode.PARSING, signatureError(VARCHAR));
         checkFailure(1.0f, SqlErrorCode.PARSING, signatureError(DECIMAL));
