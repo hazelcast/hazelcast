@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -199,9 +200,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_EXTRACT = 72;
 
-//    Reserved
+    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
 
-    public static final int LEN = EXPRESSION_EXTRACT + 1;
+    public static final int LEN = EXPRESSION_TO_TIMESTAMP_TZ + 1;
 
     @Override
     public int getFactoryId() {
@@ -305,6 +306,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
+
+        constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
