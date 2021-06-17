@@ -36,6 +36,7 @@
                 <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-wm</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
+                <include>javax.cache:cache-api</include>
                 <include>org.apache.logging.log4j:*</include>
                 <include>org.slf4j:*</include>
                 <include>info.picocli:picocli</include>

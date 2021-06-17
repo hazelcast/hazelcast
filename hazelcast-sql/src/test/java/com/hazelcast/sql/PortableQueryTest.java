@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.impl.query;
+package com.hazelcast.sql;
 
+import com.google.common.collect.Iterators;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -27,7 +28,6 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,20 +41,21 @@ import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 /**
- * Verifies that the member can handle queries on
- * PortableGenericRecords when it does not have the necessary
- * PortableFactory in its config.
+ * Verifies that the member can extract fields from PortableGenericRecords
+ * when it does not have the necessary PortableFactory in its config.
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
+public class PortableQueryTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
@@ -91,43 +92,36 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQueryOnField() {
-        IMap<Integer, ChildPortable> map = createClientAndGetMap();
-        fillMap(map, 50, ChildPortable::new);
-        Collection<ChildPortable> values = map.values(Predicates.sql("i >= 45"));
-        assertEquals(5, values.size());
-    }
-
-    @Test
-    public void testQueryOnNestedField() {
-        IMap<Integer, ParentPortable> map = createClientAndGetMap();
-        fillMap(map, 100, ParentPortable::new);
-        Collection<ParentPortable> values = map.values(Predicates.sql("c.i >= 90"));
-        assertEquals(10, values.size());
-    }
-
-    @Test
-    public void testQueryOnArrayField() {
-        IMap<Integer, ParentPortable> map = createClientAndGetMap();
-        fillMap(map, 42, ParentPortable::new);
-        Collection<ParentPortable> values = map.values(Predicates.sql("sa[0] == 40"));
-        assertEquals(1, values.size());
-    }
-
-    @Test
-    public void testQueryOnNestedArrayField() {
-        IMap<Integer, ParentPortable> map = createClientAndGetMap();
-        fillMap(map, 14, ParentPortable::new);
-        Collection<ParentPortable> values = map.values(Predicates.sql("c.ia[0] == 12"));
-        assertEquals(1, values.size());
-    }
-
-    private <T> IMap<Integer, T> createClientAndGetMap() {
+    public void testQueryOnPrimitive() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig()
-                .addPortableFactory(1, new TestPortableFactory());
+        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        return client.getMap(randomName());
+        IMap<Integer, Object> map = client.getMap("test");
+        fillMap(map, 50, ChildPortable::new);
+
+        SqlResult rows = client.getSql().execute("SELECT * FROM test WHERE i >= 45");
+
+        assertEquals(5, Iterators.size(rows.iterator()));
+    }
+
+    @Test
+    public void testQueryOnObject() {
+        //To be able to run comparison methods on objects on the server we need the classes
+        assumeTrue(clusterHasPortableConfig);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Integer, ParentPortable> map = client.getMap("test");
+        fillMap(map, 100, ParentPortable::new);
+        SqlService clientSql = client.getSql();
+
+        ChildPortable expected = new ChildPortable(10);
+        SqlResult rows = clientSql.execute("SELECT sa FROM test WHERE c = ?", expected);
+
+        Iterator<SqlRow> iterator = rows.iterator();
+        SqlRow row = Iterators.getOnlyElement(iterator);
+        String[] rowObject = row.getObject("sa");
+        assertEquals(String.valueOf(10), rowObject[0]);
     }
 
     private <T> void fillMap(IMap<Integer, T> map, int count, Function<Integer, T> constructor) {
@@ -136,7 +130,7 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
         }
     }
 
-    static class ChildPortable implements Portable {
+    static class ChildPortable implements Portable, Comparable<ChildPortable> {
         private int i;
         private int[] ia;
 
@@ -145,7 +139,7 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
 
         ChildPortable(int i) {
             this.i = i;
-            this.ia = new int[] {i};
+            this.ia = new int[]{i};
         }
 
         @Override
@@ -169,9 +163,14 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
             i = reader.readInt("i");
             ia = reader.readIntArray("ia");
         }
+
+        @Override
+        public int compareTo(ChildPortable o) {
+            return i - o.i;
+        }
     }
 
-    static class ParentPortable implements Portable {
+    static class ParentPortable implements Portable, Comparable<ParentPortable> {
         private ChildPortable c;
         private String[] sa;
 
@@ -180,7 +179,7 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
 
         ParentPortable(int i) {
             this.c = new ChildPortable(i);
-            this.sa = new String[] {String.valueOf(i)};
+            this.sa = new String[]{String.valueOf(i)};
         }
 
         @Override
@@ -203,6 +202,11 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
         public void readPortable(PortableReader reader) throws IOException {
             c = reader.readPortable("c");
             sa = reader.readStringArray("sa");
+        }
+
+        @Override
+        public int compareTo(ParentPortable o) {
+            return c.compareTo(o.c);
         }
     }
 

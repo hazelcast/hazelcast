@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -414,10 +415,11 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.POSITION) {
                     Expression<?> start = operands.length > 2 ? operands[2] : null;
                     return PositionFunction.create(operands[0], operands[1], start);
+                } else if (function == HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ) {
+                    return ToTimestampTzFunction.create(operands[0]);
                 }
 
                 break;
-
             default:
                 break;
         }
@@ -448,7 +450,7 @@ public final class RexToExpression {
                 break;
 
             case BIGINT:
-                // Calcite incorrectly convers the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
+                // Calcite incorrectly converts the DECIMAL literal to BIGINT using the "BigDecimal.unscaledValue" method.
                 // We fix it here.
                 if (literal.getTypeName() == SqlTypeName.DECIMAL) {
                     value = literal.getValueAs(BigDecimal.class).longValue();
