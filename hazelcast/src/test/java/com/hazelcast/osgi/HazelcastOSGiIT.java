@@ -44,7 +44,7 @@ import static org.ops4j.pax.exam.CoreOptions.options;
 @RunWith(PaxExamTestRunner.class)
 @Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
-public class HazelcastOSGiIntegrationTest {
+public class HazelcastOSGiIT {
 
     @Inject
     private BundleContext bundleContext;
