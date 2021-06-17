@@ -66,6 +66,7 @@ import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -316,8 +317,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
     public static final int LOCAL_RECORD_STORE_STATS = 154;
+    public static final int MAP_FETCH_INDEX = 155;
 
-    private static final int LEN = LOCAL_RECORD_STORE_STATS + 1;
+
+    private static final int LEN = MAP_FETCH_INDEX + 1;
 
     @Override
     public int getFactoryId() {
@@ -479,6 +482,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
+        constructors[MAP_FETCH_INDEX] = arg -> new MapFetchIndexOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

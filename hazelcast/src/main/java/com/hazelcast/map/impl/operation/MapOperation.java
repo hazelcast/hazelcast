@@ -37,6 +37,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.impl.operationservice.AbstractNamedOperation;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
@@ -61,6 +62,7 @@ public abstract class MapOperation extends AbstractNamedOperation
 
     protected transient MapService mapService;
     protected transient RecordStore<Record> recordStore;
+    protected transient Indexes indexes;
     protected transient MapContainer mapContainer;
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
@@ -96,6 +98,8 @@ public abstract class MapOperation extends AbstractNamedOperation
             disposeDeferredBlocks();
             throw rethrow(t, Exception.class);
         }
+
+        indexes = mapContainer.getIndexes();
 
         canPublishWanEvent = canPublishWanEvent(mapContainer);
 

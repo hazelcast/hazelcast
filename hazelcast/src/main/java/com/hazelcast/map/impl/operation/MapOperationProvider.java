@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapEntries;
@@ -27,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 
 import java.util.List;
 import java.util.Set;
@@ -134,6 +136,12 @@ public interface MapOperationProvider {
      * @see com.hazelcast.map.impl.proxy.MapProxyImpl#iterator(int, int, boolean)
      */
     MapOperation createFetchEntriesOperation(String name, IterationPointer[] pointers, int fetchSize);
+
+    MapOperation createFetchIndexOperation(String name,
+                                           String indexName,
+                                           IndexFilter indexFilter,
+                                           boolean descending,
+                                           PartitionIdSet partitionIdSet);
 
     /**
      * Creates an operation for fetching a segment of a query result from a
