@@ -179,9 +179,9 @@ public class SqlUpdateTest extends SqlTestSupport {
         testMap.put(1, 1);
         testMap.put(2, 2);
 
-        checkUpdateCount("UPDATE test_map SET this = 100", 0);
-        assertThat(testMap.get(1)).isEqualTo(100);
-        assertThat(testMap.get(2)).isEqualTo(100);
+        checkUpdateCount("UPDATE test_map SET this = this + 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(2);
+        assertThat(testMap.get(2)).isEqualTo(3);
     }
 
     @Test
@@ -190,9 +190,9 @@ public class SqlUpdateTest extends SqlTestSupport {
         testMap.put(1, 1);
         testMap.put(2, 2);
 
-        checkUpdateCount("UPDATE test_map SET this = 100 WHERE 1 = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(100);
-        assertThat(testMap.get(2)).isEqualTo(100);
+        checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE 1 = 1", 0);
+        assertThat(testMap.get(1)).isEqualTo(2);
+        assertThat(testMap.get(2)).isEqualTo(3);
     }
 
     @Test

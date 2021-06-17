@@ -131,20 +131,13 @@ public final class OptUtils {
         return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
     }
 
-    private static HazelcastRelOptTable createRelTable(
+    public static HazelcastRelOptTable createRelTable(
             List<String> names,
             HazelcastTable hazelcastTable,
             RelDataTypeFactory typeFactory
     ) {
         RelDataType rowType = hazelcastTable.getRowType(typeFactory);
-        return createRelTable(names, hazelcastTable, rowType);
-    }
 
-    public static HazelcastRelOptTable createRelTable(
-            List<String> names,
-            HazelcastTable hazelcastTable,
-            RelDataType rowType
-    ) {
         RelOptTableImpl relTable = RelOptTableImpl.create(
                 null,
                 rowType,

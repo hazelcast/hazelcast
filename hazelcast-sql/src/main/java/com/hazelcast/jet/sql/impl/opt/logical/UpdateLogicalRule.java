@@ -80,7 +80,7 @@ final class UpdateLogicalRule extends RelOptRule {
                 OptUtils.createRelTable(
                         relTable.getDelegate().getQualifiedName(),
                         hazelcastTable.withProject(keyProjects(hazelcastTable.getTarget())),
-                        hazelcastTable.getRowType(scan.getCluster().getTypeFactory())
+                        scan.getCluster().getTypeFactory()
                 )
         );
     }
