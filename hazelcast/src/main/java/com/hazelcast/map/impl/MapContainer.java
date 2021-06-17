@@ -64,6 +64,7 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -106,6 +107,7 @@ public class MapContainer {
      * Holds number of registered {@link InvalidationListener} from clients.
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
+    protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
 
     protected SplitBrainMergePolicy wanMergePolicy;
     protected DelegatingWanScheme wanReplicationDelegate;
@@ -167,6 +169,10 @@ public class MapContainer {
                 .partitionCount(partitionCount)
                 .resultFilterFactory(new IndexResultFilterFactory())
                 .build();
+    }
+
+    public AtomicLong getLastInvalidMergePolicyCheckTime() {
+        return lastInvalidMergePolicyCheckTime;
     }
 
     private class IndexResultFilterFactory implements Supplier<Predicate<QueryableEntry>> {
