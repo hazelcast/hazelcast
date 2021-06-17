@@ -182,18 +182,19 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public void addForcibly(DelayedEntry<Data, Object> delayedEntry) {
+        delayedEntry.setSequence(sequence.incrementAndGet());
         writeBehindQueue.addLast(delayedEntry, true);
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
-        delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
     public void add(DelayedEntry<Data, Object> delayedEntry) {
+        delayedEntry.setSequence(sequence.incrementAndGet());
+
         writeBehindQueue.addLast(delayedEntry, false);
 
         stagingArea.put(delayedEntry.getKey(), delayedEntry);
 
-        delayedEntry.setSequence(sequence.incrementAndGet());
     }
 
     @Override
