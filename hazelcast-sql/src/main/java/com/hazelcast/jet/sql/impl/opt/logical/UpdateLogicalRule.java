@@ -69,7 +69,7 @@ final class UpdateLogicalRule extends RelOptRule {
         call.transformTo(rel);
     }
 
-    // transforms existing project with just primary keys project
+    // rewrites existing project to just primary keys project
     private static RelNode rewriteScan(LogicalTableScan scan) {
         HazelcastRelOptTable relTable = (HazelcastRelOptTable) scan.getTable();
         HazelcastTable hazelcastTable = relTable.unwrap(HazelcastTable.class);

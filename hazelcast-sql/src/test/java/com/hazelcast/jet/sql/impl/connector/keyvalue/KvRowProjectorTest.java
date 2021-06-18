@@ -126,7 +126,7 @@ public class KvRowProjectorTest {
         }
     }
 
-    public static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
+    private static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
 
         @Override
         public Object getArgument(int index) {
