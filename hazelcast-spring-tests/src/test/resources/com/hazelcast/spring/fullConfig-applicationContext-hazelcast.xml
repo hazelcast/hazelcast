@@ -673,6 +673,19 @@
                             <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
                         </hz:identity>
                     </hz:realm>
+                    <hz:realm name="simpleRealm">
+                        <hz:authentication>
+                            <hz:simple>
+                                <hz:user username="test" password="a1234">
+                                    <hz:role>monitor</hz:role>
+                                    <hz:role>hazelcast</hz:role>
+                                </hz:user>
+                                <hz:user username="root" password="secret">
+                                    <hz:role>root</hz:role>
+                                </hz:user>
+                            </hz:simple>
+                        </hz:authentication>
+                    </hz:realm>
                     <hz:realm name="kerberosRealm">
                         <hz:authentication>
                             <hz:kerberos>

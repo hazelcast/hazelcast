@@ -26,6 +26,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
@@ -164,7 +165,7 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
-    public void testSecurityInterceptorConfig() {
+    public void testSecurityConfig() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  security:\n"
@@ -223,6 +224,20 @@ public class YamlConfigBuilderTest
                 + "            principal: jduke@HAZELCAST.COM\n"
                 + "            keytab-file: /opt/jduke.keytab\n"
                 + "            use-canonical-hostname: true\n"
+                + "      - name: simple\n"
+                + "        authentication:\n"
+                + "          simple:\n"
+                + "            skip-role: true\n"
+                + "            users:\n"
+                + "              - username: test\n"
+                + "                password: 'a1234'\n"
+                + "                roles:\n"
+                + "                  - monitor\n"
+                + "                  - hazelcast\n"
+                + "              - username: dev\n"
+                + "                password: secret\n"
+                + "                roles:\n"
+                + "                  - root\n"
                 + "    client-permission-policy:\n"
                 + "      class-name: MyPermissionPolicy\n"
                 + "      properties:\n"
@@ -299,6 +314,19 @@ public class YamlConfigBuilderTest
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
         assertNotNull(kerbLdapAuthentication);
         assertEquals("ldap://127.0.0.1", kerbLdapAuthentication.getUrl());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simple");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
+        assertEquals(Boolean.TRUE, simpleAuthnCfg.getSkipRole());
 
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();

@@ -2475,7 +2475,8 @@
                     "jaas",
                     "tls",
                     "ldap",
-                    "kerberos"
+                    "kerberos",
+                    "simple"
                   ]
                 },
                 "maxProperties": 1,
@@ -2585,6 +2586,38 @@
                       },
                       "security-realm": {
                         "type": "string"
+                      }
+                    }
+                  },
+                  "simple": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "role-separator": {
+                        "type": "string"
+                      },
+                      "users": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "username": {
+                              "type": "string"
+                            },
+                            "password": {
+                              "type": "string"
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "username", "password"
+                          ]
+                        }
                       }
                     }
                   }
