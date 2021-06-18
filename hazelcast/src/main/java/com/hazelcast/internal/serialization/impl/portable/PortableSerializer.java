@@ -294,7 +294,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
 
     /**
      * Tries to construct the user's Portable object first via given factory config.
-     * If it can not found the related factory, this will return GenericRecord representation of the object.
+     * If it can not find the related factory, this will return GenericRecord representation of the object.
      */
     <T> T read(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         Portable portable = createNewPortableInstance(factoryId, classId);
