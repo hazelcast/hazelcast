@@ -322,7 +322,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public <T> T getObject(@Nonnull String fieldName) {
-        return getVariableLength(fieldName, COMPOSED, in -> serializer.readObject(in, schemaIncludedInBinary));
+        return (T) getVariableLength(fieldName, COMPOSED, in -> serializer.read(in, schemaIncludedInBinary));
     }
 
     @Override
@@ -403,9 +403,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return getVariableLengthArray(fieldName, COMPOSED_ARRAY,
+        return (T[]) getVariableLengthArray(fieldName, COMPOSED_ARRAY,
                 length -> (T[]) Array.newInstance(componentType, length),
-                in -> serializer.readObject(in, schemaIncludedInBinary));
+                in -> serializer.read(in, schemaIncludedInBinary));
     }
 
     protected interface Reader<R> {
@@ -587,7 +587,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public Object getObjectFromArray(@Nonnull String fieldName, int index) {
         return getVarSizeFromArray(fieldName, COMPOSED_ARRAY,
-                in -> serializer.readObject(in, schemaIncludedInBinary), index);
+                in -> serializer.read(in, schemaIncludedInBinary), index);
     }
 
     private <T> T getVarSizeFromArray(@Nonnull String fieldName, FieldType fieldType,

@@ -222,22 +222,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
     }
 
-    public <T> T readObject(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
-        BufferObjectDataInput input = (BufferObjectDataInput) in;
-        Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
-        ConfigurationRegistry registry = getOrCreateRegistry(schema.getTypeName());
-
-        if (registry == null) {
-            throw new HazelcastSerializationException("The class should be in the classpath to be read via readObject* methods."
-                    + "Associated schema for the data : " + schema);
-        }
-
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
-                registry.getClazz(), schemaIncludedInBinary);
-        Object object = registry.getSerializer().read(genericRecord);
-        return managedContext != null ? (T) managedContext.initialize(object) : (T) object;
-    }
-
     private ConfigurationRegistry getOrCreateRegistry(Object object) {
         return classToRegistryMap.computeIfAbsent(object.getClass(), aClass -> {
             if (object instanceof Compactable) {
