@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.Properties;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
@@ -129,6 +130,14 @@ public class ConfigTest extends HazelcastTestSupport {
 
         assertEquals(clusterName, cfg.getClusterName());
         assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        // test for very long config string with length > 4K
+        final int longStrLength = 1 << 14;
+        String instanceName = String.join("", Collections.nCopies(longStrLength, "a"));
+        yaml = getSimpleYamlConfigStr("instance-name", instanceName);
+
+        cfg = Config.loadFromString(yaml);
+        assertEquals(instanceName, cfg.getInstanceName());
     }
 
     @Test
@@ -162,6 +171,16 @@ public class ConfigTest extends HazelcastTestSupport {
 
         assertEquals(clusterName, cfg.getClusterName());
         assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        // test for stream with > 4KB content
+        final int instanceNameLen = 1 << 14;
+        String instanceName = String.join("", Collections.nCopies(instanceNameLen, "x"));
+        yamlStream = new ByteArrayInputStream(
+                getSimpleYamlConfigStr("instance-name", instanceName).getBytes()
+        );
+
+        cfg = Config.loadFromStream(yamlStream);
+        assertEquals(instanceName, cfg.getInstanceName());
     }
 
     @Test
@@ -172,7 +191,7 @@ public class ConfigTest extends HazelcastTestSupport {
         String randStr = randomString();
         String xml = getSimpleXmlConfigStr("license-key", randStr);
 
-        Writer writer = new PrintWriter(file, "UTF-8");
+        Writer writer = new PrintWriter(file);
         writer.write(xml);
         writer.close();
 

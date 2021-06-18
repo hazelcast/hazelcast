@@ -63,6 +63,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.net.URL;
 import java.util.EventListener;
 import java.util.LinkedList;
@@ -381,15 +382,8 @@ public class Config {
             throw new IllegalArgumentException("provided string configuration is null or empty! "
                     + "Please use a well-structured content.");
         }
-        Config cfg;
-        try {
-            byte[] bytes = source.getBytes();
-            InputStream stream = new ByteArrayInputStream(bytes);
-            cfg = loadFromConfigStream(new ConfigStream(stream, bytes.length), properties);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-        return cfg;
+        byte[] bytes = source.getBytes();
+        return loadFromStream(new ByteArrayInputStream(bytes), properties);
     }
 
     /**
@@ -409,32 +403,32 @@ public class Config {
      *
      * @param source the XML or YAML stream
      * @param properties properties to use for variable resolution
-     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
      * @return Config created from the stream
      */
     public static Config loadFromStream(InputStream source, Properties properties) {
-        Config cfg = null;
+        isNotNull(source, "(InputStream) source");
+
         try {
-            cfg = loadFromConfigStream(new ConfigStream(source), properties);
+            ConfigStream cfgStream = new ConfigStream(source);
+
+            if (new MemberXmlConfigRootTagRecognizer().isRecognized(cfgStream)) {
+                cfgStream.reset();
+                InputStream stream = new SequenceInputStream(cfgStream, source);
+                return applyEnvAndSystemVariableOverrides(
+                        new XmlConfigBuilder(stream).setProperties(properties).build()
+                );
+            }
+
+            cfgStream.reset();
+            if (new MemberYamlConfigRootTagRecognizer().isRecognized(cfgStream)) {
+                cfgStream.reset();
+                InputStream stream = new SequenceInputStream(cfgStream, source);
+                return applyEnvAndSystemVariableOverrides(
+                        new YamlConfigBuilder(stream).setProperties(properties).build()
+                );
+            }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
-        }
-        return cfg;
-    }
-
-    private static Config loadFromConfigStream(ConfigStream stream, Properties properties) throws Exception {
-        if (new MemberXmlConfigRootTagRecognizer().isRecognized(stream)) {
-            stream.reset();
-            return applyEnvAndSystemVariableOverrides(
-                    new XmlConfigBuilder(stream).setProperties(properties).build()
-            );
-        }
-        stream.reset();
-        if (new MemberYamlConfigRootTagRecognizer().isRecognized(stream)) {
-            stream.reset();
-            return applyEnvAndSystemVariableOverrides(
-                    new YamlConfigBuilder(stream).setProperties(properties).build()
-            );
         }
 
         throw new IllegalArgumentException("interpretation error: the resource is neither valid XML nor valid YAML");
