@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -175,8 +176,10 @@ public class ConfigTest extends HazelcastTestSupport {
         // test for stream with > 4KB content
         final int instanceNameLen = 1 << 14;
         String instanceName = String.join("", Collections.nCopies(instanceNameLen, "x"));
-        yamlStream = new ByteArrayInputStream(
-                getSimpleYamlConfigStr("instance-name", instanceName).getBytes()
+        // wrap with BufferedInputStream (which is not resettable), so that ConfigStream
+        // behaviour kicks in.
+        yamlStream = new BufferedInputStream(new ByteArrayInputStream(
+                getSimpleYamlConfigStr("instance-name", instanceName).getBytes())
         );
 
         cfg = Config.loadFromStream(yamlStream);
