@@ -21,10 +21,12 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
@@ -33,11 +35,11 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.node.IndexSortMetadata;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -49,38 +51,31 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiPredicate;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 @SuppressWarnings("rawtypes")
 @RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
-    @Parameterized.Parameters(name = "indexType:{0}, count:{1}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {IndexType.SORTED, 10},
-                {IndexType.SORTED, 1000},
-                {IndexType.HASH, 10},
-                {IndexType.HASH, 1000}
-        });
+    @Parameterized.Parameters(name = "count:{0}")
+    public static Collection<Integer> parameters() {
+        return asList(10, 1000);
     }
 
     @Parameterized.Parameter(0)
-    public IndexType indexType;
-
-    @Parameterized.Parameter(1)
     public int count;
 
     private IMap<Integer, Person> map;
@@ -113,14 +108,56 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenNoFilterAndNoSpecificProjection() {
+    public void test_pointLookup_hashed() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+        }
+
+        expected.add(new Object[]{(5), "value-5", 5});
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "age");
+        indexConfig.setName(randomName());
+        map.addIndex(indexConfig);
+
+        IndexFilter filter = new IndexEqualsFilter(intValue(5));
+        List<Expression<?>> projections = asList(
+                ColumnExpression.create(0, INT),
+                ColumnExpression.create(1, VARCHAR),
+                ColumnExpression.create(2, INT)
+        );
+
+        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
+                map.getName(),
+                indexConfig.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
+                Arrays.asList(INT, VARCHAR, INT),
+                projections,
+                filter,
+                null
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_whenNoFilterAndNoSpecificProjection_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
         }
 
-        IndexConfig indexConfig = new IndexConfig(indexType, "age");
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
         indexConfig.setName(randomName());
         map.addIndex(indexConfig);
 
@@ -140,9 +177,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 projections,
                 filter,
-                indexType == IndexType.SORTED ?
-                        new IndexSortMetadata(indexType, false, new String[]{"age"}) :
-                        null
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
 
         TestSupport
@@ -156,7 +191,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenFilterExistsWithoutSpecificProjection() {
+    public void test_whenFilterExistsWithoutSpecificProjection_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
@@ -165,7 +200,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             }
         }
 
-        IndexConfig indexConfig = new IndexConfig(indexType, "age");
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
         indexConfig.setName(randomName());
         map.addIndex(indexConfig);
 
@@ -185,9 +220,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 projections,
                 filter,
-                indexType == IndexType.SORTED ?
-                        new IndexSortMetadata(indexType, false, new String[]{"age"}) :
-                        null
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
 
         TestSupport
@@ -201,19 +234,19 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenNoFilterButSpecificProjection() {
+    public void test_whenNoFilterButSpecificProjection_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             expected.add(new Object[]{(count - i + 1)});
         }
 
-        IndexConfig indexConfig = new IndexConfig(indexType, "age");
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
         indexConfig.setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
-        List<Expression<?>> projections = asList(ColumnExpression.create(2, INT));
+        List<Expression<?>> projections = singletonList(ColumnExpression.create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -224,9 +257,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 projections,
                 filter,
-                indexType == IndexType.SORTED ?
-                        new IndexSortMetadata(indexType, false, new String[]{"age"}) :
-                        null
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
         );
 
         TestSupport
@@ -279,8 +310,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     private static IndexFilterValue intValue(Integer value, boolean allowNull) {
         return new IndexFilterValue(
-                Collections.singletonList(constant(value, QueryDataType.INT)),
-                Collections.singletonList(allowNull)
+                singletonList(constant(value, QueryDataType.INT)),
+                singletonList(allowNull)
         );
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
@@ -41,6 +42,7 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.lang.Boolean.FALSE;
@@ -121,6 +123,11 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
             ascs.add(asc);
         }
         return ascs;
+    }
+
+    public List<FieldCollation> getCollations() {
+        return traitSet.getCollation().getFieldCollations()
+                .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 
     @Override

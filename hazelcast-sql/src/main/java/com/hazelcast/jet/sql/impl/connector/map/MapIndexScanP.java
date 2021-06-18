@@ -26,18 +26,14 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MigrationDetectedException;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -46,14 +42,12 @@ import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.plan.node.IndexSortMetadata;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -64,7 +58,6 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static java.util.stream.Collectors.toList;
 
@@ -148,26 +141,21 @@ One day we could implement merging of the operations for one target, but not now
  */
 
 /**
- * Private API, see methods in {@link SourceProcessors}.
- * <p>
- * The number of Hazelcast partitions should be configured to at least
- * {@code localParallelism * clusterSize}, otherwise some processors will
- * have no partitions assigned to them.
+ * // TODO: [sasha] detailed description
  */
 public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperationResult>> extends AbstractProcessor {
-    // TODO: discuss this number.
+    // TODO: [sasha] discuss this number.
     private static final int MAX_FETCH_SIZE = 64;
 
     private final AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader;
-    private final MapContainer mapContainer;
-    private final String indexName;
     private final ExpressionEvalContext evalContext;
     private final List<Expression<?>> projections;
     private Context context;
 
-    private final List<Split<F>> splits;
+    private final ArrayList<Split<F>> splits;
     private final MapScanRow row;
-    private Queue<QueryableEntry> queue;
+    private final Queue<Object[]> queue;
+    private final Queue<Integer> splitsToRemove = new ArrayDeque<>();
     private Object[] pendingItem;
 
     private MapIndexScanP(
@@ -175,12 +163,9 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             @Nonnull HazelcastInstance hazelcastInstance,
             @Nonnull ExpressionEvalContext evalContext,
             @Nonnull int[] partitions,
-            MapIndexScanMetadata indexScanMetadata
+            @Nonnull MapIndexScanMetadata indexScanMetadata
     ) {
         this.reader = reader;
-        MapService mapService = getNodeEngine(hazelcastInstance).getService(MapService.SERVICE_NAME);
-        this.mapContainer = mapService.getMapServiceContext().getMapContainer(indexScanMetadata.getMapName());
-        this.indexName = indexScanMetadata.getIndexName();
         this.evalContext = evalContext;
         this.projections = indexScanMetadata.getProjections();
         this.splits = new ArrayList<>();
@@ -201,8 +186,8 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                 evalContext.getSerializationService()
         );
 
-        if (indexScanMetadata.getIndexSortMetadata() != null) {
-            this.queue = new PriorityQueue(produceComparator(indexScanMetadata.getIndexSortMetadata()));
+        if (indexScanMetadata.getComparator() != null) {
+            this.queue = new PriorityQueue<>(indexScanMetadata.getComparator());
         } else {
             this.queue = new ArrayDeque<>();
         }
@@ -221,11 +206,15 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             return false;
         }
 
+        // Remove all splits which ends their job.
+        while (!splitsToRemove.isEmpty()) {
+            int split = splitsToRemove.poll();
+            splits.remove(split);
+        }
+
         if (splits.isEmpty()) {
             return projectEntryAndEmit();
         }
-
-        Queue<Integer> splitsToRemove = new ArrayDeque<>();
 
         for (int i = 0; i < splits.size(); ++i) {
             Split s = splits.get(i);
@@ -236,30 +225,36 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                 if (!s.isDone()) {
                     continue;
                 } else {
-                    if (s.readBatch(reader)) {
-                        // No more items to read, remove waisted split.
-                        System.out.println();
-                        splitsToRemove.offer(i);
+                    boolean readFlag = true;
+                    try {
+                        readFlag = s.readBatch(reader);
+                        if (readFlag) {
+                            // No more items to read, remove waisted split.
+                            splitsToRemove.offer(i);
+                            continue;
+                        }
+                    } catch (MigrationDetectedException | MissingPartitionException e) {
+                        splitOnMigration();
                         continue;
                     }
                 }
             }
-            queue.offer(s.readElement());
-        }
-        // Remove all splits which ends their job.
-        while (!splitsToRemove.isEmpty()) {
-            //noinspection SuspiciousMethodCalls
-            splits.remove(splitsToRemove.poll());
+            queue.offer(project(s.readElement()));
         }
 
         return splits.isEmpty() && projectEntryAndEmit();
     }
 
+    /**
+     *  // TODO: 'split' logic.
+     */
+    private void splitOnMigration() {
+
+    }
+
     private boolean projectEntryAndEmit() {
         if (!queue.isEmpty()) {
-            QueryableEntry entry = queue.poll();
-            assert entry != null;
-            Object[] item = project(entry);
+            Object[] item = queue.poll();
             if (!tryEmit(item)) {
                 pendingItem = item;
             }
@@ -272,7 +267,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
     }
 
-    private Object[] project(QueryableEntry entry) {
+    private Object[] project(@Nonnull QueryableEntry entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         Object[] row = new Object[projections.size()];
 
@@ -280,19 +275,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             row[j] = evaluate(projections.get(j), this.row, evalContext);
         }
         return row;
-    }
-
-    private Comparator<QueryableEntry> produceComparator(IndexSortMetadata metadata) {
-        InternalIndex index = mapContainer.getIndexes().getIndex(indexName);
-        String[] indexComponents = index.getComponents();
-        assert indexComponents.length > 0;
-        return (QueryableEntry x, QueryableEntry y) -> {
-            if (x.getAttributeValue(indexComponents[0]).hashCode() > y.getAttributeValue(indexComponents[0]).hashCode()) {
-                return 1;
-            } else {
-                return -1;
-            }
-        };
     }
 
     private static final class Split<F extends CompletableFuture<MapFetchIndexOperationResult>> {
@@ -315,10 +297,8 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         public boolean start(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader) {
             if (future == null) {
                 future = reader.readBatch(partitions, pointers);
-                System.out.println("Send request to read next batch");
                 return true;
             }
-            System.out.println("Batch is actively reading on position: " + currentBatchPosition);
             return false;
         }
 
@@ -330,24 +310,20 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                 currentBatch = reader.toRecordSet(result);
                 pointers = result.getPointers();
                 future = null;
-                System.out.println("Successfully updated batches.");
                 return currentBatch.isEmpty();
             } catch (MigrationDetectedException | MissingPartitionException e) {
                 throw rethrow(e);
             } catch (InterruptedException | ExecutionException e) {
-//                e.printStackTrace();
-                System.err.println(e.getLocalizedMessage());
+                e.printStackTrace();
                 return true;
             }
         }
 
         public QueryableEntry readElement() {
-            System.out.println("Try to read next batch element with index " + (currentBatchPosition + 1));
             return currentBatch.get(currentBatchPosition++);
         }
 
         public boolean batchIsDrained() {
-            System.out.println("Batch is drained.");
             return currentBatchPosition == currentBatch.size();
         }
 
@@ -475,23 +451,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }
-
-        public InternalCompletableFuture<MapFetchIndexOperationResult> readBatch(
-                Address address,
-                PartitionIdSet partitions,
-                IndexIterationPointer[] pointers
-        ) {
-            MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
-            Operation op = operationProvider.createFetchIndexOperation(
-                    mapProxyImpl.getName(),
-                    indexName,
-                    pointers,
-                    partitions,
-                    MAX_FETCH_SIZE
-            );
-            return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
-        }
-
     }
 
     static MapIndexScanProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {

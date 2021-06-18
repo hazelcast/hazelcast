@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
@@ -37,9 +36,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapService;
-import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -47,7 +43,6 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.plan.node.IndexSortMetadata;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -70,7 +65,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
-import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -135,17 +129,12 @@ public class CreateDagVisitor {
     public Vertex onMapIndexScan(IMapIndexScanPhysicalRel rel) {
         Table table0 = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         final MapTableIndex tableIndex = rel.getIndex();
-        final MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         final PartitionedMapTable table = (PartitionedMapTable) table0;
-        final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(table.getMapName());
-
+        final ComparatorEx<Object[]> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 
         String indexName = tableIndex.getName();
-        IndexType indexType = tableIndex.getType();
         IndexFilter filter = rel.getIndexFilter();
-        InternalIndex internalIndex = mapContainer.getIndexes().getIndex(indexName);
 
-        IndexSortMetadata indexSortMetadata = new IndexSortMetadata(indexType, false, internalIndex.getComponents());
         collectObjectKeys(table);
 
         SqlConnector sqlConnector = getJetSqlConnector(table);
@@ -158,7 +147,7 @@ public class CreateDagVisitor {
                 indexName,
                 filter,
                 rel.projection(parameterMetadata),
-                indexSortMetadata
+                comparator
         );
     }
 

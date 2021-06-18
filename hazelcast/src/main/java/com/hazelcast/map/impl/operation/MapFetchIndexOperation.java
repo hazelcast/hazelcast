@@ -212,7 +212,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             IndexIterationPointer pointer = pointers[i];
 
             // For hash lookups, pointer begin and end points will be the same
-            assert pointer.getFrom() == pointer.getTo();
+            assert checkPointerForLookup(pointer)
+                    : "Unordered index iteration pointer must have same from and to values";
 
             List<QueryableEntry> filteredEntries = getOwnedEntries(index.getRecords(pointer.getFrom()), partitionIdSet);
             entries.addAll(filteredEntries);
@@ -280,6 +281,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     return partitionIdSet.contains(partitionId);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private static boolean checkPointerForLookup(IndexIterationPointer pointer) {
+        return ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0;
     }
 
     public static class MapFetchIndexOperationResult {

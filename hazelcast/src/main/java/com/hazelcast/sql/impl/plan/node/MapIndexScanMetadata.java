@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.node;
 
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -44,7 +45,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected List<QueryDataType> fieldTypes;
     protected List<Expression<?>> projections;
     protected IndexFilter filter;
-    protected IndexSortMetadata indexSortMetadata;
+    protected ComparatorEx<Object[]> comparator;
 
     public MapIndexScanMetadata() {
         // No-op.
@@ -59,7 +60,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
             List<QueryDataType> fieldTypes,
             List<Expression<?>> projections,
             IndexFilter filter,
-            IndexSortMetadata indexSortMetadata
+            ComparatorEx<Object[]> comparator
     ) {
         this.mapName = mapName;
         this.indexName = indexName;
@@ -69,7 +70,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         this.fieldTypes = fieldTypes;
         this.projections = projections;
         this.filter = filter;
-        this.indexSortMetadata = indexSortMetadata;
+        this.comparator = comparator;
     }
 
     public String getMapName() {
@@ -104,8 +105,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         return filter;
     }
 
-    public IndexSortMetadata getIndexSortMetadata() {
-        return indexSortMetadata;
+    public ComparatorEx<Object[]> getComparator() {
+        return comparator;
     }
 
     @Override
