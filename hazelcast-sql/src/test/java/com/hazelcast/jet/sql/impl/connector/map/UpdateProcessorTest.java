@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.map.IMap;
@@ -91,26 +90,24 @@ public class UpdateProcessorTest extends SqlTestSupport {
             Expression<?> update,
             List<Object> arguments
     ) {
-        QueryPath[] paths = new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH};
-        QueryDataType[] types = new QueryDataType[]{INT, type};
         KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
-                paths,
-                types,
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryDataType[]{INT, type},
                 GenericQueryTargetDescriptor.DEFAULT,
                 GenericQueryTargetDescriptor.DEFAULT,
                 null,
                 asList(ColumnExpression.create(0, INT), ColumnExpression.create(1, type))
         );
-        KvProjector.Supplier projectorSupplier = KvProjector.supplier(
-                paths,
-                types,
+
+        ValueProjector.Supplier valueProjectorSupplier = ValueProjector.supplier(
+                new QueryPath[]{QueryPath.VALUE_PATH},
+                new QueryDataType[]{type},
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
-                PrimitiveUpsertTargetDescriptor.INSTANCE
+                singletonList(update)
         );
 
-        List<Expression<?>> updates = asList(ColumnExpression.create(0, INT), update);
         UpdateProcessorSupplier processor = new UpdateProcessorSupplier(
-                MAP_NAME, rowProjectorSupplier, updates, projectorSupplier
+                MAP_NAME, rowProjectorSupplier, valueProjectorSupplier
         );
 
         TestSupport

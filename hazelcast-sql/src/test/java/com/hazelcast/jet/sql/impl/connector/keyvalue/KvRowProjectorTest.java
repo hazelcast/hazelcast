@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -36,7 +37,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
+import java.util.Collections;
+import java.util.List;
+
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -122,4 +125,22 @@ public class KvRowProjectorTest {
             return () -> value;
         }
     }
+
+    public static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
+
+        @Override
+        public Object getArgument(int index) {
+            throw new IndexOutOfBoundsException("" + index);
+        }
+
+        @Override
+        public List<Object> getArguments() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public InternalSerializationService getSerializationService() {
+            throw new UnsupportedOperationException();
+        }
+    };
 }

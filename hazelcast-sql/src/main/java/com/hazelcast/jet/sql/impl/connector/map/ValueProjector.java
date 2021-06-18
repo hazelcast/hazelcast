@@ -14,95 +14,96 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.keyvalue;
+package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Map.Entry;
+import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
-/**
- * A utility to convert a row represented as {@code Object[]} to a
- * key-value entry represented as {@code Entry<Object, Object>}.
- * <p>
- * {@link KvRowProjector} does the reverse.
- */
-class KvProjector {
+class ValueProjector {
 
     private final QueryDataType[] types;
 
-    private final UpsertTarget keyTarget;
-    private final UpsertTarget valueTarget;
+    private final UpsertTarget target;
+
+    private final List<Expression<?>> projection;
+    private final ExpressionEvalContext evalContext;
 
     private final UpsertInjector[] injectors;
 
-    KvProjector(
+    ValueProjector(
             QueryPath[] paths,
             QueryDataType[] types,
-            UpsertTarget keyTarget,
-            UpsertTarget valueTarget
+            UpsertTarget target,
+            List<Expression<?>> projection,
+            ExpressionEvalContext evalContext
     ) {
-        checkTrue(paths.length == types.length, "paths.length != types.length");
+        checkTrue(types.length == projection.size(), "paths.length != projection.length");
         this.types = types;
 
-        this.keyTarget = keyTarget;
-        this.valueTarget = valueTarget;
+        this.target = target;
 
-        this.injectors = createInjectors(paths, types, keyTarget, valueTarget);
+        this.projection = projection;
+        this.evalContext = evalContext;
+
+        this.injectors = createInjectors(paths, types, target);
     }
 
     private static UpsertInjector[] createInjectors(
             QueryPath[] paths,
             QueryDataType[] types,
-            UpsertTarget keyTarget,
-            UpsertTarget valueTarget
+            UpsertTarget target
     ) {
         UpsertInjector[] injectors = new UpsertInjector[paths.length];
         for (int i = 0; i < paths.length; i++) {
-            UpsertTarget target = paths[i].isKey() ? keyTarget : valueTarget;
             injectors[i] = target.createInjector(paths[i].getPath(), types[i]);
         }
         return injectors;
     }
 
-    Entry<Object, Object> project(Object[] row) {
-        keyTarget.init();
-        valueTarget.init();
+    Object project(Object[] values) {
+        HeapRow row = new HeapRow(values);
+        target.init();
         for (int i = 0; i < injectors.length; i++) {
-            Object value = getToConverter(types[i]).convert(row[i]);
+            Object projected = evaluate(projection.get(i), row, evalContext);
+            Object value = getToConverter(types[i]).convert(projected);
             injectors[i].set(value);
         }
-        return entry(keyTarget.conclude(), valueTarget.conclude());
+        return target.conclude();
     }
 
-    public static Supplier supplier(
+    static Supplier supplier(
             QueryPath[] paths,
             QueryDataType[] types,
-            UpsertTargetDescriptor keyDescriptor,
-            UpsertTargetDescriptor valueDescriptor
+            UpsertTargetDescriptor descriptor,
+            List<Expression<?>> projection
     ) {
-        return new Supplier(paths, types, keyDescriptor, valueDescriptor);
+        return new Supplier(paths, types, descriptor, projection);
     }
 
-    public static final class Supplier implements DataSerializable {
+    static final class Supplier implements DataSerializable {
 
         private QueryPath[] paths;
         private QueryDataType[] types;
 
-        private UpsertTargetDescriptor keyDescriptor;
-        private UpsertTargetDescriptor valueDescriptor;
+        private UpsertTargetDescriptor descriptor;
+
+        private List<Expression<?>> projection;
 
         @SuppressWarnings("unused")
         private Supplier() {
@@ -111,21 +112,22 @@ class KvProjector {
         private Supplier(
                 QueryPath[] paths,
                 QueryDataType[] types,
-                UpsertTargetDescriptor keyDescriptor,
-                UpsertTargetDescriptor valueDescriptor
+                UpsertTargetDescriptor descriptor,
+                List<Expression<?>> projection
         ) {
             this.paths = paths;
             this.types = types;
-            this.keyDescriptor = keyDescriptor;
-            this.valueDescriptor = valueDescriptor;
+            this.descriptor = descriptor;
+            this.projection = projection;
         }
 
-        public KvProjector get(InternalSerializationService serializationService) {
-            return new KvProjector(
+        ValueProjector get(ExpressionEvalContext evalContext) {
+            return new ValueProjector(
                     paths,
                     types,
-                    keyDescriptor.create(serializationService),
-                    valueDescriptor.create(serializationService)
+                    descriptor.create(evalContext.getSerializationService()),
+                    projection,
+                    evalContext
             );
         }
 
@@ -139,8 +141,8 @@ class KvProjector {
             for (QueryDataType type : types) {
                 out.writeObject(type);
             }
-            out.writeObject(keyDescriptor);
-            out.writeObject(valueDescriptor);
+            out.writeObject(descriptor);
+            out.writeObject(projection);
         }
 
         @Override
@@ -153,8 +155,8 @@ class KvProjector {
             for (int i = 0; i < types.length; i++) {
                 types[i] = in.readObject();
             }
-            keyDescriptor = in.readObject();
-            valueDescriptor = in.readObject();
+            descriptor = in.readObject();
+            projection = in.readObject();
         }
     }
 }

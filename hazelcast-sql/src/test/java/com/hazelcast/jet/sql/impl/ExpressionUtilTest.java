@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
@@ -30,9 +32,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
@@ -145,4 +147,22 @@ public class ExpressionUtilTest {
 
         assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{4});
     }
+
+    private static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
+
+        @Override
+        public Object getArgument(int index) {
+            throw new IndexOutOfBoundsException("" + index);
+        }
+
+        @Override
+        public List<Object> getArguments() {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public InternalSerializationService getSerializationService() {
+            throw new UnsupportedOperationException();
+        }
+    };
 }

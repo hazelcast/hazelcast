@@ -191,15 +191,12 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             update.getSourceExpressionList().set(i, selectList.get(selectList.size() - sourceExpressionList.size() + i));
         }
 
+        // only tables with primary keys can be updated
         SqlNode sourceTable = update.getTargetTable();
         SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
-        if (validatorTable != null) {
-            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
-
-            // only tables with primary keys can be updated
-            if (getJetSqlConnector(table).getPrimaryKey(table).isEmpty()) {
-                throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
-            }
+        Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+        if (getJetSqlConnector(table).getPrimaryKey(table).isEmpty()) {
+            throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
         }
 
         // UPDATE FROM SELECT is transformed into join (which is not supported yet):

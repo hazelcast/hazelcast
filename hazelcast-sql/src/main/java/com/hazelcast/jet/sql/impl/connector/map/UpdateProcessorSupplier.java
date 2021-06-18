@@ -25,9 +25,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
-import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
@@ -36,7 +34,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
@@ -48,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
@@ -57,8 +53,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     private String mapName;
     private KvRowProjector.Supplier rowProjectorSupplier;
-    private List<Expression<?>> projections;
-    private KvProjector.Supplier projectorSupplier;
+    private ValueProjector.Supplier valueProjectorSupplier;
 
     private transient ExpressionEvalContext evalContext;
 
@@ -69,13 +64,11 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     UpdateProcessorSupplier(
             String mapName,
             KvRowProjector.Supplier rowProjectorSupplier,
-            List<Expression<?>> projections,
-            KvProjector.Supplier projectorSupplier
+            ValueProjector.Supplier valueProjectorSupplier
     ) {
         this.mapName = mapName;
         this.rowProjectorSupplier = rowProjectorSupplier;
-        this.projections = projections;
-        this.projectorSupplier = projectorSupplier;
+        this.valueProjectorSupplier = valueProjectorSupplier;
     }
 
     @Override
@@ -109,7 +102,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         }
         return map.submitToKeys(
                 keys,
-                new ValueUpdater(rowProjectorSupplier, projections, projectorSupplier, evalContext.getArguments())
+                new ValueUpdater(rowProjectorSupplier, valueProjectorSupplier, evalContext.getArguments())
         ).toCompletableFuture().thenApply(m -> Traversers.empty());
     }
 
@@ -117,31 +110,25 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(mapName);
         out.writeObject(rowProjectorSupplier);
-        out.writeObject(projections);
-        out.writeObject(projectorSupplier);
+        out.writeObject(valueProjectorSupplier);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readString();
         rowProjectorSupplier = in.readObject();
-        projections = in.readObject();
-        projectorSupplier = in.readObject();
+        valueProjectorSupplier = in.readObject();
     }
 
     private static final class ValueUpdater
             implements EntryProcessor<Object, Object, Object>, SerializationServiceAware, DataSerializable {
 
         private KvRowProjector.Supplier rowProjector;
-        private List<Expression<?>> projections;
-        private KvProjector.Supplier projector;
+        private ValueProjector.Supplier valueProjector;
         private List<Object> arguments;
 
         private transient ExpressionEvalContext evalContext;
-        private transient InternalSerializationService serializationService;
         private transient Extractors extractors;
-
-        private transient Function<Object[], Object[]> projectionFn;
 
         @SuppressWarnings("unused")
         private ValueUpdater() {
@@ -149,25 +136,22 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
         private ValueUpdater(
                 KvRowProjector.Supplier rowProjector,
-                List<Expression<?>> projections,
-                KvProjector.Supplier projector,
+                ValueProjector.Supplier valueProjector,
                 List<Object> arguments
         ) {
             this.rowProjector = rowProjector;
-            this.projections = projections;
-            this.projector = projector;
+            this.valueProjector = valueProjector;
             this.arguments = arguments;
         }
 
         @Override
-        public Object process(Map.Entry<Object, Object> originalEntry) {
-            Object[] row = rowProjector.get(evalContext, extractors).project(originalEntry.getKey(), originalEntry.getValue());
-            Object[] projected = projectionFn.apply(row);
-            Object value = projector.get(serializationService).projectValue(projected);
+        public Object process(Map.Entry<Object, Object> entry) {
+            Object[] row = rowProjector.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+            Object value = valueProjector.get(evalContext).project(row);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");
             } else {
-                originalEntry.setValue(value);
+                entry.setValue(value);
                 return 1;
             }
         }
@@ -175,24 +159,20 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         @Override
         public void setSerializationService(SerializationService serializationService) {
             this.evalContext = new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
-            this.serializationService = (InternalSerializationService) serializationService;
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
-            this.projectionFn = ExpressionUtil.projectionFn(projections, evalContext);
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rowProjector);
-            out.writeObject(projections);
-            out.writeObject(projector);
+            out.writeObject(valueProjector);
             out.writeObject(arguments);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rowProjector = in.readObject();
-            projections = in.readObject();
-            projector = in.readObject();
+            valueProjector = in.readObject();
             arguments = in.readObject();
         }
     }

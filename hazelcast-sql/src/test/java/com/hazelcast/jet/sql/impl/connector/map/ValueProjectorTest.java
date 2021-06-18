@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.keyvalue;
+package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.sql.impl.expression.CastExpression;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,41 +34,43 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nullable;
-import java.util.Map.Entry;
+import java.util.List;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class KvProjectorTest {
+public class ValueProjectorTest {
 
     @Test
     public void test_project() {
-        KvProjector projector = new KvProjector(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.INT},
+        ValueProjector projector = new ValueProjector(
+                new QueryPath[]{QueryPath.create("this.field")},
+                new QueryDataType[]{QueryDataType.BIGINT},
                 new MultiplyingTarget(),
-                new MultiplyingTarget()
+                singletonList(CastExpression.create(ColumnExpression.create(0, QueryDataType.INT), QueryDataType.BIGINT)),
+                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
         );
 
-        Entry<Object, Object> entry = projector.project(new Object[]{1, 2});
+        Object value = projector.project(new Object[]{1});
 
-        assertThat(entry.getKey()).isEqualTo(2);
-        assertThat(entry.getValue()).isEqualTo(4);
+        assertThat(value).isEqualTo(2L);
     }
 
     @Test
     public void test_supplierSerialization() {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        KvProjector.Supplier original = KvProjector.supplier(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.VARCHAR},
+        ValueProjector.Supplier original = ValueProjector.supplier(
+                new QueryPath[]{QueryPath.create("this.field")},
+                new QueryDataType[]{QueryDataType.INT},
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
-                PrimitiveUpsertTargetDescriptor.INSTANCE
+                singletonList(ColumnExpression.create(0, QueryDataType.INT))
         );
 
-        KvProjector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
+        ValueProjector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
 
         assertThat(serialized).isEqualToComparingFieldByField(original);
     }
@@ -90,7 +95,25 @@ public class KvProjectorTest {
 
         @Override
         public Object conclude() {
-            return (int) value * 2;
+            return (long) value * 2;
         }
     }
+
+    private static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
+
+        @Override
+        public Object getArgument(int index) {
+            throw new IndexOutOfBoundsException("" + index);
+        }
+
+        @Override
+        public List<Object> getArguments() {
+            return emptyList();
+        }
+
+        @Override
+        public InternalSerializationService getSerializationService() {
+            throw new UnsupportedOperationException();
+        }
+    };
 }

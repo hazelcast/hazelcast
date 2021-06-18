@@ -16,19 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -41,87 +44,85 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, 1);
-        testMap.put(2, 2);
-        testMap.put(3, 3);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
 
         checkUpdateCount("UPDATE test_map SET this = 100 WHERE __key = 2", 0);
-        assertThat(testMap.get(1)).isEqualTo(1);
-        assertThat(testMap.get(2)).isEqualTo(100);
-        assertThat(testMap.get(3)).isEqualTo(3);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 1, 2, 100, 3, 3));
     }
 
     @Test
     public void update_fieldInTheBeginning() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field1 = 200 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(200, 200L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(200, 200L, "300")));
     }
 
     @Test
     public void update_fieldInBetween() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field2 = 100 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 100L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 100L, "300")));
     }
 
     @Test
     public void update_fieldInTheEnd() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field3 = '400' WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200L, "400"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 200L, "400")));
     }
 
     @Test
     public void update_mixedOrderOfFields() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field3 = '200', field1 = 400, field2 = 600 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(400, 600L, "200"));
+        assertThat(map).containsExactly(entry(1, new Value(400, 600L, "200")));
     }
 
     @Test
     public void update_complexExpression() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field2 = 4 * field1 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 400L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 400L, "300")));
     }
 
     @Test
     public void update_selfReferentialCast() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field1 = CAST(field3 AS INT) WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(300, 200L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(300, 200L, "300")));
     }
 
     @Test
     public void update_dynamicParam() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field3 = 'p-' || ? WHERE __key = 1", 0, "300");
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200L, "p-300"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 200L, "p-300")));
     }
 
     @Test
     public void updateByNonKeyField() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field3 = '600' WHERE field1 = 100", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 200L, "600"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 200L, "600")));
     }
 
     @Test
@@ -139,89 +140,131 @@ public class SqlUpdateTest extends SqlTestSupport {
                         + ")"
         );
 
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field2 = 100 WHERE __key = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(100, 100L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(100, 100L, "300")));
     }
 
     @Test
     public void update_complexKey() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(new Key(1), new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(new Key(1), new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field3 = CAST(3 + keyField AS VARCHAR), field2 = 2 + 1, field1 = 1 WHERE keyField = 1", 0);
-        assertThat(testMap.get(new Key(1))).isEqualTo(new Value(1, 3L, "4"));
+        assertThat(map).containsExactly(entry(new Key(1), new Value(1, 3L, "4")));
     }
 
     @Test
     public void update_basedOnWholeKey() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(new Key(1), 1);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(new Key(1), 1);
 
         checkUpdateCount("UPDATE test_map SET this = CASE WHEN __key IS NULL THEN 2 ELSE 3 END", 0);
-        assertThat(testMap.get(new Key(1))).isEqualTo(3);
+        assertThat(map).containsExactly(entry(new Key(1), 3));
     }
 
     @Test
     public void update_basedOnWholeValue() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         checkUpdateCount("UPDATE test_map SET field1 = CASE WHEN this IS NULL THEN 2 ELSE 3 END", 0);
-        assertThat(testMap.get(1)).isEqualTo(new Value(3, 200L, "300"));
+        assertThat(map).containsExactly(entry(1, new Value(3, 200L, "300")));
     }
 
     @Test
     public void update_all() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, 1);
-        testMap.put(2, 2);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
 
         checkUpdateCount("UPDATE test_map SET this = this + 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(2);
-        assertThat(testMap.get(2)).isEqualTo(3);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 3));
     }
 
     @Test
     public void update_allWithAlwaysTrueCondition() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, 1);
-        testMap.put(2, 2);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
 
         checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE 1 = 1", 0);
-        assertThat(testMap.get(1)).isEqualTo(2);
-        assertThat(testMap.get(2)).isEqualTo(3);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 3));
     }
 
     @Test
-    public void when_updateKey_then_throws() {
+    public void when_updateKey_then_fails() {
         instance().getMap("test_map").put(1, 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 2"))
-                .hasMessageContaining("Cannot update key");
+                .hasMessageContaining("Cannot update '__key'");
     }
 
     @Test
-    public void when_updateKeyField_then_throws() {
+    public void when_updateKeyField_then_fails() {
         instance().getMap("test_map").put(new Key(1), 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET keyField = 2"))
-                .hasMessageContaining("Cannot update key");
+                .hasMessageContaining("Cannot update 'keyField'");
     }
 
     @Test
-    public void when_updateWholeValue_then_throws() {
-        IMap<Object, Object> testMap = instance().getMap("test_map");
-        testMap.put(1, new Value(100, 200L, "300"));
+    public void when_updateKeyNotHiddenAndHasFields_then_fails() {
+        Map<Key, Integer> map = instance().getMap("test_map");
+        map.put(new Key(1), 1);
+
+        execute(
+                "CREATE MAPPING test_map ("
+                        + "__key OBJECT"
+                        + ", this INT "
+                        + ", keyField INT external name \"__key.keyField\""
+                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + '\'' + OPTION_KEY_FORMAT + "'='java'"
+                        + ", '" + OPTION_KEY_CLASS + "'='" + Key.class.getName() + "'"
+                        + ", '" + OPTION_VALUE_FORMAT + "'='int'"
+                        + ")"
+        );
+
+        assertThatThrownBy(() -> execute("UPDATE test_map SET __key = null"))
+                .hasMessageContaining("Cannot update '__key'");
+    }
+
+    @Test
+    public void when_updateThis_then_fails() {
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, new Value(100, 200L, "300"));
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))
-                .hasMessageContaining("Cannot update value");
+                .hasMessageContaining("Cannot update 'this'");
     }
 
     @Test
-    public void when_updateValueToNull_then_throws() {
+    public void when_updateThisNotHiddenAndHasFields_then_fails() {
+        Map<Integer, Value> map = instance().getMap("test_map");
+        map.put(1, new Value(1, 2L, "3"));
+
+        execute(
+                "CREATE MAPPING test_map ("
+                        + "__key INT"
+                        + ", this OBJECT "
+                        + ", field1 INT"
+                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'"
+                        + ", '" + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'"
+                        + ")"
+        );
+
+        assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))
+                .hasMessageContaining("Cannot update 'this'");
+    }
+
+    @Test
+    public void when_updateValueToNull_then_fails() {
         instance().getMap("test_map").put(1, 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))
@@ -229,7 +272,7 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_updateUnknownMapping_then_throws() {
+    public void when_updateUnknownMapping_then_fails() {
         assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 1"))
                 .hasMessageContaining("Object 'test_map' not found");
     }

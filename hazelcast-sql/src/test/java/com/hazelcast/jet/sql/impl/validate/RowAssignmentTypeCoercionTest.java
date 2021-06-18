@@ -563,9 +563,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("m").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("m", "field1"));
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -612,9 +610,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("target").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("target", "field1"));
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
                 throw new AssertionError("The query failed unexpectedly: " + e, e);
@@ -659,9 +655,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("target").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("target", "field1"));
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -715,20 +709,19 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
     public void test_update_columns() {
         assumeFalse(testParams.srcType == NULL);
 
-        Class<? extends ExpressionBiValue> biClass = ExpressionBiValue.biClassForType(testParams.targetType, testParams.srcType);
+        Class<? extends ExpressionBiValue> valueClass = ExpressionBiValue.biClassForType(testParams.targetType, testParams.srcType);
         sqlService.execute("CREATE MAPPING m TYPE IMap " +
                 "OPTIONS(" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
-                "'valueJavaClass'='" + biClass.getName() +
+                "'valueJavaClass'='" + valueClass.getName() +
                 "')"
         );
-
         Object sourceValue = resolveTypeForTypeFamily(testParams.srcType).convert(testParams.valueTestSource);
-        instance().getMap("m").put(0, ExpressionBiValue.createBiValue(biClass, null, sourceValue));
+        instance().getMap("m").put(0, ExpressionBiValue.createBiValue(valueClass, null, sourceValue));
 
         try {
-            sqlService.execute("UPDATE m SET field1=field2");
+            sqlService.execute("UPDATE m SET field1 = field2");
             if (testParams.expectedFailureNonLiteralRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureNonLiteralRegex + "\", but no exception was thrown");
             }
@@ -796,7 +789,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
          * column, but you can't assign VARCHAR column or expression to a date
          * column.
          */
-        TestParams setExpectedFailureNonLiteralRegex(String failureRegex) {
+        private TestParams setExpectedFailureNonLiteralRegex(String failureRegex) {
             this.expectedFailureNonLiteralRegex = Pattern.compile(failureRegex);
             return this;
         }
