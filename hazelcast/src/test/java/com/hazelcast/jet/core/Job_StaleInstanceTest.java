@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -44,26 +44,26 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class Job_StaleInstanceTest extends JetTestSupport {
 
-    private static JetTestInstanceFactory instanceFactory;
-    private static JetInstance client;
+    private static TestHazelcastFactory instanceFactory;
+    private static HazelcastInstance client;
     private static Job job;
 
     @BeforeClass
     public static void beforeClass() {
         TestProcessors.reset(1);
-        instanceFactory = new JetTestInstanceFactory();
-        JetInstance instance = instanceFactory.newMember(smallInstanceConfig());
+        instanceFactory = new TestHazelcastFactory();
+        HazelcastInstance instance = instanceFactory.newHazelcastInstance(smallInstanceConfig());
         DAG dag = new DAG();
         dag.newVertex("v", () -> new NoOutputSourceP());
-        client = instanceFactory.newClient();
-        job = client.newJob(dag);
+        client = instanceFactory.newHazelcastClient();
+        job = client.getJet().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
 
-        instance.getHazelcastInstance().getLifecycleService().terminate();
-        instance = instanceFactory.newMember(smallInstanceConfig());
-        assertEqualsEventually(() -> firstItem(client.getHazelcastInstance().getCluster().getMembers())
+        instance.getLifecycleService().terminate();
+        instance = instanceFactory.newHazelcastInstance(smallInstanceConfig());
+        assertEqualsEventually(() -> firstItem(client.getCluster().getMembers())
                         .map(Member::getAddress).orElse(null),
-                instance.getHazelcastInstance().getCluster().getLocalMember().getAddress());
+                instance.getCluster().getLocalMember().getAddress());
     }
 
     private static <E> Optional<E> firstItem(Iterable<E> iterable) {

@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
@@ -29,6 +28,7 @@ import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -95,7 +95,7 @@ public final class TestContextSupport {
         public void init(@Nonnull Context context) throws Exception {
             if (context instanceof TestProcessorSupplierContext) {
                 TestProcessorSupplierContext c = (TestProcessorSupplierContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.hazelcastInstance()).node.nodeEngine;
+                NodeEngine nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
                 context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1,
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), 1, c.memberCount(),
@@ -116,7 +116,7 @@ public final class TestContextSupport {
             context = super.initContext(context);
             if (context instanceof TestProcessorContext) {
                 TestProcessorContext c = (TestProcessorContext) context;
-                NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.hazelcastInstance()).node.nodeEngine;
+                NodeEngine nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
                 context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),

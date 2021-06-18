@@ -102,7 +102,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
          .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
          .writeTo(Sinks.logger());
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -133,7 +133,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
          .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
          .writeTo(Sinks.logger());
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertTrue("Cleanup script didn't run", new File(baseDir, outcomeFilename).isFile());
     }
@@ -155,7 +155,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         // Then
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail();
         } catch (CompletionException ex) {
             // expected
@@ -186,7 +186,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
          .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
          .writeTo(Sinks.logger());
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -219,7 +219,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
          .apply(mapUsingPythonBatch(cfg)).setLocalParallelism(2)
          .writeTo(Sinks.logger());
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -243,7 +243,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         // When
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail();
         } catch (CompletionException ex) {
             // expected
@@ -274,7 +274,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         // When
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail();
         } catch (CompletionException ex) {
             // expected
@@ -307,7 +307,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
         // When
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail();
         } catch (CompletionException ex) {
             // expected
@@ -339,7 +339,7 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
          .writeTo(Sinks.logger());
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         assertFalse("init script ran", new File(baseDir, outcomeCleanupFilename).exists());

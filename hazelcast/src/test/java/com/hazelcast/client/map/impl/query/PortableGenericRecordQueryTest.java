@@ -58,11 +58,19 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
     @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
+    @Parameterized.Parameter(1)
+    public boolean clusterHasPortableConfig;
+
     public TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    @Parameterized.Parameters(name = "format:{0}")
+    @Parameterized.Parameters(name = "inMemoryFormat:{0}, clusterHasPortableConfig:{1}")
     public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{{InMemoryFormat.OBJECT}, {InMemoryFormat.BINARY}});
+        return asList(new Object[][]{
+                {InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, false},
+                {InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, false}
+        });
     }
 
     @Before
@@ -71,6 +79,9 @@ public class PortableGenericRecordQueryTest extends HazelcastTestSupport {
         mapConfig.setInMemoryFormat(inMemoryFormat);
         Config config = smallInstanceConfig();
         config.addMapConfig(mapConfig);
+        if (clusterHasPortableConfig) {
+            config.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        }
         factory.newHazelcastInstance(config);
     }
 

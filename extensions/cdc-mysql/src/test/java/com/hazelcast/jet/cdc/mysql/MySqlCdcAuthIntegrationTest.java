@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.cdc.mysql;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -45,10 +45,10 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(2)[0];
-
         // when
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
+
         // then
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)

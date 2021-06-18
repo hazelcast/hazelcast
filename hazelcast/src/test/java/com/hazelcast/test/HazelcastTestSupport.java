@@ -159,12 +159,14 @@ public abstract class HazelcastTestSupport {
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         assertContainsAll(expected, actual);
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         for (T item : expected) {
             if (!containsIn(item, actual, comparator)) {
                 throw new AssertionError("Actual collection does not contain the item " + item);
@@ -224,6 +226,15 @@ public abstract class HazelcastTestSupport {
 
     protected HazelcastInstance createHazelcastInstance(Config config) {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(int nodeCount) {
+        return createHazelcastInstances(getConfig(), nodeCount);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(Config config, int nodeCount) {
+        createHazelcastInstanceFactory(nodeCount);
+        return factory.newInstances(config, nodeCount);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {

@@ -85,7 +85,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         p.readFrom(fileSource)
                 .writeTo(sinkList());
 
-        jet().newJob(p).join();
+        hz().getJet().newJob(p).join();
 
         assertEquals(
                 IntStream.range(0, itemCount).mapToObj(i -> "line" + i).collect(toList()),
@@ -117,7 +117,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         Pipeline p = Pipeline.create();
         p.readFrom(fileSource)
                 .writeTo(sinkList());
-        jet().newJob(p).join();
+        hz().getJet().newJob(p).join();
 
         Map<String, Integer> actual = sinkToBag();
         Map<String, Integer> expected = IntStream.range(0, itemCount)
@@ -152,7 +152,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             Pipeline p = Pipeline.create();
             p.readFrom(socketSource)
              .writeTo(sinkList());
-            jet().newJob(p).join();
+            hz().getJet().newJob(p).join();
             List<String> expected = IntStream.range(0, itemCount).mapToObj(i -> "line" + i).collect(toList());
             assertEquals(expected, new ArrayList<>(sinkList));
         }
@@ -184,7 +184,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
             Pipeline p = Pipeline.create();
             p.readFrom(socketSource)
              .writeTo(sinkList());
-            jet().newJob(p).join();
+            hz().getJet().newJob(p).join();
 
             Map<String, Integer> expected = IntStream.range(0, itemCount)
                     .boxed()
@@ -225,7 +225,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                     .aggregate(AggregateOperations.counting())
                     .writeTo(sinkList());
 
-            jet().newJob(p).join();
+            hz().getJet().newJob(p).join();
 
             List<WindowResult<Long>> expected = LongStream
                     .range(1, itemCount + 1)
@@ -271,7 +271,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                     .aggregate(AggregateOperations.counting())
                     .writeTo(sinkList());
 
-            jet().newJob(p);
+            hz().getJet().newJob(p);
 
             List<WindowResult<Long>> expected = LongStream.range(1, itemCount - lateness)
                     .mapToObj(i -> new WindowResult<>(i - 1, i, 1L))
@@ -313,7 +313,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                     .aggregate(AggregateOperations.counting())
                     .writeTo(sinkList());
 
-            jet().newJob(p).join();
+            hz().getJet().newJob(p).join();
 
             List<WindowResult<Long>> expected = LongStream.range(1, itemCount + 1)
                     .mapToObj(i -> new WindowResult<>(i - 1, i, (long) PREFERRED_LOCAL_PARALLELISM * MEMBER_COUNT))
@@ -356,7 +356,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
 
     private void testFaultTolerance(StreamSource<?> source) {
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = hz().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -366,7 +366,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .peek()
                 .writeTo(Sinks.list(result));
 
-        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        Job job = hz().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
@@ -391,7 +391,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         StreamSource<Integer> source = integerSequenceSource(true);
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = hz().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -401,7 +401,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .peek()
                 .writeTo(Sinks.list(result));
 
-        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        Job job = hz().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
@@ -436,7 +436,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
         StreamSource<Integer> source = integerSequenceSource(false);
 
         long windowSize = 100;
-        IList<WindowResult<Long>> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<WindowResult<Long>> result = hz().getList("result-" + UuidUtil.newUnsecureUuidString());
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
@@ -446,7 +446,7 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .peek()
                 .writeTo(Sinks.list(result));
 
-        Job job = jet().newJob(p);
+        Job job = hz().getJet().newJob(p);
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         // restart the job
         job.restart();
@@ -488,13 +488,13 @@ public class SourceBuilderTest extends PipelineStreamTestSupport {
                 .build();
 
         Pipeline p = Pipeline.create();
-        IList<Integer> result = jet().getList("result-" + UuidUtil.newUnsecureUuidString());
+        IList<Integer> result = hz().getList("result-" + UuidUtil.newUnsecureUuidString());
         p.readFrom(source)
          .withoutTimestamps()
          .writeTo(Sinks.list(result));
 
-        Job job = jet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(100));
-        JobRepository jr = new JobRepository(jet().getHazelcastInstance());
+        Job job = hz().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(100));
+        JobRepository jr = new JobRepository(hz());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
 
         job.restart();

@@ -76,7 +76,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Person::getName)
                 .writeTo(Sinks.logger());
 
-        assertThatThrownBy(() -> client().newJob(pipeline, new JobConfig()).join())
+        assertThatThrownBy(() -> client().getJet().newJob(pipeline, new JobConfig()).join())
                 .hasCauseInstanceOf(JetException.class);
     }
 
@@ -91,7 +91,10 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Person::getName)
                 .writeTo(AssertionSinks.assertAnyOrder(singletonList("Joe")));
 
-        client().newJob(pipeline, new JobConfig().registerSerializer(Person.class, PersonSerializer.class)).join();
+        client().getJet().newJob(
+                pipeline,
+                new JobConfig().registerSerializer(Person.class, PersonSerializer.class)
+        ).join();
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -104,7 +107,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(name -> Animal.newBuilder().setName(name).build())
                 .writeTo(Sinks.list(listName));
 
-        client().newJob(pipeline, new JobConfig()).join();
+        client().getJet().newJob(pipeline, new JobConfig()).join();
 
         // Protocol Buffer types implement Serializable, to make sure hook registered serializer is used we check the
         // type id
@@ -124,7 +127,10 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(person -> person.getName())
                 .writeTo(AssertionSinks.assertAnyOrder(input));
 
-        client().newJob(pipeline, new JobConfig().registerSerializer(Person.class, PersonSerializer.class)).join();
+        client().getJet().newJob(
+                pipeline,
+                new JobConfig().registerSerializer(Person.class, PersonSerializer.class)
+        ).join();
     }
 
     private static class PersonSerializer extends ProtobufSerializer<Person> {

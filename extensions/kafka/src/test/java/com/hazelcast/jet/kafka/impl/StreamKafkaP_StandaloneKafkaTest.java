@@ -53,7 +53,7 @@ public class StreamKafkaP_StandaloneKafkaTest extends JetTestSupport {
                 FunctionEx.identity(), EventTimePolicy.noEventTime(), "topic"))
            .localParallelism(1);
 
-        Job job = createJetMember().newJob(dag);
+        Job job = createHazelcastInstance().getJet().newJob(dag);
         assertJobStatusEventually(job, RUNNING);
         sleepSeconds(1);
         kafkaTestSupport.shutdownKafkaCluster();

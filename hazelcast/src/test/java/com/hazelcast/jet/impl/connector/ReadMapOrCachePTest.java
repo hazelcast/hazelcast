@@ -59,7 +59,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
     public void test_whenEmpty() {
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(randomMapName())))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(emptyList());
@@ -76,7 +76,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -98,7 +98,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Projection<Entry<Integer, String>, String> projection = toProjection(Entry::getValue);
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName(), predicate, projection)))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -125,7 +125,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
         Vertex dest = dag.newVertex("dest", CheckItemsP::new).localParallelism(1);
         dag.edge(between(src, dest));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
         assertEquals(numItems, CheckItemsP.received.cardinality());
         assertEquals(numItems, CheckItemsP.received.length());
 
@@ -154,7 +154,7 @@ public class ReadMapOrCachePTest extends SimpleTestInClusterSupport {
 
         TestSupport
                 .verifyProcessor(adaptSupplier(SourceProcessors.readMapP(map.getName())))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .outputChecker((expected, actual) -> 2 == actual.size())

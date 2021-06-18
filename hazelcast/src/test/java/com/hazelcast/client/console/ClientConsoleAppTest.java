@@ -33,8 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
@@ -50,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientConsoleAppTest extends HazelcastTestSupport {
 
     private static ByteArrayOutputStream baos;
-    private static PrintStream printStream;
+    private static PrintWriter printWriter;
 
     private HazelcastInstance hazelcastInstance;
     private TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -58,11 +57,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @BeforeClass
     public static void beforeClass() {
         baos = new ByteArrayOutputStream();
-        try {
-            printStream = new PrintStream(baos, true, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            // Should never happen for the UTF-8
-        }
+        printWriter = new PrintWriter(baos, true);
     }
 
     @Before
@@ -79,7 +74,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnKey() {
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hazelcastFactory.newHazelcastClient(new ClientConfig()), printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hazelcastFactory.newHazelcastClient(new ClientConfig()), printWriter);
         for (int i = 0; i < 100; i++) {
             consoleApp.handleCommand(String.format("executeOnKey message%d key%d", i, i));
             assertTextInSystemOut("message" + i);
@@ -92,7 +87,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Test
     public void mapPut() {
         HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printWriter);
 
         IMap<String, String> map = hz.getMap("default");
 
@@ -116,7 +111,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Test
     public void mapRemove() {
         HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printWriter);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -133,7 +128,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Test
     public void mapDelete() {
         HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printWriter);
         IMap<String, String> map = hz.getMap("default");
         map.put("a", "valueOfA");
         map.put("b", "valueOfB");
@@ -150,7 +145,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Test
     public void mapGet() {
         HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printWriter);
         hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
         assertTextInSystemOut("testGetValue");
@@ -162,7 +157,7 @@ public class ClientConsoleAppTest extends HazelcastTestSupport {
     @Test
     public void mapPutMany() {
         HazelcastInstance hz = hazelcastFactory.newHazelcastClient(new ClientConfig());
-        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printStream);
+        ClientConsoleApp consoleApp = new ClientConsoleApp(hz, printWriter);
         IMap<String, ?> map = hz.getMap("default");
         consoleApp.handleCommand("m.putmany 100 8 1000");
         assertEquals("Unexpected map size", 100, map.size());

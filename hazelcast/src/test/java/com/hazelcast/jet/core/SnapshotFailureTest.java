@@ -20,8 +20,8 @@ import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -58,7 +58,7 @@ public class SnapshotFailureTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
+    private HazelcastInstance instance1;
 
     @Before
     public void setup() {
@@ -72,7 +72,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         mapStoreConfig.setImplementation(new FailingMapStore());
         config.addMapConfig(mapConfig);
 
-        JetInstance[] instances = createJetMembers(config, 2);
+        HazelcastInstance[] instances = createHazelcastInstances(config, 2);
         instance1 = instances[0];
     }
 
@@ -94,7 +94,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         config.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(100);
 
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJet().newJob(dag, config);
         job.join();
 
         assertEquals("numPartitions", numPartitions, results.size());

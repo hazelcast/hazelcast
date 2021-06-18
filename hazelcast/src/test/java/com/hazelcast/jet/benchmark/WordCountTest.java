@@ -21,8 +21,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -83,7 +83,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private static final int WARMUP_TIME = 10_000;
     private static final int TOTAL_TIME = 30_000;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private ILogger logger;
 
     @AfterClass
@@ -101,9 +101,9 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = (JetInstance) Hazelcast.newHazelcastInstance(config).getJet();
+            instance = Hazelcast.newHazelcastInstance(config);
         }
-        logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
+        logger = instance.getLoggingService().getLogger(WordCountTest.class);
         generateMockInput();
     }
 
@@ -115,7 +115,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                         addr.equals(addrs.get(0)) ? MockInputP::new : noopP()));
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP("words"));
         dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
-        instance.newJob(dag).join();
+        instance.getJet().newJob(dag).join();
         logger.info("Input generated.");
     }
 
@@ -185,7 +185,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                    .partitioned(entryKey()))
            .edge(between(aggregateStage2, sink));
 
-        benchmark("jet", () -> instance.newJob(dag).join());
+        benchmark("jet", () -> instance.getJet().newJob(dag).join());
         assertCounts(instance.getMap("counts"));
     }
 
@@ -204,7 +204,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
            .edge(between(combineLocal, combineGlobal).distributed().allToOne("ALL"))
            .edge(between(combineGlobal, sink));
 
-        benchmark("jet", () -> instance.newJob(dag).join());
+        benchmark("jet", () -> instance.getJet().newJob(dag).join());
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }

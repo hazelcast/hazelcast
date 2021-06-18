@@ -18,8 +18,8 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -50,9 +50,9 @@ import static org.junit.Assert.assertNull;
 public class JobSummaryTest extends JetTestSupport {
 
     private static final String SOURCE_NAME = "source";
-    private JetInstance[] instances;
-    private JetInstance instance;
-    private JetClientInstanceImpl client;
+    private HazelcastInstance[] instances;
+    private HazelcastInstance instance;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
@@ -60,22 +60,22 @@ public class JobSummaryTest extends JetTestSupport {
         MapConfig mapConfig = new MapConfig(SOURCE_NAME);
         mapConfig.getEventJournalConfig().setEnabled(true);
         config.addMapConfig(mapConfig);
-        instances = createJetMembers(config, 2);
+        instances = createHazelcastInstances(config, 2);
         instance = instances[0];
-        client = (JetClientInstanceImpl) createJetClient();
+        client = createHazelcastClient();
     }
 
     @Test
     public void when_noJobsRunning() {
-        assertEquals(0, client.getJobSummaryList().size());
+        assertEquals(0, getJetClientInstanceImpl(client).getJobSummaryList().size());
     }
 
     @Test
     public void when_batchJob() {
-        Job job = instance.newJob(newBatchPipeline(), new JobConfig().setName("jobA"));
+        Job job = instance.getJet().newJob(newBatchPipeline(), new JobConfig().setName("jobA"));
         job.join();
 
-        List<JobSummary> list = client.getJobSummaryList();
+        List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
@@ -87,8 +87,8 @@ public class JobSummaryTest extends JetTestSupport {
 
     @Test
     public void when_streamingJobLifecycle() {
-        Job job = instance.newJob(newStreamPipeline(), new JobConfig().setName("jobA"));
-        List<JobSummary> list = client.getJobSummaryList();
+        Job job = instance.getJet().newJob(newStreamPipeline(), new JobConfig().setName("jobA"));
+        List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
@@ -96,28 +96,28 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(job.getId(), jobSummary.getJobId());
 
         assertTrueEventually(() -> {
-            JobSummary summary = client.getJobSummaryList().get(0);
+            JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.RUNNING, summary.getStatus());
         }, 20);
 
         job.suspend();
 
         assertTrueEventually(() -> {
-            JobSummary summary = client.getJobSummaryList().get(0);
+            JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.SUSPENDED, summary.getStatus());
         }, 20);
 
         job.resume();
 
         assertTrueEventually(() -> {
-            JobSummary summary = client.getJobSummaryList().get(0);
+            JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.RUNNING, summary.getStatus());
         }, 20);
 
         job.cancel();
 
         assertTrueEventually(() -> {
-            JobSummary summary = client.getJobSummaryList().get(0);
+            JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.FAILED, summary.getStatus());
             assertEquals(0, summary.getExecutionId());
         }, 20);
@@ -135,18 +135,18 @@ public class JobSummaryTest extends JetTestSupport {
             Job job;
             if (useLightJob) {
                 // i % 4 / 2: submit every other light job to a different instance to have different coordinators
-                job = instances[i % 4 / 2].newLightJob(p);
+                job = instances[i % 4 / 2].getJet().newLightJob(p);
                 // We need to assert this for light jobs as newLightJob returns immediately before the
                 // SubmitOp is handled
                 assertJobRunningEventually(instance, job, null);
             } else {
-                job = instance.newJob(p);
+                job = instance.getJet().newJob(p);
             }
             jobs.add(job);
         }
 
         assertTrueEventually(() -> {
-            List<JobSummary> list = new ArrayList<>(client.getJobSummaryList());
+            List<JobSummary> list = new ArrayList<>(getJetClientInstanceImpl(client).getJobSummaryList());
             assertEquals(numJobs, list.size());
 
             Collections.reverse(list);
@@ -161,7 +161,7 @@ public class JobSummaryTest extends JetTestSupport {
         jobs.forEach(Job::cancel);
 
         assertTrueEventually(() -> {
-            List<JobSummary> list = new ArrayList<>(client.getJobSummaryList());
+            List<JobSummary> list = new ArrayList<>(getJetClientInstanceImpl(client).getJobSummaryList());
             // numJobs / 2: only the normal jobs
             assertEquals(numJobs / 2, list.size());
 
@@ -188,14 +188,14 @@ public class JobSummaryTest extends JetTestSupport {
         p.readFrom(Sources.mapJournal("invalid", JournalInitialPosition.START_FROM_OLDEST))
                 .withoutTimestamps()
                 .writeTo(Sinks.noop());
-        Job job = instance.newJob(p, new JobConfig().setName("jobA"));
+        Job job = instance.getJet().newJob(p, new JobConfig().setName("jobA"));
         String msg = "";
         try {
             job.join();
         } catch (Exception e) {
             msg = e.getMessage();
         }
-        List<JobSummary> list = client.getJobSummaryList();
+        List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
         assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
@@ -216,5 +216,9 @@ public class JobSummaryTest extends JetTestSupport {
         p.readFrom(Sources.map(SOURCE_NAME))
                 .writeTo(Sinks.noop());
         return p;
+    }
+
+    private JetClientInstanceImpl getJetClientInstanceImpl(HazelcastInstance client) {
+        return (JetClientInstanceImpl) client.getJet();
     }
 }

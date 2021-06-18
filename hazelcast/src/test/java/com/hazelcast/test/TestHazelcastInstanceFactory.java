@@ -25,6 +25,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.DefaultNodeContext;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.metrics.MetricsPublisher;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -37,6 +39,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -44,14 +47,20 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.TestUtil.terminateInstance;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
+import static java.util.stream.Collectors.toList;
 
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
@@ -141,7 +150,7 @@ public class TestHazelcastInstanceFactory {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
             HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -188,7 +197,7 @@ public class TestHazelcastInstanceFactory {
                             ? Collections.emptySet()
                             : new HashSet<>(asList(blockedAddresses)));
             HazelcastInstance hazelcastInstance =
-                HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+                    HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
             registerTestMetricsPublisher(hazelcastInstance);
 
             return hazelcastInstance;
@@ -256,6 +265,40 @@ public class TestHazelcastInstanceFactory {
 
     public HazelcastInstance[] newInstances(Config config) {
         return newInstances(config, count);
+    }
+
+    /**
+     * Creates the given number of Hazelcast instances in parallel. The first one is
+     * always master.
+     * <p>
+     * Spawns a separate thread to start each instance. This is required when
+     * starting a Hot Restart-enabled cluster, where the {@code newHazelcastInstance()}
+     * call blocks until the whole cluster is re-formed.
+     *
+     * @param configFn a function that must return a separate config instance for each address
+     */
+    public HazelcastInstance[] newInstancesParallel(int nodeCount, Function<Address, Config> configFn) {
+        HazelcastInstance[] hzInstances = IntStream.range(0, nodeCount)
+                .mapToObj(i -> this.nextAddress())
+                .map(address -> spawn(() -> newHazelcastInstance(address, configFn.apply(address))))
+                // we need to collect here to ensure that all threads are spawned before we call future.get()
+                .collect(toList()).stream()
+                .map(f -> uncheckCall(f::get))
+                .toArray(HazelcastInstance[]::new);
+        assertClusterSizeEventually(nodeCount, this.getAllHazelcastInstances());
+        Arrays.sort(hzInstances, Comparator.comparing(inst -> !isMaster(inst)));
+        return hzInstances;
+    }
+
+    private static boolean isMaster(HazelcastInstance inst) {
+        if (inst instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) inst).node.isMaster();
+        } else if (inst instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) inst).getOriginal().node.isMaster();
+        } else {
+            throw new IllegalArgumentException("This method can be called only member"
+                    + " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        }
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {

@@ -79,7 +79,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
         p.readFrom(AvroSources.files(directory.getPath(), User.class))
          .writeTo(Sinks.list(list.getName()));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
@@ -93,7 +93,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
         p.readFrom(AvroSources.files(directory.getPath(), SpecificUser.class))
          .writeTo(Sinks.list(list.getName()));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }
@@ -106,7 +106,7 @@ public class AvroSourceTest extends SimpleTestInClusterSupport {
         p.readFrom(AvroSources.files(directory.getPath(), (file, record) -> toUser(record)))
          .writeTo(Sinks.list(list.getName()));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(TOTAL_RECORD_COUNT, list.size());
     }

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.jet.JetInstance;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.Timeout;
@@ -40,7 +40,7 @@ public class ClientDeploymentTest extends AbstractDeploymentTest {
     }
 
     @Override
-    protected JetInstance getJetInstance() {
+    protected HazelcastInstance getHazelcastInstance() {
         return client();
     }
 }

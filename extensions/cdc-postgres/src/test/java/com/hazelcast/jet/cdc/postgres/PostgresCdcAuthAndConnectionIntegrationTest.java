@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.cdc.postgres;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -45,10 +45,10 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(2)[0];
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
 
         // when
-        Job job = jet.newJob(pipeline);
+        Job job = hz.getJet().newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)
@@ -67,10 +67,10 @@ public class PostgresCdcAuthAndConnectionIntegrationTest extends AbstractPostgre
 
         Pipeline pipeline = pipeline(source);
 
-        JetInstance jet = createJetMembers(2)[0];
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
 
         // when
-        Job job = jet.newJob(pipeline);
+        Job job = hz.getJet().newJob(pipeline);
         // then
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)

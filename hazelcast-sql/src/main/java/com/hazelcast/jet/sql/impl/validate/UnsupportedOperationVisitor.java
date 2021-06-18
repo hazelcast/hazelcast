@@ -193,6 +193,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -338,6 +339,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processSelect((SqlSelect) call);
                 break;
 
+            case DELETE:
+                break;
+
             case JOIN:
                 processJoin((SqlJoin) call);
                 break;
@@ -351,19 +355,12 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
 
-            case DELETE:
-                break;
-
             default:
                 throw unsupported(call, kind);
         }
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
-        }
-
         if (topLevelSelect == null) {
             topLevelSelect = select;
         } else {

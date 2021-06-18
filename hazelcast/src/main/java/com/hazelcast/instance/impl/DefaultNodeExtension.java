@@ -132,16 +132,17 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     private static final String PLATFORM_LOGO
-            = "\to  o   O   o---o o--o o      o-o   O    o-o  o-O-o     o--o    o-o  \n"
-            + "\t|  |  / \\     /  |    |     /     / \\  |       |       |      o  /o \n"
-            + "\tO--O o---o  -O-  O-o  |    O     o---o  o-o    |       o-o    | / | \n"
-            + "\t|  | |   |  /    |    |     \\    |   |     |   |          |   o/  o \n"
-            + "\to  o o   o o---o o--o O---o  o-o o   o o--o    o       o-o  O  o-o";
+            = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
+            + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
+            + "\t+ + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |   \n"
+            + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
+            + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
+    protected final ILogger logoLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
@@ -152,6 +153,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public DefaultNodeExtension(Node node) {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
+        this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
@@ -251,7 +253,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     protected void printBannersBeforeNodeInfo() {
-        systemLogger.info('\n' + PLATFORM_LOGO);
+        logoLogger.info('\n' + PLATFORM_LOGO);
         systemLogger.info(COPYRIGHT_LINE);
     }
 

@@ -49,7 +49,6 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.tools.RuleSet;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -96,7 +95,7 @@ public final class OptimizerContext {
             List<Object> arguments,
             int memberCount,
             @Nonnull SqlBackend sqlBackend,
-            @Nullable SqlBackend jetSqlBackend
+            @Nonnull SqlBackend jetSqlBackend
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
@@ -110,7 +109,7 @@ public final class OptimizerContext {
             List<Object> arguments,
             int memberCount,
             @Nonnull SqlBackend sqlBackend,
-            @Nullable SqlBackend jetSqlBackend
+            @Nonnull SqlBackend jetSqlBackend
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 

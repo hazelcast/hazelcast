@@ -93,6 +93,12 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             deriveType(scope, fetch);
             fetch.validate(this, getEmptyScope());
         }
+
+        SqlNode offset = select.getOffset();
+        if (offset != null) {
+            deriveType(scope, offset);
+            offset.validate(this, getEmptyScope());
+        }
     }
 
     @Override
@@ -218,24 +224,25 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     @Override
     protected SqlSelect createSourceSelectForDelete(SqlDelete call) {
         SqlNode sourceTable = call.getTargetTable();
-        Table table = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names).unwrap(HazelcastTable.class).getTarget();
-        SqlConnector connector = getJetSqlConnector(table);
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
 
-        // The Calcite default implementation selects all fields (using SELECT *). I'm not sure about how's this supposed
-        // to work. We need to feed primary keys to the delete processor so that it can directly delete the records.
-        // Therefore we use the primary key for the select list.
-        SqlNodeList selectList = connector.getPrimaryKey(table);
-        if (selectList.size() == 0) {
-            throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+        SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
+        if (validatorTable != null) {
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+            SqlConnector connector = getJetSqlConnector(table);
+
+            // We need to feed primary keys to the delete processor so that it can directly delete the records.
+            // Therefore we use the primary key for the select list.
+            connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
+            if (selectList.size() == 0) {
+                throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+            }
         }
 
         if (call.getAlias() != null) {
-          sourceTable =
-              SqlValidatorUtil.addAlias(
-                  sourceTable,
-                  call.getAlias().getSimple());
+            sourceTable = SqlValidatorUtil.addAlias(sourceTable, call.getAlias().getSimple());
         }
         return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-            call.getCondition(), null, null, null, null, null, null, null);
+                call.getCondition(), null, null, null, null, null, null, null);
     }
 }
