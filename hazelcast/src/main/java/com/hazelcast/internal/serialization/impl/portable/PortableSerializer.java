@@ -293,7 +293,7 @@ public final class PortableSerializer implements StreamSerializer<Object> {
     }
 
     /**
-     * Tries to construct the users Portable object first via given factory config.
+     * Tries to construct the user's Portable object first via given factory config.
      * If it can not found the related factory, this will return GenericRecord representation of the object.
      */
     <T> T read(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
@@ -431,4 +431,3 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return (T) genericRecordBuilder.build();
     }
 }
-
