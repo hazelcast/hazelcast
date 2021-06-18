@@ -67,7 +67,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -134,7 +133,6 @@ public class MasterJobContext {
     private volatile Set<Vertex> vertices;
     @Nonnull
     private volatile List<RawJobMetrics> jobMetrics = Collections.emptyList();
-    private volatile ScheduledFuture<?> timeoutFuture;
 
     /**
      * A new instance is (re)assigned when the execution is started and
@@ -196,10 +194,6 @@ public class MasterJobContext {
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             executionStartTime = System.currentTimeMillis();
-
-            timeoutFuture = mc.jobConfig().getTimeoutMillis() > 0L
-                    ? mc.coordinationService().scheduleJobTimeout(mc.jobId(), mc.jobConfig().getTimeoutMillis())
-                    : null;
             try {
                 JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
                 jobExecRec.markExecuted();
@@ -242,10 +236,6 @@ public class MasterJobContext {
                 finalizeJob(e);
             }
         });
-    }
-
-    public void terminate() {
-        this.requestTermination(CANCEL_FORCEFUL, false).getKey().join();
     }
 
     @Nullable
@@ -890,10 +880,6 @@ public class MasterJobContext {
         } else {
             clientFuture.complete(toList(metrics, e -> (RawJobMetrics) e.getValue()));
         }
-    }
-
-    public ScheduledFuture<?> getTimeoutFuture() {
-        return timeoutFuture;
     }
 
     /**

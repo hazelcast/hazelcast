@@ -146,6 +146,7 @@ public class JobCoordinationService {
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, Object> lightMasterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
      *
@@ -271,6 +272,10 @@ public class JobCoordinationService {
                 // If there is no master context and job result at the same time, it means this is the first submission
                 jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
+                // TODO: handle different state transitions before this point?
+                if (isMaster() && jobConfig.getTimeoutMillis() > 0) {
+                    scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis(), false);
+                }
 
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
@@ -311,16 +316,17 @@ public class JobCoordinationService {
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
-        final ScheduledFuture<?> timeoutFuture = jobConfig.getTimeoutMillis() > 0
-                ? scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis())
-                : null;
+        final long timeout = jobConfig.getTimeoutMillis();
+        if (timeout > 0) {
+            scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis(), true);
+        }
 
         return mc.getCompletionFuture()
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                    if (timeoutFuture != null) {
-                        timeoutFuture.cancel(false);
+                    if (timeout > 0) {
+                        unscheduleJobTimeout(jobId, true);
                     }
                 });
     }
@@ -872,10 +878,8 @@ public class JobCoordinationService {
                     logger.severe("No master context found to complete " + masterContext.jobIdString());
                 }
             }
-            // TODO: isolate futures from the job contexts into their own separate storage by jobId?
-            final ScheduledFuture<?> timeoutFuture = masterContext.jobContext().getTimeoutFuture();
-            if (timeoutFuture != null && isMaster()) {
-                timeoutFuture.cancel(true);
+            if (isMaster() && masterContext.jobConfig().getTimeoutMillis() > 0) {
+                unscheduleJobTimeout(masterContext.jobId(), false);
             }
         });
     }
@@ -1226,16 +1230,35 @@ public class JobCoordinationService {
         }).toArray();
     }
 
-    public ScheduledFuture<?> scheduleJobTimeout(final long jobId, final Long timeout) {
-        return this.nodeEngine().getExecutionService().schedule(() -> {
+    public void scheduleJobTimeout(final long jobId, final Long timeout, final boolean lightJob) {
+        if (!lightJob && !isMaster()) {
+            return;
+        }
+
+        final ScheduledFuture<?> future = this.nodeEngine().getExecutionService().schedule(() -> {
             final MasterContext mc = masterContexts.get(jobId);
             final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
 
             if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
-                mc.jobContext().terminate();
+                terminateJob(jobId, CANCEL_FORCEFUL);
             } else if (lightMc != null && !lightMc.isCancelled()) {
                 lightMc.requestTermination();
             }
         }, timeout, MILLISECONDS);
+
+        final ScheduledFuture<?> old = scheduledJobTimeouts.putIfAbsent(jobId, future);
+        if (old != null) {
+            old.cancel(true);
+        }
+    }
+
+    public void unscheduleJobTimeout(final long jobId, final boolean lightJob) {
+        if (!lightJob && !isMaster()) {
+            return;
+        }
+        final ScheduledFuture<?> timeoutFuture = scheduledJobTimeouts.get(jobId);
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+        }
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.JetMapMetadataResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
