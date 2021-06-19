@@ -40,6 +40,7 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -1061,11 +1062,15 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertOpenEventually(evictedEntryLatch, 20);
+        assertOpenEventually(evictedEntryLatch);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events
-        sleepAtLeastSeconds(10);
-        assertEquals(numberOfEntriesToBeAdded, count.get());
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(numberOfEntriesToBeAdded, count.get());
+            }
+        }, 5);
     }
 
     private IMap<Integer, Integer> createMapWithReadBackupDataEnabled(int maxIdleSeconds) {
