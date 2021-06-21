@@ -70,6 +70,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -303,6 +304,38 @@ public class JobTest extends SimpleTestInClusterSupport {
         } catch (ExecutionException expected) {
             assertEquals(FAILED, trackedJob.getStatus());
         }
+    }
+
+    @Test
+    public void test_trackedJobCanJoin_lightJob() throws Exception {
+        test_trackedJobCanJoin(true);
+    }
+
+    @Test
+    public void test_trackedJobCanJoin_normalJob() throws Exception {
+        test_trackedJobCanJoin(false);
+    }
+
+    private void test_trackedJobCanJoin(boolean useLightJob) throws Exception {
+        DAG dag = new DAG();
+        dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
+
+        Job submittedJob = useLightJob ? instance().getJet().newLightJob(dag) : instance().getJet().newJob(dag);
+
+        Job[] trackedJob = {null};
+        assertTrueEventually(() -> {
+            trackedJob[0] = instance().getJet().getJob(submittedJob.getId());
+            assertNotNull(trackedJob[0]);
+        });
+
+        Future<?> joinFuture = spawn(() -> trackedJob[0].join());
+        sleepMillis(200);
+        assertFalse(trackedJob[0].getFuture().isDone());
+        assertFalse(joinFuture.isDone());
+
+        NoOutputSourceP.proceedLatch.countDown();
+        trackedJob[0].join();
+        joinFuture.get();
     }
 
     @Test

@@ -31,6 +31,7 @@ import org.apache.calcite.rex.RexNode;
 import java.util.List;
 
 public class DeletePhysicalRel extends TableModify implements PhysicalRel {
+
     DeletePhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,

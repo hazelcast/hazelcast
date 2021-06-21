@@ -152,7 +152,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public Job newJobProxy(long jobId, boolean isLightJob, Object jobDefinition, JobConfig config) {
+    public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         return new JobProxy(nodeEngine, jobId, isLightJob, jobDefinition, config);
     }
 

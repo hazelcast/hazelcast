@@ -32,7 +32,6 @@ import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.NetworkStats;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.executor.StripedRunnable;
 
 import java.io.IOException;
@@ -40,11 +39,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -127,15 +121,11 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         Plane plane = getPlane(streamId);
         TcpServerConnection connection = plane.getConnection(address);
         if (connection == null && server.isLive()) {
-            final AtomicBoolean isNotYetInProgress = new AtomicBoolean();
-            plane.addConnectionInProgressIfAbsent(address, key -> {
-                isNotYetInProgress.set(true);
-                return connector.asyncConnect(address, silent, plane.index);
-            });
-            if (isNotYetInProgress.get()) {
+            if (plane.addConnectionInProgress(address)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
+                connector.asyncConnect(address, silent, plane.index);
             } else {
                 if (logger.isFineEnabled()) {
                     logger.fine("Connection to: " + address + " streamId:" + streamId + " is already in progress");
@@ -352,24 +342,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         if (endpointConfig == null) {
             context.collect(rootDescriptor.copy(), TCP_METRIC_CLIENT_COUNT, MANDATORY, COUNT, clientCount);
             context.collect(rootDescriptor.copy(), TCP_METRIC_TEXT_COUNT, MANDATORY, COUNT, textCount);
-        }
-    }
-
-    @Override
-    public boolean blockOnConnect(Address address, long millis, int streamId) throws InterruptedException {
-        Plane plane = getPlane(streamId);
-        try {
-            Future<Void> future = plane.getconnectionInProgress(address);
-            if (future != null) {
-                future.get(millis, TimeUnit.MILLISECONDS);
-                return future.isDone();
-            } else {
-                // connection-in-progress has come and gone,
-                // so we are not timed out here
-                return true;
-            }
-        } catch (ExecutionException | TimeoutException ex) {
-            throw ExceptionUtil.rethrow(ex);
         }
     }
 }

@@ -39,18 +39,18 @@ public final class DeleteLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify tableModify = (TableModify) rel;
+        TableModify delete = (TableModify) rel;
 
         return new DeleteLogicalRel(
-                tableModify.getCluster(),
-                OptUtils.toLogicalConvention(tableModify.getTraitSet()),
-                tableModify.getTable(),
-                tableModify.getCatalogReader(),
-                OptUtils.toLogicalInput(tableModify.getInput()),
-                tableModify.getOperation(),
-                tableModify.getUpdateColumnList(),
-                tableModify.getSourceExpressionList(),
-                tableModify.isFlattened()
+                delete.getCluster(),
+                OptUtils.toLogicalConvention(delete.getTraitSet()),
+                delete.getTable(),
+                delete.getCatalogReader(),
+                OptUtils.toLogicalInput(delete.getInput()),
+                delete.getOperation(),
+                delete.getUpdateColumnList(),
+                delete.getSourceExpressionList(),
+                delete.isFlattened()
         );
     }
 }
