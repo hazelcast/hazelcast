@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -125,6 +126,8 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsentAsync() {
+        assumeTrue(getMap() instanceof MapProxyImpl);
+
         MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getMap();
         for (int i = 0; i < 100; i++) {
             map.putIfAbsentAsync(i, i);

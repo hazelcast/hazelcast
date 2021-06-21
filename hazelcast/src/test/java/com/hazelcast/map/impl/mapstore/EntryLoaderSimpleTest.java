@@ -65,6 +65,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(Parameterized.class)
@@ -237,6 +238,8 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsentAsync_returnValue() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
         testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
         assertEquals("val", ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", "val2").toCompletableFuture().get());
     }

@@ -48,6 +48,7 @@ import java.util.stream.IntStream;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -220,6 +221,8 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsentAsync() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
         ((MapProxyImpl<String, String>) map)
                 .putIfAbsentAsync("key", "value").toCompletableFuture().get();
         assertEntryStore("key", "value");
@@ -227,6 +230,8 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsentAsync_withTtl() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
         ((MapProxyImpl<String, String>) map)
                 .putIfAbsentAsync("key", "value", 10, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
@@ -234,6 +239,8 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
 
     @Test
     public void testPutIfAbsentAsync_withMaxIdle() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
         ((MapProxyImpl<String, String>) map)
                 .putIfAbsentAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);

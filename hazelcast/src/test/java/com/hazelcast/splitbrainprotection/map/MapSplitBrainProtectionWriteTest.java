@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static java.util.Arrays.asList;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -121,12 +122,16 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     @Test
     @SuppressWarnings("unchecked")
     public void putIfAbsentAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(0) instanceof MapProxyImpl);
+
         ((MapProxyImpl<Object, Object>) map(0)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
     }
 
     @Test(expected = ExecutionException.class)
     @SuppressWarnings("unchecked")
     public void putIfAbsentAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(3) instanceof MapProxyImpl);
+
         ((MapProxyImpl<Object, Object>) map(3)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
     }
 
