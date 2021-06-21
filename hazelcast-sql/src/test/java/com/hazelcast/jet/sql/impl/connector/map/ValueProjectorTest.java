@@ -34,11 +34,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -51,7 +50,7 @@ public class ValueProjectorTest {
                 new QueryDataType[]{QueryDataType.BIGINT},
                 new MultiplyingTarget(),
                 singletonList(CastExpression.create(ColumnExpression.create(0, QueryDataType.INT), QueryDataType.BIGINT)),
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
+                mock(ExpressionEvalContext.class)
         );
 
         Object value = projector.project(new Object[]{1});
@@ -98,22 +97,4 @@ public class ValueProjectorTest {
             return (long) value * 2;
         }
     }
-
-    private static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
-
-        @Override
-        public Object getArgument(int index) {
-            throw new IndexOutOfBoundsException("" + index);
-        }
-
-        @Override
-        public List<Object> getArguments() {
-            return emptyList();
-        }
-
-        @Override
-        public InternalSerializationService getSerializationService() {
-            throw new UnsupportedOperationException();
-        }
-    };
 }

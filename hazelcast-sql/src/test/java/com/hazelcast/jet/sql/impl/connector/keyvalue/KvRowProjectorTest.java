@@ -37,14 +37,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collections;
-import java.util.List;
-
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,7 +60,7 @@ public class KvRowProjectorTest {
                         MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
                         DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
                 ),
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1, 8);
@@ -80,7 +78,7 @@ public class KvRowProjectorTest {
                 new IdentityTarget(),
                 (Expression<Boolean>) ConstantExpression.create(Boolean.FALSE, BOOLEAN),
                 emptyList(),
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1, 8);
@@ -125,22 +123,4 @@ public class KvRowProjectorTest {
             return () -> value;
         }
     }
-
-    private static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
-
-        @Override
-        public Object getArgument(int index) {
-            throw new IndexOutOfBoundsException("" + index);
-        }
-
-        @Override
-        public List<Object> getArguments() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public InternalSerializationService getSerializationService() {
-            throw new UnsupportedOperationException();
-        }
-    };
 }
