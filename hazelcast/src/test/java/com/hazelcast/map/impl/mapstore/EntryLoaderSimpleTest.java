@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -232,6 +233,12 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     public void testPutIfAbsent_returnValue() {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
         assertEquals("val", map.putIfAbsent("key", "val2"));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync_returnValue() throws ExecutionException, InterruptedException {
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
+        assertEquals("val", ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test

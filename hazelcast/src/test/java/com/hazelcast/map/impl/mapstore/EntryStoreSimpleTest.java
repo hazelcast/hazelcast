@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -214,6 +215,27 @@ public class EntryStoreSimpleTest extends HazelcastTestSupport {
     @Test
     public void testPutIfAbsent_withMaxIdle() {
         map.putIfAbsent("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS);
+        assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() throws ExecutionException, InterruptedException {
+        ((MapProxyImpl<String, String>) map)
+                .putIfAbsentAsync("key", "value").toCompletableFuture().get();
+        assertEntryStore("key", "value");
+    }
+
+    @Test
+    public void testPutIfAbsentAsync_withTtl() throws ExecutionException, InterruptedException {
+        ((MapProxyImpl<String, String>) map)
+                .putIfAbsentAsync("key", "value", 10, TimeUnit.DAYS).toCompletableFuture().get();
+        assertEntryStore("key", "value", 10, TimeUnit.DAYS, 10000);
+    }
+
+    @Test
+    public void testPutIfAbsentAsync_withMaxIdle() throws ExecutionException, InterruptedException {
+        ((MapProxyImpl<String, String>) map)
+                .putIfAbsentAsync("key", "value", 10, TimeUnit.DAYS, 5, TimeUnit.DAYS).toCompletableFuture().get();
         assertEntryStore("key", "value", 5, TimeUnit.DAYS, 10000);
     }
 

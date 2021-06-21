@@ -17,13 +17,17 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Member implementation for basic map methods nullability tests
@@ -48,5 +52,17 @@ public class MemberMapNullTest extends AbstractMapNullTest {
     @Override
     protected HazelcastInstance getDriver() {
         return instance;
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void testNullability() {
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, "", -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, null));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, "", -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null, -1, TimeUnit.SECONDS, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, null, -1, TimeUnit.SECONDS));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, TimeUnit.SECONDS, -1, null));
     }
 }

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
@@ -250,6 +251,31 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
             // this brings the CACHED_AS_NULL into the Near Cache
             String value1 = map.get(key);
             Future<String> future = map.putAsync(key, value).toCompletableFuture();
+            String oldValue = null;
+            try {
+                oldValue = future.get();
+            } catch (Exception e) {
+                fail("Exception in future.get(): " + e.getMessage());
+            }
+            // here we _might_ still see the CACHED_AS_NULL
+            String value2 = map.get(key);
+
+            assertNull(value1);
+            assertNull(oldValue);
+            assertEquals(value, value2);
+        }
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() {
+        IMap<String, String> map = hz.getMap(getMapName());
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
+            String key = "putifabsentasync_" + i;
+            String value = "merhaba-" + key;
+
+            // this brings the CACHED_AS_NULL into the Near Cache
+            String value1 = map.get(key);
+            Future<String> future = ((MapProxyImpl<String, String>)map).putIfAbsentAsync(key, value).toCompletableFuture();
             String oldValue = null;
             try {
                 oldValue = future.get();
