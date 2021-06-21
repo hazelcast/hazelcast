@@ -517,8 +517,9 @@
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:hot-restart enabled="true" fsync="true"/>
                 <hz:event-journal enabled="true"
-                                  capacity="123"
-                                  time-to-live-seconds="321"/>
+                                  capacity="123" time-to-live-seconds="321"/>
+                <hz:merkle-tree enabled="${testCache.merkleTree.enabled}"
+                                depth="${testCache.merkleTree.depth}"/>
             </hz:cache>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
