@@ -258,6 +258,7 @@ public class IMapSqlConnector implements SqlConnector {
                     if (updatesByFieldNames.containsKey(field.getName())) {
                         return updatesByFieldNames.get(field.getName());
                     } else if (field.getName().equals(VALUE)) {
+                        // this works because assigning `this = null` is ignored if this is expanded to fields
                         return ConstantExpression.create(null, field.getType());
                     } else {
                         return ColumnExpression.create(i, field.getType());
