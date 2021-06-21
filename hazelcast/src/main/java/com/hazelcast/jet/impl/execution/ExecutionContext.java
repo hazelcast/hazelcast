@@ -62,6 +62,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
@@ -248,7 +249,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         for (ProcessorSupplier s : procSuppliers) {
             try {
-                s.close(error);
+                doWithClassLoader(s.getClass().getClassLoader(), () -> s.close(error));
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
                         + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);

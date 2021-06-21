@@ -75,6 +75,7 @@ public final class Contexts {
         private final int memberCount;
         private final boolean isLightJob;
         private final Map<Address, int[]> partitionAssignment;
+        private final ClassLoader classLoader;
 
         @SuppressWarnings("checkstyle:ParameterNumber")
         MetaSupplierCtx(
@@ -88,8 +89,8 @@ public final class Contexts {
                 int totalParallelism,
                 int memberCount,
                 boolean isLightJob,
-                Map<Address, int[]> partitionAssignment
-        ) {
+                Map<Address, int[]> partitionAssignment,
+                ClassLoader classLoader) {
             this.instance = instance;
             this.jobId = jobId;
             this.executionId = executionId;
@@ -101,6 +102,7 @@ public final class Contexts {
             this.memberCount = memberCount;
             this.isLightJob = isLightJob;
             this.partitionAssignment = partitionAssignment;
+            this.classLoader = classLoader;
         }
 
         @Nonnull @Override
@@ -177,6 +179,11 @@ public final class Contexts {
         public Map<Address, int[]> partitionAssignment() {
             return partitionAssignment;
         }
+
+        @Override
+        public ClassLoader classLoader() {
+            return classLoader;
+        }
     }
 
     public static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
@@ -200,10 +207,11 @@ public final class Contexts {
                 boolean isLightJob,
                 Map<Address, int[]> partitionAssignment,
                 ConcurrentHashMap<String, File> tempDirectories,
-                InternalSerializationService serializationService
+                InternalSerializationService serializationService,
+                ClassLoader classLoader
         ) {
             super(instance, jobId, executionId, jobConfig, logger, vertexName, localParallelism, totalParallelism,
-                    memberCount, isLightJob, partitionAssignment);
+                    memberCount, isLightJob, partitionAssignment, classLoader);
             this.memberIndex = memberIndex;
             this.tempDirectories = tempDirectories;
             this.serializationService = serializationService;
@@ -332,10 +340,11 @@ public final class Contexts {
                        int memberIndex,
                        int memberCount,
                        ConcurrentHashMap<String, File> tempDirectories,
-                       InternalSerializationService serializationService) {
+                       InternalSerializationService serializationService,
+                       ClassLoader classLoader) {
             super(hazelcastInstance, jobId, executionId, jobConfig, logger, vertexName, localParallelism,
                     memberCount * localParallelism, memberIndex, memberCount,
-                    isLightJob, partitionAssignment, tempDirectories, serializationService);
+                    isLightJob, partitionAssignment, tempDirectories, serializationService, classLoader);
             this.localProcessorIndex = localProcessorIndex;
             this.globalProcessorIndex = globalProcessorIndex;
         }

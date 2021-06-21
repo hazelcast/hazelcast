@@ -80,7 +80,7 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
             context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                     c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),
-                    c.tempDirectories(), c.serializationService());
+                    c.tempDirectories(), c.serializationService(), context.classLoader());
         }
         return context;
     }

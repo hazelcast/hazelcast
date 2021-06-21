@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -499,6 +500,21 @@ public final class Util {
             currentThread.setContextClassLoader(previousCl);
         }
     }
+
+    public static <T> T doWithClassLoader(ClassLoader cl, Callable<T> callable) {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousCl = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(cl);
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw new HazelcastException("Callable failed", e);
+        } finally {
+            currentThread.setContextClassLoader(previousCl);
+        }
+    }
+
+
 
     /**
      * Returns the lower of the given guarantees.

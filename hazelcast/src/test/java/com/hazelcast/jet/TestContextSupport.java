@@ -99,7 +99,8 @@ public final class TestContextSupport {
                 context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1,
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), 1, c.memberCount(),
-                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
+                        context.classLoader());
             }
             delegate.init(context);
         }
@@ -120,7 +121,8 @@ public final class TestContextSupport {
                 context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),
-                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
+                        context.classLoader());
             }
             return context;
         }

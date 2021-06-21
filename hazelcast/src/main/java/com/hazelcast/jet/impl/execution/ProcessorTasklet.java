@@ -72,8 +72,8 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.COMPLETE_EDGE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_BARRIER;
 import static com.hazelcast.jet.impl.execution.ProcessorState.EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.END;
-import static com.hazelcast.jet.impl.execution.ProcessorState.PRE_EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.NULLARY_PROCESS;
+import static com.hazelcast.jet.impl.execution.ProcessorState.PRE_EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
@@ -88,6 +88,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
 import static com.hazelcast.jet.impl.util.Util.lazyAdd;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
@@ -118,6 +119,7 @@ public class ProcessorTasklet implements Tasklet {
     private final boolean isSource;
 
     private Processor processor;
+//    private ClassLoader processorCl;
     private int numActiveOrdinals; // counter for remaining active ordinals
     private CircularListCursor<InboundEdgeStream> instreamCursor;
     private InboundEdgeStream currInstream;
@@ -239,7 +241,7 @@ public class ProcessorTasklet implements Tasklet {
             }
         }
         try {
-            processor.init(outbox, context);
+            doWithClassLoader(context.classLoader(), () -> processor.init(outbox, context));
         } catch (Exception e) {
             throw sneakyThrow(e);
         }
@@ -257,7 +259,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private void closeProcessor() {
         try {
-            processor.close();
+            doWithClassLoader(context.classLoader(), () -> processor.close());
         } catch (Throwable e) {
             logger.severe(jobNameAndExecutionId(context.jobConfig().getName(), context.executionId())
                     + " encountered an exception in Processor.close(), ignoring it", e);
@@ -284,7 +286,7 @@ public class ProcessorTasklet implements Tasklet {
                 }
                 if (pendingWatermark.equals(IDLE_MESSAGE)
                         ? outbox.offer(IDLE_MESSAGE)
-                        : processor.tryProcessWatermark(pendingWatermark)) {
+                        : doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(pendingWatermark))) {
                     state = NULLARY_PROCESS;
                     pendingWatermark = null;
                 }
@@ -292,7 +294,8 @@ public class ProcessorTasklet implements Tasklet {
 
             case NULLARY_PROCESS:
                 // if currInstream is null, maybe fillInbox wasn't called yet. Avoid calling tryProcess in that case.
-                if (currInstream == null || isSnapshotInbox() || processor.tryProcess()) {
+                if (currInstream == null || isSnapshotInbox() ||
+                        doWithClassLoader(context.classLoader(), () -> processor.tryProcess())) {
                     state = PROCESS_INBOX;
                     outbox.reset();
                     stateMachineStep(); // recursion
@@ -305,7 +308,8 @@ public class ProcessorTasklet implements Tasklet {
 
             case COMPLETE_EDGE:
                 if (isSnapshotInbox()
-                        ? processor.finishSnapshotRestore() : processor.completeEdge(currInstream.ordinal())) {
+                        ? doWithClassLoader(context.classLoader(), () -> processor.finishSnapshotRestore())
+                        : doWithClassLoader(context.classLoader(), () -> processor.completeEdge(currInstream.ordinal()))) {
                     assert !outbox.hasUnfinishedItem() || !isSnapshotInbox() :
                             "outbox has an unfinished item after successful finishSnapshotRestore()";
                     progTracker.madeProgress();
@@ -314,7 +318,7 @@ public class ProcessorTasklet implements Tasklet {
                 return;
 
             case SAVE_SNAPSHOT:
-                if (processor.saveToSnapshot()) {
+                if (doWithClassLoader(context.classLoader(), () -> processor.saveToSnapshot())) {
                     progTracker.madeProgress();
                     state = ssContext.isExportOnly() ? EMIT_BARRIER : SNAPSHOT_COMMIT_PREPARE;
                     stateMachineStep(); // recursion
@@ -322,7 +326,7 @@ public class ProcessorTasklet implements Tasklet {
                 return;
 
             case SNAPSHOT_COMMIT_PREPARE:
-                if (processor.snapshotCommitPrepare()) {
+                if (doWithClassLoader(context.classLoader(), () -> processor.snapshotCommitPrepare())) {
                     progTracker.madeProgress();
                     state = EMIT_BARRIER;
                     stateMachineStep(); // recursion
@@ -347,7 +351,10 @@ public class ProcessorTasklet implements Tasklet {
             case SNAPSHOT_COMMIT_FINISH__PROCESS:
             case SNAPSHOT_COMMIT_FINISH__COMPLETE:
             case SNAPSHOT_COMMIT_FINISH__FINAL:
-                if (ssContext.isExportOnly() || processor.snapshotCommitFinish(ssContext.isLastPhase1Successful())) {
+                if (ssContext.isExportOnly() ||
+                        doWithClassLoader(context.classLoader(),
+                                () -> processor.snapshotCommitFinish(ssContext.isLastPhase1Successful()))) {
+
                     pendingSnapshotId2++;
                     ssContext.phase2DoneForTasklet();
                     progTracker.madeProgress();
@@ -428,9 +435,9 @@ public class ProcessorTasklet implements Tasklet {
         }
         if (!inbox.isEmpty()) {
             if (isSnapshotInbox()) {
-                processor.restoreFromSnapshot(inbox);
+                doWithClassLoader(context.classLoader(), () -> processor.restoreFromSnapshot(inbox));
             } else {
-                processor.process(currInstream.ordinal(), inbox);
+                doWithClassLoader(context.classLoader(), () -> processor.process(currInstream.ordinal(), inbox));
             }
         }
 
@@ -612,7 +619,7 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public boolean isCooperative() {
-        return processor.isCooperative();
+        return doWithClassLoader(processor.getClass().getClassLoader(), () -> processor.isCooperative());
     }
 
     @Override

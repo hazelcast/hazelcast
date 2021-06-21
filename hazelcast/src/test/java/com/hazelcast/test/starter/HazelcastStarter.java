@@ -34,6 +34,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -97,8 +100,27 @@ public class HazelcastStarter {
      * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
+        return newHazelcastInstance(version, configTemplate, enterprise, Collections.emptyList());
+    }
+
+    /**
+     * Starts a new {@link HazelcastInstance} of the given {@code version} configured with the given {@code Config},
+     * open source or enterprise edition.
+     *
+     * @param version        the version string e.g. "3.8". Must correspond to a released version available either in
+     *                       local maven repository or maven central or Hazelcast enterprise repository, in case
+     *                       {@code enterprise} is {@code true}
+     * @param configTemplate configuration object to clone on the target HazelcastInstance. If {@code null}, default
+     *                       configuration is assumed
+     * @param enterprise     when {@code true}, start Hazelcast enterprise edition, otherwise open source
+     * @param additionalJars
+     * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
+     */
+    public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise,
+                                                         List<URL> additionalJars) {
         ClassLoader cfgClassLoader = configTemplate == null ? null : configTemplate.getClassLoader();
-        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise, cfgClassLoader);
+        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise,
+                cfgClassLoader, additionalJars);
         if (configTemplate != null) {
             configTemplate.getUserContext().put("versionClassLoader", versionClassLoader);
         }
@@ -107,6 +129,22 @@ public class HazelcastStarter {
         currentThread().setContextClassLoader(null);
         try {
             return newHazelcastInstanceWithNetwork(versionClassLoader, configTemplate);
+        } finally {
+            if (contextClassLoader != null) {
+                currentThread().setContextClassLoader(contextClassLoader);
+            }
+        }
+    }
+
+    public static HazelcastInstance newHazelcastInstance(Config configTemplate, HazelcastAPIDelegatingClassloader classLoader) {
+        if (configTemplate != null) {
+            configTemplate.getUserContext().put("versionClassLoader", classLoader);
+        }
+
+        ClassLoader contextClassLoader = currentThread().getContextClassLoader();
+        currentThread().setContextClassLoader(null);
+        try {
+            return newHazelcastInstanceWithNetwork(classLoader, configTemplate);
         } finally {
             if (contextClassLoader != null) {
                 currentThread().setContextClassLoader(contextClassLoader);
@@ -183,11 +221,27 @@ public class HazelcastStarter {
      */
     public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise,
                                                                                 ClassLoader configClassLoader) {
+        return getTargetVersionClassloader(version, enterprise, configClassLoader, Collections.emptyList());
+    }
+
+    /**
+     * Obtains a {@link HazelcastAPIDelegatingClassloader} with the given version's binaries in its classpath.
+     * Classloaders are cached, so requesting the classloader for a given version multiple times will return the
+     * same instance.
+     *
+     * @param version           the target Hazelcast version e.g. "3.8.1", must be a published release version
+     * @param configClassLoader class loader given via config
+     * @param additionalJars
+     * @return a classloader with given version's artifacts in its classpath
+     */
+    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise,
+                                                                                ClassLoader configClassLoader,
+                                                                                List<URL> additionalJars) {
         HazelcastVersionClassloaderFuture future;
         if (configClassLoader != null) {
             // when a custom ClassLoader should be the parent of the target version ClassLoader,
             // do not use the ClassLoader cache
-            future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
+            future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader, additionalJars);
             return future.get();
         }
 
@@ -197,7 +251,7 @@ public class HazelcastStarter {
             return future.get();
         }
 
-        future = new HazelcastVersionClassloaderFuture(version, enterprise, null);
+        future = new HazelcastVersionClassloaderFuture(version, enterprise, null, additionalJars);
         HazelcastVersionClassloaderFuture found = LOADED_VERSIONS.putIfAbsent(versionSpec, future);
         if (found != null) {
             HazelcastAPIDelegatingClassloader versionClassLoader = found.get();
@@ -325,13 +379,16 @@ public class HazelcastStarter {
         private final String version;
         private final boolean enterprise;
         private final ClassLoader configClassLoader;
+        private final List<URL> additionalJars = new ArrayList<>();
 
         private HazelcastAPIDelegatingClassloader classLoader;
 
-        HazelcastVersionClassloaderFuture(String version, boolean enterprise, ClassLoader configClassLoader) {
+        HazelcastVersionClassloaderFuture(String version, boolean enterprise, ClassLoader configClassLoader,
+                                          List<URL> additionalJars) {
             this.version = version;
             this.enterprise = enterprise;
             this.configClassLoader = configClassLoader;
+            this.additionalJars.addAll(additionalJars);
         }
 
         public HazelcastAPIDelegatingClassloader get() {
@@ -341,21 +398,22 @@ public class HazelcastStarter {
             synchronized (this) {
                 File versionDir = getOrCreateVersionDirectory(versionSpec(version, enterprise));
                 File[] files = HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
-                URL[] urls = fileIntoUrls(files);
+                List<URL> urls = fileIntoUrls(files);
+                urls.addAll(additionalJars);
                 ClassLoader parentClassloader = HazelcastStarter.class.getClassLoader();
                 if (configClassLoader != null) {
                     parentClassloader = configClassLoader;
                 }
-                classLoader = new HazelcastAPIDelegatingClassloader(urls, parentClassloader);
+                classLoader = new HazelcastAPIDelegatingClassloader(urls.toArray(new URL[]{}), parentClassloader);
                 return classLoader;
             }
         }
 
-        private static URL[] fileIntoUrls(File[] files) {
-            URL[] urls = new URL[files.length];
-            for (int i = 0; i < files.length; i++) {
+        private static List<URL> fileIntoUrls(File[] files) {
+            List<URL> urls = new ArrayList<>(files.length);
+            for (File file : files) {
                 try {
-                    urls[i] = files[i].toURI().toURL();
+                    urls.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {
                     throw rethrowGuardianException(e);
                 }
