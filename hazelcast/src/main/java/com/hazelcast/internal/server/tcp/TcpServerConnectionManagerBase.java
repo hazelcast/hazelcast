@@ -34,6 +34,8 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -104,7 +106,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         this.planeCount = serverContext.properties().getInteger(CHANNEL_COUNT);
         this.planes = new Plane[planeCount];
         for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
-            planes[planeIndex] = new Plane(planeIndex);
+            planes[planeIndex] = new Plane(planeIndex, logger);
         }
     }
 
@@ -125,8 +127,11 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
         private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
 
-        Plane(int index) {
+        private final ILogger logger;
+
+        Plane(int index, ILogger logger) {
             this.index = index;
+            this.logger = logger;
         }
 
         TcpServerConnection getConnection(Address address) {
@@ -135,10 +140,26 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         void putConnection(Address address, TcpServerConnection connection) {
             connectionMap.put(address, connection);
+            putResolved(address, connection);
         }
 
         void putConnectionIfAbsent(Address address, TcpServerConnection connection) {
-            connectionMap.putIfAbsent(address, connection);
+            Connection previousConnection = connectionMap.putIfAbsent(address, connection);
+            if (previousConnection == null) {
+                putResolved(address, connection);
+            }
+        }
+
+        private void putResolved(Address address, TcpServerConnection connection) {
+            try {
+                InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
+                String hostString = inetSocketAddress.getHostString();
+                if (hostString != null) {
+                    connectionMap.put(new Address(inetSocketAddress), connection);
+                }
+            } catch (UnknownHostException e) {
+                logger.warning("Hostname resolution failed, ignoring: " + e.getMessage());
+            }
         }
 
         void removeConnection(TcpServerConnection connection) {
