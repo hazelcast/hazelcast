@@ -19,14 +19,13 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.impl.CountAggregator;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 

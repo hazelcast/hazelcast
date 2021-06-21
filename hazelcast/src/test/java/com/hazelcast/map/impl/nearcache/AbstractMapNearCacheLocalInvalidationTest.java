@@ -275,7 +275,7 @@ public abstract class AbstractMapNearCacheLocalInvalidationTest extends Hazelcas
 
             // this brings the CACHED_AS_NULL into the Near Cache
             String value1 = map.get(key);
-            Future<String> future = ((MapProxyImpl<String, String>)map).putIfAbsentAsync(key, value).toCompletableFuture();
+            Future<String> future = ((MapProxyImpl<String, String>) map).putIfAbsentAsync(key, value).toCompletableFuture();
             String oldValue = null;
             try {
                 oldValue = future.get();
