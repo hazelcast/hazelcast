@@ -153,4 +153,51 @@ not from the SQL group.
 ### Handling of client connections
 
 Queries submitted from a client should be cancelled when that client
-disconnects. Before, the client operation was always handled
+disconnects. Before, the client operation was always handled by the
+coordinating member, but now it could be forwarded to a different
+member. To handle this, we need to add two actions:
+
+1. the member that received the client message, will monitor the client,
+and if it disconnects, it will send the `SqlCloseOperation` to the
+coordinator to cancel the job.
+   
+2. the job coordinator will cancel the job if the submitting member
+leaves
+
+### Client security
+
+If security in Hazelcast Enterprise is enabled, for queries submitted
+from a client we must check permissions. However, the member handling
+the client request isn't able to check them until it parses and
+validates the query. And since the query can be forwarded to a different
+member, we need to forward the authentication information to the
+coordinating member. Therefore we add `Collection<Principal>` to the
+`SqlExecuteOperation`. If this collection is not null, the recipient
+will check if som of the principals has access to the objects referenced
+in the query. If this collection is empty, the query will be rejected
+(no access to anything).
+
+## Implementation parts
+
+The implementation will be split into 3 chunks:
+
+**PR#1**: Coordinator using only same-version members, smart clients
+sending to a correct member.
+
+**PR#2**: The [Shutdown changes](#shutdown-changes)
+
+**PR#3**: Forwarding of the client operations
+
+The PR#3 will likely not be implemented for 5.0 and is not strictly
+required. It will affect only non-smart client and only in a way that
+they will use less members than they could.
+
+## Parts that will need to support backwards compatibility
+
+- The client protocol
+
+- The `SqlExecute`, `SqlFetch` and `SqlClose` member-to-member
+operations.
+
+- The IMap scan operations `MapFetchEntriesOperation`,
+`MapFetchIndexOperation`
