@@ -1597,6 +1597,9 @@ public class MigrationManager {
                         for (Member member : shutdownRequestedMembers) {
                             if (partitionStateManager.isAbsentInPartitionTable(member)) {
                                 sendShutdownOperation(member.getAddress());
+                                if (!node.getLocalMember().equals(member)) {
+                                    node.getClusterService().suspectMember(member, "Shutdown requested", true);
+                                }
                             } else {
                                 logger.warning(member + " requested to shutdown but still in partition table");
                                 present  = true;
