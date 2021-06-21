@@ -270,7 +270,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.filesBuilder(directory.toString())
                         .rollByDate("yyyy-MM-dd.HH")
                         .build());
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         String expectedNamePattern = "\\d{4}-\\d{2}-\\d{2}\\.\\d{2}-0$";
         long numberOfFilesWithExpectedPattern =
