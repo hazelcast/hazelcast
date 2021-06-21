@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.IndexValueBatch;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -81,7 +82,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     protected void runInternal() {
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            throw new IndexReadingException("Cannot use the index \"" + indexName
+            throw new QueryException("Cannot use the index \"" + indexName
                     + "\" of the IMap \"" + name + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
                     + "\" is set to \"true\")");
@@ -89,10 +90,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         InternalIndex index = indexes.getIndex(indexName);
         if (index == null) {
-            throw new IndexReadingException("Index name \"" + indexName + "\" does not exist");
+            throw new QueryException("Index name \"" + indexName + "\" does not exist");
         }
         if (!allIndexed(index, partitionIdSet)) {
-            throw new IndexReadingException("Some of the partitions are not indexed in \"" + indexName + "\"");
+            throw new QueryException("Some of the partitions are not indexed in \"" + indexName + "\"");
         }
 
         int startMigrationTimestamp = getMigrationTimestamp();
@@ -103,7 +104,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         Set<Integer> ownedPartitions = new HashSet<>(partitionService.getMemberPartitions(currentAddress));
         // Some of partitions given as argument are not owned by the member, therefore throw exception
         if (partitionIdSet.stream().anyMatch(id -> !ownedPartitions.contains(id))) {
-            throw new MissingPartitionException();
+            throw new MigrationDetectedException("Some of partitions has already migrated");
         }
 
         MapFetchIndexOperationResult result;
@@ -125,7 +126,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         // In case of migration, pessimistically throw exception
         if (endMigrationTimestamp != startMigrationTimestamp) {
-            throw new MigrationDetectedException();
+            throw new MigrationDetectedException("Migration timestamp has changed");
         }
 
         response = result;
@@ -309,19 +310,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     public static final class MigrationDetectedException extends HazelcastException {
-        public MigrationDetectedException() {
-            super("Migration detected, operation is cancelled");
-        }
-    }
-
-    public static final class MissingPartitionException extends HazelcastException {
-        public MissingPartitionException() {
-            super("Some partitions are missing");
-        }
-    }
-
-    public static final class IndexReadingException extends HazelcastException {
-        public IndexReadingException(String message) {
+        public MigrationDetectedException(String message) {
             super(message);
         }
     }
