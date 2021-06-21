@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -29,11 +25,9 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
-import static java.util.Collections.singletonList;
+public class SinkLogicalRel extends TableModify implements LogicalRel {
 
-public class InsertPhysicalRel extends TableModify implements PhysicalRel {
-
-    InsertPhysicalRel(
+    SinkLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -45,17 +39,7 @@ public class InsertPhysicalRel extends TableModify implements PhysicalRel {
     }
 
     @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return new PlanNodeSchema(singletonList(QueryDataType.BIGINT));
-    }
-
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onInsert(this);
-    }
-
-    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertPhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+        return new SinkLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }

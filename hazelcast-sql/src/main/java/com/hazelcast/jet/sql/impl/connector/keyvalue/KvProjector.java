@@ -38,7 +38,7 @@ import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConver
  * <p>
  * {@link KvRowProjector} does the reverse.
  */
-class KvProjector {
+public class KvProjector {
 
     private final QueryDataType[] types;
 
@@ -75,7 +75,7 @@ class KvProjector {
         return injectors;
     }
 
-    Entry<Object, Object> project(Object[] row) {
+    public Entry<Object, Object> project(Object[] row) {
         keyTarget.init();
         valueTarget.init();
         for (int i = 0; i < row.length; i++) {

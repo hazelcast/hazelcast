@@ -31,9 +31,9 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-public class InsertPhysicalRel extends TableModify implements PhysicalRel {
+public class SinkPhysicalRel extends TableModify implements PhysicalRel {
 
-    InsertPhysicalRel(
+    SinkPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -51,11 +51,11 @@ public class InsertPhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onInsert(this);
+        return visitor.onSink(this);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertPhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+        return new SinkPhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }

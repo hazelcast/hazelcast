@@ -44,8 +44,8 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapIterable;
 import com.hazelcast.map.impl.iterator.MapIterator;
 import com.hazelcast.map.impl.iterator.MapPartitionIterable;
-import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
+import com.hazelcast.map.impl.iterator.MapQueryIterable;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterable;
 import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
@@ -391,6 +391,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         return newDelegatingFuture(
                 serializationService,
                 putAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit));
+    }
+
+    public InternalCompletableFuture<V> putIfAbsentAsync(@Nonnull K key, @Nonnull V value) {
+        return putIfAbsentAsync(key, value, UNSET, TimeUnit.MILLISECONDS);
+    }
+
+    public InternalCompletableFuture<V> putIfAbsentAsync(@Nonnull K key, @Nonnull V value,
+                                                    long ttl, @Nonnull TimeUnit timeunit) {
+        return putIfAbsentAsync(key, value, ttl, timeunit, UNSET, TimeUnit.MILLISECONDS);
+    }
+
+    public InternalCompletableFuture<V> putIfAbsentAsync(@Nonnull K key, @Nonnull V value,
+                                                         long ttl, @Nonnull TimeUnit timeunit,
+                                                         long maxIdle, @Nonnull TimeUnit maxIdleUnit) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
+        checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
+
+        Data valueData = toData(value);
+        return newDelegatingFuture(
+                serializationService,
+                putIfAbsentAsyncInternal(key, valueData, ttl, timeunit, maxIdle, maxIdleUnit));
     }
 
     @Override

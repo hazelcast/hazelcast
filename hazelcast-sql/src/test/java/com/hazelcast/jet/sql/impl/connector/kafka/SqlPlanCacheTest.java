@@ -105,6 +105,9 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("INSERT INTO kafka VALUES(0)");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
+        sqlService.execute("SINK INTO kafka VALUES(0)");
+        assertThat(planCache(instance()).size()).isEqualTo(2);
+
         sqlService.execute("DROP MAPPING kafka");
         assertThat(planCache(instance()).size()).isZero();
     }

@@ -82,6 +82,7 @@ public final class LogicalRules {
 
                 // DML rules
                 InsertLogicalRule.INSTANCE,
+                SinkLogicalRule.INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
                 // Miscellaneous

@@ -36,6 +36,7 @@ public final class PhysicalRules {
                 JoinPhysicalRule.INSTANCE,
                 ValuesPhysicalRule.INSTANCE,
                 InsertPhysicalRule.INSTANCE,
+                SinkPhysicalRule.INSTANCE,
                 DeletePhysicalRule.INSTANCE,
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );

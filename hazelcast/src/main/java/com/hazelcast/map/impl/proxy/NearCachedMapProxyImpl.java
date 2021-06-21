@@ -215,6 +215,18 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data valueData,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        key = toNearCacheKeyWithStrategy(key);
+        try {
+            return super.putIfAbsentAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        } finally {
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
     protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data valueData, long ttl, TimeUnit ttlUnit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);

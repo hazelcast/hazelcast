@@ -283,24 +283,19 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
-     * INSERT INTO} statements.
-     * <p>
-     * Unused for connectors that don't override {@link #sinkProcessor}.
+     * Returns the supplier for the insert processor.
      */
-    default boolean requiresSink() {
-        return false;
+    @Nonnull
+    default Vertex insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sinkProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table
-    ) {
-        throw new UnsupportedOperationException("INSERT INTO or SINK INTO not supported for " + typeName());
+    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
     }
 
     /**

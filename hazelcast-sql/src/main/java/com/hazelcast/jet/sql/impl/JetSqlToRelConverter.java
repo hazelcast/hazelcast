@@ -16,10 +16,14 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql2rel.SqlRexConvertletTable;
 
@@ -34,5 +38,12 @@ public class JetSqlToRelConverter extends HazelcastSqlToRelConverter {
             Config config
     ) {
         super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
+    }
+
+    @Override
+    protected RelNode convertInsert(SqlInsert insert0) {
+        SqlExtendedInsert insert = (SqlExtendedInsert) insert0;
+        TableModify modify = (TableModify) super.convertInsert(insert);
+        return insert.isInsert() ? new LogicalTableInsert(modify) : new LogicalTableSink(modify);
     }
 }

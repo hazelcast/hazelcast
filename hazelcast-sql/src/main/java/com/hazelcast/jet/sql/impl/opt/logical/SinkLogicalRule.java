@@ -16,38 +16,37 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalTableModify;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-public final class DeleteLogicalRule extends ConverterRule {
+final class SinkLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new DeleteLogicalRule();
+    static final RelOptRule INSTANCE = new SinkLogicalRule();
 
-    private DeleteLogicalRule() {
+    private SinkLogicalRule() {
         super(
-                LogicalTableModify.class, TableModify::isDelete, Convention.NONE, LOGICAL,
-                DeleteLogicalRule.class.getSimpleName()
+                LogicalTableSink.class, Convention.NONE, LOGICAL,
+                SinkLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify delete = (TableModify) rel;
+        LogicalTableSink sink = (LogicalTableSink) rel;
 
-        return new DeleteLogicalRel(
-                delete.getCluster(),
-                OptUtils.toLogicalConvention(delete.getTraitSet()),
-                delete.getTable(),
-                delete.getCatalogReader(),
-                OptUtils.toLogicalInput(delete.getInput()),
-                delete.isFlattened()
+        return new SinkLogicalRel(
+                sink.getCluster(),
+                OptUtils.toLogicalConvention(sink.getTraitSet()),
+                sink.getTable(),
+                sink.getCatalogReader(),
+                OptUtils.toLogicalInput(sink.getInput()),
+                sink.isFlattened()
         );
     }
 }

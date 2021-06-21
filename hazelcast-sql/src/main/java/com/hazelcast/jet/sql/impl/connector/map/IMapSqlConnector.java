@@ -21,6 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -192,9 +194,30 @@ public class IMapSqlConnector implements SqlConnector {
         return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
+    @Nonnull
     @Override
-    public boolean requiresSink() {
-        return true;
+    public Vertex insertProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        List<TableField> fields = table.getFields();
+        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
+
+        return dag.newUniqueVertex(
+                toString(table),
+                ProcessorMetaSupplier.forceTotalParallelismOne(new InsertProcessorSupplier(
+                        table.getMapName(),
+                        KvProjector.supplier(
+                                paths,
+                                types,
+                                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                                (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        )
+                ))
+        );
     }
 
     @Nonnull

@@ -142,7 +142,7 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertsIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String name = randomName();
 
         instance().getMap(name).put(

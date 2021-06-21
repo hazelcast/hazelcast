@@ -63,7 +63,7 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String mapName = randomName();
         instance().getMap(mapName).put(new PersonId(1), new Person(1, "Alice"));
 

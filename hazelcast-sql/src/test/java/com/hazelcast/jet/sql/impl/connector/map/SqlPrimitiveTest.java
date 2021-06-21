@@ -52,7 +52,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String name = randomName();
 
         instance().getMap(name).put(BigInteger.valueOf(1), "Alice");
@@ -72,7 +72,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertSelect() {
+    public void test_sinkSelect() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -94,7 +94,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertValues() {
+    public void test_sinkValues() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -110,7 +110,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertWithProject() {
+    public void test_sinkWithProject() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -126,7 +126,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertWithDynamicParameters() {
+    public void test_sinkWithDynamicParameters() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -296,12 +296,38 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertInto_then_throws() {
+    public void when_insert() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
-        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " (__key, this) VALUES (1, '2')"))
-                .hasMessageContaining("INSERT INTO clause is not supported for IMap");
+        assertMapEventually(
+                name,
+                "INSERT INTO " + name + " (this, __key) VALUES ('2', 1)",
+                createMap(1, "2")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "2"))
+        );
+    }
+
+    @Test
+    public void when_insertAndKeyAlreadyExists_then_throws() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2')"))
+                .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
+    public void when_insertDuplicateKey_then_throws() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '1'), (1, '2')"))
+                .hasMessageContaining("Duplicate key");
     }
 
     @Test

@@ -143,10 +143,17 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Vertex sinkProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table0
-    ) {
+    public Vertex insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return writeProcessor(dag, table);
+    }
+
+    @Nonnull @Override
+    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return writeProcessor(dag, table);
+    }
+
+    @Nonnull
+    private Vertex writeProcessor(DAG dag, Table table0) {
         KafkaTable table = (KafkaTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(

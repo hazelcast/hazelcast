@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.jet.sql.impl.opt.logical.SinkLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rel.logical.LogicalTableModify;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
-public final class DeleteLogicalRule extends ConverterRule {
+final class SinkPhysicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new DeleteLogicalRule();
+    static final RelOptRule INSTANCE = new SinkPhysicalRule();
 
-    private DeleteLogicalRule() {
+    private SinkPhysicalRule() {
         super(
-                LogicalTableModify.class, TableModify::isDelete, Convention.NONE, LOGICAL,
-                DeleteLogicalRule.class.getSimpleName()
+                SinkLogicalRel.class, LOGICAL, PHYSICAL,
+                SinkPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify delete = (TableModify) rel;
+        SinkLogicalRel logicalSink = (SinkLogicalRel) rel;
 
-        return new DeleteLogicalRel(
-                delete.getCluster(),
-                OptUtils.toLogicalConvention(delete.getTraitSet()),
-                delete.getTable(),
-                delete.getCatalogReader(),
-                OptUtils.toLogicalInput(delete.getInput()),
-                delete.isFlattened()
+        return new SinkPhysicalRel(
+                logicalSink.getCluster(),
+                OptUtils.toPhysicalConvention(logicalSink.getTraitSet()),
+                logicalSink.getTable(),
+                logicalSink.getCatalogReader(),
+                OptUtils.toPhysicalInput(logicalSink.getInput()),
+                logicalSink.isFlattened()
         );
     }
 }

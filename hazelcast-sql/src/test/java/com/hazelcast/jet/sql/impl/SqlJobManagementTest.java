@@ -27,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.TestUtil.createMap;
@@ -193,6 +194,36 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
         assertEquals(10L, config.getMaxProcessorAccumulatedRecords());
+    }
+
+    @Test
+    public void test_insert() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(0, "value-0", 2, "value-1")
+        );
+    }
+
+    @Test
+    public void test_sink() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v > 0");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(2, "value-1", 4, "value-2")
+        );
     }
 
     @Test

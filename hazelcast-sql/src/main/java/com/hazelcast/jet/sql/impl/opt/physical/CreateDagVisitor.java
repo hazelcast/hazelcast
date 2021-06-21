@@ -100,6 +100,15 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
+        Vertex vertex = getJetSqlConnector(table).insertProcessor(dag, table);
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onSink(SinkPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+
         Vertex vertex = getJetSqlConnector(table).sinkProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;

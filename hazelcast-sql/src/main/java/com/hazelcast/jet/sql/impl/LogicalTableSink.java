@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -29,33 +26,42 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
-import static java.util.Collections.singletonList;
+public class LogicalTableSink extends TableModify {
 
-public class InsertPhysicalRel extends TableModify implements PhysicalRel {
+    LogicalTableSink(TableModify modify) {
+        this(
+                modify.getCluster(),
+                modify.getTraitSet(),
+                modify.getTable(),
+                modify.getCatalogReader(),
+                modify.getInput(),
+                modify.isFlattened()
+        );
 
-    InsertPhysicalRel(
+        assert modify.getOperation() == Operation.INSERT;
+    }
+
+    private LogicalTableSink(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            Prepare.CatalogReader catalogReader,
+            Prepare.CatalogReader schema,
             RelNode input,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, Operation.INSERT, null, null, flattened);
+        super(cluster, traitSet, table, schema, input, Operation.INSERT, null, null, flattened);
     }
 
     @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return new PlanNodeSchema(singletonList(QueryDataType.BIGINT));
-    }
-
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onInsert(this);
-    }
-
-    @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertPhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+    public LogicalTableSink copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        assert traitSet.containsIfApplicable(Convention.NONE);
+        return new LogicalTableSink(
+                getCluster(),
+                traitSet,
+                getTable(),
+                getCatalogReader(),
+                sole(inputs),
+                isFlattened()
+        );
     }
 }
