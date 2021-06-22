@@ -49,7 +49,7 @@ import java.util.concurrent.CompletableFuture;
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
     private static final int MAX_CONCURRENT_OPS = 8;
-    private static final int MAX_BATCH_SIZE = 128;
+    private static final int MAX_BATCH_SIZE = 1024;
 
     private String mapName;
     private KvRowProjector.Supplier rowProjectorSupplier;
