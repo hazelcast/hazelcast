@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.function.Function;
 
 import static java.time.ZoneOffset.UTC;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -127,51 +128,266 @@ public class PortableUpsertTargetTest {
                 .isEqualTo(OffsetDateTime.of(2021, 2, 9, 12, 23, 34, 200_000_000, UTC));
     }
 
-    @SuppressWarnings({"unused", "checkstyle:LineLength"})
-    private Object[] values() {
-        ClassDefinition innerClassDefinition = new ClassDefinitionBuilder(4, 5, 6).build();
-
+    @SuppressWarnings("unused")
+    private Object[] primitiveClassDefinitions() {
         return new Object[]{
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableField("object", innerClassDefinition).build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableField("object", innerClassDefinition).build(), new PortableGenericRecordBuilder(innerClassDefinition).build()},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(), new boolean[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(), new byte[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(), new short[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(), new char[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(), new int[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(), new long[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(), new float[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(), new double[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(), new BigDecimal[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(), new String[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(), new LocalTime[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(), new LocalDate[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(), new LocalDateTime[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(), new OffsetDateTime[0]},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(), null},
-                new Object[]{new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(), new GenericRecord[0]},
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addBooleanField("field").build(),
+                        QueryDataType.BOOLEAN,
+                        false,
+                        (Function<InternalGenericRecord, Object>) record -> record.getBoolean("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addByteField("field").build(),
+                        QueryDataType.TINYINT,
+                        (byte) 0,
+                        (Function<InternalGenericRecord, Object>) record -> record.getByte("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addShortField("field").build(),
+                        QueryDataType.SMALLINT,
+                        (short) 0,
+                        (Function<InternalGenericRecord, Object>) record -> record.getShort("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addIntField("field").build(),
+                        QueryDataType.INT,
+                        0,
+                        (Function<InternalGenericRecord, Object>) record -> record.getInt("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addLongField("field").build(),
+                        QueryDataType.BIGINT,
+                        0L,
+                        (Function<InternalGenericRecord, Object>) record -> record.getLong("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addFloatField("field").build(),
+                        QueryDataType.REAL,
+                        0F,
+                        (Function<InternalGenericRecord, Object>) record -> record.getFloat("field")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDoubleField("field").build(),
+                        QueryDataType.DOUBLE,
+                        0D,
+                        (Function<InternalGenericRecord, Object>) record -> record.getDouble("field")
+                }
         };
     }
 
     @Test
-    @Parameters(method = "values")
+    @Parameters(method = "primitiveClassDefinitions")
+    @SuppressWarnings("unused")
+    public void when_injectNullIntoPrimitive_then_throws(
+            ClassDefinition classDefinition,
+            QueryDataType type,
+            Object defaultValue,
+            Function<InternalGenericRecord, Object> valueExtractor
+    ) {
+        UpsertTarget target = new PortableUpsertTarget(classDefinition);
+        UpsertInjector injector = target.createInjector("field", type);
+
+        target.init();
+        injector.set(null);
+        assertThatThrownBy(target::conclude)
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Cannot set value null");
+    }
+
+    @Test
+    @Parameters(method = "primitiveClassDefinitions")
+    @SuppressWarnings("unused")
+    public void when_doesNotInjectIntoPrimitive_then_insertsDefaultValue(
+            ClassDefinition classDefinition,
+            QueryDataType type,
+            Object defaultValue,
+            Function<InternalGenericRecord, Object> valueExtractor
+    ) throws IOException {
+        UpsertTarget target = new PortableUpsertTarget(classDefinition);
+
+        target.init();
+        Object portable = target.conclude();
+
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
+        assertThat(valueExtractor.apply(record)).isEqualTo(defaultValue);
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] objectClassDefinitions() {
+        ClassDefinition innerClassDefinition = new ClassDefinitionBuilder(4, 5, 6).build();
+
+        return new Object[]{
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addPortableField("object", innerClassDefinition).build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getGenericRecord("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addPortableField("object", innerClassDefinition).build(),
+                        new PortableGenericRecordBuilder(innerClassDefinition).build(),
+                        (Function<InternalGenericRecord, Object>) record -> record.getGenericRecord("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getGenericRecordArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addPortableArrayField("object", innerClassDefinition).build(),
+                        new GenericRecord[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getGenericRecordArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getBooleanArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addBooleanArrayField("object").build(),
+                        new boolean[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getBooleanArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getByteArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addByteArrayField("object").build(),
+                        new byte[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getByteArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getShortArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addShortArrayField("object").build(),
+                        new short[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getShortArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getCharArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addCharArrayField("object").build(),
+                        new char[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getCharArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getIntArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addIntArrayField("object").build(),
+                        new int[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getIntArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getLongArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addLongArrayField("object").build(),
+                        new long[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getLongArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getFloatArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addFloatArrayField("object").build(),
+                        new float[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getFloatArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getDoubleArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDoubleArrayField("object").build(),
+                        new double[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getDoubleArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getDecimalArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDecimalArrayField("object").build(),
+                        new BigDecimal[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getDecimalArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getStringArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addStringArrayField("object").build(),
+                        new String[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getStringArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimeArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimeArrayField("object").build(),
+                        new LocalTime[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimeArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getDateArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addDateArrayField("object").build(),
+                        new LocalDate[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getDateArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimestampArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimestampArrayField("object").build(),
+                        new LocalDateTime[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimestampArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(),
+                        null,
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimestampWithTimezoneArray("object")
+                },
+                new Object[]{
+                        new ClassDefinitionBuilder(1, 2, 3).addTimestampWithTimezoneArrayField("object").build(),
+                        new OffsetDateTime[0],
+                        (Function<InternalGenericRecord, Object>) record -> record.getTimestampWithTimezoneArray("object")
+                }
+        };
+    }
+
+    @Test
+    @Parameters(method = "objectClassDefinitions")
     public void when_typeIsObject_then_allValuesAreAllowed(
             ClassDefinition classDefinition,
-            Object value
+            Object value,
+            Function<InternalGenericRecord, Object> valueExtractor
     ) throws IOException {
         UpsertTarget target = new PortableUpsertTarget(classDefinition);
         UpsertInjector injector = target.createInjector("object", QueryDataType.OBJECT);
@@ -182,7 +398,25 @@ public class PortableUpsertTargetTest {
 
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
-        assertThat(record.hasField("object")).isTrue();
+        assertThat(valueExtractor.apply(record)).isEqualTo(value);
+    }
+
+    @Test
+    @Parameters(method = "objectClassDefinitions")
+    @SuppressWarnings("unused")
+    public void when_doesNotInjectIntoObject_then_insertsNull(
+            ClassDefinition classDefinition,
+            Object value,
+            Function<InternalGenericRecord, Object> valueExtractor
+    ) throws IOException {
+        UpsertTarget target = new PortableUpsertTarget(classDefinition);
+
+        target.init();
+        Object portable = target.conclude();
+
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(portable));
+        assertThat(valueExtractor.apply(record)).isNull();
     }
 
     @Test
