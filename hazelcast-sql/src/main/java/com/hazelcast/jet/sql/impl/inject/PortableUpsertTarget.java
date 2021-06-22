@@ -92,35 +92,35 @@ class PortableUpsertTarget implements UpsertTarget {
             try {
                 switch (type) {
                     case BOOLEAN:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setBoolean(name, value != NOT_SET && (boolean) value);
                         break;
                     case BYTE:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setByte(name, value == NOT_SET ? (byte) 0 : (byte) value);
                         break;
                     case SHORT:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setShort(name, value == NOT_SET ? (short) 0 : (short) value);
                         break;
                     case CHAR:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setChar(name, value == NOT_SET ? (char) 0 : (char) value);
                         break;
                     case INT:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setInt(name, value == NOT_SET ? 0 : (int) value);
                         break;
                     case LONG:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setLong(name, value == NOT_SET ? 0L : (long) value);
                         break;
                     case FLOAT:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setFloat(name, value == NOT_SET ? 0F : (float) value);
                         break;
                     case DOUBLE:
-                        ensureNotNull(name, value);
+                        ensureNotNull(value);
                         portable.setDouble(name, value == NOT_SET ? 0D : (double) value);
                         break;
                     case DECIMAL:
@@ -201,9 +201,9 @@ class PortableUpsertTarget implements UpsertTarget {
         return portable.build();
     }
 
-    private static void ensureNotNull(String name, Object value) {
+    private static void ensureNotNull(Object value) {
         if (value == null) {
-            throw QueryException.error("Cannot set NULL to a primitive field: " + name);
+            throw QueryException.error("Cannot set NULL to a primitive field");
         }
     }
 }
