@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP;
 import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapScanP;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
@@ -45,11 +46,11 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int IMAP_SCAN_PROCESSOR_SUPPLIER = 12;
 
     // Reserved for index scan processor
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR = 13;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 14;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 15;
+    public static final int IMAP_INDEX_SCAN_PROCESSOR = 13;
+    public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 14;
+    public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 15;
 
-    public static final int LEN = IMAP_SCAN_PROCESSOR_SUPPLIER + 1;
+    public static final int LEN = IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -67,6 +68,12 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[IMAP_SCAN_PROCESSOR] = arg -> new OnHeapMapScanP();
         constructors[IMAP_SCAN_PROCESSOR_META_SUPPLIER] = arg -> new OnHeapMapScanP.OnHeapMapScanMetaSupplier();
         constructors[IMAP_SCAN_PROCESSOR_SUPPLIER] = arg -> new OnHeapMapScanP.OnHeapMapScanSupplier();
+
+        constructors[IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER] =
+                arg -> new MapIndexScanP.MapIndexScanProcessorMetaSupplier<>();
+
+        constructors[IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER] =
+                arg -> new MapIndexScanP.MapIndexScanProcessorSupplier<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

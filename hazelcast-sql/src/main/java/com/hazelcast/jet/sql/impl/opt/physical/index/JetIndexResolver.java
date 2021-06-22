@@ -106,8 +106,8 @@ public final class JetIndexResolver {
      * Second, the lookups are created and if lookup's collation is equal to the full scan's collation,
      * the latter one is excluded.
      *
-     * @param scan         scan operator to be analyzed
-     * @param indexes      indexes available on the map being scanned
+     * @param scan    scan operator to be analyzed
+     * @param indexes indexes available on the map being scanned
      * @return zero, one or more index scan rels
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
@@ -904,7 +904,7 @@ public final class JetIndexResolver {
                 scan.getCluster().getTypeFactory()
         );
 
-        return new MapIndexScanPhysicalRel(
+        return new IMapIndexScanPhysicalRel(
                 scan.getCluster(),
                 traitSet,
                 newRelTable,

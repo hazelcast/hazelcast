@@ -35,18 +35,22 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -168,6 +172,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull String indexName,
             @Nonnull IndexFilter filter,
             @Nonnull List<Expression<?>> projection,
+            @Nullable Expression<Boolean> reminderFilter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
@@ -178,12 +183,14 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getValueDescriptor(),
                 table.fieldPaths(),
                 table.types(),
-                projection,
                 filter,
+                projection,
+                reminderFilter,
                 comparator
         );
 
-        return dag.newUniqueVertex(toString(table), MapIndexScanP.readMapIndexSupplier(mapScanMetadata));
+        String vertexName = "Index(" + toString(table) + ")";
+        return dag.newUniqueVertex(vertexName, MapIndexScanP.readMapIndexSupplier(mapScanMetadata));
     }
 
     @Nonnull

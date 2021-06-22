@@ -112,6 +112,14 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         return converterTypes;
     }
 
+    public RexNode getIndexExp() {
+        return indexExp;
+    }
+
+    public RexNode getRemainderExp() {
+        return remainderExp;
+    }
+
     public List<Boolean> getAscs() {
         RelCollation collation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
         assert collation != null;
@@ -126,7 +134,8 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
     }
 
     public List<FieldCollation> getCollations() {
-        return traitSet.getCollation().getFieldCollations()
+        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        return relCollation.getFieldCollations()
                 .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 

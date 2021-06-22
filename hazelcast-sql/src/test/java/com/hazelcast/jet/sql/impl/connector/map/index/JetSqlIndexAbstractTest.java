@@ -16,18 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.processor.MetaSupplierFromProcessorSupplier;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetPlan;
 import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP;
+import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.MapIndexScanProcessorMetaSupplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
@@ -48,7 +45,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -88,7 +84,6 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -407,12 +402,25 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
     ) {
         int runId = runIdGen++;
         // TODO: requires Jet parser to be enabled. Uncomment after parser switch.
-//        checkPlan(expectedUseIndex, sql, params);
+        checkPlan(expectedUseIndex, sql, params);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
 
         if (!sqlKeys.equals(expectedMapKeys)) {
+            System.out.println("ACTUAL KEYS");
+            for (Integer key : sqlKeys) {
+                System.out.print(key + " ");
+            }
+            System.out.println();
+            System.out.println("---------------------");
+            System.out.println();
+
+            System.out.println("EXPECTED KEYS");
+            for (Integer key : expectedMapKeys) {
+                System.out.print(key + " ");
+            }
+            System.out.println();
             failOnDifference(
                     runId,
                     sql,
@@ -479,19 +487,9 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         if (withIndex) {
             final String indexVertexName = String.format("Index(IMap[partitioned.%s])", mapName);
             final Vertex indexVertexCandidate = dag.getVertex(indexVertexName);
-
             assertNotNull(indexVertexCandidate);
-            assertInstanceOf(MetaSupplierFromProcessorSupplier.class, indexVertexCandidate.getMetaSupplier());
-            assertEquals(1, indexVertexCandidate.getLocalParallelism());
+            assertInstanceOf(MapIndexScanProcessorMetaSupplier.class, indexVertexCandidate.getMetaSupplier());
 
-            Address address = instance().getCluster().getLocalMember().getAddress();
-            MetaSupplierFromProcessorSupplier metaSupplier =
-                    (MetaSupplierFromProcessorSupplier) indexVertexCandidate.getMetaSupplier();
-            ProcessorSupplier processorSupplier = metaSupplier.get(Collections.singletonList(address)).apply(address);
-            assertInstanceOf(MapIndexScanP.MapIndexScanProcessorSupplier.class, processorSupplier);
-            assertEquals(1, processorSupplier.get(0).size());
-            Processor processor = processorSupplier.get(0).iterator().next();
-            assertInstanceOf(MapIndexScanP.class, processor);
         } else {
             final Vertex scanVertexCandidate = dag.getVertex(String.format("IMap[partitioned.%s]", mapName));
             assertNotNull(scanVertexCandidate);

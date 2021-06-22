@@ -134,8 +134,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                projections,
-                filter,
+                filter, projections,
+                null,
                 null
         );
 
@@ -175,8 +175,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                projections,
-                filter,
+                filter, projections,
+                null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
 
@@ -218,8 +218,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                projections,
-                filter,
+                filter, projections,
+                null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
 
@@ -255,8 +255,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                projections,
-                filter,
+                filter, projections,
+                null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
         );
 

@@ -38,17 +38,20 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -134,19 +137,25 @@ public class CreateDagVisitor {
 
         String indexName = tableIndex.getName();
         IndexFilter filter = rel.getIndexFilter();
+        Expression<Boolean> remFilter = convertFilter(
+                new PlanNodeSchema(table.types()),
+                rel.getRemainderExp(),
+                parameterMetadata
+        );
 
         collectObjectKeys(table);
 
         SqlConnector sqlConnector = getJetSqlConnector(table);
         assert sqlConnector instanceof IMapSqlConnector;
-
         IMapSqlConnector mapConnector = (IMapSqlConnector) sqlConnector;
+
         return mapConnector.indexScanReader(
                 dag,
                 table,
                 indexName,
                 filter,
                 rel.projection(parameterMetadata),
+                remFilter,
                 comparator
         );
     }
@@ -389,5 +398,18 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private Expression<Boolean> convertFilter(
+            PlanNodeSchema schema,
+            RexNode expression,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        if (expression == null) {
+            return null;
+        }
+
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
+        return (Expression<Boolean>) expression.accept(converter);
     }
 }

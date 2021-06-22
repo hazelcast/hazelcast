@@ -29,13 +29,14 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * POJO that contains all specific information to scan a partitioned map index by Jet processor.
  */
-public class MapIndexScanMetadata implements IdentifiedDataSerializable {
+public class MapIndexScanMetadata implements IdentifiedDataSerializable, Serializable {
 
     protected String mapName;
     protected String indexName;
@@ -44,6 +45,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected List<QueryPath> fieldPaths;
     protected List<QueryDataType> fieldTypes;
     protected List<Expression<?>> projections;
+    protected Expression<Boolean> remainingFilter;
     protected IndexFilter filter;
     protected ComparatorEx<Object[]> comparator;
 
@@ -58,8 +60,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
             QueryTargetDescriptor valueDescriptor,
             List<QueryPath> fieldPaths,
             List<QueryDataType> fieldTypes,
-            List<Expression<?>> projections,
-            IndexFilter filter,
+            IndexFilter filter, List<Expression<?>> projections,
+            Expression<Boolean> remainingFilter,
             ComparatorEx<Object[]> comparator
     ) {
         this.mapName = mapName;
@@ -69,6 +71,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         this.fieldPaths = fieldPaths;
         this.fieldTypes = fieldTypes;
         this.projections = projections;
+        this.remainingFilter = remainingFilter;
         this.filter = filter;
         this.comparator = comparator;
     }
@@ -103,6 +106,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
 
     public IndexFilter getFilter() {
         return filter;
+    }
+
+    public Expression<Boolean> getRemainingFilter() {
+        return remainingFilter;
     }
 
     public ComparatorEx<Object[]> getComparator() {
@@ -143,6 +150,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         SerializationUtil.writeList(fieldTypes, out);
         SerializationUtil.writeList(projections, out);
         out.writeObject(filter);
+        out.writeObject(comparator);
     }
 
     @Override
@@ -155,6 +163,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         fieldTypes = SerializationUtil.readList(in);
         projections = SerializationUtil.readList(in);
         filter = in.readObject();
+        comparator = in.readObject();
     }
 
     @Override
@@ -164,6 +173,6 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.MAP_SCAN_METADATA;
+        return SqlDataSerializerHook.MAP_INDEX_SCAN_METADATA;
     }
 }

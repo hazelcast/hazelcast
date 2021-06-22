@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -33,12 +35,15 @@ import java.util.concurrent.ExecutionException;
  * @param <B> type of the batch object
  * @param <R> type of the record
  */
-public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> {
-
-    protected final String objectName;
+public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> implements DataSerializable {
+    protected String objectName;
     protected InternalSerializationService serializationService;
 
     protected FunctionEx<B, List<R>> toRecordSetFn;
+
+    public AbstractIndexReader() {
+        // no-op
+    }
 
     public AbstractIndexReader(@Nonnull String objectName, @Nonnull FunctionEx<B, List<R>> toRecordSetFn) {
         this.objectName = objectName;
@@ -46,7 +51,7 @@ public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> 
     }
 
     @Nonnull
-    public abstract F readBatch(PartitionIdSet partitions, IndexIterationPointer[] pointers);
+    public abstract F readBatch(Address address, PartitionIdSet partitions, IndexIterationPointer[] pointers);
 
     @Nonnull
     @SuppressWarnings("unchecked")

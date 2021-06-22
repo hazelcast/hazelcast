@@ -60,32 +60,33 @@ final class FullScanPhysicalRule extends ConverterRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-
         RelNode rel = call.rel(0);
-        if (rel.getTraitSet().contains(getInTrait())) {
-            call.transformTo(convert(rel));
+        Table tableUnwrapped = getTableUnwrapped(rel.getTable());
+        List<RelNode> transforms = new ArrayList<>();
 
-            PartitionedMapTable table = (PartitionedMapTable) getTableUnwrapped(rel.getTable());
+        // Only PartitionedMapTable supposed to have indices.
+        if (tableUnwrapped instanceof PartitionedMapTable) {
+            PartitionedMapTable table = (PartitionedMapTable) tableUnwrapped;
             if (table.getIndexes().isEmpty()) {
+                call.transformTo(convert(rel));
                 return;
             }
 
-            List<RelNode> transforms = new ArrayList<>();
             List<MapTableIndex> indexes = table.getIndexes();
             FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
             Collection<RelNode> indexScans = JetIndexResolver.createIndexScans(logicalScan, indexes);
             // TODO: HD indices will be added to this transforms list later.
             //noinspection CollectionAddAllCanBeReplacedWithConstructor
             transforms.addAll(indexScans);
+        }
 
-            // Produce simple map scan if Calcite haven't produce index scan.
-            if (transforms.isEmpty()) {
-                transforms.add(convert(rel));
-            }
+        // Produce simple map scan if Calcite haven't produce index scan or indexes aren't suppose to be.
+        if (transforms.isEmpty()) {
+            transforms.add(convert(rel));
+        }
 
-            for (RelNode transform : transforms) {
-                call.transformTo(transform);
-            }
+        for (RelNode transform : transforms) {
+            call.transformTo(transform);
         }
     }
 
