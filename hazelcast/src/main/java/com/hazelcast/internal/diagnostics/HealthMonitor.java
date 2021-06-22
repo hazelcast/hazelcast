@@ -19,19 +19,19 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE;
 import static com.hazelcast.spi.properties.ClusterProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -460,9 +460,10 @@ public class HealthMonitor {
                 sb.append("native.meta.memory.used=")
                         .append(numberToUnit(usedMeta)).append(", ");
                 sb.append("native.meta.memory.free=")
-                        .append(numberToUnit(maxMeta - usedMeta)).append(", ");
+                        .append(usedMeta >= maxMeta ? 0 : numberToUnit(maxMeta - usedMeta)).append(", ");
                 sb.append("native.meta.memory.percentage=")
-                        .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
+                        .append(usedMeta >= maxMeta ? percentageString(PERCENTAGE_MULTIPLIER)
+                                : percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
             }
         }
 
