@@ -194,6 +194,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
