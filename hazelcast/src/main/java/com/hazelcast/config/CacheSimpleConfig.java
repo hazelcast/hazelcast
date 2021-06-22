@@ -762,6 +762,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         out.writeObject(hotRestartConfig);
         out.writeObject(eventJournalConfig);
 
+        // RU_COMPAT_4_2
         if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             out.writeObject(merkleTreeConfig);
         }
@@ -794,6 +795,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         hotRestartConfig = in.readObject();
         eventJournalConfig = in.readObject();
 
+        // RU_COMPAT_4_2
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             merkleTreeConfig = in.readObject();
         }
