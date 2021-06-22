@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -36,12 +37,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -59,7 +60,7 @@ public class KvRowProjectorTest {
                         MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
                         DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
                 ),
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1, 8);
@@ -77,7 +78,7 @@ public class KvRowProjectorTest {
                 new IdentityTarget(),
                 (Expression<Boolean>) ConstantExpression.create(Boolean.FALSE, BOOLEAN),
                 emptyList(),
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT
+                mock(ExpressionEvalContext.class)
         );
 
         Object[] row = projector.project(1, 8);

@@ -36,26 +36,29 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
@@ -144,19 +147,16 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-
         Vertex vStart = dag.newUniqueVertex(
                 toString(table),
-                SourceProcessors.readMapP(table.getMapName()));
+                SourceProcessors.readMapP(table.getMapName())
+        );
 
         Vertex vEnd = dag.newUniqueVertex(
                 "Project(" + toString(table) + ")",
                 rowProjector(
-                        paths,
-                        types,
+                        table.paths(),
+                        table.types(),
                         table.getKeyDescriptor(),
                         table.getValueDescriptor(),
                         filter,
@@ -179,17 +179,16 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        String name = table.getMapName();
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-        QueryTargetDescriptor keyDescriptor = table.getKeyDescriptor();
-        QueryTargetDescriptor valueDescriptor = table.getValueDescriptor();
+        KvRowProjector.Supplier rightRowProjectorSupplier = KvRowProjector.supplier(
+                table.paths(),
+                table.types(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                predicate,
+                projections
+        );
 
-        KvRowProjector.Supplier rightRowProjectorSupplier =
-                KvRowProjector.supplier(paths, types, keyDescriptor, valueDescriptor, predicate, projections);
-
-        return IMapJoiner.join(dag, name, toString(table), joinInfo, rightRowProjectorSupplier);
+        return IMapJoiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
     @Override
@@ -205,15 +204,11 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        List<TableField> fields = table.getFields();
-        QueryPath[] paths = fields.stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
-        QueryDataType[] types = fields.stream().map(TableField::getType).toArray(QueryDataType[]::new);
-
         Vertex vStart = dag.newUniqueVertex(
                 "Project(" + toString(table) + ")",
                 KvProcessors.entryProjector(
-                        paths,
-                        types,
+                        table.paths(),
+                        table.types(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
                         (UpsertTargetDescriptor) table.getValueJetMetadata()
                 )
@@ -226,6 +221,60 @@ public class IMapSqlConnector implements SqlConnector {
 
         dag.edge(between(vStart, vEnd));
         return vStart;
+    }
+
+    @Nonnull
+    @Override
+    public Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0,
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        table.keyFields().filter(field -> updatesByFieldNames.containsKey(field.getName())).findFirst().ifPresent(field -> {
+            throw QueryException.error("Cannot update '" + field.getName() + '\'');
+        });
+        if (updatesByFieldNames.containsKey(VALUE) && table.valueFields().count() > 1) {
+            throw QueryException.error("Cannot update '" + VALUE + '\'');
+        }
+
+        List<Expression<?>> projections = IntStream.range(0, table.getFieldCount())
+                .mapToObj(i -> ColumnExpression.create(i, table.getField(i).getType()))
+                .collect(toList());
+        KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
+                table.paths(),
+                table.types(),
+                table.getKeyDescriptor(),
+                table.getValueDescriptor(),
+                null,
+                projections
+        );
+
+        List<Expression<?>> updates = IntStream.range(0, table.getFieldCount())
+                .filter(i -> !((MapTableField) table.getField(i)).getPath().isKey())
+                .mapToObj(i -> {
+                    TableField field = table.getField(i);
+                    if (updatesByFieldNames.containsKey(field.getName())) {
+                        return updatesByFieldNames.get(field.getName());
+                    } else if (field.getName().equals(VALUE)) {
+                        // this works because assigning `this = null` is ignored if this is expanded to fields
+                        return ConstantExpression.create(null, field.getType());
+                    } else {
+                        return ColumnExpression.create(i, field.getType());
+                    }
+                }).collect(toList());
+        ValueProjector.Supplier valueProjectorSupplier = ValueProjector.supplier(
+                table.valuePaths(),
+                table.valueTypes(),
+                (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                updates
+        );
+
+        return dag.newUniqueVertex(
+                "Update(" + toString(table) + ")",
+                new UpdateProcessorSupplier(table.getMapName(), rowProjectorSupplier, valueProjectorSupplier)
+        );
     }
 
     @Nonnull

@@ -304,6 +304,20 @@ public interface SqlConnector {
     }
 
     /**
+     * Returns the supplier for the update processor that will update given
+     * {@code table}. The input to the processor will be the fields
+     * returned by {@link #getPrimaryKey(Table)}.
+     */
+    @Nonnull
+    default Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
+    ) {
+        throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
+    }
+
+    /**
      * Returns the supplier for the delete processor that will delete from the
      * given {@code table}. The input to the processor will be the fields
      * returned by {@link #getPrimaryKey(Table)}.
@@ -315,12 +329,13 @@ public interface SqlConnector {
 
     /**
      * Return the indexes of fields that are primary key. These fields will be
-     * fed to the delete processor.
+     * fed to the delete and update processors.
      * <p>
-     * Every connector that supports a {@link #deleteProcessor} should have a primary
-     * key on each table, otherwise deleting cannot work. If some table
-     * doesn't have a primary key and an empty node list is returned from this
-     * method, an error will be thrown.
+     * Every connector that supports {@link #deleteProcessor} or
+     * {@link #updateProcessor} should have a primary key on each table,
+     * otherwise deleting/updating cannot work. If some table doesn't have a
+     * primary key and an empty node list is returned from this method, an error
+     * will be thrown.
      */
     @Nonnull
     default List<String> getPrimaryKey(Table table) {

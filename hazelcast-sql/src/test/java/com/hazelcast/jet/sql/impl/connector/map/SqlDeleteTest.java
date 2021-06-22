@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql;
+package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
@@ -96,7 +97,7 @@ public class SqlDeleteTest extends SqlTestSupport {
     }
 
     @Test
-    public void dontDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+    public void doNotDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
