@@ -168,9 +168,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             }
 
             if (!entryIterator.hasNext()) {
-                newPointers[i] = IndexIterationPointer.createFinishedIterator();
+                newPointers[i] = IndexIterationPointer.createFinishedPointer();
             } else {
-                newPointers[i] = new IndexIterationPointer(
+                newPointers[i] = IndexIterationPointer.create(
                         pointer.isDescending() ? pointer.getFrom() : lastValueRead,
                         pointer.isDescending() ? pointer.isFromInclusive() : false,
                         pointer.isDescending() ? lastValueRead : pointer.getTo(),
