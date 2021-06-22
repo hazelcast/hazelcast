@@ -211,7 +211,7 @@ public abstract class AbstractIndex implements InternalIndex {
     }
 
     @Override
-    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,

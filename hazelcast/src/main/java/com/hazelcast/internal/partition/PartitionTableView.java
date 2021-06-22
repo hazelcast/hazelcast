@@ -20,7 +20,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
-import static com.hazelcast.internal.partition.PartitionStamp.calculateStamp;
+import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 
 /**
  * An immutable/readonly view of partition table.

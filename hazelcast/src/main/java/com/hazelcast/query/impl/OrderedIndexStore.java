@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.FlatCompositeIterator;
 import com.hazelcast.query.Predicate;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -225,7 +224,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).values().iterator());
     }
 
-    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,
@@ -246,7 +245,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         return navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).entrySet()
                 .stream()
                 .map((Entry<Comparable, Map<Data, QueryableEntry>> es) ->
-                        new IndexValueBatch(es.getKey(), new ArrayList<>(es.getValue().values())))
+                        new IndexKeyEntries(es.getKey(), es.getValue().values()))
                 .iterator();
     }
 

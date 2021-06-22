@@ -70,17 +70,7 @@ public class GlobalIndexPartitionTracker {
     }
 
     /**
-     * Validates the stamp obtained from the previous call to {@link #getPartitionStamp()}.
-     * <p>
-     * The stamp is valid iff:
-     * <ul>
-     *     <li>The index still has the same set of indexed partitions, as was expected by the previous call
-     *     to the {@link #getPartitionStamp()} that returned this stamp
-     *     <li>There are no active partition updates
-     * </ul>
-     *
-     * @param stamp stamp
-     * @return {@code true} if the stamp is valid, {@code false} otherwise
+     * See {@link InternalIndex#validatePartitionStamp(long)}.
      */
     public boolean validatePartitionStamp(long stamp) {
         return state.get().stamp == stamp;

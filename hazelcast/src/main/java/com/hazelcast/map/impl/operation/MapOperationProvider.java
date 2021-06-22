@@ -140,7 +140,7 @@ public interface MapOperationProvider {
     /**
      * Creates an operation for fetching entries using an index.
      */
-    MapOperation createFetchIndexOperation(String name,
+    MapOperation createFetchIndexOperation(String mapName,
                                            String indexName,
                                            IndexIterationPointer[] pointers,
                                            PartitionIdSet partitionIdSet,

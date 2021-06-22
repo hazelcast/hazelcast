@@ -172,7 +172,7 @@ public interface IndexStore {
     Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive,
                                                   Comparable to, boolean toInclusive, boolean descending);
 
-    Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,

@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
-import com.hazelcast.query.impl.IndexValueBatch;
+import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -33,11 +33,11 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
-import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX;
+import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
 
 /**
  * Operation for fetching map entries from an index. It will only return
@@ -137,7 +137,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
             IndexIterationPointer pointer = pointers[i];
 
-            Iterator<IndexValueBatch> entryIterator = index.getSqlRecordIteratorBatch(
+            Iterator<IndexKeyEntries> entryIterator = index.getSqlRecordIteratorBatch(
                     pointer.getFrom(),
                     pointer.isFromInclusive(),
                     pointer.getTo(),
@@ -146,10 +146,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             );
 
             while (entryIterator.hasNext()) {
-                IndexValueBatch indexValueBatch = entryIterator.next();
-                lastValueRead = indexValueBatch.getValue();
+                IndexKeyEntries indexKeyEntries = entryIterator.next();
+                lastValueRead = indexKeyEntries.getIndexKey();
                 @SuppressWarnings({"unchecked", "rawtypes"})
-                List<QueryableEntry<?, ?>> keyEntries = (List) indexValueBatch.getEntries();
+                Collection<QueryableEntry<?, ?>> keyEntries = (Collection) indexKeyEntries.getEntries();
                 if (partitionIdSet == null) {
                     entries.addAll(keyEntries);
                 } else {
@@ -201,7 +201,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     : "Unordered index iteration pointer must have same from and to values";
 
             @SuppressWarnings({"rawtypes", "unchecked"})
-            Set<QueryableEntry<?, ?>> keyEntries = (Set) index.getRecords(pointer.getFrom());
+            Collection<QueryableEntry<?, ?>> keyEntries = (Collection) index.getRecords(pointer.getFrom());
             if (partitionIdSet == null) {
                 entries.addAll(keyEntries);
             } else {
@@ -246,7 +246,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @Override
     public int getClassId() {
-        return MAP_FETCH_INDEX;
+        return MAP_FETCH_INDEX_OPERATION;
     }
 
     public static final class MapFetchIndexOperationResult {

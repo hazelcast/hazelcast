@@ -108,7 +108,7 @@ public interface InternalIndex extends Index {
      * no partition updates since the call to the {@link #getPartitionStamp()}
      * that produced this stamp.
      *
-     * @param stamp stamp
+     * @param stamp the value of {@link PartitionStamp#stamp} field
      * @return {@code true} if the stamp is still valid, {@code false} otherwise
      */
     boolean validatePartitionStamp(long stamp);

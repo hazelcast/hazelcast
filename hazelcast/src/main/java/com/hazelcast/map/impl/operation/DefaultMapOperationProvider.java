@@ -302,13 +302,13 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
 
     @Override
     public MapOperation createFetchIndexOperation(
-            String name,
+            String mapName,
             String indexName,
             IndexIterationPointer[] pointers,
             PartitionIdSet partitionIdSet,
             int sizeHint
     ) {
-        return new MapFetchIndexOperation(name, indexName, pointers, partitionIdSet, sizeHint);
+        return new MapFetchIndexOperation(mapName, indexName, pointers, partitionIdSet, sizeHint);
     }
 
     @Override

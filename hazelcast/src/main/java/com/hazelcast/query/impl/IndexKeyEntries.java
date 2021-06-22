@@ -16,22 +16,25 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.List;
+import java.util.Collection;
 
-public class IndexValueBatch {
-    private Comparable<?> value;
-    private List<QueryableEntry> entries;
+/**
+ * A holder for one index key and associated entries.
+ */
+public class IndexKeyEntries {
+    private final Comparable<?> indexKey;
+    private final Collection<QueryableEntry> entries;
 
-    public IndexValueBatch(Comparable<?> value, List<QueryableEntry> entries) {
-        this.value = value;
+    public IndexKeyEntries(Comparable<?> indexKey, Collection<QueryableEntry> entries) {
+        this.indexKey = indexKey;
         this.entries = entries;
     }
 
-    public Comparable<?> getValue() {
-        return value;
+    public Comparable<?> getIndexKey() {
+        return indexKey;
     }
 
-    public List<QueryableEntry> getEntries() {
+    public Collection<QueryableEntry> getEntries() {
         return entries;
     }
 }

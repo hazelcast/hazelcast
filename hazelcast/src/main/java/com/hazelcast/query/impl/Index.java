@@ -167,7 +167,7 @@ public interface Index {
      * @return iterator over index entries matching the given range in batches
      *         grouped by the index value
      */
-    Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,
