@@ -213,9 +213,11 @@ class JetPlanExecutor {
         return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments) {
+    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+        JobConfig jobConfig = new JobConfig()
+                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setTimeoutMillis(timeout);
 
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();

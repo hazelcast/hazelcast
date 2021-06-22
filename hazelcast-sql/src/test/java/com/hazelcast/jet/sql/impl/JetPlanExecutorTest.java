@@ -138,7 +138,7 @@ public class JetPlanExecutorTest {
         given(jet.newLightJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan, queryId, emptyList());
+        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), -1L);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);

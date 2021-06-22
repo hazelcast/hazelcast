@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 public class JobTimeoutTest extends JetTestSupport {
 
     @Test
-    public void testLightJobTimeout() {
+    public void when_lightJobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
         dag.newVertex("stuck", StuckSource::new);
@@ -45,7 +45,7 @@ public class JobTimeoutTest extends JetTestSupport {
     }
 
     @Test
-    public void testJobTimeout() {
+    public void when_jobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
         dag.newVertex("stuck", StuckSource::new);
@@ -57,7 +57,7 @@ public class JobTimeoutTest extends JetTestSupport {
     }
 
     @Test
-    public void testSuccessfulLightJobExecution() {
+    public void when_lightJobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
         dag.newVertex("normal", NormalSource::new);
@@ -69,7 +69,7 @@ public class JobTimeoutTest extends JetTestSupport {
     }
 
     @Test
-    public void testSuccessfulJobExecution() {
+    public void when_jobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
         dag.newVertex("normal", NormalSource::new);
@@ -78,6 +78,24 @@ public class JobTimeoutTest extends JetTestSupport {
 
         job.join();
         assertEquals(JobStatus.COMPLETED, job.getStatus());
+    }
+
+    @Test
+    public void when_jobIsResumedAndExceedsTimeout_jobIsCancelled() {
+        final HazelcastInstance hz = createHazelcastInstance();
+        final DAG dag = new DAG();
+        dag.newVertex("normal", StuckSource::new);
+        final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
+        final Job job = hz.getJet().newJob(dag, jobConfig);
+
+        assertJobStatusEventually(job, JobStatus.RUNNING, 1);
+        job.suspend();
+
+        assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
+        job.resume();
+
+        assertThrows(CancellationException.class, job::join);
+        assertEquals(JobStatus.FAILED, job.getStatus());
     }
 
     private static class NormalSource extends AbstractProcessor {

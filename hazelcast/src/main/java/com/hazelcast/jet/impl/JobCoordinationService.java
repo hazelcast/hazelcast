@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
@@ -272,11 +273,9 @@ public class JobCoordinationService {
                 // If there is no master context and job result at the same time, it means this is the first submission
                 jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
-                // TODO: handle different state transitions before this point?
                 if (isMaster() && jobConfig.getTimeoutMillis() > 0) {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis(), false);
                 }
-
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 res.completeExceptionally(e);
@@ -919,7 +918,20 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
+
+        if (masterContext.jobConfig().getTimeoutMillis() > 0) {
+            final long remaining = remainingTimeout(masterContext);
+            scheduleJobTimeout(jobId, remaining, false);
+        }
+
         tryStartJob(masterContext);
+    }
+
+    private long remainingTimeout(final MasterContext masterContext) {
+        final long elapsed = Clock.currentTimeMillis() - masterContext.jobRecord().getCreationTime();
+        final long timeout = masterContext.jobConfig().getTimeoutMillis();
+
+        return Math.max(1, (timeout - elapsed));
     }
 
     private void checkOperationalState() {
@@ -1050,6 +1062,11 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
+
+            if (masterContext.jobConfig().getTimeoutMillis() > 0) {
+                final long remaining = remainingTimeout(masterContext);
+                scheduleJobTimeout(jobId, remaining, false);
+            }
             tryStartJob(masterContext);
         }
 
@@ -1235,14 +1252,22 @@ public class JobCoordinationService {
             return;
         }
 
+        if (scheduledJobTimeouts.containsKey(jobId)) {
+            return;
+        }
+
         final ScheduledFuture<?> future = this.nodeEngine().getExecutionService().schedule(() -> {
             final MasterContext mc = masterContexts.get(jobId);
             final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
 
-            if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
-                terminateJob(jobId, CANCEL_FORCEFUL);
-            } else if (lightMc != null && !lightMc.isCancelled()) {
-                lightMc.requestTermination();
+            try {
+                if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
+                    terminateJob(jobId, CANCEL_FORCEFUL);
+                } else if (lightMc != null && !lightMc.isCancelled()) {
+                    lightMc.requestTermination();
+                }
+            } finally {
+                scheduledJobTimeouts.remove(jobId);
             }
         }, timeout, MILLISECONDS);
 

@@ -1292,9 +1292,10 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the maximum execution time for the job in milliseconds. If the execution time (counted from the actual start
-     * of the job), exceeds this value, the job is forcefully cancelled.
-     * The default value is {@code -1}.
+     * Sets the maximum execution time for the job in milliseconds. If the
+     * execution time (counted from the actual start of the job), exceeds this
+     * value, the job is forcefully cancelled. The default value is {@code -1},
+     * which denotes no time limit on the execution of the job.
      *
      * @since 5.0
      */
