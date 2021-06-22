@@ -37,6 +37,7 @@ import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
+import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
@@ -173,10 +174,36 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     @Override
-    protected SqlSelect createSourceSelectForUpdate(SqlUpdate call) {
-        isUpdate = true;
+    protected SqlSelect createSourceSelectForUpdate(SqlUpdate update) {
+        SqlNode sourceTable = update.getTargetTable();
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
 
-        return super.createSourceSelectForUpdate(call);
+        SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
+        if (validatorTable != null) {
+            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+            SqlConnector connector = getJetSqlConnector(table);
+
+            // only tables with primary keys can be updated
+            if (connector.getPrimaryKey(table).isEmpty()) {
+                throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
+            }
+
+            // add all fields, even hidden ones...
+            table.getFields().forEach(field -> selectList.add(new SqlIdentifier(field.getName(), SqlParserPos.ZERO)));
+        }
+        int ordinal = 0;
+        for (SqlNode exp : update.getSourceExpressionList()) {
+            // Force unique aliases to avoid a duplicate for Y with
+            // SET X=Y
+            String alias = SqlUtil.deriveAliasFromOrdinal(ordinal);
+            selectList.add(SqlValidatorUtil.addAlias(exp, alias));
+            ++ordinal;
+        }
+        if (update.getAlias() != null) {
+            sourceTable = SqlValidatorUtil.addAlias(sourceTable, update.getAlias().getSimple());
+        }
+        return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
+                update.getCondition(), null, null, null, null, null, null, null);
     }
 
     @Override
@@ -189,14 +216,6 @@ public class JetSqlValidator extends HazelcastSqlValidator {
         SqlNodeList sourceExpressionList = update.getSourceExpressionList();
         for (int i = 0; i < sourceExpressionList.size(); i++) {
             update.getSourceExpressionList().set(i, selectList.get(selectList.size() - sourceExpressionList.size() + i));
-        }
-
-        // only tables with primary keys can be updated
-        SqlNode sourceTable = update.getTargetTable();
-        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
-        Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
-        if (getJetSqlConnector(table).getPrimaryKey(table).isEmpty()) {
-            throw QueryException.error("Cannot UPDATE " + update.getTargetTable() + ": it doesn't have a primary key");
         }
 
         // UPDATE FROM SELECT is transformed into join (which is not supported yet):
