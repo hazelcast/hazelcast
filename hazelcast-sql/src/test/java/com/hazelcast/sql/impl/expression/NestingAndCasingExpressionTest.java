@@ -469,7 +469,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_TO_TIMESTAMP_TZ() {
-        check(sql("TO_TIMESTAMP_TZ(?) || TO_TIMESTAMP_TZ(1)"), 1L);
+        check(sql("TO_TIMESTAMP_TZ(?) || TO_TIMESTAMP_TZ(?)"), 1L, 1L);
     }
 
     public void test_TO_EPOCH_MILLIS() {

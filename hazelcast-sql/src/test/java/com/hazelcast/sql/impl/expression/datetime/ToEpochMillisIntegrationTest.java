@@ -33,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
@@ -48,7 +49,9 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ToEpochMillisIntegrationTest extends ExpressionTestSupport {
-    private static final long SYSTEM_OFFSET_MILLIS = OffsetDateTime.now().getOffset().getTotalSeconds() * 1000L;
+    private static final long SYSTEM_OFFSET_MILLIS = OffsetDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault())
+            .getOffset()
+            .getTotalSeconds() * 1000L;
     private static final long START_OF_DAY = OffsetDateTime.now()
             .toLocalDate()
             .atStartOfDay()
