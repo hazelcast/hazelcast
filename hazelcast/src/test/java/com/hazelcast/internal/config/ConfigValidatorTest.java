@@ -65,7 +65,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(config.getClassLoader());
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
         properties = nodeEngine.getProperties();

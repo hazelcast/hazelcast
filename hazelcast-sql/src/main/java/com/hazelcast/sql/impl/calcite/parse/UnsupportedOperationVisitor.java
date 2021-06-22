@@ -163,6 +163,7 @@ public final class UnsupportedOperationVisitor implements SqlVisitor<Void> {
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Sorting
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DESC);

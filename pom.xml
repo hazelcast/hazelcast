@@ -89,7 +89,7 @@
 
         <!-- External Hazelcast modules -->
         <hazelcast.aws.version>3.3</hazelcast.aws.version>
-        <hazelcast.kubernetes.version>2.2.2</hazelcast.kubernetes.version>
+        <hazelcast.kubernetes.version>2.2.3</hazelcast.kubernetes.version>
         <hazelcast.gcp.version>2.1</hazelcast.gcp.version>
         <hazelcast.azure.version>2.1</hazelcast.azure.version>
 

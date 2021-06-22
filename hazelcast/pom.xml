@@ -113,64 +113,17 @@
             </plugin>
 
             <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven.bundle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
-                                <Export-Package>
-                                    com.hazelcast.*
-                                </Export-Package>
-                                <Import-Package>
-                                    !org.junit,
-                                    !com.hazelcast.*,
-                                    !com.fasterxml.jackson.*,
-                                    !org.snakeyaml.*,
-                                    !io.github.classgraph.*,
-                                    !org.everit.json.*,
-                                    !org.json.*,
-                                    sun.misc;resolution:=optional,
-                                    javax.cache;resolution:=optional,
-                                    javax.cache.*;resolution:=optional,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.spi;resolution:=optional,
-                                    org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.spi;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
-                                    *
-                                </Import-Package>
-                                <Bundle-Name>Hazelcast(Core)</Bundle-Name>
-                            </instructions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
                             <mainClass>${hazelcast.serverMainClass}</mainClass>
-                            <!--<addClasspath>true</addClasspath>-->
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                         <manifestEntries>
                             <Automatic-Module-Name>com.hazelcast.core</Automatic-Module-Name>
                         </manifestEntries>
@@ -199,42 +152,7 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${maven.antrun.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>copy-hazelcast-xml</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
-                                      tofile="${basedir}/target/hazelcast.xml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-default.yaml"
-                                      tofile="${basedir}/target/hazelcast.yaml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
-                                      tofile="${basedir}/target/hazelcast-full-example.xml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.yaml"
-                                      tofile="${basedir}/target/hazelcast-full-example.yaml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.xml"
-                                      tofile="${basedir}/target/hazelcast-client-full-example.xml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.yaml"
-                                      tofile="${basedir}/target/hazelcast-client-full-example.yaml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.xml"
-                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
-                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
-                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -247,17 +165,9 @@
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
-                                <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
-                                    <include>com.fasterxml.jackson.jr:jackson-jr-objects</include>
-                                    <include>com.fasterxml.jackson.jr:jackson-jr-annotation-support</include>
-                                    <include>com.fasterxml.jackson.dataformat:jackson-dataformat-csv</include>
-                                    <include>org.snakeyaml:snakeyaml-engine</include>
-                                    <include>io.github.classgraph:classgraph</include>
-                                    <include>com.github.erosb:everit-json-schema</include>
-                                    <include>org.json:json</include>
-                                </includes>
+                                <excludes>
+                                    <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                </excludes>
                             </artifactSet>
                             <relocations>
                                 <relocation>
@@ -304,7 +214,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.snakeyaml:*</artifact>
+                                    <artifact>org.*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -321,12 +231,117 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>**/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
                             </filters>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <!-- Let's use the package phase to run the bundle plugin after the shade plugin.
+                            We need to add the resulting MANIFEST.MF to the JAR manually then.
+                            (see the "repack" execution in the ant-plugin configuration) -->
+                        <phase>package</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                        <configuration>
+                            <instructions>
+                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
+                                <Export-Package>
+                                    com.hazelcast.*
+                                </Export-Package>
+                                <Import-Package>
+                                    !org.junit,
+                                    !com.hazelcast.*,
+                                    !com.fasterxml.jackson.*,
+                                    !org.snakeyaml.*,
+                                    !io.github.classgraph.*,
+                                    !org.everit.json.*,
+                                    !org.json.*,
+                                    sun.misc;resolution:=optional,
+                                    javax.cache;resolution:=optional,
+                                    javax.cache.*;resolution:=optional,
+                                    org.apache.log4j;resolution:=optional,
+                                    org.apache.log4j.spi;resolution:=optional,
+                                    org.apache.logging.log4j;resolution:=optional,
+                                    org.apache.logging.log4j.spi;resolution:=optional,
+                                    org.slf4j;resolution:=optional,
+                                    org.codehaus.groovy.jsr223;resolution:=optional,
+                                    org.jruby.embed.jsr223;resolution:=optional,
+                                    com.damnhandy.uri.template;resolution:=optional,
+                                    org.apache.commons.validator.routines;resolution:=optional,
+                                    com.google.re2j;resolution:=optional,
+                                    *
+                                </Import-Package>
+                                <Bundle-Name>Hazelcast(Core)</Bundle-Name>
+                            </instructions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven.antrun.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>copy-hazelcast-xml</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy file="${basedir}/src/main/resources/hazelcast-default.xml"
+                                      tofile="${basedir}/target/hazelcast.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-default.yaml"
+                                      tofile="${basedir}/target/hazelcast.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-full-example.yaml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.xml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.xml"/>
+                                <copy file="${basedir}/src/main/resources/hazelcast-client-failover-full-example.yaml"
+                                      tofile="${basedir}/target/hazelcast-client-failover-full-example.yaml"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>repack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <unzip src="${project.build.directory}/${project.build.finalName}.jar"
+                                    dest="${project.build.directory}/tmp-repack" />
+                                <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
+                                      tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
+                                <zip basedir="${project.build.directory}/tmp-repack"
+                                    destfile="${project.build.directory}/${project.build.finalName}.jar" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
