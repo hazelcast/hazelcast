@@ -141,7 +141,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 new Person("person1", 45),
                 new Person("person4", 45)
         ));
-
     }
 
     @Test
@@ -161,7 +160,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
-
         assertResultSorted(result, Arrays.asList(
                 new Person("person2", 39),
                 new Person("person3", 60)
@@ -169,7 +167,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenSizeHintIsSmall_thenFetchInMultipleOperations() throws ExecutionException, InterruptedException {
+    public void whenSizeHintIsSmall_thenFetchInMultipleCalls() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
@@ -184,7 +182,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
-
 
         assertResultSorted(result, Collections.singletonList(new Person("person2", 39)));
 
@@ -204,7 +201,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMultipleObjectsHasSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
+    public void whenMultipleObjectsHaveSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
@@ -218,7 +215,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
-
 
         assertResultSorted(result, Arrays.asList(
                 new Person("person2", 39),
@@ -468,5 +464,4 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, new MockingNodeContext(nodeContext));
         }
     }
-
 }

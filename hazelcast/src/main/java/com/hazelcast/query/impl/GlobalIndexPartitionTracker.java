@@ -163,6 +163,7 @@ public class GlobalIndexPartitionTracker {
                 + ", state=" + state + '}';
     }
 
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     public static final class PartitionStamp {
         public final long stamp;
         @Nonnull

@@ -49,6 +49,8 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERA
  */
 public class MapFetchIndexOperation extends MapOperation implements ReadonlyOperation {
 
+    private static final int EXCESS_ENTRIES_RESERVE = 128;
+
     private String indexName;
     private PartitionIdSet partitionIdSet;
     private IndexIterationPointer[] pointers;
@@ -120,8 +122,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
-        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + 128);
+        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + EXCESS_ENTRIES_RESERVE);
         Comparable<?> lastValueRead = null;
         boolean sizeHintReached = false;
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
@@ -129,7 +132,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
 
         for (int i = 0; i < pointers.length; i++) {
-
             if (pointers[i].isDone() || sizeHintReached) {
                 newPointers[i] = pointers[i];
                 continue;
