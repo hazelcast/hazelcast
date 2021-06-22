@@ -201,6 +201,27 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_insertsNullIntoPrimitive_then_fails() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
+                .hasMessageContaining("Cannot set NULL to a primitive field");
+    }
+
+    @Test
     public void test_fieldsShadowing() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
@@ -612,14 +633,14 @@ public class SqlPortableTest extends SqlTestSupport {
         MapServiceContext context = service.getMapServiceContext();
 
         return Arrays.stream(context.getPartitionContainers())
-                     .map(partitionContainer -> partitionContainer.getExistingRecordStore(mapName))
-                     .filter(Objects::nonNull)
-                     .flatMap(store -> {
-                         Iterator<Entry<Data, Record>> iterator = store.iterator();
-                         return stream(spliteratorUnknownSize(iterator, ORDERED), false);
-                     })
-                     .map(entry -> entry(entry.getKey(), (Data) entry.getValue().getValue()))
-                     .findFirst()
-                     .get();
+                .map(partitionContainer -> partitionContainer.getExistingRecordStore(mapName))
+                .filter(Objects::nonNull)
+                .flatMap(store -> {
+                    Iterator<Entry<Data, Record>> iterator = store.iterator();
+                    return stream(spliteratorUnknownSize(iterator, ORDERED), false);
+                })
+                .map(entry -> entry(entry.getKey(), (Data) entry.getValue().getValue()))
+                .findFirst()
+                .get();
     }
 }
