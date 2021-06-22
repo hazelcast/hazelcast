@@ -17,18 +17,20 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
+
+import static java.util.Collections.singletonList;
+import static org.apache.calcite.rel.core.TableModify.Operation.INSERT;
 
 public class InsertPhysicalRel extends TableModify implements PhysicalRel {
 
@@ -38,18 +40,14 @@ public class InsertPhysicalRel extends TableModify implements PhysicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
-            List<String> updateColumnList,
-            List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation,
-                updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, INSERT, null, null, flattened);
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getTable());
+        return new PlanNodeSchema(singletonList(QueryDataType.BIGINT));
     }
 
     @Override
@@ -59,16 +57,6 @@ public class InsertPhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertPhysicalRel(
-                getCluster(),
-                traitSet,
-                getTable(),
-                getCatalogReader(),
-                sole(inputs),
-                getOperation(),
-                getUpdateColumnList(),
-                getSourceExpressionList(),
-                isFlattened()
-        );
+        return new InsertPhysicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }

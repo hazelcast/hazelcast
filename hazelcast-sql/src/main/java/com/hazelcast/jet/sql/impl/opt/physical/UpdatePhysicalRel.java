@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -33,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
@@ -43,12 +46,11 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
     }
 
     public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
@@ -59,7 +61,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getTable());
+        return new PlanNodeSchema(singletonList(QueryDataType.BIGINT));
     }
 
     @Override
@@ -75,7 +77,6 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 getTable(),
                 getCatalogReader(),
                 sole(inputs),
-                getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened()
