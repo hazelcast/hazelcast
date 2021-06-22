@@ -18,6 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,7 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class GlobalIndexPartitionTracker {
 
-    public static final long STAMP_INVALID = -1;
     private static final long STAMP_INITIAL = 0;
 
     /**
@@ -54,31 +56,26 @@ public class GlobalIndexPartitionTracker {
     }
 
     /**
-     * Gets the stamp associated with the given expected partition IDs.
-     * <p>
-     * The obtained stamp could be checked for validity using {@link #validatePartitionStamp(long)}.
-     *
-     * @param expectedPartitionIds expected partition IDs
-     * @return stamp or {@code -1} if indexed partitions do not match expected partitions, or there is
-     * an active partition update from {@link #beginPartitionUpdate()}
+     * See {@link InternalIndex#getPartitionStamp()}.
      */
-    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+    @Nullable
+    public PartitionStamp getPartitionStamp() {
         State state0 = state.get();
 
-        if (state0.pending > 0 || !state0.indexedPartitions.equals(expectedPartitionIds)) {
-            return STAMP_INVALID;
+        if (state0.pending > 0) {
+            return null;
         }
 
-        return state0.stamp;
+        return new PartitionStamp(state0.stamp, state0.indexedPartitions);
     }
 
     /**
-     * Validates the stamp obtained from the previous call to {@link #getPartitionStamp(PartitionIdSet)}.
+     * Validates the stamp obtained from the previous call to {@link #getPartitionStamp()}.
      * <p>
      * The stamp is valid iff:
      * <ul>
      *     <li>The index still has the same set of indexed partitions, as was expected by the previous call
-     *     to the {@link #getPartitionStamp(PartitionIdSet)} that returned this stamp
+     *     to the {@link #getPartitionStamp()} that returned this stamp
      *     <li>There are no active partition updates
      * </ul>
      *
@@ -174,6 +171,34 @@ public class GlobalIndexPartitionTracker {
         return "GlobalIndexPartitionTracker{"
                 + "partitionCount=" + partitionCount
                 + ", state=" + state + '}';
+    }
+
+    public static final class PartitionStamp {
+        public final long stamp;
+        @Nonnull
+        public final PartitionIdSet partitions;
+
+        public PartitionStamp(long stamp, @Nonnull PartitionIdSet partitions) {
+            this.stamp = stamp;
+            this.partitions = partitions;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PartitionStamp that = (PartitionStamp) o;
+            return stamp == that.stamp && partitions.equals(that.partitions);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(stamp, partitions);
+        }
     }
 
     /**

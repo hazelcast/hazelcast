@@ -19,8 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -268,8 +268,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
-            return delegate.getPartitionStamp(expectedPartitionIds);
+        public PartitionStamp getPartitionStamp() {
+            return delegate.getPartitionStamp();
         }
 
         @Override
