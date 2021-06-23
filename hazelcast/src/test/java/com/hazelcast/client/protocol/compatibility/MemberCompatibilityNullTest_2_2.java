@@ -6689,8 +6689,7 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.wanReplicationRef));
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.hotRestartConfig));
-        assertTrue(parameters.isMerkleTreeConfigExists);
-        assertTrue(isEqual(null, parameters.merkleTreeConfig));
+        assertFalse(parameters.isMerkleTreeConfigExists);
     }
 
     @Test

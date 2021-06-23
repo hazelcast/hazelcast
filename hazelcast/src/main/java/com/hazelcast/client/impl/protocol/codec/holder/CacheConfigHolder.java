@@ -244,6 +244,7 @@ public class CacheConfigHolder {
 
         config.setMergePolicyConfig(mergePolicyConfig);
         config.setDisablePerEntryInvalidationEvents(disablePerEntryInvalidationEvents);
+        config.setMerkleTreeConfig(merkleTreeConfig);
 
         if (cachePartitionLostListenerConfigs != null) {
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>(
