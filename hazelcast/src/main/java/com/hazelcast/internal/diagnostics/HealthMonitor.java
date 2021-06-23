@@ -460,10 +460,10 @@ public class HealthMonitor {
                 sb.append("native.meta.memory.used=")
                         .append(numberToUnit(usedMeta)).append(", ");
                 sb.append("native.meta.memory.free=")
-                        .append(usedMeta >= maxMeta ? 0 : numberToUnit(maxMeta - usedMeta)).append(", ");
+                        .append(usedMeta >= maxMeta ? "0" : numberToUnit(maxMeta - usedMeta)).append(", ");
                 sb.append("native.meta.memory.percentage=")
                         .append(usedMeta >= maxMeta ? percentageString(PERCENTAGE_MULTIPLIER)
-                                : percentageString(PERCENTAGE_MULTIPLIER * usedMeta / (usedNative + usedMeta))).append(", ");
+                                : percentageString(PERCENTAGE_MULTIPLIER * usedMeta / usedNative)).append(", ");
             }
         }
 
