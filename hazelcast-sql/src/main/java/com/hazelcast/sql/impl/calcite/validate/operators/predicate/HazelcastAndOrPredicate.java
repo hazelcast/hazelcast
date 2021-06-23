@@ -16,11 +16,11 @@
 
 package com.hazelcast.sql.impl.calcite.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.OperandCheckerProgram;
+import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastBinaryOperator;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;

@@ -17,12 +17,12 @@
 package com.hazelcast.sql.impl.calcite.validate.operand;
 
 import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.param.TemporalPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;

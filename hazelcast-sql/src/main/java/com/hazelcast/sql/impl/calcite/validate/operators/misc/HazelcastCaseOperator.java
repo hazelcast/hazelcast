@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.calcite.validate.operators.misc;
 
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.runtime.CalciteContextException;

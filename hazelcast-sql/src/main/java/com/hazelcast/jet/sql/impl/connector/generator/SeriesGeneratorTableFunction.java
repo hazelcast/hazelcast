@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
+import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
