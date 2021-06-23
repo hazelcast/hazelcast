@@ -265,6 +265,25 @@ public class AttributeIndexRegistry {
         }
 
         @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparison comparison,
+                Comparable value,
+                boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
         public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
                 Comparable from,
                 boolean fromInclusive,
