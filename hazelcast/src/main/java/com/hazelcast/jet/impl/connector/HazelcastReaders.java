@@ -30,10 +30,8 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 

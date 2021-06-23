@@ -263,7 +263,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, AbstractMapReader<F, B, R>> readerSupplier;
 
         LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, AbstractMapReader<F, B, R>> readerSupplier) {
+                @Nonnull BiFunctionEx<
+                        HazelcastInstance,
+                        InternalSerializationService,
+                        AbstractMapReader<F, B, R>> readerSupplier) {
             this.readerSupplier = readerSupplier;
         }
 
@@ -359,7 +362,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     }
 
     static class LocalCacheReader
-            extends AbstractMapReader<InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>> {
+            extends AbstractMapReader<
+                InternalCompletableFuture<CacheEntriesWithCursor>,
+                CacheEntriesWithCursor,
+                Entry<Data, Data>> {
 
         private final CacheProxy cacheProxy;
 

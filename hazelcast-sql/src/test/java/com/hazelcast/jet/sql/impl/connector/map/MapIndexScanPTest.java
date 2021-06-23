@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -80,15 +80,13 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     private IMap<Integer, Person> map;
 
-    public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_ANY_ORDER =
+    public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_IN_ORDER =
             (expected, actual) -> {
                 if (expected.size() != actual.size()) { // shortcut
                     return false;
                 }
                 List<Object[]> expectedList = (List<Object[]>) expected;
                 List<Object[]> actualList = (List<Object[]>) actual;
-                expectedList.sort(Comparator.comparingInt((Object[] o) -> (int) o[0]));
-                actualList.sort(Comparator.comparingInt((Object[] o) -> (int) o[0]));
                 for (int i = 0; i < expectedList.size(); i++) {
                     if (!Arrays.equals(expectedList.get(i), actualList.get(i))) {
                         return false;
@@ -145,7 +143,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);
@@ -188,7 +186,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);
@@ -233,7 +231,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);
@@ -277,7 +275,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);
@@ -323,7 +321,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(expected);

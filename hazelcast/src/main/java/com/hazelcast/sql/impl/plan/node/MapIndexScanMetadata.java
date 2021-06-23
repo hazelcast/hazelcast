@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.function.ComparatorEx;
@@ -54,6 +55,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         // No-op.
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public MapIndexScanMetadata(
             String mapName,
             String indexName,
@@ -124,6 +126,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         return comparator;
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -141,13 +144,26 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
                 && fieldTypes.equals(that.fieldTypes)
                 && projection.equals(that.projection)
                 && fullProjection.equals(that.fullProjection)
-                && remainingFilter.equals(that.remainingFilter)
-                && filter.equals(that.filter);
+                && Objects.equals(remainingFilter, that.remainingFilter)
+                && Objects.equals(filter, that.filter)
+                && Objects.equals(comparator, that.comparator);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mapName, indexName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projection, filter);
+        return Objects.hash(
+                mapName,
+                indexName,
+                keyDescriptor,
+                valueDescriptor,
+                fieldPaths,
+                fieldTypes,
+                projection,
+                fullProjection,
+                remainingFilter,
+                filter,
+                comparator
+        );
     }
 
     @Override
