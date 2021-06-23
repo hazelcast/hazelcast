@@ -32,39 +32,42 @@ import java.util.List;
 
 public class IndexIterationPointer implements IdentifiedDataSerializable {
 
-    private static final int FLAG_DESCENDING = 1;
-    private static final int FLAG_FROM_INCLUSIVE = 2;
-    private static final int FLAG_TO_INCLUSIVE = 4;
+    private static final byte FLAG_DESCENDING = 1;
+    private static final byte FLAG_FROM_INCLUSIVE = 1 << 1;
+    private static final byte FLAG_TO_INCLUSIVE = 1 << 2;
+    private static final byte FLAG_POINT_LOOKUP = 1 << 3;
 
+    private byte flags;
     private Comparable<?> from;
     private Comparable<?> to;
-    private byte flags;
-    private boolean done;
 
     public IndexIterationPointer() {
     }
 
-    public IndexIterationPointer(
+    private IndexIterationPointer(
+            byte flags,
+            Comparable<?> from,
+            Comparable<?> to
+    ) {
+        this.flags = flags;
+        this.from = from;
+        this.to = to;
+    }
+
+    public static IndexIterationPointer create(
             Comparable<?> from,
             boolean fromInclusive,
             Comparable<?> to,
             boolean toInclusive,
             boolean descending
     ) {
-        this.from = from;
-        this.to = to;
-
-        flags = (byte) ((descending ? FLAG_DESCENDING : 0)
-                | (fromInclusive ? FLAG_FROM_INCLUSIVE : 0)
-                | (toInclusive ? FLAG_TO_INCLUSIVE : 0));
-    }
-
-    private IndexIterationPointer(boolean done) {
-        this.done = done;
-    }
-
-    public static IndexIterationPointer createFinishedIterator() {
-        return new IndexIterationPointer(true);
+        return new IndexIterationPointer(
+                (byte) ((descending ? FLAG_DESCENDING : 0)
+                        | (fromInclusive ? FLAG_FROM_INCLUSIVE : 0)
+                        | (toInclusive ? FLAG_TO_INCLUSIVE : 0)
+                        | (from == to ? FLAG_POINT_LOOKUP : 0)),
+                from,
+                to);
     }
 
     public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
@@ -82,11 +85,11 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
             Comparable<?> from = rangeFilter.getFrom().getValue(evalContext);
             Comparable<?> to = rangeFilter.getTo().getValue(evalContext);
-            result.add(new IndexIterationPointer(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
+            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(new IndexIterationPointer(value, true, value, true, false));
+            result.add(create(value, true, value, true, false));
         } else if (indexFilter instanceof IndexInFilter) {
             IndexInFilter inFilter = (IndexInFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
@@ -115,24 +118,24 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         return (flags & FLAG_DESCENDING) != 0;
     }
 
-    public boolean isDone() {
-        return done;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(from);
-        out.writeObject(to);
         out.writeByte(flags);
-        out.writeBoolean(done);
+        out.writeObject(from);
+        if ((flags & FLAG_POINT_LOOKUP) == 0) {
+            out.writeObject(to);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        from = in.readObject();
-        to = in.readObject();
         flags = in.readByte();
-        done = in.readBoolean();
+        from = in.readObject();
+        if ((flags & FLAG_POINT_LOOKUP) == 0) {
+            to = in.readObject();
+        } else {
+            to = from;
+        }
     }
 
     @Override

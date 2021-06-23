@@ -120,6 +120,7 @@ public final class NioInboundPipeline extends NioPipeline implements InboundPipe
         if (readBytes > 0) {
             processCount.inc();
             lastReadTime = currentTimeMillis();
+            bytesRead.inc(readBytes);
         }
 
         // currently the whole pipeline is retried when one of the handlers is dirty; but only the dirty handler

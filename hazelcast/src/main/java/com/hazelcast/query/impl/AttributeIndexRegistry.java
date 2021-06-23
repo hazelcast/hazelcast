@@ -19,8 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -265,7 +265,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
                 Comparable from,
                 boolean fromInclusive,
                 Comparable to,
@@ -389,7 +389,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+        public PartitionStamp getPartitionStamp() {
             throw newUnsupportedException();
         }
 

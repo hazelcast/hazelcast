@@ -59,10 +59,6 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 public class LightMasterContext {
 
-    public static final JobConfig LIGHT_JOB_CONFIG = new JobConfig()
-            .setMetricsEnabled(false)
-            .setAutoScaling(false);
-
     private static final Object NULL_OBJECT = new Object() {
         @Override
         public String toString() {
@@ -83,7 +79,7 @@ public class LightMasterContext {
     private final Set<Vertex> vertices;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
+    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId, JobConfig config) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
 
@@ -103,7 +99,7 @@ public class LightMasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, config, 0, true);
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);

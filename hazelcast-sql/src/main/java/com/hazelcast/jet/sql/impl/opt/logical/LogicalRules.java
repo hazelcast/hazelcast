@@ -62,6 +62,9 @@ public final class LogicalRules {
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
 
+                // Sort
+                SortLogicalRule.INSTANCE,
+
                 // Join
                 JoinLogicalRule.INSTANCE,
                 JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
@@ -77,16 +80,13 @@ public final class LogicalRules {
                 ValuesLogicalRules.PROJECT_FILTER_INSTANCE,
                 ValuesLogicalRules.UNION_INSTANCE,
 
-                // Insert rules
+                // DML rules
                 InsertLogicalRule.INSTANCE,
-
-                // Delete rules
                 DeleteLogicalRule.INSTANCE,
 
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,
-                PruneEmptyRules.FILTER_INSTANCE,
-                SortLogicalRule.INSTANCE
+                PruneEmptyRules.FILTER_INSTANCE
         );
     }
 }

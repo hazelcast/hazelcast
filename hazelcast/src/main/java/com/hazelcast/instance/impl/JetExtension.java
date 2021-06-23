@@ -49,12 +49,14 @@ public class JetExtension {
     private final ILogger logger;
     private final JetServiceBackend jetServiceBackend;
     private volatile boolean activated;
+    private volatile boolean isAfterStartCalled;
 
     public JetExtension(Node node, JetServiceBackend jetServiceBackend) {
         this.node = node;
         this.logger = node.getLogger(getClass().getName());
         this.jetServiceBackend = jetServiceBackend;
         this.activated = false;
+        this.isAfterStartCalled = false;
     }
 
     private void checkLosslessRestartAllowed() {
@@ -97,10 +99,11 @@ public class JetExtension {
         if (node.isRunning() && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
             activated = true;
             jetServiceBackend.getJobCoordinationService().startScanningForJobs();
-            logger.info("Jet extension is enabled");
+            logger.info("Jet is enabled");
         } else {
-            logger.info("Jet extension is disabled due to current cluster version being less than 5.0.");
+            logger.info("Jet is disabled due to current cluster version being less than 5.0.");
         }
+        isAfterStartCalled = true;
     }
 
     public void beforeClusterStateChange(ClusterState requestedState) {
@@ -125,10 +128,12 @@ public class JetExtension {
     }
 
     public void onClusterVersionChange(Version newVersion) {
-        if (!activated && newVersion.isGreaterOrEqual(Versions.V5_0)) {
+        if (!activated && isAfterStartCalled && newVersion.isGreaterOrEqual(Versions.V5_0)) {
+            // Activate Jet after rolling upgrade in which the cluster
+            // version is upgraded from 4.x to 5.0
             activated = true;
             jetServiceBackend.getJobCoordinationService().startScanningForJobs();
-            logger.info("Jet extension is enabled after the cluster version upgrade.");
+            logger.info("Jet is enabled after the cluster version upgrade.");
         }
     }
 

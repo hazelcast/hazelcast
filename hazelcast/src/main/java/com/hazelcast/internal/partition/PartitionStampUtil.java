@@ -20,11 +20,11 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.HashUtil;
 
 /**
- * PartitionStamp is a utility class to generate stamp for the partition table.
+ * PartitionStampUtil is a utility class to generate stamp for the partition table.
  */
-public final class PartitionStamp {
+public final class PartitionStampUtil {
 
-    private PartitionStamp() {
+    private PartitionStampUtil() {
     }
 
     /**

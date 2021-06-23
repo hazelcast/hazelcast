@@ -142,6 +142,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     protected final Node node;
     protected final ILogger logger;
+    protected final ILogger logoLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
@@ -152,6 +153,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public DefaultNodeExtension(Node node) {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
+        this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
@@ -251,7 +253,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     protected void printBannersBeforeNodeInfo() {
-        systemLogger.info('\n' + PLATFORM_LOGO);
+        logoLogger.info('\n' + PLATFORM_LOGO);
         systemLogger.info(COPYRIGHT_LINE);
     }
 

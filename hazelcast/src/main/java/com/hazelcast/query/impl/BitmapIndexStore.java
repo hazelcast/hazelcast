@@ -338,7 +338,7 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public Iterator<IndexValueBatch> getSqlRecordIteratorBatch(
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
             Comparable to,

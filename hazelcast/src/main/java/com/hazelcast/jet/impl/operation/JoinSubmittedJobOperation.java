@@ -37,7 +37,11 @@ public class JoinSubmittedJobOperation extends AsyncJobOperation {
 
     @Override
     protected CompletableFuture<?> doRun() {
-        return getJobCoordinationService().joinSubmittedJob(jobId());
+        if (isLightJob) {
+            return getJobCoordinationService().joinLightJob(jobId());
+        } else {
+            return getJobCoordinationService().joinSubmittedJob(jobId());
+        }
     }
 
     @Override

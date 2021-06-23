@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -80,7 +81,6 @@ import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.MapScanMetadata;
 import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
 import com.hazelcast.sql.impl.plan.node.RootPlanNode;
@@ -201,7 +201,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_EXTRACT = 72;
 
-    public static final int MAP_SCAN_METADATA = 73;
+    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
     public static final int MAP_INDEX_SCAN_METADATA = 74;
 
     public static final int LEN = MAP_INDEX_SCAN_METADATA + 1;
@@ -309,8 +309,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
 
-        constructors[MAP_SCAN_METADATA] = arg -> new MapScanMetadata();
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
+        constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }
