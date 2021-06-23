@@ -60,10 +60,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
         constructors[IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER] =
-                arg -> new MapIndexScanP.MapIndexScanProcessorMetaSupplier<>();
+                arg -> new MapIndexScanP.MapIndexScanProcessorMetaSupplier();
 
         constructors[IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER] =
-                arg -> new MapIndexScanP.MapIndexScanProcessorSupplier<>();
+                arg -> new MapIndexScanP.MapIndexScanProcessorSupplier();
 
         return new ArrayDataSerializableFactory(constructors);
     }

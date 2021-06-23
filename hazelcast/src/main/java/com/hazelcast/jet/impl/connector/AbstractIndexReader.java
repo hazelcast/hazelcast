@@ -54,7 +54,6 @@ public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> 
     public abstract F readBatch(Address address, PartitionIdSet partitions, IndexIterationPointer[] pointers);
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     public B toBatchResult(@Nonnull F future) throws ExecutionException, InterruptedException {
         return (B) future.get();
     }

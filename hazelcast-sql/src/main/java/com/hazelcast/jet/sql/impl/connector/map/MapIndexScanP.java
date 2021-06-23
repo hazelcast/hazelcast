@@ -18,10 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
@@ -29,10 +27,8 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
-import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MigrationDetectedException;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -52,7 +48,6 @@ import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,16 +58,13 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
-import static com.hazelcast.jet.impl.util.Util.getHazelcastInstanceImpl;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
-import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
 import static java.util.stream.Collectors.toList;
@@ -105,7 +97,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     // TODO: [sasha] discuss this number.
     private static final int MAX_FETCH_SIZE = 64;
 
-    private AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader;
+    private final AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
     private final ExpressionEvalContext evalContext;
     private final List<Expression<?>> projections;
     private final Expression<Boolean> filter;
@@ -113,13 +105,13 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
     private final ArrayList<Split<F>> splits;
     private final MapScanRow row;
-    private Queue<Object[]> rowsQueue;
+    private final Queue<Object[]> rowsQueue;
     private final Queue<Integer> splitsToRemove = new ArrayDeque<>();
     private final Queue<Split<F>> splitsToAdd = new ArrayDeque<>();
     private Object[] pendingItem;
 
     public MapIndexScanP(
-            @Nonnull AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader,
+            @Nonnull AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader,
             @Nonnull HazelcastInstance hazelcastInstance,
             @Nonnull ExpressionEvalContext evalContext,
             @Nonnull int[] partitions,
@@ -199,7 +191,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                             splitsToRemove.offer(i);
                             continue;
                         }
-                    } catch (MigrationDetectedException | MissingPartitionException e) {
+                    } catch (MissingPartitionException e) {
                         splitOnMigration(i);
                         continue;
                     }
@@ -241,9 +233,9 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
         splitsToRemove.offer(splitIndex);
         newPartitionDistributions.put(split.getAddress(), actualPartitions);
-        newPartitionDistributions.forEach((address, partitionSet) -> {
-            splitsToAdd.offer(new Split<>(partitionSet, address, lastPointers));
-        });
+        newPartitionDistributions.forEach((address, partitionSet) ->
+                splitsToAdd.offer(new Split<>(partitionSet, address, lastPointers))
+        );
     }
 
     private boolean projectEntryAndEmit() {
@@ -262,7 +254,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
     }
 
-    private Object[] projectAndFilter(@Nonnull QueryableEntry entry) {
+    private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
 
         if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, evalContext))) {
@@ -278,10 +270,10 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     }
 
     private static final class Split<F extends CompletableFuture<MapFetchIndexOperationResult>> {
-        private PartitionIdSet partitions;
-        private Address address;
+        private final PartitionIdSet partitions;
+        private final Address address;
         private IndexIterationPointer[] pointers;
-        private List<QueryableEntry> currentBatch;
+        private List<QueryableEntry<?, ?>> currentBatch;
         private int currentBatchPosition;
         private F future;
 
@@ -294,7 +286,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             this.future = null;
         }
 
-        public boolean start(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader) {
+        public boolean start(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader) {
             if (future == null) {
                 future = reader.readBatch(address, partitions, pointers);
                 return true;
@@ -302,7 +294,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             return false;
         }
 
-        public boolean readBatch(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry> reader) {
+        public boolean readBatch(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader) {
             MapFetchIndexOperationResult result = null;
             currentBatchPosition = 0;
             try {
@@ -311,7 +303,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                 pointers = result.getPointers();
                 future = null;
                 return currentBatch.isEmpty();
-            } catch (MigrationDetectedException | MissingPartitionException e) {
+            } catch (MissingPartitionException e) {
                 throw rethrow(e);
             } catch (InterruptedException | ExecutionException e) {
                 e.printStackTrace();
@@ -319,7 +311,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             }
         }
 
-        public QueryableEntry readElement() {
+        public QueryableEntry<?, ?> readElement() {
             return currentBatch.get(currentBatchPosition++);
         }
 
@@ -344,7 +336,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         }
     }
 
-    public static final class MapIndexScanProcessorMetaSupplier<F extends CompletableFuture<MapFetchIndexOperationResult>>
+    public static final class MapIndexScanProcessorMetaSupplier
             implements ProcessorMetaSupplier, IdentifiedDataSerializable {
         private static final long serialVersionUID = 1L;
 
@@ -364,7 +356,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         @Override
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new MapIndexScanProcessorSupplier<>(indexScanMetadata);
+            return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
         }
 
         @Override
@@ -393,7 +385,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         }
     }
 
-    public static final class MapIndexScanProcessorSupplier<F extends CompletableFuture<MapFetchIndexOperationResult>>
+    public static final class MapIndexScanProcessorSupplier
             implements ProcessorSupplier, IdentifiedDataSerializable {
         static final long serialVersionUID = 1L;
 
@@ -427,7 +419,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             return Arrays.stream(distributeObjects(count, memberPartitions))
                     .map(partitions ->
                             new MapIndexScanP<>(
-                                    new LocalMapIndexReader(hzInstance, serializationService, indexScanMetadata),
+                                    LocalMapIndexReader.create(hzInstance, serializationService, indexScanMetadata),
                                     hzInstance,
                                     evalContext,
                                     memberPartitions,
@@ -469,22 +461,24 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     static class LocalMapIndexReader extends AbstractIndexReader<
             InternalCompletableFuture<MapFetchIndexOperationResult>,
             MapFetchIndexOperationResult,
-            QueryableEntry> {
+            QueryableEntry<?, ?>> {
 
         private HazelcastInstance hazelcastInstance;
         private String indexName;
 
-        LocalMapIndexReader() {
-            //no-op
-        }
-
-        LocalMapIndexReader(@Nonnull HazelcastInstance hzInstance,
-                            @Nonnull InternalSerializationService serializationService,
-                            @Nonnull MapIndexScanMetadata indexScanMetadata) {
+        private LocalMapIndexReader(@Nonnull HazelcastInstance hzInstance,
+                                    @Nonnull InternalSerializationService serializationService,
+                                    @Nonnull MapIndexScanMetadata indexScanMetadata) {
             super(indexScanMetadata.getMapName(), MapFetchIndexOperationResult::getEntries);
             this.hazelcastInstance = hzInstance;
             this.indexName = indexScanMetadata.getIndexName();
             this.serializationService = serializationService;
+        }
+
+        public static LocalMapIndexReader create(@Nonnull HazelcastInstance hzInstance,
+                                                 @Nonnull InternalSerializationService serializationService,
+                                                 @Nonnull MapIndexScanMetadata indexScanMetadata) {
+            return new LocalMapIndexReader(hzInstance, serializationService, indexScanMetadata);
         }
 
         @Nonnull
@@ -525,6 +519,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     }
 
     static MapIndexScanProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
-        return new MapIndexScanProcessorMetaSupplier<>(indexScanMetadata);
+        return new MapIndexScanProcessorMetaSupplier(indexScanMetadata);
     }
 }
