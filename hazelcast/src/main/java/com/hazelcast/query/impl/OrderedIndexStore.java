@@ -133,7 +133,6 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:NPathComplexity")
     public Iterator<QueryableEntry> getSqlRecordIterator(
         Comparable from,
         boolean fromInclusive,
@@ -228,6 +227,8 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 .iterator();
     }
 
+    @Override
+    @SuppressWarnings("checkstyle:NPathComplexity")
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
@@ -479,7 +480,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
     }
 
-    private static class IteratorFromBatch implements Iterator<QueryableEntry> {
+    private static final class IteratorFromBatch implements Iterator<QueryableEntry> {
         private final Iterator<IndexKeyEntries> iterator;
         private Iterator<QueryableEntry> indexKeyIterator;
 

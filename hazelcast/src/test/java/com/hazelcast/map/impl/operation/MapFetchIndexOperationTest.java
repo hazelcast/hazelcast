@@ -42,7 +42,6 @@ import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionE
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.partition.PartitionService;
-import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -447,7 +446,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             return this.age;
         }
 
-        public String getDepartment() { return this.department; }
+        public String getDepartment() {
+            return this.department;
+        }
 
         public void setName(String name) {
             this.name = name;
@@ -457,15 +458,15 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             this.age = age;
         }
 
-        public void setDepartment(String department) { this.department = department; }
+        public void setDepartment(String department) {
+            this.department = department;
+        }
 
         @Override
         public String toString() {
-            return "Person{" +
-                    "name='" + name + '\'' +
-                    ", age=" + age +
-                    ", department='" + department + '\'' +
-                    '}';
+            return "Person{" + "name='" + name + '\''
+                    + ", age=" + age + ", department='"
+                    + department + '\'' + '}';
         }
 
         @Override
