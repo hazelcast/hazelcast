@@ -151,7 +151,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
                         .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1128, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'foo'", "foo",
-                        "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE")
+                        "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE")
                         .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1129, VARCHAR, OBJECT, "'foo'", "foo", "foo"),
 
@@ -160,19 +160,19 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type BOOLEAN"),
                 TestParams.passingCase(1202, BOOLEAN, BOOLEAN, "true", "true", true),
                 TestParams.failingCase(1203, BOOLEAN, TINYINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type TINYINT from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1204, BOOLEAN, SMALLINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type SMALLINT from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1205, BOOLEAN, INTEGER, "true", "true",
-                        "Cannot assign to target field 'field1' of type INTEGER from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1206, BOOLEAN, BIGINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type BIGINT from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1207, BOOLEAN, DECIMAL, "true", "true",
-                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1208, BOOLEAN, REAL, "true", "true",
-                        "Cannot assign to target field 'field1' of type REAL from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type REAL from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1209, BOOLEAN, DOUBLE, "true", "true",
-                        "Cannot assign to target field 'field1' of type DOUBLE from source field 'EXPR\\$\\d' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1210, BOOLEAN, TIME, "true", "true",
                         "Cannot assign to target field 'field1' of type TIME from source field '.+' of type BOOLEAN"),
                 TestParams.failingCase(1211, BOOLEAN, DATE, "true", "true",
@@ -540,13 +540,6 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertValues() throws Exception {
-        // TODO remove this once we support the TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE literals
-        assumeFalse(testParams.targetType == TIMESTAMP || testParams.targetType == TIMESTAMP_WITH_TIME_ZONE);
-
-        // these fail due to a calcite issue that converts temporal literals casted to OBJECT to INT
-        // or BIGINT casted to OBJECT
-        assumeFalse(testParams.srcType == OBJECT && testParams.targetType.isTemporal());
-
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         String sql = "CREATE MAPPING m type IMap " +
                 "OPTIONS(" +
@@ -579,11 +572,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertSelect() {
-        // TODO remove this assume after https://github.com/hazelcast/hazelcast/pull/18067 is merged.
-        //  Calcite converts these to `CASE WHEN bool THEN 0 ELSE 1 END`, we don't support CASE yet.
-        assumeFalse(testParams.srcType == BOOLEAN && testParams.targetType.isNumeric());
-
-        // the TestBatchSource doesn't support OBJECT type
+        // the TestBatchSource doesn't support OBJECT/NULL type
         assumeFalse(testParams.srcType == OBJECT || testParams.srcType == NULL);
 
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
@@ -630,13 +619,6 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertSelect_withLiteral() throws Exception {
-        // TODO remove this once we support the TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE literals
-        assumeFalse(testParams.targetType == TIMESTAMP || testParams.targetType == TIMESTAMP_WITH_TIME_ZONE);
-
-        // these fail due to a calcite issue that converts temporal literals casted to OBJECT to INT
-        // or BIGINT casted to OBJECT
-        assumeFalse(testParams.srcType == OBJECT && testParams.targetType.isTemporal());
-
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", 1);
 
@@ -671,13 +653,6 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_update_literals() throws Exception {
-        // TODO remove this once we support the TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE literals
-        assumeFalse(testParams.targetType == TIMESTAMP || testParams.targetType == TIMESTAMP_WITH_TIME_ZONE);
-
-        // these fail due to a calcite issue that converts temporal literals casted to OBJECT to INT
-        // or BIGINT casted to OBJECT
-        assumeFalse(testParams.srcType == OBJECT && testParams.targetType.isTemporal());
-
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         sqlService.execute("CREATE MAPPING m type IMap " +
                 "OPTIONS (" +
