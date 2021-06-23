@@ -338,6 +338,21 @@ public final class BitmapIndexStore extends BaseIndexStore {
     }
 
     @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        throw makeUnsupportedOperationException();
+    }
+
+    @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
             Comparable from,
             boolean fromInclusive,
