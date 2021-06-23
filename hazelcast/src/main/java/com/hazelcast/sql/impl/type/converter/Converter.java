@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.Serializable;

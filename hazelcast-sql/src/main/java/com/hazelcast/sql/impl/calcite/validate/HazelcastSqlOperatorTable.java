@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToTimestampTzFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -30,12 +28,14 @@ import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunct
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRoundTruncateFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastArithmeticOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
