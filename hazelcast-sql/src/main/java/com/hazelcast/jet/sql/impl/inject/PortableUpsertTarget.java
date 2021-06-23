@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -38,6 +38,8 @@ import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL
 
 @NotThreadSafe
 class PortableUpsertTarget implements UpsertTarget {
+
+    private static final Object NOT_SET = new Object();
 
     private final ClassDefinition classDefinition;
 
@@ -69,13 +71,13 @@ class PortableUpsertTarget implements UpsertTarget {
 
     @Override
     public void init() {
-        Arrays.fill(values, null);
+        Arrays.fill(values, NOT_SET);
     }
 
     @Override
     public Object conclude() {
         GenericRecord record = toRecord(classDefinition, values);
-        Arrays.fill(values, null);
+        Arrays.fill(values, NOT_SET);
         return record;
     }
 
@@ -90,94 +92,102 @@ class PortableUpsertTarget implements UpsertTarget {
             try {
                 switch (type) {
                     case BOOLEAN:
-                        portable.setBoolean(name, value != null && (boolean) value);
+                        ensureNotNull(value);
+                        portable.setBoolean(name, value != NOT_SET && (boolean) value);
                         break;
                     case BYTE:
-                        portable.setByte(name, value == null ? (byte) 0 : (byte) value);
+                        ensureNotNull(value);
+                        portable.setByte(name, value == NOT_SET ? (byte) 0 : (byte) value);
                         break;
                     case SHORT:
-                        portable.setShort(name, value == null ? (short) 0 : (short) value);
+                        ensureNotNull(value);
+                        portable.setShort(name, value == NOT_SET ? (short) 0 : (short) value);
                         break;
                     case CHAR:
-                        portable.setChar(name, value == null ? (char) 0 : (char) value);
+                        ensureNotNull(value);
+                        portable.setChar(name, value == NOT_SET ? (char) 0 : (char) value);
                         break;
                     case INT:
-                        portable.setInt(name, value == null ? 0 : (int) value);
+                        ensureNotNull(value);
+                        portable.setInt(name, value == NOT_SET ? 0 : (int) value);
                         break;
                     case LONG:
-                        portable.setLong(name, value == null ? 0L : (long) value);
+                        ensureNotNull(value);
+                        portable.setLong(name, value == NOT_SET ? 0L : (long) value);
                         break;
                     case FLOAT:
-                        portable.setFloat(name, value == null ? 0F : (float) value);
+                        ensureNotNull(value);
+                        portable.setFloat(name, value == NOT_SET ? 0F : (float) value);
                         break;
                     case DOUBLE:
-                        portable.setDouble(name, value == null ? 0D : (double) value);
+                        ensureNotNull(value);
+                        portable.setDouble(name, value == NOT_SET ? 0D : (double) value);
                         break;
                     case DECIMAL:
-                        portable.setDecimal(name, (BigDecimal) value);
+                        portable.setDecimal(name, value == NOT_SET ? null : (BigDecimal) value);
                         break;
                     case UTF:
-                        portable.setString(name, (String) QueryDataType.VARCHAR.convert(value));
+                        portable.setString(name, value == NOT_SET ? null : (String) QueryDataType.VARCHAR.convert(value));
                         break;
                     case TIME:
-                        portable.setTime(name, (LocalTime) value);
+                        portable.setTime(name, value == NOT_SET ? null : (LocalTime) value);
                         break;
                     case DATE:
-                        portable.setDate(name, (LocalDate) value);
+                        portable.setDate(name, value == NOT_SET ? null : (LocalDate) value);
                         break;
                     case TIMESTAMP:
-                        portable.setTimestamp(name, (LocalDateTime) value);
+                        portable.setTimestamp(name, value == NOT_SET ? null : (LocalDateTime) value);
                         break;
                     case TIMESTAMP_WITH_TIMEZONE:
-                        portable.setTimestampWithTimezone(name, (OffsetDateTime) value);
+                        portable.setTimestampWithTimezone(name, value == NOT_SET ? null : (OffsetDateTime) value);
                         break;
                     case PORTABLE:
-                        portable.setGenericRecord(name, (GenericRecord) value);
+                        portable.setGenericRecord(name, value == NOT_SET ? null : (GenericRecord) value);
                         break;
                     case BOOLEAN_ARRAY:
-                        portable.setBooleanArray(name, (boolean[]) value);
+                        portable.setBooleanArray(name, value == NOT_SET ? null : (boolean[]) value);
                         break;
                     case BYTE_ARRAY:
-                        portable.setByteArray(name, (byte[]) value);
+                        portable.setByteArray(name, value == NOT_SET ? null : (byte[]) value);
                         break;
                     case SHORT_ARRAY:
-                        portable.setShortArray(name, (short[]) value);
+                        portable.setShortArray(name, value == NOT_SET ? null : (short[]) value);
                         break;
                     case CHAR_ARRAY:
-                        portable.setCharArray(name, (char[]) value);
+                        portable.setCharArray(name, value == NOT_SET ? null : (char[]) value);
                         break;
                     case INT_ARRAY:
-                        portable.setIntArray(name, (int[]) value);
+                        portable.setIntArray(name, value == NOT_SET ? null : (int[]) value);
                         break;
                     case LONG_ARRAY:
-                        portable.setLongArray(name, (long[]) value);
+                        portable.setLongArray(name, value == NOT_SET ? null : (long[]) value);
                         break;
                     case FLOAT_ARRAY:
-                        portable.setFloatArray(name, (float[]) value);
+                        portable.setFloatArray(name, value == NOT_SET ? null : (float[]) value);
                         break;
                     case DOUBLE_ARRAY:
-                        portable.setDoubleArray(name, (double[]) value);
+                        portable.setDoubleArray(name, value == NOT_SET ? null : (double[]) value);
                         break;
                     case DECIMAL_ARRAY:
-                        portable.setDecimalArray(name, (BigDecimal[]) value);
+                        portable.setDecimalArray(name, value == NOT_SET ? null : (BigDecimal[]) value);
                         break;
                     case UTF_ARRAY:
-                        portable.setStringArray(name, (String[]) value);
+                        portable.setStringArray(name, value == NOT_SET ? null : (String[]) value);
                         break;
                     case TIME_ARRAY:
-                        portable.setTimeArray(name, (LocalTime[]) value);
+                        portable.setTimeArray(name, value == NOT_SET ? null : (LocalTime[]) value);
                         break;
                     case DATE_ARRAY:
-                        portable.setDateArray(name, (LocalDate[]) value);
+                        portable.setDateArray(name, value == NOT_SET ? null : (LocalDate[]) value);
                         break;
                     case TIMESTAMP_ARRAY:
-                        portable.setTimestampArray(name, (LocalDateTime[]) value);
+                        portable.setTimestampArray(name, value == NOT_SET ? null : (LocalDateTime[]) value);
                         break;
                     case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                        portable.setTimestampWithTimezoneArray(name, (OffsetDateTime[]) value);
+                        portable.setTimestampWithTimezoneArray(name, value == NOT_SET ? null : (OffsetDateTime[]) value);
                         break;
                     case PORTABLE_ARRAY:
-                        portable.setGenericRecordArray(name, (GenericRecord[]) value);
+                        portable.setGenericRecordArray(name, value == NOT_SET ? null : (GenericRecord[]) value);
                         break;
                     default:
                         throw QueryException.error("Unsupported type: " + type);
@@ -189,5 +199,11 @@ class PortableUpsertTarget implements UpsertTarget {
             }
         }
         return portable.build();
+    }
+
+    private static void ensureNotNull(Object value) {
+        if (value == null) {
+            throw QueryException.error("Cannot set NULL to a primitive field");
+        }
     }
 }

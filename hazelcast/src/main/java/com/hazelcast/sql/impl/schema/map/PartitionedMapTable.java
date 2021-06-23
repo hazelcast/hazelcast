@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
@@ -106,12 +107,36 @@ public class PartitionedMapTable extends AbstractMapTable {
         return Util.toList(getFields(), field -> ((MapTableField) field).getPath());
     }
 
-    public List<QueryDataType> types() {
+    public List<QueryDataType> fieldTypes() {
         return getFields().stream().map(TableField::getType).collect(Collectors.toList());
     }
 
     public boolean isHd() {
         return hd;
+    }
+
+    public Stream<MapTableField> keyFields() {
+        return getFields().stream().map(field -> (MapTableField) field).filter(field -> field.getPath().isKey());
+    }
+
+    public Stream<MapTableField> valueFields() {
+        return getFields().stream().map(field -> (MapTableField) field).filter(field -> !field.getPath().isKey());
+    }
+
+    public QueryPath[] paths() {
+        return getFields().stream().map(field -> ((MapTableField) field).getPath()).toArray(QueryPath[]::new);
+    }
+
+    public QueryDataType[] types() {
+        return getFields().stream().map(TableField::getType).toArray(QueryDataType[]::new);
+    }
+
+    public QueryPath[] valuePaths() {
+        return valueFields().map(MapTableField::getPath).toArray(QueryPath[]::new);
+    }
+
+    public QueryDataType[] valueTypes() {
+        return valueFields().map(TableField::getType).toArray(QueryDataType[]::new);
     }
 
     static class PartitionedMapPlanObjectKey implements PlanObjectKey {
