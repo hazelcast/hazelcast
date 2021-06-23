@@ -22,6 +22,7 @@ import java.util.Objects;
 public class EmployeeDTO implements Comparable<EmployeeDTO> {
 
     private int age;
+    private int rank;
     private long id;
     private boolean isHired;
     private boolean isFired;
@@ -34,6 +35,7 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
         this.id = id;
         this.isFired = false;
         this.isHired = true;
+        this.rank = age;
     }
 
     @Override
@@ -43,6 +45,7 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
                 + ", id=" + id
                 + ", isHired=" + isHired
                 + ", isFired=" + isFired
+                + ", rank=" + rank
                 + '}';
     }
 
@@ -67,12 +70,13 @@ public class EmployeeDTO implements Comparable<EmployeeDTO> {
             return false;
         }
         EmployeeDTO that = (EmployeeDTO) o;
-        return age == that.age && id == that.id && isHired == that.isHired && isFired == that.isFired;
+        return age == that.age && id == that.id && isHired == that.isHired && isFired == that.isFired
+                && rank == that.rank;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(age, id, isHired, isFired);
+        return Objects.hash(age, id, isHired, isFired, rank);
     }
 
     @Override

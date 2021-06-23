@@ -160,7 +160,7 @@ public class ExtractionInArraySpecTest extends AbstractExtractionTest {
                 Expected.empty());
     }
 
-    @Test
+    @Test(expected = QueryException.class)
     public void indexOutOfBound_negative_atLeaf() {
         execute(Input.of(BOND, KRUEGER),
                 Query.of(equal("limbs_array[0].tattoos_array[-1]", "knife")),
