@@ -36,6 +36,21 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <acceptPomPackaging>true</acceptPomPackaging>
+                    <includedLicenses combine.children="append">
+                        <includedLicense>CDDL</includedLicense>
+                        <includedLicense>CDDL 1.1</includedLicense>
+                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                        <includedLicense>Lesser General Public License (LGPL)</includedLicense>
+                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                        <includedLicense>The Go license</includedLicense>
+                    </includedLicenses>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>

@@ -29,7 +29,7 @@ public interface WrappableException<T extends RuntimeException> {
     /**
      * Returns a new exception of the same type as {@code this} exception, using
      * {@code this} exception as its cause. This is useful when {@code this} is
-     * a remote or async exception, because it's stack trace is disconnected from the
+     * a remote or async exception, because its stack trace is disconnected from the
      * client code that handles the exception. The returned exception includes
      * all the state of {@code this} exception, while providing the local stack trace
      * and the remote/async stack trace in its {@code cause}.

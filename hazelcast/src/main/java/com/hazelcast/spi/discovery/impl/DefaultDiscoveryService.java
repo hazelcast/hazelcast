@@ -150,7 +150,7 @@ public class DefaultDiscoveryService
                     discoveryStrategies
                             .add(autoDetectedFactory.newDiscoveryStrategy(discoveryNode, logger, Collections.emptyMap()));
                 } else {
-                    logger.info("No discovery strategy is applicable for auto-detection");
+                    logger.fine("No discovery strategy is applicable for auto-detection");
                 }
             }
             return discoveryStrategies;

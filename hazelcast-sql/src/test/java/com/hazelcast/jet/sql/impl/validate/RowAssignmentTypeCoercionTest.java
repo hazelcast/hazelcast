@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.BeforeClass;
@@ -54,6 +55,7 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static com.hazelcast.sql.impl.type.converter.AbstractTemporalConverter.DEFAULT_ZONE;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.fail;
@@ -62,7 +64,7 @@ import static org.junit.Assume.assumeFalse;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-public class SinkTypeCoercionTest extends SqlTestSupport {
+public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     @Parameter
     public TestParams testParams;
@@ -130,27 +132,27 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1120, VARCHAR, DOUBLE, "'foo'", "foo",
                         "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1121, VARCHAR, TIME, "'01:42:01'", "01:42:01", LocalTime.of(1, 42, 1))
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIME from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1122, VARCHAR, TIME, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIME")
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIME from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1123, VARCHAR, DATE, "'2020-12-30'", "2020-12-30", LocalDate.of(2020, 12, 30))
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type DATE from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1124, VARCHAR, DATE, "'foo'", "foo",
                         "Cannot parse VARCHAR value to DATE")
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type DATE from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1125, VARCHAR, TIMESTAMP, "'2020-12-30T01:42:00'", "2020-12-30T01:42:00",
                         LocalDateTime.of(2020, 12, 30, 1, 42))
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1126, VARCHAR, TIMESTAMP, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIMESTAMP")
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1127, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'2020-12-30T01:42:00-05:00'",
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'v' of type VARCHAR"),
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1128, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'foo'", "foo",
-                        "Cannot parse VARCHAR value to TIMESTAMP_WITH_TIME_ZONE")
-                        .setExpectedFailureNonLiteral("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'v' of type VARCHAR"),
+                        "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE")
+                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1129, VARCHAR, OBJECT, "'foo'", "foo", "foo"),
 
                 // BOOLEAN
@@ -158,19 +160,19 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type BOOLEAN"),
                 TestParams.passingCase(1202, BOOLEAN, BOOLEAN, "true", "true", true),
                 TestParams.failingCase(1203, BOOLEAN, TINYINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type TINYINT from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1204, BOOLEAN, SMALLINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type SMALLINT from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1205, BOOLEAN, INTEGER, "true", "true",
-                        "Cannot assign to target field 'field1' of type INTEGER from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1206, BOOLEAN, BIGINT, "true", "true",
-                        "Cannot assign to target field 'field1' of type BIGINT from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1207, BOOLEAN, DECIMAL, "true", "true",
-                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1208, BOOLEAN, REAL, "true", "true",
-                        "Cannot assign to target field 'field1' of type REAL from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type REAL from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1209, BOOLEAN, DOUBLE, "true", "true",
-                        "Cannot assign to target field 'field1' of type DOUBLE from source field 'EXPR\\$1' of type BOOLEAN"),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
                 TestParams.failingCase(1210, BOOLEAN, TIME, "true", "true",
                         "Cannot assign to target field 'field1' of type TIME from source field '.+' of type BOOLEAN"),
                 TestParams.failingCase(1211, BOOLEAN, DATE, "true", "true",
@@ -500,34 +502,34 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
 
                 // OBJECT
                 TestParams.failingCase(2401, OBJECT, VARCHAR, "cast('foo' as object)", null,
-                        "Cannot assign to target field 'field1' of type VARCHAR from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type VARCHAR from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2402, OBJECT, BOOLEAN, "cast(true as object)", null,
-                        "Cannot assign to target field 'field1' of type BOOLEAN from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2403, OBJECT, TINYINT, "cast(42 as object)", null,
-                        "Cannot assign to target field 'field1' of type TINYINT from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2404, OBJECT, SMALLINT, "cast(420 as object)", null,
-                        "Cannot assign to target field 'field1' of type SMALLINT from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2405, OBJECT, INTEGER, "cast(420000 as object)", null,
-                        "Cannot assign to target field 'field1' of type INTEGER from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2406, OBJECT, BIGINT, "cast(4200000000 as object)", null,
-                        "Cannot assign to target field 'field1' of type BIGINT from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2407, OBJECT, DECIMAL, "cast(cast(1.5 as decimal) as object)", null,
-                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2408, OBJECT, REAL, "cast(cast(1.5 as real) as object)", null,
-                        "Cannot assign to target field 'field1' of type REAL from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type REAL from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2409, OBJECT, DOUBLE, "cast(cast(1.5 as double) as object)", null,
-                        "Cannot assign to target field 'field1' of type DOUBLE from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2410, OBJECT, TIME, "cast(cast('01:42:00' as time) as object)", null,
-                        "Cannot assign to target field 'field1' of type TIME from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type TIME from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2411, OBJECT, DATE, "cast(cast('2020-12-30' as date) as object)", null,
-                        "Cannot assign to target field 'field1' of type DATE from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type DATE from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2412, OBJECT, TIMESTAMP, "cast(cast('2020-12-30T01:42:00' as timestamp) as object)", null,
-                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.failingCase(2413, OBJECT, TIMESTAMP_WITH_TIME_ZONE,
                         "cast(cast('2020-12-30T01:42:00-05:00' as timestamp with time zone) as object)", null,
-                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'EXPR\\$1' of type OBJECT"),
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'EXPR\\$\\d' of type OBJECT"),
                 TestParams.passingCase(2414, OBJECT, OBJECT, "cast('foo' as object)",
-                        null, "foo"),
+                        "foo", "foo"),
         };
     }
 
@@ -538,13 +540,6 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertValues() throws Exception {
-        // TODO remove this once we support the TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE literals
-        assumeFalse(testParams.targetType == TIMESTAMP || testParams.targetType == TIMESTAMP_WITH_TIME_ZONE);
-
-        // these fail due to a calcite issue that converts temporal literals casted to OBJECT to INT
-        // or BIGINT casted to OBJECT
-        assumeFalse(testParams.srcType == OBJECT && testParams.targetType.isTemporal());
-
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         String sql = "CREATE MAPPING m type IMap " +
                 "OPTIONS(" +
@@ -561,9 +556,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("m").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("m", "field1"));
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -579,11 +572,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertSelect() {
-        // TODO remove this assume after https://github.com/hazelcast/hazelcast/pull/18067 is merged.
-        //  Calcite converts these to `CASE WHEN bool THEN 0 ELSE 1 END`, we don't support CASE yet.
-        assumeFalse(testParams.srcType == BOOLEAN && testParams.targetType.isNumeric());
-
-        // the TestBatchSource doesn't support OBJECT type
+        // the TestBatchSource doesn't support OBJECT/NULL type
         assumeFalse(testParams.srcType == OBJECT || testParams.srcType == NULL);
 
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
@@ -603,24 +592,22 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
             sql = "SINK INTO target SELECT 0, v, 0 FROM src";
             logger.info(sql);
             sqlService.execute(sql);
-            if (testParams.expectedFailureNonLiteral != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureNonLiteral
+            if (testParams.expectedFailureNonLiteralRegex != null) {
+                fail("Expected to fail with \"" + testParams.expectedFailureNonLiteralRegex
                         + "\", but no exception was thrown");
             }
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("target").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("target", "field1"));
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteral == null) {
+            if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
                 throw new AssertionError("The query failed unexpectedly: " + e, e);
             }
-            if (testParams.expectedFailureNonLiteral != null) {
-                if (!e.toString().contains(testParams.expectedFailureNonLiteral)) {
+            if (testParams.expectedFailureNonLiteralRegex != null) {
+                if (!testParams.nonLiteralFailureMatches(e)) {
                     throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain \n'"
-                            + testParams.expectedFailureNonLiteral + "'", e);
+                            + testParams.expectedFailureNonLiteralRegex + "'", e);
                 }
             } else if (!testParams.exceptionMatches(e)) {
                 throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
@@ -632,17 +619,6 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
 
     @Test
     public void test_insertSelect_withLiteral() throws Exception {
-        // TODO remove this assume after https://github.com/hazelcast/hazelcast/pull/18067 is merged.
-        //  Calcite converts these to `CASE WHEN bool THEN 0 ELSE 1 END`, we don't support CASE yet.
-        assumeFalse(testParams.srcType == BOOLEAN && testParams.targetType.isNumeric());
-
-        // TODO remove this once we support the TIMESTAMP and TIMESTAMP_WITH_TIME_ZONE literals
-        assumeFalse(testParams.targetType == TIMESTAMP || testParams.targetType == TIMESTAMP_WITH_TIME_ZONE);
-
-        // these fail due to a calcite issue that converts temporal literals casted to OBJECT to INT
-        // or BIGINT casted to OBJECT
-        assumeFalse(testParams.srcType == OBJECT && testParams.targetType.isTemporal());
-
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", 1);
 
@@ -661,9 +637,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            Object actualValueRef = instance().getMap("target").get(0);
-            Object actualValue = actualValueRef.getClass().getField("field1").get(actualValueRef);
-            assertEquals(testParams.targetValue, actualValue);
+            assertEquals(testParams.targetValue, extractValue("target", "field1"));
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -677,6 +651,80 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
         }
     }
 
+    @Test
+    public void test_update_literals() throws Exception {
+        String targetClassName = ExpressionValue.classForType(testParams.targetType);
+        sqlService.execute("CREATE MAPPING m type IMap " +
+                "OPTIONS (" +
+                "'keyFormat'='int', " +
+                "'valueFormat'='java', " +
+                "'valueJavaClass'='" + targetClassName +
+                "')"
+        );
+        instance().getMap("m").put(0, ExpressionValue.create(targetClassName));
+
+        try {
+            sqlService.execute("UPDATE m SET field1 = " + testParams.valueLiteral);
+            if (testParams.expectedFailureRegex != null) {
+                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
+            }
+            assertEquals(testParams.targetValue, extractValue("m", "field1"));
+        } catch (Exception e) {
+            if (testParams.expectedFailureRegex == null) {
+                throw e;
+            }
+            if (!testParams.exceptionMatches(e)) {
+                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
+                        + testParams.expectedFailureRegex + "'", e);
+            }
+        }
+    }
+
+    @Test
+    public void test_update_columns() {
+        assumeFalse(testParams.srcType == NULL);
+
+        Class<? extends ExpressionBiValue> valueClass = ExpressionBiValue.biClassForType(testParams.targetType, testParams.srcType);
+        sqlService.execute("CREATE MAPPING m TYPE IMap " +
+                "OPTIONS(" +
+                "'keyFormat'='int', " +
+                "'valueFormat'='java', " +
+                "'valueJavaClass'='" + valueClass.getName() +
+                "')"
+        );
+        Object sourceValue = resolveTypeForTypeFamily(testParams.srcType).convert(testParams.valueTestSource);
+        instance().getMap("m").put(0, ExpressionBiValue.createBiValue(valueClass, null, sourceValue));
+
+        try {
+            sqlService.execute("UPDATE m SET field1 = field2");
+            if (testParams.expectedFailureNonLiteralRegex != null) {
+                fail("Expected to fail with \"" + testParams.expectedFailureNonLiteralRegex + "\", but no exception was thrown");
+            }
+            if (testParams.expectedFailureRegex != null) {
+                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
+            }
+            assertEquals(testParams.targetValue, extractValue("m", "field1"));
+        } catch (Exception e) {
+            if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
+                throw new AssertionError("The query failed unexpectedly: " + e, e);
+            }
+            if (testParams.expectedFailureNonLiteralRegex != null) {
+                if (!testParams.nonLiteralFailureMatches(e)) {
+                    throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain \n'"
+                            + testParams.expectedFailureNonLiteralRegex + "'", e);
+                }
+            } else if (!testParams.exceptionMatches(e)) {
+                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
+                        + testParams.expectedFailureRegex + "'", e);
+            }
+        }
+    }
+
+    private static Object extractValue(String mapName, String fieldName) throws Exception {
+        Object valueWrapper = instance().getMap(mapName).get(0);
+        return valueWrapper.getClass().getField(fieldName).get(valueWrapper);
+    }
+
     private static final class TestParams {
         private final int testId;
         private final QueryDataTypeFamily srcType;
@@ -685,7 +733,7 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
         private final String valueTestSource;
         private final Object targetValue;
         private final Pattern expectedFailureRegex;
-        private String expectedFailureNonLiteral;
+        private Pattern expectedFailureNonLiteralRegex;
 
         private TestParams(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType, String valueLiteral,
                            String valueTestSource, Object targetValue, String expectedFailureRegex) {
@@ -716,9 +764,14 @@ public class SinkTypeCoercionTest extends SqlTestSupport {
          * column, but you can't assign VARCHAR column or expression to a date
          * column.
          */
-        TestParams setExpectedFailureNonLiteral(String failureText) {
-            expectedFailureNonLiteral = failureText;
+        private TestParams setExpectedFailureNonLiteralRegex(String failureRegex) {
+            this.expectedFailureNonLiteralRegex = Pattern.compile(failureRegex);
             return this;
+        }
+
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+        private boolean nonLiteralFailureMatches(Exception e) {
+            return expectedFailureNonLiteralRegex.matcher(e.getMessage()).find();
         }
 
         @Override

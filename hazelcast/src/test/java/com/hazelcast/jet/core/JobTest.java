@@ -814,8 +814,6 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_jobWithSameNameManyTimes_then_queryResultSortedBySubmission() {
-        DAG batchDag = new DAG();
-        batchDag.newVertex("v", MockP::new);
         DAG streamingDag = new DAG();
         streamingDag.newVertex("v", () -> new MockP().streaming());
 
@@ -823,7 +821,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // When
         for (int i = 0; i < 10; i++) {
-            Job job = instance().getJet().newJob(batchDag, new JobConfig().setName("foo"));
+            Job job = instance().getJet().newJob(streamingDag, new JobConfig().setName("foo"));
             jobIds.add(0, job.getId());
             job.cancel();
             joinAndExpectCancellation(job);
