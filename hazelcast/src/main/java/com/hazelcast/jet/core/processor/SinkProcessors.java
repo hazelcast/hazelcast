@@ -269,7 +269,7 @@ public final class SinkProcessors {
 
         String charsetName = charset.name();
         return preferLocalParallelismOne(writeBufferedP(
-                ConnectorPermission.socket(host + ':' + port, ACTION_WRITE),
+                ConnectorPermission.socket(host, port, ACTION_WRITE),
                 index -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
                 (bufferedWriter, item) -> {
                     @SuppressWarnings("unchecked")

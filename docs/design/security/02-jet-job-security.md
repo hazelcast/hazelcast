@@ -13,7 +13,7 @@ this mechanism for Jet jobs too.
 
 - Disable Jet: One can disable Jet engine completely using
 `JetConfig#enable`. We don't create the internal Jet service and don't
-start the threads. If user tries to obtain `JetService` an, we throw an
+start the threads. If a user tries to obtain `JetService`, we throw an
 exception. 
 - Disable Jet class/resource upload: Jet uploads the job resources and
 classes along with the job. This is disabled by default and can be
@@ -174,4 +174,12 @@ required permission.
 
 Before submitting a job, from the vertices of the DAG we obtain the
 PMSs and from them the required permissions. For each permission we ask
-the security context if the endpoint has the required permissions.  
+the security context if the endpoint has the required permissions.
+
+### Upload Permission
+
+Jet jobs, by design, uploads the custom code written by the user to the
+server and runs it on the server side. User can do whatever he wants in
+this code. For example, user can get the member instance using
+`Hazelcast#getAllHazelcastInstances` and update a map bypassing the
+permission mechanism.

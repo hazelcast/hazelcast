@@ -54,6 +54,9 @@ abstract class JetPlan extends SqlPlan {
     abstract SqlResult execute(QueryId queryId, List<Object> arguments);
 
     protected void checkPermissions(SqlSecurityContext context, DAG dag) {
+        if (!context.isSecurityEnabled()) {
+            return;
+        }
         context.checkPermission(new JobPermission(ACTION_CREATE));
         for (Vertex vertex : dag) {
             Permission permission = vertex.getMetaSupplier().getRequiredPermission();
@@ -446,6 +449,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new JobPermission(ACTION_EXPORT));
         }
 
         @Override

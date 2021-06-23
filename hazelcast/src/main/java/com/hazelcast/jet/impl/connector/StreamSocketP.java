@@ -160,7 +160,7 @@ public final class StreamSocketP extends AbstractProcessor {
 
     @Override
     public Permission getRequiredPermission() {
-        return ConnectorPermission.socket(hostAndPort(), ACTION_READ);
+        return ConnectorPermission.socket(host, port, ACTION_READ);
     }
 
     /**

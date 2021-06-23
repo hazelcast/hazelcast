@@ -37,8 +37,8 @@ public class ConnectorPermission extends InstancePermission {
         return new ConnectorPermission(FILE_PREFIX + directory, action);
     }
 
-    public static ConnectorPermission socket(String hostAndPort, String action) {
-        return new ConnectorPermission(SOCKET_PREFIX + hostAndPort, action);
+    public static ConnectorPermission socket(String host, int port, String action) {
+        return new ConnectorPermission(SOCKET_PREFIX + host + ':' + port, action);
     }
 
     public static ConnectorPermission jms(@Nullable String destination, String action) {
