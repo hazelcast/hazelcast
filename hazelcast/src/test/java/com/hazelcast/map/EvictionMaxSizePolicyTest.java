@@ -23,7 +23,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
@@ -38,6 +37,8 @@ import com.hazelcast.map.impl.eviction.EvictorImpl;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
@@ -52,7 +53,10 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_PERCENTAGE;
 import static com.hazelcast.config.MaxSizePolicy.FREE_HEAP_SIZE;
@@ -85,8 +89,9 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     @Test
     public void testPerNodePolicy_afterGracefulShutdown() {
-        int nodeCount = 2;
+        int nodeCount = 3;
         int perNodeMaxSize = 1000;
+        int numberOfPuts = 5000;
 
         // eviction takes place if a partitions size exceeds this number
         // see EvictionChecker#toPerPartitionMaxSize
@@ -94,30 +99,57 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
         String mapName = "testPerNodePolicy_afterGracefulShutdown";
         Config config = createConfig(PER_NODE, perNodeMaxSize, mapName);
-
+        Set<Object> evictedKeySet = Collections.newSetFromMap(new ConcurrentHashMap<>());
         // populate map from one of the nodes
-        Collection<HazelcastInstance> nodes = createNodes(nodeCount, config);
-        for (HazelcastInstance node : nodes) {
-            IMap map = node.getMap(mapName);
-            for (int i = 0; i < 5000; i++) {
-                map.put(i, i);
-            }
+        List<HazelcastInstance> nodes = createNodes(nodeCount, config);
+        assertClusterSize(3, nodes.toArray(new HazelcastInstance[0]));
 
-            node.shutdown();
-            break;
+        IMap map = nodes.get(0).getMap(mapName);
+        for (int i = 0; i < numberOfPuts; i++) {
+            map.put(i, i);
         }
 
-        for (HazelcastInstance node : nodes) {
-            if (node.getLifecycleService().isRunning()) {
-                int mapSize = node.getMap(mapName).size();
-                String message = format("map size is %d and it should be smaller "
-                                + "than maxPartitionSize * PARTITION_COUNT which is %.0f",
-                        mapSize, maxPartitionSize * PARTITION_COUNT);
+        int initialMapSize = map.size();
 
-                assertTrue(message, mapSize <= maxPartitionSize * PARTITION_COUNT);
+        nodes.get(1).getMap(mapName).addEntryListener((EntryEvictedListener) event -> {
+            evictedKeySet.add(event.getKey());
+        }, true);
+
+        nodes.get(0).shutdown();
+
+        assertTrueEventually(() -> {
+            for (HazelcastInstance node : nodes) {
+                if (node.getLifecycleService().isRunning()) {
+                    int currentMapSize = node.getMap(mapName).size();
+                    int evictedKeyCount = evictedKeySet.size();
+                    String message = format("initialMapSize=%d, evictedKeyCount=%d, map size is %d and it should be smaller "
+                                    + "than maxPartitionSize * PARTITION_COUNT which is %.0f",
+                            initialMapSize, evictedKeyCount, currentMapSize, maxPartitionSize * PARTITION_COUNT);
+
+                    assertEquals(message, initialMapSize, evictedKeyCount + currentMapSize);
+                    // current map size should approximately be around (nodeCount - 1) * perNodeMaxSize.
+                    assertTrue(message, ((nodeCount - 1) * perNodeMaxSize)
+                            + (PARTITION_COUNT / nodeCount) >= currentMapSize);
+                }
             }
-        }
+
+            // check also backup entry count is around perNodeMaxSize.
+            IMap<Object, Object> map1 = nodes.get(1).getMap(mapName);
+            IMap<Object, Object> map2 = nodes.get(2).getMap(mapName);
+            long totalBackupEntryCount = getTotalBackupEntryCount(map1, map2);
+            assertTrue("totalBackupEntryCount=" + totalBackupEntryCount, ((nodeCount - 1) * perNodeMaxSize)
+                    + (PARTITION_COUNT / nodeCount) >= totalBackupEntryCount);
+        });
     }
+
+    private static long getTotalBackupEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            total += map.getLocalMapStats().getBackupEntryCount();
+        }
+        return total;
+    }
+
 
     /**
      * Eviction starts if a partitions' size exceeds this number:
@@ -403,9 +435,11 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     Config createConfig(MaxSizePolicy maxSizePolicy, int maxSize, String mapName) {
         Config config = getConfig();
+        config.getMetricsConfig().setEnabled(false);
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 
         MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setBackupCount(1);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
         evictionConfig.setMaxSizePolicy(maxSizePolicy);
@@ -414,10 +448,10 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         return config;
     }
 
-    Collection<HazelcastInstance> createNodes(int nodeCount, Config config) {
+    List<HazelcastInstance> createNodes(int nodeCount, Config config) {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         factory.newInstances(config);
-        return factory.getAllHazelcastInstances();
+        return new ArrayList<>(factory.getAllHazelcastInstances());
     }
 
     int getSize(Collection<IMap> maps) {
