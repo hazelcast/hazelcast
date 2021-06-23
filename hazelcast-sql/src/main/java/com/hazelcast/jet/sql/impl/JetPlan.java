@@ -551,7 +551,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, Long timeout) {
-            return planExecutor.execute(this, queryId, arguments, isStreaming ? -1 : timeout);
+            return planExecutor.execute(this, queryId, arguments, timeout);
         }
     }
 
