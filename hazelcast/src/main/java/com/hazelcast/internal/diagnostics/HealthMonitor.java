@@ -445,7 +445,10 @@ public class HealthMonitor {
                 return;
             }
 
+            final long maxNative = memoryStats.getMaxNative();
             final long usedNative = memoryStats.getUsedNative();
+            final long usedMeta = memoryStats.getUsedMetadata();
+
             sb.append("native.memory.used=")
                     .append(numberToUnit(usedNative)).append(", ");
             sb.append("native.memory.free=")
@@ -453,18 +456,13 @@ public class HealthMonitor {
             sb.append("native.memory.total=")
                     .append(numberToUnit(memoryStats.getCommittedNative())).append(", ");
             sb.append("native.memory.max=")
-                    .append(numberToUnit(memoryStats.getMaxNative())).append(", ");
-            final long maxMeta = memoryStats.getMaxMetadata();
-            if (maxMeta > 0) {
-                final long usedMeta = memoryStats.getUsedMetadata();
-                sb.append("native.meta.memory.used=")
-                        .append(numberToUnit(usedMeta)).append(", ");
-                sb.append("native.meta.memory.free=")
-                        .append(usedMeta >= maxMeta ? "0" : numberToUnit(maxMeta - usedMeta)).append(", ");
-                sb.append("native.meta.memory.percentage=")
-                        .append(usedMeta >= maxMeta ? percentageString(PERCENTAGE_MULTIPLIER)
-                                : percentageString(PERCENTAGE_MULTIPLIER * usedMeta / usedNative)).append(", ");
-            }
+                    .append(numberToUnit(maxNative)).append(", ");
+            sb.append("native.meta.memory.used=")
+                    .append(numberToUnit(usedMeta)).append(", ");
+            sb.append("native.meta.memory.free=")
+                    .append(numberToUnit(maxNative - usedMeta)).append(", ");
+            sb.append("native.meta.memory.percentage=")
+                    .append(percentageString(PERCENTAGE_MULTIPLIER * usedMeta / maxNative)).append(", ");
         }
 
         private void renderExecutors() {
