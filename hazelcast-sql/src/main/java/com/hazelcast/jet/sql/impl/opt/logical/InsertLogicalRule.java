@@ -39,7 +39,7 @@ final class InsertLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify insert = (TableModify) rel;
+        LogicalTableModify insert = (LogicalTableModify) rel;
 
         return new InsertLogicalRel(
                 insert.getCluster(),
@@ -47,9 +47,6 @@ final class InsertLogicalRule extends ConverterRule {
                 insert.getTable(),
                 insert.getCatalogReader(),
                 OptUtils.toLogicalInput(insert.getInput()),
-                insert.getOperation(),
-                insert.getUpdateColumnList(),
-                insert.getSourceExpressionList(),
                 insert.isFlattened()
         );
     }

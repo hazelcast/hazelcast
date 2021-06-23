@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
+import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
@@ -43,12 +44,11 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
     }
 
     public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
@@ -59,7 +59,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getTable());
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -75,7 +75,6 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 getTable(),
                 getCatalogReader(),
                 sole(inputs),
-                getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened()
