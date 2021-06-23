@@ -20,7 +20,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -37,7 +37,7 @@ public final class ToBackupSender<RS> {
     private static final int TARGET_BATCH_SIZE = 100;
 
     private final String serviceName;
-    private final OperationService operationService;
+    private final OperationServiceImpl operationService;
     private final BiFunction<Integer, Integer, Boolean> backupOpFilter;
     private final BiFunction<RS, Collection<ExpiredKey>, Operation> backupOpSupplier;
 
@@ -48,7 +48,7 @@ public final class ToBackupSender<RS> {
         this.serviceName = serviceName;
         this.backupOpFilter = backupOpFilter;
         this.backupOpSupplier = backupOpSupplier;
-        this.operationService = nodeEngine.getOperationService();
+        this.operationService = ((OperationServiceImpl) nodeEngine.getOperationService());
     }
 
     static <S> ToBackupSender<S> newToBackupSender(String serviceName,
@@ -90,8 +90,7 @@ public final class ToBackupSender<RS> {
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
             if (backupOpFilter.apply(partitionId, replicaIndex)) {
                 Operation operation = backupOpSupplier.apply(recordStore, expiredKeys);
-                operationService.createInvocationBuilder(serviceName, operation, partitionId)
-                        .setReplicaIndex(replicaIndex).invoke();
+                operationService.invokeOnPartitionAsync(serviceName, operation, partitionId, replicaIndex);
             }
         }
     }
