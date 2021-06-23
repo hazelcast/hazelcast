@@ -134,7 +134,9 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                filter, projections,
+                filter,
+                projections,
+                projections,
                 null,
                 null
         );
@@ -175,7 +177,9 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                filter, projections,
+                filter,
+                projections,
+                projections,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
@@ -218,7 +222,9 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                filter, projections,
+                filter,
+                projections,
+                projections,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
@@ -246,7 +252,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
-        List<Expression<?>> projections = singletonList(ColumnExpression.create(2, INT));
+        List<Expression<?>> projection = singletonList(ColumnExpression.create(2, INT));
+        List<Expression<?>> fullProjection = asList(
+                ColumnExpression.create(0, INT),
+                ColumnExpression.create(1, VARCHAR),
+                ColumnExpression.create(2, INT)
+        );
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -255,7 +266,55 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 GenericQueryTargetDescriptor.DEFAULT,
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
-                filter, projections,
+                filter,
+                projection,
+                fullProjection,
+                null,
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_ANY_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_whenFilterAndSpecificProjectionExists_sorted() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+            if (i > count / 2) {
+                expected.add(new Object[]{(count - i + 1)});
+            }
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
+        indexConfig.setName(randomName());
+        map.addIndex(indexConfig);
+
+        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
+        List<Expression<?>> projection = singletonList(ColumnExpression.create(2, INT));
+        List<Expression<?>> fullProjection = asList(
+                ColumnExpression.create(0, INT),
+                ColumnExpression.create(1, VARCHAR),
+                ColumnExpression.create(2, INT)
+        );
+
+        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
+                map.getName(),
+                indexConfig.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
+                Arrays.asList(INT, VARCHAR, INT),
+                filter,
+                projection,
+                fullProjection,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
         );

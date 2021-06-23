@@ -21,6 +21,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.JetPlan;
 import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP;
@@ -414,12 +415,12 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
             }
             System.out.println();
             System.out.println("---------------------");
-            System.out.println();
 
             System.out.println("EXPECTED KEYS");
             for (Integer key : expectedMapKeys) {
                 System.out.print(key + " ");
             }
+            System.out.println("---------------------");
             System.out.println();
             failOnDifference(
                     runId,
@@ -493,7 +494,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         } else {
             final Vertex scanVertexCandidate = dag.getVertex(String.format("IMap[partitioned.%s]", mapName));
             assertNotNull(scanVertexCandidate);
-            assertInstanceOf(MapIndexScanP.MapIndexScanProcessorSupplier.class, scanVertexCandidate.getMetaSupplier());
+            assertInstanceOf(ReadMapOrCacheP.LocalProcessorMetaSupplier.class, scanVertexCandidate.getMetaSupplier());
         }
     }
 

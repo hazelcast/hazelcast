@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
@@ -48,14 +49,11 @@ import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -99,15 +97,14 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
     private final AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
     private final ExpressionEvalContext evalContext;
-    private final List<Expression<?>> projections;
+    private final List<Expression<?>> projection;
+    private final List<Expression<?>> fullProjection;
     private final Expression<Boolean> filter;
+    private final ComparatorEx<Object[]> comparator;
     private transient Context context;
 
     private final ArrayList<Split<F>> splits;
     private final MapScanRow row;
-    private final Queue<Object[]> rowsQueue;
-    private final Queue<Integer> splitsToRemove = new ArrayDeque<>();
-    private final Queue<Split<F>> splitsToAdd = new ArrayDeque<>();
     private Object[] pendingItem;
 
     public MapIndexScanP(
@@ -119,7 +116,8 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     ) {
         this.reader = reader;
         this.evalContext = evalContext;
-        this.projections = indexScanMetadata.getProjections();
+        this.projection = indexScanMetadata.getProjection();
+        this.fullProjection = indexScanMetadata.getFullProjection();
         this.filter = indexScanMetadata.getRemainingFilter();
         this.splits = new ArrayList<>();
         this.splits.add(
@@ -140,9 +138,9 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         );
 
         if (indexScanMetadata.getComparator() != null) {
-            this.rowsQueue = new PriorityQueue<>(indexScanMetadata.getComparator());
+            this.comparator = indexScanMetadata.getComparator();
         } else {
-            this.rowsQueue = new ArrayDeque<>();
+            this.comparator = null;
         }
     }
 
@@ -159,21 +157,13 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             return false;
         }
 
-        // Remove all splits which ends their job.
-        while (!splitsToRemove.isEmpty()) {
-            int split = splitsToRemove.poll();
-            splits.remove(split);
-        }
-
-        // Add all splits which should start their execution.
-        while (!splitsToAdd.isEmpty()) {
-            Split split = splitsToAdd.poll();
-            splits.add(split);
-        }
-
         if (splits.isEmpty()) {
-            return projectEntryAndEmit();
+            return true;
         }
+
+        Object[] extreme = null;
+        QueryableEntry<?, ?> extremeEntry = null;
+        int extremeIndex = -1;
 
         for (int i = 0; i < splits.size(); ++i) {
             Split s = splits.get(i);
@@ -187,29 +177,51 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                     try {
                         boolean readFlag = s.readBatch(reader);
                         if (readFlag) {
-                            // No more items to read, remove waisted split.
-                            splitsToRemove.offer(i);
+                            // No more items to read, remove finished split.
+                            splits.remove(i--);
                             continue;
                         }
                     } catch (MissingPartitionException e) {
-                        splitOnMigration(i);
+                        List<Split<F>> newSplits = splitOnMigration(i);
+                        splits.remove(i--);
+                        splits.addAll(newSplits);
                         continue;
                     }
                 }
             }
-            Object[] row = projectAndFilter(s.readElement());
+            QueryableEntry<?, ?> entry = s.readElement();
+            Object[] row = transformAndFilter(entry, i);
             if (row != null) {
-                rowsQueue.offer(row);
+                if (extreme == null || comparator.compare(row, extreme) > 0) {
+                    extreme = row;
+                    extremeEntry = entry;
+                    extremeIndex = i;
+                }
             }
         }
 
-        return splits.isEmpty() && projectEntryAndEmit();
+        if (extreme != null) {
+            splits.get(extremeIndex).incrementBatchPosition();
+        } else {
+            // item was filtered or no splits are executing at the moment;
+            return false;
+        }
+
+        extreme = project(extremeEntry);
+
+        if (!tryEmit(extreme)) {
+            pendingItem = extreme;
+        }
+
+        return splits.isEmpty();
     }
 
-    private void splitOnMigration(int splitIndex) {
+    private List<Split<F>> splitOnMigration(int splitIndex) {
         assert splitIndex < splits.size();
         Split<F> split = splits.get(splitIndex);
         IndexIterationPointer[] lastPointers = split.getPointers();
+
+        List<Split<F>> newSplits = new ArrayList<>();
 
         Map<Address, int[]> addressMap = context.partitionAssignment();
         Map<Address, PartitionIdSet> newPartitionDistributions = new HashMap<>();
@@ -231,45 +243,45 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             }
         });
 
-        splitsToRemove.offer(splitIndex);
         newPartitionDistributions.put(split.getAddress(), actualPartitions);
         newPartitionDistributions.forEach((address, partitionSet) ->
-                splitsToAdd.offer(new Split<>(partitionSet, address, lastPointers))
+                newSplits.add(new Split<>(partitionSet, address, lastPointers))
         );
-    }
-
-    private boolean projectEntryAndEmit() {
-        if (!rowsQueue.isEmpty()) {
-            Object[] item = rowsQueue.poll();
-            System.out.println("<- " + item[0]);
-            if (!tryEmit(item)) {
-                pendingItem = item;
-            }
-            return false;
-        }
-        return true;
+        return newSplits;
     }
 
     private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter) {
         return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
     }
 
-    private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+    private Object[] transformAndFilter(@Nonnull QueryableEntry<?, ?> entry, int splitIndex) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
 
         if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, evalContext))) {
+            assert splitIndex < splits.size();
+            // filtered items should be incremented manually after filter check failure.
+            splits.get(splitIndex).incrementBatchPosition();
             return null;
         }
 
-        Object[] row = new Object[projections.size()];
-
-        for (int j = 0; j < projections.size(); j++) {
-            row[j] = evaluate(projections.get(j), this.row, evalContext);
+        Object[] row = new Object[fullProjection.size()];
+        for (int j = 0; j < fullProjection.size(); j++) {
+            row[j] = evaluate(fullProjection.get(j), this.row, evalContext);
         }
         return row;
     }
 
-    private static final class Split<F extends CompletableFuture<MapFetchIndexOperationResult>> {
+    private Object[] project(@Nonnull QueryableEntry<?, ?> entry) {
+        row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
+
+        Object[] row = new Object[projection.size()];
+        for (int j = 0; j < projection.size(); j++) {
+            row[j] = evaluate(projection.get(j), this.row, evalContext);
+        }
+        return row;
+    }
+
+    static final class Split<F extends CompletableFuture<MapFetchIndexOperationResult>> {
         private final PartitionIdSet partitions;
         private final Address address;
         private IndexIterationPointer[] pointers;
@@ -312,7 +324,11 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         }
 
         public QueryableEntry<?, ?> readElement() {
-            return currentBatch.get(currentBatchPosition++);
+            return currentBatch.get(currentBatchPosition);
+        }
+
+        public void incrementBatchPosition() {
+            ++currentBatchPosition;
         }
 
         public boolean batchIsDrained() {

@@ -100,6 +100,22 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         return project(schema, projection, parameterMetadata);
     }
 
+    public List<Expression<?>> fullProjection(QueryParameterMetadata parameterMetadata) {
+        PlanNodeSchema schema = OptUtils.schema(getTable());
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        int fieldCount = table.getTarget().getFieldCount();
+
+        List<RexNode> projection = new ArrayList<>(fieldCount);
+
+        for (int index = 0; index < fieldCount; index++) {
+            TableField field = table.getTarget().getField(index);
+            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
+            projection.add(new RexInputRef(index, relDataType));
+        }
+
+        return project(schema, projection, parameterMetadata);
+    }
+
     public MapTableIndex getIndex() {
         return index;
     }
@@ -110,10 +126,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public List<QueryDataType> getConverterTypes() {
         return converterTypes;
-    }
-
-    public RexNode getIndexExp() {
-        return indexExp;
     }
 
     public RexNode getRemainderExp() {

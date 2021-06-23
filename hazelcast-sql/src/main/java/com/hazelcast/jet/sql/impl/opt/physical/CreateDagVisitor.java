@@ -146,16 +146,14 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         SqlConnector sqlConnector = getJetSqlConnector(table);
-        assert sqlConnector instanceof IMapSqlConnector;
-        IMapSqlConnector mapConnector = (IMapSqlConnector) sqlConnector;
-
-        return mapConnector.indexScanReader(
+        return sqlConnector.indexScanReader(
                 dag,
                 table,
                 indexName,
-                filter,
                 rel.projection(parameterMetadata),
+                rel.fullProjection(parameterMetadata),
                 remFilter,
+                filter,
                 comparator
         );
     }

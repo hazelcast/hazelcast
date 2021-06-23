@@ -172,13 +172,15 @@ public class IMapSqlConnector implements SqlConnector {
     }
 
     @Nonnull
+    @Override
     public Vertex indexScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nonnull String indexName,
-            @Nonnull IndexFilter filter,
             @Nonnull List<Expression<?>> projection,
+            @Nonnull List<Expression<?>> fullProjection,
             @Nullable Expression<Boolean> reminderFilter,
+            @Nonnull IndexFilter filter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
@@ -191,6 +193,7 @@ public class IMapSqlConnector implements SqlConnector {
                 table.types(),
                 filter,
                 projection,
+                fullProjection,
                 reminderFilter,
                 comparator
         );

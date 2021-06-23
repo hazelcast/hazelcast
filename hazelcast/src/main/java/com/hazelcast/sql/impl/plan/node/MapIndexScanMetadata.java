@@ -44,7 +44,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
     protected QueryTargetDescriptor valueDescriptor;
     protected List<QueryPath> fieldPaths;
     protected List<QueryDataType> fieldTypes;
-    protected List<Expression<?>> projections;
+    protected List<Expression<?>> projection;
+    protected List<Expression<?>> fullProjection;
     protected Expression<Boolean> remainingFilter;
     protected IndexFilter filter;
     protected ComparatorEx<Object[]> comparator;
@@ -60,7 +61,9 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
             QueryTargetDescriptor valueDescriptor,
             List<QueryPath> fieldPaths,
             List<QueryDataType> fieldTypes,
-            IndexFilter filter, List<Expression<?>> projections,
+            IndexFilter filter,
+            List<Expression<?>> projections,
+            List<Expression<?>> fullProjection,
             Expression<Boolean> remainingFilter,
             ComparatorEx<Object[]> comparator
     ) {
@@ -70,7 +73,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         this.valueDescriptor = valueDescriptor;
         this.fieldPaths = fieldPaths;
         this.fieldTypes = fieldTypes;
-        this.projections = projections;
+        this.projection = projections;
+        this.fullProjection = fullProjection;
         this.remainingFilter = remainingFilter;
         this.filter = filter;
         this.comparator = comparator;
@@ -100,8 +104,12 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         return fieldTypes;
     }
 
-    public List<Expression<?>> getProjections() {
-        return projections;
+    public List<Expression<?>> getProjection() {
+        return projection;
+    }
+
+    public List<Expression<?>> getFullProjection() {
+        return fullProjection;
     }
 
     public IndexFilter getFilter() {
@@ -131,13 +139,15 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
                 && valueDescriptor.equals(that.valueDescriptor)
                 && fieldPaths.equals(that.fieldPaths)
                 && fieldTypes.equals(that.fieldTypes)
-                && projections.equals(that.projections)
+                && projection.equals(that.projection)
+                && fullProjection.equals(that.fullProjection)
+                && remainingFilter.equals(that.remainingFilter)
                 && filter.equals(that.filter);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mapName, indexName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projections, filter);
+        return Objects.hash(mapName, indexName, keyDescriptor, valueDescriptor, fieldPaths, fieldTypes, projection, filter);
     }
 
     @Override
@@ -148,8 +158,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         out.writeObject(valueDescriptor);
         SerializationUtil.writeList(fieldPaths, out);
         SerializationUtil.writeList(fieldTypes, out);
-        SerializationUtil.writeList(projections, out);
+        SerializationUtil.writeList(projection, out);
+        SerializationUtil.writeList(fullProjection, out);
         out.writeObject(filter);
+        out.writeObject(remainingFilter);
         out.writeObject(comparator);
     }
 
@@ -161,8 +173,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable, Seriali
         valueDescriptor = in.readObject();
         fieldPaths = SerializationUtil.readList(in);
         fieldTypes = SerializationUtil.readList(in);
-        projections = SerializationUtil.readList(in);
+        projection = SerializationUtil.readList(in);
+        fullProjection = SerializationUtil.readList(in);
         filter = in.readObject();
+        remainingFilter = in.readObject();
         comparator = in.readObject();
     }
 

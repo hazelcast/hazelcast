@@ -257,7 +257,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         return result;
     }
 
-    static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
+    public static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, AbstractMapReader<F, B, R>> readerSupplier;
