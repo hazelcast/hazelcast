@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.io.IOException;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
@@ -53,6 +54,7 @@ public class KvProjector {
             UpsertTarget keyTarget,
             UpsertTarget valueTarget
     ) {
+        checkTrue(paths.length == types.length, "paths.length != types.length");
         this.types = types;
 
         this.keyTarget = keyTarget;
@@ -78,7 +80,7 @@ public class KvProjector {
     public Entry<Object, Object> project(Object[] row) {
         keyTarget.init();
         valueTarget.init();
-        for (int i = 0; i < row.length; i++) {
+        for (int i = 0; i < injectors.length; i++) {
             Object value = getToConverter(types[i]).convert(row[i]);
             injectors[i].set(value);
         }

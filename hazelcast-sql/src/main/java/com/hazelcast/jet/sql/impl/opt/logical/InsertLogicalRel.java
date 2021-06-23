@@ -25,6 +25,8 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
+import static org.apache.calcite.rel.core.TableModify.Operation.INSERT;
+
 public class InsertLogicalRel extends TableModify implements LogicalRel {
 
     InsertLogicalRel(
@@ -35,7 +37,7 @@ public class InsertLogicalRel extends TableModify implements LogicalRel {
             RelNode input,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, Operation.INSERT, null, null, flattened);
+        super(cluster, traitSet, table, catalogReader, input, INSERT, null, null, flattened);
     }
 
     @Override

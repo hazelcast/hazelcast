@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -29,7 +28,7 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
-import static java.util.Collections.singletonList;
+import static org.apache.calcite.rel.core.TableModify.Operation.INSERT;
 
 public class InsertPhysicalRel extends TableModify implements PhysicalRel {
 
@@ -41,12 +40,12 @@ public class InsertPhysicalRel extends TableModify implements PhysicalRel {
             RelNode input,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, Operation.INSERT, null, null, flattened);
+        super(cluster, traitSet, table, catalogReader, input, INSERT, null, null, flattened);
     }
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return new PlanNodeSchema(singletonList(QueryDataType.BIGINT));
+        throw new UnsupportedOperationException();
     }
 
     @Override

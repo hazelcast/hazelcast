@@ -153,6 +153,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         assertJobStatusEventually(job, expected, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
+    public static Config smallInstanceWithResourceUploadConfig() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setResourceUploadEnabled(true);
+        return config;
+    }
+
     /**
      * Asserts that a job status is eventually RUNNING. When it's running,
      * checks that the execution ID is different from the given {@code

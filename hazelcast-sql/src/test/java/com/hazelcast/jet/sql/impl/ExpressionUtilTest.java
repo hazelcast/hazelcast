@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
@@ -32,12 +33,12 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.NOT_IMPLEMENTED_ARGUMENTS_CONTEXT;
 import static com.hazelcast.sql.impl.type.QueryDataType.BOOLEAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -88,7 +89,7 @@ public class ExpressionUtilTest {
     }
 
     private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
-        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+        Object[] joined = ExpressionUtil.join(leftRow, rightRow, predicate, mock(ExpressionEvalContext.class));
 
         assertThat(joined).isEqualTo(expected);
     }
@@ -97,7 +98,7 @@ public class ExpressionUtilTest {
     public void test_evaluate() {
         List<Object[]> rows = asList(new Object[]{0, "a"}, new Object[]{1, "b"});
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(null, null, rows, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(null, null, rows, mock(ExpressionEvalContext.class));
 
         assertThat(evaluated).containsExactlyElementsOf(rows);
     }
@@ -111,7 +112,7 @@ public class ExpressionUtilTest {
             return value != 1;
         });
 
-        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, null, rows, NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+        List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, null, rows, mock(ExpressionEvalContext.class));
 
         assertThat(evaluated).containsExactly(new Object[]{0, "a"}, new Object[]{2, "c"});
     }
@@ -124,7 +125,7 @@ public class ExpressionUtilTest {
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
         List<Object[]> evaluated = ExpressionUtil.evaluate(null, singletonList(projection), rows,
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+                mock(ExpressionEvalContext.class));
 
         assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{2}, new Object[]{4});
     }
@@ -141,7 +142,7 @@ public class ExpressionUtilTest {
                 MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT);
 
         List<Object[]> evaluated = ExpressionUtil.evaluate(predicate, singletonList(projection), rows,
-                NOT_IMPLEMENTED_ARGUMENTS_CONTEXT);
+                mock(ExpressionEvalContext.class));
 
         assertThat(evaluated).containsExactly(new Object[]{0}, new Object[]{4});
     }

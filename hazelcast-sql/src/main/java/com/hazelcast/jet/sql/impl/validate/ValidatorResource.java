@@ -40,6 +40,9 @@ public interface ValidatorResource {
     @BaseMessage("VALUES clause not supported on the right side of a join")
     ExInst<SqlValidatorException> joiningValuesNotSupported();
 
+    @BaseMessage("UPDATE FROM SELECT not supported")
+    ExInst<SqlValidatorException> updateFromSelectNotSupported();
+
     @BaseMessage("You must use CREATE JOB statement for a streaming DML query")
     ExInst<SqlValidatorException> mustUseCreateJob();
 

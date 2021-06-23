@@ -25,6 +25,8 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
+import static org.apache.calcite.rel.core.TableModify.Operation.DELETE;
+
 public class DeleteLogicalRel extends TableModify implements LogicalRel {
 
     protected DeleteLogicalRel(
@@ -35,7 +37,7 @@ public class DeleteLogicalRel extends TableModify implements LogicalRel {
             RelNode input,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, Operation.DELETE, null, null, flattened);
+        super(cluster, traitSet, table, catalogReader, input, DELETE, null, null, flattened);
     }
 
     @Override

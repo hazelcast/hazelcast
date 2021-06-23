@@ -105,6 +105,23 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_update_noPrimaryKey() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
+
+        assertThatThrownBy(() -> sqlService.execute("UPDATE b SET v = 1"))
+                .hasMessageContaining("PRIMARY KEY not supported by connector: TestBatch");
+    }
+
+    @Test
+    public void test_update_fromSelect() {
+        instance().getMap("m1").put(1, 1);
+        instance().getMap("m2").put(1, 2);
+
+        assertThatThrownBy(() -> sqlService.execute("UPDATE m1 SET __key = (select m2.this from m2 WHERE m1.__key = m2.__key)"))
+                .hasMessageContaining("UPDATE FROM SELECT not supported");
+    }
+
+    @Test
     public void test_delete_noPrimaryKey() {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 

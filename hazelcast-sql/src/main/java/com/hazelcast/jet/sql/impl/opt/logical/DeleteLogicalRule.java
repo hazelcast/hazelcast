@@ -39,7 +39,7 @@ public final class DeleteLogicalRule extends ConverterRule {
 
     @Override
     public RelNode convert(RelNode rel) {
-        TableModify delete = (TableModify) rel;
+        LogicalTableModify delete = (LogicalTableModify) rel;
 
         return new DeleteLogicalRel(
                 delete.getCluster(),
