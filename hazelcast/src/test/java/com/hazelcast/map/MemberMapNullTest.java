@@ -57,6 +57,8 @@ public class MemberMapNullTest extends AbstractMapNullTest {
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void testNullability() {
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, ""));
+        assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync(null, "", -1, TimeUnit.SECONDS));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", null, -1, TimeUnit.SECONDS));
         assertThrowsNPE(m -> ((MapProxyImpl) m).putIfAbsentAsync("", "", -1, null));
