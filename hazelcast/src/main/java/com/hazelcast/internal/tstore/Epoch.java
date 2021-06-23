@@ -31,6 +31,7 @@ public final class Epoch {
     private volatile long current;
     private volatile long safe;
 
+    // TODO: isolate each thread epoch in its own cache line
     private final AtomicLongArray threadEpochs;
 
     // TODO: track the actual action count?
@@ -130,6 +131,7 @@ public final class Epoch {
         assert threadEpochs.get(threadIndex) != FREE;
         threadEpochs.set(threadIndex, FREE);
 
+        long current = CURRENT.incrementAndGet(this);
         long safe = computeSafeEpoch(current);
         updateSafeEpoch(safe);
     }
