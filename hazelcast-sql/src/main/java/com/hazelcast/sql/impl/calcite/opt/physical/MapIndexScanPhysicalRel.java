@@ -36,13 +36,12 @@ import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.apache.calcite.rel.RelFieldCollation.Direction;
-
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Map index scan operator.
