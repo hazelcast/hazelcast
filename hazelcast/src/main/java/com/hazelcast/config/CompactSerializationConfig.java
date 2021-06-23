@@ -32,8 +32,8 @@ public class CompactSerializationConfig {
     private final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistryMap;
 
     public CompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
-        this.classNameToRegistryMap = compactSerializationConfig.classNameToRegistryMap;
-        this.classToRegistryMap = compactSerializationConfig.classToRegistryMap;
+        this.classNameToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classNameToRegistryMap);
+        this.classToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classToRegistryMap);
     }
 
     public CompactSerializationConfig() {
@@ -43,85 +43,64 @@ public class CompactSerializationConfig {
 
 
     /**
-     * Register class to be serialized via compact serializer.
-     * Overrides Portable,Identified,Java Serializable or GlobalSerializer
+     * Registers the class to be serialized via compact serializer.
+     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      * <p>
-     * class name is determined automatically from clazz. It is full path including package by default
-     * fields are determined automatically from class via reflection
+     * Type name is determined automatically from the class, which is its
+     * fully qualified class name.
+     * Field types are determined automatically from the class via reflection.
      *
      * @param clazz Class to be serialized via compact serializer
      */
     public <T> void register(Class<T> clazz) {
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, clazz.getName(), null);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(clazz.getName(), registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class name " + clazz.getName());
-        }
-        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
-        }
+        checkNotNull(clazz, "Class cannot be null");
+        register0(clazz, clazz.getName(), null);
     }
 
     /**
-     * Register class to be serialized via compact serializer.
-     * Overrides Portable,Identified,Java Serializable or GlobalSerializer
+     * Registers the class to be serialized via compact serializer.
+     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      * <p>
-     * fields are determined automatically from class via reflection
+     * Field types are determined automatically from the class via reflection.
      *
      * @param clazz Class to be serialized via compact serializer
+     * @param typeName Type name of the class
      */
     public <T> void register(Class<T> clazz, String typeName) {
-        checkNotNull(typeName, "typeName");
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, null);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class name " + clazz.getName());
-        }
-        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
-        }
+        checkNotNull(clazz, "Class cannot be null");
+        checkNotNull(typeName, "Type name cannot be null");
+        register0(clazz, typeName, null);
     }
 
     /**
-     * Register class to be serialized via compact serializer.
-     * Overrides Portable,Identified,Java Serializable or GlobalSerializer
+     * Registers the class to be serialized via compact serializer.
+     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      *
      * @param clazz Class to be serialized via compact serializer
+     * @param typeName Type name of the class
+     * @param explicitSerializer Serializer to be used for the given class
      */
     public <T> void register(Class<T> clazz, String typeName, CompactSerializer<T> explicitSerializer) {
-        checkNotNull(typeName, "typeName");
-        checkNotNull(explicitSerializer, "explicitSerializer");
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, explicitSerializer);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class name " + typeName);
-        }
-        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
-        }
+        checkNotNull(clazz, "Class cannot be null");
+        checkNotNull(typeName, "Type name cannot be null");
+        checkNotNull(explicitSerializer, "Explicit serializer cannot be null");
+        register0(clazz, typeName, explicitSerializer);
     }
 
     /**
-     * Register class to be serialized via compact serializer.
-     * Overrides Portable,Identified,Java Serializable or GlobalSerializer
-     * class name is determined automatically from clazz. It is full path including package by default
+     * Registers the class to be serialized via compact serializer.
+     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
+     * <p>
+     * Type name is determined automatically from the class, which is its
+     * fully qualified class name.
      *
      * @param clazz Class to be serialized via compact serializer
+     * @param explicitSerializer Serializer to be used for the given class
      */
     public <T> void register(Class<T> clazz, CompactSerializer<T> explicitSerializer) {
-        checkNotNull(explicitSerializer, "explicitSerializer");
-        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, clazz.getName(), explicitSerializer);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(clazz.getName(), registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class name " + clazz.getName());
-        }
-        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
-        if (oldRegistry != null) {
-            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
-        }
+        checkNotNull(clazz, "Class cannot be null");
+        checkNotNull(explicitSerializer, "Explicit serializer cannot be null");
+        register0(clazz, clazz.getName(), explicitSerializer);
     }
 
     public Map<String, TriTuple<Class, String, CompactSerializer>> getRegistries() {
@@ -144,5 +123,17 @@ public class CompactSerializationConfig {
     @Override
     public int hashCode() {
         return Objects.hash(classNameToRegistryMap, classToRegistryMap);
+    }
+
+    private <T> void register0(Class<T> clazz, String typeName, CompactSerializer<T> explicitSerializer) {
+        TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, explicitSerializer);
+        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
+        if (oldRegistry != null) {
+            throw new InvalidConfigurationException("Already have a registry for the type name " + typeName);
+        }
+        oldRegistry = classToRegistryMap.putIfAbsent(clazz, registry);
+        if (oldRegistry != null) {
+            throw new InvalidConfigurationException("Already have a registry for class " + clazz);
+        }
     }
 }
