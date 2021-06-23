@@ -39,8 +39,8 @@ public class Schema implements IdentifiedDataSerializable {
 
     private String typeName;
     private TreeMap<String, FieldDescriptor> fieldDefinitionMap;
-    private int numberOfComplexFields;
-    private int primitivesLength;
+    private int numberVarSizeFields;
+    private int fixedSizeFieldsLength;
     private transient long schemaId;
     private boolean isSchemaIdSet;
 
@@ -54,11 +54,22 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     private void init() {
+        int offset = 0;
+        int bitOffset = 0;
+
+        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
+                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .sorted(Comparator.comparingInt(o -> ((FieldDescriptor) o).getType().getTypeSize()).reversed())
+                .collect(Collectors.toList());
+        for (FieldDescriptor fieldDefinition : definiteSizedList) {
+            fieldDefinition.setOffset(offset);
+            offset += fieldDefinition.getType().getTypeSize();
+        }
+
         List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
                 .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
                 .collect(Collectors.toList());
-        int offset = 0;
-        int bitOffset = 0;
         for (FieldDescriptor fieldDefinition : booleanFieldsList) {
             fieldDefinition.setOffset(offset);
             fieldDefinition.setBitOffset((byte) (bitOffset % Byte.SIZE));
@@ -71,16 +82,7 @@ public class Schema implements IdentifiedDataSerializable {
             offset++;
         }
 
-        List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
-                .sorted(Comparator.comparingInt(o -> o.getType().getTypeSize())).collect(Collectors.toList());
-        for (FieldDescriptor fieldDefinition : definiteSizedList) {
-            fieldDefinition.setOffset(offset);
-            offset += fieldDefinition.getType().getTypeSize();
-        }
-
-        primitivesLength = offset;
+        fixedSizeFieldsLength = offset;
 
         int index = 0;
         List<FieldDescriptor> varSizeList = fieldDefinitionMap.values().stream()
@@ -91,7 +93,7 @@ public class Schema implements IdentifiedDataSerializable {
             fieldDefinition.setIndex(index++);
         }
 
-        numberOfComplexFields = index;
+        numberVarSizeFields = index;
     }
 
     /**
@@ -112,12 +114,12 @@ public class Schema implements IdentifiedDataSerializable {
         return fieldDefinitionMap.keySet();
     }
 
-    public int getNumberOfVariableLengthFields() {
-        return numberOfComplexFields;
+    public int getNumberOfVariableSizeFields() {
+        return numberVarSizeFields;
     }
 
-    public int getPrimitivesLength() {
-        return primitivesLength;
+    public int getFixedSizeFieldsLength() {
+        return fixedSizeFieldsLength;
     }
 
     public int getFieldCount() {
@@ -150,8 +152,8 @@ public class Schema implements IdentifiedDataSerializable {
     public String toString() {
         return "Schema {"
                 + " className = " + typeName
-                + " numberOfComplexFields = " + numberOfComplexFields
-                + " primitivesLength = " + primitivesLength
+                + " numberOfComplexFields = " + numberVarSizeFields
+                + " primitivesLength = " + fixedSizeFieldsLength
                 + ", map = " + fieldDefinitionMap
                 + '}';
     }
@@ -201,8 +203,8 @@ public class Schema implements IdentifiedDataSerializable {
             return false;
         }
         Schema schema = (Schema) o;
-        return numberOfComplexFields == schema.numberOfComplexFields
-                && primitivesLength == schema.primitivesLength
+        return numberVarSizeFields == schema.numberVarSizeFields
+                && fixedSizeFieldsLength == schema.fixedSizeFieldsLength
                 && schemaId == schema.schemaId
                 && Objects.equals(typeName, schema.typeName)
                 && Objects.equals(fieldDefinitionMap, schema.fieldDefinitionMap);

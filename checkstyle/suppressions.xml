@@ -293,7 +293,7 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]AbstractGenericRecordBuilder"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedGenericRecord"/>
-    <suppress checks="MethodCount"
+    <suppress checks="MethodCount|ExecutableStatementCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactInternalGenericRecord"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordCloner"/>

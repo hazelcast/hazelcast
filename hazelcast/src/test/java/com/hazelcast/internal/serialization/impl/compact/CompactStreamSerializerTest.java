@@ -139,8 +139,8 @@ public class CompactStreamSerializerTest {
         Data data = ss1.toData(bitsDTO);
 
         // hash(4) + typeid(4) + schemaId(8) + (4 byte length) + (1 bytes for 8 bits) + (4 bytes for int)
-        // (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (4 byte offset bytes)
-        assertEquals(34, data.toByteArray().length);
+        // (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (1 byte offset bytes)
+        assertEquals(31, data.toByteArray().length);
 
         GenericRecordQueryReader reader = new GenericRecordQueryReader(ss2.readAsInternalGenericRecord(data));
         assertEquals(121, reader.read("id"));
@@ -403,6 +403,35 @@ public class CompactStreamSerializerTest {
 
         assertEquals(schema.getField("singleEmployee").getOffset(), -1);
         assertEquals(schema.getField("singleEmployee").getIndex(), 3);
+    }
+
+    @Test
+    public void testFieldOrderFixedSize() throws IOException {
+        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
+
+        SchemaWriter writer = new SchemaWriter("className");
+
+        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
+        reflectiveCompactSerializer.write(writer, employeeDTO);
+
+        Schema schema = writer.build();
+
+        assertEquals(schema.getField("id").getOffset(), 0);
+        assertEquals(schema.getField("id").getIndex(), -1);
+
+        assertEquals(schema.getField("age").getOffset(), 8);
+        assertEquals(schema.getField("age").getIndex(), -1);
+
+        assertEquals(schema.getField("rank").getOffset(), 12);
+        assertEquals(schema.getField("rank").getIndex(), -1);
+
+        assertEquals(schema.getField("isFired").getOffset(), 16);
+        assertEquals(schema.getField("isFired").getBitOffset(), 0);
+        assertEquals(schema.getField("isFired").getIndex(), -1);
+
+        assertEquals(schema.getField("isHired").getOffset(), 16);
+        assertEquals(schema.getField("isHired").getBitOffset(), 1);
+        assertEquals(schema.getField("isHired").getIndex(), -1);
     }
 
     @Test
