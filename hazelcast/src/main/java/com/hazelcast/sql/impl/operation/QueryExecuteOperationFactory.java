@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation.coordinator;
+package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
-import static com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperationFragmentMapping.EXPLICIT;
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.DATA_MEMBERS;
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 
 /**
  * Factory to create query execute operations.

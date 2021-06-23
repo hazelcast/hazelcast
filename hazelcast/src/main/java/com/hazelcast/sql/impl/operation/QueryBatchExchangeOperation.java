@@ -14,45 +14,61 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation.coordinator;
+package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.row.RowBatch;
 
 import java.io.IOException;
 import java.util.UUID;
 
 /**
- * Flow control operation which allows for remote sender to proceed with sending.
+ * Batch operation.
  */
-public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOperation {
+public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation {
 
+    private RowBatch batch;
     private long ordinal;
+    private boolean last;
     private long remainingMemory;
 
-    public QueryFlowControlExchangeOperation() {
+    public QueryBatchExchangeOperation() {
         // No-op.
     }
 
-    public QueryFlowControlExchangeOperation(
+    public QueryBatchExchangeOperation(
         QueryId queryId,
         int edgeId,
         UUID targetMemberId,
+        RowBatch batch,
         long ordinal,
+        boolean last,
         long remainingMemory
     ) {
         super(queryId, edgeId, targetMemberId);
 
+        assert batch != null;
         assert remainingMemory >= 0L;
 
+        this.batch = batch;
         this.ordinal = ordinal;
+        this.last = last;
         this.remainingMemory = remainingMemory;
+    }
+
+    public RowBatch getBatch() {
+        return batch;
     }
 
     public long getOrdinal() {
         return ordinal;
+    }
+
+    public boolean isLast() {
+        return last;
     }
 
     public long getRemainingMemory() {
@@ -61,23 +77,27 @@ public class QueryFlowControlExchangeOperation extends QueryAbstractExchangeOper
 
     @Override
     public boolean isInbound() {
-        return false;
+        return true;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.QUERY_OPERATION_FLOW_CONTROL;
+        return SqlDataSerializerHook.QUERY_OPERATION_BATCH;
     }
 
     @Override
     protected void writeInternal2(ObjectDataOutput out) throws IOException {
+        out.writeObject(batch);
         out.writeLong(ordinal);
+        out.writeBoolean(last);
         out.writeLong(remainingMemory);
     }
 
     @Override
     protected void readInternal2(ObjectDataInput in) throws IOException {
+        batch = in.readObject();
         ordinal = in.readLong();
+        last = in.readBoolean();
         remainingMemory = in.readLong();
     }
 }

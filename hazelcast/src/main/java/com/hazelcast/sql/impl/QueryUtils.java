@@ -180,7 +180,9 @@ public final class QueryUtils {
     /**
      * Finds a larger same-version group of data members from a collection
      * members and, if {@code localMember} is from that group, return that.
-     * Otherwise return a random member from the group.
+     * Otherwise return a random member from the group. If the same-version
+     * groups have the same size, return a member from the newer group
+     * (preferably the local one).
      * <p>
      * Used for SqlExecute and SubmitJob(light=true) messages.
      *

@@ -37,7 +37,7 @@ import com.hazelcast.query.impl.predicates.SkipIndexPredicate;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.operationservice.AbstractLocalOperation;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
-import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteFragmentOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteFragmentOperation;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

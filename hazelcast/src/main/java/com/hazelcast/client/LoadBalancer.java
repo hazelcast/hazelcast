@@ -26,7 +26,7 @@ import com.hazelcast.cluster.Member;
  * It is up to the implementation to use different load balancing policies.
  * <p>
  * If the client is configured with {@link ClientNetworkConfig#isSmartRouting()},
- * only operations that are not key-based will be routed to the endpoint returned by the LoadBalancer. For
+ * operations that are not key-based will be routed to the endpoint returned by the LoadBalancer. For
  * non-smart clients, the {@link LoadBalancer} is not used.
  * <p>
  * For configuration see  {@link ClientConfig#setLoadBalancer(LoadBalancer)}.
@@ -51,7 +51,7 @@ public interface LoadBalancer {
     /**
      * Returns the next data member or null if no data member is available.
      *
-     *  @throws UnsupportedOperationException if the operation is not supported by this instance
+     * @throws UnsupportedOperationException if the operation is not supported by this instance
      * @since 4.2
      * @deprecated Since 5.0, the method is unused
      */

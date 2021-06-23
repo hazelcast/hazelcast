@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation.coordinator;
+package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
@@ -32,7 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperationFragmentMapping.EXPLICIT;
+import static com.hazelcast.sql.impl.operation.QueryExecuteOperationFragmentMapping.EXPLICIT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

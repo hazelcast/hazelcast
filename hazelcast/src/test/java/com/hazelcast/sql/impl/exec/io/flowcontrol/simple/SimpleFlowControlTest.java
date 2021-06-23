@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.FaultyQueryOperationHandler;
 import com.hazelcast.sql.impl.LoggingQueryOperationHandler;
 import com.hazelcast.sql.impl.QueryId;
-import com.hazelcast.sql.impl.operation.coordinator.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

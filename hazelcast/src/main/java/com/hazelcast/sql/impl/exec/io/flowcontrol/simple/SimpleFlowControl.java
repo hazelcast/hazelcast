@@ -19,8 +19,8 @@ package com.hazelcast.sql.impl.exec.io.flowcontrol.simple;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControl;
-import com.hazelcast.sql.impl.operation.coordinator.QueryFlowControlExchangeOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandler;
+import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 
 import java.util.HashMap;
 import java.util.UUID;

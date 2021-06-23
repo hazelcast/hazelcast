@@ -106,7 +106,7 @@ public class QueryUtilsTest extends SqlTestSupport {
     }
 
     @Test
-    // the test calls methods that return random value - let's try couple of times it doesn't pass by chance. Test is pretty fast
+    // the test calls methods that return random value - let's try multiple times so that it doesn't pass by chance
     @Repeat(5)
     public void test_findLightJobCoordinator() {
         MemberVersion v1 = MemberVersion.of(0, 1, 0);

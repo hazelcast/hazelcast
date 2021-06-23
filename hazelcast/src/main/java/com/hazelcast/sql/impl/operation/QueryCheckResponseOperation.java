@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation.initiator;
+package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlInternalService;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Collection;
 
-public class SqlCloseOperation extends SqlQueryOperation {
-    public SqlCloseOperation() {
+/**
+ * Response to {@link QueryCheckOperation} operation. Sent from coordinator to participant.
+ */
+public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
+    public QueryCheckResponseOperation() {
+        // No-op.
     }
 
-    public SqlCloseOperation(QueryId queryId) {
-        super(queryId);
+    public QueryCheckResponseOperation(Collection<QueryId> queryIds) {
+        super(queryIds);
     }
 
     @Override
-    protected CompletableFuture<?> doRun() throws Exception {
-        SqlInternalService service = getNodeEngine().getSqlService().getInternalService();
-        service.getClientStateRegistry().close(endpoint.getUuid(), getQueryId());
-        return CompletableFuture.completedFuture(null);
+    public boolean isSystem() {
+        return true;
     }
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CLOSE;
+        return SqlDataSerializerHook.QUERY_OPERATION_CHECK_RESPONSE;
     }
 }

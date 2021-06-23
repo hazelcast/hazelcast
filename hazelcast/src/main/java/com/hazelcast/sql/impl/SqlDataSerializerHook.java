@@ -70,16 +70,13 @@ import com.hazelcast.sql.impl.expression.string.TrimFunction;
 import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.operation.coordinator.QueryBatchExchangeOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryCancelOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryCheckOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryCheckResponseOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperation;
-import com.hazelcast.sql.impl.operation.coordinator.QueryExecuteOperationFragment;
-import com.hazelcast.sql.impl.operation.coordinator.QueryFlowControlExchangeOperation;
-import com.hazelcast.sql.impl.operation.initiator.SqlCloseOperation;
-import com.hazelcast.sql.impl.operation.initiator.SqlExecuteOperation;
-import com.hazelcast.sql.impl.operation.initiator.SqlFetchOperation;
+import com.hazelcast.sql.impl.operation.QueryBatchExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryCancelOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckOperation;
+import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
+import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
+import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
 import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
 import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
 import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
@@ -204,11 +201,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
     public static final int EXPRESSION_TO_EPOCH_MILLIS = 74;
 
-    public static final int OPERATION_EXECUTE = 75;
-    public static final int OPERATION_FETCH = 76;
-    public static final int OPERATION_CLOSE = 77;
-
-    public static final int LEN = OPERATION_CLOSE + 1;
+    public static final int LEN = EXPRESSION_TO_EPOCH_MILLIS + 1;
 
     @Override
     public int getFactoryId() {
@@ -315,10 +308,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
         constructors[EXPRESSION_TO_EPOCH_MILLIS] = arg -> new ToEpochMillisFunction();
-
-        constructors[OPERATION_EXECUTE] = arg -> new SqlExecuteOperation();
-        constructors[OPERATION_FETCH] = arg -> new SqlFetchOperation();
-        constructors[OPERATION_CLOSE] = arg -> new SqlCloseOperation();
 
         return new ArrayDataSerializableFactory(constructors);
     }

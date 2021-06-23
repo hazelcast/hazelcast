@@ -17,33 +17,15 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.sql.impl.operation.initiator.SqlQueryOperation;
-
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Base class for SQL messages.
  */
-public abstract class SqlAbstractMessageTask<T, P> extends AbstractAsyncMessageTask<T, P> {
+public abstract class SqlAbstractMessageTask<T> extends AbstractCallableMessageTask<T> {
     protected SqlAbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
-
-    @Override
-    protected CompletableFuture<P> processInternal() {
-        SqlQueryOperation op = prepareOperation();
-        UUID targetId = op.getQueryId().getMemberId();
-        Address targetAddress = nodeEngine.getClusterService().getMember(targetId).getAddress();
-        return nodeEngine.getOperationService()
-                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, targetAddress)
-                .invoke();
-    }
-
-    protected abstract SqlQueryOperation prepareOperation();
 }

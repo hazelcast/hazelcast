@@ -15,11 +15,9 @@
  */
 
 /**
- * Contains operations sent from the initiator member to coordinator
- * members. They match the SQL client messages.
- * <p>
- * In most cases, these operations are local. We only send to another
- * member if the initiator is a lite member or a member of the smaller
- * same-version member group.
+ * Contains operations sent from the coordinator member to participant
+ * members. These operations do not extend {@link
+ * com.hazelcast.spi.impl.operationservice.Operation}, but {@link
+ * com.hazelcast.sql.impl.operation.QueryOperation}.
  */
-package com.hazelcast.sql.impl.operation.initiator;
+package com.hazelcast.sql.impl.operation;

@@ -32,7 +32,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.operation.coordinator.QueryOperationHandlerImpl;
+import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
 import com.hazelcast.sql.impl.plan.node.PlanNode;

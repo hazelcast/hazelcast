@@ -20,35 +20,44 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.operation.initiator.SqlExecuteOperation;
-import com.hazelcast.sql.impl.operation.initiator.SqlQueryOperation;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.security.AccessControlException;
 import java.security.Permission;
 
-import static com.hazelcast.sql.impl.client.SqlClientUtils.expectedResultTypeToEnum;
-
 /**
  * SQL query execute task.
  */
-public class SqlExecuteMessageTask
-        extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters, SqlExecuteCodec.ResponseParameters> {
-
+public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCodec.RequestParameters> {
     public SqlExecuteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected SqlQueryOperation prepareOperation() {
-        return new SqlExecuteOperation(parameters.queryId, parameters.sql, parameters.parameters, parameters.timeoutMillis,
-                parameters.cursorBufferSize, parameters.schema, expectedResultTypeToEnum(parameters.expectedResultType),
-                endpoint.getSubject());
+    protected Object call() throws Exception {
+        SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
+
+        SqlStatement query = new SqlStatement(parameters.sql);
+
+        for (Data param : parameters.parameters) {
+            query.addParameter(serializationService.toObject(param));
+        }
+
+        query.setSchema(parameters.schema);
+        query.setTimeoutMillis(parameters.timeoutMillis);
+        query.setCursorBufferSize(parameters.cursorBufferSize);
+        query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
+
+        SqlServiceImpl sqlService = nodeEngine.getSqlService();
+
+        return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
     }
 
     @Override
@@ -117,14 +126,14 @@ public class SqlExecuteMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{
-                parameters.sql,
-                parameters.parameters,
-                parameters.timeoutMillis,
-                parameters.cursorBufferSize,
-                parameters.schema,
-                parameters.queryId
-        };
+        return new Object[] {
+            parameters.sql,
+            parameters.parameters,
+            parameters.timeoutMillis,
+            parameters.cursorBufferSize,
+            parameters.schema,
+            parameters.queryId
+        } ;
     }
 
     @Override

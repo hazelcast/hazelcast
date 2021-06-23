@@ -38,7 +38,6 @@ import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -99,7 +98,10 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     protected Address findLightJobCoordinator() {
-        return QueryUtils.memberOfLargerSameVersionGroup(container());
+        // If a light job is submitted from a member, it's always coordinated locally.
+        // This is important for SQL jobs running in mixed-version clusters - the job DAG
+        // was created locally and uses features available to the local member version.
+        return container().getThisAddress();
     }
 
     @Override

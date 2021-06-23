@@ -46,7 +46,7 @@ public interface Cluster {
      * the {@link InitialMembershipEvent}.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
-     * The listener doesn't notify you when a lite member is promoted to a data member.
+     * The listener doesn't notify when a lite member is promoted to a data member.
      *
      * @param listener membership listener
      * @return the registration ID

@@ -161,9 +161,7 @@ public interface JetService {
     /**
      * Submits a light job for execution. This kind of job is focused on
      * reducing the job startup and teardown time: only a single operation is
-     * used to deploy the job instead of 2 for normal jobs. Unlike normal jobs,
-     * they also run during rolling upgrade (enterprise feature), but they run
-     * only on the larger subset of members with equal major+minor version.
+     * used to deploy the job instead of 2 for normal jobs.
      * <p>
      * Limitations of light jobs:
      * <ul>

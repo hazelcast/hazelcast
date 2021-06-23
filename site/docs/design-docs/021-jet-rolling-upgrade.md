@@ -26,11 +26,11 @@ approach: a job will run only on a subset of members that have the same
 version (ignoring the patch version). We'll use the largest such subset.
 This allows us to ignore most of the above compatibility requirements.
 
-In the traditional upgrade procedure, in the middle of the upgrade
-process only half of the members will actually run Jet jobs - when half
-of the members are of version `v` and half are of version `v+1`. If the
-two groups of members with the same version have the same size, we
-choose the group with higher version.
+In the traditional upgrade procedure when members are upgraded one by
+one, in the middle of the upgrade process only half of the members will
+actually run Jet jobs - when half of the members are of version `v` and
+half are of version `v+1`. If the two groups of members with the same
+version have the same size, we choose the group with higher version.
 
 To remediate this, the user can choose to temporarily increase the
 cluster size. The enterprise licence allows it.

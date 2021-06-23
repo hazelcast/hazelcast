@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.operation.coordinator.QueryAbstractExchangeOperation;
+import com.hazelcast.sql.impl.operation.QueryAbstractExchangeOperation;
 import com.hazelcast.sql.impl.worker.QueryFragmentExecutable;
 
 import java.util.Collections;

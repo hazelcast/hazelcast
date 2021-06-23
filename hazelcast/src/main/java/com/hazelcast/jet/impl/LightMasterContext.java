@@ -93,6 +93,9 @@ public class LightMasterContext {
         Collection<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> m.getAddress().equals(thisAddress))
                 .collect(Collectors.toList());
+        if (members.isEmpty()) {
+            throw new JetException("No data member with version equal to the coordinator version found");
+        }
         if (members.size() < membersView.size()) {
             logFine(logger, "Light job %s will run on a subset of members: %d out of %d members",
                     idToString(jobId), members.size(), membersView.size());

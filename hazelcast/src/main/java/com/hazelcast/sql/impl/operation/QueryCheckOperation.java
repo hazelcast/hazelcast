@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.operation.coordinator;
+package com.hazelcast.sql.impl.operation;
 
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;

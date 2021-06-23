@@ -22,22 +22,24 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
-import com.hazelcast.sql.impl.operation.initiator.SqlCloseOperation;
-import com.hazelcast.sql.impl.operation.initiator.SqlQueryOperation;
 
 import java.security.Permission;
 
 /**
  * SQL query close task.
  */
-public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId, Void> {
+public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
     public SqlCloseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected SqlQueryOperation prepareOperation() {
-        return new SqlCloseOperation(parameters);
+    protected Object call() throws Exception {
+        SqlInternalService service = nodeEngine.getSqlService().getInternalService();
+
+        service.getClientStateRegistry().close(endpoint.getUuid(), parameters);
+
+        return null;
     }
 
     @Override
@@ -67,7 +69,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId, Void> {
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters};
+        return new Object[] { parameters } ;
     }
 
     @Override

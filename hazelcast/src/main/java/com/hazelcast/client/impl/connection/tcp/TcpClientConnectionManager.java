@@ -825,7 +825,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        // Otherwise iterate over connections and return the very first one
+        // Otherwise iterate over connections and return the first one
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
             return connectionEntry.getValue();
         }
@@ -847,13 +847,22 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             }
         }
 
-        // Otherwise iterate over connections and return the very first one
+        // Otherwise iterate over connections and return the first one that's not to a lite member
+        ClientConnection firstConnection = null;
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
+            if (firstConnection == null) {
+                firstConnection = connectionEntry.getValue();
+            }
+            UUID memberId = connectionEntry.getKey();
+            Member member = client.getClientClusterService().getMember(memberId);
+            if (member == null || member.isLiteMember()) {
+                continue;
+            }
             return connectionEntry.getValue();
         }
 
         // Failed to get a connection
-        return null;
+        return firstConnection;
     }
 
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {
