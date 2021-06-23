@@ -18,9 +18,11 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.json.NonTerminalJsonValue;
+import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
@@ -89,7 +91,16 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
             }
             attributeValue = AbstractJsonGetter.convertFromJsonValue((JsonValue) attributeValue);
         }
-        return applyForSingleAttributeValue((Comparable) attributeValue);
+        if (attributeValue instanceof Comparable || attributeValue == null) {
+            return applyForSingleAttributeValue((Comparable) attributeValue);
+        }
+        if (attributeValue instanceof PortableGenericRecord) {
+            ClassDefinition classDefinition = ((PortableGenericRecord) attributeValue).getClassDefinition();
+            throw new QueryException(attributeName + " field can not be compared, because "
+                    + "the user class could not be constructed. ClassDefinition " + classDefinition);
+        }
+        throw new QueryException(attributeName + " field can not be compared, "
+                + "because it does not implement Comparable interface. Class " + attributeValue.getClass());
     }
 
     protected abstract boolean applyForSingleAttributeValue(Comparable attributeValue);

@@ -62,8 +62,14 @@
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
         </dependencySet>
     </dependencySets>
-<!--
     <files>
+        <file>
+            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
+            <destName>THIRD-PARTY.txt</destName>
+            <outputDirectory>licenses</outputDirectory>
+        </file>
+    </files>
+<!--
         &lt;!&ndash; Full Example YAML config files &ndash;&gt;
         <file>
             <source>${configs.from.jar}/hazelcast-jet-full-example.yaml</source>
@@ -114,7 +120,6 @@
             <destName>hazelcast-client-full-example.xml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
-    </files>
 -->
     <fileSets>
         <fileSet>

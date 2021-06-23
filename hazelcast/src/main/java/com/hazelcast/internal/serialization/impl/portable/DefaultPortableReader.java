@@ -256,7 +256,7 @@ public class DefaultPortableReader implements PortableReader {
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                return serializer.readAsObject(in, factoryId, classId);
+                return serializer.read(in, factoryId, classId);
             }
             return null;
         } finally {
@@ -378,7 +378,7 @@ public class DefaultPortableReader implements PortableReader {
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    portables[i] = serializer.readAsObject(in, factoryId, classId);
+                    portables[i] = serializer.read(in, factoryId, classId);
                 }
             }
             return portables;

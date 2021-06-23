@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.validate;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToTimestampTzFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
@@ -202,6 +203,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
     public static final SqlFunction TO_TIMESTAMP_TZ = HazelcastToTimestampTzFunction.INSTANCE;
+    public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

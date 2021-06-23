@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -32,35 +31,9 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public final class ExpressionUtil {
-
-    /**
-     * An {@link ExpressionEvalContext} that would fail if any dynamic
-     * parameter (a.k.a. argument) or column expression requests its values.
-     * <p>
-     * Useful when evaluating expressions in planning phase where these are not
-     * available.
-     */
-    public static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
-
-        @Override
-        public Object getArgument(int index) {
-            throw new IndexOutOfBoundsException("" + index);
-        }
-
-        @Override
-        public List<Object> getArguments() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public InternalSerializationService getSerializationService() {
-            throw new UnsupportedOperationException();
-        }
-    };
 
     private ExpressionUtil() {
     }

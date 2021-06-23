@@ -55,25 +55,6 @@ public class KvProjectorTest {
     }
 
     @Test
-    public void when_fieldIsHidden_then_itIsSkipped() {
-        KvProjector projector = new KvProjector(
-                new QueryPath[]{
-                        QueryPath.KEY_PATH,
-                        QueryPath.create(QueryPath.VALUE_PREFIX + "field1"),
-                        QueryPath.create(QueryPath.VALUE_PREFIX + "field2")
-                },
-                new QueryDataType[]{QueryDataType.INT, QueryDataType.VARCHAR, QueryDataType.INT},
-                new MultiplyingTarget(),
-                new MultiplyingTarget()
-        );
-
-        Entry<Object, Object> entry = projector.project(new Object[]{1, null, 2});
-
-        assertThat(entry.getKey()).isEqualTo(2);
-        assertThat(entry.getValue()).isEqualTo(4);
-    }
-
-    @Test
     public void test_supplierSerialization() {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 

@@ -22,9 +22,10 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
-import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
+
+import static org.apache.calcite.rel.core.TableModify.Operation.INSERT;
 
 public class InsertLogicalRel extends TableModify implements LogicalRel {
 
@@ -34,36 +35,13 @@ public class InsertLogicalRel extends TableModify implements LogicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
-            List<String> updateColumnList,
-            List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(
-                cluster,
-                traitSet,
-                table,
-                catalogReader,
-                input,
-                operation,
-                updateColumnList,
-                sourceExpressionList,
-                flattened
-        );
+        super(cluster, traitSet, table, catalogReader, input, INSERT, null, null, flattened);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new InsertLogicalRel(
-                getCluster(),
-                traitSet,
-                getTable(),
-                getCatalogReader(),
-                sole(inputs),
-                getOperation(),
-                getUpdateColumnList(),
-                getSourceExpressionList(),
-                isFlattened()
-        );
+        return new InsertLogicalRel(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }

@@ -121,6 +121,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.TRIM);
 
         SUPPORTED_KINDS.add(SqlKind.CASE);
+        SUPPORTED_KINDS.add(SqlKind.NULLIF);
+        SUPPORTED_KINDS.add(SqlKind.COALESCE);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -194,6 +196,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -339,6 +342,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processSelect((SqlSelect) call);
                 break;
 
+            case UPDATE:
             case DELETE:
                 break;
 
