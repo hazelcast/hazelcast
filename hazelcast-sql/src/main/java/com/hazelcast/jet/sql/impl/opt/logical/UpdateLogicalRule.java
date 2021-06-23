@@ -61,7 +61,6 @@ final class UpdateLogicalRule extends RelOptRule {
                 update.getTable(),
                 update.getCatalogReader(),
                 rewriteScan(scan),
-                update.getOperation(),
                 update.getUpdateColumnList(),
                 update.getSourceExpressionList(),
                 update.isFlattened()

@@ -46,9 +46,6 @@ final class InsertPhysicalRule extends ConverterRule {
                 logicalInsert.getTable(),
                 logicalInsert.getCatalogReader(),
                 OptUtils.toPhysicalInput(logicalInsert.getInput()),
-                logicalInsert.getOperation(),
-                logicalInsert.getUpdateColumnList(),
-                logicalInsert.getSourceExpressionList(),
                 logicalInsert.isFlattened()
         );
     }

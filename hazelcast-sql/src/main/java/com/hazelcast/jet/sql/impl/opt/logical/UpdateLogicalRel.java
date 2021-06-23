@@ -26,6 +26,8 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
 
+import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
+
 public class UpdateLogicalRel extends TableModify implements LogicalRel {
 
     UpdateLogicalRel(
@@ -34,12 +36,11 @@ public class UpdateLogicalRel extends TableModify implements LogicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
     }
 
     @Override
@@ -50,7 +51,6 @@ public class UpdateLogicalRel extends TableModify implements LogicalRel {
                 getTable(),
                 getCatalogReader(),
                 sole(inputs),
-                getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened()
