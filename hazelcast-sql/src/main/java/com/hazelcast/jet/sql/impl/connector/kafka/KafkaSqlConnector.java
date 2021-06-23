@@ -143,8 +143,8 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Vertex insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
-        return writeProcessor(dag, table);
+    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return new VertexWithInputConfig(writeProcessor(dag, table));
     }
 
     @Nonnull @Override

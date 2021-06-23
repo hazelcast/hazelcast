@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
@@ -30,7 +31,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An API to bridge Jet connectors and SQL. Allows the use of a Jet
@@ -286,7 +291,7 @@ public interface SqlConnector {
      * Returns the supplier for the insert processor.
      */
     @Nonnull
-    default Vertex insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
         throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
@@ -343,27 +348,31 @@ public interface SqlConnector {
      */
     class VertexWithInputConfig {
 
-        private final Vertex vertex;
-        private final Consumer<Edge> configureEdgeFn;
+        private final Function<Address, Vertex> vertexFn;
+        private final BiConsumer<Edge, Address> configureEdgeFn;
 
         /**
          * Creates a Vertex with default edge config (local, unicast).
          */
         public VertexWithInputConfig(Vertex vertex) {
-            this(vertex, null);
+            this(address -> vertex, null);
         }
 
         public VertexWithInputConfig(Vertex vertex, Consumer<Edge> configureEdgeFn) {
-            this.vertex = vertex;
+            this(address -> vertex, (edge, address) -> configureEdgeFn.accept(edge));
+        }
+
+        public VertexWithInputConfig(Function<Address, Vertex> vertexFn, BiConsumer<Edge, Address> configureEdgeFn) {
+            this.vertexFn = requireNonNull(vertexFn);
             this.configureEdgeFn = configureEdgeFn;
         }
 
-        public Vertex vertex() {
-            return vertex;
+        public Vertex vertex(Address address) {
+            return vertexFn.apply(address);
         }
 
-        public Consumer<Edge> configureEdgeFn() {
-            return configureEdgeFn;
+        public Consumer<Edge> configureEdgeFn(Address address) {
+            return configureEdgeFn == null ? null : edge -> configureEdgeFn.accept(edge, address);
         }
     }
 }

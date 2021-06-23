@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -54,6 +55,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -195,24 +197,27 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex insertProcessor(
+    public VertexWithInputConfig insertProcessor(
             @Nonnull DAG dag,
             @Nonnull Table table0
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        return dag.newUniqueVertex(
-                toString(table),
-                ProcessorMetaSupplier.forceTotalParallelismOne(new InsertProcessorSupplier(
-                        table.getMapName(),
-                        KvProjector.supplier(
-                                table.paths(),
-                                table.types(),
-                                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                                (UpsertTargetDescriptor) table.getValueJetMetadata()
-                        )
-                ))
+        InsertProcessorSupplier insertProcessorSupplier = new InsertProcessorSupplier(
+                table.getMapName(),
+                KvProjector.supplier(
+                        table.paths(),
+                        table.types(),
+                        (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+                )
         );
+        Function<Address, Vertex> vertexFn = address -> dag.newUniqueVertex(
+                toString(table),
+                ProcessorMetaSupplier.forceTotalParallelismOne(insertProcessorSupplier, address)
+        );
+
+        return new VertexWithInputConfig(vertexFn, (edge, address) -> edge.distributeTo(address).allToOne(""));
     }
 
     @Nonnull

@@ -296,27 +296,9 @@ public interface ProcessorMetaSupplier extends Serializable {
     static ProcessorMetaSupplier forceTotalParallelismOne(
             @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
     ) {
-        /**
-         * A meta-supplier that will only use the given {@code ProcessorSupplier}
-         * on a node with given {@code partitionKey}.
-         */
-        @SuppressFBWarnings(value = "SE_BAD_FIELD", justification = "the class is never java-serialized")
-        @SerializableByConvention
-        class SpecificMemberPms implements ProcessorMetaSupplier, DataSerializable {
+        return new ProcessorMetaSupplier() {
 
-            private ProcessorSupplier supplier;
-            private String partitionKey;
-
-            private transient Address memberAddress;
-
-            @SuppressWarnings("unused")
-            private SpecificMemberPms() {
-            }
-
-            private SpecificMemberPms(ProcessorSupplier supplier, String partitionKey) {
-                this.supplier = supplier;
-                this.partitionKey = partitionKey;
-            }
+            private transient Address ownerAddress;
 
             @Override
             public void init(@Nonnull Context context) {
@@ -326,34 +308,20 @@ public interface ProcessorMetaSupplier extends Serializable {
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                memberAddress = context.hazelcastInstance().getPartitionService()
-                        .getPartition(key).getOwner().getAddress();
+                ownerAddress = context.hazelcastInstance().getPartitionService()
+                                      .getPartition(key).getOwner().getAddress();
             }
 
             @Nonnull @Override
             public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-                return address -> address.equals(memberAddress) ? supplier : count -> singletonList(new ExpectNothingP());
+                return addr -> addr.equals(ownerAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }
 
             @Override
             public int preferredLocalParallelism() {
                 return 1;
             }
-
-            @Override
-            public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeObject(supplier);
-                out.writeString(partitionKey);
-            }
-
-            @Override
-            public void readData(ObjectDataInput in) throws IOException {
-                supplier = in.readObject();
-                partitionKey = in.readString();
-            }
-        }
-
-        return new SpecificMemberPms(supplier, partitionKey);
+        };
     }
 
     /**

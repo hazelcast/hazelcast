@@ -312,7 +312,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertAndKeyAlreadyExists_then_throws() {
+    public void when_insertAndKeyAlreadyExists_then_fail() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
         sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
@@ -322,7 +322,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertDuplicateKey_then_throws() {
+    public void when_insertDuplicateKey_then_fail() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 

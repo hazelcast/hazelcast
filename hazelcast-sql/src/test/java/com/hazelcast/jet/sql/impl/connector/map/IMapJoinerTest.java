@@ -80,8 +80,8 @@ public class IMapJoinerTest {
         );
 
         // then
-        assertThat(vertexWithConfig.vertex()).isEqualTo(vertex);
-        assertThat(vertexWithConfig.configureEdgeFn()).isNotNull();
+        assertThat(vertexWithConfig.vertex(null)).isEqualTo(vertex);
+        assertThat(vertexWithConfig.configureEdgeFn(null)).isNotNull();
     }
 
     @Test
@@ -101,8 +101,8 @@ public class IMapJoinerTest {
         );
 
         // then
-        assertThat(vertexWithConfig.vertex()).isEqualTo(vertex);
-        assertThat(vertexWithConfig.configureEdgeFn()).isNotNull();
+        assertThat(vertexWithConfig.vertex(null)).isEqualTo(vertex);
+        assertThat(vertexWithConfig.configureEdgeFn(null)).isNotNull();
     }
 
     @Test
@@ -122,8 +122,8 @@ public class IMapJoinerTest {
         );
 
         // then
-        assertThat(vertexWithConfig.vertex()).isEqualTo(vertex);
-        assertThat(vertexWithConfig.configureEdgeFn()).isNull();
+        assertThat(vertexWithConfig.vertex(null)).isEqualTo(vertex);
+        assertThat(vertexWithConfig.configureEdgeFn(null)).isNull();
     }
 
     private static JetJoinInfo joinInfo(JoinRelType joinType, int[] leftEquiJoinIndices, int[] rightEquiJoinIndices) {

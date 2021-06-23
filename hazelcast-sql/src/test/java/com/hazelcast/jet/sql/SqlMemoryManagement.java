@@ -40,8 +40,17 @@ public class SqlMemoryManagement extends SqlTestSupport {
                 .setCooperativeThreadCount(1)
                 .setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS);
 
-        initialize(1, config);
+        initialize(2, config);
         sqlService = instance().getSql();
+    }
+
+    @Test
+    public void when_maxAccumulatedRecordsCountIsExceededWhileInserting_then_throws() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (0, '0'), (1, '1'), (2, '2')"))
+                .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
     @Test

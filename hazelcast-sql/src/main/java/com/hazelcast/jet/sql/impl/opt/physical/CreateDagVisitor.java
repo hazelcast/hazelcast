@@ -100,8 +100,9 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        Vertex vertex = getJetSqlConnector(table).insertProcessor(dag, table);
-        connectInput(rel.getInput(), vertex, null);
+        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
+        Vertex vertex = vertexWithConfig.vertex(localMemberAddress);
+        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn(localMemberAddress));
         return vertex;
     }
 
@@ -157,7 +158,6 @@ public class CreateDagVisitor {
                         ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
-
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -274,8 +274,9 @@ public class CreateDagVisitor {
                 rel.rightProjection(parameterMetadata),
                 rel.joinInfo(parameterMetadata)
         );
-        connectInput(rel.getLeft(), vertexWithConfig.vertex(), vertexWithConfig.configureEdgeFn());
-        return vertexWithConfig.vertex();
+        Vertex vertex = vertexWithConfig.vertex(localMemberAddress);
+        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn(localMemberAddress));
+        return vertex;
     }
 
     public Vertex onRoot(JetRootRel rootRel) {

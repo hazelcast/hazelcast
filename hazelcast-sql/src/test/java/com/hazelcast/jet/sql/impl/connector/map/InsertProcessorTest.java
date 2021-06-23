@@ -51,7 +51,7 @@ public class InsertProcessorTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        initialize(1, null);
     }
 
     @Before
@@ -124,13 +124,13 @@ public class InsertProcessorTest extends SqlTestSupport {
                 .setMaxProcessorAccumulatedRecords(maxAccumulatedKeys);
         TestSupport
                 .verifyProcessor(adaptSupplier(processor))
+                .hazelcastInstance(instance())
                 .jobConfig(config)
                 .disableSnapshots()
+                .disableProgressAssertion()
                 .executeBeforeEachRun(setup)
                 .input(rows)
-                .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
-                .disableProgressAssertion()
                 .expectOutput(expectedOutput);
     }
 }
