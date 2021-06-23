@@ -88,13 +88,22 @@ public class SqlPojoTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
-                "SINK INTO " + name + " VALUES (null, null)",
-                createMap(new PersonId(), new Person())
+                "SINK INTO " + name + " VALUES (1, null)",
+                createMap(new PersonId(1), new Person())
         );
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(null, null))
+                singletonList(new Row(1, null))
         );
+    }
+
+    @Test
+    public void when_insertsNullIntoPrimitive_then_fails() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
+                .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
     }
 
     @Test
