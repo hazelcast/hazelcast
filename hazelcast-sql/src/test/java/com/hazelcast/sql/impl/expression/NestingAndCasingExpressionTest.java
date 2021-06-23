@@ -467,6 +467,15 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         check(sql("COALESCE('1', ?) || COALESCE('2', ?)"), "1", "2");
     }
 
+    @Test
+    public void test_TO_TIMESTAMP_TZ() {
+        check(sql("TO_TIMESTAMP_TZ(?) || TO_TIMESTAMP_TZ(?)"), 1L, 1L);
+    }
+
+    public void test_TO_EPOCH_MILLIS() {
+        check(sql("TO_EPOCH_MILLIS(?) || TO_EPOCH_MILLIS(?)"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
         checkValue0(lowerCaseInternal(sql), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);

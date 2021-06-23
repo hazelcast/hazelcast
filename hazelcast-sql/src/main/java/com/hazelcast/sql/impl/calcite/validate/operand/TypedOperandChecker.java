@@ -45,6 +45,8 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker REAL = new TypedOperandChecker(SqlTypeName.REAL);
     public static final TypedOperandChecker DOUBLE = new TypedOperandChecker(SqlTypeName.DOUBLE);
     public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
+    public static final TypedOperandChecker TIMESTAMP_WITH_LOCAL_TIME_ZONE =
+            new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;

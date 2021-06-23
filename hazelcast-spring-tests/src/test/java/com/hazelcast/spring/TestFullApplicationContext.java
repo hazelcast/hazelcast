@@ -328,7 +328,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanRef.getMergePolicyClassName());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
     }
@@ -415,7 +415,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
 
         assertEquals(1000, testMapConfig2.getEvictionConfig().getSize());
@@ -482,7 +482,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
     }
 
     @Test

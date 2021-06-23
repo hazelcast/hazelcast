@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.List;
 
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 public class RowProjector implements Row {
@@ -46,6 +47,7 @@ public class RowProjector implements Row {
             List<Expression<?>> projection,
             ExpressionEvalContext evalContext
     ) {
+        checkTrue(paths.length == types.length, "paths.length != types.length");
         this.target = target;
         this.extractors = createExtractors(target, paths, types);
 

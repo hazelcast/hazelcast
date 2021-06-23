@@ -83,6 +83,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -203,14 +204,13 @@ public class JobCoordinationService {
     public CompletableFuture<Void> submitJob(
             long jobId,
             Data serializedJobDefinition,
-            Data serializedConfig,
+            JobConfig jobConfig,
             Subject subject
     ) {
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
             try {
-                JobConfig jobConfig = nodeEngine.getSerializationService().toObject(serializedConfig);
                 assertIsMaster("Cannot submit job " + idToString(jobId) + " to non-master node");
                 checkOperationalState();
 
@@ -295,7 +295,12 @@ public class JobCoordinationService {
         return res;
     }
 
-    public CompletableFuture<Void> submitLightJob(long jobId, Data serializedJobDefinition, Subject subject) {
+    public CompletableFuture<Void> submitLightJob(
+            long jobId,
+            Data serializedJobDefinition,
+            JobConfig jobConfig,
+            Subject subject
+    ) {
         Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         DAG dag;
         if (jobDefinition instanceof DAG) {
@@ -320,7 +325,7 @@ public class JobCoordinationService {
 
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId);
+        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId, jobConfig);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
@@ -428,6 +433,14 @@ public class JobCoordinationService {
                 .thenCompose(identity()); // unwrap the inner future
     }
 
+    public CompletableFuture<Void> joinLightJob(long jobId) {
+        Object mc = lightMasterContexts.get(jobId);
+        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+            throw new JobNotFoundException(jobId);
+        }
+        return ((LightMasterContext) mc).getCompletionFuture();
+    }
+
     public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode) {
         return runWithJob(jobId,
                 masterContext -> {
@@ -486,7 +499,17 @@ public class JobCoordinationService {
                 if (lightMasterContexts.get(onlyJobId) != null) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
-                if (isMaster() && (masterContexts.get(onlyJobId) != null || jobRepository.getJobResult(onlyJobId) != null)) {
+
+                if (isMaster()) {
+                    try {
+                        callWithJob(onlyJobId, mc -> null, jobResult -> null, jobRecord -> null, null)
+                                .get();
+                    } catch (ExecutionException e) {
+                        if (e.getCause() instanceof JobNotFoundException) {
+                            return GetJobIdsResult.EMPTY;
+                        }
+                        throw e;
+                    }
                     return new GetJobIdsResult(onlyJobId, false);
                 }
                 return GetJobIdsResult.EMPTY;

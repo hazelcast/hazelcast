@@ -16,15 +16,12 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
@@ -108,19 +105,20 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_delete_noDeleteProcessor() {
-        sqlService.execute("CREATE MAPPING b ("
-                + "__key INT"
-                + ", this INT"
-                + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='int'"
-                + ", '" + OPTION_VALUE_FORMAT + "'='int'"
-                + ")"
-        );
+    public void test_update_noPrimaryKey() {
+        TestBatchSqlConnector.create(sqlService, "b", 1);
 
-        assertThatThrownBy(() -> sqlService.execute("DELETE FROM b WHERE v=1"))
-                .hasMessageContaining("DELETE not supported by connector: Kafka");
+        assertThatThrownBy(() -> sqlService.execute("UPDATE b SET v = 1"))
+                .hasMessageContaining("PRIMARY KEY not supported by connector: TestBatch");
+    }
+
+    @Test
+    public void test_update_fromSelect() {
+        instance().getMap("m1").put(1, 1);
+        instance().getMap("m2").put(1, 2);
+
+        assertThatThrownBy(() -> sqlService.execute("UPDATE m1 SET __key = (select m2.this from m2 WHERE m1.__key = m2.__key)"))
+                .hasMessageContaining("UPDATE FROM SELECT not supported");
     }
 
     @Test
@@ -128,6 +126,6 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 
         assertThatThrownBy(() -> sqlService.execute("DELETE FROM b WHERE v=1"))
-                .hasMessageContaining("DELETE not supported by connector: TestBatch");
+                .hasMessageContaining("PRIMARY KEY not supported by connector: TestBatch");
     }
 }

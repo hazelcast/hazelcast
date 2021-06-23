@@ -58,6 +58,12 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
         return fetch.accept(visitor);
     }
 
+    public Expression<?> offset(QueryParameterMetadata parameterMetadata) {
+        PlanNodeSchema schema = schema(parameterMetadata);
+        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
+        return offset.accept(visitor);
+    }
+
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         return OptUtils.schema(rowType);

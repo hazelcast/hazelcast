@@ -51,6 +51,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Permission;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.function.LongSupplier;
 import java.util.regex.Matcher;
@@ -113,7 +115,9 @@ public final class WriteFileP<T> implements Processor {
         this.directory = Paths.get(directoryName);
         this.toStringFn = toStringFn;
         this.charset = Charset.forName(charset);
-        this.dateFormatter = dateFormatter != null ? DateTimeFormatter.ofPattern(dateFormatter) : null;
+        this.dateFormatter = dateFormatter != null
+                ? DateTimeFormatter.ofPattern(dateFormatter).withZone(ZoneId.from(ZoneOffset.UTC))
+                : null;
         this.maxFileSize = maxFileSize;
         this.exactlyOnce = exactlyOnce;
         this.clock = clock;

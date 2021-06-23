@@ -131,7 +131,7 @@ public final class OptUtils {
         return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
     }
 
-    private static HazelcastRelOptTable createRelTable(
+    public static HazelcastRelOptTable createRelTable(
             List<String> names,
             HazelcastTable hazelcastTable,
             RelDataTypeFactory typeFactory
