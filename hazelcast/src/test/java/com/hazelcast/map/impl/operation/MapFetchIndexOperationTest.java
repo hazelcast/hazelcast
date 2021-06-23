@@ -73,8 +73,6 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.Accessors.getOperationService;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -185,8 +183,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         assertResultSorted(result, Collections.singletonList(new Person("person2", 39)));
 
-        assertTrue(result.getPointers()[0].isDone());
-        assertFalse(result.getPointers()[1].isDone());
+        assertEquals(1, result.getPointers().length);
 
         operation = operationProvider.createFetchIndexOperation(
                 mapName, orderedIndexName, result.getPointers(), partitions, 4);
@@ -196,8 +193,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
         assertResultSorted(result, Collections.singletonList(new Person("person3", 60)));
 
-        assertTrue(result.getPointers()[0].isDone());
-        assertTrue(result.getPointers()[1].isDone());
+        assertEquals(0, result.getPointers().length);
     }
 
     @Test
@@ -317,9 +313,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
 
     static class Person implements Serializable {
         private String name;
-        private int age;
+        private Integer age;
 
-        Person(String name, int age) {
+        Person(String name, Integer age) {
             this.name = name;
             this.age = age;
         }
@@ -328,7 +324,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             return this.name;
         }
 
-        public int getAge() {
+        public Integer getAge() {
             return this.age;
         }
 
@@ -336,7 +332,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
             this.name = name;
         }
 
-        public void setAge(int age) {
+        public void setAge(Integer age) {
             this.age = age;
         }
 
@@ -357,7 +353,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 return false;
             }
             Person person = (Person) o;
-            return age == person.age && name.equals(person.name);
+            return Objects.equals(name, person.name) && Objects.equals(age, person.age);
         }
 
         @Override

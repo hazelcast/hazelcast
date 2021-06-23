@@ -125,20 +125,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
         List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + EXCESS_ENTRIES_RESERVE);
-        Comparable<?> lastValueRead = null;
-        boolean sizeHintReached = false;
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
-        IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
-
         for (int i = 0; i < pointers.length; i++) {
-            if (pointers[i].isDone() || sizeHintReached) {
-                newPointers[i] = pointers[i];
-                continue;
-            }
-
             IndexIterationPointer pointer = pointers[i];
-
             Iterator<IndexKeyEntries> entryIterator = index.getSqlRecordIteratorBatch(
                     pointer.getFrom(),
                     pointer.isFromInclusive(),
@@ -149,7 +139,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
-                lastValueRead = indexKeyEntries.getIndexKey();
                 @SuppressWarnings({"unchecked", "rawtypes"})
                 Collection<QueryableEntry<?, ?>> keyEntries = (Collection) indexKeyEntries.getEntries();
                 if (partitionIdSet == null) {
@@ -164,43 +153,40 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 }
 
                 if (entries.size() >= sizeHint) {
-                    sizeHintReached = true;
-                    break;
-                }
-            }
+                    IndexIterationPointer[] newPointers;
+                    if (entryIterator.hasNext()) {
+                        Comparable<?> currentIndexKey = indexKeyEntries.getIndexKey();
+                        newPointers = new IndexIterationPointer[pointers.length - i];
+                        newPointers[0] = IndexIterationPointer.create(
+                                pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
+                                pointer.isDescending() ? pointer.isFromInclusive() : false,
+                                pointer.isDescending() ? currentIndexKey : pointer.getTo(),
+                                pointer.isDescending() ? false : pointer.isToInclusive(),
+                                pointer.isDescending());
 
-            if (!entryIterator.hasNext()) {
-                newPointers[i] = IndexIterationPointer.createFinishedPointer();
-            } else {
-                newPointers[i] = IndexIterationPointer.create(
-                        pointer.isDescending() ? pointer.getFrom() : lastValueRead,
-                        pointer.isDescending() ? pointer.isFromInclusive() : false,
-                        pointer.isDescending() ? lastValueRead : pointer.getTo(),
-                        pointer.isDescending() ? false : pointer.isToInclusive(),
-                        pointer.isDescending());
+                        System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);
+                    } else {
+                        newPointers = new IndexIterationPointer[pointers.length - i - 1];
+                        System.arraycopy(pointers, i + 1, newPointers, 0, newPointers.length);
+                    }
+                    return new MapFetchIndexOperationResult(entries, newPointers);
+                }
             }
         }
 
-        return new MapFetchIndexOperationResult(entries, newPointers);
+        return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
     }
 
     private MapFetchIndexOperationResult runInternalHash(InternalIndex index) {
-        IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length];
         List<QueryableEntry<?, ?>> entries = new ArrayList<>();
-        boolean sizeHintReached = false;
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
-        for (int i = 0; i < pointers.length; i++) {
-            if (sizeHintReached || pointers[i].isDone()) {
-                newPointers[i] = pointers[i];
-                continue;
-            }
-
-            IndexIterationPointer pointer = pointers[i];
+        int pointerIndex;
+        for (pointerIndex = 0; pointerIndex < pointers.length && entries.size() < sizeHint; pointerIndex++) {
+            IndexIterationPointer pointer = pointers[pointerIndex];
 
             // For hash lookups, pointer begin and end points must be the same
-            assert ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0
-                    : "Unordered index iteration pointer must have same from and to values";
+            assert pointer.getFrom() == pointer.getTo() : "Unordered index iteration pointer must have same from and to values";
 
             @SuppressWarnings({"rawtypes", "unchecked"})
             Collection<QueryableEntry<?, ?>> keyEntries = (Collection) index.getRecords(pointer.getFrom());
@@ -214,12 +200,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     }
                 }
             }
-
-            if (entries.size() >= sizeHint) {
-                sizeHintReached = true;
-            }
         }
 
+        IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length - pointerIndex];
+        System.arraycopy(pointers, pointerIndex, newPointers, 0, newPointers.length);
         return new MapFetchIndexOperationResult(entries, newPointers);
     }
 
@@ -267,6 +251,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             return entries;
         }
 
+        /**
+         * Returns the new pointers to continue the iteration from. If it's an
+         * empty array, iteration is done.
+         */
         public IndexIterationPointer[] getPointers() {
             return pointers;
         }

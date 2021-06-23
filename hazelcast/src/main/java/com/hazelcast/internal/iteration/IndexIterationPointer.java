@@ -35,8 +35,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     private static final byte FLAG_DESCENDING = 1;
     private static final byte FLAG_FROM_INCLUSIVE = 1 << 1;
     private static final byte FLAG_TO_INCLUSIVE = 1 << 2;
-    private static final byte FLAG_DONE  = 1 << 3;
-    private static final byte FLAG_POINT_LOOKUP = 1 << 4;
+    private static final byte FLAG_POINT_LOOKUP = 1 << 3;
 
     private byte flags;
     private Comparable<?> from;
@@ -69,10 +68,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                         | (from == to ? FLAG_POINT_LOOKUP : 0)),
                 from,
                 to);
-    }
-
-    public static IndexIterationPointer createFinishedPointer() {
-        return new IndexIterationPointer(FLAG_DONE, null, null);
     }
 
     public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
@@ -123,16 +118,9 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         return (flags & FLAG_DESCENDING) != 0;
     }
 
-    public boolean isDone() {
-        return (flags & FLAG_DONE) != 0;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByte(flags);
-        if (isDone()) {
-            return;
-        }
         out.writeObject(from);
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             out.writeObject(to);
@@ -142,9 +130,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         flags = in.readByte();
-        if (isDone()) {
-            return;
-        }
         from = in.readObject();
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             to = in.readObject();
