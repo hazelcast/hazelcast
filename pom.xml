@@ -98,6 +98,7 @@
         <bytebuddy.version>1.10.21</bytebuddy.version>
         <reflections.version>0.9.10</reflections.version>
         <jmh.version>1.27</jmh.version>
+        <commons-codec.version>1.15</commons-codec.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <felix.utils.version>1.11.6</felix.utils.version>
         <findbugs.annotations.version>3.0.1u2</findbugs.annotations.version>
@@ -343,6 +344,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <profiles>
         <profile>
