@@ -497,12 +497,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             if (indexKeyIterator.hasNext()) {
                 return true;
             } else {
-                if (iterator.hasNext()) {
+                while (iterator.hasNext()) {
                     indexKeyIterator = iterator.next().getEntries().iterator();
-                    return indexKeyIterator.hasNext();
-                } else {
-                    return false;
+                    if (indexKeyIterator.hasNext()) {
+                        return true;
+                    }
                 }
+                return false;
             }
         }
 
