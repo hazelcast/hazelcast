@@ -203,7 +203,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFullRange() throws ExecutionException, InterruptedException {
+    public void testFullScan() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
@@ -219,13 +219,14 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person6", null, "Dep1"),
                 new Person("person7", null, null),
+                new Person("person6", null, "Dep1"),
                 new Person("person2", 39, "Dep1"),
                 new Person("person5", 43, "Dep2"),
-                new Person("person1", 45, "Dep1"),
                 new Person("person4", 45, "Dep2"),
-                new Person("person3", 60, "Dep1")
+                new Person("person1", 45, "Dep1"),
+                new Person("person3", 60, "Dep1"),
+                new Person("person8", 79, null)
         ));
     }
 

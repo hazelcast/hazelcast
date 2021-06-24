@@ -23,6 +23,7 @@ import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.Indexes;
@@ -128,14 +129,37 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
         for (int i = 0; i < pointers.length; i++) {
+            Iterator<IndexKeyEntries> entryIterator;
             IndexIterationPointer pointer = pointers[i];
-            Iterator<IndexKeyEntries> entryIterator = index.getSqlRecordIteratorBatch(
-                    pointer.getFrom(),
-                    pointer.isFromInclusive(),
-                    pointer.getTo(),
-                    pointer.isToInclusive(),
-                    pointer.isDescending()
-            );
+
+            if (pointer.getFrom() != null) {
+                if (pointer.getTo() != null) {
+                    entryIterator = index.getSqlRecordIteratorBatch(
+                            pointer.getFrom(),
+                            pointer.isFromInclusive(),
+                            pointer.getTo(),
+                            pointer.isToInclusive(),
+                            pointer.isDescending()
+                    );
+                } else {
+                    entryIterator = index.getSqlRecordIteratorBatch(
+                            pointer.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER,
+                            pointer.getFrom(),
+                            pointer.isDescending()
+                    );
+                }
+            } else {
+                if (pointer.getTo() != null) {
+                    entryIterator = index.getSqlRecordIteratorBatch(
+                            pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
+                            pointer.getTo(),
+                            pointer.isDescending()
+                    );
+                } else {
+                    entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
+                }
+            }
+
 
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
