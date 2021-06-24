@@ -2025,6 +2025,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <capacity>120</capacity>\n"
                 + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
                 + "          </event-journal>"
+                + "        <merkle-tree enabled=\"true\">\n"
+                + "            <depth>20</depth>\n"
+                + "          </merkle-tree>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2077,6 +2080,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, cacheConfig.getCacheEntryListeners().size());
         assertEquals("com.example.cache.MyEntryListenerFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryListenerFactory());
         assertEquals("com.example.cache.MyEntryEventFilterFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryEventFilterFactory());
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
     }
 
     @Override

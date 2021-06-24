@@ -538,6 +538,7 @@
             <xs:element name="merge-policy" type="merge-policy" minOccurs="0"/>
             <xs:element name="hot-restart" type="hot-restart" minOccurs="0"/>
             <xs:element name="event-journal" type="event-journal" minOccurs="0"/>
+            <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0"/>
             <xs:element name="disable-per-entry-invalidation-events" type="xs:boolean" minOccurs="0" default="false">
                 <xs:annotation>
                     <xs:documentation>

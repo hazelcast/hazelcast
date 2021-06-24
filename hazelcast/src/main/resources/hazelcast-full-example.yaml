@@ -1619,6 +1619,21 @@ hazelcast:
   # - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
   # - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
   # - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
+  # * "merkle-tree":
+  # It has the following sub-elements:
+  # - "enabled":
+  # 	Specifies whether the merkle tree is enabled.
+  # - "depth":
+  # 	The depth of the merkle tree.
+  # 	A larger depth means that a data synchronization mechanism will be able
+  # 	to pinpoint a smaller subset of the data structure contents in which a
+  # 	change occurred. This causes the synchronization mechanism to be more
+  # 	efficient. On the other hand, a larger tree depth means the merkle tree
+  # 	will consume more memory.
+  # 	A smaller depth means the data synchronization mechanism will have to
+  # 	transfer larger chunks of the data structure in which a possible change
+  # 	happened. On the other hand, a shallower tree consumes less memory.
+  # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
   # * "hot-restart":
   # Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
@@ -1698,6 +1713,9 @@ hazelcast:
         enabled: false
         capacity: 10000
         time-to-live-seconds: 0
+      merkle-tree:
+        enabled: false
+        depth: 10
       disable-per-entry-invalidation-events: true
 
   #
