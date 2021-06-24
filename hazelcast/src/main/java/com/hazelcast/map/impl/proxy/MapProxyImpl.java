@@ -408,6 +408,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(timeunit, NULL_TIMEUNIT_IS_NOT_ALLOWED);
+        checkNotNull(maxIdleUnit, NULL_MAX_IDLE_UNIT_IS_NOT_ALLOWED);
 
         Data valueData = toData(value);
         return newDelegatingFuture(
