@@ -1247,7 +1247,7 @@ public class JobCoordinationService {
         }).toArray();
     }
 
-    public void scheduleJobTimeout(final long jobId, final Long timeout, final boolean lightJob) {
+    public void scheduleJobTimeout(final long jobId, final long timeout, final boolean lightJob) {
         if (!lightJob && !isMaster()) {
             return;
         }
