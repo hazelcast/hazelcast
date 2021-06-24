@@ -147,6 +147,30 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testOneSideRange() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance);
+
+        IndexIterationPointer[] pointers = new IndexIterationPointer[1];
+        pointers[0] = IndexIterationPointer.create(null, true, 60, false, true);
+
+        MapOperationProvider operationProvider = getOperationProvider(map);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
+
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+        assertResultSorted(result, Arrays.asList(
+                new Person("person4", 45, "Dep2"),
+                new Person("person1", 45, "Dep1"),
+                new Person("person5", 43, "Dep2"),
+                new Person("person2", 39, "Dep1")
+        ));
+    }
+
+    @Test
     public void testRangeReverse() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
