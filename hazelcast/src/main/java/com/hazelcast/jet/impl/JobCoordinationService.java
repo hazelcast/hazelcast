@@ -320,7 +320,7 @@ public class JobCoordinationService {
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                    unscheduleJobTimeout(jobId, true);
+                    unscheduleJobTimeout(jobId);
                 });
     }
 
@@ -871,9 +871,7 @@ public class JobCoordinationService {
                     logger.severe("No master context found to complete " + masterContext.jobIdString());
                 }
             }
-            if (isMaster() && masterContext.jobConfig().hasTimeout()) {
-                unscheduleJobTimeout(masterContext.jobId(), false);
-            }
+            unscheduleJobTimeout(masterContext.jobId());
         });
     }
 
@@ -1253,7 +1251,7 @@ public class JobCoordinationService {
         scheduledJobTimeouts.computeIfAbsent(jobId, id -> scheduleJobTimeoutTask(id, timeout));
     }
 
-    private void unscheduleJobTimeout(final long jobId, final boolean lightJob) {
+    private void unscheduleJobTimeout(final long jobId) {
         final ScheduledFuture<?> timeoutFuture = scheduledJobTimeouts.remove(jobId);
         if (timeoutFuture != null) {
             timeoutFuture.cancel(true);
