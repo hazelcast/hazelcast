@@ -78,9 +78,10 @@ public class InsertProcessorTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_maxAccumulatedKeysCountIsExceeded_then_fail() {
-        assertThatThrownBy(() -> executeInsert(1, asList(new Object[]{1, 1}, new Object[]{2, 2}), emptyList()))
-                .isInstanceOf(AccumulationLimitExceededException.class);
+    public void when_keyIsNull_then_fail() {
+        assertThatThrownBy(() -> executeInsert(singletonList(new Object[]{null, 1}), emptyList()))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Key cannot be null");
     }
 
     @Test
@@ -95,6 +96,12 @@ public class InsertProcessorTest extends SqlTestSupport {
         assertThatThrownBy(() -> executeInsert(asList(new Object[]{1, 1}, new Object[]{1, 2}), emptyList()))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
+    public void when_maxAccumulatedKeysCountIsExceeded_then_fail() {
+        assertThatThrownBy(() -> executeInsert(1, asList(new Object[]{1, 1}, new Object[]{2, 2}), emptyList()))
+                .isInstanceOf(AccumulationLimitExceededException.class);
     }
 
     private void executeInsert(List<Object[]> rows, List<Object[]> expectedOutput) {

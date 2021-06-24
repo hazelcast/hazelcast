@@ -359,7 +359,7 @@ public interface SqlConnector {
         }
 
         public VertexWithInputConfig(Vertex vertex, Consumer<Edge> configureEdgeFn) {
-            this(address -> vertex, (edge, address) -> configureEdgeFn.accept(edge));
+            this(address -> vertex, configureEdgeFn == null ? null : (edge, address) -> configureEdgeFn.accept(edge));
         }
 
         public VertexWithInputConfig(Function<Address, Vertex> vertexFn, BiConsumer<Edge, Address> configureEdgeFn) {
