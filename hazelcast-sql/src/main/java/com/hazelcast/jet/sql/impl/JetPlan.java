@@ -563,18 +563,6 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    private static void ensureNoArguments(String name, List<Object> arguments) {
-        if (!arguments.isEmpty()) {
-            throw QueryException.error(name + " does not support dynamic parameters");
-        }
-    }
-
-    private static void ensureNoTimeout(String name, long timeout) {
-        if (timeout > 0) {
-            throw QueryException.error(name + " does not support timeout");
-        }
-    }
-
     static class DmlPlan extends JetPlan {
         private final TableModify.Operation operation;
         private final Set<PlanObjectKey> objectKeys;
@@ -639,6 +627,18 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
+        }
+    }
+
+    private static void ensureNoTimeout(String name, long timeout) {
+        if (timeout > 0) {
+            throw QueryException.error(name + " does not support timeout");
         }
     }
 }

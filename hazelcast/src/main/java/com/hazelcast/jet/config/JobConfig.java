@@ -51,6 +51,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -73,7 +74,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
     private long maxProcessorAccumulatedRecords = -1;
-    private long timeoutMillis = -1L;
+    private long timeoutMillis;
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
@@ -1300,8 +1301,8 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @since 5.0
      */
     public JobConfig setTimeoutMillis(long timeoutMillis) {
+        checkPositive(timeoutMillis, "timeoutMillis must be a positive number");
         this.timeoutMillis = timeoutMillis;
-
         return this;
     }
 
