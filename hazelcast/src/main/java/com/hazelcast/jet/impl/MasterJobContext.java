@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -218,7 +217,7 @@ public class MasterJobContext {
                 } else {
                     logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
                 }
-                MembersView membersView = getMembersView();
+                MembersView membersView = Util.getMembersView(mc.nodeEngine());
                 logger.info("Start executing " + mc.jobIdString()
                         + ", execution graph in DOT format:\n" + dotRepresentation
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
@@ -419,11 +418,6 @@ public class MasterJobContext {
         }
         mc.setJobStatus(NOT_RUNNING);
         mc.coordinationService().scheduleRestart(mc.jobId());
-    }
-
-    private MembersView getMembersView() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) mc.nodeEngine().getClusterService();
-        return clusterService.getMembershipManager().getMembersView();
     }
 
     // Called as callback when all InitOperation invocations are done

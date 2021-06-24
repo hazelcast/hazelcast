@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
@@ -30,6 +29,7 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -39,6 +39,7 @@ import com.hazelcast.version.Version;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -88,10 +89,10 @@ public class LightMasterContext {
         jobIdString = idToString(jobId);
 
         // find a subset of members with version equal to the coordinator version.
-        MembersView membersView = getMembersView();
-        Address thisAddress = nodeEngine.getThisAddress();
-        Collection<MemberInfo> members = membersView.getMembers().stream()
-                .filter(m -> m.getAddress().equals(thisAddress))
+        MembersView membersView = Util.getMembersView(nodeEngine);
+        Version thisVersion = nodeEngine.getLocalMember().getVersion().asVersion();
+        List<MemberInfo> members = membersView.getMembers().stream()
+                .filter(m -> m.getVersion().asVersion().equals(thisVersion) && !m.isLiteMember())
                 .collect(Collectors.toList());
         if (members.isEmpty()) {
             throw new JetException("No data member with version equal to the coordinator version found");
@@ -233,11 +234,6 @@ public class LightMasterContext {
                                                             .collect(Collectors.toList()));
             }
         });
-    }
-
-    private MembersView getMembersView() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
-        return clusterService.getMembershipManager().getMembersView();
     }
 
     /**

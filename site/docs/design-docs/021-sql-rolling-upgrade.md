@@ -1,11 +1,11 @@
 ---
-title: 021 - Simple Rolling Upgrade for Light Jobs
+title: 021 - Simple Rolling Upgrade for SQL
 description: Describe the simple rolling upgrade implementation by using members with the same version 
 ---
 
 Until now, Jet didn't support rolling upgrades at all. Since Jet is
 being used to back SQL, SQL will be completely unavailable while there
-are members of different versions.
+are members of different versions in the cluster.
 
 Proper implementation of rolling upgrade would require:
 
@@ -14,7 +14,7 @@ Proper implementation of rolling upgrade would require:
   items, snapshot objects, job metadata in IMaps
 
 - compatible behavior of processors, operations, client messages and
-  of packets sent directly
+  of packets sent directly between members
 
 - SQL optimizer will have to be able to avoid using of new processor
   implementations or behavior until the cluster is upgraded
@@ -24,7 +24,9 @@ development of every new feature and a whole new class of possible
 compatibility issues. For this reason we decided to do a simplified
 approach: a job will run only on a subset of members that have the same
 version (ignoring the patch version). We'll use the largest such subset.
-This allows us to ignore most of the above compatibility requirements.
+We'll also ensure that a member of the same version will create the
+execution plan for the query. This allows us to ignore most of the above
+compatibility requirements.
 
 In the traditional upgrade procedure when members are upgraded one by
 one, in the middle of the upgrade process only half of the members will
@@ -34,6 +36,14 @@ version have the same size, we choose the group with higher version.
 
 To remediate this, the user can choose to temporarily increase the
 cluster size. The enterprise licence allows it.
+
+## Non-goals
+
+This feature won't provide rolling upgrades for Jet light jobs in
+general. To do that we would have to provide Jet client compatibility
+and DAG binary compatibility.
+
+Fault-tolerant SQL jobs also won't be supported.
 
 ## Implementation details
 

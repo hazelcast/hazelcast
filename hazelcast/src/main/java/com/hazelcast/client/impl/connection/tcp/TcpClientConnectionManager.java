@@ -845,6 +845,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                     return connection;
                 }
             }
+            // TODO [viliam] there might be a race - the client just connected or disconnected. Try again.
         }
 
         // Otherwise iterate over connections and return the first one that's not to a lite member
