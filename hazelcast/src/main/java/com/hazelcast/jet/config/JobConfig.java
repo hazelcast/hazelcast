@@ -50,8 +50,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -266,7 +266,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
-        Preconditions.checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
+        checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
     }
@@ -1295,20 +1295,20 @@ public class JobConfig implements IdentifiedDataSerializable {
     /**
      * Sets the maximum execution time for the job in milliseconds. If the
      * execution time (counted from the actual start of the job), exceeds this
-     * value, the job is forcefully cancelled. The default value is {@code -1},
+     * value, the job is forcefully cancelled. The default value is {@code 0},
      * which denotes no time limit on the execution of the job.
      *
      * @since 5.0
      */
     public JobConfig setTimeoutMillis(long timeoutMillis) {
-        checkPositive(timeoutMillis, "timeoutMillis must be a positive number");
+        checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
         this.timeoutMillis = timeoutMillis;
         return this;
     }
 
     /**
-     * Quick check to see if JobConfig has valid timeout value.
-     * Any negative value or zero is considered invalid.
+     * Quick check to see if JobConfig has a timeout value.
+     * Any non-positive value is considered as Job not having a timeout value.
      *
      * @since 5.0
      */
