@@ -129,37 +129,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
         for (int i = 0; i < pointers.length; i++) {
-            Iterator<IndexKeyEntries> entryIterator;
             IndexIterationPointer pointer = pointers[i];
-
-            if (pointer.getFrom() != null) {
-                if (pointer.getTo() != null) {
-                    entryIterator = index.getSqlRecordIteratorBatch(
-                            pointer.getFrom(),
-                            pointer.isFromInclusive(),
-                            pointer.getTo(),
-                            pointer.isToInclusive(),
-                            pointer.isDescending()
-                    );
-                } else {
-                    entryIterator = index.getSqlRecordIteratorBatch(
-                            pointer.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER,
-                            pointer.getFrom(),
-                            pointer.isDescending()
-                    );
-                }
-            } else {
-                if (pointer.getTo() != null) {
-                    entryIterator = index.getSqlRecordIteratorBatch(
-                            pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
-                            pointer.getTo(),
-                            pointer.isDescending()
-                    );
-                } else {
-                    entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
-                }
-            }
-
+            Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
 
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
@@ -199,6 +170,39 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
 
         return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
+    }
+
+    private static Iterator<IndexKeyEntries> getEntryIterator(InternalIndex index, IndexIterationPointer pointer) {
+        Iterator<IndexKeyEntries> entryIterator;
+
+        if (pointer.getFrom() != null) {
+            if (pointer.getTo() != null) {
+                entryIterator = index.getSqlRecordIteratorBatch(
+                        pointer.getFrom(),
+                        pointer.isFromInclusive(),
+                        pointer.getTo(),
+                        pointer.isToInclusive(),
+                        pointer.isDescending()
+                );
+            } else {
+                entryIterator = index.getSqlRecordIteratorBatch(
+                        pointer.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER,
+                        pointer.getFrom(),
+                        pointer.isDescending()
+                );
+            }
+        } else {
+            if (pointer.getTo() != null) {
+                entryIterator = index.getSqlRecordIteratorBatch(
+                        pointer.isToInclusive() ? Comparison.LESS_OR_EQUAL : Comparison.LESS,
+                        pointer.getTo(),
+                        pointer.isDescending()
+                );
+            } else {
+                entryIterator = index.getSqlRecordIteratorBatch(pointer.isDescending());
+            }
+        }
+        return entryIterator;
     }
 
     private MapFetchIndexOperationResult runInternalHash(InternalIndex index) {
