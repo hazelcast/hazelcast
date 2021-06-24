@@ -302,12 +302,15 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
-                "INSERT INTO " + name + " (this, __key) VALUES ('2', 1)",
-                createMap(1, "2")
+                "INSERT INTO " + name + " (this, __key) VALUES ('1', 1), ('2', 2)",
+                createMap(1, "1", 2, "2")
         );
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(1, "2"))
+                asList(
+                        new Row(1, "1"),
+                        new Row(2, "2")
+                )
         );
     }
 

@@ -55,13 +55,6 @@ public class LogicalTableInsert extends TableModify {
     @Override
     public LogicalTableInsert copy(RelTraitSet traitSet, List<RelNode> inputs) {
         assert traitSet.containsIfApplicable(Convention.NONE);
-        return new LogicalTableInsert(
-                getCluster(),
-                traitSet,
-                getTable(),
-                getCatalogReader(),
-                sole(inputs),
-                isFlattened()
-        );
+        return new LogicalTableInsert(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }

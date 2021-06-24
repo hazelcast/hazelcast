@@ -55,13 +55,6 @@ public class LogicalTableSink extends TableModify {
     @Override
     public LogicalTableSink copy(RelTraitSet traitSet, List<RelNode> inputs) {
         assert traitSet.containsIfApplicable(Convention.NONE);
-        return new LogicalTableSink(
-                getCluster(),
-                traitSet,
-                getTable(),
-                getCatalogReader(),
-                sole(inputs),
-                isFlattened()
-        );
+        return new LogicalTableSink(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }
