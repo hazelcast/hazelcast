@@ -1305,6 +1305,16 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Quick check to see if JobConfig has valid timeout value.
+     * Any negative value or zero is considered invalid.
+     *
+     * @since 5.0
+     */
+    public boolean hasTimeout() {
+        return timeoutMillis > 0;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;

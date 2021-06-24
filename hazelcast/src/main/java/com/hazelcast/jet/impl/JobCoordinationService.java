@@ -273,7 +273,7 @@ public class JobCoordinationService {
                 // If there is no master context and job result at the same time, it means this is the first submission
                 jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
-                if (isMaster() && jobConfig.getTimeoutMillis() > 0) {
+                if (isMaster() && jobConfig.hasTimeout()) {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis(), false);
                 }
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
@@ -315,8 +315,8 @@ public class JobCoordinationService {
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
-        final long timeout = jobConfig.getTimeoutMillis();
-        if (timeout > 0) {
+        final boolean hasTimeout = jobConfig.hasTimeout();
+        if (hasTimeout) {
             scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis(), true);
         }
 
@@ -324,7 +324,7 @@ public class JobCoordinationService {
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                    if (timeout > 0) {
+                    if (hasTimeout) {
                         unscheduleJobTimeout(jobId, true);
                     }
                 });
@@ -877,7 +877,7 @@ public class JobCoordinationService {
                     logger.severe("No master context found to complete " + masterContext.jobIdString());
                 }
             }
-            if (isMaster() && masterContext.jobConfig().getTimeoutMillis() > 0) {
+            if (isMaster() && masterContext.jobConfig().hasTimeout()) {
                 unscheduleJobTimeout(masterContext.jobId(), false);
             }
         });
@@ -919,7 +919,7 @@ public class JobCoordinationService {
             return;
         }
 
-        if (masterContext.jobConfig().getTimeoutMillis() > 0) {
+        if (masterContext.jobConfig().hasTimeout()) {
             final long remaining = remainingTimeout(masterContext);
             scheduleJobTimeout(jobId, remaining, false);
         }
@@ -1063,7 +1063,7 @@ public class JobCoordinationService {
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
 
-            if (masterContext.jobConfig().getTimeoutMillis() > 0) {
+            if (masterContext.jobConfig().hasTimeout()) {
                 final long remaining = remainingTimeout(masterContext);
                 scheduleJobTimeout(jobId, remaining, false);
             }
@@ -1256,7 +1256,21 @@ public class JobCoordinationService {
             return;
         }
 
-        final ScheduledFuture<?> future = this.nodeEngine().getExecutionService().schedule(() -> {
+        scheduledJobTimeouts.computeIfAbsent(jobId, id -> scheduleJobTimeoutTask(id, timeout));
+    }
+
+    public void unscheduleJobTimeout(final long jobId, final boolean lightJob) {
+        if (!lightJob && !isMaster()) {
+            return;
+        }
+        final ScheduledFuture<?> timeoutFuture = scheduledJobTimeouts.remove(jobId);
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+        }
+    }
+
+    private ScheduledFuture<?> scheduleJobTimeoutTask(final long jobId, final long timeout) {
+        return this.nodeEngine().getExecutionService().schedule(() -> {
             final MasterContext mc = masterContexts.get(jobId);
             final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
 
@@ -1270,20 +1284,5 @@ public class JobCoordinationService {
                 scheduledJobTimeouts.remove(jobId);
             }
         }, timeout, MILLISECONDS);
-
-        final ScheduledFuture<?> old = scheduledJobTimeouts.putIfAbsent(jobId, future);
-        if (old != null) {
-            old.cancel(true);
-        }
-    }
-
-    public void unscheduleJobTimeout(final long jobId, final boolean lightJob) {
-        if (!lightJob && !isMaster()) {
-            return;
-        }
-        final ScheduledFuture<?> timeoutFuture = scheduledJobTimeouts.get(jobId);
-        if (timeoutFuture != null) {
-            timeoutFuture.cancel(true);
-        }
     }
 }
