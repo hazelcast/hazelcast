@@ -1,15 +1,15 @@
 ---
 title: 021 - Job Security
-description: Authorize Jobs in a secure environment
+description: Authorize jobs in a secure environment
 ---
 
 ## Summary
 
-Hazelcast provides fine-grained authorization mechanisms for
-distributed data-structures. With merge to Hazelcast, we want to provide
+Hazelcast provides fine-grained authorization mechanisms for distributed
+data structures. After merge with Hazelcast IMDG, we want to provide
 this mechanism for Jet jobs too.
 
-## Open-Source side Security
+## Security in the Open Source Part
 
 - Disable Jet: One can disable Jet engine completely using
 `JetConfig#enable`. We don't create the internal Jet service and don't
@@ -23,11 +23,11 @@ upload the resources/classes, but the job fails on the server side.
 
 ## Client Permissions
 
-Hazelcast creates a security context on server-side and gate-guards each
+Hazelcast creates a security context on server side and gate-guards each
 client operation using configured permissions. These permissions are per
-data-structure, MapPermission, ListPermission... There are also feature
-related permissions, UserCodeDeploymentPermission, ConfigPermission,
-ManagementPermission and TransactionPermission.
+data structure, MapPermission, ListPermission... There are also
+feature-related permissions, UserCodeDeploymentPermission,
+ConfigPermission, ManagementPermission and TransactionPermission.
 
 These permissions can have a name and various actions configured. For
 example a MapPermission with the name `foo` and actions `create` and
@@ -36,38 +36,38 @@ read operations (like get, getAll, keySet etc.) on it.
 
 ### Job Permission
 
-For Jet jobs, we created the type `JobPermission` to authorize the job
-specific operations. Contrary to data-structure specific permissions,
-JobPermission does not have a name. It can be configured with below
-actions:
+For Jet jobs, we created the type `JobPermission` to authorize the
+job-specific operations. Contrary to data structure-specific
+permissions, JobPermission does not have a name. It can be configured
+with actions below:
 
-- create: submit a new job, without uploading resources.
+- create: submit a new job, without uploading resources
 - destroy: cancel a running job
-- read: get the job (with the id or the name), get job-config, get
-status, get submission time... The other actions imply `read` action,
-for example if permission has `create` action, it means the permission
-has `read` action as well.
+- read: get the job (by id or name), get job config, get status,
+submission time... Every other action implies `read` action, for example
+if permission has `create` action, it means the permission has `read`
+action as well.
 - list: list the jobs
 - suspend: suspend a running job
 - resume: resume a suspended job
 - export: export the snapshot
-- upload: upload the resources/classes along with the jobs. This means
+- upload: upload the resources/classes along with jobs. This means
 running custom code on the server, basically user can do anything with
 this permission.
-- all: all the above
+- all: all of the above
 
 ### Connector Permission
 
 Jet offers some OOTB connectors: file, socket, jms and jdbc connectors.
-We want to guard these and possible others (extension module) hence the
+We want to guard these and possibly others (extension module), hence the
 connector permission. Instead of creating a separate permission for
 each connector we created a single generic one which has the type of
-the connector as a prefix in its name. The permission has following
+the connector as a prefix in its name. The permission has the following
 actions:
 
 - read: for sources
 - write: for sinks
-- all: all the above
+- all: all of the above
 
 Configuration options for different connectors:
 
@@ -117,10 +117,10 @@ permission with the name `jdbc:`
 
 ### Hazelcast Connector Permissions
 
-A job can bypass the configured permissions for Hazelcast 
-data-structures like map, cache, list and ringbuffer using the OOTB
+A job can bypass the configured permissions for Hazelcast data
+structures like IMap, ICache, IList and RingBuffer using the OOTB
 Hazelcast connectors. User should add the necessary permissions to be
-able to include these connectors to the pipeline.
+able to include these connectors in the pipeline.
 
 ```java
 Pipeline p = Pipeline.create();
@@ -129,7 +129,7 @@ p.readFrom(Sources.map("source_map"))
  .writeTo(Sinks.map("sink_map"));
 ```
 
-For the above pipeline, user should configure below permissions for
+For the above pipeline, user must configure the permissions below for
 Hazelcast connectors:
 
 ```xml
@@ -153,12 +153,12 @@ not created already.
 
 ## Implementation
 
-To apply the job permissions, we've implemented the
-`SecureRequest#getRequiredPermission` for each job related message task.
-This secured the DAG/Pipeline jobs, but the jobs originated from SQL
-are submitted from server.
+To enforce the job permissions, we've implemented the
+`SecureRequest#getRequiredPermission` for each job-related message task.
+This secured the DAG/Pipeline jobs, but jobs originated from SQL are
+submitted from server.
 
-SQL has already a mechanism to apply some security checks, these checks
+SQL already has a mechanism to apply security checks, these checks
 are limited to map/cache read/write permissions. We've extended them to
 apply the necessary job permissions as well as other connector
 permissions.
@@ -178,8 +178,8 @@ the security context if the endpoint has the required permissions.
 
 ### Upload Permission
 
-Jet jobs, by design, uploads the custom code written by the user to the
-server and runs it on the server side. User can do whatever he wants in
-this code. For example, user can get the member instance using
+Jet jobs, by design, upload the custom code written by the user to the
+server and run it on the server side. The user can do whatever he wants
+in this code. For example, he can get the member instance using
 `Hazelcast#getAllHazelcastInstances` and update a map bypassing the
 permission mechanism.
