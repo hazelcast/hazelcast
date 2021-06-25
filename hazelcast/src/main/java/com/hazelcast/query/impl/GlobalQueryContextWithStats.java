@@ -181,6 +181,27 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(comparison, value, descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
         public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
                 Comparable from,
                 boolean fromInclusive,

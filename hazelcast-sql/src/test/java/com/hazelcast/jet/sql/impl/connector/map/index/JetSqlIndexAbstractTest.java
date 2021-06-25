@@ -419,8 +419,8 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
             for (Integer key : expectedMapKeys) {
                 System.out.print(key + " ");
             }
-            System.out.println("---------------------");
             System.out.println();
+            System.out.println("---------------------");
             failOnDifference(
                     runId,
                     sql,

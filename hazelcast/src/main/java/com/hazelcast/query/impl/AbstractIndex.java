@@ -42,7 +42,7 @@ import static java.util.Collections.emptySet;
 /**
  * Provides an abstract base for indexes.
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({"rawtypes", "methodcount"})
 public abstract class AbstractIndex implements InternalIndex {
 
     /**
@@ -193,6 +193,33 @@ public abstract class AbstractIndex implements InternalIndex {
         }
 
         return indexStore.getSqlRecordIterator(comparison, convert(value), descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(convert(value));
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(descending);
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        if (converter == null) {
+            return emptyIterator();
+        }
+
+        return indexStore.getSqlRecordIteratorBatch(comparison, convert(value), descending);
     }
 
     @Override
