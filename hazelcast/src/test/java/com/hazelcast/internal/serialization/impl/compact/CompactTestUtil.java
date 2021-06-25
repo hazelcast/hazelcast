@@ -44,6 +44,11 @@ public final class CompactTestUtil {
                             + "new schema " + schema);
                 }
             }
+
+            @Override
+            public void putLocal(Schema schema) {
+                put(schema);
+            }
         };
     }
 }
