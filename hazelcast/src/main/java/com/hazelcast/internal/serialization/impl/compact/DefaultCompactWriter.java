@@ -34,6 +34,8 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
@@ -114,11 +116,11 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     private void writeOffsets(int dataLength, int[] offsets) throws IOException {
-        if (dataLength < Byte.MAX_VALUE) {
+        if (dataLength < BYTE_OFFSET_READER_RANGE) {
             for (int offset : offsets) {
                 out.writeByte(offset);
             }
-        } else if (dataLength < Short.MAX_VALUE) {
+        } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
             for (int offset : offsets) {
                 out.writeShort(offset);
             }

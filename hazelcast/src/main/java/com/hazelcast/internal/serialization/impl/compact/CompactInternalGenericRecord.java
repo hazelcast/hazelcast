@@ -40,6 +40,12 @@ import java.util.function.Function;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.INT_OFFSET_READER;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.NULL_OFFSET;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER;
+import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
@@ -74,13 +80,6 @@ import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
 
 public class CompactInternalGenericRecord extends CompactGenericRecord implements InternalGenericRecord {
 
-    private static final OffsetReader BYTE_OFFSET_READER =
-            (in, variableOffsetsPos, index) -> in.readByte(variableOffsetsPos + index);
-    private static final OffsetReader SHORT_OFFSET_READER =
-            (in, variableOffsetsPos, index) -> in.readShort(variableOffsetsPos + (index * SHORT_SIZE_IN_BYTES));
-    private static final OffsetReader INT_OFFSET_READER =
-            (in, variableOffsetsPos, index) -> in.readInt(variableOffsetsPos + (index * INT_SIZE_IN_BYTES));
-    private static final int NULL_POSITION = -1;
     private final OffsetReader offsetReader;
     private final Schema schema;
     private final BufferObjectDataInput in;
@@ -91,10 +90,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private final boolean schemaIncludedInBinary;
     private final @Nullable
     Class associatedClass;
-
-    public interface OffsetReader {
-        int getOffset(BufferObjectDataInput in, int variableOffsetsPos, int index) throws IOException;
-    }
 
     public CompactInternalGenericRecord(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
                                         @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
@@ -109,10 +104,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 int dataLength = in.readInt();
                 dataStartPosition = in.position();
                 variableOffsetsPosition = dataStartPosition + dataLength;
-                if (dataLength < Byte.MAX_VALUE) {
+                if (dataLength < BYTE_OFFSET_READER_RANGE) {
                     offsetReader = BYTE_OFFSET_READER;
                     finalPosition = variableOffsetsPosition + numberOfVariableLengthFields;
-                } else if (dataLength < Short.MAX_VALUE) {
+                } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
                     offsetReader = SHORT_OFFSET_READER;
                     finalPosition = variableOffsetsPosition + (numberOfVariableLengthFields * SHORT_SIZE_IN_BYTES);
                 } else {
@@ -267,15 +262,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private <T> T getVariableLength(@Nonnull String fieldName, FieldType fieldType,
-                                    Reader<T> geter) {
+                                    Reader<T> reader) {
         int currentPos = in.position();
         try {
             int pos = readVariableSizeFieldPosition(fieldName, fieldType);
-            if (pos == NULL_POSITION) {
+            if (pos == NULL_OFFSET) {
                 return null;
             }
             in.position(pos);
-            return geter.read(in);
+            return reader.read(in);
         } catch (IOException e) {
             throw illegalStateException(e);
         } finally {
@@ -472,9 +467,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private static OffsetReader getOffsetReader(int dataLength) {
         OffsetReader offsetReader;
-        if (dataLength < Byte.MAX_VALUE) {
+        if (dataLength < BYTE_OFFSET_READER_RANGE) {
             offsetReader = BYTE_OFFSET_READER;
-        } else if (dataLength < Short.MAX_VALUE) {
+        } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
             offsetReader = SHORT_OFFSET_READER;
         } else {
             offsetReader = INT_OFFSET_READER;
@@ -505,7 +500,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             FieldDescriptor fd = getFieldDefinition(fieldName, fieldType);
             int index = fd.getIndex();
             int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
-            return offset == NULL_POSITION ? NULL_POSITION : offset + dataStartPosition;
+            return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -532,7 +527,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         int position = readVariableSizeFieldPosition(fieldName, BOOLEAN_ARRAY);
-        if (position == NULL_POSITION) {
+        if (position == NULL_OFFSET) {
             return null;
         }
         if (readLength(position) <= index) {
@@ -578,7 +573,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldType fieldType,
                                              Reader<T> geter, int index) {
         int position = readVariableSizeFieldPosition(fieldName, fieldType);
-        if (position == NULL_POSITION) {
+        if (position == NULL_OFFSET) {
             return null;
         }
         checkNotNegative(index, "Array index can not be negative");
@@ -644,7 +639,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         try {
             int pos = readVariableSizeFieldPosition(fieldName, fieldType);
 
-            if (pos == NULL_POSITION) {
+            if (pos == NULL_OFFSET) {
                 return null;
             }
             int itemCount = in.readInt(pos);
@@ -657,7 +652,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             OffsetReader offsetReader = getOffsetReader(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
             int indexedItemOffset = offsetReader.getOffset(in, offsetsPosition, index);
-            if (indexedItemOffset != NULL_POSITION) {
+            if (indexedItemOffset != NULL_OFFSET) {
                 in.position(indexedItemOffset + dataStartPosition);
                 return reader.read(in);
             }
