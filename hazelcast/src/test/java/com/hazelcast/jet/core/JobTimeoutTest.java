@@ -114,9 +114,29 @@ public class JobTimeoutTest extends JetTestSupport {
         assertEquals(JobStatus.FAILED, job.getStatus());
     }
 
+    @Test
+    public void when_jobHasNoTimeout_jobIsNotCancelled() {
+        final HazelcastInstance hz = createHazelcastInstance();
+        final DAG dag = new DAG();
+        dag.newVertex("slow", SlowSource::new);
+        final JobConfig jobConfig = new JobConfig();
+        final Job job = hz.getJet().newJob(dag, jobConfig);
+
+        job.join();
+        assertEquals(JobStatus.COMPLETED, job.getStatus());
+    }
+
     private static class NormalSource extends AbstractProcessor {
         @Override
         public boolean complete() {
+            return true;
+        }
+    }
+
+    private static class SlowSource extends AbstractProcessor {
+        @Override
+        public boolean complete() {
+            sleepMillis(100);
             return true;
         }
     }

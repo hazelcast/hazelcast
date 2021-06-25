@@ -1072,8 +1072,11 @@ public class JobCoordinationService {
         long jobId = masterContext.jobId();
         boolean hasTimeout = masterContext.hasTimeout();
         long remaining = masterContext.remainingTimeout(Clock.currentTimeMillis());
+        if (!hasTimeout) {
+            return;
+        }
 
-        if (!hasTimeout || remaining > 0) {
+        if (remaining > 0) {
             scheduleJobTimeout(jobId, remaining);
         } else {
             terminateJob(jobId, CANCEL_FORCEFUL);
