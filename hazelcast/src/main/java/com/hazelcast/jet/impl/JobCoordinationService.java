@@ -1075,12 +1075,7 @@ public class JobCoordinationService {
         if (!hasTimeout) {
             return;
         }
-
-        if (remaining > 0) {
-            scheduleJobTimeout(jobId, remaining);
-        } else {
-            terminateJob(jobId, CANCEL_FORCEFUL);
-        }
+        scheduleJobTimeout(jobId, Math.max(1, remaining));
     }
 
     private int getQuorumSize() {
