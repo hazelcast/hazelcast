@@ -224,12 +224,12 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
         Map<Address, int[]> addressMap = context.partitionAssignment();
         Map<Address, PartitionIdSet> newPartitionDistributions = new HashMap<>();
-        addressMap.remove(split.getAddress());
 
         int partitionCount = split.getPartitions().getPartitionCount();
-        PartitionIdSet actualPartitions = new PartitionIdSet(partitionCount, context.processorPartitions());
-
+        PartitionIdSet actualPartitions = new PartitionIdSet(partitionCount, addressMap.get(split.getAddress()));
         PartitionIdSet intersection = split.getPartitions().intersectCopy(actualPartitions);
+
+        addressMap.remove(split.getAddress());
 
         // Full split on disjoint sets
         addressMap.forEach((address, partitions) -> {
