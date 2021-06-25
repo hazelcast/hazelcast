@@ -177,13 +177,20 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         if (pointer.getFrom() != null) {
             if (pointer.getTo() != null) {
-                entryIterator = index.getSqlRecordIteratorBatch(
-                        pointer.getFrom(),
-                        pointer.isFromInclusive(),
-                        pointer.getTo(),
-                        pointer.isToInclusive(),
-                        pointer.isDescending()
-                );
+                if (((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
+                    assert pointer.isFromInclusive() && pointer.isToInclusive()
+                            : "If range scan is a point lookup then limits should be all inclusive";
+                    entryIterator = index.getSqlRecordIteratorBatch(pointer.getFrom());
+                } else {
+                    entryIterator = index.getSqlRecordIteratorBatch(
+                            pointer.getFrom(),
+                            pointer.isFromInclusive(),
+                            pointer.getTo(),
+                            pointer.isToInclusive(),
+                            pointer.isDescending()
+                    );
+                }
+
             } else {
                 entryIterator = index.getSqlRecordIteratorBatch(
                         pointer.isFromInclusive() ? Comparison.GREATER_OR_EQUAL : Comparison.GREATER,
