@@ -200,6 +200,17 @@ public class MasterContext {
         return executionPlanMap;
     }
 
+    boolean hasTimeout() {
+        return jobConfig().getTimeoutMillis() > 0;
+    }
+
+    long remainingTimeout(long currentTimeMillis) {
+        long elapsed = currentTimeMillis - jobRecord().getCreationTime();
+        long timeout = jobConfig().getTimeoutMillis();
+
+        return timeout - elapsed;
+    }
+
     ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses() {
         return startOperationResponses;
     }
