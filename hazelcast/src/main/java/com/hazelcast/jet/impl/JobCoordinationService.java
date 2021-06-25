@@ -273,8 +273,6 @@ public class JobCoordinationService {
                 // If there is no master context and job result at the same time, it means this is the first submission
                 jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
-                scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
-
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 res.completeExceptionally(e);
@@ -910,15 +908,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
-
-        final long remaining = remainingTimeout(masterContext);
-        scheduleJobTimeout(jobId, remaining);
-
-        if (!masterContext.jobConfig().hasTimeout() || (masterContext.jobConfig().hasTimeout() && remaining > 0)) {
-            tryStartJob(masterContext);
-        } else {
-            terminateJob(jobId, CANCEL_FORCEFUL);
-        }
+        tryStartJob(masterContext);
     }
 
     private long remainingTimeout(final MasterContext masterContext) {
@@ -1056,14 +1046,7 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
-
-            final long remaining = remainingTimeout(masterContext);
-            scheduleJobTimeout(jobId, remaining);
-            if (!masterContext.jobConfig().hasTimeout() || (masterContext.jobConfig().hasTimeout() && remaining > 0)) {
-                tryStartJob(masterContext);
-            } else {
-                terminateJob(jobId, CANCEL_FORCEFUL);
-            }
+            tryStartJob(masterContext);
         }
 
         return masterContext.jobContext().jobCompletionFuture();
@@ -1092,6 +1075,16 @@ public class JobCoordinationService {
 
     private void tryStartJob(MasterContext masterContext) {
         masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
+
+        final long jobId = masterContext.jobId();
+        final long remaining = remainingTimeout(masterContext);
+        final boolean hasTimeout = masterContext.jobConfig().getTimeoutMillis() > 0;
+
+        if (!hasTimeout || remaining > 0) {
+            scheduleJobTimeout(jobId, remaining);
+        } else {
+            terminateJob(jobId, CANCEL_FORCEFUL);
+        }
     }
 
     private int getQuorumSize() {
