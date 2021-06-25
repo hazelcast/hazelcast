@@ -83,7 +83,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_jobIsResumedAndExceedsTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("normal", StuckSource::new);
+        dag.newVertex("stuck", StuckSource::new);
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
@@ -92,6 +92,23 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
         job.resume();
+
+        assertThrows(CancellationException.class, job::join);
+        assertEquals(JobStatus.FAILED, job.getStatus());
+    }
+
+    @Test
+    public void when_jobIsSuspendedAndExceedsTimeout_jobIsCancelled() {
+        final HazelcastInstance hz = createHazelcastInstance();
+        final DAG dag = new DAG();
+        dag.newVertex("stuck", StuckSource::new);
+        final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
+        final Job job = hz.getJet().newJob(dag, jobConfig);
+
+        assertJobStatusEventually(job, JobStatus.RUNNING, 1);
+        job.suspend();
+
+        assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
