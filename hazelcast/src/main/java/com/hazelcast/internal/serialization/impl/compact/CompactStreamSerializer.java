@@ -116,10 +116,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     void writeGenericRecord(BufferObjectDataOutput output, CompactGenericRecord record,
                             boolean includeSchemaOnBinary) throws IOException {
         Schema schema = record.getSchema();
-        if (!schema.isSchemaIdSet()) {
-            long schemaId = calculateSchemaId(schema);
-            schema.setSchemaId(schemaId);
-        }
         schemaService.put(schema);
         writeSchema(output, includeSchemaOnBinary, schema);
         DefaultCompactWriter writer = new DefaultCompactWriter(this, output, schema, includeSchemaOnBinary);
@@ -132,12 +128,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         writer.end();
     }
 
-    private long calculateSchemaId(Schema schema) throws IOException {
-        BufferObjectDataOutput out = bufferObjectDataOutputSupplier.get();
-        schema.writeData(out);
-        return RabinFingerPrint.fingerprint64(out.toByteArray());
-    }
-
     public void writeObject(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
         ConfigurationRegistry registry = getOrCreateRegistry(o);
         Class<?> aClass = o.getClass();
@@ -147,8 +137,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             SchemaWriter writer = new SchemaWriter(registry.getTypeName());
             registry.getSerializer().write(writer, o);
             schema = writer.build();
-            long schemaId = calculateSchemaId(schema);
-            schema.setSchemaId(schemaId);
             schemaService.put(schema);
             classToSchemaMap.put(aClass, schema);
         }
@@ -210,12 +198,11 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             input.readInt();
             schema = new Schema();
             schema.readData(input);
-            long includedSchemaId = calculateSchemaId(schema);
-            if (schemaId != includedSchemaId) {
+            long incomingSchemaId = schema.getSchemaId();
+            if (schemaId != incomingSchemaId) {
                 throw new HazelcastSerializationException("Invalid schema id found. Expected " + schemaId
-                        + ", actual " + includedSchemaId + " for schema " + schema);
+                        + ", actual " + incomingSchemaId + " for schema " + schema);
             }
-            schema.setSchemaId(schemaId);
             schemaService.put(schema);
             return schema;
         }

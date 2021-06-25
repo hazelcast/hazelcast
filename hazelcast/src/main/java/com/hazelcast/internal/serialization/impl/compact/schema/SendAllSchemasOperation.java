@@ -24,26 +24,25 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class SendAllSchemasOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Map<Long, Schema> schemas;
+    private Collection<Schema> schemas;
 
     public SendAllSchemasOperation() {
     }
 
-    public SendAllSchemasOperation(Map<Long, Schema> schemas) {
+    public SendAllSchemasOperation(Collection<Schema> schemas) {
         this.schemas = schemas;
     }
 
     @Override
     public void run() {
         MemberSchemaService schemaService = getService();
-        for (Map.Entry<Long, Schema> entry : schemas.entrySet()) {
-            schemaService.putIfAbsent(entry.getKey(), entry.getValue());
+        for (Schema schema : schemas) {
+            schemaService.putIfAbsent(schema);
         }
     }
 
@@ -51,24 +50,20 @@ public class SendAllSchemasOperation extends Operation implements IdentifiedData
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         int size = schemas.size();
         out.writeInt(size);
-        Iterator<Map.Entry<Long, Schema>> iterator = schemas.entrySet().iterator();
-        for (int i = 0; i < size; i++) {
-            Map.Entry<Long, Schema> entry = iterator.next();
-            out.writeLong(entry.getKey());
-            entry.getValue().writeData(out);
+        for (Schema schema : schemas) {
+            schema.writeData(out);
+
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        schemas = new HashMap<>(size);
+        schemas = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            long schemaId = in.readLong();
             Schema schema = new Schema();
             schema.readData(in);
-            schema.setSchemaId(schemaId);
-            schemas.put(schemaId, schema);
+            schemas.add(schema);
         }
     }
 

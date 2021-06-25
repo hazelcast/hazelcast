@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -70,8 +71,8 @@ public class ClientSchemaService implements SchemaService {
         }
         long schemaId = schema.getSchemaId();
         if (putIfAbsent(schemaId, schema)) {
-            ClientInvocation invocation =
-                    new ClientInvocation(client, ClientSendSchemaCodec.encodeRequest(schema, schemaId), SERVICE_NAME);
+            ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
+            ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
             invocation.invoke().joinInternal();
         }
     }
@@ -99,8 +100,8 @@ public class ClientSchemaService implements SchemaService {
         if (logger.isFinestEnabled()) {
             logger.finest("Sending schemas to the cluster " + schemas);
         }
-        ClientInvocation invocation =
-                new ClientInvocation(client, ClientSendAllSchemasCodec.encodeRequest(schemas.entrySet()), SERVICE_NAME);
+        ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(schemas.values()));
+        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
         invocation.invoke().joinInternal();
     }
 }
