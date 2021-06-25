@@ -911,13 +911,6 @@ public class JobCoordinationService {
         tryStartJob(masterContext);
     }
 
-    private long remainingTimeout(final MasterContext masterContext) {
-        final long elapsed = Clock.currentTimeMillis() - masterContext.jobRecord().getCreationTime();
-        final long timeout = masterContext.jobConfig().getTimeoutMillis();
-
-        return timeout - elapsed;
-    }
-
     private void checkOperationalState() {
         if (isClusterEnteringPassiveState) {
             throw new EnteringPassiveClusterStateException();
@@ -1076,9 +1069,9 @@ public class JobCoordinationService {
     private void tryStartJob(MasterContext masterContext) {
         masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
 
-        final long jobId = masterContext.jobId();
-        final long remaining = remainingTimeout(masterContext);
-        final boolean hasTimeout = masterContext.jobConfig().getTimeoutMillis() > 0;
+        long jobId = masterContext.jobId();
+        boolean hasTimeout = masterContext.hasTimeout();
+        long remaining = masterContext.remainingTimeout(Clock.currentTimeMillis());
 
         if (!hasTimeout || remaining > 0) {
             scheduleJobTimeout(jobId, remaining);

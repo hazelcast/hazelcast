@@ -28,7 +28,6 @@ import java.util.concurrent.CancellationException;
 
 import static org.junit.Assert.assertEquals;
 
-
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobTimeoutTest extends JetTestSupport {
 
