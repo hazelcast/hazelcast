@@ -84,7 +84,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
             Comparable<?> from = rangeFilter.getFrom() == null ? null : rangeFilter.getFrom().getValue(evalContext);
-            Comparable<?> to = rangeFilter.getTo() == null ? null : rangeFilter.getFrom().getValue(evalContext);
+            Comparable<?> to = rangeFilter.getTo() == null ? null : rangeFilter.getTo().getValue(evalContext);
             result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
