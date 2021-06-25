@@ -657,8 +657,7 @@ public class ReferenceObjects {
     public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
     public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
     public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
-    public static List<Map.Entry<Long, Schema>> aMapOfLongToSchema
-            = Collections.singletonList(new AbstractMap.SimpleEntry<>(aLong, aSchema));
+    public static List<Schema> aListOfSchemas = Collections.singletonList(aSchema);
 
     static {
         try {

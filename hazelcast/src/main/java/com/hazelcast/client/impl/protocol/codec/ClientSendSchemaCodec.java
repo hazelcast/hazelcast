@@ -36,53 +36,38 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Sends a schema to cluster
  */
-@Generated("e85caa97f9ae528f513aa91a0965556b")
+@Generated("5ddb868d7b35f8211f7e00c79df2e25a")
 public final class ClientSendSchemaCodec {
     //hex: 0x001300
     public static final int REQUEST_MESSAGE_TYPE = 4864;
     //hex: 0x001301
     public static final int RESPONSE_MESSAGE_TYPE = 4865;
-    private static final int REQUEST_SCHEMA_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SCHEMA_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private ClientSendSchemaCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         * schema to be send to the cluster
-         */
-        public com.hazelcast.internal.serialization.impl.compact.Schema schema;
-
-        /**
-         * Id of the schema which will later can be used to fetch the schema back
-         */
-        public long schemaId;
-    }
-
-    public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.impl.compact.Schema schema, long schemaId) {
+    public static ClientMessage encodeRequest(com.hazelcast.internal.serialization.impl.compact.Schema schema) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Client.SendSchema");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeLong(initialFrame.content, REQUEST_SCHEMA_ID_FIELD_OFFSET, schemaId);
         clientMessage.add(initialFrame);
         SchemaCodec.encode(clientMessage, schema);
         return clientMessage;
     }
 
-    public static ClientSendSchemaCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     * schema to be send to the cluster
+     */
+    public static com.hazelcast.internal.serialization.impl.compact.Schema decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
-        request.schemaId = decodeLong(initialFrame.content, REQUEST_SCHEMA_ID_FIELD_OFFSET);
-        request.schema = SchemaCodec.decode(iterator);
-        return request;
+        //empty initial frame
+        iterator.next();
+        return SchemaCodec.decode(iterator);
     }
 
     public static ClientMessage encodeResponse() {

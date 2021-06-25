@@ -27,35 +27,30 @@ import java.io.IOException;
 
 public class SendSchemaOperation extends Operation implements IdentifiedDataSerializable {
 
-    private long schemaId;
     private Schema schema;
 
     public SendSchemaOperation() {
     }
 
-    public SendSchemaOperation(long schemaId, Schema schema) {
+    public SendSchemaOperation(Schema schema) {
         this.schema = schema;
-        this.schemaId = schemaId;
     }
 
     @Override
     public void run() {
         MemberSchemaService schemaService = getService();
-        schemaService.putLocal(schemaId, schema);
+        schemaService.putLocal(schema);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeLong(schemaId);
         schema.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        schemaId = in.readLong();
         schema = new Schema();
         schema.readData(in);
-        schema.setSchemaId(schemaId);
     }
 
     @Override

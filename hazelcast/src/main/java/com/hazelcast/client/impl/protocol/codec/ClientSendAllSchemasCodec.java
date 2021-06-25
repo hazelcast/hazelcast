@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Sends all the schemas to the cluster
  */
-@Generated("1a5f010db172a2272144ea61a334f235")
+@Generated("fd89fb238082e87a3d70bb8bdd42e008")
 public final class ClientSendAllSchemasCodec {
     //hex: 0x001500
     public static final int REQUEST_MESSAGE_TYPE = 5376;
@@ -48,7 +48,7 @@ public final class ClientSendAllSchemasCodec {
     private ClientSendAllSchemasCodec() {
     }
 
-    public static ClientMessage encodeRequest(java.util.Collection<java.util.Map.Entry<Long, com.hazelcast.internal.serialization.impl.compact.Schema>> schemas) {
+    public static ClientMessage encodeRequest(java.util.Collection<com.hazelcast.internal.serialization.impl.compact.Schema> schemas) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Client.SendAllSchemas");
@@ -56,18 +56,18 @@ public final class ClientSendAllSchemasCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        EntryListLongSchemaCodec.encode(clientMessage, schemas);
+        ListMultiFrameCodec.encode(clientMessage, schemas, SchemaCodec::encode);
         return clientMessage;
     }
 
     /**
-     * list of class definitions
+     * list of schemas
      */
-    public static java.util.List<java.util.Map.Entry<Long, com.hazelcast.internal.serialization.impl.compact.Schema>> decodeRequest(ClientMessage clientMessage) {
+    public static java.util.List<com.hazelcast.internal.serialization.impl.compact.Schema> decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         //empty initial frame
         iterator.next();
-        return EntryListLongSchemaCodec.decode(iterator);
+        return ListMultiFrameCodec.decode(iterator, SchemaCodec::decode);
     }
 
     public static ClientMessage encodeResponse() {

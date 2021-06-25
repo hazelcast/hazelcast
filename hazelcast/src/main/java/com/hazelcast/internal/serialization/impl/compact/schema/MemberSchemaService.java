@@ -75,7 +75,7 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
         if (logger.isFinestEnabled()) {
             logger.finest("Preparing prejoin operation with schemas " + schemas);
         }
-        return new SendAllSchemasOperation(schemas);
+        return new SendAllSchemasOperation(new ArrayList<>(schemas.values()));
     }
 
     @Override
@@ -117,7 +117,7 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
                 return searchClusterAsync(schemaId, iterator, operationService);
             }
             Schema retrievedSchema = (Schema) o;
-            putLocal(schemaId, retrievedSchema);
+            putLocal(retrievedSchema);
             return CompletableFuture.completedFuture(getLocal(schemaId));
         });
     }
@@ -133,48 +133,47 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
             return;
         }
         long schemaId = schema.getSchemaId();
-        if (putIfAbsent(schemaId, schema)) {
+        if (putIfAbsent(schema)) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Sending schema id  " + schemaId + " locally, will search on the cluster" + schemaId);
             }
             if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
                 return;
             }
-            invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schemaId, schema), MAX_RETRIES)
+            invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES)
                     .joinInternal();
         }
     }
 
-    public CompletableFuture<Void> putAsync(long schemaId, Schema schema) {
-        schema.setSchemaId(schemaId);
-        if (putIfAbsent(schemaId, schema)) {
+    public CompletableFuture<Void> putAsync(Schema schema) {
+        if (putIfAbsent(schema)) {
             if (nodeEngine.getClusterService().getClusterState().equals(ClusterState.PASSIVE)) {
                 return CompletableFuture.completedFuture(null);
             }
-            return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schemaId, schema), MAX_RETRIES);
+            return invokeOnStableClusterSerial(nodeEngine, () -> new SendSchemaOperation(schema), MAX_RETRIES);
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
 
     @Nonnull
-    public CompletableFuture<Void> putAllAsync(List<Map.Entry<Long, Schema>> parameters) {
+    public CompletableFuture<Void> putAllAsync(List<Schema> parameters) {
         ArrayList<CompletableFuture<Void>> futures = new ArrayList<>(parameters.size());
         if (logger.isFinestEnabled()) {
             logger.finest("Putting schemas to the cluster" + parameters);
         }
-        for (Map.Entry<Long, Schema> parameter : parameters) {
-            futures.add(putAsync(parameter.getKey(), parameter.getValue()));
+        for (Schema schema : parameters) {
+            futures.add(putAsync(schema));
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
-    public void putLocal(long schemaId, Schema schema) {
-        schema.setSchemaId(schemaId);
-        putIfAbsent(schemaId, schema);
+    public void putLocal(Schema schema) {
+        putIfAbsent(schema);
     }
 
-    public boolean putIfAbsent(long schemaId, Schema schema) {
+    public boolean putIfAbsent(Schema schema) {
+        long schemaId = schema.getSchemaId();
         Schema existingSchema = schemas.putIfAbsent(schemaId, schema);
         if (existingSchema == null) {
             return true;

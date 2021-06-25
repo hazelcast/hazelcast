@@ -42,7 +42,6 @@ public class Schema implements IdentifiedDataSerializable {
     private int numberVarSizeFields;
     private int fixedSizeFieldsLength;
     private transient long schemaId;
-    private boolean isSchemaIdSet;
 
     public Schema() {
     }
@@ -94,6 +93,7 @@ public class Schema implements IdentifiedDataSerializable {
         }
 
         numberVarSizeFields = index;
+        calculateSchemaId();
     }
 
     /**
@@ -135,17 +135,7 @@ public class Schema implements IdentifiedDataSerializable {
     }
 
     public long getSchemaId() {
-        assert isSchemaIdSet;
         return schemaId;
-    }
-
-    public void setSchemaId(long schemaId) {
-        this.isSchemaIdSet = true;
-        this.schemaId = schemaId;
-    }
-
-    public boolean isSchemaIdSet() {
-        return isSchemaIdSet;
     }
 
     @Override
@@ -167,6 +157,17 @@ public class Schema implements IdentifiedDataSerializable {
             out.writeString(descriptor.getFieldName());
             out.writeByte(descriptor.getType().getId());
         }
+    }
+
+    private void calculateSchemaId() {
+        long fp = RabinFingerPrint.fingerprint64(RabinFingerPrint.INIT, typeName);
+        fp = RabinFingerPrint.fingerprint64(fp, fieldDefinitionMap.size());
+        Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
+        for (FieldDescriptor descriptor : fields) {
+            fp = RabinFingerPrint.fingerprint64(fp, descriptor.getFieldName());
+            fp = RabinFingerPrint.fingerprint64(fp, descriptor.getType().getId());
+        }
+        schemaId = fp;
     }
 
     @Override

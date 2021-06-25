@@ -27,10 +27,9 @@ import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaServ
 
 import java.security.Permission;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-public class SendAllSchemasMessageTask extends AbstractAsyncMessageTask<List<Map.Entry<Long, Schema>>, Void> {
+public class SendAllSchemasMessageTask extends AbstractAsyncMessageTask<List<Schema>, Void> {
 
     public SendAllSchemasMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +42,7 @@ public class SendAllSchemasMessageTask extends AbstractAsyncMessageTask<List<Map
     }
 
     @Override
-    protected List<Map.Entry<Long, Schema>> decodeClientMessage(ClientMessage clientMessage) {
+    protected List<Schema> decodeClientMessage(ClientMessage clientMessage) {
         return ClientSendAllSchemasCodec.decodeRequest(clientMessage);
     }
 

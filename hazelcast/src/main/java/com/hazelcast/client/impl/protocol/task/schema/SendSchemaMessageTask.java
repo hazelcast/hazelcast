@@ -21,27 +21,28 @@ import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 
 import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
-public class SendSchemaMessageTask extends AbstractAsyncMessageTask<ClientSendSchemaCodec.RequestParameters, Void> {
+public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void> {
 
     public SendSchemaMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientSendSchemaCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected Schema decodeClientMessage(ClientMessage clientMessage) {
         return ClientSendSchemaCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected CompletableFuture processInternal() {
         MemberSchemaService memberSchemaService = getService(getServiceName());
-        return memberSchemaService.putAsync(parameters.schemaId, parameters.schema);
+        return memberSchemaService.putAsync(parameters);
     }
 
     @Override
