@@ -69,15 +69,20 @@ public class ClientSchemaService implements SchemaService {
             //this is to prevent converting every schema put to data and calculate fingerprint
             return;
         }
-        long schemaId = schema.getSchemaId();
-        if (putIfAbsent(schemaId, schema)) {
+        if (putIfAbsent(schema)) {
             ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
             invocation.invoke().joinInternal();
         }
     }
 
-    private boolean putIfAbsent(long schemaId, Schema schema) {
+    @Override
+    public void putLocal(Schema schema) {
+        putIfAbsent(schema);
+    }
+
+    private boolean putIfAbsent(Schema schema) {
+        long schemaId = schema.getSchemaId();
         Schema existingSchema = schemas.putIfAbsent(schemaId, schema);
         if (existingSchema == null) {
             return true;

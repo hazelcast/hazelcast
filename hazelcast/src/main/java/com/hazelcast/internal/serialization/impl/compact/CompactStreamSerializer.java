@@ -137,7 +137,13 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             SchemaWriter writer = new SchemaWriter(registry.getTypeName());
             registry.getSerializer().write(writer, o);
             schema = writer.build();
-            schemaService.put(schema);
+            if (includeSchemaOnBinary) {
+                //if we will include the schema on binary, the schema will be delivered anyway.
+                //No need to put it to cluster. Putting it local only in order not to ask from remote on read.
+                schemaService.putLocal(schema);
+            } else {
+                schemaService.put(schema);
+            }
             classToSchemaMap.put(aClass, schema);
         }
         writeSchema(out, includeSchemaOnBinary, schema);
