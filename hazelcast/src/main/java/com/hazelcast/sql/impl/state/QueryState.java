@@ -16,14 +16,14 @@
 
 package com.hazelcast.sql.impl.state;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ClockProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.plan.cache.CachedPlanInvalidationCallback;
 
 import javax.annotation.Nullable;
 import java.util.Collection;

@@ -104,7 +104,8 @@ import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThr
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static java.util.Collections.emptySet;
 
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
@@ -134,6 +135,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
+    protected final CompositeCacheRSMutationObserver compositeCacheRSMutationObserver;
 
     protected boolean primary;
     protected boolean eventsEnabled = true;
@@ -182,6 +184,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.cacheRecordFactory = new CacheRecordFactory(cacheConfig.getInMemoryFormat(), ss);
         this.valueComparator = getValueComparatorOf(cacheConfig.getInMemoryFormat());
         this.clearExpiredRecordsTask = cacheService.getExpirationManager().getTask();
+        this.compositeCacheRSMutationObserver = new CompositeCacheRSMutationObserver();
 
         if (cacheConfig.isStatisticsEnabled()) {
             statistics = cacheService.createCacheStatIfAbsent(cacheNameWithPrefix);
@@ -300,6 +303,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         primary = isPrimary();
         records.setEntryCounting(primary);
         markExpirable(TIME_NOT_AVAILABLE);
+        addMutationObservers();
+    }
+
+    // Overridden in EE.
+    protected void addMutationObservers() {
+        if (eventJournalConfig != null && eventJournalConfig.isEnabled()) {
+            compositeCacheRSMutationObserver.add(
+                    new EventJournalRSMutationObserver(cacheService, eventJournalConfig, objectNamespace, partitionId));
+        }
     }
 
     protected boolean isReadThrough() {
@@ -547,9 +559,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public void onEvict(Data key, R record, boolean wasExpired) {
         if (wasExpired) {
-            cacheService.eventJournal.writeExpiredEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+            compositeCacheRSMutationObserver.onExpire(key, record.getValue());
         } else {
-            cacheService.eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+            compositeCacheRSMutationObserver.onEvict(key, record.getValue());
         }
         invalidateEntry(key);
     }
@@ -705,7 +717,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             // Writing to `CacheWriter` failed, so we should revert entry (remove added record).
             final R removed = records.remove(key);
             if (removed != null) {
-                cacheService.eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId,
+                compositeCacheRSMutationObserver.onRemove(
                         key, removed.getValue());
             }
             // Disposing key/value/record should be handled inside `onCreateRecordWithExpiryError`.
@@ -756,7 +768,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void onUpdateRecord(Data key, R record, Object value, Data oldDataValue) {
-        cacheService.eventJournal.writeUpdateEvent(eventJournalConfig, objectNamespace, partitionId, key, oldDataValue, value);
+        compositeCacheRSMutationObserver.onUpdate(key, oldDataValue, value);
     }
 
     protected void onUpdateRecordError(Data key, R record, Object value, Data newDataValue,
@@ -1139,11 +1151,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         R oldRecord = records.put(key, record);
         if (updateJournal) {
             if (oldRecord != null) {
-                cacheService.eventJournal.writeUpdateEvent(
-                        eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
+                compositeCacheRSMutationObserver.onUpdate(
+                        key, oldRecord.getValue(), record.getValue());
             } else {
-                cacheService.eventJournal.writeCreatedEvent(
-                        eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+                compositeCacheRSMutationObserver.onCreate(
+                        key, record.getValue());
             }
         }
         invalidateEntry(key, source);
@@ -1158,7 +1170,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected R doRemoveRecord(Data key, UUID source) {
         R removedRecord = records.remove(key);
         if (removedRecord != null) {
-            cacheService.eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace, partitionId,
+            compositeCacheRSMutationObserver.onRemove(
                     key, removedRecord.getValue());
             invalidateEntry(key, source);
         }
@@ -1905,7 +1917,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void destroyEventJournal() {
-        cacheService.eventJournal.destroy(objectNamespace, partitionId);
+        compositeCacheRSMutationObserver.onDestroy();
     }
 
     @Override

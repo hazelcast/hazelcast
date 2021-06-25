@@ -1710,6 +1710,9 @@
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
+        <merkle-tree enabled="false">
+            <depth>10</depth>
+        </merkle-tree>
         <hot-restart enabled="false">
             <fsync>false</fsync>
         </hot-restart>

@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
@@ -951,6 +952,19 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutIfAbsentAsync() {
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getInstance().getMap("testPutIfAbsentAsync");
+        try {
+            assertNull(map.putIfAbsentAsync(1, 1).toCompletableFuture().get());
+            assertEquals(1, map.putIfAbsentAsync(1, 2).toCompletableFuture().get());
+            assertEquals(1, map.putIfAbsentAsync(1, 3).toCompletableFuture().get());
+            assertEquals(1, map.size());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void testAsyncMethodChaining() {
         IMap<Integer, Integer> map = getInstance().getMap("testGetPutRemoveAsync");
         CompletionStage<Integer> setThenGet = map.setAsync(1, 1)
@@ -1688,6 +1702,18 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null, 1, TimeUnit.SECONDS)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync(null, "value");
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(null, \"value\")");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", null);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(\"key\", null)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync(null, "value", 1, SECONDS);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(null, \"value\", 1, TimeUnit.SECONDS)");
+
+        runnable = () -> ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", null, 1, SECONDS);
+        assertRunnableThrowsNullPointerException(runnable, "putIfAbsentAsync(\"key\", null, 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {

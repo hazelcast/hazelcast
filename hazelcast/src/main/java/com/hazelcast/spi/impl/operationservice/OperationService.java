@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice;
 
-import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
@@ -119,6 +119,8 @@ public interface OperationService {
 
     <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId);
 
+    <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId, int replicaIndex);
+
     /**
      * Executes an operation on a partition.
      *
@@ -217,7 +219,7 @@ public interface OperationService {
      *                         grouped by owners
      * @param <T>              type of result of operations returned by {@code operationFactory}
      * @return a future returning a Map with partitionId as a key and the
-     *         outcome of the operation as a value.
+     * outcome of the operation as a value.
      */
     <T> CompletableFuture<Map<Integer, T>> invokeOnPartitionsAsync(
             String serviceName,

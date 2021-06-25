@@ -171,7 +171,8 @@ public class ClientDynamicClusterConfig extends Config {
                         : cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
-                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(), cacheConfig.getHotRestartConfig());
+                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
         invoke(request);
         return this;
     }

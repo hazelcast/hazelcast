@@ -24,6 +24,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.WanReplicationRef;
 
 import javax.annotation.Nonnull;
@@ -79,6 +80,18 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     public EventJournalConfig getEventJournalConfig() {
         EventJournalConfig eventJournalConfig = super.getEventJournalConfig();
         return new EventJournalConfigReadOnly(eventJournalConfig);
+    }
+
+    @Override
+    public MergePolicyConfig getMergePolicyConfig() {
+        MergePolicyConfig mergePolicyConfig = super.getMergePolicyConfig();
+        return new MergePolicyConfigReadOnly(mergePolicyConfig);
+    }
+
+    @Override
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        MerkleTreeConfig merkleTreeConfig = super.getMerkleTreeConfig();
+        return new MerkleTreeConfigReadOnly(merkleTreeConfig);
     }
 
     @Override
@@ -203,6 +216,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfiguration<K, V> setEventJournalConfig(@Nonnull EventJournalConfig eventJournalConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
+    public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
         throw throwReadOnly();
     }
 
