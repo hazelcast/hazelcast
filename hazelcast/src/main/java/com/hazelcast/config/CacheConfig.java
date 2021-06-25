@@ -21,10 +21,12 @@ import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -62,7 +64,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
  * @param <K> the key type
  * @param <V> the value type
  */
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Versioned {
 
     private String name;
     private String managerPrefix;
@@ -78,6 +80,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     private EvictionConfig evictionConfig = new EvictionConfig();
     @SuppressFBWarnings("SE_BAD_FIELD")
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+    private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
 
     /**
@@ -118,6 +121,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             }
             this.splitBrainProtectionName = config.splitBrainProtectionName;
             this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
+            this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
             this.serializationService = config.serializationService;
             this.classLoader = config.classLoader;
@@ -152,6 +156,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         copyListeners(simpleConfig);
         this.splitBrainProtectionName = simpleConfig.getSplitBrainProtectionName();
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
+        this.merkleTreeConfig = new MerkleTreeConfig(simpleConfig.getMerkleTreeConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
@@ -463,6 +468,25 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
+     * Gets the {@code MerkleTreeConfig} for this {@code CacheConfig}
+     *
+     * @return merkle tree config
+     */
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    /**
+     * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
+     *
+     * @param merkleTreeConfig merkle tree config
+     * @return this {@code CacheConfig} instance
+     */
+    public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
+        this.merkleTreeConfig = merkleTreeConfig;
+    }
+
+    /**
      * Returns invalidation events disabled status for per entry.
      *
      * @return {@code true} if invalidation events are disabled for per entry, {@code false} otherwise
@@ -519,6 +543,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeBoolean(disablePerEntryInvalidationEvents);
 
         writePartitionLostListenerConfigs(out);
+
+        // RU_COMPAT_4_2
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            out.writeObject(merkleTreeConfig);
+        }
     }
 
     private void writePartitionLostListenerConfigs(ObjectDataOutput out)
@@ -579,6 +608,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.serializationService = ((SerializationServiceSupport) in).getSerializationService();
 
         readPartitionLostListenerConfigs(in);
+
+        // RU_COMPAT_4_2
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            merkleTreeConfig = in.readObject();
+        }
     }
 
     private void readPartitionLostListenerConfigs(ObjectDataInput in)
@@ -633,6 +667,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
                 + ", wanReplicationRef=" + wanReplicationRef
+                + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';
     }
 
@@ -719,6 +754,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setManagementEnabled(isManagementEnabled());
         target.setManagerPrefix(getManagerPrefix());
         target.setMergePolicyConfig(getMergePolicyConfig());
+        target.setMerkleTreeConfig(getMerkleTreeConfig());
         target.setName(getName());
         target.setPartitionLostListenerConfigs(getPartitionLostListenerConfigs());
         target.setSplitBrainProtectionName(getSplitBrainProtectionName());

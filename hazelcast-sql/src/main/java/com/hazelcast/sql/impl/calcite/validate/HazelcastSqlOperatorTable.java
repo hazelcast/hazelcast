@@ -1,26 +1,25 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.sql.impl.calcite.validate;
 
-import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
+import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToTimestampTzFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleFunction;
@@ -29,12 +28,14 @@ import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRandFunct
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastRoundTruncateFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastSignFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastArithmeticOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCastFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCoalesceFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastDescOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
-import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastComparisonPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
@@ -199,6 +200,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
     public static final SqlFunction TO_TIMESTAMP_TZ = HazelcastToTimestampTzFunction.INSTANCE;
+    public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

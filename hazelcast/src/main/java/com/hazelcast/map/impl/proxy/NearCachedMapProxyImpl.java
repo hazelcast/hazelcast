@@ -215,6 +215,24 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data valueData,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        key = toNearCacheKeyWithStrategy(key);
+        try {
+            return super.putIfAbsentAsyncInternal(key, valueData, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        } finally {
+            // If the operation is retried, the return value can be wrong.
+            // Consider: key k isn't present. We do putIfAbsent(k, v). The operation puts the value, updates
+            // the backup, but before the response is sent, the member crashes. The caller doesn't receive the response,
+            // so retries with the new key owner. This time, the operation does nothing because the key isn't absent,
+            // and returns the old value.
+            //The unnecessary invalidation doesn't hurt as much as non-invalidated near cache would.
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
     protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data valueData, long ttl, TimeUnit ttlUnit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         key = toNearCacheKeyWithStrategy(key);
