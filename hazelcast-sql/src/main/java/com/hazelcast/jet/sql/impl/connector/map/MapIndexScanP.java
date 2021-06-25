@@ -68,24 +68,12 @@ import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PR
 import static java.util.stream.Collectors.toList;
 
 /*
-Description of MapIndexFetchOp:
-
 Behavior of the processor
-- Converts `IndexFilter` to `IndexIterationPointer[]`. Replaces `ParameterExpression` with `ConstantExpression`
+- Converts `IndexFilter` to `IndexIterationPointer[]`.
+- Replaces `ParameterExpression` with `ConstantExpression`
 - initially it assumes that all assigned partitions are local. Sends IndexFetchOp with all local partitions
 - When response is received, saves the new `pointers` to `lastPointers` and
-    sends another one immediately with the new pointers and then emits to processor's outbox
-
-- behavior when MissingPartitionException is received:
-  - get current partition table
-  - split the partitions assigned to the processor according to the new partition table into disjoint sets,
-        one for each member having some partition assigned to this processor
-  - sends one IndexFetchOp to each target in parallel. The starting position will be `lastPointers`.
-        From now on we have to track `lastPointers` separately for each target.
-  - merge-sort the results from multiple IndexFetchOp into a single sor
-        Note that the initial partitionIdSet is only split, it's never joined again.
-            For example if some partition migrates away and then back, we'll still continue with two operations.
-            We can split any number of times, after each `MissingPartitionException`.
+  sends another one immediately with the new pointers and then emits to processor's outbox
 */
 
 /**
@@ -103,7 +91,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     private final ComparatorEx<Object[]> comparator;
     private transient Context context;
 
-    private final ArrayList<Split<F>> splits;
+    private final ArrayList<Split<F>> splits = new ArrayList<>();
     private final MapScanRow row;
     private Object[] pendingItem;
 
@@ -119,7 +107,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         this.projection = indexScanMetadata.getProjection();
         this.fullProjection = indexScanMetadata.getFullProjection();
         this.filter = indexScanMetadata.getRemainingFilter();
-        this.splits = new ArrayList<>();
         this.splits.add(
                 new Split<>(
                         new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), partitions),
@@ -216,7 +203,19 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return splits.isEmpty();
     }
 
-    private List<Split<F>> splitOnMigration(int splitIndex) {
+    /**
+     * Perform splitting of split unit after receiving {@code MissingPartitionException}.
+     * Method gets current partition table and proceed with following procedure :
+     * <p>
+     * It splits the partitions assigned to the processor
+     * according to the new partition table into disjoint sets,
+     * one for each member having some partition assigned to this processor.
+     * <p>
+     *
+     * @param splitIndex index of 'split' unit to make split
+     * @return collection of new split units
+     */
+    List<Split<F>> splitOnMigration(int splitIndex) {
         assert splitIndex < splits.size();
         Split<F> split = splits.get(splitIndex);
         IndexIterationPointer[] lastPointers = split.getPointers();
@@ -230,11 +229,13 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         int partitionCount = split.getPartitions().getPartitionCount();
         PartitionIdSet actualPartitions = new PartitionIdSet(partitionCount, context.processorPartitions());
 
-        // Full split on disjoint set
+        PartitionIdSet intersection = split.getPartitions().intersectCopy(actualPartitions);
+
+        // Full split on disjoint sets
         addressMap.forEach((address, partitions) -> {
-            PartitionIdSet partitionIdSet = new PartitionIdSet(actualPartitions.getPartitionCount());
+            PartitionIdSet partitionIdSet = new PartitionIdSet(split.getPartitions().getPartitionCount());
             for (int partition : partitions) {
-                if (split.getPartitions().contains(partition) && !actualPartitions.contains(partition)) {
+                if (split.getPartitions().contains(partition) && !intersection.contains(partition)) {
                     partitionIdSet.add(partition);
                 }
             }
@@ -243,7 +244,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
             }
         });
 
-        newPartitionDistributions.put(split.getAddress(), actualPartitions);
+        newPartitionDistributions.put(split.getAddress(), intersection);
         newPartitionDistributions.forEach((address, partitionSet) ->
                 newSplits.add(new Split<>(partitionSet, address, lastPointers))
         );
@@ -281,6 +282,12 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return row;
     }
 
+    /**
+     * Basic unit of index scan execution bounded to concrete member and partitions set.
+     * Can be splitted on different units after migration detection and handling.
+     *
+     * @param <F> future which contains result of operation execution
+     */
     static final class Split<F extends CompletableFuture<MapFetchIndexOperationResult>> {
         private final PartitionIdSet partitions;
         private final Address address;
