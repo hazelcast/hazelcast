@@ -129,7 +129,6 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS.getRequestParameterName()), "");
         assertEquals(parameters.get(PhoneHomeMetrics.GO_CLIENT_VERSIONS.getRequestParameterName()), "");
 
-        assertEquals(parameters.get(PhoneHomeMetrics.JET_BUILD_VERSION.getRequestParameterName()), "");
         assertFalse(Integer.parseInt(parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName())) < 0);
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), "0");
         assertNotEquals(parameters.get(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN.getRequestParameterName()), parameters.get(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP.getRequestParameterName()));

@@ -40,7 +40,6 @@ class BuildInfoCollector implements MetricsCollector {
         metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
         metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
-        metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION, "");
         String classpath = System.getProperty("java.class.path");
         if (classpath != null) {
             metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,
