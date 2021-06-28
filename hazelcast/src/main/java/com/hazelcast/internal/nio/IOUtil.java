@@ -211,7 +211,7 @@ public final class IOUtil {
     }
 
     public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
+        int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
 
@@ -233,7 +233,7 @@ public final class IOUtil {
     }
 
     public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
+        int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
 
