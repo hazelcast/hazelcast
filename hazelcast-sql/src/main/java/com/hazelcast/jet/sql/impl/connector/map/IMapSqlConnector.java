@@ -201,17 +201,18 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        InsertProcessorSupplier insertProcessorSupplier = new InsertProcessorSupplier(
-                table.getMapName(),
-                KvProjector.supplier(
-                        table.paths(),
-                        table.types(),
-                        (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+        Vertex vertex = dag.newUniqueVertex(
+                toString(table),
+                new InsertProcessorSupplier(
+                        table.getMapName(),
+                        KvProjector.supplier(
+                                table.paths(),
+                                table.types(),
+                                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                                (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        )
                 )
-        );
-
-        Vertex vertex = dag.newUniqueVertex(toString(table), insertProcessorSupplier).localParallelism(1);
+        ).localParallelism(1);
         return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne(newUnsecureUuidString()));
     }
 
