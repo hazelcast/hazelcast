@@ -63,6 +63,7 @@ import static java.util.Collections.newSetFromMap;
 abstract class TcpServerConnectionManagerBase implements ServerConnectionManager {
     private static final int RETRY_NUMBER = 5;
     private static final long DELAY_FACTOR = 100L;
+    private static final String FORCIBLY_CLOSED = "An existing connection was forcibly closed by the remote host";
 
     @Probe(name = TCP_METRIC_ENDPOINT_MANAGER_OPENED_COUNT)
     protected final MwCounter openedCount = newMwCounter();
@@ -288,7 +289,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             long lastReadTime = connection.getChannel().lastReadTimeMillis();
             boolean hadNoDataTraffic = lastReadTime < 0;
             if (hadNoDataTraffic) {
-                serverContext.onFailedConnection(remoteAddress);
+                if (!(cause.getMessage().equals(FORCIBLY_CLOSED))) {
+                    serverContext.onFailedConnection(remoteAddress);
+                }
                 if (!silent && plane != null) {
                     getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
                 }
