@@ -101,8 +101,8 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
-        Vertex vertex = vertexWithConfig.vertex(localMemberAddress);
-        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn(localMemberAddress));
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
     }
 
@@ -274,8 +274,8 @@ public class CreateDagVisitor {
                 rel.rightProjection(parameterMetadata),
                 rel.joinInfo(parameterMetadata)
         );
-        Vertex vertex = vertexWithConfig.vertex(localMemberAddress);
-        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn(localMemberAddress));
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
     }
 

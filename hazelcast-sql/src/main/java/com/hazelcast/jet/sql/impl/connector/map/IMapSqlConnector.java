@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -55,9 +53,9 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
@@ -212,12 +210,9 @@ public class IMapSqlConnector implements SqlConnector {
                         (UpsertTargetDescriptor) table.getValueJetMetadata()
                 )
         );
-        Function<Address, Vertex> vertexFn = address -> dag.newUniqueVertex(
-                toString(table),
-                ProcessorMetaSupplier.forceTotalParallelismOne(insertProcessorSupplier, address)
-        );
 
-        return new VertexWithInputConfig(vertexFn, (edge, address) -> edge.distributeTo(address).allToOne(""));
+        Vertex vertex = dag.newUniqueVertex(toString(table), insertProcessorSupplier).localParallelism(1);
+        return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne(newUnsecureUuidString()));
     }
 
     @Nonnull

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
@@ -31,11 +30,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * An API to bridge Jet connectors and SQL. Allows the use of a Jet
@@ -348,31 +343,27 @@ public interface SqlConnector {
      */
     class VertexWithInputConfig {
 
-        private final Function<Address, Vertex> vertexFn;
-        private final BiConsumer<Edge, Address> configureEdgeFn;
+        private final Vertex vertex;
+        private final Consumer<Edge> configureEdgeFn;
 
         /**
          * Creates a Vertex with default edge config (local, unicast).
          */
         public VertexWithInputConfig(Vertex vertex) {
-            this(address -> vertex, null);
+            this(vertex, null);
         }
 
         public VertexWithInputConfig(Vertex vertex, Consumer<Edge> configureEdgeFn) {
-            this(address -> vertex, configureEdgeFn == null ? null : (edge, address) -> configureEdgeFn.accept(edge));
-        }
-
-        public VertexWithInputConfig(Function<Address, Vertex> vertexFn, BiConsumer<Edge, Address> configureEdgeFn) {
-            this.vertexFn = requireNonNull(vertexFn);
+            this.vertex = vertex;
             this.configureEdgeFn = configureEdgeFn;
         }
 
-        public Vertex vertex(Address address) {
-            return vertexFn.apply(address);
+        public Vertex vertex() {
+            return vertex;
         }
 
-        public Consumer<Edge> configureEdgeFn(Address address) {
-            return configureEdgeFn == null ? null : edge -> configureEdgeFn.accept(edge, address);
+        public Consumer<Edge> configureEdgeFn() {
+            return configureEdgeFn;
         }
     }
 }
