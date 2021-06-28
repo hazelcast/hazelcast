@@ -85,14 +85,14 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     private static final class InsertP extends AbstractProcessor {
 
-        private static final int MAX_IN_FLIGHT_INSERTS = 8;
+        private static final int MAX_IN_FLIGHT_INSERTS = 16;
 
         private final String mapName;
         private final KvProjector projector;
+        private final Set<Object> seenKeys = new HashSet<>();
         private final Deque<CompletableFuture<Object>> inFlightInserts = new ArrayDeque<>(MAX_IN_FLIGHT_INSERTS);
 
         private MapProxyImpl<Object, Object> map;
-        private Set<Object> seenKeys;
         private long maxAccumulatedKeys;
         private long numberOfInsertedEntries;
 
@@ -104,14 +104,15 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         @Override
         protected void init(@Nonnull Context context) throws Exception {
             map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
-            seenKeys = new HashSet<>();
             maxAccumulatedKeys = context.maxProcessorAccumulatedRecords();
         }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object row) {
-            if (isQueueFull() && !tryFlushQueue()) {
-                return false;
+            if (isQueueFull()) {
+                if (!tryFlushQueue() && isQueueFull()) {
+                    return false;
+                }
             }
 
             Entry<Object, Object> entry = projector.project((Object[]) row);
@@ -130,11 +131,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
         @Override
         public boolean complete() {
-            if (!tryFlushQueue()) {
-                return false;
-            } else {
-                return tryEmit(new Object[]{numberOfInsertedEntries});
-            }
+            return tryFlushQueue() && tryEmit(new Object[]{numberOfInsertedEntries});
         }
 
         private boolean isQueueFull() {
@@ -152,7 +149,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
                     try {
                         previousValue = future.get();
                     } catch (Throwable e) {
-                        throw new JetException("Insert operation completed exceptionally: " + e, e);
+                        throw new JetException("INSERT operation completed exceptionally: " + e, e);
                     }
 
                     inFlightInserts.remove();
