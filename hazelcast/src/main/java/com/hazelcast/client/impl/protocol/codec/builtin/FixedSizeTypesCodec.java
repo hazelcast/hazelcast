@@ -45,7 +45,7 @@ public final class FixedSizeTypesCodec {
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
     public static final int UUID_SIZE_IN_BYTES = BOOLEAN_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES * 2;
 
-    public static final int LOCAL_DATE_SIZE_IN_BYTES = SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2;
+    public static final int LOCAL_DATE_SIZE_IN_BYTES = INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2;
     public static final int LOCAL_TIME_SIZE_IN_BYTES = BYTE_SIZE_IN_BYTES * 3 + INT_SIZE_IN_BYTES;
     public static final int LOCAL_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_SIZE_IN_BYTES + LOCAL_TIME_SIZE_IN_BYTES;
     public static final int OFFSET_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_TIME_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
