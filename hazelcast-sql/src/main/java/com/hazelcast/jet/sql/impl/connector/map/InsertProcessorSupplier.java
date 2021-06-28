@@ -138,7 +138,6 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
             return inFlightInserts.size() == MAX_IN_FLIGHT_INSERTS;
         }
 
-        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         private boolean tryFlushQueue() {
             CompletableFuture<Object> future;
             while ((future = inFlightInserts.peek()) != null) {
