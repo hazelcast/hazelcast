@@ -305,7 +305,16 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         return createSerializationService(true);
     }
 
-    protected InternalSerializationService createSerializationService(boolean isCompatibility) {
+    /**
+     * Creates a serialization service. The {@code isCompatibility} parameter defines
+     * whether the serialization format used by the service will conform to the
+     * 3.x or the 4.x format.
+     *
+     * @param isCompatibility {@code true} if the serialized format should conform to the
+     *                 3.x serialization format, {@code false} otherwise
+     * @return the serialization service
+     */
+    private InternalSerializationService createSerializationService(boolean isCompatibility) {
         InternalSerializationService ss;
         try {
             Config config = node.getConfig();
