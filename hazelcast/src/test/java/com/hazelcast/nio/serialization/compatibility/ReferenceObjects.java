@@ -33,6 +33,7 @@ import java.nio.CharBuffer;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -245,6 +246,7 @@ class ReferenceObjects {
             Predicates.in(aSmallString, aComparable, aComparable),
             Predicates.regex(aSmallString, aSmallString),
             Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aSmallString, aComparable)),
+            Predicates.partitionsPredicate(Arrays.asList(aComparable), Predicates.greaterThan(aSmallString, aComparable)),
             Predicates.and(Predicates.sql(anSqlString),
                     Predicates.equal(aSmallString, aComparable),
                     Predicates.notEqual(aSmallString, aComparable),
