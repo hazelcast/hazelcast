@@ -32,6 +32,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -515,22 +516,19 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         }
         Factory<CacheLoader<K, V>> thisCacheLoaderFactory = this.getCacheLoaderFactory();
         Factory<CacheLoader<K, V>> thatCacheLoaderFactory = that.getCacheLoaderFactory();
-        if (thisCacheLoaderFactory != null ? !thisCacheLoaderFactory.equals(thatCacheLoaderFactory)
-                : thatCacheLoaderFactory != null) {
+        if (!Objects.equals(thisCacheLoaderFactory, thatCacheLoaderFactory)) {
             return false;
         }
 
         Factory<CacheWriter<? super K, ? super V>> thisCacheWriterFactory = this.getCacheWriterFactory();
         Factory<CacheWriter<? super K, ? super V>> thatCacheWriterFactory = that.getCacheWriterFactory();
-        if (thisCacheWriterFactory != null ? !thisCacheWriterFactory.equals(thatCacheWriterFactory)
-                : thatCacheWriterFactory != null) {
+        if (!Objects.equals(thisCacheWriterFactory, thatCacheWriterFactory)) {
             return false;
         }
 
         Factory<ExpiryPolicy> thisExpiryPolicyFactory = this.getExpiryPolicyFactory();
         Factory<ExpiryPolicy> thatExpiryPolicyFactory = that.getExpiryPolicyFactory();
-        if (thisExpiryPolicyFactory != null
-                ? !thisExpiryPolicyFactory.equals(thatExpiryPolicyFactory) : thatExpiryPolicyFactory != null) {
+        if (!Objects.equals(thisExpiryPolicyFactory, thatExpiryPolicyFactory)) {
             return false;
         }
 

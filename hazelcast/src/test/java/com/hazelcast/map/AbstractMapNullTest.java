@@ -19,13 +19,13 @@ package com.hazelcast.map;
 import com.hazelcast.aggregation.impl.CountAggregator;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -179,7 +179,7 @@ public abstract class AbstractMapNullTest extends HazelcastTestSupport {
         assertThrowsNPE(m -> m.setTtl("", -1, null));
     }
 
-    private void assertThrowsNPE(ConsumerEx<IMap<Object, Object>> method) {
+    protected void assertThrowsNPE(ConsumerEx<IMap<Object, Object>> method) {
         assertThrows(NullPointerException.class, method);
     }
 

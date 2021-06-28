@@ -90,8 +90,7 @@ public final class ToBackupSender<RS> {
         for (int replicaIndex = 1; replicaIndex < backupReplicaCount + 1; replicaIndex++) {
             if (backupOpFilter.apply(partitionId, replicaIndex)) {
                 Operation operation = backupOpSupplier.apply(recordStore, expiredKeys);
-                operationService.createInvocationBuilder(serviceName, operation, partitionId)
-                        .setReplicaIndex(replicaIndex).invoke();
+                operationService.invokeOnPartitionAsync(serviceName, operation, partitionId, replicaIndex);
             }
         }
     }

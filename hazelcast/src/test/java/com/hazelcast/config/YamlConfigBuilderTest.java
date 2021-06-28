@@ -2034,6 +2034,9 @@ public class YamlConfigBuilderTest
                 + "         batch-size: 100\n"
                 + "         class-name: LatestAccessMergePolicy\n"
                 + "      disable-per-entry-invalidation-events: true\n"
+                + "      merkle-tree:\n"
+                + "        enabled: true\n"
+                + "        depth: 20\n"
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
@@ -2075,6 +2078,8 @@ public class YamlConfigBuilderTest
         assertEquals("LatestAccessMergePolicy",
                 cacheConfig.getMergePolicyConfig().getPolicy());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
 

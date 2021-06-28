@@ -24,9 +24,10 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.WanReplicationRef;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ public class CacheConfigHolder {
     private boolean isManagementEnabled;
     private boolean isStatisticsEnabled;
     private HotRestartConfig hotRestartConfig;
+    private final boolean merkleTreeConfigExists;
+    private MerkleTreeConfig merkleTreeConfig;
     private EventJournalConfig eventJournalConfig;
     private String splitBrainProtectionName;
     private List<Data> listenerConfigurations;
@@ -69,7 +72,8 @@ public class CacheConfigHolder {
                              EventJournalConfig eventJournalConfig, String splitBrainProtectionName,
                              List<Data> listenerConfigurations, MergePolicyConfig mergePolicyConfig,
                              boolean disablePerEntryInvalidationEvents,
-                             List<ListenerConfigHolder> cachePartitionLostListenerConfigs) {
+                             List<ListenerConfigHolder> cachePartitionLostListenerConfigs, boolean merkleTreeConfigExists,
+                             MerkleTreeConfig merkleTreeConfig) {
         this.name = name;
         this.managerPrefix = managerPrefix;
         this.uriString = uriString;
@@ -95,6 +99,9 @@ public class CacheConfigHolder {
         this.mergePolicyConfig = mergePolicyConfig;
         this.disablePerEntryInvalidationEvents = disablePerEntryInvalidationEvents;
         this.cachePartitionLostListenerConfigs = cachePartitionLostListenerConfigs;
+        this.mergePolicyConfig = mergePolicyConfig;
+        this.merkleTreeConfigExists = merkleTreeConfigExists;
+        this.merkleTreeConfig = merkleTreeConfig;
     }
 
     public String getName() {
@@ -197,6 +204,14 @@ public class CacheConfigHolder {
         return cachePartitionLostListenerConfigs;
     }
 
+    public MerkleTreeConfig getMerkleTreeConfig() {
+        return merkleTreeConfig;
+    }
+
+    public boolean isMerkleTreeConfigExists() {
+        return merkleTreeConfigExists;
+    }
+
     public <K, V> CacheConfig<K, V> asCacheConfig(SerializationService serializationService) {
         CacheConfig<K, V> config = new CacheConfig();
         config.setName(name);
@@ -229,6 +244,7 @@ public class CacheConfigHolder {
 
         config.setMergePolicyConfig(mergePolicyConfig);
         config.setDisablePerEntryInvalidationEvents(disablePerEntryInvalidationEvents);
+        config.setMerkleTreeConfig(merkleTreeConfig);
 
         if (cachePartitionLostListenerConfigs != null) {
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>(
@@ -271,7 +287,8 @@ public class CacheConfigHolder {
                 serializationService.toData(config.getExpiryPolicyFactory()), config.isReadThrough(), config.isWriteThrough(),
                 config.isStoreByValue(), config.isManagementEnabled(), config.isStatisticsEnabled(), config.getHotRestartConfig(),
                 config.getEventJournalConfig(), config.getSplitBrainProtectionName(), listenerConfigurations,
-                config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(), cachePartitionLostListenerConfigs);
+                config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(),
+                cachePartitionLostListenerConfigs, config.getMerkleTreeConfig().isEnabled(), config.getMerkleTreeConfig());
     }
 
 }
