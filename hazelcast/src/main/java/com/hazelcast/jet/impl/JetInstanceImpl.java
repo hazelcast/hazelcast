@@ -26,7 +26,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
-import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -143,7 +142,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
      */
     @Override
     public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
-        return ImdgUtil.existsDistributedObject(nodeEngine, serviceName, objectName);
+        return nodeEngine.getProxyService().existsDistributedObject(serviceName, objectName);
     }
 
     @Override
