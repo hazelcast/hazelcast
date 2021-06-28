@@ -27,8 +27,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
 
-@SuppressWarnings({ "WeakerAccess", "checkstyle:methodcount", "checkstyle:magicnumber", "checkstyle:classfanoutcomplexity",
-        "checkstyle:ClassDataAbstractionCoupling" })
 public final class PortableUtil {
 
     private PortableUtil() {
@@ -54,7 +52,7 @@ public final class PortableUtil {
     }
 
     public static void writeLocalDate(ObjectDataOutput out, LocalDate value) throws IOException {
-        // for year field, short used here for backward compatibility
+        // a short used here for backward compatibility, other places use an int
         int year = value.getYear();
         int monthValue = value.getMonthValue();
         int dayOfMonth = value.getDayOfMonth();
@@ -64,7 +62,7 @@ public final class PortableUtil {
     }
 
     public static LocalDate readLocalDate(ObjectDataInput in) throws IOException {
-        // for year field, short used here for backward compatibility
+        // a short used here for backward compatibility, other places use an int
         int year = in.readShort();
         int month = in.readByte();
         int dayOfMonth = in.readByte();

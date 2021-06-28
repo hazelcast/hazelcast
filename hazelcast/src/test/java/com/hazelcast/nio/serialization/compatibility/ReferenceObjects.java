@@ -164,7 +164,7 @@ class ReferenceObjects {
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.ZONE_OFFSET, 0);
         aDate = calendar.getTime();
-        aLocalDate = LocalDate.of(2021,6,28);
+        aLocalDate = LocalDate.of(2021, 6, 28);
         aLocalTime = LocalTime.of(11, 22, 41, 123456789);
         aLocalDateTime = LocalDateTime.of(aLocalDate, aLocalTime);
         aOffsetDateTime = OffsetDateTime.of(aLocalDateTime, ZoneOffset.ofHours(18));

@@ -329,8 +329,6 @@ public final class JavaDefaultSerializers {
         }
     }
 
-
-
     public static final class OffsetDateTimeSerializer extends SingletonSerializer<OffsetDateTime> {
 
         @Override
