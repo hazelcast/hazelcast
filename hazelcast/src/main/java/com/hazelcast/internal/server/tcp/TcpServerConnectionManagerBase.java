@@ -244,6 +244,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private final class ConnectionLifecycleListenerImpl implements ConnectionLifecycleListener<TcpServerConnection> {
         @Override
         public void onConnectionClose(TcpServerConnection connection, Throwable cause, boolean silent) {
