@@ -458,7 +458,8 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, PortableUtil::readOffsetDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
+                PortableUtil::readOffsetDateTime);
     }
 
     private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {

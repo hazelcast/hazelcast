@@ -457,7 +457,8 @@ public class DefaultPortableReader implements PortableReader {
     @Override
     @Nullable
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName) throws IOException {
-        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, PortableUtil::readOffsetDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
+                PortableUtil::readOffsetDateTime);
     }
 
     private int readPosition(@Nonnull String fieldName, FieldType fieldType) throws IOException {
