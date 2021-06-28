@@ -38,6 +38,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
+
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -68,6 +70,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      */
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(15 * 60);
+
+    @ClassRule
+    public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(JetTestSupport.class);
 
