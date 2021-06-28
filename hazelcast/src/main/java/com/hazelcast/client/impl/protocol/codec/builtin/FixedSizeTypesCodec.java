@@ -183,14 +183,14 @@ public final class FixedSizeTypesCodec {
 
     public static void encodeLocalDate(byte[] buffer, int pos, LocalDate value) {
         encodeInt(buffer, pos, value.getYear());
-        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES, (byte) value.getMonthValue());
-        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES, (byte) value.getDayOfMonth());
+        encodeByte(buffer, pos + INT_SIZE_IN_BYTES, (byte) value.getMonthValue());
+        encodeByte(buffer, pos + INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES, (byte) value.getDayOfMonth());
     }
 
     public static LocalDate decodeLocalDate(byte[] buffer, int pos) {
         int year = decodeInt(buffer, pos);
-        int month = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES);
-        int dayOfMonth = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES);
+        int month = decodeByte(buffer, pos + INT_SIZE_IN_BYTES);
+        int dayOfMonth = decodeByte(buffer, pos + INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES);
 
         return LocalDate.of(year, month, dayOfMonth);
     }
