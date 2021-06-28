@@ -297,6 +297,15 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public InternalSerializationService createSerializationService() {
+        return createSerializationService(false);
+    }
+
+    @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        return createSerializationService(true);
+    }
+
+    protected InternalSerializationService createSerializationService(boolean isCompatibility) {
         InternalSerializationService ss;
         try {
             Config config = node.getConfig();
@@ -323,6 +332,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                             return new HazelcastInstanceNotActiveException();
                         }
                     })
+                    .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

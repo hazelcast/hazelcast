@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -50,7 +51,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.EMPTY_PARTITIONING_STRATEGY;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.getInterfaces;
@@ -75,9 +75,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     protected SerializerAdapter javaSerializerAdapter;
     protected SerializerAdapter javaExternalizableAdapter;
 
-    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap = new IdentityHashMap<Class, SerializerAdapter>(
-            CONSTANT_SERIALIZERS_LENGTH);
-    private final SerializerAdapter[] constantTypeIds = new SerializerAdapter[CONSTANT_SERIALIZERS_LENGTH];
+    private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
+    private final SerializerAdapter[] constantTypeIds;
     private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
@@ -90,6 +89,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     private volatile boolean active = true;
     private final byte version;
     private final ILogger logger = Logger.getLogger(InternalSerializationService.class);
+    private boolean isCompatibility;
     private final boolean allowOverrideDefaultSerializers;
 
     AbstractSerializationService(Builder<?> builder) {
@@ -103,6 +103,13 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, builder.bufferPoolFactory,
                 builder.notActiveExceptionSupplier);
         this.nullSerializerAdapter = createSerializerAdapter(new ConstantSerializers.NullSerializer());
+        this.constantTypesMap = new IdentityHashMap<>(builder.isCompatibility
+                ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
+                : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH);
+        this.constantTypeIds = new SerializerAdapter[builder.isCompatibility
+                ? CompatibilitySerializationConstants.CONSTANT_SERIALIZERS_LENGTH
+                : SerializationConstants.CONSTANT_SERIALIZERS_LENGTH];
+        this.isCompatibility = builder.isCompatibility;
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
     }
 
@@ -118,17 +125,25 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, new BufferPoolFactoryImpl(),
                 prototype.notActiveExceptionSupplier);
         this.nullSerializerAdapter = prototype.nullSerializerAdapter;
+        this.constantTypesMap = new IdentityHashMap<>(prototype.constantTypesMap.size());
+        this.constantTypeIds = new SerializerAdapter[prototype.constantTypeIds.length];
         this.allowOverrideDefaultSerializers = prototype.allowOverrideDefaultSerializers;
     }
 
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
+        if (isCompatibility) {
+            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
+        }
         if (obj == null) {
             return null;
         }
@@ -323,17 +338,17 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data, int offset) {
-        return inputOutputFactory.createInput(data, offset, this);
+        return inputOutputFactory.createInput(data, offset, this, isCompatibility);
     }
 
     @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
-        return inputOutputFactory.createInput(data, this);
+        return inputOutputFactory.createInput(data, this, isCompatibility);
     }
 
     @Override
@@ -468,7 +483,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
     public SerializerAdapter serializerFor(final int typeId) {
         if (typeId <= 0) {
             final int index = indexForDefaultType(typeId);
-            if (index < CONSTANT_SERIALIZERS_LENGTH) {
+            if (index < constantTypeIds.length) {
                 return constantTypeIds[index];
             }
         }
@@ -604,6 +619,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         private int initialOutputBufferSize;
         private BufferPoolFactory bufferPoolFactory;
         private Supplier<RuntimeException> notActiveExceptionSupplier;
+        private boolean isCompatibility;
         private boolean allowOverrideDefaultSerializers;
 
         protected Builder() {
@@ -653,6 +669,27 @@ public abstract class AbstractSerializationService implements InternalSerializat
         public final T withNotActiveExceptionSupplier(Supplier<RuntimeException> notActiveExceptionSupplier) {
             this.notActiveExceptionSupplier = notActiveExceptionSupplier;
             return self();
+        }
+
+        /**
+         * Sets whether the serialization service should (de)serialize in the
+         * compatibility (3.x) format.
+         *
+         * @param isCompatibility {@code true} if the serialized format should conform to the
+         *                        3.x serialization format, {@code false} otherwise
+         * @return this builder
+         */
+        public final T withCompatibility(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+            return self();
+        }
+
+        /**
+         * @return {@code true} if the serialized format of the serialization service should
+         * conform to the 3.x serialization format, {@code false} otherwise.
+         */
+        public boolean isCompatibility() {
+            return isCompatibility;
         }
 
         public final T withAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {

@@ -65,5 +65,7 @@ public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize);
 
+    SerializationServiceBuilder isCompatibility(boolean isCompatibility);
+
     <T extends SerializationService> T build();
 }
