@@ -20,6 +20,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
@@ -83,8 +84,25 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     ) {
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
-            Comparable<?> from = rangeFilter.getFrom() == null ? null : rangeFilter.getFrom().getValue(evalContext);
-            Comparable<?> to = rangeFilter.getTo() == null ? null : rangeFilter.getTo().getValue(evalContext);
+
+            Comparable<?> from = null;
+            if (rangeFilter.getFrom() != null) {
+                Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
+                if (fromValue == null) {
+                    return;
+                }
+                from = fromValue;
+            }
+
+            Comparable<?> to = null;
+            if (rangeFilter.getTo() != null) {
+                Comparable<?> toValue = rangeFilter.getTo().getValue(evalContext);
+                if (toValue == null) {
+                    return;
+                }
+                to = toValue;
+            }
+
             result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
