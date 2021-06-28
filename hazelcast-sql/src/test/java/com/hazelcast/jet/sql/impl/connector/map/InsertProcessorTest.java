@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -124,13 +125,11 @@ public class InsertProcessorTest extends SqlTestSupport {
                 PrimitiveUpsertTargetDescriptor.INSTANCE
         );
 
-        InsertProcessorSupplier processor = new InsertProcessorSupplier(MAP_NAME, projectorSupplier);
-
         JobConfig config = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList())
                 .setMaxProcessorAccumulatedRecords(maxAccumulatedKeys);
         TestSupport
-                .verifyProcessor(adaptSupplier(processor))
+                .verifyProcessor(adaptSupplier(ProcessorSupplier.of(() -> new InsertP(MAP_NAME, projectorSupplier))))
                 .hazelcastInstance(instance())
                 .jobConfig(config)
                 .disableSnapshots()
