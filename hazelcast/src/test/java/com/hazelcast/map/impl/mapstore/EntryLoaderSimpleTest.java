@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -64,6 +65,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(Parameterized.class)
@@ -232,6 +234,14 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
     public void testPutIfAbsent_returnValue() {
         testEntryLoader.putExternally("key", "val", 5 , TimeUnit.DAYS);
         assertEquals("val", map.putIfAbsent("key", "val2"));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync_returnValue() throws ExecutionException, InterruptedException {
+        assumeTrue(map instanceof MapProxyImpl);
+
+        testEntryLoader.putExternally("key", "val", 5, TimeUnit.DAYS);
+        assertEquals("val", ((MapProxyImpl<String, String>) map).putIfAbsentAsync("key", "val2").toCompletableFuture().get());
     }
 
     @Test

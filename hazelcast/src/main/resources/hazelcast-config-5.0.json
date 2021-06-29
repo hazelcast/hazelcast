@@ -2097,6 +2097,22 @@
               }
             }
           },
+          "merkle-tree": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "depth": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 27,
+                "default": 10
+              }
+            }
+          },
           "disable-per-entry-invalidation-events": {
             "type": "boolean",
             "default": false,

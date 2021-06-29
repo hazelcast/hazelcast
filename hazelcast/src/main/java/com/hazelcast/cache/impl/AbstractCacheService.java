@@ -98,8 +98,8 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PartitionAwareService,
-                                                      SplitBrainProtectionAwareService, SplitBrainHandlerService,
-                                                      ClusterStateListener, TenantContextAwareService {
+        SplitBrainProtectionAwareService, SplitBrainHandlerService,
+        ClusterStateListener, TenantContextAwareService {
     /**
      * Map from full prefixed cache name to {@link CacheConfig}
      */
@@ -589,8 +589,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, listener)
-                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
-                                   CALLER_RUNS);
+                .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                        CALLER_RUNS);
     }
 
     @Override
@@ -599,8 +599,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.registerListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, eventFilter, listener)
-                           .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
-                                   CALLER_RUNS);
+                .thenApplyAsync((eventRegistration) -> updateRegisteredListeners(listener, eventRegistration),
+                        CALLER_RUNS);
     }
 
     private UUID updateRegisteredListeners(CacheEventListener listener, EventRegistration eventRegistration) {
@@ -642,10 +642,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         EventService eventService = getNodeEngine().getEventService();
 
         return eventService.deregisterListenerAsync(AbstractCacheService.SERVICE_NAME, cacheNameWithPrefix, registrationId)
-                           .thenApplyAsync(result -> {
-                               removeFromLocalResources(registrationId);
-                               return result;
-                           }, CALLER_RUNS);
+                .thenApplyAsync(result -> {
+                    removeFromLocalResources(registrationId);
+                    return result;
+                }, CALLER_RUNS);
     }
 
     private void removeFromLocalResources(UUID registrationId) {

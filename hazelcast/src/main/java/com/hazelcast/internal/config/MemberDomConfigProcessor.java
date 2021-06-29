@@ -1053,8 +1053,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
     protected void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig =
                 ConfigUtils.getByNameOrNew(config.getCardinalityEstimatorConfigs(),
-                                            getTextContent(getNamedItemNode(node, "name")),
-                                            CardinalityEstimatorConfig.class);
+                        getTextContent(getNamedItemNode(node, "name")),
+                        CardinalityEstimatorConfig.class);
 
         handleCardinalityEstimatorNode(node, cardinalityEstimatorConfig);
     }
@@ -1898,6 +1898,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 cacheConfig.setHotRestartConfig(createHotRestartConfig(n));
             } else if (matches("disable-per-entry-invalidation-events", nodeName)) {
                 cacheConfig.setDisablePerEntryInvalidationEvents(getBooleanValue(getTextContent(n)));
+            } else if (matches("merkle-tree", nodeName)) {
+                handleViaReflection(n, cacheConfig, cacheConfig.getMerkleTreeConfig());
             }
         }
         try {
@@ -2746,12 +2748,12 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private RestEndpointGroup lookupEndpointGroup(String name) {
         return Arrays.stream(RestEndpointGroup.values())
-          .filter(value -> value.toString().replace("_", "")
-            .equals(name.toUpperCase().replace("_", "")))
-          .findAny()
-          .orElseThrow(() -> new InvalidConfigurationException(
-            "Wrong name attribute value was provided in endpoint-group element: " + name
-              + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values())));
+                .filter(value -> value.toString().replace("_", "")
+                        .equals(name.toUpperCase().replace("_", "")))
+                .findAny()
+                .orElseThrow(() -> new InvalidConfigurationException(
+                        "Wrong name attribute value was provided in endpoint-group element: " + name
+                                + "\nAllowed values: " + Arrays.toString(RestEndpointGroup.values())));
     }
 
     private void handleCPSubsystem(Node node) {

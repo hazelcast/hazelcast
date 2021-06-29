@@ -2178,6 +2178,22 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected.getProviderMode(), actual.getProviderMode());
     }
 
+    @Test
+    public void testCacheMerkleTreeConfig() {
+        MerkleTreeConfig actual = new MerkleTreeConfig()
+                .setEnabled(true)
+                .setDepth(22);
+
+        Config cfg = new Config();
+        cfg.getCacheConfig("test")
+                .setMerkleTreeConfig(actual);
+
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+                .getCacheConfig("test").getMerkleTreeConfig();
+
+        assertEquals(expected, actual);
+    }
+
     private DiscoveryConfig getDummyDiscoveryConfig() {
         DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(new TestDiscoveryStrategyFactory());
         strategyConfig.addProperty("prop1", "val1");

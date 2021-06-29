@@ -548,6 +548,9 @@
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
         </partition-lost-listeners>
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>

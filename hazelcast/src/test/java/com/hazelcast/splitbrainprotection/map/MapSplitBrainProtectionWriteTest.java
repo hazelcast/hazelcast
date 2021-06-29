@@ -19,6 +19,7 @@ package com.hazelcast.splitbrainprotection.map;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.TestLoggingEntryProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -42,8 +43,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -116,6 +117,22 @@ public class MapSplitBrainProtectionWriteTest extends AbstractSplitBrainProtecti
     @Test(expected = ExecutionException.class)
     public void putAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
         map(3).putAsync("foo", "bar").toCompletableFuture().get();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void putIfAbsentAsync_successful_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(0) instanceof MapProxyImpl);
+
+        ((MapProxyImpl<Object, Object>) map(0)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
+    }
+
+    @Test(expected = ExecutionException.class)
+    @SuppressWarnings("unchecked")
+    public void putIfAbsentAsync_failing_whenSplitBrainProtectionSize_met() throws Exception {
+        assumeTrue(map(3) instanceof MapProxyImpl);
+
+        ((MapProxyImpl<Object, Object>) map(3)).putIfAbsentAsync("foo", "bar").toCompletableFuture().get();
     }
 
     @Test
