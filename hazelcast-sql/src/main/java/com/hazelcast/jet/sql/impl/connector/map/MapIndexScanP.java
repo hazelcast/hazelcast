@@ -141,6 +141,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     @Override
     public boolean complete() {
         if (pendingItem != null && !tryEmit(pendingItem)) {
+            pendingItem = null;
             return false;
         }
 
@@ -189,12 +190,11 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
         if (extreme != null) {
             splits.get(extremeIndex).incrementBatchPosition();
+            extreme = project(extremeEntry);
         } else {
-            // item was filtered or no splits are executing at the moment;
+            // no item was produced / item was filtered or no splits are executing at the moment;
             return false;
         }
-
-        extreme = project(extremeEntry);
 
         if (!tryEmit(extreme)) {
             pendingItem = extreme;
@@ -251,6 +251,10 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return newSplits;
     }
 
+    List<Split<F>> getActiveSplits() {
+        return splits;
+    }
+
     private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter) {
         return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
     }
@@ -272,7 +276,8 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         return row;
     }
 
-    private Object[] project(@Nonnull QueryableEntry<?, ?> entry) {
+    private @Nonnull
+    Object[] project(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
 
         Object[] row = new Object[projection.size()];

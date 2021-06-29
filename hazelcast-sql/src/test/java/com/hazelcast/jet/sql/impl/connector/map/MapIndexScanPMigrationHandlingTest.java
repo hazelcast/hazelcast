@@ -24,6 +24,7 @@ import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.TestContextSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -63,7 +64,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -89,6 +89,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 @SuppressWarnings("rawtypes")
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -181,10 +182,8 @@ public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSuppo
         assertFalse(processor.complete());
     }
 
-
-    @Ignore
     @Test
-    public void testConcurrentMigrationHandling() {
+    public void testConcurrentMigrationHandling() throws Exception {
         List<Object[]> expected = new ArrayList<>();
         for (int i = itemsCount; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
@@ -224,25 +223,32 @@ public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSuppo
                 .setHazelcastInstance(instance1)
                 .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()));
         Processor processor = TestSupport.supplierFrom(metaSupplier, psContext).get();
+        MapIndexScanP indexScanP = (MapIndexScanP) ((TestContextSupport.TestProcessorAdapter) processor).getWrapped();
 
-        assertFalse(processor.complete());
+        indexScanP.init(
+                new TestOutbox(1),
+                new TestProcessorContext()
+                        .setHazelcastInstance(instance1)
+                        .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+        );
+
+        assertFalse(indexScanP.complete());
 
         MapProxyImpl<Integer, Person> mapProxy = (MapProxyImpl<Integer, Person>) map;
         int migrationStamp = mapProxy.getService().getMigrationStamp();
 
         // TODO
-//        HazelcastInstance newInstance = FACTORY.newHazelcastInstance(smallInstanceConfig());
-//        try {
-//            // Await for migration stamp to change.
-//            assertTrueEventually(() -> assertNotEquals(migrationStamp, mapProxy.getService().getMigrationStamp()));
-//
-//            // Try advance, should catch an exception
-//            while (!processor.complete()) ;
-//            assertTrue(processor.complete());
-//
-//        } finally {
-//            newInstance.shutdown();
-//        }
+        HazelcastInstance newInstance = FACTORY.newHazelcastInstance(smallInstanceConfig());
+        try {
+            // Await for migration stamp to change.
+            assertTrueEventually(() -> assertNotEquals(migrationStamp, mapProxy.getService().getMigrationStamp()));
+            while (indexScanP.getActiveSplits().size() <= 1) {
+                assertFalse(indexScanP.complete());
+            }
+
+        } finally {
+            newInstance.shutdown();
+        }
     }
 
     static class MockReader extends AbstractIndexReader<
