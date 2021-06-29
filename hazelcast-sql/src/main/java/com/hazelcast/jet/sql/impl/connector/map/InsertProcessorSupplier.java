@@ -109,10 +109,8 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object row) {
-            if (isQueueFull()) {
-                if (!tryFlushQueue() && isQueueFull()) {
-                    return false;
-                }
+            if (!tryFlushQueue() && isQueueFull()) {
+                return false;
             }
 
             Entry<Object, Object> entry = projector.project((Object[]) row);
