@@ -90,9 +90,9 @@ public class LightMasterContext {
 
         // find a subset of members with version equal to the coordinator version.
         MembersView membersView = Util.getMembersView(nodeEngine);
-        Version thisVersion = nodeEngine.getLocalMember().getVersion().asVersion();
+        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
-                .filter(m -> m.getVersion().asVersion().equals(thisVersion) && !m.isLiteMember())
+                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
                 .collect(Collectors.toList());
         if (members.isEmpty()) {
             throw new JetException("No data member with version equal to the coordinator version found");
@@ -122,7 +122,6 @@ public class LightMasterContext {
         executionPlanMap = executionPlanMapTmp;
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
-        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
             return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
