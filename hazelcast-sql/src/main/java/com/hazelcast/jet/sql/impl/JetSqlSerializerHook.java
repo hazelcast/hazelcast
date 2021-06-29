@@ -46,7 +46,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     // public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 11;
     // public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 12;
 
-    public static final int LEN = MAPPING_FIELD + 1;
+    public static final int LEN = LAG_EVENT_TIME_POLICY_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
