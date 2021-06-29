@@ -151,16 +151,6 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-notice-and-license</id>
-                        <phase>process-classes</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <executions>
@@ -357,7 +347,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${maven.resources.plugin.version}</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>
@@ -377,6 +367,10 @@
                             <outputDirectory>src/main/java</outputDirectory>
                             <overwrite>true</overwrite>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-notice-and-license</id>
+                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
