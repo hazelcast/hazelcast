@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.sql.impl.QueryUtils.memberOfLargerSameVersionGroup;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

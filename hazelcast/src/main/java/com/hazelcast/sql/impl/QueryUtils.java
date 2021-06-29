@@ -174,7 +174,8 @@ public final class QueryUtils {
     }
 
     public static Address memberOfLargerSameVersionGroup(NodeEngineImpl nodeEngine) {
-        return memberOfLargerSameVersionGroup(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember()).getAddress();
+        return memberOfLargerSameVersionGroup(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember())
+                .getAddress();
     }
 
     /**
@@ -191,6 +192,7 @@ public final class QueryUtils {
      * @return the chosen member or null, if no data member is found
      */
     @Nullable
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static Member memberOfLargerSameVersionGroup(@Nonnull Collection<Member> members, @Nullable Member localMember) {
         // The members should have at most 2 different version (ignoring the patch version).
         // Find a random member from the larger same-version group.
@@ -215,7 +217,8 @@ public final class QueryUtils {
                 version1 = v;
                 currentCount = ++count1;
             } else {
-                throw new RuntimeException("More than 2 distinct member versions found: " + version0 + ", " + version1 + ", " + v);
+                throw new RuntimeException("More than 2 distinct member versions found: " + version0 + ", " + version1 + ", "
+                        + v);
             }
             // a shortcut
             if (currentCount > grossMajority && localMember != null && localMember.getVersion().asVersion().equals(v)) {
