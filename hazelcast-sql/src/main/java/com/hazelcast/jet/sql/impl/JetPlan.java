@@ -588,7 +588,7 @@ public abstract class JetPlan extends SqlPlan {
             this.permissions = permissions;
         }
 
-        public Operation getOperation() {
+        Operation getOperation() {
             return operation;
         }
 

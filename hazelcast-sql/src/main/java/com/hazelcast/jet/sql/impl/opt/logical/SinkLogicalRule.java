@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.LogicalTableInsert;
+import com.hazelcast.jet.sql.impl.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
@@ -25,28 +25,28 @@ import org.apache.calcite.rel.convert.ConverterRule;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
-final class InsertLogicalRule extends ConverterRule {
+final class SinkLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new InsertLogicalRule();
+    static final RelOptRule INSTANCE = new SinkLogicalRule();
 
-    private InsertLogicalRule() {
+    private SinkLogicalRule() {
         super(
-                LogicalTableInsert.class, Convention.NONE, LOGICAL,
-                InsertLogicalRule.class.getSimpleName()
+                LogicalTableSink.class, Convention.NONE, LOGICAL,
+                SinkLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        LogicalTableInsert insert = (LogicalTableInsert) rel;
+        LogicalTableSink sink = (LogicalTableSink) rel;
 
-        return new InsertLogicalRel(
-                insert.getCluster(),
-                OptUtils.toLogicalConvention(insert.getTraitSet()),
-                insert.getTable(),
-                insert.getCatalogReader(),
-                OptUtils.toLogicalInput(insert.getInput()),
-                insert.isFlattened()
+        return new SinkLogicalRel(
+                sink.getCluster(),
+                OptUtils.toLogicalConvention(sink.getTraitSet()),
+                sink.getTable(),
+                sink.getCatalogReader(),
+                OptUtils.toLogicalInput(sink.getInput()),
+                sink.isFlattened()
         );
     }
 }

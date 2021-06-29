@@ -59,8 +59,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     private transient MapFetchIndexOperationResult response;
 
-    public MapFetchIndexOperation() {
-    }
+    public MapFetchIndexOperation() { }
 
     public MapFetchIndexOperation(
             String mapName,
