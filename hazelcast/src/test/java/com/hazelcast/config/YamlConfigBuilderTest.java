@@ -65,6 +65,7 @@ import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.config.WanQueueFullBehavior.DISCARD_AFTER_MUTATION;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -2033,6 +2034,9 @@ public class YamlConfigBuilderTest
                 + "         batch-size: 100\n"
                 + "         class-name: LatestAccessMergePolicy\n"
                 + "      disable-per-entry-invalidation-events: true\n"
+                + "      merkle-tree:\n"
+                + "        enabled: true\n"
+                + "        depth: 20\n"
                 + "      hot-restart:\n"
                 + "        enabled: false\n"
                 + "        fsync: false\n"
@@ -2074,6 +2078,8 @@ public class YamlConfigBuilderTest
         assertEquals("LatestAccessMergePolicy",
                 cacheConfig.getMergePolicyConfig().getPolicy());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
         assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
         assertFalse(cacheConfig.getHotRestartConfig().isFsync());
 
@@ -2501,7 +2507,7 @@ public class YamlConfigBuilderTest
         assertFalse(wanReplicationRef.isRepublishingEnabled());
         assertEquals("PassThroughMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertEquals(1, wanReplicationRef.getFilters().size());
-        assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
+        assertEquals(lowerCaseInternal("com.example.SampleFilter"), lowerCaseInternal(wanReplicationRef.getFilters().get(0)));
     }
 
     @Override

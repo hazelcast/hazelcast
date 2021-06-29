@@ -18,14 +18,14 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
@@ -34,17 +34,17 @@ import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.Processors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -85,6 +85,7 @@ import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static java.lang.String.format;
 import static java.util.Collections.nCopies;
 import static java.util.Collections.singletonList;
@@ -127,7 +128,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        parallelism = instance().getConfig().getInstanceConfig().getCooperativeThreadCount();
+        parallelism = instance().getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
         TestProcessors.reset(MEMBER_COUNT * parallelism);
     }
 
@@ -137,7 +138,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
 
         // When
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         job.join();
 
         // Then
@@ -154,7 +155,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Vertex v2 = dag.newVertex("v2", () -> new NoOutputSourceP());
         dag.edge(between(v1, v2));
 
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         assertTrueEventually(this::assertPClosedWithoutError);
         NoOutputSourceP.proceedLatch.countDown();
         job.join();
@@ -168,7 +169,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setInitError(MOCK_ERROR)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
@@ -184,7 +185,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dagGood.newVertex("good", () -> new NoOutputSourceP());
 
         // When
-        LightJob jobGood = newJob(dagGood);
+        Job jobGood = newJob(dagGood);
         NoOutputSourceP.executionStarted.await();
         runJobExpectFailure(dagFaulty, false);
 
@@ -201,7 +202,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setGetError(MOCK_ERROR)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
@@ -215,7 +216,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).setCloseError(MOCK_ERROR)));
 
         // When
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         job.join();
 
         // Then
@@ -232,7 +233,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setInitError(MOCK_ERROR))));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPsClosedWithError();
@@ -247,7 +248,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setGetError(MOCK_ERROR))));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPsClosedWithError();
@@ -284,7 +285,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).setCloseError(MOCK_ERROR))));
 
         // When
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         job.join();
 
         // Then
@@ -302,7 +303,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setInitError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -321,7 +322,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         dag.edge(between(source, process));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -338,7 +339,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -355,7 +356,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().setCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, false);
+        Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPClosedWithError();
@@ -372,7 +373,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().streaming().setOnSnapshotCompleteError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, true);
+        Job job = runJobExpectFailure(dag, true);
         assertTrue("onSnapshotCompleted not called", MockP.onSnapshotCompletedCalled);
 
         // Then
@@ -390,7 +391,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockP().nonCooperative().streaming().setSaveToSnapshotError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = runJobExpectFailure(dag, true);
+        Job job = runJobExpectFailure(dag, true);
         assertTrue("saveToSnapshot not called", MockP.saveToSnapshotCalled);
 
         // Then
@@ -408,7 +409,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(() -> new MockP().setCloseError(MOCK_ERROR), MEMBER_COUNT)));
 
         // When
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         job.join();
 
         // Then
@@ -425,7 +426,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 new MockPMS(() -> new MockPS(NoOutputSourceP::new, MEMBER_COUNT))));
 
         // When
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
@@ -450,7 +451,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         MembersView membersView = clusterService.getMembershipManager().getMembersView();
         int memberListVersion = membersView.getVersion();
 
-        JetService jetService = getJetService(instance());
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
         final Map<MemberInfo, ExecutionPlan> executionPlans =
                 ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
                         new JobConfig(), NO_SNAPSHOT, false);
@@ -459,19 +460,37 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         long executionId = 1;
 
         Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
-        jetService.getJobExecutionService().initExecution(
+        jetServiceBackend.getJobExecutionService().initExecution(
                 jobId, executionId, localAddress, memberListVersion, participants, executionPlan
         );
 
-        ExecutionContext executionContext = jetService.getJobExecutionService().getExecutionContext(executionId);
+        ExecutionContext executionContext = jetServiceBackend.getJobExecutionService().getExecutionContext(executionId);
         executionContext.terminateExecution(null);
 
         // When
-        CompletableFuture<Void> future = executionContext.beginExecution(jetService.getTaskletExecutionService());
+        CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());
 
         // Then
         expectedException.expect(CancellationException.class);
         future.join();
+    }
+
+    @Test
+    public void when_executionCancelledBeforeStart_then_jobIsCancelled() {
+        // not applicable to light jobs - light jobs don't use the StartExecutionOperation
+        assumeFalse(useLightJob);
+
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
+
+        delayOperationsFrom(instance(), JetInitDataSerializerHook.FACTORY_ID,
+                singletonList(JetInitDataSerializerHook.START_EXECUTION_OP));
+
+        Job job = instance().getJet().newJob(dag);
+        assertJobStatusEventually(job, RUNNING); // RUNNING status is set on master before sending the StartOp
+        job.cancel();
+        assertThatThrownBy(() -> job.join())
+                .isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -480,7 +499,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPS(() -> new NoOutputSourceP(10_000), MEMBER_COUNT)));
 
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         assertOpenEventually(NoOutputSourceP.executionStarted);
 
         // When
@@ -509,7 +528,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         when_deserializationOnMembersFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMembersFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
+    private void when_deserializationOnMembersFails_then_jobSubmissionFails(HazelcastInstance instance) throws Throwable {
         // Given
         DAG dag = new DAG();
         // this is designed to fail when member deserializes the execution plan while executing
@@ -526,7 +545,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_deserializationOnMasterFails_then_jobSubmissionFails_member() throws Throwable {
+    public void when_deserializationOnMasterFails_then_jobSubmissionFails_member() {
         // Not applicable for light jobs - light jobs are always submitted to local member, without serializing the DAG
         assumeFalse(useLightJob);
 
@@ -534,27 +553,18 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_deserializationOnMasterFails_then_jobSubmissionFails_client() throws Throwable {
+    public void when_deserializationOnMasterFails_then_jobSubmissionFails_client() {
         when_deserializationOnMasterFails_then_jobSubmissionFails(client());
     }
 
-    private void when_deserializationOnMasterFails_then_jobSubmissionFails(JetInstance instance) throws Throwable {
-        // Given
+    private void when_deserializationOnMasterFails_then_jobSubmissionFails(HazelcastInstance instance) {
         DAG dag = new DAG();
         // this is designed to fail when the master member deserializes the DAG
         dag.newVertex("faulty", new NotDeserializableProcessorMetaSupplier());
 
-        // Then
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectMessage("fake.Class");
-
-        // When
-        LightJob job = newJob(instance, dag, null);
-        try {
-            job.join();
-        } catch (Throwable e) {
-            throw peel(e);
-        }
+        assertThatThrownBy(() -> newJob(instance, dag, null).join())
+                .hasRootCauseInstanceOf(ClassNotFoundException.class)
+                .hasMessageContaining("fake.Class");
     }
 
     @Test
@@ -562,7 +572,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG();
         // When
         dag.newVertex("v", new PmsProducingNonSerializablePs());
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
 
         // Then
         assertThatThrownBy(() -> job.join())
@@ -584,7 +594,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                            .localParallelism(1);
         dag.edge(between(noop, faulty));
 
-        Job job = (Job) newJob(client(), dag, null);
+        Job job = newJob(client(), dag, null);
         assertJobStatusEventually(job, RUNNING);
         NoOutputSourceP.proceedLatch.countDown();
         Throwable excBeforeComplete;
@@ -597,8 +607,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
 
         // create a new client that will join the job after completion
-        JetInstance client2 = factory().newClient();
-        Job job2 = client2.getJob(job.getId());
+        HazelcastInstance client2 = factory().newHazelcastClient();
+        Job job2 = client2.getJet().getJob(job.getId());
         try {
             job2.join();
             throw new AssertionError("should have failed");
@@ -622,11 +632,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_job_withNoSnapshots_completed_then_noSnapshotMapsLeft() {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         DAG dag = new DAG();
         dag.newVertex("noop", Processors.noopP());
         newJob(instance, dag, null).join();
-        Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+        Collection<DistributedObject> objects = instance.getDistributedObjects();
         long snapshotMaps = objects.stream()
                                    .filter(obj -> obj instanceof IMap)
                                    .filter(obj -> obj.getName().contains("snapshots.data"))
@@ -642,18 +652,18 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 (FunctionEx<? super Address, ? extends ProcessorSupplier>)
                         address -> new NotSerializable_DataSerializable_ProcessorSupplier()));
 
-        LightJob job = newJob(dag);
+        Job job = newJob(dag);
         Exception e = assertThrows(Exception.class, () -> job.join());
         assertContains(e.getMessage(), "Failed to serialize");
     }
 
     @Test
     public void test_jobStatusCompleting() {
-        assumeFalse(useLightJob); // test not applicable to light jobs
+        assumeFalse(useLightJob); // light jobs cannot be restarted
 
         DAG dag = new DAG();
         dag.newVertex("v", () -> new TestProcessors.MockP().streaming());
-        Job job = (Job) newJob(dag);
+        Job job = newJob(dag);
 
         long endTime = System.nanoTime() + SECONDS.toNanos(2);
         while (System.nanoTime() < endTime) {
@@ -666,6 +676,25 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             // job status is XXX, should be RUNNING"
             job.restart();
         }
+    }
+
+    @Test
+    public void when_memberLeft_then_jobFails() {
+        // Test for https://github.com/hazelcast/hazelcast/issues/18844
+
+        // This test doesn't use the shared cluster because it shuts down one of the members
+        HazelcastInstance inst1 = createHazelcastInstance();
+        HazelcastInstance inst2 = createHazelcastInstance();
+
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+
+        Job job = inst1.getJet().newLightJob(dag);
+        assertJobRunningEventually(inst1, job, null);
+        inst2.getLifecycleService().terminate();
+
+        assertThatThrownBy(() -> job.join())
+                .hasRootCauseInstanceOf(MemberLeftException.class);
     }
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -686,21 +715,21 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private LightJob newJob(DAG dag) {
+    private Job newJob(DAG dag) {
         return newJob(instance(), dag, null);
     }
 
-    private LightJob newJob(JetInstance instance, DAG dag, JobConfig config) {
+    private Job newJob(HazelcastInstance instance, DAG dag, JobConfig config) {
         if (config != null) {
             assumeFalse(useLightJob); // light jobs don't support config
-            return instance.newJob(dag, config);
+            return instance.getJet().newJob(dag, config);
         } else {
-            return useLightJob ? instance.newLightJob(dag) : instance.newJob(dag);
+            return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
         }
     }
 
-    private LightJob runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
-        LightJob job = null;
+    private Job runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
+        Job job = null;
         assumeTrue(!snapshotting || !useLightJob); // snapshotting not supported for light jobs
         try {
             JobConfig config = null;
@@ -781,17 +810,17 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         throw new AssertionError("None of expected exceptions caught. Expected: " + Arrays.toString(expected), caught);
     }
 
-    private void assertJobSucceeded(LightJob job) {
+    private void assertJobSucceeded(Job job) {
         assertTrue(job.getFuture().isDone());
         job.join();
-        if (job instanceof Job) {
-            JobResult jobResult = getJobResult((Job) job);
+        if (!job.isLightJob()) {
+            JobResult jobResult = getJobResult(job);
             assertTrue(jobResult.isSuccessful());
             assertNull(jobResult.getFailureText());
         }
     }
 
-    private void assertJobFailed(LightJob job, Throwable expected) {
+    private void assertJobFailed(Job job, Throwable expected) {
         assertTrue(job.getFuture().isDone());
         try {
             job.join();
@@ -799,8 +828,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Throwable caught) {
             assertExceptionInCauses(expected, caught);
         }
-        if (job instanceof Job) {
-            Job normalJob = (Job) job;
+        if (!job.isLightJob()) {
+            Job normalJob = job;
             JobResult jobResult = getJobResult(normalJob);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
             assertNotNull(jobResult.getFailureText());
@@ -810,9 +839,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private JobResult getJobResult(Job job) {
-        JetService jetService = getJetService(instance());
-        assertNull(jetService.getJobRepository().getJobRecord(job.getId()));
-        JobResult jobResult = jetService.getJobRepository().getJobResult(job.getId());
+        JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
+        assertNull(jetServiceBackend.getJobRepository().getJobRecord(job.getId()));
+        JobResult jobResult = jetServiceBackend.getJobRepository().getJobResult(job.getId());
         assertNotNull(jobResult);
         return jobResult;
     }

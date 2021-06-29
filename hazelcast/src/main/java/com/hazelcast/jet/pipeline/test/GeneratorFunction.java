@@ -23,7 +23,7 @@ import java.io.Serializable;
  *
  * @param <R> the type of the result of the function
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 @FunctionalInterface
 public interface GeneratorFunction<R> extends Serializable {

@@ -536,6 +536,9 @@ hazelcast:
         enabled: true
         capacity: 100
         time-to-live-seconds: 100
+      merkle-tree:
+        enabled: true
+        depth: 5
 
   flake-id-generator:
     default:

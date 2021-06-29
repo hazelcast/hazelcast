@@ -59,4 +59,8 @@ public final class TestEnvironment {
     public static String getSerializedClassNamesPath() {
         return System.getProperty(SAMPLE_SERIALIZED_OBJECTS);
     }
+
+    public static boolean isSolaris() {
+        return System.getProperty("os.name").startsWith("SunOS");
+    }
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
  *
  * @param <T> the type of the input items
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class AllOfAggregationBuilder<T> {
 

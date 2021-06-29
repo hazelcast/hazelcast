@@ -23,7 +23,6 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
@@ -73,11 +72,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.jet.Util.idFromString;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.IOUtil.fileNameFromUrl;
@@ -171,7 +170,7 @@ public class JobRepository {
     private static final int JOB_ID_STRING_LENGTH = idToString(0L).length();
 
 
-    private final JetInstance jetInstance;
+    private final HazelcastInstance instance;
     private final ILogger logger;
 
     private final ConcurrentMemoizingSupplier<IMap<Long, JobRecord>> jobRecords;
@@ -183,9 +182,8 @@ public class JobRepository {
 
     private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
 
-    public JobRepository(JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
-        HazelcastInstance instance = jetInstance.getHazelcastInstance();
+    public JobRepository(HazelcastInstance instance) {
+        this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
@@ -206,7 +204,7 @@ public class JobRepository {
      * If the upload process fails for any reason, such as being unable to access a resource,
      * uploaded resources are cleaned up.
      */
-    long uploadJobResources(long jobId, JobConfig jobConfig) {
+    void uploadJobResources(long jobId, JobConfig jobConfig) {
         Map<String, byte[]> tmpMap = new HashMap<>();
         try {
             Supplier<IMap<String, byte[]>> jobFileStorage = Util.memoize(() -> getJobResources(jobId));
@@ -255,7 +253,6 @@ public class JobRepository {
                 throw new JetException("Job resource upload failed", e);
             }
         }
-        return jobId;
     }
 
     private Path validateAndGetDirectoryPath(ResourceConfig rc) throws URISyntaxException, IOException {
@@ -286,7 +283,7 @@ public class JobRepository {
                 if (zipEntry.isDirectory()) {
                     continue;
                 }
-                if (zipEntry.getName().toLowerCase().endsWith(".jar")) {
+                if (lowerCaseInternal(zipEntry.getName()).endsWith(".jar")) {
                     loadJarFromInputStream(map, zis);
                 }
             }
@@ -394,7 +391,7 @@ public class JobRepository {
                 break;
             } catch (Exception e) {
                 // if the local instance was shut down, re-throw the error
-                LifecycleService lifecycleService = jetInstance.getHazelcastInstance().getLifecycleService();
+                LifecycleService lifecycleService = instance.getLifecycleService();
                 if (e instanceof HazelcastInstanceNotActiveException && (!lifecycleService.isRunning())) {
                     throw e;
                 }
@@ -492,7 +489,7 @@ public class JobRepository {
             jobResultsMap.values().stream().sorted(comparing(JobResult::getCompletionTime).reversed())
                     .skip(maxNoResults)
                     .map(JobResult::getJobId)
-                    .collect(Collectors.toList())
+                    .collect(toList())
                     .forEach(id -> {
                         jobMetrics.get().delete(id);
                         jobResults.get().delete(id);
@@ -537,7 +534,7 @@ public class JobRepository {
 
     private Map<Long, JobRecord> jobRecordsMap() {
         if (jobRecords.remembered() != null ||
-                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
+                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RECORDS_MAP_NAME)) {
             return jobRecords.get();
         }
         return Collections.emptyMap();
@@ -545,7 +542,7 @@ public class JobRepository {
 
     private Map<Long, JobResult> jobResultsMap() {
         if (jobResults.remembered() != null ||
-                ((AbstractJetInstance) jetInstance).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
+                ((AbstractJetInstance) instance.getJet()).existsDistributedObject(SERVICE_NAME, JOB_RESULTS_MAP_NAME)) {
             return jobResults.get();
         }
         return Collections.emptyMap();
@@ -563,7 +560,7 @@ public class JobRepository {
      * Gets the job resources map
      */
     public IMap<String, byte[]> getJobResources(long jobId) {
-        return jetInstance.getMap(jobResourcesMapName(jobId));
+        return instance.getMap(jobResourcesMapName(jobId));
     }
 
     @Nullable
@@ -580,9 +577,11 @@ public class JobRepository {
         return jobResults.get().values();
     }
 
-    List<JobResult> getJobResults(String name) {
-        return jobResults.get().values(new FilterJobResultByNamePredicate(name)).stream()
-                         .sorted(comparing(JobResult::getCreationTime).reversed()).collect(toList());
+    /**
+     * Returns job results for jobs with the given name.
+     */
+    Collection<JobResult> getJobResults(@Nonnull String name) {
+        return jobResults.get().values(new FilterJobResultByNamePredicate(name));
     }
 
     /**
@@ -640,7 +639,7 @@ public class JobRepository {
     void clearSnapshotData(long jobId, int dataMapIndex) {
         String mapName = snapshotDataMapName(jobId, dataMapIndex);
         try {
-            jetInstance.getMap(mapName).clear();
+            instance.getMap(mapName).clear();
             logFine(logger, "Cleared snapshot data map %s", mapName);
         } catch (Exception logged) {
             logger.warning("Cannot delete old snapshot data  " + idToString(jobId), logged);
@@ -754,6 +753,4 @@ public class JobRepository {
             name = in.readUTF();
         }
     }
-
-
 }

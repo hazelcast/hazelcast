@@ -29,7 +29,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  * that holds fine-tuning parameters that influence its performance
  * characteristics.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class EdgeConfig implements IdentifiedDataSerializable {
 

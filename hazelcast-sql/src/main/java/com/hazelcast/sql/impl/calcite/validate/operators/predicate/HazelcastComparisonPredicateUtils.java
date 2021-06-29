@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -22,11 +22,9 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
-import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 
 public final class HazelcastComparisonPredicateUtils {
@@ -105,48 +103,24 @@ public final class HazelcastComparisonPredicateUtils {
             setNumericParameterConverter(validator, low, highHZType);
         }
 
-        if (highHZType.getTypeFamily() == lowHZType.getTypeFamily()) {
-            // Types are in the same family, do nothing.
-            return true;
+        boolean valid = validator
+                .getTypeCoercion()
+                .rowTypeElementCoercion(
+                        callBinding.getScope(),
+                        low,
+                        highType,
+                        lowOperandNode -> callBinding.getCall().setOperand(lowIndex, lowOperandNode));
+
+        if (valid && highHZType == QueryDataType.OBJECT && lowHZType != QueryDataType.OBJECT) {
+            valid = false;
         }
 
-        boolean valid = bothOperandsAreNumeric(highHZType, lowHZType)
-                || bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(highHZType, lowHZType)
-                || highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(highHZType, lowHZType, low);
-
-        if (!valid) {
-            // Types cannot be converted to each other, throw.
-            if (throwOnFailure) {
-                throw callBinding.newValidationSignatureError();
-            } else {
-                return false;
-            }
+        // Types cannot be converted to each other.
+        if (!valid && throwOnFailure) {
+            throw callBinding.newValidationSignatureError();
         }
 
-        // Types are in the same group, cast lower to higher.
-        RelDataType newLowType = validator.getTypeFactory().createTypeWithNullability(highType, lowType.isNullable());
-
-        validator.getTypeCoercion().coerceOperandType(callBinding.getScope(), callBinding.getCall(), lowIndex, newLowType);
-
-        return true;
-    }
-
-    private static boolean bothOperandsAreNumeric(QueryDataType highHZType, QueryDataType lowHZType) {
-        return (highHZType.getTypeFamily().isNumeric() && lowHZType.getTypeFamily().isNumeric());
-    }
-
-    private static boolean bothOperandsAreTemporalAndLowOperandCanBeConvertedToHighOperand(QueryDataType highHZType,
-                                                                                           QueryDataType lowHZType) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily().isTemporal()
-                && lowHZType.getConverter().canConvertTo(highHZType.getTypeFamily());
-    }
-
-    private static boolean highOperandIsTemporalAndLowOperandIsLiteralOfVarcharType(QueryDataType highHZType,
-                                                                                    QueryDataType lowHZType, SqlNode low) {
-        return highHZType.getTypeFamily().isTemporal()
-                && lowHZType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                && low instanceof SqlLiteral;
+        return valid;
     }
 
     private static void setNumericParameterConverter(HazelcastSqlValidator validator, SqlNode node, QueryDataType type) {

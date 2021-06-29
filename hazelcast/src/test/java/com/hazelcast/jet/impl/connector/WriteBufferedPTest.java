@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
@@ -89,14 +89,14 @@ public class WriteBufferedPTest extends JetTestSupport {
 
     @Test
     public void when_writeBufferedJobFailed_then_bufferDisposed() throws Exception {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", () -> new NoOutputSourceP());
         Vertex sink = dag.newVertex("sink", getLoggingBufferedWriter()).localParallelism(1);
 
         dag.edge(Edge.between(source, sink));
 
-        Job job = instance.newJob(dag);
+        Job job = instance.getJet().newJob(dag);
         // wait for the job to initialize
         Thread.sleep(5000);
         job.cancel();

@@ -24,7 +24,7 @@ import com.hazelcast.jet.annotation.EvolvingApi;
  * used to terminate the streaming job. If caught from the {@link Job#join()}
  * method, it can be ignored.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 @EvolvingApi
 public final class AssertionCompletedException extends RuntimeException {

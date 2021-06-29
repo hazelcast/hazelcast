@@ -180,8 +180,8 @@ public class MasterContext {
         return jobNameAndExecutionId(jobName, executionId);
     }
 
-    public JetService getJetService() {
-        return coordinationService.getJetService();
+    public JetServiceBackend getJetServiceBackend() {
+        return coordinationService.getJetServiceBackend();
     }
 
     public NodeEngine nodeEngine() {
@@ -198,6 +198,17 @@ public class MasterContext {
 
     Map<MemberInfo, ExecutionPlan> executionPlanMap() {
         return executionPlanMap;
+    }
+
+    boolean hasTimeout() {
+        return jobConfig().getTimeoutMillis() > 0;
+    }
+
+    long remainingTime(long currentTimeMillis) {
+        long elapsed = currentTimeMillis - jobRecord().getCreationTime();
+        long timeout = jobConfig().getTimeoutMillis();
+
+        return timeout - elapsed;
     }
 
     ConcurrentMap<Address, CompletableFuture<Void>> startOperationResponses() {
@@ -280,7 +291,7 @@ public class MasterContext {
     ) {
         Operation operation = operationSupplier.get();
         InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                .createInvocationBuilder(JetService.SERVICE_NAME, operation, memberInfo.getAddress())
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, memberInfo.getAddress())
                 .invoke();
 
         future.whenCompleteAsync(withTryCatch(logger, (r, throwable) -> {

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.hadoop.file;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.hadoop.impl.HadoopTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -83,12 +83,12 @@ public abstract class BaseFileFormatTest extends HadoopTestSupport {
         p.readFrom(source.build())
          .apply(Assertions.assertCollected(assertion));
 
-        JetInstance[] jets = createJetMembers(memberCount);
+        HazelcastInstance[] instances = createHazelcastInstances(memberCount);
         try {
-            jets[0].newJob(p).join();
+            instances[0].getJet().newJob(p).join();
         } finally {
-            for (JetInstance jet : jets) {
-                jet.shutdown();
+            for (HazelcastInstance instance : instances) {
+                instance.shutdown();
             }
         }
     }
@@ -107,17 +107,17 @@ public abstract class BaseFileFormatTest extends HadoopTestSupport {
         p.readFrom(source.build())
          .writeTo(Sinks.logger());
 
-        JetInstance[] jets = createJetMembers(1);
+        HazelcastInstance[] instances = createHazelcastInstances(1);
 
         try {
-            assertThatThrownBy(() -> jets[0].newJob(p).join())
+            assertThatThrownBy(() -> instances[0].getJet().newJob(p).join())
                     .hasCauseInstanceOf(JetException.class)
                     // can't use hasRootCauseInstanceOf because of mismatch between shaded/non-shaded version
                     .hasStackTraceContaining(expectedRootException.getName())
                     .hasMessageContaining(expectedMessage);
         } finally {
-            for (JetInstance jet : jets) {
-                jet.shutdown();
+            for (HazelcastInstance instance : instances) {
+                instance.shutdown();
             }
         }
     }

@@ -36,7 +36,7 @@ package com.hazelcast.jet.config;
  * in lower latency and higher throughput overall, with the caveat that
  * some items may be processed twice after a restart.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public enum ProcessingGuarantee {
 

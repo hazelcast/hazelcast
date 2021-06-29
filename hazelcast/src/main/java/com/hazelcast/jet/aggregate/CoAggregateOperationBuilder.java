@@ -45,7 +45,7 @@ import static java.util.stream.IntStream.range;
  * AggregateOperations#coAggregateOperationBuilder()}. and refer to that
  * method's Javadoc for further details.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class CoAggregateOperationBuilder {
 

@@ -590,6 +590,9 @@ public class ConvertersTest {
         checkDataException(() -> c.asDouble(invalid));
 
         // Temporal
+        assertEquals(LocalTime.parse("01:02"), c.asTime("1:2"));
+        assertEquals(LocalTime.parse("01:22"), c.asTime("1:22"));
+        assertEquals(LocalTime.parse("11:02"), c.asTime("11:2"));
         assertEquals(LocalTime.parse("11:22"), c.asTime("11:22"));
         assertEquals(LocalTime.parse("11:22:33"), c.asTime("11:22:33"));
         assertEquals(LocalTime.parse("11:22:33.444"), c.asTime("11:22:33.444"));
@@ -601,8 +604,17 @@ public class ConvertersTest {
         checkDataException(() -> c.asTime(invalid));
 
         assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-01"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-1-01"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-01-1"));
+        assertEquals(LocalDate.parse("2020-01-01"), c.asDate("2020-1-1"));
+        assertEquals(LocalDate.parse("2020-12-01"), c.asDate("2020-12-1"));
+        assertEquals(LocalDate.parse("2020-01-12"), c.asDate("2020-1-12"));
+        assertEquals(LocalDate.parse("2020-09-12"), c.asDate("2020-09-12"));
+        assertEquals(LocalDate.parse("2020-09-12"), c.asDate("2020-9-12"));
         checkDataException(() -> c.asDate("2020-13-01"));
         checkDataException(() -> c.asDate("2020-01-35"));
+        checkDataException(() -> c.asDate("2020-13-1"));
+        checkDataException(() -> c.asDate("2020-1-35"));
         checkDataException(() -> c.asDate(invalid));
 
         assertEquals(LocalDateTime.parse("2020-01-01T11:22"), c.asTimestamp("2020-01-01T11:22"));
@@ -616,6 +628,22 @@ public class ConvertersTest {
         checkDataException(() -> c.asTimestamp("2020-01-01T11:22:66"));
         checkDataException(() -> c.asTimestamp("2020-01-01T11:22:33.4444444444"));
         checkDataException(() -> c.asTimestamp(invalid));
+
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22"), c.asTimestamp("2020-01-01 11:22"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33"), c.asTimestamp("2020-01-01 11:22:33"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444"), c.asTimestamp("2020-01-01 11:22:33.444"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444444444"), c.asTimestamp("2020-01-01 11:22:33.444444444"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22"), c.asTimestamp("2020-01-01 11:22"));
+        assertEquals(LocalDateTime.parse("2020-01-01T01:22:33"), c.asTimestamp("2020-01-01 1:22:33"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444"), c.asTimestamp("2020-01-01 11:22:33.444"));
+        assertEquals(LocalDateTime.parse("2020-01-01T11:22:33.444444444"), c.asTimestamp("2020-01-01 11:22:33.444444444"));
+        checkDataException(() -> c.asTimestamp("2020-13-01 11:22"));
+        checkDataException(() -> c.asTimestamp("2020-13-01 11:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-35 11:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-1 33:22"));
+        checkDataException(() -> c.asTimestamp("2020-01-1 11:66"));
+        checkDataException(() -> c.asTimestamp("2020-01-1 T11:22:66"));
+        checkDataException(() -> c.asTimestamp("2020-01-01 11:22:33.4444444444"));
 
         assertEquals(OffsetDateTime.parse("2020-01-01T11:22:33.444444444Z"),
             c.asTimestampWithTimezone("2020-01-01T11:22:33.444444444Z"));

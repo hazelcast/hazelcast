@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 public class JetGetJobSubmissionTimeMessageTask
-        extends AbstractJetMessageTask<Long, Long> {
+        extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long> {
 
     JetGetJobSubmissionTimeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
@@ -34,7 +34,7 @@ public class JetGetJobSubmissionTimeMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new GetJobSubmissionTimeOperation(parameters);
+        return new GetJobSubmissionTimeOperation(parameters.jobId, parameters.isLightJob);
     }
 
     @Override

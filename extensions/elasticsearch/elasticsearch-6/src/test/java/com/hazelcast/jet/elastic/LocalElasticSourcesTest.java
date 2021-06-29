@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -45,17 +45,17 @@ import static org.mockito.Mockito.when;
  */
 public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
-    private JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.terminateAll();
     }
 
     @Override
-    protected JetInstance createJetInstance() {
+    protected HazelcastInstance createHazelcastInstance() {
         // This starts very quickly, no need to cache the instance
-        return factory.newMember(config());
+        return factory.newHazelcastInstance(config());
     }
 
     @Test
@@ -74,9 +74,9 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
         p.readFrom(source)
          .writeTo(Sinks.logger());
 
-        assertThatThrownBy(() -> super.jet.newJob(p).join())
+        assertThatThrownBy(() -> super.hz.getJet().newJob(p).join())
                 .hasCauseInstanceOf(JetException.class)
-                .hasMessageContaining("Shard locations are not equal to Jet nodes locations");
+                .hasMessageContaining("Shard locations are not equal to Hazelcast members locations");
     }
 
     @Test

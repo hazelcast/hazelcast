@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Processor;
@@ -150,7 +150,7 @@ import static java.util.stream.Collectors.toMap;
  * <h3>Example usage</h3>
  * This will test one of the jet-provided processors:
  * <pre>{@code
- * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase()))
+ * TestSupport.verifyProcessor(Processors.map((String s) -> s.toUpperCase(Locale.ROOT)))
  *            .disableCompleteCall()             // enabled by default
  *            .disableLogging()                  // enabled by default
  *            .disableProgressAssertion()        // enabled by default
@@ -161,7 +161,7 @@ import static java.util.stream.Collectors.toMap;
  *            .expectOutput(asList("FOO", "BAR"));
  * }</pre>
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class TestSupport {
 
@@ -220,7 +220,7 @@ public final class TestSupport {
     private int localParallelism = 1;
     private int totalParallelism = 1;
 
-    private JetInstance jetInstance;
+    private HazelcastInstance hazelcastInstance;
     private JobConfig jobConfig;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
     private long runUntilOutputMatchesTimeoutMillis = -1;
@@ -355,19 +355,19 @@ public final class TestSupport {
         this.outputOrdinalCount = outputOrdinalCount;
         try {
             TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
-            if (jetInstance != null) {
-                metaSupplierContext.setJetInstance(jetInstance);
+            if (hazelcastInstance != null) {
+                metaSupplierContext.setHazelcastInstance(hazelcastInstance);
             }
             if (jobConfig != null) {
                 metaSupplierContext.setJobConfig(jobConfig);
             }
             metaSupplier.init(metaSupplierContext);
-            Address address = jetInstance != null
-                    ? jetInstance.getHazelcastInstance().getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
+            Address address = hazelcastInstance != null
+                    ? hazelcastInstance.getCluster().getLocalMember().getAddress() : LOCAL_ADDRESS;
             supplier = metaSupplier.get(singletonList(address)).apply(address);
             TestProcessorSupplierContext supplierContext = new TestProcessorSupplierContext();
-            if (jetInstance != null) {
-                supplierContext.setJetInstance(jetInstance);
+            if (hazelcastInstance != null) {
+                supplierContext.setHazelcastInstance(hazelcastInstance);
             }
             if (jobConfig != null) {
                 supplierContext.setJobConfig(jobConfig);
@@ -534,12 +534,12 @@ public final class TestSupport {
     }
 
     /**
-     * Use the given instance for {@link Context#jetInstance()}
+     * Use the given instance for {@link Context#hazelcastInstance()}
      *
      * @return {@code this} instance for fluent API
      */
-    public TestSupport jetInstance(@Nonnull JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
+    public TestSupport hazelcastInstance(@Nonnull HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
         return this;
     }
 
@@ -856,8 +856,8 @@ public final class TestSupport {
 
     private void initProcessor(Processor processor, TestOutbox outbox) {
         SerializationService serializationService;
-        if (jetInstance != null && jetInstance.getHazelcastInstance() instanceof SerializationServiceSupport) {
-            SerializationServiceSupport impl = (SerializationServiceSupport) jetInstance.getHazelcastInstance();
+        if (hazelcastInstance != null && hazelcastInstance instanceof SerializationServiceSupport) {
+            SerializationServiceSupport impl = (SerializationServiceSupport) hazelcastInstance;
             serializationService = impl.getSerializationService();
         } else {
             serializationService = new DefaultSerializationServiceBuilder()
@@ -873,8 +873,8 @@ public final class TestSupport {
                 .setLocalParallelism(localParallelism)
                 .setTotalParallelism(totalParallelism);
 
-        if (jetInstance != null) {
-            context.setJetInstance(jetInstance);
+        if (hazelcastInstance != null) {
+            context.setHazelcastInstance(hazelcastInstance);
         }
         if (jobConfig != null) {
             context.setJobConfig(jobConfig);

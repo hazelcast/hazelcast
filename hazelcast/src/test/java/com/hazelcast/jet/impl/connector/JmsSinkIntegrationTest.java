@@ -74,7 +74,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -91,7 +91,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -111,7 +111,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -133,7 +133,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
 
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, true, MESSAGE_COUNT);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -154,7 +154,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);
@@ -176,7 +176,7 @@ public class JmsSinkIntegrationTest extends SimpleTestInClusterSupport {
         List<Object> messages = consumeMessages(getConnectionFactory(), destinationName, false, MESSAGE_COUNT);
         sleepSeconds(1);
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
 
         assertEqualsEventually(messages::size, MESSAGE_COUNT);
         assertContainsAll(srcList, messages);

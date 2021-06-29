@@ -17,6 +17,8 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,11 +32,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Map;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -109,7 +113,7 @@ public class JobConfigTest extends JetTestSupport {
         // Then
         exception.expect(IllegalStateException.class);
         exception.expectMessage("Lossless Restart requires Hazelcast Enterprise Edition");
-        createJetMember(config);
+        createHazelcastInstance(config);
     }
 
     @Test
@@ -159,6 +163,47 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         assertThat(config.isSuspendOnFailure(), equalTo(TRUE));
+    }
+
+    @Test
+    public void test_jobConfigForLightJob() {
+        HazelcastInstance inst = createHazelcastInstance();
+        DAG dag = new DAG();
+
+        JobConfig configWithName = new JobConfig();
+        configWithName.setName("foo");
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithName))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported for light jobs");
+
+        JobConfig configWithResource = new JobConfig();
+        configWithResource.addClass(JobConfigTest.class);
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithResource))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported for light jobs");
+
+        JobConfig configWithGuarantee = new JobConfig();
+        configWithGuarantee.setProcessingGuarantee(EXACTLY_ONCE);
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithGuarantee))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported for light jobs");
+
+        JobConfig configWithClassLoaderFactory = new JobConfig();
+        configWithClassLoaderFactory.setClassLoaderFactory(new JobClassLoaderFactory() {
+            @Nonnull @Override
+            public ClassLoader getJobClassLoader() {
+                throw new UnsupportedOperationException();
+            }
+        });
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithClassLoaderFactory))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported for light jobs");
+
+        JobConfig configWithInitialSnapshot = new JobConfig();
+        configWithInitialSnapshot.setInitialSnapshotName("foo");
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithInitialSnapshot))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("not supported for light jobs");
     }
 
     private static class ObjectSerializer implements StreamSerializer<Object> {

@@ -23,6 +23,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JobNotFoundException;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -30,53 +32,89 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Base {@link Job} implementation for both client and member proxy.
+ *
+ * @param <C> the type of container (the client instance or the node engine)
+ * @param <M> the type of member ID (UUID or Address)
  */
-public abstract class AbstractJobProxy<T> implements Job {
+public abstract class AbstractJobProxy<C, M> implements Job {
+
+    private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
+
+    /** Null for normal jobs, non-null for light jobs  */
+    protected final M lightJobCoordinator;
 
     private final long jobId;
     private final ILogger logger;
-    private final T container;
+    private final C container;
 
     /**
      * Future that will be completed when we learn that the coordinator
      * completed the job, but only if {@link #joinedJob} is true.
      */
-    private final NonCompletableFuture future = new NonCompletableFuture();
+    private final NonCompletableFuture future;
 
     // Flag which indicates if this proxy has sent a request to join the job result or not
     private final AtomicBoolean joinedJob = new AtomicBoolean();
-    private final BiConsumer<Void, Throwable> joinJobCallback = new JoinJobCallback();
+    private final BiConsumer<Void, Throwable> joinJobCallback;
 
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
-    AbstractJobProxy(T container, long jobId) {
+    /**
+     * True if this instance submitted the job. False if it was created later
+     * to track existing job.
+     */
+    private final boolean submittingInstance;
+
+    AbstractJobProxy(C container, long jobId, M lightJobCoordinator) {
         this.jobId = jobId;
         this.container = container;
-        this.logger = loggingService().getLogger(Job.class);
+        this.lightJobCoordinator = lightJobCoordinator;
+
+        logger = loggingService().getLogger(AbstractJobProxy.class);
+        future = new NonCompletableFuture();
+        joinJobCallback = new JoinJobCallback();
+        submittingInstance = false;
     }
 
-    AbstractJobProxy(T container, long jobId, Object jobDefinition, JobConfig config) {
-        this(container, jobId);
+    AbstractJobProxy(C container, long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+        this.jobId = jobId;
+        this.container = container;
+        this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
+        this.logger = loggingService().getLogger(Job.class);
+        submittingInstance = true;
 
         try {
-            doSubmitJob(jobDefinition, config);
+            NonCompletableFuture submitFuture = doSubmitJob(jobDefinition, config);
             joinedJob.set(true);
-            doInvokeJoinJob();
+            // For light jobs, the future of the submit operation is also the job future.
+            // For normal jobs, we invoke the join operation separately.
+            if (isLightJob) {
+                future = submitFuture;
+                joinJobCallback = null;
+            } else {
+                submitFuture.join();
+                future = new NonCompletableFuture();
+                joinJobCallback = new JoinJobCallback();
+                doInvokeJoinJob();
+            }
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -87,9 +125,10 @@ public abstract class AbstractJobProxy<T> implements Job {
         return jobId;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobConfig getConfig() {
+        checkNotLightJob("config");
+
         // The common path will use a single volatile load
         JobConfig loadResult = jobConfig;
         if (loadResult != null) {
@@ -121,14 +160,29 @@ public abstract class AbstractJobProxy<T> implements Job {
                 + ')';
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public CompletableFuture<Void> getFuture() {
         if (joinedJob.compareAndSet(false, true)) {
             doInvokeJoinJob();
         }
         return future;
     }
+
+    @Nonnull @Override
+    public final JobStatus getStatus() {
+        if (isLightJob()) {
+            CompletableFuture<Void> f = getFuture();
+            if (!f.isDone()) {
+                return JobStatus.RUNNING;
+            }
+            return f.isCompletedExceptionally()
+                    ? JobStatus.FAILED : JobStatus.COMPLETED;
+        } else {
+            return getStatus0();
+        }
+    }
+
+    protected abstract JobStatus getStatus0();
 
     @Override
     public long getSubmissionTime() {
@@ -155,11 +209,40 @@ public abstract class AbstractJobProxy<T> implements Job {
     }
 
     private void terminate(TerminationMode mode) {
+        if (mode != TerminationMode.CANCEL_FORCEFUL) {
+            checkNotLightJob(mode.toString());
+        }
+
         logger.fine("Sending " + mode + " request for job " + idAndName());
         while (true) {
             try {
-                invokeTerminateJob(mode).get();
-                break;
+                try {
+                    invokeTerminateJob(mode).get();
+                    break;
+                } catch (ExecutionException e) {
+                    if (!(e.getCause() instanceof JobNotFoundException) || !isLightJob()) {
+                        throw e;
+                    }
+                    if (submittingInstance) {
+                        // it can happen that we enqueued the submit operation, but the master handled
+                        // the terminate op before the submit op and doesn't yet know about the job. But
+                        // it can be that the job already completed, we don't know. We'll look at the submit
+                        // future, if it's done, the job is done. Otherwise we'll retry - the job will eventually
+                        // start or complete.
+                        // This scenario is possible only on the client or lite member. On normal member,
+                        // the submit op is executed directly.
+                        assert joinedJob.get() : "not joined";
+                        if (getFuture().isDone()) {
+                            return;
+                        }
+                    } else {
+                        // This instance is an output of one of the JetService.getJob() or getJobs() methods.
+                        // That means that the job was already known to some member and since it's not
+                        // known anymore, it's safe to assume it already completed.
+                        return;
+                    }
+                }
+                LockSupport.parkNanos(TERMINATE_RETRY_DELAY_NS);
             } catch (Exception e) {
                 if (!isRestartable(e)) {
                     throw rethrow(e);
@@ -178,6 +261,13 @@ public abstract class AbstractJobProxy<T> implements Job {
                 + "}";
     }
 
+    @Override
+    public boolean isLightJob() {
+        return lightJobCoordinator != null;
+    }
+
+    protected abstract M findLightJobCoordinator();
+
     /**
      * Submit and join job with a given DAG and config
      */
@@ -195,12 +285,12 @@ public abstract class AbstractJobProxy<T> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
-     * Get the current master UUID.
+     * Get the current master ID.
      *
      * @throws IllegalStateException if the master isn't known
      */
     @Nonnull
-    protected abstract UUID masterUuid();
+    protected abstract M masterId();
 
     protected abstract SerializationService serializationService();
 
@@ -208,15 +298,16 @@ public abstract class AbstractJobProxy<T> implements Job {
 
     protected abstract boolean isRunning();
 
-    protected T container() {
+    protected C container() {
         return container;
     }
 
-    private void doSubmitJob(Object jobDefinition, JobConfig config) {
+    private NonCompletableFuture doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
-        invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(callback);
-        submitFuture.join();
+        invokeSubmitJob(serializationService().toData(jobDefinition), config)
+                .whenCompleteAsync(callback);
+        return submitFuture;
     }
 
     private boolean isRestartable(Throwable t) {
@@ -227,7 +318,19 @@ public abstract class AbstractJobProxy<T> implements Job {
     }
 
     private void doInvokeJoinJob() {
-        invokeJoinJob().whenCompleteAsync(joinJobCallback);
+        invokeJoinJob()
+                .whenComplete(withTryCatch(logger, (r, t) -> {
+                    if (isLightJob() && t instanceof JobNotFoundException) {
+                        throw new IllegalStateException("job already completed");
+                    }
+                }))
+                .whenCompleteAsync(withTryCatch(logger, joinJobCallback));
+    }
+
+    protected void checkNotLightJob(String msg) {
+        if (isLightJob()) {
+            throw new UnsupportedOperationException("not supported for light jobs: " + msg);
+        }
     }
 
     private abstract class CallbackBase implements BiConsumer<Void, Throwable> {
@@ -263,11 +366,11 @@ public abstract class AbstractJobProxy<T> implements Job {
         private void retryAction(Throwable t) {
             try {
                 // calling for the side-effect of throwing ISE if master not known
-                masterUuid();
+                masterId();
             } catch (IllegalStateException e) {
                 // job data will be cleaned up eventually by the coordinator
                 String msg = operationName() + " failed for job " + idAndName() + " because the cluster " +
-                        "is performing  split-brain merge and the coordinator is not known";
+                        "is performing split-brain merge and the coordinator is not known";
                 logger.warning(msg, t);
                 future.internalCompleteExceptionally(new CancellationException(msg));
                 return;

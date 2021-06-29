@@ -17,6 +17,6 @@
 /**
  * Module for reading CSV files in Hazelcast Jet.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 package com.hazelcast.jet.csv.impl;

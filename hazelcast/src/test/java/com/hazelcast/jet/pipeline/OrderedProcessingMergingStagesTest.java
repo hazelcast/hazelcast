@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -62,12 +62,12 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
     // Used to set the LP of the stage with the smaller value than upstream parallelism
     private static final int LOW_LOCAL_PARALLELISM = 2;
     private static Pipeline p;
-    private static JetInstance jet;
+    private static HazelcastInstance hz;
 
 
     @BeforeClass
     public static void setupClass() {
-        jet = Hazelcast.newHazelcastInstance(smallInstanceConfig()).getJetInstance();
+        hz = Hazelcast.newHazelcastInstance(smallInstanceConfig());
     }
 
     @Before
@@ -77,7 +77,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
 
     @AfterClass
     public static void cleanup() {
-        jet.shutdown();
+        hz.shutdown();
     }
 
 
@@ -131,7 +131,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> Assert.assertArrayEquals(list.toArray(), sequence4.toArray())));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
@@ -172,7 +172,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
                             assertFalse("There is some reordered items in the list", list.contains(false));
                         }
                 ));
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
@@ -219,7 +219,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
                             assertFalse("There is some reordered items in the list", list.contains(false));
                         }
                 ));
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
@@ -261,7 +261,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
                             assertFalse("There is some reordered items in the list", list.contains(false));
                         }
                 ));
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
@@ -307,7 +307,7 @@ public class OrderedProcessingMergingStagesTest extends JetTestSupport implement
                             assertFalse("There is some reordered items in the list", list.contains(false));
                         }
                 ));
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");

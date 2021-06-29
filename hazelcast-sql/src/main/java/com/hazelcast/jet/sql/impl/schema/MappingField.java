@@ -1,24 +1,25 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
@@ -31,19 +32,18 @@ import static java.util.Objects.requireNonNull;
 /**
  * A field in a {@link Mapping}.
  */
-public class MappingField implements DataSerializable {
+public class MappingField implements IdentifiedDataSerializable {
 
     private static final String NAME = "name";
     private static final String TYPE = "type";
     private static final String EXTERNAL_NAME = "externalName";
 
     // This generic structure is used to have binary compatibility if more fields are added in
-    // the future, like nullability, watermark info etc. Instances are stored as a part of the
+    // the future, like nullability, uniqueness etc. Instances are stored as a part of the
     // persisted schema.
     private Map<String, Object> properties;
 
-    @SuppressWarnings("unused")
-    private MappingField() {
+    public MappingField() {
     }
 
     public MappingField(String name, QueryDataType type) {
@@ -80,6 +80,16 @@ public class MappingField implements DataSerializable {
 
     public void setExternalName(String extName) {
         properties.put(EXTERNAL_NAME, extName);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetSqlSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetSqlSerializerHook.MAPPING_FIELD;
     }
 
     @Override

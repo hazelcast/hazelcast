@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -62,8 +62,6 @@ import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
-
-    public static final UnsupportedOperationVisitor INSTANCE = new UnsupportedOperationVisitor();
 
     /**
      * A set of {@link SqlKind} values that are supported without any additional validation.
@@ -123,6 +121,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.TRIM);
 
         SUPPORTED_KINDS.add(SqlKind.CASE);
+        SUPPORTED_KINDS.add(SqlKind.NULLIF);
+        SUPPORTED_KINDS.add(SqlKind.COALESCE);
 
         // Aggregations
         SUPPORTED_KINDS.add(SqlKind.COUNT);
@@ -195,6 +195,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -210,8 +212,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
     }
 
-    private UnsupportedOperationVisitor() {
-    }
+    // The top level select is used to filter out nested selects with FETCH/OFFSET
+    private SqlSelect topLevelSelect;
 
     @Override
     public Void visit(SqlCall call) {
@@ -340,6 +342,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processSelect((SqlSelect) call);
                 break;
 
+            case UPDATE:
+            case DELETE:
+                break;
+
             case JOIN:
                 processJoin((SqlJoin) call);
                 break;
@@ -353,17 +359,19 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 processOtherDdl(call);
                 break;
 
-            case DELETE:
-                break;
-
             default:
                 throw unsupported(call, kind);
         }
     }
 
     private void processSelect(SqlSelect select) {
-        if (select.getOffset() != null) {
-            throw unsupported(select.getOffset(), "OFFSET");
+        if (topLevelSelect == null) {
+            topLevelSelect = select;
+        } else {
+            // Check for nested fetch offset
+            if (select.getFetch() != null || select.getOffset() != null) {
+                throw error(select, "FETCH/OFFSET is only supported for the top-level SELECT");
+            }
         }
     }
 
@@ -408,7 +416,11 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         return error(node, ValidatorResource.RESOURCE.notSupported(name));
     }
 
-    private CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
+    private static CalciteContextException error(SqlNode node, ExInst<SqlValidatorException> error) {
         return SqlUtil.newContextException(node.getParserPosition(), error);
+    }
+
+    public static CalciteContextException error(SqlNode node, String name) {
+        return error(node, RESOURCE.error(name));
     }
 }

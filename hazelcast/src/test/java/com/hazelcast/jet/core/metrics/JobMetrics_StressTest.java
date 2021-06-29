@@ -17,9 +17,9 @@
 package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
@@ -54,7 +54,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
     private static volatile Throwable restartThreadException;
     private static volatile Throwable obtainMetricsThreadException;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
@@ -65,7 +65,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
 
         Config config = new Config();
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
-        instance = createJetMember(config);
+        instance = createHazelcastInstance(config);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
 
     private void stressTest(Function<Job, Runnable> restart) throws Throwable {
         DAG dag = buildDag();
-        Job job = instance.newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = instance.getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         try {
             assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 
@@ -102,7 +102,7 @@ public class JobMetrics_StressTest extends JetTestSupport {
                 throw obtainMetricsThreadException;
             }
         } finally {
-            super.ditchJob(job, instance);
+            ditchJob(job, instance);
         }
     }
 

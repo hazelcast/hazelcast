@@ -162,9 +162,9 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetService().getConfig()
+        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig()
               .getInstanceConfig().getCooperativeThreadCount();
-        this.defaultQueueSize = mc.getJetService().getJetInstance().getConfig()
+        this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
     }
 
@@ -270,7 +270,7 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
             }
-            ClassLoader classLoader = mc.getJetService().getClassLoader(mc.jobId());
+            ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
             try {
                 dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
@@ -582,6 +582,12 @@ public class MasterJobContext {
                     // have to use Async version, the future is completed inside a synchronized block
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
+            if (error instanceof ExecutionNotFoundException) {
+                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
+                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
+                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
+                error = new JobTerminateRequestedException(requestedTerminationMode);
+            }
             finalizeJob(error);
         }
     }

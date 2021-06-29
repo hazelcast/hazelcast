@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.Message;
@@ -454,6 +455,15 @@ public class AllTest {
                 IMap map = hazelcast.getMap("myMap");
                 map.putIfAbsent(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
             }
+        }, 5);
+        addOperation(operations, () -> {
+            MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) hazelcast.getMap("myMap");
+            map.putIfAbsentAsync(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))),
+                    10, TimeUnit.MILLISECONDS);
+        }, 5);
+        addOperation(operations, () -> {
+            MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) hazelcast.getMap("myMap");
+            map.putIfAbsentAsync(random.nextInt(SIZE), new Customer(random.nextInt(100), String.valueOf(random.nextInt(10000))));
         }, 5);
         addOperation(operations, new Runnable() {
             public void run() {

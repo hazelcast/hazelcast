@@ -22,6 +22,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
+import com.hazelcast.jet.pipeline.StageWithKeyAndWindow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -104,14 +105,13 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkS
  *     accumulator. After this conversion the accumulator will no longer be
  *     used, it's allowed, for example, to use the {@code identity()} function
  * </li></ol>
- *
+ * <p>
  * All the functions must be stateless and {@linkplain
  * Processor#isCooperative() cooperative}.
  *
  * @param <A> the type of the accumulator
  * @param <R> the type of the final result
- *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface AggregateOperation<A, R> extends Serializable {
 
@@ -293,7 +293,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * cooperative}.
      *
      * @param getAccFn the function that extracts the accumulator from the stream item
-     * @param <T> the type of stream item
+     * @param <T>      the type of stream item
      */
     @Nonnull
     default <T> AggregateOperation1<T, A, R> withCombiningAccumulateFn(
@@ -356,7 +356,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * Processor#isCooperative() cooperative}.
      *
      * @param createFn the {@code create} primitive
-     * @param <A> the type of the accumulator
+     * @param <A>      the type of the accumulator
      * @return the builder object whose static type represents the fact that it
      *         has just the {@code create} primitive defined
      */

@@ -83,7 +83,7 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
     }
 
     public EvictionConfig(EvictionConfig config) {
-        this.sizeConfigured = true;
+        this.sizeConfigured = config.sizeConfigured;
         this.size = config.size;
         this.maxSizePolicy = config.maxSizePolicy;
         this.evictionPolicy = config.evictionPolicy;

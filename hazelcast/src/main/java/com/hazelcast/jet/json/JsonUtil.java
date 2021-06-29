@@ -49,7 +49,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * make use of <a href="https://github.com/FasterXML/jackson-annotations/wiki/Jackson-Annotations">
  * Jackson Annotations</a>.
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 public final class JsonUtil {
 

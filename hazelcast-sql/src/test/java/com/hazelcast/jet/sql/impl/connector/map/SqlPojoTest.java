@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -63,7 +63,7 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String mapName = randomName();
         instance().getMap(mapName).put(new PersonId(1), new Person(1, "Alice"));
 
@@ -88,13 +88,22 @@ public class SqlPojoTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
-                "SINK INTO " + name + " VALUES (null, null)",
-                createMap(new PersonId(), new Person())
+                "SINK INTO " + name + " VALUES (1, null)",
+                createMap(new PersonId(1), new Person())
         );
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(null, null))
+                singletonList(new Row(1, null))
         );
+    }
+
+    @Test
+    public void when_nullIntoPrimitive_then_fails() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, PersonId.class, Person.class));
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
+                .hasMessageContaining("Cannot pass NULL to a method with a primitive argument");
     }
 
     @Test

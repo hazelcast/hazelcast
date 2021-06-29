@@ -69,6 +69,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -126,6 +130,10 @@ import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaD
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.HazelcastJsonValueSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalTimeSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateTimeSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OffsetDateTimeSerializer;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
@@ -254,6 +262,11 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
         registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
         registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+
+        registerConstant(LocalTime.class, new LocalTimeSerializer());
+        registerConstant(LocalDate.class, new LocalDateSerializer());
+        registerConstant(LocalDateTime.class, new LocalDateTimeSerializer());
+        registerConstant(OffsetDateTime.class, new OffsetDateTimeSerializer());
 
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);

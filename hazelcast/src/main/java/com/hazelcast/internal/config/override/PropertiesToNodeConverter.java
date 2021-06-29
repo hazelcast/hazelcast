@@ -18,6 +18,8 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.config.InvalidConfigurationException;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,7 +59,7 @@ final class PropertiesToNodeConverter {
 
     private static void parseEntry(String key, String value, ConfigNode root) {
         ConfigNode last = root;
-        for (String s : key.toLowerCase().split("\\.")) {
+        for (String s : lowerCaseInternal(key).split("\\.")) {
             ConfigNode node = last.getChildren().get(s);
             if (node == null) {
                 node = new ConfigNode(s, last);

@@ -77,7 +77,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setMetricsEnabled(true) //enable metric collection
                 .setStoreMetricsAfterJobCompletion(false); //disable metric saving on completion
-        Job job = jet().newJob(dag, config);
+        Job job = hz().getJet().newJob(dag, config);
 
         //when
         NoOutputSourceP.executionStarted.await();
@@ -98,7 +98,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         DAG dag = new DAG();
         dag.newVertex("v1", MockP::new);
         dag.newVertex("v2", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
 
         //when
         NoOutputSourceP.executionStarted.await();
@@ -112,7 +112,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         //then
         assertJobStatusEventually(job, JobStatus.COMPLETED);
         assertJobHasMetrics(job, true);
-        assertTrue(jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
+        assertTrue(hz().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         BlockingInInitMetaSupplier.latch = new CountDownLatch(1);
         dag.newVertex("v1", new BlockingInInitMetaSupplier());
 
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         assertTrueAllTheTime(() -> assertEmptyJobMetrics(job, false), 2);
         BlockingInInitMetaSupplier.latch.countDown();
         assertTrueEventually(() -> assertJobHasMetrics(job, false));
@@ -138,7 +138,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         Vertex v1 = dag.newVertex("v1", Processors.noopP());
         Vertex v2 = dag.newVertex("v2", Processors.noopP());
         dag.edge(between(v1, v2).distributed());
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         job.join();
         assertJobHasMetrics(job, true);
         // If there would be multiple metrics with the same name, then an
@@ -156,7 +156,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setMetricsEnabled(true) //enable metric collection
                 .setStoreMetricsAfterJobCompletion(false); //disable metric saving on completion
-        Job job = jet().newJob(dag, config);
+        Job job = hz().getJet().newJob(dag, config);
 
         //when
         TestProcessors.NoOutputSourceP.executionStarted.await();
@@ -191,7 +191,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         Vertex v2 = dag.newVertex("v2", (SupplierEx<Processor>) TestProcessors.NoOutputSourceP::new);
         dag.edge(between(v1, v2));
 
-        Job job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
         TestProcessors.NoOutputSourceP.executionStarted.await();
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
@@ -214,7 +214,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setMetricsEnabled(false)
                 .setStoreMetricsAfterJobCompletion(true);
-        Job job = jet().newJob(dag, config);
+        Job job = hz().getJet().newJob(dag, config);
 
         //when
         NoOutputSourceP.executionStarted.await();
@@ -233,7 +233,7 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     private Job runJobExpectFailure(@Nonnull DAG dag, @Nonnull RuntimeException expectedException) {
         Job job = null;
         try {
-            job = jet().newJob(dag, JOB_CONFIG_WITH_METRICS);
+            job = hz().getJet().newJob(dag, JOB_CONFIG_WITH_METRICS);
             job.join();
             fail("Job execution should have failed");
         } catch (Exception actual) {
@@ -246,13 +246,13 @@ public class JobMetrics_MiscTest extends TestInClusterSupport {
     private void assertJobHasMetrics(Job job, boolean saved) {
         assertFalse(job.getMetrics().metrics().isEmpty());
         assertFalse(job.getMetrics().get("queuesSize").isEmpty());
-        assertEquals(saved, jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
+        assertEquals(saved, hz().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
     private void assertEmptyJobMetrics(Job job, boolean saved) {
         assertTrue("Should have been empty, but contained: " + job.getMetrics().metrics(),
                 job.getMetrics().metrics().isEmpty());
-        assertEquals(saved, jet().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
+        assertEquals(saved, hz().getMap(JobRepository.JOB_METRICS_MAP_NAME).containsKey(job.getId()));
     }
 
     private static class BlockingInInitMetaSupplier implements ProcessorMetaSupplier {

@@ -17,8 +17,8 @@
 package com.hazelcast.jet.elastic;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.elasticsearch.action.search.SearchRequest;
@@ -31,16 +31,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ElasticClientsTest extends BaseElasticTest {
 
-    private final JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void afterClass() throws Exception {
+    public void afterClass() {
         factory.terminateAll();
     }
 
     @Override
-    protected JetInstance createJetInstance() {
-        return factory.newMember(config());
+    protected HazelcastInstance createHazelcastInstance() {
+        return factory.newHazelcastInstance(config());
     }
 
     @Test

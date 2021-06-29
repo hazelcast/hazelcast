@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -32,16 +32,14 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 /**
- * A utility to convert a key-value entry represented as {@code
- * Entry<Object, Object>} to a row represented as {@code Object[]}. As a
- * convenience, it also contains a {@link #predicate} - it is applied
- * before projecting.
+ * A utility to convert a key-value entry to a row represented as
+ * {@code Object[]}. As a convenience, it also contains a
+ * {@link #predicate} - it is applied before projecting.
  * <p>
  * {@link KvProjector} does the reverse.
  */
@@ -94,9 +92,9 @@ public class KvRowProjector implements Row {
         return extractors;
     }
 
-    public Object[] project(Entry<Object, Object> entry) {
-        keyTarget.setTarget(entry.getKey(), null);
-        valueTarget.setTarget(entry.getValue(), null);
+    public Object[] project(Object key, Object value) {
+        keyTarget.setTarget(key, null);
+        valueTarget.setTarget(value, null);
 
         if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
             return null;

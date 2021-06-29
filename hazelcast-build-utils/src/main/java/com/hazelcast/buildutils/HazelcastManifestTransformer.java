@@ -19,7 +19,6 @@ package com.hazelcast.buildutils;
 import aQute.lib.osgi.Instruction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
 
@@ -29,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -95,7 +95,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
     @Override
     public boolean canTransformResource(String resource) {
-        return JarFile.MANIFEST_NAME.equalsIgnoreCase(resource);
+        return JarFile.MANIFEST_NAME.equals(resource.toUpperCase(Locale.ROOT));
     }
 
     @Override
@@ -191,11 +191,13 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             shadedManifest = new Manifest();
         }
 
-        precompileOverrideInstructions();
-
         Attributes attributes = shadedManifest.getMainAttributes();
-        attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
-        attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+
+        if (overrideInstructions != null) {
+            precompileOverrideInstructions();
+            attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
+            attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+        }
 
         attributes.putValue("Created-By", "HazelcastManifestTransformer through Shade Plugin");
 
@@ -217,7 +219,6 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         jarOutputStream.flush();
     }
 
-    @SuppressFBWarnings(value = "NP_UNWRITTEN_FIELD", justification = "Field is set by Maven")
     private void precompileOverrideInstructions() {
         String importPackageInstructions = overrideInstructions.get(IMPORT_PACKAGE);
         if (importPackageInstructions != null) {
@@ -372,7 +373,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         private boolean findResolutionConstraint(String[] tokens) {
             for (String token : tokens) {
                 if (token.startsWith(RESOLUTION_PREFIX)) {
-                    return token.equalsIgnoreCase("resolution:=optional");
+                    return token.toLowerCase(Locale.ROOT).equals("resolution:=optional");
                 }
             }
             return false;

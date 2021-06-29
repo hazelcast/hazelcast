@@ -17,8 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.util.ImdgUtil;
@@ -40,29 +39,24 @@ public class MemberReconnectionTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.setClusterName(randomName());
 
-        JetInstance inst1 = Hazelcast.newHazelcastInstance(config).getJetInstance();
-        JetInstance inst2 = Hazelcast.newHazelcastInstance(config).getJetInstance();
+        HazelcastInstance inst1 = createHazelcastInstance(config);
+        HazelcastInstance inst2 = createHazelcastInstance(config);
 
-        try {
-            DAG dag = new DAG();
-            Vertex v1 = dag.newVertex("v1", () -> new MockP().streaming());
-            Vertex v2 = dag.newVertex("v2", () -> new MockP());
-            dag.edge(between(v1, v2).distributed());
+        DAG dag = new DAG();
+        Vertex v1 = dag.newVertex("v1", () -> new MockP().streaming());
+        Vertex v2 = dag.newVertex("v2", () -> new MockP());
+        dag.edge(between(v1, v2).distributed());
 
-            Job job = inst1.newJob(dag);
-            long executionId = assertJobRunningEventually(inst1, job, null);
+        Job job = inst1.getJet().newJob(dag);
+        long executionId = assertJobRunningEventually(inst1, job, null);
 
-            // Close the connection. Nothing is sent through the SenderTasklet, therefore we won't detect
-            // it there. We rely on detecting it in ReceiverTasklet, we assert that it was detected there.
-            logger.info("closing the connection...");
-            ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1), getNodeEngineImpl(inst2).getThisAddress())
-                    .close("mock close", new Exception("mock close"));
+        // Close the connection. Nothing is sent through the SenderTasklet, therefore we won't detect
+        // it there. We rely on detecting it in ReceiverTasklet, we assert that it was detected there.
+        logger.info("closing the connection...");
+        ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1), getNodeEngineImpl(inst2).getThisAddress())
+                .close("mock close", new Exception("mock close"));
 
-            // assert that the job was restarted
-            assertJobRunningEventually(inst1, job, executionId);
-        } finally {
-            inst1.getHazelcastInstance().getLifecycleService().terminate();
-            inst2.getHazelcastInstance().getLifecycleService().terminate();
-        }
+        // assert that the job was restarted
+        assertJobRunningEventually(inst1, job, executionId);
     }
 }

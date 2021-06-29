@@ -17,7 +17,7 @@
 package com.hazelcast.jet.cdc.postgres;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.CdcSinks;
@@ -79,11 +79,11 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(null);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         //then
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //when
         executeBatch(
@@ -94,7 +94,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -115,12 +115,12 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = ordersPipeline();
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -171,15 +171,15 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(snapshotIntervalMs);
 
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline, config);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline, config);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //make sure the job stores a Postgres WAL offset so that it won't trigger database snapshots after any restart
         //multiple snapshots are a problem for this test, because it is updating the same row, so subsequent snapshots
         //will return different images
-        JobRepository jr = new JobRepository(jet);
+        JobRepository jr = new JobRepository(hz);
         waitForNextSnapshot(jr, job.getId(), 20, false);
 
         String lsnFlushedBeforeRestart = getConfirmedFlushLsn();
@@ -214,7 +214,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 expectedPatterns.add("1004/" + format("%05d", i) + ":UPDATE:Customer \\{id=1004, firstName=Anne" + i +
                         ", lastName=Kretchmar, email=annek@noanswer.org\\}");
             }
-            assertTrueEventually(() -> assertMatch(expectedPatterns, mapResultsToSortedList(jet.getMap("results"))));
+            assertTrueEventually(() -> assertMatch(expectedPatterns, mapResultsToSortedList(hz.getMap("results"))));
             assertTrueEventually(() -> assertNotEquals(lsnFlushedBeforeRestart, getConfirmedFlushLsn()));
         } finally {
             job.cancel();
@@ -229,22 +229,22 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(250L);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline, new JobConfig());
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline, new JobConfig());
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //then update a record
         executeBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
 
         //when
-        assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
         //then
-        jet.getMap("results").destroy();
+        hz.getMap("results").destroy();
 
         //when
-        assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 0);
 
         String lsnFlushedBeforeRestart = getConfirmedFlushLsn();
 
@@ -253,7 +253,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         //when
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
         //then update a record
         executeBatch(
@@ -263,7 +263,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")),
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")),
                     Arrays.asList(
                             "1001/00000:SYNC:" + new Customer(1001, "Sally", "Thomas", "sally.thomas@acme.com"),
                             "1002/00000:SYNC:" + new Customer(1002, "George", "Bailey", "gbailey@foobar.com"),
@@ -306,8 +306,8 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         Pipeline pipeline = customersPipeline(null);
 
         // when
-        JetInstance jet = createJetMembers(1)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(1)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         //then
         assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -323,7 +323,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         //then
         try {
             assertTrueEventually(() -> {
-                IMap<Object, Object> map = jet.getMap("results");
+                IMap<Object, Object> map = hz.getMap("results");
                 int size = map.size();
                 System.out.println("No. of records: " + size);
                 assertEquals(expectedRecords.size(), size);
@@ -370,12 +370,12 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
-        Job job = jet.newJob(pipeline, jobConfig);
+        Job job = hz.getJet().newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
@@ -392,7 +392,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
                 "INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')"
         );
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
@@ -405,7 +405,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
         //when
         executeBatch("DELETE FROM customers WHERE id=1005");
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",

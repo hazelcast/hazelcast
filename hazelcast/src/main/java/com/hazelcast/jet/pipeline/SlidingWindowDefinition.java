@@ -24,7 +24,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 /**
  * Represents the definition of a sliding window.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @SerializableByConvention
 public class SlidingWindowDefinition extends WindowDefinition {

@@ -24,7 +24,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -74,7 +74,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * The default local parallelism for the sinks in this class is typically 1,
  * check the documentation of individual methods.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class Sinks {
 
@@ -174,7 +174,7 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <T, K, V> Sink<T> map(
@@ -206,7 +206,7 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <T, K, V> Sink<T> map(
@@ -250,7 +250,7 @@ public final class Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      *
-     * @since 4.2
+     * @since Jet 4.2
      */
     @Nonnull
     public static <T, K, V> Sink<T> remoteMap(
@@ -837,12 +837,12 @@ public final class Sinks {
      * <p>
      * Local parallelism for this sink is 1.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                ctx -> ctx.jetInstance().getReliableTopic(reliableTopicName))
+                ctx -> ctx.hazelcastInstance().getReliableTopic(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
                 .build();
     }
@@ -861,7 +861,7 @@ public final class Sinks {
      * <p>
      * Local parallelism for this sink is 1.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull ITopic<Object> reliableTopic) {
@@ -879,7 +879,7 @@ public final class Sinks {
      * <p>
      * Local parallelism for this sink is 1.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
@@ -1346,7 +1346,7 @@ public final class Sinks {
      * The default local parallelism for this sink is 1.
      *
      * @param <T> type of the items the sink accepts
-     * @since 4.1
+     * @since Jet 4.1
      */
     @Nonnull
     public static <T> JdbcSinkBuilder<T> jdbcBuilder() {
@@ -1357,7 +1357,7 @@ public final class Sinks {
      * Returns a sink that publishes to the {@link Observable} with the
      * provided name. The records that are sent to the observable can be
      * read through first getting a handle to it through
-     * {@link JetInstance#getObservable(String)} and then subscribing to
+     * {@link JetService#getObservable(String)} and then subscribing to
      * the events using the methods on {@link Observable}.
      * <p>
      * The {@code Observable} should be destroyed after using it. For the full
@@ -1376,7 +1376,7 @@ public final class Sinks {
      * }</pre>
      * This sink is cooperative and uses a local parallelism of 1.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <T> Sink<T> observable(String name) {
@@ -1394,7 +1394,7 @@ public final class Sinks {
      * <p>
      * For more details refer to {@link #observable(String) observable(name)}.
      *
-     * @since 4.0
+     * @since Jet 4.0
      */
     @Nonnull
     public static <T> Sink<T> observable(Observable<? super T> observable) {

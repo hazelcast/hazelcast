@@ -75,7 +75,7 @@ import static java.util.stream.Collectors.joining;
  * Data travels from sources to sinks and is transformed and reshaped
  * as it passes through the processors.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
@@ -108,7 +108,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      *
      * @param namePrefix the prefix for unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(
@@ -139,7 +139,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      *
      * @param namePrefix the prefix for unique name of the vertex
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorSupplier processorSupplier) {
@@ -169,7 +169,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      *
      * @param namePrefix the prefix for unique name of the vertex
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public Vertex newUniqueVertex(@Nonnull String namePrefix, @Nonnull ProcessorMetaSupplier metaSupplier) {
@@ -428,7 +428,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             edge.add("toOrdinal", e.getDestOrdinal());
             edge.add("priority", e.getPriority());
             edge.add("distributedTo", String.valueOf(e.getDistributedTo()));
-            edge.add("type", e.getRoutingPolicy().toString().toLowerCase());
+            edge.add("type", StringUtil.lowerCaseInternal(e.getRoutingPolicy().toString()));
             edges.add(edge);
         }
         dag.add("edges", edges);
@@ -531,7 +531,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             labels.add("distributed to " + e.getDistributedTo());
         }
         if (e.getRoutingPolicy() != RoutingPolicy.UNICAST) {
-            labels.add(e.getRoutingPolicy().toString().toLowerCase());
+            labels.add(StringUtil.lowerCaseInternal(e.getRoutingPolicy().toString()));
         }
         return String.join("-", labels);
     }

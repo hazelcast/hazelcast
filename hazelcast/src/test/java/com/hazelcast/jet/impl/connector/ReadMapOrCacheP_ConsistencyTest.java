@@ -23,7 +23,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -68,11 +67,11 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
     private static CountDownLatch proceedLatch;
 
     private final List<HazelcastInstance> remoteInstances = new ArrayList<>();
-    private JetInstance jet;
+    private HazelcastInstance hz;
 
     @Before
     public void setup() {
-        jet = createJetMember();
+        hz = createHazelcastInstance();
 
         processedCount = new AtomicInteger();
         startLatch = new CountDownLatch(1);
@@ -88,7 +87,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_addingItems_local() {
-        test_addingItems(jet.getMap(MAP_NAME), null);
+        test_addingItems(hz.getMap(MAP_NAME), null);
     }
 
     @Test
@@ -103,7 +102,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_removingItems_local() {
-        test_removingItems(jet.getMap(MAP_NAME), null);
+        test_removingItems(hz.getMap(MAP_NAME), null);
     }
 
     @Test
@@ -117,7 +116,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
 
     @Test
     public void test_migration_local() throws Exception {
-        test_migration(jet.getMap(MAP_NAME), null, () -> createJetMember());
+        test_migration(hz.getMap(MAP_NAME), null, () -> createHazelcastInstance());
     }
 
     @Test
@@ -161,7 +160,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
              }
          }));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
 
         proceedLatch.countDown();
 
@@ -201,7 +200,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
              }
          }));
 
-        Job job = jet.newJob(p);
+        Job job = hz.getJet().newJob(p);
 
         proceedLatch.countDown();
 
@@ -240,7 +239,7 @@ public class ReadMapOrCacheP_ConsistencyTest extends JetTestSupport {
          .setLocalParallelism(1)
          .writeTo(AssertionSinks.assertAnyOrder(IntStream.range(0, NUM_ITEMS).boxed().collect(toList())));
 
-        Job job = jet.newJob(p, new JobConfig().setAutoScaling(false));
+        Job job = hz.getJet().newJob(p, new JobConfig().setAutoScaling(false));
 
         // start the job. The map reader will be blocked thanks to the backpressure from the mapping stage
         startLatch.await();

@@ -40,7 +40,7 @@ import java.util.function.Predicate;
  *
  * @param <T> traversed item type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface Traverser<T> {

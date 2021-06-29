@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -58,7 +55,7 @@ public class UpdateMapPTest extends JetTestSupport {
     @Parameterized.Parameter(1)
     public int keyRange;
 
-    private JetInstance jet;
+    private HazelcastInstance hz;
     private HazelcastInstance client;
     private IMap<String, Integer> sinkMap;
 
@@ -74,19 +71,19 @@ public class UpdateMapPTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        jet = createJetMember();
-        client = new HazelcastClientProxy((HazelcastClientInstanceImpl) createJetClient().getHazelcastInstance());
-        sinkMap = jet.getMap("results");
+        hz = createHazelcastInstance();
+        client = createHazelcastClient();
+        sinkMap = hz.getMap("results");
     }
 
     @Test
     public void test_localMap() {
-        runTest(updateMap(jet.getHazelcastInstance()));
+        runTest(updateMap(hz));
     }
 
     @Test
     public void test_localMap_with_EP() {
-        runTest(updateMapWithEP(jet.getHazelcastInstance()));
+        runTest(updateMapWithEP(hz));
     }
 
     @Test
@@ -132,7 +129,7 @@ public class UpdateMapPTest extends JetTestSupport {
 
         TestSupport
             .verifyProcessor(sup)
-            .jetInstance(jet)
+            .hazelcastInstance(hz)
             .input(input)
             .disableSnapshots()
             .disableLogging()

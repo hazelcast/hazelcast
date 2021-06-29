@@ -81,6 +81,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -190,7 +191,7 @@ public class MCMessageTasksTest extends HazelcastTestSupport {
         assertTrue(response.clusterTime > 0);
         assertEquals(0, response.currentState);
         assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), response.memberVersion);
-        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), response.jetVersion);
+        assertNull(response.jetVersion);
     }
 
     @Test

@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -591,8 +591,8 @@ public class BatchStageTest extends PipelineTestSupport {
         for (int i : input) {
             replicatedMap.put(i, prefix + i);
         }
-        for (JetInstance jet : allJetInstances()) {
-            assertSizeEventually(itemCount, jet.getReplicatedMap(replicatedMapName));
+        for (HazelcastInstance hz : allHazelcastInstances()) {
+            assertSizeEventually(itemCount, hz.getReplicatedMap(replicatedMapName));
         }
 
         // When
@@ -673,7 +673,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // Then
         stage.writeTo(sink);
-        Job job = jet().newJob(p);
+        Job job = hz().getJet().newJob(p);
 
         assertThatThrownBy(() -> job.join())
                 .hasMessageContaining("mock error");

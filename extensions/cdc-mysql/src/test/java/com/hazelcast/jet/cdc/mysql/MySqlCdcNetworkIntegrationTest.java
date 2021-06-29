@@ -20,8 +20,8 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.api.model.Ports;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.AbstractCdcIntegrationTest;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -98,9 +98,10 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
     }
 
     @Before
-    public void ignoreOnJdk15() throws SQLException {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+    public void ignoreOnJdk15OrHigher() throws SQLException {
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
+                        "https://github.com/hazelcast/hazelcast/issues/18800",
+                System.getProperty("java.version").matches("^1[56].*"));
     }
 
     @After
@@ -120,24 +121,24 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         Pipeline pipeline = initPipeline(containerIpAddress, port);
 
         // when job starts
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         // then
         boolean neverReconnect = reconnectBehavior.getMaxAttempts() == 0;
         if (neverReconnect) {
             // then job fails
             assertJobFailsWithConnectException(job, false);
-            assertTrue(jet.getMap("results").isEmpty());
+            assertTrue(hz.getMap("results").isEmpty());
         } else {
             // and can't connect to DB
             assertJobStatusEventually(job, RUNNING);
-            assertTrue(jet.getMap("results").isEmpty());
+            assertTrue(hz.getMap("results").isEmpty());
 
             // and DB starts
             mysql.start();
             try {
                 // then source connects successfully
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
@@ -155,8 +156,8 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when job starts
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
             assertJobStatusEventually(job, RUNNING);
 
             // and snapshotting is ongoing (we have no exact way of identifying
@@ -174,7 +175,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
             // then connector manages to reconnect and finish snapshot
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
             } finally {
                 abortJob(job);
             }
@@ -188,8 +189,8 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when job starts
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         // and snapshotting is ongoing (we have no exact way of identifying
@@ -209,7 +210,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
             // then snapshotting finishes successfully
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 4);
                 assertEquals(RUNNING, job.getStatus());
             } finally {
                 abortJob(job);
@@ -227,11 +228,11 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, mysql);
             Pipeline pipeline = initPipeline(proxy.getContainerIpAddress(), proxy.getProxyPort());
             // when connector is up and transitions to binlog reading
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 4);
             insertRecords(mysql, 1005);
-            assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
             // and the connection is cut
             proxy.setConnectionCut(true);
@@ -247,7 +248,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
             // then the connector catches up
             try {
-                assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                assertEqualsEventually(() -> hz.getMap("results").size(), 7);
             } finally {
                 abortJob(job);
             }
@@ -261,12 +262,12 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
         Pipeline pipeline = initPipeline(mysql.getContainerIpAddress(), port);
         // when connector is up and transitions to binlog reading
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
         SECONDS.sleep(3);
         insertRecords(mysql, 1005);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 5);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 5);
 
         // and DB is stopped
         stopContainer(mysql);
@@ -277,8 +278,8 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             assertJobFailsWithConnectException(job, true);
         } else {
             // and results are cleared
-            jet.getMap("results").clear();
-            assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+            hz.getMap("results").clear();
+            assertEqualsEventually(() -> hz.getMap("results").size(), 0);
 
             // and DB is started anew
             mysql = initMySql(null, port);
@@ -287,10 +288,10 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
             try {
                 if (resetStateOnReconnect) {
                     // then job keeps running, connector starts freshly, including snapshotting
-                    assertEqualsEventually(() -> jet.getMap("results").size(), 7);
+                    assertEqualsEventually(() -> hz.getMap("results").size(), 7);
                     assertEquals(RUNNING, job.getStatus());
                 } else {
-                    assertEqualsEventually(() -> jet.getMap("results").size(), 2);
+                    assertEqualsEventually(() -> hz.getMap("results").size(), 2);
                     assertEquals(RUNNING, job.getStatus());
                 }
             } finally {

@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -62,7 +62,7 @@ public class JobRepositoryTest extends JetTestSupport {
     private static final int MAX_JOB_RESULTS_COUNT = 2;
 
     private final JobConfig jobConfig = new JobConfig();
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private JobRepository jobRepository;
 
     @Before
@@ -70,7 +70,7 @@ public class JobRepositoryTest extends JetTestSupport {
         Config config = new Config();
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
 
-        instance = createJetMember(config);
+        instance = createHazelcastInstance(config);
         jobRepository = new JobRepository(instance);
         jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
@@ -166,7 +166,7 @@ public class JobRepositoryTest extends JetTestSupport {
             jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
             fail();
         } catch (JetException e) {
-            Collection<DistributedObject> objects = instance.getHazelcastInstance().getDistributedObjects();
+            Collection<DistributedObject> objects = instance.getDistributedObjects();
             assertTrue(objects.stream().noneMatch(o -> o.getName().startsWith(JobRepository.RESOURCES_MAP_NAME_PREFIX)));
         }
     }
@@ -177,14 +177,14 @@ public class JobRepositoryTest extends JetTestSupport {
 
     @Test
     public void test_getJobRecordFromClient() {
-        JetInstance client = createJetClient();
+        HazelcastInstance client = createHazelcastClient();
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.streamFromProcessor("source", ProcessorMetaSupplier.of(() -> new NoOutputSourceP())))
-         .withoutTimestamps()
-         .writeTo(Sinks.logger());
-        Job job = instance.newJob(p, new JobConfig()
-            .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
-            .setSnapshotIntervalMillis(100));
+                .withoutTimestamps()
+                .writeTo(Sinks.logger());
+        Job job = instance.getJet().newJob(p, new JobConfig()
+                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
+                .setSnapshotIntervalMillis(100));
         JobRepository jobRepository = new JobRepository(client);
         assertTrueEventually(() -> assertNotNull(jobRepository.getJobRecord(job.getId())));
         client.shutdown();
@@ -197,7 +197,7 @@ public class JobRepositoryTest extends JetTestSupport {
 
         // create max+1 jobs
         for (int i = 0; i < MAX_JOB_RESULTS_COUNT + 1; i++) {
-            instance.newJob(dag).join();
+            instance.getJet().newJob(dag).join();
         }
 
         jobRepository.cleanup(getNodeEngineImpl(instance));
@@ -210,7 +210,9 @@ public class JobRepositoryTest extends JetTestSupport {
 
     private long uploadResourcesForNewJob() {
         jobConfig.addClass(DummyClass.class);
-        return jobRepository.uploadJobResources(jobRepository.newJobId(), jobConfig);
+        long jobId = jobRepository.newJobId();
+        jobRepository.uploadJobResources(jobId, jobConfig);
+        return jobId;
     }
 
     private Data createDagData() {

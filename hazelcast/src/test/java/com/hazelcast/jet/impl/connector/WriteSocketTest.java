@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -95,16 +95,16 @@ public class WriteSocketTest extends JetTestSupport {
             }
         }));
 
-        JetInstance jetInstance = createJetMember();
-        createJetMember();
-        IMap<Integer, String> map = jetInstance.getMap("map");
+        HazelcastInstance hz = createHazelcastInstance();
+        createHazelcastInstance();
+        IMap<Integer, String> map = hz.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.map("map"))
          .writeTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
 
-        jetInstance.newJob(p).join();
+        hz.getJet().newJob(p).join();
         assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));
         serverSocket.close();
         // wait a little to check, if the counter doesn't get too far

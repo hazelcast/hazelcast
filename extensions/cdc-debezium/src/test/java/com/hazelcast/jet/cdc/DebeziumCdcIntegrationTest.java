@@ -17,8 +17,8 @@
 package com.hazelcast.jet.cdc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.JobStatus;
@@ -60,8 +60,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql() throws Exception {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
+                        "https://github.com/hazelcast/hazelcast/issues/18800",
+                System.getProperty("java.version").matches("^1[56].*"));
 
         MySQLContainer<?> container = mySqlContainer();
 
@@ -100,11 +101,11 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
 
             //then
-            assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
             //when
             try (Connection connection = getMySqlConnection(container.withDatabaseName("inventory").getJdbcUrl(),
@@ -118,7 +119,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
             //then
             try {
-                assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+                assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
             } finally {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
@@ -146,8 +147,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
     @Test
     public void mysql_simpleJson() {
-        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623",
-                System.getProperty("java.version").startsWith("15"));
+        Assume.assumeFalse("https://github.com/hazelcast/hazelcast-jet/issues/2623, " +
+                        "https://github.com/hazelcast/hazelcast/issues/18800",
+                System.getProperty("java.version").matches("^1[56].*"));
 
         MySQLContainer<?> container = mySqlContainer();
 
@@ -209,12 +211,12 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
 
             //then
             try {
-                assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap("results"))));
+                assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap("results"))));
             } finally {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
@@ -280,11 +282,11 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
 
             //then
-            assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+            assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
             //when
             try (Connection connection = getPostgreSqlConnection(container.getJdbcUrl(), container.getUsername(),
@@ -299,7 +301,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
             //then
             try {
-                assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+                assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
             } finally {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
@@ -365,12 +367,12 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .writeTo(Sinks.map("results"));
 
             // when
-            JetInstance jet = createJetMembers(2)[0];
-            Job job = jet.newJob(pipeline);
+            HazelcastInstance hz = createHazelcastInstances(2)[0];
+            Job job = hz.getJet().newJob(pipeline);
 
             //then
             try {
-                assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap("results"))));
+                assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap("results"))));
             } finally {
                 job.cancel();
                 assertJobStatusEventually(job, JobStatus.FAILED);
@@ -401,8 +403,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                 .writeTo(Sinks.noop());
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
+
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("connector class io.debezium.connector.xxx.BlaBlaBla not found");

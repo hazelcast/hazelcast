@@ -33,7 +33,7 @@ public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExpo
 
     @Override
     protected Operation prepareOperation() {
-        return getJetService().createExportSnapshotOperation(parameters.jobId, parameters.name, parameters.cancelJob);
+        return getJetServiceBackend().createExportSnapshotOperation(parameters.jobId, parameters.name, parameters.cancelJob);
     }
 
     @Override

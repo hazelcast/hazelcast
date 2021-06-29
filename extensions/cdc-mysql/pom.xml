@@ -62,22 +62,24 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven.assembly.plugin.version}</version>
+                <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
-                    <descriptors>
-                        <descriptor>src/assembly-descriptor.xml</descriptor>
-                    </descriptors>
+                    <artifactSet>
+                        <excludes>
+                            <!-- Exclude dependencies common with cdc-debezium -->
+                            <exclude>io.debezium:debezium-core</exclude>
+                        </excludes>
+                    </artifactSet>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>distro-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <includedLicenses combine.children="append">
+                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                    </includedLicenses>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -16,10 +16,15 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -28,7 +33,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -55,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -137,8 +143,8 @@ public final class Util {
         return true;
     }
 
-    public static JetInstance getJetInstance(NodeEngine nodeEngine) {
-        return nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
+    public static JetService getJet(NodeEngine nodeEngine) {
+        return nodeEngine.<JetServiceBackend>getService(JetServiceBackend.SERVICE_NAME).getJet();
     }
 
     public static long addClamped(long a, long b) {
@@ -255,6 +261,26 @@ public final class Util {
 
         for (int i = 0; i < count; i++) {
             processorToObjects.putIfAbsent(i, emptyList());
+        }
+        return processorToObjects;
+    }
+
+    /**
+     * Distributes the {@code objects} to {@code count} processors in a
+     * round-robin fashion. If the object count is smaller than processor
+     * count, an empty array is put for the rest of the processors.
+     *
+     * @param count   count of processors
+     * @param objects list of objects to distribute
+     * @return an array, at n-th index is an array of partitions for n-th processor
+     */
+    public static int[][] distributeObjects(int count, int[] objects) {
+        int[][] processorToObjects = new int[count][];
+        for (int i = 0; i < count; i++) {
+            processorToObjects[i] = new int[objects.length / count + (objects.length % count > i ? 1 : 0)];
+        }
+        for (int i = 0; i < objects.length; i++) {
+            processorToObjects[i % count][i / count] = objects[i];
         }
         return processorToObjects;
     }
@@ -428,7 +454,7 @@ public final class Util {
     }
 
     @SuppressWarnings("WeakerAccess")  // used in jet-enterprise
-    public static CompletableFuture<Void> copyMapUsingJob(JetInstance instance, int queueSize,
+    public static CompletableFuture<Void> copyMapUsingJob(HazelcastInstance instance, int queueSize,
                                                           String sourceMap, String targetMap) {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("readMap(" + sourceMap + ')', readMapP(sourceMap));
@@ -436,7 +462,7 @@ public final class Util {
         dag.edge(between(source, sink).setConfig(new EdgeConfig().setQueueSize(queueSize)));
         JobConfig jobConfig = new JobConfig()
                 .setName("copy-" + sourceMap + "-to-" + targetMap);
-        return instance.newJob(dag, jobConfig).getFuture();
+        return instance.getJet().newJob(dag, jobConfig).getFuture();
     }
 
     /**
@@ -647,7 +673,52 @@ public final class Util {
         };
     }
 
-    public static NodeEngineImpl getNodeEngine(JetInstance instance) {
-        return ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientInstanceImpl) {
+            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientProxy) {
+            return ((HazelcastClientProxy) instance).getSerializationService();
+        } else {
+            throw new IllegalArgumentException("Could not access serialization service." +
+                    " Unsupported HazelcastInstance type:" + instance);
+        }
+    }
+
+    public static NodeEngineImpl getNodeEngine(HazelcastInstance instance) {
+        return getHazelcastInstanceImpl(instance).node.nodeEngine;
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance);
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getOriginal();
+        } else {
+            throw new IllegalArgumentException("This method can be called only with member" +
+                    " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        }
+    }
+
+    /**
+     * Returns a predicate that can be applied as a filter to a non-parallel
+     * {@link Stream} to remove items that have duplicate key.
+     * <p>
+     * Don't use in parallel streams, it uses non-concurrent Set internally.
+     * Don't reuse the returned instance, it's not stateless.
+     * <p>
+     * <pre>{@code
+     *    List<String> list = asList("alice", "adela", "ben");
+     *    list.stream()
+     *        .filter(distinctBy(s -> s.charAt(0)))
+     *        ... // returns "alice", "ben", "adela" is filtered out
+     * }</pre>
+     */
+    public static <T> Predicate<T> distinctBy(Function<? super T, ?> keyFn) {
+        Set<Object> seen = new HashSet<>();
+        return t -> seen.add(keyFn.apply(t));
     }
 }

@@ -27,17 +27,19 @@ import org.w3c.dom.Node;
 
 import javax.annotation.Nonnull;
 
+// TODO: I directly replaced JetInstance with JetService for
+//  my convenience. If necessary, add the JetInstance bean.
 /**
- * Bean definition parser for {@link com.hazelcast.jet.JetInstance}.
+ * Bean definition parser for {@link com.hazelcast.jet.JetService}.
  * <p>
  * <b>Sample bean</b>
  * <pre>
- * &lt;hz:jet id="jet" instance-ref="instance"/&gt;
+ * &lt;hz:jet id="jetService" instance-ref="instance"/&gt;
  * </pre>
  */
 public class JetBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    private static final String METHOD_NAME = "getJetInstance";
+    private static final String METHOD_NAME = "getJet";
 
     @Override
     protected AbstractBeanDefinition parseInternal(@Nonnull Element element, @Nonnull ParserContext parserContext) {

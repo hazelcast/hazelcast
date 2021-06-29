@@ -204,7 +204,7 @@ public class SourcesTest extends PipelineTestSupport {
     public void map_withProjectionToNull_then_nullsSkipped() {
         // given
         String mapName = randomName();
-        IMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        IMap<Integer, Entry<Integer, String>> sourceMap = hz().getMap(mapName);
         range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // when
@@ -212,14 +212,14 @@ public class SourcesTest extends PipelineTestSupport {
 
         // then
         p.readFrom(source).writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         assertTrueEventually(() -> assertEquals(
                 range(0, itemCount)
                         .filter(i -> i % 2 != 0)
                         .mapToObj(String::valueOf)
                         .sorted()
                         .collect(joining("\n")),
-                jet().getHazelcastInstance().<String>getList(sinkName)
+                hz().<String>getList(sinkName)
                         .stream()
                         .sorted()
                         .collect(joining("\n"))
@@ -297,7 +297,7 @@ public class SourcesTest extends PipelineTestSupport {
         p.readFrom(source).map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
-        jet().newJob(p, jobConfig).join();
+        hz().getJet().newJob(p, jobConfig).join();
         List<Object> expected = singletonList(person.toString());
         List<Object> actual = new ArrayList<>(sinkList);
         assertEquals(expected, actual);
@@ -360,7 +360,7 @@ public class SourcesTest extends PipelineTestSupport {
         p.readFrom(source).map(en -> en.getValue().toString()).writeTo(sink);
         JobConfig jobConfig = new JobConfig();
         jobConfig.addJar(jarResource);
-        jet().newJob(p, jobConfig).join();
+        hz().getJet().newJob(p, jobConfig).join();
         List<Object> expected = singletonList(person.toString());
         List<Object> actual = new ArrayList<>(sinkList);
         assertEquals(expected, actual);
@@ -459,7 +459,7 @@ public class SourcesTest extends PipelineTestSupport {
         // Then
         p.readFrom(source).writeTo(sink);
         execute();
-        int nodeCount = jet().getCluster().getMembers().size();
+        int nodeCount = hz().getCluster().getMembers().size();
         assertEquals(4 * nodeCount, sinkList.size());
     }
 
@@ -478,14 +478,14 @@ public class SourcesTest extends PipelineTestSupport {
 
         // Then
         p.readFrom(source).withoutTimestamps().writeTo(sink);
-        Job job = jet().newJob(p);
+        Job job = hz().getJet().newJob(p);
         // wait for the processor to initialize
         assertJobStatusEventually(job, JobStatus.RUNNING);
         // pre-existing file should not be picked up
         assertEquals(0, sinkList.size());
         appendToFile(file, "third line");
         // now, only new line should be picked up
-        int nodeCount = jet().getCluster().getMembers().size();
+        int nodeCount = hz().getCluster().getMembers().size();
         assertTrueEventually(() -> assertEquals(nodeCount, sinkList.size()));
     }
 

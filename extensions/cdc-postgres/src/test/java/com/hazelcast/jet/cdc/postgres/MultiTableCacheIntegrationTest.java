@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cdc.postgres;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cdc.ChangeRecord;
 import com.hazelcast.jet.cdc.Operation;
@@ -80,8 +80,8 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 ));
 
         // when
-        JetInstance jet = createJetMembers(1)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(1)[0];
+        Job job = hz.getJet().newJob(pipeline);
         //then
         Map<Integer, OrdersOfCustomer> expected = toMap(
         new OrdersOfCustomer(
@@ -96,7 +96,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 new Order(10004, new Date(1456012800000L), 1003, 1, 107)),
         new OrdersOfCustomer(
                 new Customer(1004, "Anne", "Kretchmar", "annek@noanswer.org")));
-        assertEqualsEventually(() -> getIMapContent(jet, CACHE), expected);
+        assertEqualsEventually(() -> getIMapContent(hz, CACHE), expected);
 
         //when
         List<String> batch = new ArrayList<>();
@@ -128,7 +128,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                 new OrdersOfCustomer(
                         new Customer(1004, "Anne" + REPEATS, "Kretchmar", "annek@noanswer.org")));
         expected.put(1005, new OrdersOfCustomer());
-        assertEqualsEventually(() -> getIMapContent(jet, CACHE), expected);
+        assertEqualsEventually(() -> getIMapContent(hz, CACHE), expected);
     }
 
     private StreamStage<ChangeRecord> fixOrdering(StreamStage<ChangeRecord> input) {
@@ -149,8 +149,8 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
     }
 
     @Nonnull
-    private static Map<Integer, OrdersOfCustomer> getIMapContent(JetInstance jet, String name) {
-        return new HashMap<>(jet.getMap(name));
+    private static Map<Integer, OrdersOfCustomer> getIMapContent(HazelcastInstance hz, String name) {
+        return new HashMap<>(hz.getMap(name));
     }
 
     @Nonnull

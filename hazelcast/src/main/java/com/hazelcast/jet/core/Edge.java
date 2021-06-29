@@ -63,7 +63,7 @@ import static java.util.Objects.requireNonNull;
  * A newly instantiated Edge is non-distributed with a {@link
  * RoutingPolicy#UNICAST UNICAST} routing policy.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class Edge implements IdentifiedDataSerializable {
 
@@ -71,7 +71,7 @@ public class Edge implements IdentifiedDataSerializable {
      * An address returned by {@link #getDistributedTo()} denoting an edge that
      * distributes the items among all members.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     public static final Address DISTRIBUTE_TO_ALL;
 
@@ -370,7 +370,7 @@ public class Edge implements IdentifiedDataSerializable {
      * the source processors emit watermarks or you add a processing guarantee,
      * the job will fail at runtime.
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     public Edge ordered(@Nonnull ComparatorEx<?> comparator) {
         this.comparator = comparator;
@@ -380,7 +380,7 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Activates the {@link RoutingPolicy#FANOUT FANOUT} routing policy.
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public Edge fanout() {
@@ -401,7 +401,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Returns the comparator defined on this edge using {@link
      * #ordered(ComparatorEx)}.
      *
-     * @since 4.3
+     * @since Jet 4.3
      **/
     @Nullable
     public ComparatorEx<?> getOrderComparator() {
@@ -424,7 +424,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @see #distributeTo(Address)
      * @see #getDistributedTo()
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public Edge local() {
@@ -473,7 +473,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @see #local()
      * @see #getDistributedTo()
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public Edge distributeTo(@Nonnull Address targetMember) {
@@ -494,7 +494,7 @@ public class Edge implements IdentifiedDataSerializable {
      *          call)
      * </ul>
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nullable
     public Address getDistributedTo() {
@@ -704,7 +704,7 @@ public class Edge implements IdentifiedDataSerializable {
          * To work as expected, the edge must be also {@link #distributed()}.
          * Otherwise it will work just like {@link #UNICAST}.
          *
-         * @since 4.4
+         * @since Jet 4.4
          */
         FANOUT
     }

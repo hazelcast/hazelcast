@@ -23,7 +23,7 @@ import java.io.Serializable;
  * The definition of the window for a windowed aggregation operation. To obtain
  * a window definition, use the factory methods provided in this interface.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public abstract class WindowDefinition implements Serializable {
 
@@ -34,7 +34,7 @@ public abstract class WindowDefinition implements Serializable {
      * this window definition. A return value of zero means that the stage
      * won't emit early window results.
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     public long earlyResultsPeriod() {
         return earlyResultPeriodMs;
@@ -65,7 +65,7 @@ public abstract class WindowDefinition implements Serializable {
      *                           the emission of early results to the next one
      * @return {@code this}
      *
-     * @since 3.1
+     * @since Jet 3.1
      */
     public WindowDefinition setEarlyResultsPeriod(long earlyResultPeriodMs) {
         this.earlyResultPeriodMs = earlyResultPeriodMs;

@@ -21,7 +21,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -70,8 +70,8 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
 
     @Test
     public void when_memberTerminated_then_transactionsRolledBack() throws Exception {
-        JetInstance instance1 = createJetMember();
-        JetInstance instance2 = createJetMember();
+        HazelcastInstance instance1 = createHazelcastInstance();
+        HazelcastInstance instance2 = createHazelcastInstance();
 
         // use higher number of messages so that each of the parallel processors gets some
         JmsTestUtil.sendMessages(getConnectionFactory(), "queue", true, MESSAGE_COUNT);
@@ -84,7 +84,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
          .withoutTimestamps()
          .writeTo(Sinks.list(sinkList));
 
-        instance1.newJob(p, new JobConfig()
+        instance1.getJet().newJob(p, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 
@@ -97,7 +97,7 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         // twice, if this was wrong, the items in the non-rolled-back
         // transaction will be stalled and only emitted once, they will be
         // emitted after the default Artemis timeout of 5 minutes.
-        instance2.getHazelcastInstance().getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
         assertTrueEventually(() -> assertEquals("items should be emitted twice", MESSAGE_COUNT * 2, sinkList.size()), 30);
     }
 
@@ -126,13 +126,13 @@ public class JmsSourceIntegration_NonSharedClusterTest extends JetTestSupport {
         mapStoreConfig.setImplementation(new FailingMapStore());
         config.addMapConfig(mapConfig);
 
-        JetInstance instance = createJetMember(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.jmsQueue("queue", JmsSourceIntegration_NonSharedClusterTest::getConnectionFactory))
          .withoutTimestamps()
          .writeTo(Sinks.noop());
 
-        Job job = instance.newJob(p, new JobConfig()
+        Job job = instance.getJet().newJob(p, new JobConfig()
                 .setProcessingGuarantee(guarantee)
                 .setSnapshotIntervalMillis(100));
 

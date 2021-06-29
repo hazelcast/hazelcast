@@ -29,7 +29,7 @@ import java.io.Serializable;
  * @param <T1> the type of the second argument to the function
  * @param <T2> the type of the third argument to the function
  * @param <R>  the type of the result of the function
- * @since 3.0
+ * @since Jet 3.0
  */
 @FunctionalInterface
 public interface TriFunction<T0, T1, T2, R> extends Serializable {

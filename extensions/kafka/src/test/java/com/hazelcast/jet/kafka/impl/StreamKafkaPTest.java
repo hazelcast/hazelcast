@@ -17,10 +17,10 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -126,7 +126,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
          .withoutTimestamps()
          .writeTo(Sinks.list("sink"));
 
-        instance().newJob(p);
+        instance().getJet().newJob(p);
         sleepAtLeastSeconds(3);
         for (int i = 0; i < messageCount; i++) {
             kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
@@ -153,8 +153,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
     private void integrationTest(ProcessingGuarantee guarantee) throws Exception {
         int messageCount = 20;
-        JetInstance[] instances = new JetInstance[2];
-        Arrays.setAll(instances, i -> createJetMember());
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance());
 
         Pipeline p = Pipeline.create();
         p.readFrom(KafkaSources.kafka(properties(), topic1Name, topic2Name))
@@ -164,7 +164,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(guarantee);
         config.setSnapshotIntervalMillis(500);
-        Job job = instances[0].newJob(p, config);
+        Job job = instances[0].getJet().newJob(p, config);
         sleepSeconds(3);
         for (int i = 0; i < messageCount; i++) {
             kafkaTestSupport.produce(topic1Name, i, Integer.toString(i));
@@ -196,7 +196,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
             // Bring down one member. Job should restart and drain additional items (and maybe
             // some of the previous duplicately).
-            instances[1].getHazelcastInstance().getLifecycleService().terminate();
+            instances[1].getLifecycleService().terminate();
             Thread.sleep(500);
 
             for (int i = messageCount; i < 2 * messageCount; i++) {
@@ -378,7 +378,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
          .withoutTimestamps()
          .writeTo(Sinks.list(sinkList));
 
-        Job job = instance().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
+        Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> {
             kafkaTestSupport.produce(topic1Name, 0, "0").get();
             assertFalse(sinkList.isEmpty());
@@ -408,7 +408,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
          .writeTo(Sinks.list(sinkList));
 
         kafkaTestSupport.produce(topic1Name, 0, "0").get();
-        instance().newJob(p);
+        instance().getJet().newJob(p);
         assertTrueAllTheTime(() -> assertTrue(sinkList.isEmpty()), 2);
     }
 
