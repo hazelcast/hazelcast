@@ -8,7 +8,7 @@ print_help() {
     echo "  -d, --debug       : Prints curl error output."
     echo "HTTPs related (TLS enabled):"
     echo "      --https       : Uses HTTPs protocol for REST calls. (no parameter value expected)"
-    echo "      --cacert      : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
+    echo "      --ca-cert     : Defines trusted PEM-encoded certificate file path. It's used to verify member certificates."
     echo "      --cert        : Defines PEM-encoded client certificate file path. Only needed when client certificate authentication is used."
     echo "      --key         : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
     echo "      --insecure    : Disables member certificate verification. (no parameter value expected)"
@@ -98,11 +98,11 @@ case "$OPERATION" in
 esac
 
 URL="${URL_SCHEME}://${ADDRESS}:${PORT}/hazelcast/health"
-HTTP_RESPONSE=$(curl ${CURL_ARGS} --write-out "HTTPSTATUS:%{http_code}" $URL)
+HTTP_RESPONSE=$(curl "${CURL_ARGS}" --write-out "HTTPSTATUS:%{http_code}" $URL)
 HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed -e 's/HTTPSTATUS\:.*//g')
 HTTP_STATUS=$(echo "${HTTP_RESPONSE}" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
 
-if [ $HTTP_STATUS -ne 200 ]; then
+if [ "$HTTP_STATUS" -ne 200 ]; then
     echo "Error while checking health of hazelcast cluster on ip ${ADDRESS} on port ${PORT}."
     echo "Please check that cluster is running and that health check is enabled in REST API configuration."
     exit 1
@@ -114,7 +114,7 @@ if [ "$OPERATION" = "all" ]; then
 fi
 
 PREFIX_REGEX="Hazelcast\:\:${KEYWORD}\="
-RESULT=$(echo $HTTP_BODY | grep -Eo "${PREFIX_REGEX}[A-Z_0-9]*" | sed "s/${PREFIX_REGEX}//")
+RESULT=$(echo "$HTTP_BODY" | grep -Eo "${PREFIX_REGEX}[A-Z_0-9]*" | sed "s/${PREFIX_REGEX}//")
 
 echo "${RESULT}"
 exit 0

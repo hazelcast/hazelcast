@@ -9,22 +9,22 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "the corresponding endpoint group."
     echo
     echo "Parameters:"
-    echo "  -o, --operation   Specifies the operation to perform, one of 'get-state', 'change-state',"
-    echo "                    'shutdown', 'force-start', 'get-cluster-version', 'change-cluster-version'."
-    echo "  -s, --state       Changes the cluster state. Valid states: 'active', 'frozen', 'passive'."
-    echo "  -a, --address     IP address to connect to. The default is 127.0.0.1."
-    echo "  -p, --port        TCP port to connect to. The default is 5701."
-    echo "  -c, --clustername The name of the cluster. The default is 'jet'."
-    echo "  -P, --password    The password of the cluster. The default is 'jet-pass'."
-    echo "  -d, --debug       Show verbose output from curl"
-    echo "  -v, --version     The cluster version to change to. To be used with '-o change-cluster-version'."
+    echo "  -o, --operation    : Specifies the operation to perform, one of 'get-state', 'change-state',"
+    echo "                       'shutdown', 'force-start', 'get-cluster-version', 'change-cluster-version'."
+    echo "  -s, --state        : Changes the cluster state. Valid states: 'active', 'frozen', 'passive'."
+    echo "  -a, --address      : IP address to connect to. The default is 127.0.0.1."
+    echo "  -p, --port         : TCP port to connect to. The default is 5701."
+    echo "  -c, --cluster-name : The name of the cluster. The default is 'jet'."
+    echo "  -P, --password     : The password of the cluster. The default is 'jet-pass'."
+    echo "  -d, --debug        : Show verbose output from curl"
+    echo "  -v, --version      : The cluster version to change to. To be used with '-o change-cluster-version'."
     echo
-    echo "HTTPS-related (releveant only when TLS is enabled on the Hazelcast Jet cluster):"
-    echo "  --https     Use the HTTPS protocol for REST calls."
-    echo "  --insecure  Disable member certificate verification."
-    echo "  --cacert    Path to the trusted PEM-encoded certificate, used to verify member certificates."
-    echo "  --cert      Path to the PEM-encoded client certificate. Needed for client certificate authentication."
-    echo "  --key       Path to the PEM-encoded client private key. Needed for client certificate authentication."
+    echo "HTTPS-related (relevant only when TLS is enabled on the Hazelcast Jet cluster):"
+    echo "      --https        : Use the HTTPS protocol for REST calls."
+    echo "      --insecure     : Disable member certificate verification."
+    echo "      --ca-cert      : Path to the trusted PEM-encoded certificate, used to verify member certificates."
+    echo "      --cert         : Path to the PEM-encoded client certificate. Needed for client certificate authentication."
+    echo "      --key          : Path to the PEM-encoded client private key. Needed for client certificate authentication."
     exit 0
 fi
 
@@ -51,8 +51,8 @@ case "$key" in
     PORT="$2"
     shift
     ;;
-    -c|--clustername)
-    CLUSTERNAME="$2"
+    -c|--cluster-name)
+    CLUSTER_NAME="$2"
     shift
     ;;
     -P|--password)
@@ -77,7 +77,7 @@ case "$key" in
     CURL_ARGS="$CURL_ARGS $1 $2"
     shift
     ;;
-    --cacert)
+    --ca-cert)
     CURL_ARGS="$CURL_ARGS --capath /dev/null $1 $2"
     shift
     ;;
@@ -100,9 +100,9 @@ if [[ -z "$PORT" ]]; then
     PORT="5701"
 fi
 
-if [[ -z "$CLUSTERNAME" ]]; then
+if [[ -z "$CLUSTER_NAME" ]]; then
     echo "No cluster name specified, using 'jet'."
-    CLUSTERNAME="jet"
+    CLUSTER_NAME="jet"
 fi
 
 if [[ -z "$PASSWORD" ]]; then
@@ -122,7 +122,7 @@ make_request () {
     if [[ "$1" = "version" ]] && [[ -z "$2" ]]; then
         RESPONSE=$(${curl_cmd} "$url");
     else
-        local data="${CLUSTERNAME}&${PASSWORD}"
+        local data="${CLUSTER_NAME}&${PASSWORD}"
         if [[ "$2" ]]; then
             data="${data}&$2"
         fi
@@ -159,8 +159,8 @@ make_request () {
 
 if [[ "$OPERATION" = "get-state" ]]; then
     make_request state
-    CURRSTATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
-    echo "The cluster state is '${CURRSTATE}'."
+    CURR_STATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "The cluster state is '${CURR_STATE}'."
     exit 0
 fi
 
@@ -175,16 +175,16 @@ if [[ "$OPERATION" = "change-state" ]]; then
     fi
     echo "Changing cluster state to ${DESIRED_STATE}"
     make_request changeState "${DESIRED_STATE}"
-    NEWSTATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
+    NEW_STATE=$(echo "${RESPONSE}" | sed -e 's/^.*"state"[ ]*:[ ]*"//' -e 's/".*//');
     if [[ "$STATUS" = "fail" ]]; then
-        if [[ "$NEWSTATE" != "null" ]]; then
+        if [[ "$NEW_STATE" != "null" ]]; then
             echo "Cluster is already in the '${DESIRED_STATE}' state."
         else
             echo "Got error response: $RESPONSE";
         fi
         exit 0
     fi
-    echo "The cluster is now in the '${NEWSTATE}' state"
+    echo "The cluster is now in the '${NEW_STATE}' state"
     exit 0
 fi
 
@@ -217,8 +217,8 @@ fi
 if [[ "$OPERATION" = "get-cluster-version" ]]; then
     echo "Getting cluster version."
     make_request version
-    CURRVERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
-    echo "Cluster is at version ${CURRVERSION}."
+    CURR_VERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "Cluster is at version ${CURR_VERSION}."
     exit 0
 fi
 
@@ -229,9 +229,9 @@ if [[ "$OPERATION" = "change-cluster-version" ]]; then
         exit 0
     fi
     echo "Changing cluster version to $CLUSTER_VERSION."
-    make_request version ${CLUSTER_VERSION}
-    NEWVERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
-    echo "Cluster version changed to $NEWVERSION."
+    make_request version "${CLUSTER_VERSION}"
+    NEW_VERSION=$(echo "${RESPONSE}" | sed -e 's/^.*"version"[ ]*:[ ]*"//' -e 's/".*//');
+    echo "Cluster version changed to $NEW_VERSION."
     exit 0
 fi
 
