@@ -21,6 +21,7 @@ import com.hazelcast.internal.monitor.impl.IndexOperationStats;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
 
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -76,6 +77,32 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
 
     final MultiResultSet createMultiResultSet() {
         return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
