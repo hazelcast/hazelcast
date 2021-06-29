@@ -142,7 +142,7 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertsIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String name = randomName();
 
         instance().getMap(name).put(
@@ -201,7 +201,7 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertsNullIntoPrimitive_then_fails() {
+    public void when_nullIntoPrimitive_then_fails() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
