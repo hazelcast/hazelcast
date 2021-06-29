@@ -523,10 +523,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord[] getGenericRecordArray(@Nonnull String fieldName) {
-        return readNestedArray(fieldName, GenericRecord[]::new, false);
+        return readNestedArray(fieldName, GenericRecord[]::new, true);
     }
 
-    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asPortable) {
+    private <T> T[] readNestedArray(@Nonnull String fieldName, Function<Integer, T[]> constructor, boolean asGenericRecord) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -558,10 +558,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
                 for (int i = 0; i < len; i++) {
                     int start = in.readInt(offset + i * Bits.INT_SIZE_IN_BYTES);
                     in.position(start);
-                    if (asPortable) {
-                        portables[i] = serializer.readAsObject(in, factoryId, classId);
+                    if (asGenericRecord) {
+                        portables[i] = serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
                     } else {
-                        portables[i] = serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                        portables[i] = serializer.read(in, factoryId, classId);
                     }
                 }
             }
@@ -575,10 +575,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return readNested(fieldName, false);
+        return readNested(fieldName, true);
     }
 
-    private <T> T readNested(@Nonnull String fieldName, boolean asPortable) {
+    private <T> T readNested(@Nonnull String fieldName, boolean asGenericRecord) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -599,10 +599,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             checkFactoryAndClass(fd, factoryId, classId);
 
             if (!isNull) {
-                if (asPortable) {
-                    return serializer.readAsObject(in, factoryId, classId);
+                if (asGenericRecord) {
+                    return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
                 } else {
-                    return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                    return serializer.read(in, factoryId, classId);
                 }
             }
             return null;
@@ -757,15 +757,15 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public GenericRecord getGenericRecordFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, false);
+        return readNestedFromArray(fieldName, index, true);
     }
 
     @Override
     public Object getObjectFromArray(@Nonnull String fieldName, int index) {
-        return readNestedFromArray(fieldName, index, true);
+        return readNestedFromArray(fieldName, index, false);
     }
 
-    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, boolean asPortable) {
+    private <T> T readNestedFromArray(@Nonnull String fieldName, int index, boolean asGenericRecord) {
         int currentPos = in.position();
         try {
             FieldDefinition fd = cd.getField(fieldName);
@@ -793,10 +793,10 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
             int offset = in.position();
             int start = in.readInt(offset + index * Bits.INT_SIZE_IN_BYTES);
             in.position(start);
-            if (asPortable) {
-                return serializer.readAsObject(in, factoryId, classId);
+            if (asGenericRecord) {
+                return serializer.readAsGenericRecord(in, factoryId, classId, readGenericLazy);
             } else {
-                return serializer.readAndInitialize(in, factoryId, classId, readGenericLazy);
+                return serializer.read(in, factoryId, classId);
             }
         } catch (IOException e) {
             throw newIllegalStateException(e);
@@ -858,12 +858,12 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public Object[] getObjectArray(@Nonnull String fieldName) {
-        return readNestedArray(fieldName, Portable[]::new, true);
+        return readNestedArray(fieldName, Portable[]::new, false);
     }
 
     @Override
     public Object getObject(@Nonnull String fieldName) {
-        return readNested(fieldName, true);
+        return readNested(fieldName, false);
     }
 
     @Override

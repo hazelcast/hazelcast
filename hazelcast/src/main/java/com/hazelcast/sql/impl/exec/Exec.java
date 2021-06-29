@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.exec;
 
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.sql.impl.row.RowBatch;
+import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 
 /**
  * Basic execution stage.

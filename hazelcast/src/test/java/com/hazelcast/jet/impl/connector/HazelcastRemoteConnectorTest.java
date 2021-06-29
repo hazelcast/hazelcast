@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -28,8 +29,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -77,18 +76,18 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     private static String SOURCE_NAME = randomName() + "-source";
     private static String SINK_NAME = randomName() + "-sink";
 
-    private static JetInstance jet;
-    private static HazelcastInstance hz;
+    private static HazelcastInstance localHz;
+    private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
-    private static final JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @BeforeClass
     public static void setUp() {
         Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
 
-        jet = factory.newMember(config);
-        JetInstance jet2 = factory.newMember(config);
+        localHz = factory.newHazelcastInstance(config);
+        HazelcastInstance localHz2 = factory.newHazelcastInstance(config);
 
         Config remoteClusterConfig = smallInstanceConfig();
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig().setName("*");
@@ -98,19 +97,19 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("*").getEventJournalConfig().setEnabled(true);
         remoteClusterConfig.addMapConfig(mapConfig);
-        hz = Hazelcast.newHazelcastInstance(remoteClusterConfig);
+        remoteHz = Hazelcast.newHazelcastInstance(remoteClusterConfig);
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(remoteClusterConfig);
 
         clientConfig = new ClientConfig();
         clientConfig.setClusterName(remoteClusterConfig.getClusterName());
-        Address address = hz.getCluster().getLocalMember().getAddress();
+        Address address = remoteHz.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
 
         // workaround for `cache is not created` exception, create cache locally on all nodes
         hz2.getCacheManager().getCache(SOURCE_NAME);
         hz2.getCacheManager().getCache(SINK_NAME);
-        jet2.getCacheManager().getCache(SOURCE_NAME);
-        jet2.getCacheManager().getCache(SINK_NAME);
+        localHz2.getCacheManager().getCache(SOURCE_NAME);
+        localHz2.getCacheManager().getCache(SINK_NAME);
     }
 
     @AfterClass
@@ -121,8 +120,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        destroyObjects(jet.getHazelcastInstance());
-        destroyObjects(hz);
+        destroyObjects(localHz);
+        destroyObjects(remoteHz);
         SOURCE_NAME = randomName() + "-source";
         SINK_NAME = randomName() + "-sink";
     }
@@ -133,7 +132,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_readRemoteMap_withNativePredicateAndProjection() {
-        populateMap(hz.getMap(SOURCE_NAME));
+        populateMap(remoteHz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source",
@@ -146,7 +145,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        IList<Object> list = jet.getList(SINK_NAME);
+        IList<Object> list = localHz.getList(SINK_NAME);
         assertEquals(ITEM_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));
@@ -154,7 +153,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_readRemoteMap_withPredicateAndFunction() {
-        populateMap(hz.getMap(SOURCE_NAME));
+        populateMap(remoteHz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, readRemoteMapP(SOURCE_NAME,
@@ -163,7 +162,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        IList<Object> list = jet.getList(SINK_NAME);
+        IList<Object> list = localHz.getList(SINK_NAME);
         assertEquals(ITEM_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));
@@ -171,7 +170,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_writeRemoteMap() {
-        populateMap(jet.getMap(SOURCE_NAME));
+        populateMap(localHz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readMapP(SOURCE_NAME));
@@ -179,12 +178,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getMap(SINK_NAME).size());
+        assertEquals(ITEM_COUNT, remoteHz.getMap(SINK_NAME).size());
     }
 
     @Test
     public void when_readRemoteCache() {
-        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
+        populateCache(remoteHz.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, readRemoteCacheP(SOURCE_NAME, clientConfig));
@@ -192,12 +191,12 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList(SINK_NAME).size());
+        assertEquals(ITEM_COUNT, localHz.getList(SINK_NAME).size());
     }
 
     @Test
     public void when_writeRemoteCache() {
-        populateCache(jet.getCacheManager().getCache(SOURCE_NAME));
+        populateCache(localHz.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
         Vertex producer = dag.newVertex(SOURCE_NAME, readCacheP(SOURCE_NAME));
@@ -205,7 +204,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getCacheManager().getCache(SINK_NAME).size());
+        assertEquals(ITEM_COUNT, remoteHz.getCacheManager().getCache(SINK_NAME).size());
     }
 
     @Test
@@ -216,11 +215,11 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Job job = jet.newJob(dag);
+        Job job = localHz.getJet().newJob(dag);
 
-        populateMap(hz.getMap(SOURCE_NAME));
+        populateMap(remoteHz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
+        assertSizeEventually(ITEM_COUNT, localHz.getList(SINK_NAME));
         job.cancel();
     }
 
@@ -233,13 +232,13 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Job job = jet.newJob(dag);
+        Job job = localHz.getJet().newJob(dag);
 
-        populateMap(hz.getMap(SOURCE_NAME));
+        populateMap(remoteHz.getMap(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
-        assertFalse(jet.getList(SINK_NAME).contains(0));
-        assertTrue(jet.getList(SINK_NAME).contains(1));
+        assertSizeEventually(ITEM_COUNT - 1, localHz.getList(SINK_NAME));
+        assertFalse(localHz.getList(SINK_NAME).contains(0));
+        assertTrue(localHz.getList(SINK_NAME).contains(1));
         job.cancel();
     }
 
@@ -253,11 +252,11 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
 
-        Job job = jet.newJob(dag);
+        Job job = localHz.getJet().newJob(dag);
 
-        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
+        populateCache(remoteHz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT, jet.getList(SINK_NAME));
+        assertSizeEventually(ITEM_COUNT, localHz.getList(SINK_NAME));
         job.cancel();
     }
 
@@ -271,18 +270,18 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
-        Job job = jet.newJob(dag);
+        Job job = localHz.getJet().newJob(dag);
 
-        populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
+        populateCache(remoteHz.getCacheManager().getCache(SOURCE_NAME));
 
-        assertSizeEventually(ITEM_COUNT - 1, jet.getList(SINK_NAME));
-        assertFalse(jet.getList(SINK_NAME).contains(0));
-        assertTrue(jet.getList(SINK_NAME).contains(1));
+        assertSizeEventually(ITEM_COUNT - 1, localHz.getList(SINK_NAME));
+        assertFalse(localHz.getList(SINK_NAME).contains(0));
+        assertTrue(localHz.getList(SINK_NAME).contains(1));
         job.cancel();
     }
 
     private void executeAndWait(DAG dag) {
-        assertCompletesEventually(jet.newJob(dag).getFuture());
+        assertCompletesEventually(localHz.getJet().newJob(dag).getFuture());
     }
 
 

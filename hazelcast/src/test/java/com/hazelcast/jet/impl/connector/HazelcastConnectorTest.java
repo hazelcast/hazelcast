@@ -99,7 +99,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         streamSinkName = "stream" + sinkName;
 
         // workaround for `cache is not created` exception, create cache locally on all nodes
-        ICacheManager cacheManager = instances()[1].getHazelcastInstance().getCacheManager();
+        ICacheManager cacheManager = instances()[1].getCacheManager();
         cacheManager.getCache(sourceName);
         cacheManager.getCache(sinkName);
         cacheManager.getCache(streamSourceName);
@@ -117,7 +117,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, instance().getMap(sinkName).size());
     }
@@ -133,7 +133,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeMapP(sinkName, i -> i, i -> i));
         dag.edge(between(src, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         IMap<Object, Object> sinkMap = instance().getMap(sinkName);
         assertInstanceOf(NearCachedMapProxyImpl.class, sinkMap);
@@ -155,7 +155,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         Vertex sink = dag.newVertex("sink", writeListP(sinkName));
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         IList<Object> list = instance().getList(sinkName);
         assertEquals(ENTRY_COUNT - 1, list.size());
@@ -177,7 +177,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
         Vertex sink = dag.newVertex("sink", writeListP(sinkName));
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         checkContents_projectedToNull(sinkName);
     }
@@ -189,7 +189,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
                          .mapToObj(String::valueOf)
                          .sorted()
                          .collect(joining("\n")),
-                instance().getHazelcastInstance().<String>getList(sinkName).stream()
+                instance().<String>getList(sinkName).stream()
                         .sorted()
                         .collect(joining("\n")));
     }
@@ -205,7 +205,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         IList<Object> list = instance().getList(sinkName);
         assertEquals(ENTRY_COUNT - 1, list.size());
@@ -222,7 +222,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         IMap<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
@@ -242,7 +242,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         IMap<Integer, Entry<Integer, String>> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
@@ -261,7 +261,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         IMap<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, i));
@@ -283,7 +283,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, instance().getCacheManager().getCache(sinkName).size());
     }
@@ -297,7 +297,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         ICache<Integer, Integer> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
@@ -316,7 +316,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         ICache<Integer, Integer> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceCache.put(i, i));
@@ -338,7 +338,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         assertEquals(ENTRY_COUNT, instance().getList(sinkName).size());
     }
@@ -352,7 +352,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         IMap<Integer, Integer> sourceMap = instance().getMap(streamSourceName);
         sourceMap.put(1, 1); // ADDED
@@ -384,7 +384,7 @@ public class HazelcastConnectorTest extends SimpleTestInClusterSupport {
 
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         ICache<Object, Object> sourceCache = instance().getCacheManager().getCache(streamSourceName);
         sourceCache.put(1, 1); // ADDED

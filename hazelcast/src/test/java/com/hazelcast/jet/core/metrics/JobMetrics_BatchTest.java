@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core.metrics;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -84,14 +84,14 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Job job = execute(p, JOB_CONFIG_WITH_METRICS);
 
         // When
-        JetInstance instance = factory.newMember(prepareConfig());
+        HazelcastInstance instance = factory.newHazelcastInstance(prepareConfig());
         try {
-            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
+            assertClusterSizeEventually(MEMBER_COUNT + 1, hz());
             // Then
             assertMetrics(job.getMetrics());
         } finally {
             instance.shutdown();
-            assertClusterSizeEventually(MEMBER_COUNT, jet());
+            assertClusterSizeEventually(MEMBER_COUNT, hz());
         }
     }
 
@@ -99,15 +99,15 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     public void when_memberRemovedAfterJobFinished_then_metricsNotAffected() {
         Pipeline p = createPipeline();
 
-        JetInstance newMember = factory.newMember(prepareConfig());
+        HazelcastInstance newMember = factory.newHazelcastInstance(prepareConfig());
         Job job;
         try {
-            assertClusterSizeEventually(MEMBER_COUNT + 1, jet());
+            assertClusterSizeEventually(MEMBER_COUNT + 1, hz());
             job = execute(p, JOB_CONFIG_WITH_METRICS);
         } finally {
             newMember.shutdown();
         }
-        assertClusterSizeEventually(MEMBER_COUNT, jet());
+        assertClusterSizeEventually(MEMBER_COUNT, hz());
         assertMetrics(job.getMetrics());
     }
 
@@ -117,8 +117,8 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
         Pipeline p = createPipeline();
         Pipeline p2 = createPipeline(anotherText);
 
-        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
-        Job job2 = jet().newJob(p2, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job2 = hz().getJet().newJob(p2, JOB_CONFIG_WITH_METRICS);
         job.join();
         job2.join();
 
@@ -131,8 +131,8 @@ public class JobMetrics_BatchTest extends TestInClusterSupport {
     public void when_twoDifferentJobsForTheSamePipeline_then_haveDifferentMetrics() {
         Pipeline p = createPipeline();
 
-        Job job = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
-        Job job2 = jet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job = hz().getJet().newJob(p, JOB_CONFIG_WITH_METRICS);
+        Job job2 = hz().getJet().newJob(p, JOB_CONFIG_WITH_METRICS);
         job.join();
         job2.join();
 

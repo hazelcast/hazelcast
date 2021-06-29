@@ -17,7 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -46,11 +46,11 @@ public class StatefulMappingStressTest extends JetTestSupport {
     private static final long TTL = SECONDS.toMillis(2);
     private static final String MAP_SINK_NAME = StatefulMappingStressTest.class.getSimpleName() + "_sink";
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void setup() {
-        instance = createJetMembers(new Config(), 2)[0];
+        instance = createHazelcastInstances(new Config(), 2)[0];
     }
 
     @Test
@@ -92,7 +92,7 @@ public class StatefulMappingStressTest extends JetTestSupport {
         StreamStage<Map.Entry<Integer, Integer>> statefulStage = statefulFn.apply(streamStageWithKey);
         statefulStage.writeTo(Sinks.mapWithMerging(MAP_SINK_NAME, (oldValue, newValue) -> oldValue + newValue));
 
-        instance.newJob(p);
+        instance.getJet().newJob(p);
 
         Map<Integer, Integer> map = instance.getMap(MAP_SINK_NAME);
 

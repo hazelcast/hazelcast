@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -50,10 +50,10 @@ public class LoggerSinkTest extends JetTestSupport {
     @Test
     public void loggerSink() {
         // Given
-        JetInstance jet = createJetMember();
+        HazelcastInstance hz = createHazelcastInstance();
         String srcName = randomName();
 
-        jet.getList(srcName).add(0);
+        hz.getList(srcName).add(0);
 
         Pipeline p = Pipeline.create();
 
@@ -62,7 +62,7 @@ public class LoggerSinkTest extends JetTestSupport {
          .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
          .writeTo(Sinks.logger());
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         // Then
         Assert.assertTrue("no message containing '0-shouldBeSeenOnTheSystemOutput' was found",

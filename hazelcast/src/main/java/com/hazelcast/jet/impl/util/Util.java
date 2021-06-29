@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -669,8 +673,34 @@ public final class Util {
         };
     }
 
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientInstanceImpl) {
+            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientProxy) {
+            return ((HazelcastClientProxy) instance).getSerializationService();
+        } else {
+            throw new IllegalArgumentException("Could not access serialization service." +
+                    " Unsupported HazelcastInstance type:" + instance);
+        }
+    }
+
     public static NodeEngineImpl getNodeEngine(HazelcastInstance instance) {
-        return ((HazelcastInstanceImpl) instance).node.nodeEngine;
+        return getHazelcastInstanceImpl(instance).node.nodeEngine;
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance);
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getOriginal();
+        } else {
+            throw new IllegalArgumentException("This method can be called only with member" +
+                    " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        }
     }
 
     /**

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
-import com.hazelcast.jet.sql.impl.connector.map.OnHeapMapScanP;
 import com.hazelcast.jet.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -42,16 +41,12 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     // reserved for mapping related stuff
 
-    public static final int IMAP_SCAN_PROCESSOR = 10;
-    public static final int IMAP_SCAN_PROCESSOR_META_SUPPLIER = 11;
-    public static final int IMAP_SCAN_PROCESSOR_SUPPLIER = 12;
-
     // Reserved for index scan processor
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR = 13;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 14;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 15;
+    // public static final int IMAP_INDEX_SCAN_PROCESSOR = 10;
+    // public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 11;
+    // public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 12;
 
-    public static final int LEN = IMAP_SCAN_PROCESSOR_SUPPLIER + 1;
+    public static final int LEN = MAPPING_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -66,10 +61,6 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
         constructors[LAG_EVENT_TIME_POLICY_SUPPLIER] = arg -> new EventTimePolicySupplier.LagEventTimePolicySupplier();
-
-        constructors[IMAP_SCAN_PROCESSOR] = arg -> new OnHeapMapScanP();
-        constructors[IMAP_SCAN_PROCESSOR_META_SUPPLIER] = arg -> new OnHeapMapScanP.OnHeapMapScanMetaSupplier();
-        constructors[IMAP_SCAN_PROCESSOR_SUPPLIER] = arg -> new OnHeapMapScanP.OnHeapMapScanSupplier();
 
         return new ArrayDataSerializableFactory(constructors);
     }

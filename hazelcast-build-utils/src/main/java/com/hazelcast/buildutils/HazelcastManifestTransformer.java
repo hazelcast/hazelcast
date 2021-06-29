@@ -19,7 +19,6 @@ package com.hazelcast.buildutils;
 import aQute.lib.osgi.Instruction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
 
@@ -192,11 +191,13 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             shadedManifest = new Manifest();
         }
 
-        precompileOverrideInstructions();
-
         Attributes attributes = shadedManifest.getMainAttributes();
-        attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
-        attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+
+        if (overrideInstructions != null) {
+            precompileOverrideInstructions();
+            attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
+            attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
+        }
 
         attributes.putValue("Created-By", "HazelcastManifestTransformer through Shade Plugin");
 
@@ -218,7 +219,6 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
         jarOutputStream.flush();
     }
 
-    @SuppressFBWarnings(value = "NP_UNWRITTEN_FIELD", justification = "Field is set by Maven")
     private void precompileOverrideInstructions() {
         String importPackageInstructions = overrideInstructions.get(IMPORT_PACKAGE);
         if (importPackageInstructions != null) {

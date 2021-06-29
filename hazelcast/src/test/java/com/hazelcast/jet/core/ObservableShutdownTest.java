@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.function.Observer;
@@ -47,8 +47,8 @@ public class ObservableShutdownTest extends JetTestSupport {
 
     private static final int MEMBER_COUNT = 3;
 
-    private JetInstance[] members;
-    private JetInstance client;
+    private HazelcastInstance[] members;
+    private HazelcastInstance client;
 
     private Observable<Long> memberObservable;
     private Observable<Long> clientObservable;
@@ -58,15 +58,15 @@ public class ObservableShutdownTest extends JetTestSupport {
 
     @Before
     public void before() {
-        members = createJetMembers(MEMBER_COUNT);
-        client = createJetClient();
+        members = createHazelcastInstances(MEMBER_COUNT);
+        client = createHazelcastClient();
 
         memberObserver = new TestObserver();
-        memberObservable = members[members.length - 1].newObservable();
+        memberObservable = members[members.length - 1].getJet().newObservable();
         memberObservable.addObserver(memberObserver);
 
         clientObserver = new TestObserver();
-        clientObservable = client.newObservable();
+        clientObservable = client.getJet().newObservable();
         clientObservable.addObserver(clientObserver);
     }
 
@@ -81,7 +81,7 @@ public class ObservableShutdownTest extends JetTestSupport {
         stage.writeTo(Sinks.observable(memberObservable));
 
         //when
-        Job job = client.newJob(pipeline);
+        Job job = client.getJet().newJob(pipeline);
         //then
         assertTrueEventually(() -> assertTrue(clientObserver.getNoOfValues() > 10));
         assertTrueEventually(() -> assertTrue(memberObserver.getNoOfValues() > 10));
@@ -95,7 +95,7 @@ public class ObservableShutdownTest extends JetTestSupport {
         long jobId = job.getId();
         members[members.length - 1].shutdown();
         //then
-        assertJobStatusEventually(members[0].getJob(jobId), JobStatus.RUNNING);
+        assertJobStatusEventually(members[0].getJet().getJob(jobId), JobStatus.RUNNING);
         assertObserverStopsReceivingValues(memberObserver);
     }
 

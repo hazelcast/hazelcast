@@ -70,7 +70,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertOrdered_not_terminal() {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(1, 2, 3, 4))
@@ -88,7 +88,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertOrdered_not_terminal_should_fail() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(1, 2, 4, 3))
@@ -161,7 +161,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_not_terminal() {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(4, 3, 2, 1))
@@ -179,7 +179,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertAnyOrder_not_terminal_should_fail() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(3, 2, 1))
@@ -214,7 +214,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertContains_not_terminal() {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(4, 3, 2, 1))
@@ -232,7 +232,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertContains_not_terminal_should_fail() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(4, 1, 2, 3))
@@ -268,7 +268,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollected_not_terminal() {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(4, 3, 2, 1))
@@ -286,7 +286,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollected_not_terminal_should_fail() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items(1))
@@ -322,7 +322,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollectedEventuallynot_terminal() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
@@ -338,7 +338,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_assertCollectedEventuallynot_terminal_should_fail() throws Throwable {
-        List<Integer> assertionSink = jet().getList(sinkName);
+        List<Integer> assertionSink = hz().getList(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.itemStream(1, (ts, seq) -> 0L))
@@ -354,7 +354,7 @@ public class AssertionsTest extends PipelineTestSupport {
 
     @Test
     public void test_multiple_assertions_in_pipeline() throws Throwable {
-        Map<String, Long> assertionSink = jet().getMap(sinkName);
+        Map<String, Long> assertionSink = hz().getMap(sinkName);
         assertTrue(assertionSink.isEmpty());
 
         p.readFrom(TestSources.items("some text here and here and some here"))

@@ -68,7 +68,7 @@ public class ImdgUtilTest extends SimpleTestInClusterSupport {
         srcMap.putAll(testData);
 
         logger.info("Copying using job...");
-        Util.copyMapUsingJob(instance().getHazelcastInstance(), 128, srcMap.getName(), "target").get();
+        Util.copyMapUsingJob(instance(), 128, srcMap.getName(), "target").get();
         logger.info("Done copying");
 
         assertEquals(testData, new HashMap<>(instance().getMap("target")));

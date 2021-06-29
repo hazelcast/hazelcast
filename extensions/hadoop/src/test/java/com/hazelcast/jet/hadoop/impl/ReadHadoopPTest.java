@@ -143,7 +143,7 @@ public class ReadHadoopPTest extends HadoopTestSupport {
                 .writeTo(Sinks.list(sinkList))
                 .setLocalParallelism(1);
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
         int expected = paths.size() * ENTRIES.length * (sharedFileSystem ? 1 : 2);
         assertEquals(projectionType == CUSTOM_WITH_NULLS ? expected / 2 : expected, sinkList.size());
         assertTrue(sinkList.get(0).toString().contains("value"));

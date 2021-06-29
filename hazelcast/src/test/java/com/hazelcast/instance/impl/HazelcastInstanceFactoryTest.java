@@ -183,7 +183,7 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
                         }
                         return null;
                     }
-                }).when(nodeExtension).beforeShutdown(false);
+                }).when(nodeExtension).beforeShutdown(true);
                 return nodeExtension;
             }
         };
@@ -207,12 +207,9 @@ public class HazelcastInstanceFactoryTest extends HazelcastTestSupport {
             public NodeExtension createNodeExtension(final Node node) {
                 NodeExtension nodeExtension = super.createNodeExtension(node);
 
-                doAnswer(new Answer() {
-                    @Override
-                    public Object answer(InvocationOnMock invocation) throws Throwable {
-                        node.hazelcastInstance.shutdown();
-                        return null;
-                    }
+                doAnswer(invocation -> {
+                    node.hazelcastInstance.shutdown();
+                    return null;
                 }).when(nodeExtension).afterStart();
 
                 return nodeExtension;

@@ -17,10 +17,14 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.RecordReaderWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -344,10 +348,8 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         map.put(1, 1, 100, TimeUnit.SECONDS);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
-        long lastAccessTime = entryView.getLastAccessTime();
-        long delayToExpiration = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
+        long delayToExpiration = TimeUnit.SECONDS.toMillis(10);
 
-        // lastAccessTime is zero after put, we can find expiration by this calculation
         long expectedExpirationTime = delayToExpiration + entryView.getCreationTime();
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
     }
@@ -367,14 +369,53 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLastAccessTime_isZero_afterFirstPut() {
-        IMap<Integer, Integer> map = createMap();
-
+    public void testCreationTime_is_minus_one_when_per_entry_stats_false() {
+        IMap<Integer, Integer> map = createMapWithLRU(false);
         map.put(1, 1);
 
         EntryView<Integer, Integer> entryView = map.getEntryView(1);
 
-        assertEquals(0L, entryView.getLastAccessTime());
+        assertEquals(-1, entryView.getCreationTime());
+    }
+
+    @Test
+    public void testLastAccessTime_is_set_at_creation_time__when_per_entry_stats_false() {
+        long nowBeforePut = getStripedNow();
+
+        IMap<Integer, Integer> map = createMapWithLRU(false);
+        map.put(1, 1);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+
+        assertTrue(entryView.getLastAccessTime() >= nowBeforePut);
+    }
+
+    private static long getStripedNow() {
+        Record record = newRecord();
+        record.setLastAccessTime(Clock.currentTimeMillis());
+        return record.getLastAccessTime();
+    }
+
+    @Test
+    public void testCreationTime_is_set_when_per_entry_stats_true() {
+        long nowBeforePut = getStripedNow();
+
+        IMap<Integer, Integer> map = createMapWithLRU(true);
+        map.put(1, 1);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+
+        assertTrue(entryView.getCreationTime() >= nowBeforePut);
+    }
+
+    @Test
+    public void testLastAccessTime_is_not_set_at_creation_time_when_per_entry_stats_true() {
+        IMap<Integer, Integer> map = createMapWithLRU(true);
+        map.put(1, 1);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(1);
+
+        assertEquals(0, entryView.getLastAccessTime());
     }
 
     @Test
@@ -438,9 +479,9 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         long lastAccessTimeBefore = map.getEntryView(1).getLastAccessTime();
 
-        sleepAtLeastMillis(10);
+        sleepAtLeastMillis(500);
         map.get(1);
-        sleepAtLeastMillis(10);
+        sleepAtLeastMillis(500);
         map.get(1);
 
         long lastAccessTimeAfter = map.getEntryView(1).getLastAccessTime();
@@ -462,6 +503,17 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setInMemoryFormat(inMemoryFormat());
         mapConfig.setPerEntryStatsEnabled(true);
+        return createHazelcastInstance(config).getMap(mapName);
+    }
+
+    private <T, U> IMap<T, U> createMapWithLRU(boolean perEntryStats) {
+        String mapName = randomMapName();
+        Config config = getConfig();
+        config.getMetricsConfig().setEnabled(false);
+        MapConfig mapConfig = config.getMapConfig(mapName);
+        mapConfig.setInMemoryFormat(inMemoryFormat());
+        mapConfig.setPerEntryStatsEnabled(perEntryStats);
+        mapConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.LRU);
         return createHazelcastInstance(config).getMap(mapName);
     }
 
@@ -504,5 +556,39 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     private static long getExpirationTime(IMap<Integer, Integer> map, int key) {
         EntryView<Integer, Integer> entryView = map.getEntryView(key);
         return entryView.getExpirationTime();
+    }
+
+    private static Record newRecord() {
+        return new Record() {
+            @Override
+            public Object getValue() {
+                return null;
+            }
+
+            @Override
+            public void setValue(Object value) {
+
+            }
+
+            @Override
+            public long getCost() {
+                return 0;
+            }
+
+            @Override
+            public int getVersion() {
+                return 0;
+            }
+
+            @Override
+            public void setVersion(int version) {
+
+            }
+
+            @Override
+            public RecordReaderWriter getMatchingRecordReaderWriter() {
+                return null;
+            }
+        };
     }
 }

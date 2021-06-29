@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -63,7 +63,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     public Mode mode;
 
     private DAG dag = new DAG();
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private IList<Object> sinkList;
 
     private enum Mode {
@@ -78,8 +78,8 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     @Before
     public void before() {
-        instance = super.createJetMember();
-        sinkList = instance.getHazelcastInstance().getList("sinkList");
+        instance = super.createHazelcastInstance();
+        sinkList = instance.getList("sinkList");
     }
 
     private static DAG createDag(Mode mode, List<Object> input1, List<Object> input2) {
@@ -113,7 +113,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_active_i2_active_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(wm(100)), singletonList(wm(100)));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -122,7 +122,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_active_i2_idle_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(wm(100)), singletonList(IDLE_MESSAGE));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -131,7 +131,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_idle_i2_active_then_wmForwardedImmediately() {
         dag = createDag(mode, singletonList(IDLE_MESSAGE), singletonList(wm(100)));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -140,7 +140,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_i1_idle_i2_idle_then_idleMessageForwardedImmediately() {
         dag = createDag(mode, singletonList(IDLE_MESSAGE), singletonList(IDLE_MESSAGE));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         // the idle message should not be presented to the processor
         assertTrueAllTheTime(() -> assertEquals(0, sinkList.size()), 3);
@@ -149,7 +149,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_waitingForWmOnI2ButI2BecomesDone_then_wmFromI1Forwarded() {
         dag = createDag(mode, singletonList(wm(100)), asList(delay(500), DONE_ITEM_STR));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));
@@ -158,7 +158,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     @Test
     public void when_multipleWm_then_allForwarded() {
         dag = createDag(mode, asList(wm(100), delay(500), wm(101)), asList(wm(100), delay(500), wm(101)));
-        instance.newJob(dag);
+        instance.getJet().newJob(dag);
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()));
         assertEquals("wm(100)", sinkList.get(0));

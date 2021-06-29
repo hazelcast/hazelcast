@@ -17,10 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.ServiceFactories;
@@ -47,12 +47,12 @@ import static org.junit.Assert.assertEquals;
 public class ManagedContextTest extends JetTestSupport {
 
     static final String INJECTED_VALUE = "injectedValue";
-    private JetInstance jet;
+    private HazelcastInstance hz;
 
     @Before
     public void setup() {
         Config config = smallInstanceConfig().setManagedContext(new MockManagedContext());
-        jet = createJetMember(config);
+        hz = createHazelcastInstance(config);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class ManagedContextTest extends JetTestSupport {
          .writeTo(assertAnyOrder(singletonList(INJECTED_VALUE)));
 
         // When
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
     }
 
     @Test
@@ -96,7 +96,7 @@ public class ManagedContextTest extends JetTestSupport {
          .writeTo(assertAnyOrder(singletonList("item" + INJECTED_VALUE)));
 
         // When
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
     }
 
     @Test
@@ -120,7 +120,7 @@ public class ManagedContextTest extends JetTestSupport {
         pipeline.readFrom(src)
                 .writeTo(assertAnyOrder(singletonList(INJECTED_VALUE)));
 
-        jet.newJob(pipeline).join();
+        hz.getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -142,7 +142,7 @@ public class ManagedContextTest extends JetTestSupport {
         pipeline.readFrom(TestSources.items(1))
                 .writeTo(sink);
 
-        jet.newJob(pipeline).join();
+        hz.getJet().newJob(pipeline).join();
     }
 
     private static class MockManagedContext implements ManagedContext {

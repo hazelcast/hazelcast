@@ -1043,6 +1043,7 @@ public class ConfigXmlGenerator {
             gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
             appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendHotRestartConfig(gen, c.getHotRestartConfig());
+            appendMerkleTreeConfig(gen, c.getMerkleTreeConfig());
 
             gen.node("disable-per-entry-invalidation-events", c.isDisablePerEntryInvalidationEvents())
                     .close();

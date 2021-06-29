@@ -17,12 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.Clock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -119,6 +121,18 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             map.putAsync(i, i);
         }
         final LocalMapStats localMapStats = getMapStats();
+        assertTrueEventually(() -> assertEquals(100, localMapStats.getPutOperationCount()));
+    }
+
+    @Test
+    public void testPutIfAbsentAsync() {
+        assumeTrue(getMap() instanceof MapProxyImpl);
+
+        MapProxyImpl<Object, Object> map = (MapProxyImpl<Object, Object>) getMap();
+        for (int i = 0; i < 100; i++) {
+            map.putIfAbsentAsync(i, i);
+        }
+        LocalMapStats localMapStats = getMapStats();
         assertTrueEventually(() -> assertEquals(100, localMapStats.getPutOperationCount()));
     }
 

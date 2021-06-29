@@ -50,7 +50,7 @@ public class TestSourcesTest extends PipelineTestSupport {
         p.readFrom(TestSources.items(input))
                 .apply(Assertions.assertOrdered(expected));
 
-        jet().newJob(p).join();
+        hz().getJet().newJob(p).join();
     }
 
     @Test
@@ -62,7 +62,7 @@ public class TestSourcesTest extends PipelineTestSupport {
         p.readFrom(TestSources.itemsDistributed(input))
                 .apply(Assertions.assertAnyOrder(expected));
 
-        jet().newJob(p).join();
+        hz().getJet().newJob(p).join();
     }
 
     @Test

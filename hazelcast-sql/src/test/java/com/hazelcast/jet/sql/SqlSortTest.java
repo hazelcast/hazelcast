@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -202,6 +202,103 @@ public class SqlSortTest extends SqlTestSupport {
                         new Row("A", null)
                 )
         );
+    }
+
+    @Test
+    public void test_sortWithLimit() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2", tableName),
+                asList(
+                        new Row("A", 3),
+                        new Row("B", 2)
+                )
+        );
+    }
+
+    @Test
+    public void test_sortWithLimitAndOffset() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2 OFFSET 2", tableName),
+                asList(
+                        new Row("C", 1),
+                        new Row("B", 1)
+                )
+        );
+    }
+
+    @Test
+    public void whenOffsetEqualsZero_thenNoOffset() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"A", "1"},
+                new String[]{"C", "1"}
+        );
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC LIMIT 2 OFFSET 0", tableName),
+                asList(
+                        new Row("A", 3),
+                        new Row("B", 2)
+                )
+        );
+    }
+
+    @Test
+    public void whenOffsetMoreThanSize_thenItShouldCompleteWithNoOutput() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"},
+                new String[]{"A", "3"},
+                new String[]{"C", "1"}
+        );
+
+        assertRowsAnyOrder(
+                String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET 100", tableName),
+                asList()
+        );
+    }
+
+    @Test
+    public void whenOffsetIsNegativeOrNull_thenFails() {
+        String tableName = createTable(
+                new String[]{"B", "2"},
+                new String[]{"B", "1"}
+        );
+
+        assertThatThrownBy(() ->
+                sqlService.execute(
+                        String.format(
+                                "SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET -1",
+                                tableName
+                        )
+                ))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"-\" at line 1, column 108");
+
+        assertThatThrownBy(() ->
+                sqlService.execute(
+                        String.format(
+                                "SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET NULL",
+                                tableName
+                        )
+                ))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Encountered \"NULL\" at line 1, column 108.");
     }
 
     @Test

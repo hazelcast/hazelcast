@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -61,13 +61,13 @@ import static org.junit.Assert.assertTrue;
 @Ignore
 public class StreamFilesP_integrationTest extends JetTestSupport {
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private File directory;
     private IList<Entry<String, String>> list;
 
     @Before
     public void setup() throws Exception {
-        instance = createJetMember();
+        instance = createHazelcastInstance();
         directory = createTempDirectory();
         list = instance.getList("writer");
     }
@@ -81,7 +81,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         appendToFile(file, "hello", "pre-existing");
         sleepAtLeastMillis(50);
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
@@ -106,7 +106,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         }
         sleepAtLeastMillis(50);
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
@@ -133,7 +133,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         }
         sleepAtLeastMillis(50);
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
@@ -156,7 +156,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
     public void when_newAndModified_then_pickupAddition() throws Exception {
         DAG dag = buildDag();
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
@@ -176,7 +176,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
     public void when_fileWithManyLines_then_emitCooperatively() throws Exception {
         DAG dag = buildDag();
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
@@ -203,7 +203,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         // At the end, I'll check, if all the contents matches.
         DAG dag = buildDag();
 
-        Future<Void> jobFuture = instance.newJob(dag).getFuture();
+        Future<Void> jobFuture = instance.getJet().newJob(dag).getFuture();
         // wait for the processor to initialize
         sleepAtLeastSeconds(2);
         int numLines = 10_000;

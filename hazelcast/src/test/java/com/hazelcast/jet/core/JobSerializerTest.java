@@ -97,7 +97,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(entry -> entry.getValue().value())
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -107,7 +107,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(i -> new SimpleEntry<>(i, new Value(i)))
                 .writeTo(Sinks.map(SINK_MAP_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
 
         Map<Integer, Value> map = client().getMap(SINK_MAP_NAME);
         assertThat(map).containsExactlyInAnyOrderEntriesOf(
@@ -132,7 +132,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(entry -> entry.getValue().value())
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -142,7 +142,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(i -> new SimpleEntry<>(i, new Value(i)))
                 .writeTo(Sinks.cache(SINK_CACHE_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
 
         ICache<Integer, Value> cache = client().getCacheManager().getCache(SINK_CACHE_NAME);
         assertThat(cache).hasSize(2);
@@ -168,7 +168,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Value::value)
                 .writeTo(AssertionSinks.assertAnyOrder(asList(1, 2)));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
     }
 
     @Test
@@ -178,7 +178,7 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .map(Value::new)
                 .writeTo(Sinks.list(SINK_LIST_NAME));
 
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
 
         IList<Value> list = client().getList(SINK_LIST_NAME);
         assertThat(list).containsExactlyInAnyOrder(
@@ -195,11 +195,11 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.observable(OBSERVABLE_NAME));
 
         // When
-        Observable<Value> observable = client().getObservable(OBSERVABLE_NAME);
+        Observable<Value> observable = client().getJet().getObservable(OBSERVABLE_NAME);
         CompletableFuture<Long> counter = observable.toFuture(values -> values.map(Value::value).count());
 
         // Then
-        client().newJob(pipeline, jobConfig()).join();
+        client().getJet().newJob(pipeline, jobConfig()).join();
         assertThat(counter.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS).intValue()).isEqualTo(2);
     }
 

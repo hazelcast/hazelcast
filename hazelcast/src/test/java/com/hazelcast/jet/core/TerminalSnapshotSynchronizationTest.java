@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -48,7 +48,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
     }
 
     private Job setup(boolean snapshotting) {
-        JetInstance[] instances = createJetMembers(NODE_COUNT);
+        HazelcastInstance[] instances = createHazelcastInstances(NODE_COUNT);
 
         DAG dag = new DAG();
         dag.newVertex("generator", () -> new NoOutputSourceP()).localParallelism(1);
@@ -56,7 +56,7 @@ public class TerminalSnapshotSynchronizationTest extends JetTestSupport {
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(snapshotting ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1));
-        Job job = instances[0].newJob(dag, config);
+        Job job = instances[0].getJet().newJob(dag, config);
         assertJobStatusEventually(job, RUNNING);
         return job;
     }

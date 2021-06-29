@@ -17,9 +17,9 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.accumulator.LongAccumulator;
@@ -80,7 +80,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
 
     @Test
     public void smokeTest() throws Exception {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
 
         SlidingWindowPolicy wDef = slidingWinPolicy(2000, 1000);
 
@@ -131,7 +131,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                     .edge(between(slidingWin, sink));
         }
 
-        Job job = instance.newJob(dag);
+        Job job = instance.getJet().newJob(dag);
 
         if (isBatch) {
             job.join();
