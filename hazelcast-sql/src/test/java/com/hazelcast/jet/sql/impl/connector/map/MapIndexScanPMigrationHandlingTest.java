@@ -22,7 +22,6 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -90,8 +89,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("rawtypes")
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -161,6 +158,7 @@ public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSuppo
 
         MapIndexScanP processor = new MapIndexScanP<>(new MockReader(), instance1, evalContext, partitions1, scanMeta);
 
+        // Reshuffle partitions : 'migrate' last partition from Member1 to Member2
         int[] newPartitionsSet1 = new int[partitions1.length - 1];
         int[] newPartitionsSet2 = new int[partitions2.length + 1];
         System.arraycopy(partitions1, 0, newPartitionsSet1, 0, partitions1.length - 1);
