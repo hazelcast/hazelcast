@@ -35,14 +35,10 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(JET_SQL_DS_FACTORY, JET_SQL_DS_FACTORY_ID);
 
-    public static final int MAPPING = 1;
-    public static final int MAPPING_FIELD = 2;
-    // reserved for mapping related stuff
+    public static final int MAPPING = 0;
+    public static final int MAPPING_FIELD = 1;
 
-    // Reserved for index scan processor
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR = 10;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER = 11;
-    // public static final int IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER = 12;
+    // reserved for mapping related stuff
 
     public static final int LEN = MAPPING_FIELD + 1;
 
