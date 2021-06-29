@@ -81,7 +81,8 @@ public class LightMasterContext {
     private final Set<Vertex> vertices;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId, JobConfig config) {
+    public LightMasterContext(NodeEngine nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
+                              JobConfig config) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
 
@@ -92,7 +93,9 @@ public class LightMasterContext {
         MembersView membersView = Util.getMembersView(nodeEngine);
         Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
-                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion) && !m.isLiteMember())
+                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion)
+                        && !m.isLiteMember()
+                        && !coordinationService.isMemberShuttingDown(m.getUuid()))
                 .collect(Collectors.toList());
         if (members.isEmpty()) {
             throw new JetException("No data member with version equal to the coordinator version found");

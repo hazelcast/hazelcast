@@ -65,7 +65,7 @@ public interface LoadBalancer {
      *
      * @see #nextDataMember()
      * @since 4.2
-     * @deprecated The method was always unused.
+     * @deprecated Since 5.0, the method is unused
      */
     @Deprecated
     default boolean canGetNextDataMember() {

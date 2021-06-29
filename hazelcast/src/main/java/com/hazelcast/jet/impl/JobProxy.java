@@ -101,6 +101,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         // If a light job is submitted from a member, it's always coordinated locally.
         // This is important for SQL jobs running in mixed-version clusters - the job DAG
         // was created locally and uses features available to the local member version.
+        // A lite member can also coordinate.
         return container().getThisAddress();
     }
 

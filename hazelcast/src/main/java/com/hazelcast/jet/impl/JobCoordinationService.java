@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
@@ -59,6 +60,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.version.Version;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -306,7 +308,7 @@ public class JobCoordinationService {
 
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId, jobConfig);
+        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
@@ -718,6 +720,15 @@ public class JobCoordinationService {
                     membersShuttingDown.keySet());
             return false;
         }
+
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        for (Member m : nodeEngine.getClusterService().getMembers()) {
+            if (!clusterVersion.equals(m.getVersion().asVersion())) {
+                logger.fine("Not starting jobs because rolling upgrade is in progress");
+                return false;
+            }
+        }
+
         PartitionServiceState state =
                 getInternalPartitionService().getPartitionReplicaStateChecker().getPartitionServiceState();
         if (state != PartitionServiceState.SAFE) {
@@ -1211,5 +1222,9 @@ public class JobCoordinationService {
             Object lmc = lightMasterContexts.get(key);
             return lmc == null || lmc instanceof LightMasterContext && ((LightMasterContext) lmc).isCancelled();
         }).toArray();
+    }
+
+    boolean isMemberShuttingDown(UUID uuid) {
+        return membersShuttingDown.containsKey(uuid);
     }
 }

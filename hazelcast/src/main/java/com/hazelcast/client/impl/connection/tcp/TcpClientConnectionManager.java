@@ -837,15 +837,19 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     @Override
     public ClientConnection getConnectionForSql() {
         if (isSmartRoutingEnabled) {
-            Member member = QueryUtils.memberOfLargerSameVersionGroup(
-                    client.getClientClusterService().getMemberList(), null);
-            if (member != null) {
-                ClientConnection connection = activeConnections.get(member.getUuid());
-                if (connection != null) {
-                    return connection;
+            // There might be a race - the chosen member just connected or disconnected - try a
+            // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
+            // we might be lucky...
+            for (int i = 0; i < 10; i++) {
+                Member member = QueryUtils.memberOfLargerSameVersionGroup(
+                        client.getClientClusterService().getMemberList(), null);
+                if (member != null) {
+                    ClientConnection connection = activeConnections.get(member.getUuid());
+                    if (connection != null) {
+                        return connection;
+                    }
                 }
             }
-            // TODO [viliam] there might be a race - the client just connected or disconnected. Try again.
         }
 
         // Otherwise iterate over connections and return the first one that's not to a lite member
