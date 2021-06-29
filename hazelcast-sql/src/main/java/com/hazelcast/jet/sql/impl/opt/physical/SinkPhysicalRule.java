@@ -14,39 +14,39 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import org.apache.calcite.plan.Convention;
+import com.hazelcast.jet.sql.impl.opt.logical.SinkLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
-final class InsertLogicalRule extends ConverterRule {
+final class SinkPhysicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new InsertLogicalRule();
+    static final RelOptRule INSTANCE = new SinkPhysicalRule();
 
-    private InsertLogicalRule() {
+    private SinkPhysicalRule() {
         super(
-                LogicalTableInsert.class, Convention.NONE, LOGICAL,
-                InsertLogicalRule.class.getSimpleName()
+                SinkLogicalRel.class, LOGICAL, PHYSICAL,
+                SinkPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public RelNode convert(RelNode rel) {
-        LogicalTableInsert insert = (LogicalTableInsert) rel;
+        SinkLogicalRel logicalSink = (SinkLogicalRel) rel;
 
-        return new InsertLogicalRel(
-                insert.getCluster(),
-                OptUtils.toLogicalConvention(insert.getTraitSet()),
-                insert.getTable(),
-                insert.getCatalogReader(),
-                OptUtils.toLogicalInput(insert.getInput()),
-                insert.isFlattened()
+        return new SinkPhysicalRel(
+                logicalSink.getCluster(),
+                OptUtils.toPhysicalConvention(logicalSink.getTraitSet()),
+                logicalSink.getTable(),
+                logicalSink.getCatalogReader(),
+                OptUtils.toPhysicalInput(logicalSink.getInput()),
+                logicalSink.isFlattened()
         );
     }
 }

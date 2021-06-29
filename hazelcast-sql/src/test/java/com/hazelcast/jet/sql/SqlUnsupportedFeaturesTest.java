@@ -93,7 +93,7 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO b VALUES(1)"))
-                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+                .hasMessageContaining("INSERT INTO not supported for TestBatch");
     }
 
     @Test
@@ -101,7 +101,7 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "b", 1);
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO b VALUES(1)"))
-                .hasMessageContaining("INSERT INTO or SINK INTO not supported for TestBatch");
+                .hasMessageContaining("SINK INTO not supported for TestBatch");
     }
 
     @Test

@@ -18,23 +18,35 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.Collections;
+import java.util.Properties;
+
+import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.instance.ProtocolType.WAN;
+import static java.io.File.createTempFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("checkstyle:Indentation")
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
     private Config config;
@@ -74,6 +86,120 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 5, objectMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
+    }
+
+    @Test
+    public void testExternalConfigOverrides() throws Exception {
+        String clusterName = randomName();
+        String instanceName = randomName();
+
+        System.setProperty("hz.cluster-name", clusterName);
+
+        Config cfg = withEnvironmentVariable("HZ_INSTANCENAME", instanceName)
+                .and("HZ_NETWORK_PORT_PORT", "6731")
+                .execute(Config::load);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals(instanceName, cfg.getInstanceName());
+        assertEquals(6731, cfg.getNetworkConfig().getPort());
+    }
+
+    @Test
+    public void testLoadFromString() {
+        String xml = getSimpleXmlConfigStr(
+                "instance-name", "hz-instance-name",
+                "cluster-name", "${cluster.name}"
+        );
+
+        String yaml = getSimpleYamlConfigStr(
+                "instance-name", "hz-instance-name",
+                "cluster-name", "${cluster.name}"
+        );
+
+        String clusterName = randomName();
+        Properties properties = new Properties();
+        properties.setProperty("cluster.name", clusterName);
+
+        Config cfg = Config.loadFromString(xml, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        clusterName = randomName();
+        properties.setProperty("cluster.name", clusterName);
+        cfg = Config.loadFromString(yaml, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        // test for very long config string with length > 4K
+        final int longStrLength = 1 << 14;
+        String instanceName = String.join("", Collections.nCopies(longStrLength, "a"));
+        yaml = getSimpleYamlConfigStr("instance-name", instanceName);
+
+        cfg = Config.loadFromString(yaml);
+        assertEquals(instanceName, cfg.getInstanceName());
+    }
+
+    @Test
+    public void testLoadFromStream() {
+        InputStream xmlStream = new ByteArrayInputStream(
+                getSimpleXmlConfigStr(
+                        "instance-name", "hz-instance-name",
+                        "cluster-name", "${cluster.name}"
+                ).getBytes()
+        );
+
+        InputStream yamlStream = new ByteArrayInputStream(
+                getSimpleYamlConfigStr(
+                        "instance-name", "hz-instance-name",
+                        "cluster-name", "${cluster.name}"
+                ).getBytes()
+        );
+
+        String clusterName = randomName();
+        Properties properties = new Properties();
+        properties.setProperty("cluster.name", clusterName);
+
+        Config cfg = Config.loadFromStream(xmlStream, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        clusterName = randomName();
+        properties.setProperty("cluster.name", clusterName);
+        cfg = Config.loadFromStream(yamlStream, properties);
+
+        assertEquals(clusterName, cfg.getClusterName());
+        assertEquals("hz-instance-name", cfg.getInstanceName());
+
+        // test for stream with > 4KB content
+        final int instanceNameLen = 1 << 14;
+        String instanceName = String.join("", Collections.nCopies(instanceNameLen, "x"));
+        // wrap with BufferedInputStream (which is not resettable), so that ConfigStream
+        // behaviour kicks in.
+        yamlStream = new BufferedInputStream(new ByteArrayInputStream(
+                getSimpleYamlConfigStr("instance-name", instanceName).getBytes())
+        );
+
+        cfg = Config.loadFromStream(yamlStream);
+        assertEquals(instanceName, cfg.getInstanceName());
+    }
+
+    @Test
+    public void testLoadFromFile() throws IOException {
+        File file = createTempFile("foo", "cfg.xml");
+        file.deleteOnExit();
+
+        String randStr = randomString();
+        String xml = getSimpleXmlConfigStr("license-key", randStr);
+
+        Writer writer = new PrintWriter(file);
+        writer.write(xml);
+        writer.close();
+
+        Config cfg = Config.loadFromFile(file);
+        assertEquals(randStr, cfg.getLicenseKey());
     }
 
     @Test
@@ -124,5 +250,33 @@ public class ConfigTest extends HazelcastTestSupport {
         Config config = new Config();
         assertNull(config.getConfigurationUrl());
         assertNull(config.getConfigurationFile());
+    }
+
+    private static String getSimpleXmlConfigStr(String ...tagAndVal) {
+        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
+            throw new IllegalArgumentException("provide one or more tag and value pairs");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n");
+
+        for (int i = 0; i < tagAndVal.length - 1; i += 2) {
+            sb.append("<" + tagAndVal[i] + ">" + tagAndVal[i + 1] + "</" + tagAndVal[i] + ">\n");
+        }
+        sb.append("</hazelcast>\n");
+        return sb.toString();
+    }
+
+    private static String getSimpleYamlConfigStr(String ...tagAndVal) {
+        if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
+            throw new IllegalArgumentException("provide one or more tag and value pairs");
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("hazelcast:\n");
+
+        for (int i = 0; i < tagAndVal.length - 1; i += 2) {
+            sb.append("  " + tagAndVal[i] + ": " + tagAndVal[i + 1] + "\n");
+        }
+        return sb.toString();
     }
 }

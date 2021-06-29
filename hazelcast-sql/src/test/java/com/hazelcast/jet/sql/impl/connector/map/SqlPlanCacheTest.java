@@ -107,14 +107,17 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     @Test
     public void test_dmlCaching() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
-        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
+        sqlService.execute("INSERT INTO map VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        sqlService.execute("UPDATE map SET this = 'value-1' WHERE id = 0");
+        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(2);
 
-        sqlService.execute("DELETE FROM map WHERE id = 0");
+        sqlService.execute("UPDATE map SET this = 'value-1' WHERE id = 0");
         assertThat(planCache(instance()).size()).isEqualTo(3);
+
+        sqlService.execute("DELETE FROM map WHERE id = 0");
+        assertThat(planCache(instance()).size()).isEqualTo(4);
 
         sqlService.execute("DROP MAPPING map");
         assertThat(planCache(instance()).size()).isZero();
