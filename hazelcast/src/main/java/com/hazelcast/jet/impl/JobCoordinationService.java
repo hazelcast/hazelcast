@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.JetException;
@@ -81,6 +82,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -145,6 +147,7 @@ public class JobCoordinationService {
     private final ConcurrentMap<Long, MasterContext> masterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<Long, Object> lightMasterContexts = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, CompletableFuture<Void>> membersShuttingDown = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
      *
@@ -270,7 +273,6 @@ public class JobCoordinationService {
                 // If there is no master context and job result at the same time, it means this is the first submission
                 jobSubmitted.inc();
                 jobRepository.putNewJobRecord(jobRecord);
-
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 res.completeExceptionally(e);
@@ -310,10 +312,13 @@ public class JobCoordinationService {
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
+        scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
+
         return mc.getCompletionFuture()
                 .whenComplete((r, t) -> {
                     Object removed = lightMasterContexts.remove(jobId);
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                    unscheduleJobTimeout(jobId);
                 });
     }
 
@@ -864,6 +869,7 @@ public class JobCoordinationService {
                     logger.severe("No master context found to complete " + masterContext.jobIdString());
                 }
             }
+            unscheduleJobTimeout(masterContext.jobId());
         });
     }
 
@@ -1062,6 +1068,11 @@ public class JobCoordinationService {
 
     private void tryStartJob(MasterContext masterContext) {
         masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
+
+        if (masterContext.hasTimeout()) {
+            long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
+            scheduleJobTimeout(masterContext.jobId(), Math.max(1, remainingTime));
+        }
     }
 
     private int getQuorumSize() {
@@ -1211,5 +1222,37 @@ public class JobCoordinationService {
             Object lmc = lightMasterContexts.get(key);
             return lmc == null || lmc instanceof LightMasterContext && ((LightMasterContext) lmc).isCancelled();
         }).toArray();
+    }
+
+    private void scheduleJobTimeout(final long jobId, final long timeout) {
+        if (timeout <= 0) {
+            return;
+        }
+
+        scheduledJobTimeouts.computeIfAbsent(jobId, id -> scheduleJobTimeoutTask(id, timeout));
+    }
+
+    private void unscheduleJobTimeout(final long jobId) {
+        final ScheduledFuture<?> timeoutFuture = scheduledJobTimeouts.remove(jobId);
+        if (timeoutFuture != null) {
+            timeoutFuture.cancel(true);
+        }
+    }
+
+    private ScheduledFuture<?> scheduleJobTimeoutTask(final long jobId, final long timeout) {
+        return this.nodeEngine().getExecutionService().schedule(() -> {
+            final MasterContext mc = masterContexts.get(jobId);
+            final LightMasterContext lightMc = (LightMasterContext) lightMasterContexts.get(jobId);
+
+            try {
+                if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
+                    terminateJob(jobId, CANCEL_FORCEFUL);
+                } else if (lightMc != null && !lightMc.isCancelled()) {
+                    lightMc.requestTermination();
+                }
+            } finally {
+                scheduledJobTimeouts.remove(jobId);
+            }
+        }, timeout, MILLISECONDS);
     }
 }
