@@ -25,11 +25,8 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.annotation.SlowTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -71,25 +68,5 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         final Job restartedJob = newMaster.getJet().getJob(jobId);
         assertNotNull(restartedJob);
         assertJobStatusEventually(restartedJob, JobStatus.FAILED);
-    }
-
-    private static class StuckSource extends AbstractProcessor {
-        private final AtomicLong counter = new AtomicLong(1);
-        @Override
-        public boolean saveToSnapshot() {
-            final long id = counter.incrementAndGet();
-            return tryEmitToSnapshot(id, id);
-        }
-
-        @Override
-        protected void restoreFromSnapshot(@NotNull final Object key, @NotNull final Object value) {
-            counter.set((long) key);
-        }
-
-        @Override
-        public boolean complete() {
-            sleepMillis(1);
-            return false;
-        }
     }
 }

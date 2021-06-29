@@ -1068,13 +1068,11 @@ public class JobCoordinationService {
 
     private void tryStartJob(MasterContext masterContext) {
         masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
-        if (!masterContext.hasTimeout()) {
-            return;
-        }
 
-        final long jobId = masterContext.jobId();
-        final long remaining = masterContext.remainingTime(Clock.currentTimeMillis());
-        scheduleJobTimeout(jobId, Math.max(1, remaining));
+        if (masterContext.hasTimeout()) {
+            long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
+            scheduleJobTimeout(masterContext.jobId(), Math.max(1, remainingTime));
+        }
     }
 
     private int getQuorumSize() {
