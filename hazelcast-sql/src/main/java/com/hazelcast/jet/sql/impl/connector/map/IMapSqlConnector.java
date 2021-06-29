@@ -203,7 +203,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         Vertex vertex = dag.newUniqueVertex(
                 toString(table),
-                () -> new InsertP(
+                new InsertProcessorSupplier(
                         table.getMapName(),
                         KvProjector.supplier(
                                 table.paths(),
