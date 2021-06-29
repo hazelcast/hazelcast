@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.SqlParser.Config;
@@ -90,7 +91,11 @@ public class QueryParser {
     private QueryParseResult parse(String sql, SqlBackend sqlBackend) throws SqlParseException {
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
-        SqlNode topNode = parser.parseStmt();
+        SqlNodeList statements = parser.parseStmtList();
+        if (statements.size() != 1) {
+            throw QueryException.error(SqlErrorCode.PARSING, "The command must contain a single statement");
+        }
+        SqlNode topNode = statements.get(0);
 
         HazelcastSqlValidator validator =
                 (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance, arguments);

@@ -37,7 +37,6 @@ public class BuildInfo {
     private final boolean enterprise;
     private final byte serializationVersion;
     private final BuildInfo upstreamBuildInfo;
-    private final JetBuildInfo jetBuildInfo;
     private final String commitId;
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
@@ -47,12 +46,6 @@ public class BuildInfo {
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo) {
-        this(version, build, revision, buildNumber, enterprise, serializationVersion, commitId,
-                upstreamBuildInfo, null);
-    }
-
-    private BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
-                     byte serializationVersion, String commitId, BuildInfo upstreamBuildInfo, JetBuildInfo jetBuildInfo) {
         this.version = version;
         this.build = build;
         this.revision = revision;
@@ -61,13 +54,6 @@ public class BuildInfo {
         this.serializationVersion = serializationVersion;
         this.commitId = commitId;
         this.upstreamBuildInfo = upstreamBuildInfo;
-        this.jetBuildInfo = jetBuildInfo;
-    }
-
-    private BuildInfo(BuildInfo buildInfo, JetBuildInfo jetBuildInfo) {
-        this(buildInfo.getVersion(), buildInfo.getBuild(), buildInfo.getRevision(), buildInfo.getBuildNumber(),
-                buildInfo.isEnterprise(), buildInfo.getSerializationVersion(), buildInfo.getCommitId(),
-                buildInfo.getUpstreamBuildInfo(), jetBuildInfo);
     }
 
     public String getRevision() {
@@ -102,17 +88,6 @@ public class BuildInfo {
         return commitId;
     }
 
-    /**
-     * @return {@link JetBuildInfo} if Hazelcast Jet is used, {@code null} otherwise
-     */
-    public JetBuildInfo getJetBuildInfo() {
-        return jetBuildInfo;
-    }
-
-    BuildInfo withJetBuildInfo(JetBuildInfo jetBuildInfo) {
-        return new BuildInfo(this, jetBuildInfo);
-    }
-
     @Override
     public String toString() {
         return "BuildInfo{"
@@ -122,7 +97,6 @@ public class BuildInfo {
                 + ", revision=" + revision
                 + ", enterprise=" + enterprise
                 + ", serializationVersion=" + serializationVersion
-                + (jetBuildInfo == null ? "" : ", jet=" + jetBuildInfo)
                 + (upstreamBuildInfo == null ? "" : ", upstream=" + upstreamBuildInfo)
                 + '}';
     }

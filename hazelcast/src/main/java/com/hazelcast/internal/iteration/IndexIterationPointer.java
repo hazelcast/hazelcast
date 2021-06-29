@@ -83,8 +83,29 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     ) {
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
-            Comparable<?> from = rangeFilter.getFrom() == null ? null : rangeFilter.getFrom().getValue(evalContext);
-            Comparable<?> to = rangeFilter.getTo() == null ? null : rangeFilter.getTo().getValue(evalContext);
+
+            Comparable<?> from = null;
+            if (rangeFilter.getFrom() != null) {
+                Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
+                // If the index filter has expression like a > NULL, we need to
+                // stop creating index iteration pointer because comparison with NULL
+                // produces UNKNOWN result.
+                if (fromValue == null) {
+                    return;
+                }
+                from = fromValue;
+            }
+
+            Comparable<?> to = null;
+            if (rangeFilter.getTo() != null) {
+                Comparable<?> toValue = rangeFilter.getTo().getValue(evalContext);
+                // Same comment above for expressions like a < NULL.
+                if (toValue == null) {
+                    return;
+                }
+                to = toValue;
+            }
+
             result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
