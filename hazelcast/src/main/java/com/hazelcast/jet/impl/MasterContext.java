@@ -204,7 +204,7 @@ public class MasterContext {
         return jobConfig().getTimeoutMillis() > 0;
     }
 
-    long remainingTimeout(long currentTimeMillis) {
+    long remainingTime(long currentTimeMillis) {
         long elapsed = currentTimeMillis - jobRecord().getCreationTime();
         long timeout = jobConfig().getTimeoutMillis();
 

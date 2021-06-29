@@ -26,6 +26,7 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -35,7 +36,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_lightJobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("stuck", StuckSource::new);
+        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1L);
         final Job job = hz.getJet().newLightJob(dag, jobConfig);
 
@@ -47,7 +48,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_jobIsCompletedAfterTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("stuck", StuckSource::new);
+        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
@@ -59,7 +60,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_lightJobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("normal", NormalSource::new);
+        dag.newVertex("normal", MockP::new);
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newLightJob(dag, jobConfig);
 
@@ -71,7 +72,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_jobIsCompletedBeforeTimeout_jobIsNotCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("normal", NormalSource::new);
+        dag.newVertex("normal", MockP::new);
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
@@ -83,7 +84,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_jobIsResumedAndExceedsTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("stuck", StuckSource::new);
+        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
@@ -101,7 +102,7 @@ public class JobTimeoutTest extends JetTestSupport {
     public void when_jobIsSuspendedAndExceedsTimeout_jobIsCancelled() {
         final HazelcastInstance hz = createHazelcastInstance();
         final DAG dag = new DAG();
-        dag.newVertex("stuck", StuckSource::new);
+        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
@@ -112,40 +113,5 @@ public class JobTimeoutTest extends JetTestSupport {
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
-    }
-
-    @Test
-    public void when_jobHasNoTimeout_jobIsNotCancelled() {
-        final HazelcastInstance hz = createHazelcastInstance();
-        final DAG dag = new DAG();
-        dag.newVertex("slow", SlowSource::new);
-        final JobConfig jobConfig = new JobConfig();
-        final Job job = hz.getJet().newJob(dag, jobConfig);
-
-        job.join();
-        assertEquals(JobStatus.COMPLETED, job.getStatus());
-    }
-
-    private static class NormalSource extends AbstractProcessor {
-        @Override
-        public boolean complete() {
-            return true;
-        }
-    }
-
-    private static class SlowSource extends AbstractProcessor {
-        @Override
-        public boolean complete() {
-            sleepMillis(100);
-            return true;
-        }
-    }
-
-    private static class StuckSource extends AbstractProcessor {
-        @Override
-        public boolean complete() {
-            sleepMillis(1);
-            return false;
-        }
     }
 }

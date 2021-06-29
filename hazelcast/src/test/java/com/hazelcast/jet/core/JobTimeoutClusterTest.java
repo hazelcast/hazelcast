@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.annotation.SlowTest;
@@ -28,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertNotNull;
@@ -47,7 +47,7 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         assertClusterStateEventually(ClusterState.ACTIVE, newMaster);
 
         final DAG dag = new DAG();
-        dag.newVertex("stuck", StuckSource::new);
+        dag.newVertex("stuck", () -> new MockP().streaming());
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(10000L)
                 .setSnapshotIntervalMillis(1L)
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
@@ -71,63 +71,6 @@ public class JobTimeoutClusterTest extends JetTestSupport {
         final Job restartedJob = newMaster.getJet().getJob(jobId);
         assertNotNull(restartedJob);
         assertJobStatusEventually(restartedJob, JobStatus.FAILED);
-    }
-
-    @Test
-    public void when_masterFails_nonTimedOutJobFinishesCorrectly() {
-        final HazelcastInstance[] instances = createHazelcastInstances(2);
-        final HazelcastInstance oldMaster = instances[0];
-        final HazelcastInstance newMaster = instances[1];
-
-        assertClusterSizeEventually(2, newMaster);
-        assertClusterStateEventually(ClusterState.ACTIVE, newMaster);
-
-        final DAG dag = new DAG();
-        dag.newVertex("normal", NormalSource::new);
-        final JobConfig jobConfig = new JobConfig().setTimeoutMillis(3600_000L)
-                .setSnapshotIntervalMillis(1L)
-                .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        final Job job = oldMaster.getJet().newJob(dag, jobConfig);
-        final long jobId = job.getId();
-
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-        final JobRepository oldJobRepository = new JobRepository(oldMaster);
-        assertTrueEventually(() -> {
-            final JobExecutionRecord record = oldJobRepository.getJobExecutionRecord(jobId);
-            assertTrue(record.snapshotId() > 0);
-        });
-
-        oldMaster.getLifecycleService().terminate();
-        assertClusterStateEventually(ClusterState.ACTIVE, newMaster);
-        assertClusterSize(1, newMaster);
-
-        // wait for the job to be restarted and cancelled due to timeout
-        final Job restartedJob = newMaster.getJet().getJob(jobId);
-        assertNotNull(restartedJob);
-        NormalSource.canComplete.set(true);
-        assertJobStatusEventually(restartedJob, JobStatus.COMPLETED);
-    }
-
-    private static class NormalSource extends AbstractProcessor {
-        public static final AtomicBoolean canComplete = new AtomicBoolean(false);
-        private final AtomicLong counter = new AtomicLong(1);
-
-        @Override
-        public boolean saveToSnapshot() {
-            final long id = counter.incrementAndGet();
-            return tryEmitToSnapshot(id, id);
-        }
-
-        @Override
-        protected void restoreFromSnapshot(@NotNull final Object key, @NotNull final Object value) {
-            counter.set((long) key);
-        }
-
-        @Override
-        public boolean complete() {
-            sleepMillis(1);
-            return canComplete.get();
-        }
     }
 
     private static class StuckSource extends AbstractProcessor {

@@ -1068,13 +1068,12 @@ public class JobCoordinationService {
 
     private void tryStartJob(MasterContext masterContext) {
         masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
-
-        long jobId = masterContext.jobId();
-        boolean hasTimeout = masterContext.hasTimeout();
-        long remaining = masterContext.remainingTimeout(Clock.currentTimeMillis());
-        if (!hasTimeout) {
+        if (!masterContext.hasTimeout()) {
             return;
         }
+
+        final long jobId = masterContext.jobId();
+        final long remaining = masterContext.remainingTime(Clock.currentTimeMillis());
         scheduleJobTimeout(jobId, Math.max(1, remaining));
     }
 
