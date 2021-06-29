@@ -20,7 +20,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
@@ -88,6 +87,9 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             Comparable<?> from = null;
             if (rangeFilter.getFrom() != null) {
                 Comparable<?> fromValue = rangeFilter.getFrom().getValue(evalContext);
+                // If the index filter has expression like a > NULL, we need to
+                // stop creating index iteration pointer because comparison with NULL
+                // produces UNKNOWN result.
                 if (fromValue == null) {
                     return;
                 }
@@ -97,6 +99,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             Comparable<?> to = null;
             if (rangeFilter.getTo() != null) {
                 Comparable<?> toValue = rangeFilter.getTo().getValue(evalContext);
+                // Same comment above for expressions like a < NULL.
                 if (toValue == null) {
                     return;
                 }
