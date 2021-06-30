@@ -26,6 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -53,18 +54,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NonSmartClientTest extends JetTestSupport {
 
-    private HazelcastInstance client1;
-    private HazelcastInstance client2;
-    private HazelcastInstance instance;
+    private HazelcastInstance masterInstance;
+    private HazelcastInstance nonMasterInstance;
+    private HazelcastInstance masterClient;
+    private HazelcastInstance nonMasterClient;
 
     @Before
     public void setUp() {
         Config config = smallInstanceConfig();
         config.getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
-        instance = createHazelcastInstance(config);
-        HazelcastInstance hz2 = createHazelcastInstance(config);
-        client1 = createClientConnectingTo(config, instance);
-        client2 = createClientConnectingTo(config, hz2);
+        masterInstance = createHazelcastInstance(config);
+        nonMasterInstance = createHazelcastInstance(config);
+        masterClient = createClientConnectingTo(config, masterInstance);
+        nonMasterClient = createClientConnectingTo(config, nonMasterInstance);
     }
 
     private HazelcastInstance createClientConnectingTo(Config config, HazelcastInstance targetInstance) {
@@ -82,16 +84,16 @@ public class NonSmartClientTest extends JetTestSupport {
         //Given
         String sourceName = "source";
         String sinkName = "sink";
-        fillListWithInts(instance.getList(sourceName), 10);
+        fillListWithInts(masterInstance.getList(sourceName), 10);
 
         //When
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(sourceName))
          .writeTo(Sinks.list(sinkName));
-        client2.getJet().newJob(p).join();
+        nonMasterClient.getJet().newJob(p).join();
 
         //Then
-        assertEquals(10, instance.getList(sinkName).size());
+        assertEquals(10, masterInstance.getList(sinkName).size());
     }
 
     @Test
@@ -101,7 +103,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
         //When
         Pipeline p = streamingPipeline();
-        JetService jet = client2.getJet();
+        JetService jet = nonMasterClient.getJet();
         Job job = jet.newJob(p, new JobConfig().setName(jobName));
 
         long jobId = job.getId();
@@ -130,7 +132,7 @@ public class NonSmartClientTest extends JetTestSupport {
         job.suspend();
 
         //Then
-        assertJobStatusEventually(client2.getJet().getJob(job.getName()), JobStatus.SUSPENDED);
+        assertJobStatusEventually(nonMasterClient.getJet().getJob(job.getName()), JobStatus.SUSPENDED);
     }
 
     @Test
@@ -139,13 +141,13 @@ public class NonSmartClientTest extends JetTestSupport {
         Job job = startJobAndVerifyItIsRunning();
         job.suspend();
         String jobName = job.getName();
-        assertJobStatusEventually(client2.getJet().getJob(jobName), JobStatus.SUSPENDED);
+        assertJobStatusEventually(nonMasterClient.getJet().getJob(jobName), JobStatus.SUSPENDED);
 
         //When
         job.resume();
 
         //Then
-        assertJobStatusEventually(client2.getJet().getJob(jobName), JobStatus.RUNNING);
+        assertJobStatusEventually(nonMasterClient.getJet().getJob(jobName), JobStatus.RUNNING);
     }
 
     @Test
@@ -157,7 +159,7 @@ public class NonSmartClientTest extends JetTestSupport {
         job.cancel();
 
         //Then
-        assertJobStatusEventually(client2.getJet().getJob(job.getName()), JobStatus.FAILED);
+        assertJobStatusEventually(nonMasterClient.getJet().getJob(job.getName()), JobStatus.FAILED);
     }
 
     @Test
@@ -166,7 +168,7 @@ public class NonSmartClientTest extends JetTestSupport {
         startJobAndVerifyItIsRunning();
 
         //When
-        List<JobSummary> summaryList = ((JetClientInstanceImpl) client2.getJet()).getJobSummaryList();
+        List<JobSummary> summaryList = ((JetClientInstanceImpl) nonMasterClient.getJet()).getJobSummaryList();
 
         //Then
         assertNotNull(summaryList);
@@ -174,16 +176,24 @@ public class NonSmartClientTest extends JetTestSupport {
     }
 
     @Test
+    public void when_lightJobSubmittedToNonMaster_then_coordinatedByNonMaster() {
+        Job job = nonMasterClient.getJet().newLightJob(streamingPipeline());
+        JetServiceBackend service = getNodeEngineImpl(nonMasterInstance).getService(JetServiceBackend.SERVICE_NAME);
+        assertTrueEventually(() ->
+                assertNotNull(service.getJobCoordinationService().getLightMasterContexts().get(job.getId())));
+    }
+
+    @Test
     public void when_lightJobSubmittedToNonMaster_then_accessibleFromAllMembers() {
-        Job job = client2.getJet().newLightJob(streamingPipeline());
+        Job job = nonMasterClient.getJet().newLightJob(streamingPipeline());
         assertTrueEventually(() -> {
-            Job trackedJob = instance.getJet().getJob(job.getId());
+            Job trackedJob = masterInstance.getJet().getJob(job.getId());
             assertNotNull(trackedJob);
             assertEquals(JobStatus.RUNNING, trackedJob.getStatus());
         });
 
-        Job job1 = client1.getJet().getJob(job.getId());
-        Job job2 = client2.getJet().getJob(job.getId());
+        Job job1 = masterClient.getJet().getJob(job.getId());
+        Job job2 = nonMasterClient.getJet().getJob(job.getId());
         assertNotNull(job1);
         assertNotNull(job2);
         assertNotEquals(0, job1.getSubmissionTime());
@@ -201,8 +211,8 @@ public class NonSmartClientTest extends JetTestSupport {
     private Job startJobAndVerifyItIsRunning() {
         String jobName = randomName();
         Pipeline p = streamingPipeline();
-        Job job = client2.getJet().newJob(p, new JobConfig().setName(jobName));
-        assertJobStatusEventually(client2.getJet().getJob(jobName), JobStatus.RUNNING);
+        Job job = nonMasterClient.getJet().newJob(p, new JobConfig().setName(jobName));
+        assertJobStatusEventually(nonMasterClient.getJet().getJob(jobName), JobStatus.RUNNING);
         return job;
     }
 

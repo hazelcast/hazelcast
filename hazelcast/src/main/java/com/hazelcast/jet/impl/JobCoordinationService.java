@@ -701,6 +701,11 @@ public class JobCoordinationService {
     }
 
     // only for testing
+    public Map<Long, Object> getLightMasterContexts() {
+        return new HashMap<>(lightMasterContexts);
+    }
+
+    // only for testing
     public MasterContext getMasterContext(long jobId) {
         return masterContexts.get(jobId);
     }
