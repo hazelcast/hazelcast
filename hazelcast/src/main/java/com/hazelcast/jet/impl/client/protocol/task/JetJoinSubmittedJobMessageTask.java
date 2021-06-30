@@ -32,6 +32,11 @@ public class JetJoinSubmittedJobMessageTask
     }
 
     @Override
+    protected boolean isLightJob() {
+        return parameters.isLightJob;
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new JoinSubmittedJobOperation(parameters.jobId, parameters.isLightJob);
     }

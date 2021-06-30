@@ -746,31 +746,42 @@ public class JobTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_member() throws InterruptedException {
-        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(instance());
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_member_normalJob() throws Exception {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(instance(), false);
     }
 
     @Test
-    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_client() throws InterruptedException {
-        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(client());
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_member_lightJob() throws Exception {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(instance(), true);
     }
 
-    private void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(HazelcastInstance instance) throws InterruptedException {
+    @Test
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_client_normalJob() throws Exception {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(client(), false);
+    }
+
+    @Test
+    public void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried_client_lightJob() throws Exception {
+        when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(client(), true);
+    }
+
+    private void when_jobIsSubmitted_then_jobSubmissionTimeIsQueried(HazelcastInstance instance, boolean useLightJob)
+            throws Exception {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
-        JobConfig config = new JobConfig();
-        String jobName = randomName();
-        config.setName(jobName);
 
         // When
-        Job job = instance().getJet().newJob(dag, config);
+        Job job = useLightJob ? instances()[1].getJet().newLightJob(dag) : instance().getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
-        Job trackedJob = instance.getJet().getJob(jobName);
+        Job trackedJob = instance.getJet().getJob(job.getId());
 
         // Then
         assertNotNull(trackedJob);
-        assertNotEquals(0, job.getSubmissionTime());
-        assertNotEquals(0, trackedJob.getSubmissionTime());
+        long submissionTime = job.getSubmissionTime();
+        long trackedJobSubmissionTime = trackedJob.getSubmissionTime();
+        assertNotEquals(0, submissionTime);
+        assertNotEquals(0, trackedJobSubmissionTime);
+        assertEquals(submissionTime, trackedJobSubmissionTime);
         NoOutputSourceP.proceedLatch.countDown();
     }
 

@@ -30,6 +30,11 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     }
 
     @Override
+    protected boolean isLightJob() {
+        return parameters.isLightJob;
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new SubmitJobOperation(parameters.jobId, parameters.dag, parameters.jobConfig, parameters.isLightJob);
     }

@@ -33,6 +33,11 @@ public class JetGetJobSubmissionTimeMessageTask
     }
 
     @Override
+    protected boolean isLightJob() {
+        return parameters.isLightJob;
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new GetJobSubmissionTimeOperation(parameters.jobId, parameters.isLightJob);
     }

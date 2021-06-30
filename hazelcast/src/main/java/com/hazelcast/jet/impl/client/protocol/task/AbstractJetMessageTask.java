@@ -47,7 +47,6 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
         return JetServiceBackend.SERVICE_NAME;
     }
 
-
     @Override
     protected final P decodeClientMessage(ClientMessage clientMessage) {
         return decoder.apply(clientMessage);
@@ -72,14 +71,23 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
         return nodeEngine.getSerializationService().toData(v);
     }
 
+    protected boolean isLightJob() {
+        return false;
+    }
+
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
-        Address masterAddress = nodeEngine.getMasterAddress();
-        if (masterAddress == null) {
-            throw new RetryableHazelcastException("master not yet known");
+        Address address;
+        if (isLightJob()) {
+            address = nodeEngine.getThisAddress();
+        } else {
+            address = nodeEngine.getMasterAddress();
+            if (address == null) {
+                throw new RetryableHazelcastException("master not yet known");
+            }
         }
         return nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                operation, masterAddress);
+                operation, address);
     }
 
     protected JetServiceBackend getJetServiceBackend() {

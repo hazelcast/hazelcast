@@ -23,19 +23,21 @@ While the above is theoretically possible, it will add a large burden to
 development of every new feature and a whole new class of possible
 compatibility issues. For this reason we decided to do a simplified
 approach: a job will run only on a subset of members that have the same
-version (ignoring the patch version). We'll use the largest such subset.
-We'll also ensure that a member of the same version will create the
-execution plan for the query. This allows us to ignore most of the above
-compatibility requirements.
+version. We'll use the largest such subset. We'll also ensure that a
+member of the same version will create the execution plan for the query.
+This allows us to ignore most of the above compatibility requirements.
+
+When comparing versions, we'll ignore the patch version - we'll provide
+full rolling upgrade support for patch versions.
 
 In the traditional upgrade procedure when members are upgraded one by
 one, in the middle of the upgrade process only half of the members will
 actually run Jet jobs - when half of the members are of version `v` and
 half are of version `v+1`. If the two groups of members with the same
-version have the same size, we choose the group with higher version.
-
-To remediate this, the user can choose to temporarily increase the
-cluster size. The enterprise licence allows it.
+version have the same size, we choose the group with higher version; the
+reason is that members of `v+1` version will not be shut down. To
+mitigate this, the user can choose to temporarily increase the cluster
+size, the enterprise licence allows it.
 
 ## Non-goals
 
@@ -54,11 +56,12 @@ metadata. They also can be fault-tolerant - to support restarting of a
 job on a new version, we would need most of the compatibility
 requirements listed above.
 
-### Submit job operation routing
+### SQL operations routing
 
-Light jobs submitted from a member are coordinated locally, if the local
-member is a member of the larger group of members with the same version.
-Otherwise, the request is sent to a random member of the larger group.
+SQL commands submitted from a member are optimized and submitted
+locally, if the local member is a member of the larger group of members
+with the same version. Otherwise, the request is sent to a random member
+of the larger group.
 
 If the operation is sent from a client, it's also routed to a member
 from the larger group. For a non-smart client, the receiving member
