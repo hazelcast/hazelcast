@@ -45,7 +45,7 @@ public final class FixedSizeTypesCodec {
     public static final int BOOLEAN_SIZE_IN_BYTES = Bits.BOOLEAN_SIZE_IN_BYTES;
     public static final int UUID_SIZE_IN_BYTES = BOOLEAN_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES * 2;
 
-    public static final int LOCAL_DATE_SIZE_IN_BYTES = SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2;
+    public static final int LOCAL_DATE_SIZE_IN_BYTES = INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES * 2;
     public static final int LOCAL_TIME_SIZE_IN_BYTES = BYTE_SIZE_IN_BYTES * 3 + INT_SIZE_IN_BYTES;
     public static final int LOCAL_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_SIZE_IN_BYTES + LOCAL_TIME_SIZE_IN_BYTES;
     public static final int OFFSET_DATE_TIME_SIZE_IN_BYTES = LOCAL_DATE_TIME_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
@@ -182,15 +182,15 @@ public final class FixedSizeTypesCodec {
     }
 
     public static void encodeLocalDate(byte[] buffer, int pos, LocalDate value) {
-        encodeShort(buffer, pos, (short) value.getYear());
-        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES, (byte) value.getMonthValue());
-        encodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES, (byte) value.getDayOfMonth());
+        encodeInt(buffer, pos, value.getYear());
+        encodeByte(buffer, pos + INT_SIZE_IN_BYTES, (byte) value.getMonthValue());
+        encodeByte(buffer, pos + INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES, (byte) value.getDayOfMonth());
     }
 
     public static LocalDate decodeLocalDate(byte[] buffer, int pos) {
-        int year = decodeShort(buffer, pos);
-        int month = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES);
-        int dayOfMonth = decodeByte(buffer, pos + SHORT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES);
+        int year = decodeInt(buffer, pos);
+        int month = decodeByte(buffer, pos + INT_SIZE_IN_BYTES);
+        int dayOfMonth = decodeByte(buffer, pos + INT_SIZE_IN_BYTES + BYTE_SIZE_IN_BYTES);
 
         return LocalDate.of(year, month, dayOfMonth);
     }

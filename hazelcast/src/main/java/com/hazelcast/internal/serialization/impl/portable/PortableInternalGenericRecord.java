@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.PortableUtil;
 import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -226,22 +227,22 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime getTime(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIME, IOUtil::readLocalTime);
+        return readNullableField(fieldName, FieldType.TIME, PortableUtil::readLocalTime);
     }
 
     @Override
     public LocalDate getDate(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.DATE, IOUtil::readLocalDate);
+        return readNullableField(fieldName, FieldType.DATE, PortableUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIMESTAMP, IOUtil::readLocalDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP, PortableUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
-        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
+        return readNullableField(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, PortableUtil::readOffsetDateTime);
     }
 
     private boolean isNullOrEmpty(int pos) {
@@ -442,22 +443,23 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime[] getTimeArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, IOUtil::readLocalTime);
+        return readObjectArrayField(fieldName, TIME_ARRAY, LocalTime[]::new, PortableUtil::readLocalTime);
     }
 
     @Override
     public LocalDate[] getDateArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, IOUtil::readLocalDate);
+        return readObjectArrayField(fieldName, DATE_ARRAY, LocalDate[]::new, PortableUtil::readLocalDate);
     }
 
     @Override
     public LocalDateTime[] getTimestampArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, IOUtil::readLocalDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_ARRAY, LocalDateTime[]::new, PortableUtil::readLocalDateTime);
     }
 
     @Override
     public OffsetDateTime[] getTimestampWithTimezoneArray(@Nonnull String fieldName) {
-        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+        return readObjectArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, OffsetDateTime[]::new,
+                PortableUtil::readOffsetDateTime);
     }
 
     private void checkFactoryAndClass(FieldDefinition fd, int factoryId, int classId) {
@@ -838,22 +840,22 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
 
     @Override
     public LocalTime getTimeFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIME_ARRAY, IOUtil::readLocalTime, index);
+        return readObjectFromArrayField(fieldName, TIME_ARRAY, PortableUtil::readLocalTime, index);
     }
 
     @Override
     public LocalDate getDateFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, DATE_ARRAY, IOUtil::readLocalDate, index);
+        return readObjectFromArrayField(fieldName, DATE_ARRAY, PortableUtil::readLocalDate, index);
     }
 
     @Override
     public LocalDateTime getTimestampFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIMESTAMP_ARRAY, IOUtil::readLocalDateTime, index);
+        return readObjectFromArrayField(fieldName, TIMESTAMP_ARRAY, PortableUtil::readLocalDateTime, index);
     }
 
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
-        return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, IOUtil::readOffsetDateTime, index);
+        return readObjectFromArrayField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, PortableUtil::readOffsetDateTime, index);
     }
 
     @Override

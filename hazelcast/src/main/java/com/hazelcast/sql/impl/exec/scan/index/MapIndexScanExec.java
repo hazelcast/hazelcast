@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.exec.scan.index;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -47,7 +47,7 @@ public class MapIndexScanExec extends MapScanExec {
     private InternalIndex index;
 
     /** Stamp to ensure that indexed partitions are stable throughout query execution. */
-    private Long partitionStamp;
+    private long partitionStampValue;
 
     // The collation of index entries
     private List<Boolean> ascs;
@@ -113,18 +113,18 @@ public class MapIndexScanExec extends MapScanExec {
         }
 
         // Make sure that required partitions are indexed
-        partitionStamp = index.getPartitionStamp(partitions);
-
-        if (partitionStamp == GlobalIndexPartitionTracker.STAMP_INVALID) {
+        PartitionStamp partitionStamp = index.getPartitionStamp();
+        if (partitionStamp == null || !partitionStamp.partitions.equals(partitions)) {
             throw invalidIndexStamp();
         }
+        partitionStampValue = partitionStamp.stamp;
 
         return new MapIndexScanExecIterator(mapName, index, componentCount, indexFilter, ascs, converterTypes, ctx);
     }
 
     @Override
     protected void validateConsistency() {
-        if (!index.validatePartitionStamp(partitionStamp)) {
+        if (!index.validatePartitionStamp(partitionStampValue)) {
             throw invalidIndexStamp();
         }
     }

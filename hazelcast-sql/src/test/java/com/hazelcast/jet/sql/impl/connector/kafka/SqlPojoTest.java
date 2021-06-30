@@ -284,17 +284,17 @@ public class SqlPojoTest extends SqlTestSupport {
 
         if (explicit) {
             assertThatThrownBy(() ->
-                    sqlService.execute("SINK INTO " + topicName + " VALUES(1, null, 'foo')"))
+                    sqlService.execute("INSERT INTO " + topicName + " VALUES(1, null, 'foo')"))
                     .isInstanceOf(HazelcastSqlException.class)
                     .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
         }
 
         assertThatThrownBy(() ->
-                sqlService.execute("SINK INTO " + topicName + "(__key, this) VALUES(1, null)"))
+                sqlService.execute("INSERT INTO " + topicName + "(__key, this) VALUES(1, null)"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Writing to top-level fields of type OBJECT not supported");
 
-        sqlService.execute("SINK INTO " + topicName + (explicit ? "(__key, name)" : "") + " VALUES (1, 'foo')");
+        sqlService.execute("INSERT INTO " + topicName + (explicit ? "(__key, name)" : "") + " VALUES (1, 'foo')");
 
         assertRowsEventuallyInAnyOrder("SELECT __key, this, name FROM " + topicName,
                 singletonList(new Row(1, new Person(null, "foo"), "foo")));
