@@ -30,7 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
-import static com.hazelcast.internal.partition.PartitionStamp.calculateStamp;
+import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;

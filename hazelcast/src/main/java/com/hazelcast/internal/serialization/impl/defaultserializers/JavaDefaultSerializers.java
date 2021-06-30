@@ -35,6 +35,10 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
@@ -49,6 +53,10 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALDATE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALTIME;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALDATETIME;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OFFSETDATETIME;
 import static java.lang.Math.max;
 
 
@@ -264,6 +272,78 @@ public final class JavaDefaultSerializers {
         @Override
         public void write(final ObjectDataOutput out, final Date obj) throws IOException {
             out.writeLong(obj.getTime());
+        }
+    }
+
+    public static final class LocalDateSerializer extends SingletonSerializer<LocalDate> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_LOCALDATE;
+        }
+
+        @Override
+        public LocalDate read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalDate(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalDate value) throws IOException {
+            IOUtil.writeLocalDate(out, value);
+        }
+    }
+
+    public static final class LocalTimeSerializer extends SingletonSerializer<LocalTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_LOCALTIME;
+        }
+
+        @Override
+        public LocalTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalTime value) throws IOException {
+            IOUtil.writeLocalTime(out, value);
+        }
+    }
+
+    public static final class LocalDateTimeSerializer extends SingletonSerializer<LocalDateTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_LOCALDATETIME;
+        }
+
+        @Override
+        public LocalDateTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalDateTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalDateTime value) throws IOException {
+            IOUtil.writeLocalDateTime(out, value);
+        }
+    }
+
+    public static final class OffsetDateTimeSerializer extends SingletonSerializer<OffsetDateTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_OFFSETDATETIME;
+        }
+
+        @Override
+        public OffsetDateTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readOffsetDateTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final OffsetDateTime value) throws IOException {
+            IOUtil.writeOffsetDateTime(out, value);
         }
     }
 
