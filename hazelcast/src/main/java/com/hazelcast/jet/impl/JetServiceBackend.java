@@ -19,6 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
@@ -43,23 +46,33 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker {
+public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
@@ -67,12 +80,12 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
     private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
-    private NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
     private final JetConfig jetConfig;
 
+    private NodeEngineImpl nodeEngine;
     private HazelcastInstance hazelcastInstance;
     private JetService jet;
     private Networking networking;
@@ -80,9 +93,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
     private JobExecutionService jobExecutionService;
+    private Set<Member> members; // TODO: use members to determine the state of jet
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
-
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
     @Nullable
@@ -92,7 +105,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.jetConfig = node.getConfig().getJetConfig();
-
         JetSqlCoreBackend sqlCoreBackend;
         try {
             Class<?> jetSqlServiceClass = Class.forName("com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl");
@@ -103,6 +115,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             throw new RuntimeException(e);
         }
         this.sqlCoreBackend = sqlCoreBackend;
+        this.members = new HashSet<>(nodeEngine.getClusterService().getMembers());
     }
 
     // ManagedService
@@ -261,7 +274,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
-    public void handlePacket(Packet packet) {
+    @Override
+    public void accept(Packet packet) {
         try {
             networking.handle(packet);
         } catch (IOException e) {
@@ -318,5 +332,41 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     public TaskletExecutionService getTaskletExecutionService() {
         return taskletExecutionService;
+    }
+
+    public void configureJetInternalObjects(Node node) {
+        Config config = node.config.getStaticConfig();
+        JetConfig jetConfig = config.getJetConfig();
+
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                // we query creationTime of resources maps
+                .setStatisticsEnabled(true);
+
+        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
+
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_METRICS_MAP_NAME)
+                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        config.addMapConfig(internalMapConfig)
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
+    }
+
+    public Map<String, Object> jetServices() {
+        Map<String, Object> jetServices = new HashMap<>();
+
+        jetServices.put(JetServiceBackend.SERVICE_NAME, this);
+
+        if (this.getSqlCoreBackend() != null) {
+            jetServices.put(JetSqlCoreBackend.SERVICE_NAME, this.getSqlCoreBackend());
+        }
+
+        return jetServices;
     }
 }
