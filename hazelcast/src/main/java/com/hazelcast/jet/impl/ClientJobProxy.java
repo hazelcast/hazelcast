@@ -135,7 +135,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), isLightJob());
+        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), lightJobCoordinator);
         ClientInvocation invocation = invocation(request, masterId());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
@@ -144,7 +144,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), isLightJob());
+        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), lightJobCoordinator);
         return invocation(request, masterId()).invoke().thenApply(c -> null);
     }
 
@@ -183,7 +183,7 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Override
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
-            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), isLightJob());
+            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), lightJobCoordinator);
             ClientMessage response = invocation(request, masterId()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });

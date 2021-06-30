@@ -22,12 +22,14 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
+import java.util.UUID;
 import java.util.function.Function;
 
 abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTask<P> {
@@ -71,15 +73,18 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
         return nodeEngine.getSerializationService().toData(v);
     }
 
-    protected boolean isLightJob() {
-        return false;
+    protected UUID getLightJobCoordinator() {
+        return null;
     }
 
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation operation) {
         Address address;
-        if (isLightJob()) {
-            address = nodeEngine.getThisAddress();
+        if (getLightJobCoordinator() != null) {
+            address = nodeEngine.getClusterService().getMember(getLightJobCoordinator()).getAddress();
+            if (address == null) {
+                throw new TopologyChangedException("Light job coordinator left the cluster");
+            }
         } else {
             address = nodeEngine.getMasterAddress();
             if (address == null) {

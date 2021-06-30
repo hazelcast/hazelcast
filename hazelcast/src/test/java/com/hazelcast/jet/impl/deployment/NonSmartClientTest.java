@@ -40,11 +40,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -168,6 +171,31 @@ public class NonSmartClientTest extends JetTestSupport {
         //Then
         assertNotNull(summaryList);
         assertEquals(1, summaryList.size());
+    }
+
+    @Test
+    public void when_lightJobSubmittedToNonMaster_then_accessibleFromAllMembers() {
+        Job job = client2.getJet().newLightJob(streamingPipeline());
+        assertTrueEventually(() -> {
+            Job trackedJob = instance.getJet().getJob(job.getId());
+            assertNotNull(trackedJob);
+            assertEquals(JobStatus.RUNNING, trackedJob.getStatus());
+        });
+
+        Job job1 = client1.getJet().getJob(job.getId());
+        Job job2 = client2.getJet().getJob(job.getId());
+        assertNotNull(job1);
+        assertNotNull(job2);
+        assertNotEquals(0, job1.getSubmissionTime());
+        assertEquals(job1.getSubmissionTime(), job2.getSubmissionTime());
+        assertFalse(job1.getFuture().isDone());
+        assertFalse(job2.getFuture().isDone());
+        // cancel requested through client connected to the master, but job is coordinated by the other member
+        job1.cancel();
+        try {
+            job1.join();
+            fail("join didn't fail");
+        } catch (CancellationException ignored) { }
     }
 
     private Job startJobAndVerifyItIsRunning() {
