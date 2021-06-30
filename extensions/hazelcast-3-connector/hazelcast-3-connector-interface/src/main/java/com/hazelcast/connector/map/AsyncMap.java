@@ -34,4 +34,8 @@ public interface AsyncMap<K, V> extends Map<K, V> {
      * Delegates to IMap#getAsync(K)
      */
     CompletionStage<V> getAsync(@Nonnull K key);
+
+    <K, V> CompletionStage<Void> putAllAsync(
+            Map<? extends K, ? extends V> items
+    );
 }

@@ -186,7 +186,7 @@ final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends AbstractP
         private final String mapName;
         private final String clientXml;
 
-        private Hz3MapAdapter hz3MapAdapter;
+        private transient Hz3MapAdapter hz3MapAdapter;
 
         private transient InternalSerializationService serializationService;
         private transient int totalParallelism;
