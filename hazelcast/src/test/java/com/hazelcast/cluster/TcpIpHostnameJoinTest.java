@@ -24,7 +24,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Assume;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,9 +31,10 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 
 @RunWith(PowerMockRunner.class)
@@ -43,14 +43,17 @@ import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 @Category(SlowTest.class)
 public class TcpIpHostnameJoinTest {
 
-    private static String HOSTNAME1;
-    private static String HOSTNAME2;
+    private static final String HOSTNAME1;
+    private static final String HOSTNAME2;
 
-    @BeforeClass
-    public static void beforeClass() throws IOException {
-        HOSTNAME1 = "localhost";
-        HOSTNAME2 = InetAddress.getLocalHost().getHostName();
-        Assume.assumeFalse(HOSTNAME1.equals(HOSTNAME2));
+    static {
+        try {
+            HOSTNAME1 = "localhost";
+            HOSTNAME2 = InetAddress.getLocalHost().getHostName();
+            Assume.assumeFalse(HOSTNAME1.equals(HOSTNAME2));
+        } catch (UnknownHostException e) {
+            throw rethrow(e);
+        }
     }
 
     @After
