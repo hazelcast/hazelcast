@@ -51,7 +51,7 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
      * @return this object
      */
     public SimpleAuthenticationConfig addUser(@Nonnull String username, @Nonnull String password, String... roles) {
-        userMap.computeIfAbsent(requireNonNull(username), u -> new UserDto(password)).setRoles(roles);
+        addUser(username, new UserDto(password).setRoles(roles));
         return self();
     }
 
@@ -63,8 +63,13 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
      * @return this object
      */
     public SimpleAuthenticationConfig addUser(@Nonnull String username, @Nonnull UserDto userDto) {
-        userMap.put(requireNonNull(username, "Username has to be provided"),
-                requireNonNull(userDto, "UserDto object has to be provided"));
+        requireNonNull(userDto, "UserDto object has to be provided");
+        userMap.compute(requireNonNull(username), (u, dto) -> {
+            if (dto != null) {
+                throw new IllegalArgumentException("User " + username + " already exists.");
+            }
+            return userDto;
+        });
         return self();
     }
 
@@ -76,6 +81,9 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
      * @return this object
      */
     public SimpleAuthenticationConfig setRoleSeparator(@Nullable String roleSeparator) {
+        if (roleSeparator != null && roleSeparator.isEmpty()) {
+            throw new IllegalArgumentException("Empty role separator is not allowed");
+        }
         this.roleSeparator = roleSeparator;
         return self();
     }
@@ -86,7 +94,7 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
      *
      * @return the separator
      */
-    public String getRoleSeparator() {
+    public @Nullable String getRoleSeparator() {
         return roleSeparator;
     }
 
@@ -203,14 +211,14 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
          * Constructor taking the user's password as a mandatory attribute.
          */
         public UserDto(@Nonnull String password) {
-            this.password = requireNonNull(password, "Password can't be null");
+            this.password = requireNonEmpty(password, "Password can't be empty");
         }
 
         /**
          * Changes user's password.
          */
         public UserDto setPassword(@Nonnull String password) {
-            this.password = requireNonNull(password, "Password can't be null");
+            this.password = requireNonEmpty(password, "Password can't be empty");
             return this;
         }
 
@@ -270,5 +278,12 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
             UserDto other = (UserDto) obj;
             return Objects.equals(password, other.password) && Objects.equals(roles, other.roles);
         }
+    }
+
+    protected static String requireNonEmpty(String str, String message) {
+        if (str == null || str.isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+        return str;
     }
 }
