@@ -34,7 +34,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.phonehome.MetricsCollector.RESPONSE_OK;
 import static com.hazelcast.internal.util.phonehome.MetricsCollector.TIMEOUT;
 import static java.lang.System.getenv;
 
