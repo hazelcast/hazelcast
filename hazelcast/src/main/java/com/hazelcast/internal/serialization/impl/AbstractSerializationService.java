@@ -133,17 +133,11 @@ public abstract class AbstractSerializationService implements InternalSerializat
     //region Serialization Service
     @Override
     public final <B extends Data> B toData(Object obj) {
-        if (isCompatibility) {
-            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
-        }
         return toData(obj, globalPartitioningStrategy);
     }
 
     @Override
     public final <B extends Data> B toData(Object obj, PartitioningStrategy strategy) {
-        if (isCompatibility) {
-            throw new UnsupportedOperationException("Only deserialization is supported in compatibility mode");
-        }
         if (obj == null) {
             return null;
         }
