@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.core.test;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetInstance;
@@ -35,8 +35,10 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * {@link ProcessorMetaSupplier.Context} implementation suitable to be used
@@ -84,7 +86,9 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         this.instance = instance;
         if (this.instance instanceof HazelcastInstanceProxy || this.instance instanceof HazelcastInstanceImpl) {
             NodeEngineImpl nodeEngine = Util.getNodeEngine(this.instance);
-            this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine);
+            this.partitionAssignment = ExecutionPlanBuilder.getPartitionAssignment(nodeEngine,
+                    Util.getMembersView(nodeEngine).getMembers())
+                    .entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
         }
         return this;
     }

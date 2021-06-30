@@ -310,7 +310,7 @@ public class JobCoordinationService {
 
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, dag, jobId, jobConfig);
+        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
@@ -1270,5 +1270,9 @@ public class JobCoordinationService {
                 scheduledJobTimeouts.remove(jobId);
             }
         }, timeout, MILLISECONDS);
+    }
+
+    boolean isMemberShuttingDown(UUID uuid) {
+        return membersShuttingDown.containsKey(uuid);
     }
 }
