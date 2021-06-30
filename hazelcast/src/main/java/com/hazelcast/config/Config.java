@@ -744,6 +744,8 @@ public class Config {
      * @return this config instance
      */
     public Config addMapConfig(MapConfig mapConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
         mapConfigs.put(mapConfig.getName(), mapConfig);
         return this;
     }
@@ -860,6 +862,8 @@ public class Config {
      * @return this config instance
      */
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(cacheConfig.getHotRestartConfig(), cacheConfig.getDataPersistenceConfig());
         cacheConfigs.put(cacheConfig.getName(), cacheConfig);
         return this;
     }
