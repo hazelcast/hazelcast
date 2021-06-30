@@ -127,7 +127,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     private List<QueryCacheConfig> queryCacheConfigs;
     private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
+    // todo: to be removed when we get rid of hot-restart
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
+    private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
     private EvictionConfig evictionConfig = new EvictionConfig()
@@ -168,6 +170,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 ? new PartitioningStrategyConfig(config.getPartitioningStrategyConfig()) : null;
         this.splitBrainProtectionName = config.splitBrainProtectionName;
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+        this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(config.merkleTreeConfig);
         this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
     }
@@ -680,13 +683,41 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     }
 
     /**
+     * Gets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public @Nonnull
+    DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code MapConfig}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code MapConfig} instance
+     *
+     * @deprecated since 5.0
      */
+    @Deprecated
     public MapConfig setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code MapConfig}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code MapConfig} instance
+     */
+    public MapConfig setDataPersistenceConfig(@Nonnull DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = checkNotNull(dataPersistenceConfig, "DataPersistenceConfig cannot be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -837,6 +868,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (!eventJournalConfig.equals(that.eventJournalConfig)) {
             return false;
         }
+        if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
+            return false;
+        }
+
         return hotRestartConfig.equals(that.hotRestartConfig);
     }
 
@@ -868,6 +903,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + merkleTreeConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + dataPersistenceConfig.hashCode();
         return result;
     }
 
@@ -886,6 +922,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", merkleTree=" + merkleTreeConfig
                 + ", eventJournal=" + eventJournalConfig
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
                 + ", mergePolicyConfig=" + mergePolicyConfig
@@ -935,6 +972,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         out.writeObject(partitioningStrategyConfig);
         out.writeString(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
+        out.writeObject(dataPersistenceConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
@@ -968,6 +1006,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         partitioningStrategyConfig = in.readObject();
         splitBrainProtectionName = in.readString();
         hotRestartConfig = in.readObject();
+        dataPersistenceConfig = in.readObject();
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());

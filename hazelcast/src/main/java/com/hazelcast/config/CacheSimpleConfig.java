@@ -100,6 +100,8 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
 
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
+    private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
+
     private EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
     private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
@@ -142,6 +144,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         this.mergePolicyConfig = new MergePolicyConfig(cacheSimpleConfig.mergePolicyConfig);
         this.merkleTreeConfig = new MerkleTreeConfig(cacheSimpleConfig.merkleTreeConfig);
         this.hotRestartConfig = new HotRestartConfig(cacheSimpleConfig.hotRestartConfig);
+        this.dataPersistenceConfig = new DataPersistenceConfig(cacheSimpleConfig.dataPersistenceConfig);
         this.eventJournalConfig = new EventJournalConfig(cacheSimpleConfig.eventJournalConfig);
         this.disablePerEntryInvalidationEvents = cacheSimpleConfig.disablePerEntryInvalidationEvents;
     }
@@ -653,13 +656,40 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
     }
 
     /**
+     * Gets the {@code DataPersistenceConfig} for this {@code CacheSimpleConfig}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code CacheSimpleConfig}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheSimpleConfig} instance
+     *
+     * @deprecated since 5.0
      */
+    @Deprecated
     public CacheSimpleConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = hotRestartConfig;
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code CacheSimpleConfig}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code CacheSimpleConfig} instance
+     */
+    public CacheSimpleConfig setDataPersistenceConfig(DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = dataPersistenceConfig;
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -760,6 +790,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         writeNullableList(partitionLostListenerConfigs, out);
         out.writeObject(mergePolicyConfig);
         out.writeObject(hotRestartConfig);
+        out.writeObject(dataPersistenceConfig);
         out.writeObject(eventJournalConfig);
 
         // RU_COMPAT_4_2
@@ -793,6 +824,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicyConfig = in.readObject();
         hotRestartConfig = in.readObject();
+        dataPersistenceConfig = in.readObject();
         eventJournalConfig = in.readObject();
 
         // RU_COMPAT_4_2
@@ -885,6 +917,10 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         if (!Objects.equals(eventJournalConfig, that.eventJournalConfig)) {
             return false;
         }
+        if (!Objects.equals(dataPersistenceConfig, that.dataPersistenceConfig)) {
+            return false;
+        }
+
         return Objects.equals(hotRestartConfig, that.hotRestartConfig);
     }
 
@@ -914,6 +950,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + (merkleTreeConfig != null ? merkleTreeConfig.hashCode() : 0);
         result = 31 * result + (hotRestartConfig != null ? hotRestartConfig.hashCode() : 0);
+        result = 31 * result + (dataPersistenceConfig != null ? dataPersistenceConfig.hashCode() : 0);
         result = 31 * result + (eventJournalConfig != null ? eventJournalConfig.hashCode() : 0);
         result = 31 * result + (disablePerEntryInvalidationEvents ? 1 : 0);
         return result;
@@ -945,6 +982,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
                 + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", merkleTreeConfig=" + merkleTreeConfig
                 + ", hotRestartConfig=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", eventJournal=" + eventJournalConfig
                 + '}';
     }

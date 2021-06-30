@@ -17,12 +17,9 @@
 package com.hazelcast.config;
 
 /**
- * Specifies the policy that will be respected during hot restart cluster start
- *
- * @deprecated since 5.0
+ * Specifies the policy that will be respected during persistence cluster start
  */
-@Deprecated
-public enum HotRestartClusterDataRecoveryPolicy {
+public enum PersistenceClusterDataRecoveryPolicy {
 
     /**
      * Starts the cluster only when all expected nodes are present and correct. Otherwise, it fails.

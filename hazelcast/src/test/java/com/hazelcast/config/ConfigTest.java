@@ -49,6 +49,9 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
+    static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
+    static final String HAZELCAST_END_TAG = "</hazelcast>\n";
+
     private Config config;
 
     @Before
@@ -252,18 +255,97 @@ public class ConfigTest extends HazelcastTestSupport {
         assertNull(config.getConfigurationFile());
     }
 
+    @Test
+    public void testMergePersistenceAndHotRestartPersistenceXml() {
+        String dir = randomString();
+        int parallelism = Math.abs(dir.hashCode());
+
+        String xmlTemplate = HAZELCAST_START_TAG
+                + "<persistence enabled=\"%s\">"
+                + "    <base-dir>" + dir + "</base-dir>"
+                + "    <parallelism>" + parallelism + "</parallelism>"
+                + "</persistence>\n"
+                + "<hot-restart-persistence enabled=\"%s\">"
+                + "    <base-dir>" + (dir + "a") + "</base-dir>"
+                + "    <parallelism>" + Math.max(parallelism - 1, parallelism + 1) + "</parallelism>"
+                + "</hot-restart-persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        boolean[][] cases = { {true, true}, {true, false}, {false, true}, {false, false} };
+        String[] expectedDir = { dir, dir, dir + "a" };
+        int[] expectedParallelism = {parallelism, parallelism, Math.max(parallelism - 1, parallelism + 1)};
+
+        for (int i = 0; i < cases.length; ++i) {
+            String xml = String.format(xmlTemplate, cases[i][0], cases[i][1]);
+            Config cfg = Config.loadFromString(xml);
+            HotRestartPersistenceConfig hotRestartPersistenceConfig = cfg.getHotRestartPersistenceConfig();
+            PersistenceConfig persistenceConfig = cfg.getPersistenceConfig();
+
+            assertEquals(cases[i][0] || cases[i][1], persistenceConfig.isEnabled());
+            if (persistenceConfig.isEnabled()) {
+                assertEquals(new File(expectedDir[i]).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+                assertEquals(expectedParallelism[i], persistenceConfig.getParallelism());
+            }
+
+            assertEquals(cases[i][0] || cases[i][1], hotRestartPersistenceConfig.isEnabled());
+            if (hotRestartPersistenceConfig.isEnabled()) {
+                assertEquals(new File(expectedDir[i]).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+                assertEquals(expectedParallelism[i], hotRestartPersistenceConfig.getParallelism());
+            }
+        }
+    }
+
+    @Test
+    public void testMergePersistenceAndHotRestartPersistenceYaml() {
+        String dir = randomString();
+        int parallelism = Math.abs(dir.hashCode());
+
+        String yamlTemplate = ""
+                + "hazelcast:\n"
+                + "  persistence:\n"
+                + "    enabled: %s\n"
+                + "    base-dir: " + dir + "\n"
+                + "    parallelism: " + parallelism + "\n"
+                + "  hot-restart-persistence:\n"
+                + "    enabled: %s\n"
+                + "    base-dir: " + (dir + "a") + "\n"
+                + "    parallelism: " + Math.max(parallelism - 1, parallelism + 1) + "\n";
+        boolean[][] cases = { {true, true}, {true, false}, {false, true}, {false, false} };
+        String[] expectedDir = { dir, dir, dir + "a" };
+        int[] expectedParallelism = {parallelism, parallelism, Math.max(parallelism - 1, parallelism + 1)};
+
+        for (int i = 0; i < cases.length; ++i) {
+            String yaml = String.format(yamlTemplate, cases[i][0], cases[i][1]);
+            Config cfg = Config.loadFromString(yaml);
+            HotRestartPersistenceConfig hotRestartPersistenceConfig = cfg.getHotRestartPersistenceConfig();
+            PersistenceConfig persistenceConfig = cfg.getPersistenceConfig();
+
+            assertEquals(cases[i][0] || cases[i][1], persistenceConfig.isEnabled());
+            if (persistenceConfig.isEnabled()) {
+                assertEquals(new File(expectedDir[i]).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+                assertEquals(expectedParallelism[i], persistenceConfig.getParallelism());
+            }
+
+            assertEquals(cases[i][0] || cases[i][1], hotRestartPersistenceConfig.isEnabled());
+            if (hotRestartPersistenceConfig.isEnabled()) {
+                assertEquals(new File(expectedDir[i]).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+                assertEquals(expectedParallelism[i], hotRestartPersistenceConfig.getParallelism());
+            }
+        }
+    }
+
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("provide one or more tag and value pairs");
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n");
+        sb.append(HAZELCAST_START_TAG);
 
         for (int i = 0; i < tagAndVal.length - 1; i += 2) {
             sb.append("<" + tagAndVal[i] + ">" + tagAndVal[i + 1] + "</" + tagAndVal[i] + ">\n");
         }
-        sb.append("</hazelcast>\n");
+        sb.append(HAZELCAST_END_TAG);
         return sb.toString();
     }
 

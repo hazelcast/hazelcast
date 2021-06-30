@@ -49,6 +49,8 @@ import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -152,6 +154,8 @@ public class Config {
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
 
+    private final ILogger logger = Logger.getLogger(Config.class);
+
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
 
@@ -176,6 +180,8 @@ public class Config {
     private NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
 
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
+
+    private PersistenceConfig persistenceConfig = new PersistenceConfig();
 
     private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
 
@@ -221,7 +227,11 @@ public class Config {
     }
 
     private static Config applyEnvAndSystemVariableOverrides(Config cfg) {
-        return new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
+        cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
+        if (cfg.mergePersistenceAndHotRestartPersistence()) {
+            cfg.warnPersistenceOverwroteHotRestartPersistenceConfig();
+        }
+        return cfg;
     }
 
     private static Config loadFromFile(Properties properties) {
@@ -307,10 +317,14 @@ public class Config {
         checkTrue(stream != null, "Specified resource '" + resource + "' could not be found!");
 
         if (resource.endsWith(".xml")) {
-            return new XmlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
         if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
-            return new YamlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
@@ -346,10 +360,14 @@ public class Config {
         String path = configFile.getPath();
         InputStream stream = new FileInputStream(configFile);
         if (path.endsWith(".xml")) {
-            return new XmlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
         if (path.endsWith(".yaml") || path.endsWith(".yml")) {
-            return new YamlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
@@ -2567,16 +2585,111 @@ public class Config {
     }
 
     /**
+     * Returns the Persistence configuration for this hazelcast instance
+     *
+     * @return persistence configuration
+     */
+    public PersistenceConfig getPersistenceConfig() {
+        return persistenceConfig;
+    }
+
+    /**
      * Sets the Hot Restart configuration.
      *
      * @param hrConfig Hot Restart configuration
      * @return this config instance
      * @throws NullPointerException if the {@code hrConfig} parameter is {@code null}
+     *
+     * @deprecated since 5.0
      */
+    @Deprecated
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
         checkNotNull(hrConfig, "Hot restart config cannot be null!");
         this.hotRestartPersistenceConfig = hrConfig;
+        if (mergePersistenceAndHotRestartPersistence()) {
+            warnPersistenceOverwroteHotRestartPersistenceConfig();
+        }
         return this;
+    }
+
+    /**
+     * Sets the Persistence configuration.
+     *
+     * @param persistenceConfig Persistence configuration
+     * @return this config instance
+     * @throws NullPointerException if the {@code persistenceConfig} parameter is {@code null}
+     */
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        checkNotNull(persistenceConfig, "Persistence config cannot be null!");
+        this.persistenceConfig = persistenceConfig;
+        if (mergePersistenceAndHotRestartPersistence()) {
+            warnPersistenceOverwroteHotRestartPersistenceConfig();
+        }
+        return this;
+    }
+
+    /**
+     * if hot-restart-persistence: enabled="true" and persistence: enabled="false"
+     * => enable persistence (HR) and use the config from hot-restart-persistence.
+     * Does not break current deployments.
+     *
+     * <br><br>
+     *
+     * if hot-restart-persistence: enabled="false" and persistence: enabled="true"
+     * => enable persistence (HR) and use the config from persistence. This is
+     * for the new users.
+     *
+     * <br><br>
+     *
+     * if hot-restart-persistence: enabled="true" and persistence: enabled="true"
+     * => enable persistence (HR) and use the config from persistence. We prefer
+     * the new element, and the old one might get removed at some point.
+     *
+     * @return true if hotRestartPersistenceConfig has been overridden by
+     * persistenceConfig
+     */
+    private boolean mergePersistenceAndHotRestartPersistence() {
+        final HotRestartPersistenceConfig hotCfg = this.hotRestartPersistenceConfig;
+
+        if (hotCfg.isEnabled() && !persistenceConfig.isEnabled()) {
+            persistenceConfig.setEnabled(true)
+                    .setBaseDir(hotCfg.getBaseDir())
+                    .setBackupDir(hotCfg.getBackupDir())
+                    .setAutoRemoveStaleData(hotCfg.isAutoRemoveStaleData())
+                    .setEncryptionAtRestConfig(hotCfg.getEncryptionAtRestConfig())
+                    .setDataLoadTimeoutSeconds(hotCfg.getDataLoadTimeoutSeconds())
+                    .setParallelism(hotCfg.getParallelism())
+                    .setValidationTimeoutSeconds(hotCfg.getValidationTimeoutSeconds())
+                    .setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy
+                            .valueOf(hotCfg.getClusterDataRecoveryPolicy().name()));
+            return false;
+        }
+
+        if (!persistenceConfig.isEnabled()) {
+            return false;
+        }
+
+        boolean override = hotCfg.isEnabled() && persistenceConfig.isEnabled();
+
+        hotCfg.setEnabled(persistenceConfig.isEnabled())
+                .setBaseDir(persistenceConfig.getBaseDir())
+                .setBackupDir(persistenceConfig.getBackupDir())
+                .setAutoRemoveStaleData(persistenceConfig.isAutoRemoveStaleData())
+                .setEncryptionAtRestConfig(persistenceConfig.getEncryptionAtRestConfig())
+                .setDataLoadTimeoutSeconds(persistenceConfig.getDataLoadTimeoutSeconds())
+                .setParallelism(persistenceConfig.getParallelism())
+                .setValidationTimeoutSeconds(persistenceConfig.getValidationTimeoutSeconds())
+                .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.
+                        valueOf(persistenceConfig.getClusterDataRecoveryPolicy().name()));
+        return override;
+    }
+
+    private void warnPersistenceOverwroteHotRestartPersistenceConfig() {
+        logger.warning(
+                "Please not that HotRestartPersistence is deprecated and should not be used. "
+                + "Since both HotRestartPersistence and Persistence are enabled, "
+                + "and thus there is a conflict, the latter is used in persistence configuration."
+        );
     }
 
     public CRDTReplicationConfig getCRDTReplicationConfig() {
@@ -2957,7 +3070,9 @@ public class Config {
                 + ", userContext=" + userContext
                 + ", memberAttributeConfig=" + memberAttributeConfig
                 + ", nativeMemoryConfig=" + nativeMemoryConfig
+                // todo: shall be removed in the future
                 + ", hotRestartPersistenceConfig=" + hotRestartPersistenceConfig
+                + ", persistenceConfig=" + persistenceConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", liteMember=" + liteMember

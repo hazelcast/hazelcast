@@ -89,7 +89,10 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      */
     protected boolean isManagementEnabled;
 
+    // todo: to be removed
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
+    protected DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
 
     protected EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
@@ -262,13 +265,41 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     /**
+     * Gets the {@code PersistConfig} for this {@code CacheConfiguration}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public @Nonnull
+    DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code CacheConfiguration}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheConfiguration} instance
+     *
+     * @deprecated since 5.0
      */
+    @Deprecated
     public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig can't be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code CacheConfiguration}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setDataPersistenceConfig(@Nonnull DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = checkNotNull(dataPersistenceConfig, "DataPersistenceConfig can't be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -484,6 +515,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         result = 31 * result + (isStoreByValue ? 1 : 0);
         result = 31 * result + (isManagementEnabled ? 1 : 0);
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         return result;
     }
@@ -543,6 +575,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         if (!hotRestartConfig.equals(that.hotRestartConfig)) {
             return false;
         }
+
+        if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
+            return false;
+        }
+
         return keyValueTypesEqual(that);
     }
 

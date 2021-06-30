@@ -107,6 +107,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
             this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
@@ -158,6 +159,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
         this.merkleTreeConfig = new MerkleTreeConfig(simpleConfig.getMerkleTreeConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.dataPersistenceConfig = new DataPersistenceConfig(simpleConfig.getDataPersistenceConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
@@ -480,8 +482,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
      *
      * @param merkleTreeConfig merkle tree config
-     * @return this {@code CacheConfig} instance
-     */
+s     */
     public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
         this.merkleTreeConfig = merkleTreeConfig;
     }
@@ -666,6 +667,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';

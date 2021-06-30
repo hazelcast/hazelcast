@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * Configures the Hot Restart Persistence per Hazelcast data structure.
+ * Configures the Persistence per Hazelcast data structure.
  *
  * <br><br>
  * Note: If either, but not both, data-persistence ({@code DataPersistenceConfig}) or
@@ -33,27 +33,24 @@ import java.io.IOException;
  * enabled, Hazelcast will use the data-persistence ({@code DataPersistenceConfig})
  * configuration. hot-restart element (and thus {@code HotRestartConfig})
  * will be removed in a future release.
- *
- * @deprecated since 5.0
  */
-@Deprecated
-public class HotRestartConfig implements IdentifiedDataSerializable {
+public class DataPersistenceConfig implements IdentifiedDataSerializable {
 
     private boolean enabled;
     private boolean fsync;
 
-    public HotRestartConfig() {
+    public DataPersistenceConfig() {
     }
 
-    public HotRestartConfig(HotRestartConfig hotRestartConfig) {
-        enabled = hotRestartConfig.enabled;
-        fsync = hotRestartConfig.fsync;
+    public DataPersistenceConfig(DataPersistenceConfig dataPersistenceConfig) {
+        enabled = dataPersistenceConfig.enabled;
+        fsync = dataPersistenceConfig.fsync;
     }
 
     /**
-     * Returns whether hot restart enabled on related data structure.
+     * Returns whether persistence enabled on related data structure.
      *
-     * @return true if hot restart enabled, false otherwise
+     * @return true if persistence enabled, false otherwise
      */
     public boolean isEnabled() {
         return enabled;
@@ -62,9 +59,9 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
     /**
      * Sets whether hot restart is enabled on related data structure.
      *
-     * @return HotRestartConfig
+     * @return DataPersistenceConfig
      */
-    public HotRestartConfig setEnabled(boolean enabled) {
+    public DataPersistenceConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -82,16 +79,16 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
      * Sets whether disk write should be followed by an {@code fsync()} system call.
      *
      * @param fsync fsync
-     * @return this HotRestartConfig
+     * @return this DataPersistenceConfig
      */
-    public HotRestartConfig setFsync(boolean fsync) {
+    public DataPersistenceConfig setFsync(boolean fsync) {
         this.fsync = fsync;
         return this;
     }
 
     @Override
     public String toString() {
-        return "HotRestartConfig{"
+        return "DataPersistenceConfig{"
                 + "enabled=" + enabled
                 + ", fsync=" + fsync
                 + '}';
@@ -104,7 +101,7 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
 
     @Override
     public int getClassId() {
-        return ConfigDataSerializerHook.HOT_RESTART_CONFIG;
+        return ConfigDataSerializerHook.DATA_PERSISTENCE_CONFIG;
     }
 
     @Override
@@ -124,11 +121,11 @@ public class HotRestartConfig implements IdentifiedDataSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HotRestartConfig)) {
+        if (!(o instanceof DataPersistenceConfig)) {
             return false;
         }
 
-        HotRestartConfig that = (HotRestartConfig) o;
+        DataPersistenceConfig that = (DataPersistenceConfig) o;
         if (enabled != that.enabled) {
             return false;
         }

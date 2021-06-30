@@ -2266,6 +2266,12 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setFsync(true);
     }
 
+    private static DataPersistenceConfig dataPersistenceConfig() {
+        return new DataPersistenceConfig()
+                .setEnabled(true)
+                .setFsync(true);
+    }
+
     private static MerkleTreeConfig merkleTreeConfig() {
         return new MerkleTreeConfig()
                 .setEnabled(true)
