@@ -18,17 +18,16 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -43,6 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -61,19 +61,16 @@ public class NonSmartClientTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = smallInstanceConfig();
-        config.getMapConfig("journal*").getEventJournalConfig().setEnabled(true);
-        masterInstance = createHazelcastInstance(config);
-        nonMasterInstance = createHazelcastInstance(config);
-        masterClient = createClientConnectingTo(config, masterInstance);
-        nonMasterClient = createClientConnectingTo(config, nonMasterInstance);
+        masterInstance = createHazelcastInstance();
+        nonMasterInstance = createHazelcastInstance();
+        masterClient = createClientConnectingTo(masterInstance);
+        nonMasterClient = createClientConnectingTo(nonMasterInstance);
     }
 
-    private HazelcastInstance createClientConnectingTo(Config config, HazelcastInstance targetInstance) {
+    private HazelcastInstance createClientConnectingTo(HazelcastInstance targetInstance) {
         Address address = targetInstance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.setClusterName(config.getClusterName());
         clientConfig.getNetworkConfig().getAddresses().clear();
         clientConfig.getNetworkConfig().getAddresses().add(address.getHost() + ":" + address.getPort());
         return createHazelcastClient(clientConfig);
@@ -102,9 +99,9 @@ public class NonSmartClientTest extends JetTestSupport {
         String jobName = randomName();
 
         //When
-        Pipeline p = streamingPipeline();
+        DAG dag = streamingDag();
         JetService jet = nonMasterClient.getJet();
-        Job job = jet.newJob(p, new JobConfig().setName(jobName));
+        Job job = jet.newJob(dag, new JobConfig().setName(jobName));
 
         long jobId = job.getId();
 
@@ -177,7 +174,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
     @Test
     public void when_lightJobSubmittedToNonMaster_then_coordinatedByNonMaster() {
-        Job job = nonMasterClient.getJet().newLightJob(streamingPipeline());
+        Job job = nonMasterClient.getJet().newLightJob(streamingDag());
         JetServiceBackend service = getNodeEngineImpl(nonMasterInstance).getService(JetServiceBackend.SERVICE_NAME);
         assertTrueEventually(() ->
                 assertNotNull(service.getJobCoordinationService().getLightMasterContexts().get(job.getId())));
@@ -185,7 +182,7 @@ public class NonSmartClientTest extends JetTestSupport {
 
     @Test
     public void when_lightJobSubmittedToNonMaster_then_accessibleFromAllMembers() {
-        Job job = nonMasterClient.getJet().newLightJob(streamingPipeline());
+        Job job = nonMasterClient.getJet().newLightJob(streamingDag());
         assertTrueEventually(() -> {
             Job trackedJob = masterInstance.getJet().getJob(job.getId());
             assertNotNull(trackedJob);
@@ -210,17 +207,9 @@ public class NonSmartClientTest extends JetTestSupport {
 
     private Job startJobAndVerifyItIsRunning() {
         String jobName = randomName();
-        Pipeline p = streamingPipeline();
-        Job job = nonMasterClient.getJet().newJob(p, new JobConfig().setName(jobName));
+        DAG dag = streamingDag();
+        Job job = nonMasterClient.getJet().newJob(dag, new JobConfig().setName(jobName));
         assertJobStatusEventually(nonMasterClient.getJet().getJob(jobName), JobStatus.RUNNING);
         return job;
-    }
-
-    private Pipeline streamingPipeline() {
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.mapJournal("journal" + randomMapName(), JournalInitialPosition.START_FROM_OLDEST))
-         .withoutTimestamps()
-         .writeTo(Sinks.map(randomMapName()));
-        return p;
     }
 }

@@ -33,7 +33,7 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected UUID getLightJobCoordinator() {
-        return nodeEngine.getLocalMember().getUuid();
+        return parameters.isLightJob ? nodeEngine.getLocalMember().getUuid() : null;
     }
 
     @Override
