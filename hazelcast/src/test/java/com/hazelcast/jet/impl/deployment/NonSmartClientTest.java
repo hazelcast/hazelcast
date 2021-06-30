@@ -21,9 +21,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -34,7 +34,7 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,28 +52,29 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NonSmartClientTest extends JetTestSupport {
+public class NonSmartClientTest extends SimpleTestInClusterSupport {
 
-    private HazelcastInstance masterInstance;
-    private HazelcastInstance nonMasterInstance;
-    private HazelcastInstance masterClient;
-    private HazelcastInstance nonMasterClient;
+    private static HazelcastInstance masterInstance;
+    private static HazelcastInstance nonMasterInstance;
+    private static HazelcastInstance masterClient;
+    private static HazelcastInstance nonMasterClient;
 
-    @Before
-    public void setUp() {
-        masterInstance = createHazelcastInstance();
-        nonMasterInstance = createHazelcastInstance();
+    @BeforeClass
+    public static void setUp() {
+        initialize(2, null);
+        masterInstance = instances()[0];
+        nonMasterInstance = instances()[1];
         masterClient = createClientConnectingTo(masterInstance);
         nonMasterClient = createClientConnectingTo(nonMasterInstance);
     }
 
-    private HazelcastInstance createClientConnectingTo(HazelcastInstance targetInstance) {
+    private static HazelcastInstance createClientConnectingTo(HazelcastInstance targetInstance) {
         Address address = targetInstance.getCluster().getLocalMember().getAddress();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
         clientConfig.getNetworkConfig().getAddresses().clear();
         clientConfig.getNetworkConfig().getAddresses().add(address.getHost() + ":" + address.getPort());
-        return createHazelcastClient(clientConfig);
+        return factory().newHazelcastClient(clientConfig);
     }
 
     @Test
@@ -162,14 +163,14 @@ public class NonSmartClientTest extends JetTestSupport {
     @Test
     public void when_jobSummaryListIsAsked_then_jobSummaryListReturned() {
         //Given
-        startJobAndVerifyItIsRunning();
+        Job job = startJobAndVerifyItIsRunning();
 
         //When
         List<JobSummary> summaryList = ((JetClientInstanceImpl) nonMasterClient.getJet()).getJobSummaryList();
 
         //Then
         assertNotNull(summaryList);
-        assertEquals(1, summaryList.size());
+        assertTrue(summaryList.stream().anyMatch(s -> s.getJobId() == job.getId()));
     }
 
     @Test
