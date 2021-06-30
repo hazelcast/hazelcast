@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
+import com.hazelcast.jet.sql.impl.connector.map.IMapPlanner;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
@@ -96,11 +97,15 @@ class JetSqlBackend implements SqlBackend {
     private final NodeEngine nodeEngine;
     private final JetPlanExecutor planExecutor;
 
+    private final IMapPlanner mapPlanner;
+
     private final ILogger logger;
 
     JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
         this.nodeEngine = nodeEngine;
         this.planExecutor = planExecutor;
+
+        this.mapPlanner = new IMapPlanner(nodeEngine.getHazelcastInstance());
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -171,15 +176,20 @@ class JetSqlBackend implements SqlBackend {
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else {
-            QueryConvertResult convertResult = context.convert(parseResult);
-            return toPlan(
-                    planKey,
-                    parseResult.getParameterMetadata(),
-                    convertResult.getRel(),
-                    convertResult.getFieldNames(),
-                    context,
-                    parseResult.isInfiniteRows()
-            );
+            SqlPlan optimizedMapPlan = mapPlanner.tryCreatePlan(planKey, parseResult, context);
+            if (optimizedMapPlan != null) {
+                return optimizedMapPlan;
+            } else {
+                QueryConvertResult convertResult = context.convert(parseResult);
+                return toPlan(
+                        planKey,
+                        parseResult.getParameterMetadata(),
+                        convertResult.getRel(),
+                        convertResult.getFieldNames(),
+                        context,
+                        parseResult.isInfiniteRows()
+                );
+            }
         }
     }
 

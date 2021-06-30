@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -306,5 +307,10 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      */
     public boolean isInfiniteRows() {
         return false;
+    }
+
+    public Table extractTable(SqlIdentifier identifier) {
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
+        return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
     }
 }

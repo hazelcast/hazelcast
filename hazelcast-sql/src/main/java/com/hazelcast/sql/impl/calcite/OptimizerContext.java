@@ -46,6 +46,7 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.tools.RuleSet;
 
 import javax.annotation.Nonnull;
@@ -144,6 +145,10 @@ public final class OptimizerContext {
      */
     public QueryConvertResult convert(QueryParseResult parseResult) {
         return converter.convert(parseResult);
+    }
+
+    public RexNode convertExpression(QueryParseResult parseResult) {
+        return converter.convertExpression(parseResult);
     }
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {

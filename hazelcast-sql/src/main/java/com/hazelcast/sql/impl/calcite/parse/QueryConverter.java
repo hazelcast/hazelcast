@@ -27,6 +27,7 @@ import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.rel.rules.SubQueryRemoveRule;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql2rel.SqlToRelConverter;
 import org.apache.calcite.sql2rel.StandardConvertletTable;
@@ -103,6 +104,21 @@ public class QueryConverter {
 
         // 5. Collect original field names.
         return new QueryConvertResult(relTrimmed, Pair.right(root.fields));
+    }
+
+    public RexNode convertExpression(QueryParseResult parseResult) {
+        SqlNode node = parseResult.getNode();
+
+        SqlToRelConverter converter = parseResult.getSqlBackend().converter(
+                null,
+                parseResult.getValidator(),
+                catalogReader,
+                cluster,
+                StandardConvertletTable.INSTANCE,
+                CONFIG
+        );
+
+        return converter.convertExpression(node);
     }
 
     /**

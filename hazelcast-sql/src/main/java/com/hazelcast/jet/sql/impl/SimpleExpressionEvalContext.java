@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
@@ -23,6 +25,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -50,6 +53,13 @@ public final class SimpleExpressionEvalContext implements ExpressionEvalContext 
         return new SimpleExpressionEvalContext(
                 requireNonNull(ctx.jobConfig().getArgument(SQL_ARGUMENTS_KEY_NAME)),
                 ((Contexts.ProcSupplierCtx) ctx).serializationService()
+        );
+    }
+
+    public static SimpleExpressionEvalContext from(HazelcastInstance hazelcastInstance) {
+        return new SimpleExpressionEvalContext(
+                Collections.emptyList(),
+                ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService()
         );
     }
 

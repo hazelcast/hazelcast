@@ -54,6 +54,17 @@ public class SqlDeleteTest extends SqlTestSupport {
     }
 
     @Test
+    public void deleteBySingleKeyExpression() {
+        put(2);
+        checkUpdateCount("delete from test_map where __key = 1 + 1 ", 0);
+        assertMapDoesNotContainKey(2);
+
+        put(1, 1);
+        checkUpdateCount("delete from test_map where __key = this + 0", 0);
+        assertMapDoesNotContainKey(1);
+    }
+
+    @Test
     public void deleteWithoutKeyInPredicate() {
         put(1, 1);
         checkUpdateCount("delete from test_map where this = 1", 0);
@@ -121,6 +132,11 @@ public class SqlDeleteTest extends SqlTestSupport {
         instance().getMap(name).put(1, 1);
         assertMapContainsKey(name, 1);
         execute("delete from " + name + " where __key = 1");
+        assertMapDoesNotContainKey(name, 1);
+
+        instance().getMap(name).put(1, 1);
+        assertMapContainsKey(name, 1);
+        execute("delete from " + name + " where this = 1");
         assertMapDoesNotContainKey(name, 1);
     }
 

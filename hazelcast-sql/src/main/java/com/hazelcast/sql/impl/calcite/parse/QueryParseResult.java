@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.validate.SqlValidator;
 
 /**
  * Parsing result.
@@ -28,14 +28,14 @@ public class QueryParseResult {
 
     private final SqlNode node;
     private final QueryParameterMetadata parameterMetadata;
-    private final SqlValidator validator;
+    private final HazelcastSqlValidator validator;
     private final SqlBackend sqlBackend;
     private final boolean isInfiniteRows;
 
     public QueryParseResult(
             SqlNode node,
             QueryParameterMetadata parameterMetadata,
-            SqlValidator validator,
+            HazelcastSqlValidator validator,
             SqlBackend sqlBackend,
             boolean isInfiniteRows
     ) {
@@ -54,7 +54,7 @@ public class QueryParseResult {
         return parameterMetadata;
     }
 
-    public SqlValidator getValidator() {
+    public HazelcastSqlValidator getValidator() {
         return validator;
     }
 

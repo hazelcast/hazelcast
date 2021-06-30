@@ -38,13 +38,13 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Set;
 
-abstract class JetPlan extends SqlPlan {
+public abstract class JetPlan extends SqlPlan {
 
     protected JetPlan(PlanKey planKey) {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
+    protected abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
