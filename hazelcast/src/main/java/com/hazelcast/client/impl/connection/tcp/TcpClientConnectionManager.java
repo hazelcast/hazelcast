@@ -69,7 +69,6 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
@@ -182,7 +181,6 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
          * Invocations are allowed in this state.
          */
         INITIALIZED_ON_CLUSTER,
-
         /**
          * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
          * any connection happened without cluster switch intent are no longer allowed and will be closed.
@@ -813,20 +811,29 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection() {
+    public ClientConnection getRandomConnection(boolean dataMember) {
         // Try getting the connection from the load balancer, if smart routing is enabled
         if (isSmartRoutingEnabled) {
-            Member member = loadBalancer.next();
+            ClientConnection connection = getConnectionFromLoadBalancer(dataMember);
 
-            // Failed to get a member
-            ClientConnection connection = member != null ? activeConnections.get(member.getUuid()) : null;
             if (connection != null) {
                 return connection;
             }
         }
 
-        // Otherwise iterate over connections and return the first one
+        // Otherwise iterate over connections and return the very first valid
+
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
+            if (dataMember) {
+                UUID memberId = connectionEntry.getKey();
+
+                Member member = client.getClientClusterService().getMember(memberId);
+
+                if (member == null || member.isLiteMember()) {
+                    continue;
+                }
+            }
+
             return connectionEntry.getValue();
         }
 
@@ -834,40 +841,25 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return null;
     }
 
-    @Override
-    public ClientConnection getConnectionForSql() {
-        if (isSmartRoutingEnabled) {
-            // There might be a race - the chosen member just connected or disconnected - try a
-            // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
-            // we might be lucky...
-            for (int i = 0; i < 10; i++) {
-                Member member = QueryUtils.memberOfLargerSameVersionGroup(
-                        client.getClientClusterService().getMemberList(), null);
-                if (member != null) {
-                    ClientConnection connection = activeConnections.get(member.getUuid());
-                    if (connection != null) {
-                        return connection;
-                    }
-                }
+    private ClientConnection getConnectionFromLoadBalancer(boolean dataMember) {
+        Member member;
+
+        if (dataMember) {
+            if (loadBalancer.canGetNextDataMember()) {
+                member = loadBalancer.nextDataMember();
+            } else {
+                member = null;
             }
+        } else {
+            member = loadBalancer.next();
         }
 
-        // Otherwise iterate over connections and return the first one that's not to a lite member
-        ClientConnection firstConnection = null;
-        for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
-            if (firstConnection == null) {
-                firstConnection = connectionEntry.getValue();
-            }
-            UUID memberId = connectionEntry.getKey();
-            Member member = client.getClientClusterService().getMember(memberId);
-            if (member == null || member.isLiteMember()) {
-                continue;
-            }
-            return connectionEntry.getValue();
+        // Failed to get member
+        if (member == null) {
+            return null;
         }
 
-        // Failed to get a connection
-        return firstConnection;
+        return activeConnections.get(member.getUuid());
     }
 
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {

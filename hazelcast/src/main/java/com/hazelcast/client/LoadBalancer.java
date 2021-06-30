@@ -22,14 +22,15 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 
 /**
- * {@link LoadBalancer} allows you to send operations to one of a number of endpoints (members).
+ * {@link LoadBalancer} allows you to send operations to one of a number of endpoints(Members).
  * It is up to the implementation to use different load balancing policies.
  * <p>
- * If the client is configured with {@link ClientNetworkConfig#isSmartRouting()},
- * operations that are not key-based will be routed to the endpoint returned by the LoadBalancer. For
- * non-smart clients, the {@link LoadBalancer} is not used.
+ * If Client is configured with {@link ClientNetworkConfig#isSmartRouting()},
+ * only the operations that are not key based will be routed to the endpoint returned by the LoadBalancer. If it is
+ * not {@link ClientNetworkConfig#isSmartRouting()}, {@link LoadBalancer} will not be used.
  * <p>
- * For configuration see  {@link ClientConfig#setLoadBalancer(LoadBalancer)}.
+ *
+ * For configuration see  {@link com.hazelcast.client.config.ClientConfig#setLoadBalancer(LoadBalancer)}
  */
 public interface LoadBalancer {
 
@@ -49,25 +50,23 @@ public interface LoadBalancer {
     Member next();
 
     /**
-     * Returns the next data member or null if no data member is available.
+     * Returns the next data member to route to.
      *
+     * @return Returns the next data member or null if no data member is available
      * @throws UnsupportedOperationException if the operation is not supported by this instance
-     * @since 4.2
-     * @deprecated Since 5.0, the method is unused
      */
-    @Deprecated
     default Member nextDataMember() {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Returns whether this instance supports getting data members through a call to {@link #nextDataMember()}.
+     * <p>
+     * This method is used by components that require communication with data members only, such as the SQL engine.
      *
+     * @return {@code true} if this instance supports getting data members through a call to {@link #nextDataMember()}
      * @see #nextDataMember()
-     * @since 4.2
-     * @deprecated Since 5.0, the method is unused
      */
-    @Deprecated
     default boolean canGetNextDataMember() {
         return false;
     }

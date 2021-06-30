@@ -330,7 +330,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
 
-            Connection connection = clientService.getQueryConnection();
+            Connection connection = clientService.getRandomConnection();
             clientService.invokeOnConnection(connection, message);
 
             fail("Must fail");

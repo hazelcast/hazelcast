@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -38,7 +39,6 @@ import org.junit.experimental.categories.Category;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,7 +57,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     private static final ProcessorMetaSupplier MOCK_PMS =
             addresses -> address -> count -> nCopies(count, new DummyProcessor());
     private static NodeEngineImpl nodeEngineImpl;
-    private static List<MemberInfo> membersView;
+    private static MembersView membersView;
 
     private DAG dag = new DAG();
     private Vertex v1 = dag.newVertex("v1", MOCK_PMS);
@@ -71,7 +71,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         initialize(1, null);
         nodeEngineImpl = getNodeEngineImpl(instance());
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
-        membersView = clusterService.getMembershipManager().getMembersView().getMembers();
+        membersView = clusterService.getMembershipManager().getMembersView();
     }
 
     @Test

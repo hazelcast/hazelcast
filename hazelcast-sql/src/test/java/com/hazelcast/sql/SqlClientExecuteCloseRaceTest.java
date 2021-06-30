@@ -83,7 +83,7 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "execute"
-        Connection connection = clientService.getQueryConnection();
+        Connection connection = clientService.getRandomConnection();
 
         ClientMessage executeResponse = sendExecuteRequest(connection, queryId);
 
@@ -104,7 +104,7 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
-        Connection connection = clientService.getQueryConnection();
+        Connection connection = clientService.getRandomConnection();
 
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 
@@ -125,7 +125,7 @@ public class SqlClientExecuteCloseRaceTest {
         QueryId queryId = QueryId.create(UUID.randomUUID());
 
         // Send "close"
-        Connection connection = clientService.getQueryConnection();
+        Connection connection = clientService.getRandomConnection();
 
         ClientMessage closeRequest = SqlCloseCodec.encodeRequest(queryId);
 

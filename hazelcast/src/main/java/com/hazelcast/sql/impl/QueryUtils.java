@@ -16,20 +16,16 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.version.MemberVersion;
-import com.hazelcast.version.Version;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +34,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Common SQL engine utility methods used by both "core" and "sql" modules.
@@ -171,95 +166,5 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
-    }
-
-    public static Address memberOfLargerSameVersionGroup(NodeEngineImpl nodeEngine) {
-        return memberOfLargerSameVersionGroup(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember())
-                .getAddress();
-    }
-
-    /**
-     * Finds a larger same-version group of data members from a collection
-     * members and, if {@code localMember} is from that group, return that.
-     * Otherwise return a random member from the group. If the same-version
-     * groups have the same size, return a member from the newer group
-     * (preferably the local one).
-     * <p>
-     * Used for SqlExecute and SubmitJob(light=true) messages.
-     *
-     * @param members list of all members
-     * @param localMember the local member, null for client instance
-     * @return the chosen member or null, if no data member is found
-     */
-    @Nullable
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    public static Member memberOfLargerSameVersionGroup(@Nonnull Collection<Member> members, @Nullable Member localMember) {
-        // The members should have at most 2 different version (ignoring the patch version).
-        // Find a random member from the larger same-version group.
-
-        // we don't use 2-element array to save on GC litter
-        Version version0 = null;
-        Version version1 = null;
-        int count0 = 0;
-        int count1 = 0;
-        int grossMajority = members.size() / 2;
-
-        for (Member m : members) {
-            if (m.isLiteMember()) {
-                continue;
-            }
-            Version v = m.getVersion().asVersion();
-            int currentCount;
-            if (version0 == null || version0.equals(v)) {
-                version0 = v;
-                currentCount = ++count0;
-            } else if (version1 == null || version1.equals(v)) {
-                version1 = v;
-                currentCount = ++count1;
-            } else {
-                throw new RuntimeException("More than 2 distinct member versions found: " + version0 + ", " + version1 + ", "
-                        + v);
-            }
-            // a shortcut
-            if (currentCount > grossMajority && localMember != null && localMember.getVersion().asVersion().equals(v)) {
-                return localMember;
-            }
-        }
-
-        assert count1 == 0 || count0 > 0;
-
-        // no data members
-        if (count0 == 0) {
-            return null;
-        }
-
-        int count;
-        Version version;
-        if (count0 > count1 || count0 == count1 && version0.compareTo(version1) > 0) {
-            count = count0;
-            version = version0;
-        } else {
-            count = count1;
-            version = version1;
-        }
-
-        // if the local member is data member and is from the larger group, use that
-        if (localMember != null && !localMember.isLiteMember()
-                && localMember.getVersion().asVersion().equals(version)) {
-            return localMember;
-        }
-
-        // otherwise return a random member from the larger group
-        int randomMemberIndex = ThreadLocalRandom.current().nextInt(count);
-        for (Member m : members) {
-            if (!m.isLiteMember() && m.getVersion().asVersion().equals(version)) {
-                randomMemberIndex--;
-                if (randomMemberIndex < 0) {
-                    return m;
-                }
-            }
-        }
-
-        throw new RuntimeException("should never get here");
     }
 }

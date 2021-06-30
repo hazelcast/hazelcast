@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -29,7 +28,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -54,7 +52,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
     private int coordinatorMemberListVersion;
-    private Version coordinatorVersion;
     private Set<MemberInfo> participants;
     private Data serializedPlan;
     private boolean isLightJob;
@@ -63,12 +60,10 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
-                                  Version coordinatorVersion,
                                   Set<MemberInfo> participants, Data serializedPlan, boolean isLightJob) {
         super(jobId);
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
-        this.coordinatorVersion = coordinatorVersion;
         this.participants = participants;
         this.serializedPlan = serializedPlan;
         this.isLightJob = isLightJob;
@@ -77,13 +72,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
     @Override
     protected CompletableFuture<?> doRun() {
         ILogger logger = getLogger();
-        if (!getNodeEngine().getLocalMember().getVersion().asVersion().equals(coordinatorVersion)) {
-            // Operations are sent to targets by Address. It can happen that the coordinator finds members
-            // with the same version, but some member is upgraded before the operation is sent and has
-            // the same address.
-            throw new JetException("Mismatch between coordinator and participant version");
-        }
-
         JetServiceBackend service = getService();
         Address caller = getCallerAddress();
         LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
@@ -117,7 +105,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
         out.writeLong(executionId);
         out.writeBoolean(isLightJob);
         out.writeInt(coordinatorMemberListVersion);
-        out.writeObject(coordinatorVersion);
         out.writeInt(participants.size());
         for (MemberInfo participant : participants) {
             out.writeObject(participant);
@@ -132,7 +119,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
         executionId = in.readLong();
         isLightJob = in.readBoolean();
         coordinatorMemberListVersion = in.readInt();
-        coordinatorVersion = in.readObject();
         int count = in.readInt();
         participants = new HashSet<>();
         for (int i = 0; i < count; i++) {

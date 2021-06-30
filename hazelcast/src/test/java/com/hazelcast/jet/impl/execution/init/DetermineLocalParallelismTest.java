@@ -88,7 +88,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
     private void validateExecutionPlans(DAG dag) {
         ExecutionPlanBuilder.createExecutionPlans(
                 nodeEngine,
-                ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView().getMembers(),
+                ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView(),
                 dag, 1, 1, new JobConfig(), NO_SNAPSHOT, false);
     }
 

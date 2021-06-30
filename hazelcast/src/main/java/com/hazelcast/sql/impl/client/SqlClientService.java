@@ -68,7 +68,15 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        ClientConnection connection = getQueryConnection();
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
+
+        if (connection == null) {
+            throw rethrow(QueryException.error(
+                SqlErrorCode.CONNECTION_PROBLEM,
+                "Client is not currently connected to the cluster."
+            ));
+        }
+
         QueryId id = QueryId.create(connection.getRemoteUuid());
 
         try {
@@ -184,12 +192,17 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    // public for testing only
-    public ClientConnection getQueryConnection() {
-        ClientConnection connection = client.getConnectionManager().getConnectionForSql();
+    /**
+     * For testing only.
+     */
+    public ClientConnection getRandomConnection() {
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
 
         if (connection == null) {
-            throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            throw rethrow(QueryException.error(
+                SqlErrorCode.CONNECTION_PROBLEM,
+                "Client is not connected to topology"
+            ));
         }
 
         return connection;
