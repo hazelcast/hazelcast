@@ -163,15 +163,33 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         SqlConnector sqlConnector = getJetSqlConnector(table);
-        return sqlConnector.indexScanReader(
+
+        Vertex indexScanner = sqlConnector.indexScanReader(
                 dag,
                 table,
                 indexName,
-                remFilter, rel.projection(parameterMetadata),
+                remFilter,
+                rel.projection(parameterMetadata),
                 rel.fullProjection(parameterMetadata),
                 filter,
                 comparator
         );
+
+        // Reused from onSort
+        Vertex combineVertex = dag.newUniqueVertex("SortCombine",
+                ProcessorMetaSupplier.forceTotalParallelismOne(
+                        ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                        localMemberAddress
+                )
+        );
+        dag.edge(Edge
+                .from(indexScanner)
+                .to(combineVertex)
+                .ordered(comparator)
+                .distributeTo(localMemberAddress)
+                .allToOne(""));
+
+        return combineVertex;
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -51,16 +52,15 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.getPartitionAssignment;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -191,7 +191,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                 }
                 QueryableEntry<?, ?> entry = s.readElement();
                 // Sometimes scan query may not include indexed field.
-                // So, additional projection is required to be able to merge-sort an output.
+                // So, additional projection is required to ability to merge-sort an output.
                 Object[] row = doFullProjectionAndFilter(entry, i);
                 if (row != null) {
                     if (extreme == null || comparator.compare(row, extreme) > 0) {
@@ -233,45 +233,20 @@ public final class MapIndexScanP extends AbstractProcessor {
      * @return collection of new split units
      */
     List<Split> splitOnMigration(int splitIndex) {
-        assert splitIndex < splits.size();
         Split split = splits.get(splitIndex);
         IndexIterationPointer[] lastPointers = split.getPointers();
-
-        List<Split> newSplits = new ArrayList<>();
-
-        Map<Address, int[]> addressMap = getPartitionAssignment(getNodeEngine(context.hazelcastInstance()));
-
-        int partitionCount = split.getPartitions().getPartitionCount();
-        int[] actualPartitions = addressMap.get(split.getAddress());
-        if (actualPartitions == null) {
-            // Member was removed from cluster
-            return Collections.emptyList();
+        InternalPartitionService partitionService = getNodeEngine(context.hazelcastInstance()).getPartitionService();
+        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+        Map<Address, Split> newSplits = new HashMap<>();
+        while (partitionIterator.hasNext()) {
+            int partitionId = partitionIterator.nextInt();
+            Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            // TODO: does it possible that owner is NULL?
+            newSplits.computeIfAbsent(owner, x -> new Split(
+                    new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
+            ).partitions.add(partitionId);
         }
-        PartitionIdSet actualPartitionSet = new PartitionIdSet(partitionCount, actualPartitions);
-        PartitionIdSet intersection = split.getPartitions().intersectCopy(actualPartitionSet);
-
-        Map<Address, PartitionIdSet> newPartitionDistributions = new HashMap<>();
-
-        // Full split on disjoint sets
-        addressMap.forEach((address, partitions) -> {
-            if (address != split.getAddress()) {
-                PartitionIdSet partitionIdSet = new PartitionIdSet(split.getPartitions().getPartitionCount());
-                for (int partition : partitions) {
-                    if (split.getPartitions().contains(partition) && !intersection.contains(partition)) {
-                        partitionIdSet.add(partition);
-                    }
-                }
-                if (!partitionIdSet.isEmpty()) {
-                    newPartitionDistributions.put(address, partitionIdSet);
-                }
-            }
-        });
-
-        newPartitionDistributions.put(split.getAddress(), intersection);
-        newPartitionDistributions.forEach((address, partitionSet) ->
-                newSplits.add(new Split(partitionSet, address, lastPointers))
-        );
-        return newSplits;
+        return new ArrayList<>(newSplits.values());
     }
 
     List<Split> getActiveSplits() {
@@ -410,11 +385,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
-        }
-
-        @Override
-        public int preferredLocalParallelism() {
-            return 1;
         }
 
         @Override

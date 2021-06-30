@@ -24,7 +24,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.IMapIndexScanPhysicalRel;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTrait;
 import com.hazelcast.sql.impl.calcite.opt.physical.index.IndexComponentCandidate;
 import com.hazelcast.sql.impl.calcite.opt.physical.index.IndexComponentFilter;
 import com.hazelcast.sql.impl.calcite.opt.physical.index.IndexRexVisitor;
@@ -903,9 +902,12 @@ public final class JetIndexResolver {
                 scan.getCluster().getTypeFactory()
         );
 
+        // Extend on composite index.
+        composeFilter(createFullScanFilter(), index.getType(), index.getComponentsCount());
+
         return new IMapIndexScanPhysicalRel(
                 scan.getCluster(),
-                traitSet,
+                OptUtils.toPhysicalConvention(traitSet),
                 newRelTable,
                 index,
                 null,
@@ -918,16 +920,11 @@ public final class JetIndexResolver {
     /**
      * Create an index scan without any filter. Used by HD maps only.
      *
-     * @param scan         the original scan operator
-     * @param distribution the original distribution
-     * @param indexes      available indexes
+     * @param scan    the original scan operator
+     * @param indexes available indexes
      * @return index scan or {@code null}
      */
-    public static RelNode createFullIndexScan(
-            FullScanLogicalRel scan,
-            DistributionTrait distribution,
-            List<MapTableIndex> indexes
-    ) {
+    public static RelNode createFullIndexScan(FullScanLogicalRel scan, List<MapTableIndex> indexes) {
         MapTableIndex firstIndex = null;
 
         for (MapTableIndex index : indexes) {
@@ -1295,6 +1292,18 @@ public final class JetIndexResolver {
             fromAllowNulls.add(false);
             toAllowNulls.add(false);
         }
+    }
+
+    private static List<IndexFilter> createFullScanFilter() {
+        IndexFilterValue leftBound = new IndexFilterValue(
+                singletonList(ConstantExpression.create(NEGATIVE_INFINITY, QueryDataType.OBJECT)),
+                singletonList(true)
+        );
+        IndexFilterValue rightBound = new IndexFilterValue(
+                singletonList(ConstantExpression.create(NEGATIVE_INFINITY, QueryDataType.OBJECT)),
+                singletonList(true)
+        );
+        return singletonList(new IndexRangeFilter(leftBound, true, rightBound, true));
     }
 
     /**
