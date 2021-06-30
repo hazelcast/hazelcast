@@ -51,6 +51,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +60,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
@@ -80,8 +81,8 @@ Behavior of the processor
  * // TODO: [sasha] detailed description
  */
 public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperationResult>> extends AbstractProcessor {
-    // TODO: [sasha] discuss this number.
-    private static final int MAX_FETCH_SIZE = 64;
+    @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:MagicNumber"})
+    static int FETCH_SIZE_HINT = 64;
 
     private final AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
     private final ExpressionEvalContext evalContext;
@@ -141,7 +142,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
     @Override
     public boolean complete() {
         if (pendingItem != null && !tryEmit(pendingItem)) {
-            pendingItem = null;
             return false;
         }
 
@@ -223,24 +223,30 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         List<Split<F>> newSplits = new ArrayList<>();
 
         Map<Address, int[]> addressMap = context.partitionAssignment();
-        Map<Address, PartitionIdSet> newPartitionDistributions = new HashMap<>();
 
         int partitionCount = split.getPartitions().getPartitionCount();
-        PartitionIdSet actualPartitions = new PartitionIdSet(partitionCount, addressMap.get(split.getAddress()));
-        PartitionIdSet intersection = split.getPartitions().intersectCopy(actualPartitions);
+        int[] actualPartitions = addressMap.get(split.getAddress());
+        if (actualPartitions == null) {
+            // Member was removed from cluster
+            return Collections.emptyList();
+        }
+        PartitionIdSet actualPartitionSet = new PartitionIdSet(partitionCount, actualPartitions);
+        PartitionIdSet intersection = split.getPartitions().intersectCopy(actualPartitionSet);
 
-        addressMap.remove(split.getAddress());
+        Map<Address, PartitionIdSet> newPartitionDistributions = new HashMap<>();
 
         // Full split on disjoint sets
         addressMap.forEach((address, partitions) -> {
-            PartitionIdSet partitionIdSet = new PartitionIdSet(split.getPartitions().getPartitionCount());
-            for (int partition : partitions) {
-                if (split.getPartitions().contains(partition) && !intersection.contains(partition)) {
-                    partitionIdSet.add(partition);
+            if (address != split.getAddress()) {
+                PartitionIdSet partitionIdSet = new PartitionIdSet(split.getPartitions().getPartitionCount());
+                for (int partition : partitions) {
+                    if (split.getPartitions().contains(partition) && !intersection.contains(partition)) {
+                        partitionIdSet.add(partition);
+                    }
                 }
-            }
-            if (!partitionIdSet.isEmpty()) {
-                newPartitionDistributions.put(address, partitionIdSet);
+                if (!partitionIdSet.isEmpty()) {
+                    newPartitionDistributions.put(address, partitionIdSet);
+                }
             }
         });
 
@@ -312,7 +318,12 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
 
         public boolean start(AbstractIndexReader<F, MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader) {
             if (future == null) {
-                future = reader.readBatch(address, partitions, pointers);
+                try {
+                    future = reader.readBatch(address, partitions, pointers);
+                } catch (MissingPartitionException e) {
+                    e.printStackTrace();
+                    return false;
+                }
                 return true;
             }
             return false;
@@ -327,9 +338,15 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                 pointers = result.getPointers();
                 future = null;
                 return currentBatch.isEmpty();
-            } catch (MissingPartitionException e) {
-                throw rethrow(e);
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (ExecutionException e) {
+                Throwable peel = peel(e);
+                if (peel instanceof MissingPartitionException) {
+                    throw (MissingPartitionException) peel;
+                } else {
+                    e.printStackTrace();
+                    return true;
+                }
+            } catch (InterruptedException e) {
                 e.printStackTrace();
                 return true;
             }
@@ -373,7 +390,6 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
         public MapIndexScanProcessorMetaSupplier() {
             // No-op.
         }
-
 
         public MapIndexScanProcessorMetaSupplier(
                 @Nonnull MapIndexScanMetadata indexScanMetadata
@@ -522,7 +538,7 @@ public final class MapIndexScanP<F extends CompletableFuture<MapFetchIndexOperat
                     indexName,
                     pointers,
                     partitions,
-                    MAX_FETCH_SIZE
+                    FETCH_SIZE_HINT
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }

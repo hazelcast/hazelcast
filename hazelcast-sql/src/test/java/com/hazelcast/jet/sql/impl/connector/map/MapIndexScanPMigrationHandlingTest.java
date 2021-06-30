@@ -23,16 +23,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.TestContextSupport;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
-import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
-import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
@@ -40,7 +34,6 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -48,16 +41,12 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,22 +55,26 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
-import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanUtils.intValue;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.completedExceptionally;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
+import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -89,49 +82,54 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("rawtypes")
+@RunWith(Parameterized.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSupport {
-    static final int itemsCount = 100_000;
-    private IMap<Integer, Person> map;
-    HazelcastInstance instance1;
-    HazelcastInstance instance2;
+public class MapIndexScanPMigrationHandlingTest extends JetTestSupport {
+    static final int itemsCount = 1000;
 
-    private final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(2);
+    @Parameterized.Parameters(name = "instanceCount:{0}")
+    public static Collection<Integer> parameters() {
+        return asList(2, 3);
+    }
+
+    @Parameterized.Parameter(0)
+    public int instanceCount;
+
+    private HazelcastInstance[] instances;
+    private IMap<Integer, Person> map;
+
+    private final TestHazelcastInstanceFactory FACTORY = new TestHazelcastInstanceFactory(instanceCount);
 
     @Before
     public void before() {
-        instance1 = FACTORY.newHazelcastInstance(smallInstanceConfig());
-        instance2 = FACTORY.newHazelcastInstance(smallInstanceConfig());
-        map = instance1.getMap(randomName());
+        instances = new HazelcastInstance[instanceCount];
+        for (int i = 0; i < instanceCount; ++i) {
+            instances[i] = FACTORY.newHazelcastInstance(smallInstanceConfig());
+        }
+        map = instances[0].getMap(randomMapName());
     }
 
     @After
     public void after() {
-        instance1.shutdown();
-        instance2.shutdown();
+        for (int i = 0; i < instanceCount; ++i) {
+            instances[i].shutdown();
+        }
     }
 
     @Test
-    public void testConcurrentMigrationHandlingWithMock() throws Exception {
-        List<Object[]> expected = new ArrayList<>();
+    public void testConcurrentMigrationHandling() throws Exception {
         for (int i = itemsCount; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(itemsCount - i + 1), "value-" + (itemsCount - i + 1), (itemsCount - i + 1)});
         }
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(itemsCount), true);
-        List<Expression<?>> projections = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
+        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMeta = new MapIndexScanMetadata(
                 map.getName(),
@@ -147,108 +145,58 @@ public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSuppo
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
         );
 
-        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instance1);
-        InternalSerializationService serializationService =
-                (InternalSerializationService) nodeEngineImpl.getSerializationService();
-        ExpressionEvalContext evalContext = new SimpleExpressionEvalContext(emptyList(), serializationService);
-        Address address1 = instance1.getCluster().getLocalMember().getAddress();
-        Address address2 = instance2.getCluster().getLocalMember().getAddress();
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(instances[0]);
+        InternalSerializationService iss = (InternalSerializationService) nodeEngineImpl.getSerializationService();
+        ExpressionEvalContext evalContext = new SimpleExpressionEvalContext(emptyList(), iss);
+
+        List<Address> addresses = new ArrayList<>();
+        List<int[]> currentPartitions = new ArrayList<>();
+        int[] migratedPartitions = new int[instanceCount - 1];
         Map<Address, int[]> assignments = ExecutionPlanBuilder.getPartitionAssignment(nodeEngineImpl);
-        int[] partitions1 = assignments.get(address1);
-        int[] partitions2 = assignments.get(address2);
 
-        MapIndexScanP processor = new MapIndexScanP<>(new MockReader(), instance1, evalContext, partitions1, scanMeta);
+        for (int i = 0; i < instanceCount; ++i) {
+            Address currentAddress = instances[i].getCluster().getLocalMember().getAddress();
+            addresses.add(currentAddress);
+            currentPartitions.add(assignments.get(currentAddress));
+        }
 
-        // Reshuffle partitions : 'migrate' last partition from Member1 to Member2
-        int[] newPartitionsSet1 = new int[partitions1.length - 1];
-        int[] newPartitionsSet2 = new int[partitions2.length + 1];
-        System.arraycopy(partitions1, 0, newPartitionsSet1, 0, partitions1.length - 1);
-        System.arraycopy(partitions2, 0, newPartitionsSet2, 0, partitions2.length);
-        newPartitionsSet2[partitions2.length] = partitions1[partitions1.length - 1];
+        MapIndexScanP processor = new MapIndexScanP<>(new MockReader(), instances[0], evalContext, currentPartitions.get(0), scanMeta);
 
+        // Reshuffle partitions : 'migrate' last partitions from Member1 to Member(`instanceCount - 1`)
         Map<Address, int[]> newAssignedPartitions = new HashMap<>();
-        newAssignedPartitions.put(address1, newPartitionsSet1);
-        newAssignedPartitions.put(address2, newPartitionsSet2);
+
+        int newMigratedPartitionsCapacity = currentPartitions.get(0).length - instanceCount + 1;
+        int[] newDrainedPartitionsSet = new int[newMigratedPartitionsCapacity];
+        System.arraycopy(currentPartitions.get(0), 0, newDrainedPartitionsSet, 0, newMigratedPartitionsCapacity);
+        newAssignedPartitions.put(addresses.get(0), newDrainedPartitionsSet);
+
+        for (int i = 1; i < instanceCount; ++i) {
+            int[] newPartitionsSet = new int[currentPartitions.get(i).length + 1];
+            System.arraycopy(currentPartitions.get(i), 0, newPartitionsSet, 0, currentPartitions.get(i).length);
+            int migratedPartition = currentPartitions.get(0)[currentPartitions.get(0).length - i];
+            newPartitionsSet[currentPartitions.get(i).length] = migratedPartition;
+            migratedPartitions[i - 1] = migratedPartition;
+            newAssignedPartitions.put(addresses.get(i), newPartitionsSet);
+        }
+
+        PartitionIdSet ownedPartitionSetByFirstMember = new PartitionIdSet(11, newDrainedPartitionsSet);
 
         processor.init(
                 new TestOutbox(1),
                 new TestProcessorContext()
-                        .setHazelcastInstance(instance1)
+                        .setHazelcastInstance(instances[0])
                         .setPartitionAssignment(newAssignedPartitions)
                         .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
         );
         List<MapIndexScanP.Split> split = processor.splitOnMigration(0);
-        assertEquals(2, split.size());
+        assertEquals(instanceCount, split.size());
+        // 'Drained' member is always located on the last index because `splitOnMigration()` puts owned partitions last.
+        // Also it's a reason of such strange `instanceCount - i - 2` shift in assertion below.
+        for (int i = 0; i < instanceCount - 1; ++i) {
+            assertTrue(split.get(instanceCount - i - 2).getPartitions().contains(migratedPartitions[i]));
+        }
+        assertTrue(split.get(split.size() - 1).getPartitions().containsAll(ownedPartitionSetByFirstMember));
         assertFalse(processor.complete());
-    }
-
-    @Test
-    public void testConcurrentMigrationHandling() throws Exception {
-        List<Object[]> expected = new ArrayList<>();
-        for (int i = itemsCount; i > 0; i--) {
-            map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(itemsCount - i + 1), "value-" + (itemsCount - i + 1), (itemsCount - i + 1)});
-        }
-
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
-        map.addIndex(indexConfig);
-
-        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(itemsCount), true);
-        List<Expression<?>> projections = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projections,
-                projections,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
-        );
-
-        TestProcessorMetaSupplierContext metaSupplierContext = new TestProcessorMetaSupplierContext();
-        metaSupplierContext.setHazelcastInstance(instance1);
-
-        ProcessorMetaSupplier metaSupplier = adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata));
-        TestProcessorSupplierContext psContext = new TestProcessorSupplierContext()
-                .setHazelcastInstance(instance1)
-                .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()));
-        Processor processor = TestSupport.supplierFrom(metaSupplier, psContext).get();
-        MapIndexScanP indexScanP = (MapIndexScanP) ((TestContextSupport.TestProcessorAdapter) processor).getWrapped();
-
-        indexScanP.init(
-                new TestOutbox(1),
-                new TestProcessorContext()
-                        .setHazelcastInstance(instance1)
-                        .setJobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-        );
-
-        assertFalse(indexScanP.complete());
-
-        MapProxyImpl<Integer, Person> mapProxy = (MapProxyImpl<Integer, Person>) map;
-        int migrationStamp = mapProxy.getService().getMigrationStamp();
-
-        // TODO
-        HazelcastInstance newInstance = FACTORY.newHazelcastInstance(smallInstanceConfig());
-        try {
-            // Await for migration stamp to change.
-            assertTrueEventually(() -> assertNotEquals(migrationStamp, mapProxy.getService().getMigrationStamp()));
-            while (indexScanP.getActiveSplits().size() <= 1) {
-                assertFalse(indexScanP.complete());
-            }
-
-        } finally {
-            newInstance.shutdown();
-        }
     }
 
     static class MockReader extends AbstractIndexReader<
@@ -317,19 +265,5 @@ public class MapIndexScanPMigrationHandlingTest extends SimpleTestInClusterSuppo
             this.age = in.readInt();
         }
     }
-
-    private static IndexFilterValue intValue(Integer value) {
-        return intValue(value, false);
-    }
-
-    private static IndexFilterValue intValue(Integer value, boolean allowNull) {
-        return new IndexFilterValue(
-                singletonList(constant(value, QueryDataType.INT)),
-                singletonList(allowNull)
-        );
-    }
-
-    private static ConstantExpression constant(Object value, QueryDataType type) {
-        return ConstantExpression.create(value, type);
-    }
 }
+
