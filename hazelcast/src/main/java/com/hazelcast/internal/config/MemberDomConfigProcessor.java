@@ -149,9 +149,11 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -3151,14 +3153,15 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private void addSimpleUser(SimpleAuthenticationConfig simpleCfg, Node node) {
         String username = getAttribute(node, "username");
-        SimpleAuthenticationConfig.UserDto userDto = new SimpleAuthenticationConfig.UserDto(getAttribute(node, "password"));
-
+        List<String> roles = new ArrayList<>();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("role", nodeName)) {
-                userDto.addRoles(getTextContent(child));
+                roles.add(getTextContent(child));
             }
         }
+        SimpleAuthenticationConfig.UserDto userDto = new SimpleAuthenticationConfig.UserDto(getAttribute(node, "password"),
+                roles.toArray(new String[roles.size()]));
         simpleCfg.addUser(username, userDto);
     }
 

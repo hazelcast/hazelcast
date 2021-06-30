@@ -16,10 +16,13 @@
 
 package com.hazelcast.config.security;
 
+import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
 
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -51,7 +54,7 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
      * @return this object
      */
     public SimpleAuthenticationConfig addUser(@Nonnull String username, @Nonnull String password, String... roles) {
-        addUser(username, new UserDto(password).setRoles(roles));
+        addUser(username, new UserDto(password, roles));
         return self();
     }
 
@@ -201,57 +204,17 @@ public class SimpleAuthenticationConfig extends AbstractClusterLoginConfig<Simpl
     }
 
     /**
-     * Helper object representing user attributes (i.e. password and roles) in the {@link SimpleAuthenticationConfig}.
+     * Helper immutable object representing user attributes (i.e. password and roles) in the {@link SimpleAuthenticationConfig}.
      */
     public static class UserDto {
-        volatile String password;
-        final Set<String> roles = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        final String password;
+        final Set<String> roles;
 
-        /**
-         * Constructor taking the user's password as a mandatory attribute.
-         */
-        public UserDto(@Nonnull String password) {
+        public UserDto(@Nonnull String password, @Nonnull String... roles) {
             this.password = requireNonEmpty(password, "Password can't be empty");
-        }
-
-        /**
-         * Changes user's password.
-         */
-        public UserDto setPassword(@Nonnull String password) {
-            this.password = requireNonEmpty(password, "Password can't be empty");
-            return this;
-        }
-
-        /**
-         * Replaces current set of roles with the ones provided as arguments.
-         */
-        public UserDto setRoles(String... roles) {
-            this.roles.clear();
-            addRoles(roles);
-            return this;
-        }
-
-        /**
-         * Replaces current set of roles with the ones provided in the argument.
-         */
-        public UserDto setRoles(Set<String> roles) {
-            this.roles.clear();
-            if (roles != null) {
-                this.roles.addAll(roles);
-            }
-            return this;
-        }
-
-        /**
-         * Adds provided roles to the current set of roles.
-         */
-        public UserDto addRoles(String... roles) {
-            if (roles != null) {
-                for (String role : roles) {
-                    this.roles.add(role);
-                }
-            }
-            return this;
+            requireNonNull(roles, "Roles can't be null");
+            this.roles = unmodifiableSet(
+                    Arrays.stream(roles).collect(toCollection(() -> newSetFromMap(new ConcurrentHashMap<>()))));
         }
 
         @Override

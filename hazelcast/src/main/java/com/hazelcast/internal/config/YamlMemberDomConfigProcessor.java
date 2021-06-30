@@ -90,6 +90,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -882,23 +884,24 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     protected void addSimpleUsers(SimpleAuthenticationConfig simpleCfg, Node node) {
         for (Node child : childElements(node)) {
-            String username = getAttribute(child, "username");
-            SimpleAuthenticationConfig.UserDto userDto = new SimpleAuthenticationConfig.UserDto(
-                    getAttribute(child, "password"));
-            fillSimpleUserRoles(child, userDto);
-            simpleCfg.addUser(username, userDto);
+            simpleCfg.addUser(
+                    getAttribute(child, "username"),
+                    getAttribute(child, "password"),
+                    getSimpleUserRoles(child));
         }
     }
 
-    private void fillSimpleUserRoles(Node node, SimpleAuthenticationConfig.UserDto userDto) {
+    private String[] getSimpleUserRoles(Node node) {
+        List<String> roles = new ArrayList<>();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("roles", nodeName)) {
                 for (Node roleNode : childElements(child)) {
-                    userDto.addRoles(getTextContent(roleNode));
+                    roles.add(getTextContent(roleNode));
                 }
             }
         }
+        return roles.toArray(new String[roles.size()]);
     }
 
     @Override
