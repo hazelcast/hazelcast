@@ -39,9 +39,9 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
@@ -179,9 +179,9 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nonnull String indexName,
+            @Nullable Expression<Boolean> reminderFilter,
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
-            @Nullable Expression<Boolean> reminderFilter,
             @Nonnull IndexFilter filter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {

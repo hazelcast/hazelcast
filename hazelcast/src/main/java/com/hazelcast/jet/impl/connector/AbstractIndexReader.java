@@ -21,6 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
@@ -29,13 +30,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Stateless interface to read a map/cache.
+ * Stateless interface to read the map index
  *
- * @param <F> type of the result future
  * @param <B> type of the batch object
  * @param <R> type of the record
  */
-public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> implements DataSerializable {
+public abstract class AbstractIndexReader<B, R> implements DataSerializable {
     protected String objectName;
     protected InternalSerializationService serializationService;
 
@@ -51,10 +51,15 @@ public abstract class AbstractIndexReader<F extends CompletableFuture<B>, B, R> 
     }
 
     @Nonnull
-    public abstract F readBatch(Address address, PartitionIdSet partitions, IndexIterationPointer[] pointers);
+    public abstract CompletableFuture<MapFetchIndexOperationResult> readBatch(
+            Address address,
+            PartitionIdSet partitions,
+            IndexIterationPointer[] pointers
+    );
 
     @Nonnull
-    public B toBatchResult(@Nonnull F future) throws ExecutionException, InterruptedException {
+    public B toBatchResult(@Nonnull CompletableFuture<MapFetchIndexOperationResult> future)
+            throws ExecutionException, InterruptedException {
         return (B) future.get();
     }
 

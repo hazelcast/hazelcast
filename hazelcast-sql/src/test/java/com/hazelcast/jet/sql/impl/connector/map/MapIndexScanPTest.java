@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -58,6 +57,7 @@ import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
+import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
@@ -71,7 +71,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Parameterized.Parameters(name = "count:{0}")
     public static Collection<Integer> parameters() {
-        return asList(10, 1000);
+        return asList(100, 10_000);
     }
 
     @Parameterized.Parameter(0)
@@ -113,16 +113,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
         expected.add(new Object[]{(5), "value-5", 5});
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexEqualsFilter(intValue(5));
-        List<Expression<?>> projections = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
+        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -156,16 +151,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
         }
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
-        List<Expression<?>> projections = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
+        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -201,16 +191,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             }
         }
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
-        List<Expression<?>> projections = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
+        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -244,17 +229,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             expected.add(new Object[]{(count - i + 1)});
         }
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
-        List<Expression<?>> projection = singletonList(ColumnExpression.create(2, INT));
-        List<Expression<?>> fullProjection = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
-        );
+        List<Expression<?>> projection = singletonList(create(2, INT));
+        List<Expression<?>> fullProjection = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -295,11 +275,11 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
-        List<Expression<?>> projection = singletonList(ColumnExpression.create(2, INT));
+        List<Expression<?>> projection = singletonList(create(2, INT));
         List<Expression<?>> fullProjection = asList(
-                ColumnExpression.create(0, INT),
-                ColumnExpression.create(1, VARCHAR),
-                ColumnExpression.create(2, INT)
+                create(0, INT),
+                create(1, VARCHAR),
+                create(2, INT)
         );
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(

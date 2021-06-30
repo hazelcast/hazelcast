@@ -160,7 +160,7 @@ public class MapIndexScanPMigrationHandlingTest extends JetTestSupport {
             currentPartitions.add(assignments.get(currentAddress));
         }
 
-        MapIndexScanP processor = new MapIndexScanP<>(new MockReader(), instances[0], evalContext, currentPartitions.get(0), scanMeta);
+        MapIndexScanP processor = new MapIndexScanP(new MockReader(), instances[0], evalContext, currentPartitions.get(0), scanMeta);
 
         // Reshuffle partitions : 'migrate' last partitions from Member1 to Member(`instanceCount - 1`)
         Map<Address, int[]> newAssignedPartitions = new HashMap<>();
@@ -200,7 +200,6 @@ public class MapIndexScanPMigrationHandlingTest extends JetTestSupport {
     }
 
     static class MockReader extends AbstractIndexReader<
-            InternalCompletableFuture<MapFetchIndexOperationResult>,
             MapFetchIndexOperationResult,
             QueryableEntry<?, ?>> {
 

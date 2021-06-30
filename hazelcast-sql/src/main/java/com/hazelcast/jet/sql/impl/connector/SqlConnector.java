@@ -247,9 +247,9 @@ public interface SqlConnector {
             @Nonnull DAG dag,
             @Nonnull Table table,
             @Nonnull String indexName,
+            @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
-            @Nullable Expression<Boolean> predicate,
             @Nonnull IndexFilter filter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {

@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -57,6 +58,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
 
     private IMap<Short, Short> map;
 
+    @Ignore
     @Test
     public void testConcurrentMigrationHandling() {
         for (short i = 0; i < Short.MAX_VALUE; i++) {
