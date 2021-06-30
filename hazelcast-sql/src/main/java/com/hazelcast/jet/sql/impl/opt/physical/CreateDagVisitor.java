@@ -167,7 +167,8 @@ public class CreateDagVisitor {
                 dag,
                 table,
                 indexName,
-                remFilter, rel.projection(parameterMetadata),
+                remFilter,
+                rel.projection(parameterMetadata),
                 rel.fullProjection(parameterMetadata),
                 filter,
                 comparator
