@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,7 @@ import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
+import com.hazelcast.query.impl.OrderedIndexStore.DataComparator;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -49,9 +51,6 @@ import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERA
  * MissingPartitionException}.
  */
 public class MapFetchIndexOperation extends MapOperation implements ReadonlyOperation {
-
-    private static final int EXCESS_ENTRIES_RESERVE = 128;
-
     private String indexName;
     private PartitionIdSet partitionIdSet;
     private IndexIterationPointer[] pointers;
@@ -123,25 +122,54 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
-        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + EXCESS_ENTRIES_RESERVE);
+        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + 1);
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
+        DataComparator comparator = new DataComparator();
 
         for (int i = 0; i < pointers.length; i++) {
             IndexIterationPointer pointer = pointers[i];
+            Data lastEntryKeyData = pointer.getLastEntryKeyData();
+
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
 
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
-                @SuppressWarnings({"unchecked", "rawtypes"})
-                Collection<QueryableEntry<?, ?>> keyEntries = (Collection) indexKeyEntries.getEntries();
-                if (partitionIdSet == null) {
-                    entries.addAll(keyEntries);
-                } else {
-                    for (QueryableEntry<?, ?> entry : keyEntries) {
+                @SuppressWarnings({"rawtypes"})
+                Iterator<QueryableEntry> keyEntries = indexKeyEntries.getEntries();
+
+                // Skip until the entry last read
+                if (lastEntryKeyData != null) {
+                    while (keyEntries.hasNext()) {
+                        QueryableEntry<?, ?> entry = keyEntries.next();
+
+                        // TODO: Non-HD index iterator is in ascending order for the same index key
+                        //       HD index iterator might be ascending or descending
+                        int comparison = comparator.compare(entry.getKeyData(), lastEntryKeyData);
+
+                        if (comparison == 0) {
+                            break;
+                        } else if (comparison > 0) {
+                            entries.add(entry);
+                            break;
+                        }
+                    }
+                }
+
+                // Read and add until size hint is reached or iterator ends
+                while (keyEntries.hasNext()) {
+                    if (entries.size() >= sizeHint) {
+                        break;
+                    }
+                    QueryableEntry<?, ?> entry = keyEntries.next();
+                    if (partitionIdSet == null) {
+                        entries.add(entry);
+                        lastEntryKeyData = entry.getKeyData();
+                    } else {
                         int partitionId = HashUtil.hashToIndex(entry.getKeyData().getPartitionHash(), partitionCount);
                         if (partitionIdSet.contains(partitionId)) {
+                            lastEntryKeyData = entry.getKeyData();
                             entries.add(entry);
                         }
                     }
@@ -157,7 +185,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                                 pointer.isDescending() ? pointer.isFromInclusive() : false,
                                 pointer.isDescending() ? currentIndexKey : pointer.getTo(),
                                 pointer.isDescending() ? false : pointer.isToInclusive(),
-                                pointer.isDescending());
+                                pointer.isDescending(),
+                                lastEntryKeyData
+                        );
 
                         System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);
                     } else {
