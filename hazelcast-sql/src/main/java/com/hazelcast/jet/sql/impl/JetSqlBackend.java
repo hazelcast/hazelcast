@@ -25,14 +25,15 @@ import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
-import com.hazelcast.jet.sql.impl.connector.map.IMapPlanner;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
@@ -97,15 +98,11 @@ class JetSqlBackend implements SqlBackend {
     private final NodeEngine nodeEngine;
     private final JetPlanExecutor planExecutor;
 
-    private final IMapPlanner mapPlanner;
-
     private final ILogger logger;
 
     JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
         this.nodeEngine = nodeEngine;
         this.planExecutor = planExecutor;
-
-        this.mapPlanner = new IMapPlanner(nodeEngine.getHazelcastInstance());
 
         this.logger = nodeEngine.getLogger(getClass());
     }
@@ -176,20 +173,15 @@ class JetSqlBackend implements SqlBackend {
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else {
-            SqlPlan optimizedMapPlan = mapPlanner.tryCreatePlan(planKey, parseResult, context);
-            if (optimizedMapPlan != null) {
-                return optimizedMapPlan;
-            } else {
-                QueryConvertResult convertResult = context.convert(parseResult);
-                return toPlan(
-                        planKey,
-                        parseResult.getParameterMetadata(),
-                        convertResult.getRel(),
-                        convertResult.getFieldNames(),
-                        context,
-                        parseResult.isInfiniteRows()
-                );
-            }
+            QueryConvertResult convertResult = context.convert(parseResult);
+            return toPlan(
+                    planKey,
+                    parseResult.getParameterMetadata(),
+                    convertResult.getRel(),
+                    convertResult.getFieldNames(),
+                    context,
+                    parseResult.isInfiniteRows()
+            );
         }
     }
 
@@ -283,7 +275,11 @@ class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof TableModify) {
+        if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
+            DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
+            return new IMapDeletePlan(planKey, deleteRel.objectKey(), parameterMetadata, deleteRel.mapName(),
+                    deleteRel.primaryKeyCondition(parameterMetadata), planExecutor, permissions);
+        } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
             return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),

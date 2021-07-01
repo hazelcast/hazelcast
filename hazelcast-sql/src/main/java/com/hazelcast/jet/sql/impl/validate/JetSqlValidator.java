@@ -256,6 +256,11 @@ public class JetSqlValidator extends HazelcastSqlValidator {
                 delete.getCondition(), null, null, null, null, null, null, null);
     }
 
+    private Table extractTable(SqlIdentifier identifier) {
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
+        return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
+    }
+
     @Override
     public boolean isInfiniteRows() {
         return isInfiniteRows;

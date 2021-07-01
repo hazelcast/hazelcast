@@ -71,8 +71,7 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
-
-    static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
+    public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
