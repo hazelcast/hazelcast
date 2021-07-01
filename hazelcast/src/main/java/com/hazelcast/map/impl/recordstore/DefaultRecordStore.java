@@ -917,7 +917,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long maxIdle, long expiryTime, long now, UUID transactionId,
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
-        Record record = createRecord(newValue, ttl, maxIdle, now);
+        Record record = createRecord(key, newValue, ttl, maxIdle, now);
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }

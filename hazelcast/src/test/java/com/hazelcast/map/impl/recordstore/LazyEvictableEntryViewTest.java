@@ -71,7 +71,7 @@ public class LazyEvictableEntryViewTest {
         when(mapContainer.getMapConfig()).thenReturn(mapConfig);
         DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, serializationService);
         Data key = serializationService.toData(this.key);
-        recordInstance = recordFactory.newRecord(value);
+        recordInstance = recordFactory.newRecord(key, value);
         return new LazyEvictableEntryView(key, recordInstance, ExpiryMetadata.NULL, serializationService);
     }
 

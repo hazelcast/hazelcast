@@ -32,7 +32,12 @@ public enum InMemoryFormat {
     /**
      * As native storage
      */
-    NATIVE(2);
+    NATIVE(2),
+
+    /**
+     * As native storage based on the the persistent hybrid log (tiered store)
+     */
+    NATIVE_TSTORE(3);
 
     private final byte id;
 

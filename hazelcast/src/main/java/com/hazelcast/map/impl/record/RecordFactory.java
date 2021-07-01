@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.version.Version;
 
@@ -27,7 +28,7 @@ import com.hazelcast.version.Version;
  */
 public interface RecordFactory<T> {
 
-    Record<T> newRecord(Object value);
+    Record<T> newRecord(Data key, Object value);
 
     // RU_COMPAT_4_1
     default boolean isClusterV41() {
