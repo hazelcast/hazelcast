@@ -52,7 +52,6 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,10 +59,8 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.getPartitionAssignment;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -194,7 +191,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                 }
                 QueryableEntry<?, ?> entry = s.readElement();
                 // Sometimes scan query may not include indexed field.
-                // So, additional projection is required to be able to merge-sort an output.
+                // So, additional projection is required to ability to merge-sort an output.
                 Object[] row = doFullProjectionAndFilter(entry, i);
                 if (row != null) {
                     if (extreme == null || comparator.compare(row, extreme) > 0) {
@@ -388,11 +385,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
-        }
-
-        @Override
-        public int preferredLocalParallelism() {
-            return 1;
         }
 
         @Override

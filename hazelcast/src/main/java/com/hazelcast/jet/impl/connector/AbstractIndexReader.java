@@ -57,6 +57,7 @@ public abstract class AbstractIndexReader<B, R> implements DataSerializable {
             IndexIterationPointer[] pointers
     );
 
+    @SuppressWarnings("unchecked")
     @Nonnull
     public B toBatchResult(@Nonnull CompletableFuture<MapFetchIndexOperationResult> future)
             throws ExecutionException, InterruptedException {
