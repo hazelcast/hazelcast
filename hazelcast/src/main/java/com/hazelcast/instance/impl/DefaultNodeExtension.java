@@ -94,7 +94,6 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -115,11 +114,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.MODE;
@@ -127,6 +124,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
@@ -146,7 +144,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final ILogger logger;
     protected final ILogger logoLogger;
     protected final ILogger systemLogger;
-    protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
+    protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<>();
     protected PhoneHome phoneHome;
     protected JetServiceBackend jetServiceBackend;
     private final MemoryStats memoryStats = new DefaultMemoryStats();
@@ -162,6 +160,7 @@ public class DefaultNodeExtension implements NodeExtension {
         createAndSetPhoneHome();
         if (node.getConfig().getJetConfig().isEnabled()) {
             jetServiceBackend = createService(JetServiceBackend.class);
+            registerListener(jetServiceBackend);
         }
     }
 
@@ -222,7 +221,7 @@ public class DefaultNodeExtension implements NodeExtension {
             // objects.
             jetServiceBackend.configureJetInternalObjects(node);
         } else {
-            systemLogger.info("Jet is disabled, see JetConfig#setEnabled.");
+            systemLogger.info("Jet is disabled, see JetConfig#setEnabled to enable jet.");
         }
     }
 
@@ -289,8 +288,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void afterStart() {
-        if (node.isRunning()) {
-            jetServiceBackend.getJobCoordinationService().startScanningForJobs();
+        if (jetServiceBackend != null) {
+            jetServiceBackend.tryStartScanningForJobs(node.getClusterService().getClusterVersion());
         }
     }
 
@@ -447,15 +446,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeClusterStateChange(ClusterState currState, ClusterState requestedState, boolean isTransient) {
-        if (jetServiceBackend != null && requestedState == PASSIVE) {
-            NodeEngineImpl ne = node.nodeEngine;
-            try {
-                ne.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                        new PrepareForPassiveClusterOperation(), ne.getMasterAddress())
-                        .invoke().get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw rethrow(e);
-            }
+        if (jetServiceBackend != null) {
+            jetServiceBackend.beforeClusterStateChange(requestedState);
         }
     }
 
@@ -467,7 +459,11 @@ public class DefaultNodeExtension implements NodeExtension {
             listener.onClusterStateChange(newState);
         }
         if (jetServiceBackend != null) {
-            jetServiceBackend.getJobCoordinationService().clusterChangeDone();
+            try {
+                jetServiceBackend.getJobCoordinationService().clusterChangeDone();
+            } catch (IllegalStateException e) {
+                ignore(e);
+            }
         }
     }
 
@@ -492,7 +488,6 @@ public class DefaultNodeExtension implements NodeExtension {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
         }
-
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
         for (ClusterVersionListener listener : listeners) {
@@ -622,7 +617,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public JetService getJet() {
         if (jetServiceBackend == null) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+            throw new IllegalStateException("Jet is disabled, see JetConfig#setEnabled to enable jet");
         }
         return jetServiceBackend.getJet();
     }

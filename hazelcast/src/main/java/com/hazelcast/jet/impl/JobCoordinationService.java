@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -195,6 +196,7 @@ public class JobCoordinationService {
         HazelcastProperties properties = nodeEngine.getProperties();
         maxJobScanPeriodInMillis = properties.getMillis(JOB_SCAN_PERIOD);
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
+        logger.info("Jet started scanning for jobs");
     }
 
     public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, JobConfig jobConfig) {
@@ -216,7 +218,7 @@ public class JobCoordinationService {
                 }
                 if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
                     throw new JetException("The JobConfig contains resources to upload, but the resource upload " +
-                            "is disabled. Either remove the resources from the job config or enabled resource " +
+                            "is disabled. Either remove the resources from the job config or enable resource " +
                             "uploading, see JetConfig#setResourceUploadEnabled.");
                 }
 
@@ -817,7 +819,9 @@ public class JobCoordinationService {
         if (addedMember.isLiteMember()) {
             return;
         }
-
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
+            return;
+        }
         updateQuorumValues();
         scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
     }

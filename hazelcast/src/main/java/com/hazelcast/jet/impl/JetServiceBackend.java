@@ -19,11 +19,13 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -38,6 +40,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -48,22 +51,25 @@ import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
+import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
@@ -72,7 +78,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker, Consumer<Packet> {
+public class JetServiceBackend implements ManagedService, MembershipAwareService,
+        LiveOperationsTracker, ClusterVersionListener, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
@@ -93,7 +100,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
     private JobExecutionService jobExecutionService;
-    private Set<Member> members; // TODO: use members to determine the state of jet
+    private AtomicBoolean isJobScanStarted;
+    private volatile Version clusterVersion;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
@@ -115,21 +123,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             throw new RuntimeException(e);
         }
         this.sqlCoreBackend = sqlCoreBackend;
-        this.members = new HashSet<>(nodeEngine.getClusterService().getMembers());
+        this.isJobScanStarted = new AtomicBoolean(false);
     }
 
     // ManagedService
     @Override
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
-
         this.hazelcastInstance = engine.getHazelcastInstance();
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
+        jobRepository = new JobRepository(hazelcastInstance);
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
         );
-        jobRepository = new JobRepository(hazelcastInstance);
-
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
 
@@ -164,6 +170,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      * all are down.
      */
     public void shutDownJobs() {
+        if (clusterVersion.isLessThan(Versions.V5_0)) {
+            return;
+        }
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
             notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
@@ -221,11 +230,15 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @SuppressWarnings("unused") // parameters are used from jet-enterprise
     public Operation createExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
-        throw new UnsupportedOperationException("You need Hazelcast Jet Enterprise to use this feature");
+        throw new UnsupportedOperationException("You need Hazelcast Enterprise to use this feature");
     }
 
     public JetService getJet() {
-        return this.jet;
+        if (clusterVersion.isGreaterOrEqual(Versions.V5_0)) {
+            return jet;
+        } else {
+            throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
+        }
     }
 
     public LiveOperationRegistry getLiveOperationRegistry() {
@@ -245,7 +258,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public JobCoordinationService getJobCoordinationService() {
-        return jobCoordinationService;
+        if (clusterVersion.isGreaterOrEqual(Versions.V5_0)) {
+            return jobCoordinationService;
+        } else {
+            throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
+        }
     }
 
     public JobExecutionService getJobExecutionService() {
@@ -358,15 +375,38 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 .addMapConfig(metricsMapConfig);
     }
 
+    public void beforeClusterStateChange(ClusterState requestedState) {
+        if (requestedState == PASSIVE && clusterVersion.isGreaterOrEqual(Versions.V5_0)) {
+            try {
+                nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
+                        new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                        .invoke().get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw rethrow(e);
+            }
+        }
+    }
+
+    public void tryStartScanningForJobs(Version clusterVersion) {
+        if (nodeEngine != null && nodeEngine.isRunning() && clusterVersion.isGreaterThan(Versions.V5_0)
+                && isJobScanStarted.compareAndSet(false, true)) {
+            jobCoordinationService.startScanningForJobs();
+        }
+    }
+
+    @Override
+    public void onClusterVersionChange(Version newVersion) {
+        clusterVersion = newVersion;
+        tryStartScanningForJobs(clusterVersion);
+    }
+
     public Map<String, Object> jetServices() {
         Map<String, Object> jetServices = new HashMap<>();
-
         jetServices.put(JetServiceBackend.SERVICE_NAME, this);
 
         if (this.getSqlCoreBackend() != null) {
             jetServices.put(JetSqlCoreBackend.SERVICE_NAME, this.getSqlCoreBackend());
         }
-
         return jetServices;
     }
 }
