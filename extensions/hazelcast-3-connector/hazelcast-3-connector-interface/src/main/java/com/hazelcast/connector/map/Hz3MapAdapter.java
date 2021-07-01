@@ -48,4 +48,15 @@ public interface Hz3MapAdapter {
      */
     void shutdown();
 
+    /**
+     * Returns map with given name.
+     * <p>
+     * The returned type is {@link AsyncMap} because of the incompatible interfaces between Hazelcast 3 and 4.
+     */
+    <K, V> AsyncMap<K, V> getMap(String mapName);
+
+    /**
+     * Returns replicated map with given name
+     */
+    <V, K> Map<K, V> getReplicatedMap(String mapName);
 }
