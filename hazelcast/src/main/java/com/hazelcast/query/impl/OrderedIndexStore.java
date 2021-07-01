@@ -377,7 +377,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             } else {
                 SortedMap<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
-                    records = new ConcurrentSkipListMap<>();
+                    records = new ConcurrentSkipListMap<>(DATA_COMPARATOR);
                     recordMap.put(value, records);
                 }
                 return records.put(entry.getKeyData(), entry);
@@ -404,7 +404,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             } else {
                 SortedMap<Data, QueryableEntry> records = recordMap.get(value);
                 if (records == null) {
-                    records = Collections.emptySortedMap();
+                    records = new TreeMap<>(DATA_COMPARATOR);
                 }
 
                 records = new TreeMap<>(records);
