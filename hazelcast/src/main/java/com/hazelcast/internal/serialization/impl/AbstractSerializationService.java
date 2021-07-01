@@ -27,7 +27,6 @@ import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.CompactWithSchemaStreamSerializerAdapter;
@@ -43,6 +42,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import java.io.Externalizable;
@@ -611,7 +611,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         if (PortableGenericRecord.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         }
-        if (CompactGenericRecord.class.isAssignableFrom(type)) {
+        if (CompactRecord.class.isAssignableFrom(type)) {
             if (includeSchema) {
                 return compactWithSchemaSerializerAdapter;
             } else {

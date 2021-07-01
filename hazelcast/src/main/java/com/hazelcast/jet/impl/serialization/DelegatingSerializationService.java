@@ -24,6 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -106,6 +107,11 @@ public class DelegatingSerializationService extends AbstractSerializationService
 
     @Override
     public InternalGenericRecord readAsInternalGenericRecord(Data data) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public InternalCompactRecord readAsInternalCompactRecord(Data data) {
         throw new UnsupportedOperationException();
     }
 

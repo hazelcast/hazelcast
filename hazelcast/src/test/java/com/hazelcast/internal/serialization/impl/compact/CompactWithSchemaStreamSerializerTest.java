@@ -21,7 +21,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.compact.CompactRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -41,16 +41,16 @@ import static org.junit.Assert.assertEquals;
 public class CompactWithSchemaStreamSerializerTest {
 
     @Test
-    public void testReadAsGenericRecord() throws IOException {
+    public void testReadAsCompactRecord() throws IOException {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecord expected = compact("fooBarClassName")
+        CompactRecord expected = compact("fooBarClassName")
                 .setInt("foo", 1)
                 .setLong("bar", 1231L)
-                .setGenericRecord("nested",
+                .setCompactRecord("nested",
                         compact("nested").setBoolean("bool", true).build())
                 .build();
 
@@ -63,21 +63,21 @@ public class CompactWithSchemaStreamSerializerTest {
                 .setSchemaService(schemaService2)
                 .build();
 
-        GenericRecord actual = serializationService2.readAsInternalGenericRecord(data);
+        CompactRecord actual = serializationService2.readAsInternalCompactRecord(data);
         assertEquals(expected, actual);
     }
 
     @Test
-    public void testFromGenericRecord() {
+    public void testFromCompactRecord() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecord expected = compact("fooBarClassName")
+        CompactRecord expected = compact("fooBarClassName")
                 .setInt("foo", 1)
                 .setLong("bar", 1231L)
-                .setGenericRecord("nested",
+                .setCompactRecord("nested",
                         compact("nested").setBoolean("bool", true).build())
                 .build();
 
@@ -90,7 +90,7 @@ public class CompactWithSchemaStreamSerializerTest {
                 .setSchemaService(schemaService2)
                 .build();
 
-        GenericRecord actual = serializationService2.toObject(data);
+        CompactRecord actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
     }
 

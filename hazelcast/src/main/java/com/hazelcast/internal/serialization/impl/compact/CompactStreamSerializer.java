@@ -21,16 +21,15 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -40,8 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.TYPE_COMPACT;
+import static com.hazelcast.internal.serialization.impl.compact.schema.FieldOperations.fieldOperations;
 
 public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, ConfigurationRegistry> classToRegistryMap = new ConcurrentHashMap<>();
@@ -75,9 +74,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         }
     }
 
-    public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
+    public InternalCompactRecord readAsInternalCompactRecord(ObjectDataInput input, boolean schemaIncludedInBinary)
             throws IOException {
-        return (InternalGenericRecord) readGenericRecord(input, schemaIncludedInBinary);
+        return (InternalCompactRecord) readCompactRecord(input, schemaIncludedInBinary);
     }
 
     @Override
@@ -85,14 +84,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return TYPE_COMPACT;
     }
 
-    public GenericRecordBuilder createGenericRecordBuilder(Schema schema) {
-        return new SerializingGenericRecordBuilder(this, schema,
+    public CompactRecordBuilder createCompactRecordBuilder(Schema schema) {
+        return new SerializingCompactRecordBuilder(this, schema,
                 bufferObjectDataInputFunc,
                 bufferObjectDataOutputSupplier);
     }
 
-    public GenericRecordBuilder createGenericRecordCloner(Schema schema, CompactInternalGenericRecord record) {
-        return new SerializingGenericRecordCloner(this, schema, record,
+    public CompactRecordBuilder createCompactRecordCloner(Schema schema, InternalCompactRecord record) {
+        return new SerializingCompactRecordCloner(this, schema, record,
                 bufferObjectDataInputFunc,
                 bufferObjectDataOutputSupplier);
     }
@@ -106,14 +105,14 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     void write(BufferObjectDataOutput out, Object o, boolean includeSchemaOnBinary) throws IOException {
-        if (o instanceof CompactGenericRecord) {
-            writeGenericRecord(out, (CompactGenericRecord) o, includeSchemaOnBinary);
+        if (o instanceof AbstractCompactRecord) {
+            writeCompactRecord(out, (AbstractCompactRecord) o, includeSchemaOnBinary);
         } else {
             writeObject(out, o, includeSchemaOnBinary);
         }
     }
 
-    void writeGenericRecord(BufferObjectDataOutput output, CompactGenericRecord record,
+    void writeCompactRecord(BufferObjectDataOutput output, AbstractCompactRecord record,
                             boolean includeSchemaOnBinary) throws IOException {
         Schema schema = record.getSchema();
         schemaService.put(schema);
@@ -122,8 +121,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
-            FieldType fieldType = fieldDescriptor.getType();
-            fieldOperations(fieldType).readFromGenericRecordToWriter(writer, record, fieldName);
+            TypeID fieldType = fieldDescriptor.getType();
+            fieldOperations(fieldType).readFromCompactRecordToWriter(writer, record, fieldName);
         }
         writer.end();
     }
@@ -178,13 +177,13 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         ConfigurationRegistry registry = getOrCreateRegistry(schema.getTypeName());
 
         if (registry == null) {
-            //we have tried to load class via class loader, it did not work. We are returning a GenericRecord.
+            //we have tried to load class via class loader, it did not work. We are returning a CompactRecord.
             return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
         }
 
-        DefaultCompactReader genericRecord = new DefaultCompactReader(this, input, schema,
+        DefaultCompactReader compactRecord = new DefaultCompactReader(this, input, schema,
                 registry.getClazz(), schemaIncludedInBinary);
-        Object object = registry.getSerializer().read(genericRecord);
+        Object object = registry.getSerializer().read(compactRecord);
         return managedContext != null ? managedContext.initialize(object) : object;
 
     }
@@ -242,7 +241,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         });
     }
 
-    public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
+    public CompactRecord readCompactRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);

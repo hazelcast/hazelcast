@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayBlockingQueueStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayDequeStreamSerializer;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ArrayListStreamSerializer;
@@ -193,10 +194,14 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             BufferObjectDataInput in = createObjectDataInput(data);
             return portableSerializer.readAsInternalGenericRecord(in);
         }
+        throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
+    }
+
+    public InternalCompactRecord readAsInternalCompactRecord(Data data) throws IOException {
         if (SerializationConstants.TYPE_COMPACT == data.getType()) {
-            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data), false);
+            return compactStreamSerializer.readAsInternalCompactRecord(createObjectDataInput(data), false);
         } else if (SerializationConstants.TYPE_COMPACT_WITH_SCHEMA == data.getType()) {
-            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data), true);
+            return compactStreamSerializer.readAsInternalCompactRecord(createObjectDataInput(data), true);
         }
         throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
     }

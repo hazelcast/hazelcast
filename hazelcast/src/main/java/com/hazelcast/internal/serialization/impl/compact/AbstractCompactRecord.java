@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization.impl.compact;
+
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
+import static com.hazelcast.internal.serialization.impl.compact.schema.FieldOperations.fieldOperations;
 
-/**
- * Implementation of GenericRecord interface to give common equals and hashcode implementation
- */
-public abstract class AbstractGenericRecord implements GenericRecord {
+public abstract class AbstractCompactRecord implements CompactRecord {
 
-    protected abstract Object getClassIdentifier();
+    abstract Schema getSchema();
 
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof AbstractGenericRecord)) {
+        if (!(o instanceof AbstractCompactRecord)) {
             return false;
         }
-        AbstractGenericRecord that = (AbstractGenericRecord) o;
-        if (!that.getClassIdentifier().equals(getClassIdentifier())) {
+        AbstractCompactRecord that = (AbstractCompactRecord) o;
+        if (!that.getSchema().equals(getSchema())) {
             return false;
         }
         Set<String> thatFieldNames = that.getFieldNames();
@@ -46,8 +46,8 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             return false;
         }
         for (String fieldName : thatFieldNames) {
-            FieldType thatFieldType = that.getFieldType(fieldName);
-            FieldType thisFieldType = getFieldType(fieldName);
+            TypeID thatFieldType = that.getFieldType(fieldName);
+            TypeID thisFieldType = getFieldType(fieldName);
             if (!thatFieldType.equals(thisFieldType)) {
                 return false;
             }
@@ -65,17 +65,17 @@ public abstract class AbstractGenericRecord implements GenericRecord {
     }
 
     public int hashCode() {
-        int result = Objects.hash(getClassIdentifier());
+        int result = Objects.hash(getSchema());
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
-            FieldType fieldType = getFieldType(fieldName);
+            TypeID fieldType = getFieldType(fieldName);
             result = 31 * result + fieldOperations(fieldType).hashCode(this, fieldName);
         }
         return result;
     }
 
     public final <T> T readAny(@Nonnull String fieldName) {
-        FieldType type = getFieldType(fieldName);
+        TypeID type = getFieldType(fieldName);
         return (T) fieldOperations(type).readInSerializedForm(this, fieldName);
     }
 }

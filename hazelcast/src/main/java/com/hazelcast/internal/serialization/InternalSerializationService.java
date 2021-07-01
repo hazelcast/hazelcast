@@ -21,6 +21,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -90,11 +91,24 @@ public interface InternalSerializationService extends SerializationService, Disp
     BufferObjectDataOutput createObjectDataOutput();
 
     /**
-     * @param data
-     * @return InternalGenericRecord if data type supports it, otherwise returns null
-     * @throws IOException
+     * Reads data as InternalGenericRecord if it is in Portable format.
+     * InternalGenericRecord is used to query the data without needing the user classes
+     *
+     * @param data to be read as InternalGenericRecord
+     * @return InternalGenericRecord representation of the data.
+     * @throws IllegalArgumentException if data is not in Portable format
      */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+
+    /**
+     * Reads data as InternalCompactRecord if it is in Compact format.
+     * InternalCompactRecord is used to query the data without needing the user classes
+     *
+     * @param data to be read as InternalGenericRecord
+     * @return InternalGenericRecord representation of the data.
+     * @throws IllegalArgumentException if data is not in Portable format
+     */
+    InternalCompactRecord readAsInternalCompactRecord(Data data) throws IOException;
 
     boolean isCompactSerializable(Object object);
 
@@ -118,5 +132,4 @@ public interface InternalSerializationService extends SerializationService, Disp
     ByteOrder getByteOrder();
 
     byte getVersion();
-
 }

@@ -289,18 +289,21 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]TreeMapStreamSerializer"/>
 
     <!-- Serialization Compact Format -->
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactRecord"/>
     <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]AbstractGenericRecordBuilder"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]AbstractCompactRecordBuilder"/>
     <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedGenericRecord"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedCompactRecord"/>
     <suppress checks="MethodCount|ExecutableStatementCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactInternalGenericRecord"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]InternalCompactRecord"/>
     <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordCloner"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingCompactRecordCloner"/>
     <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordBuilder"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingCompactRecordBuilder"/>
     <suppress checks="MethodLength|CyclomaticComplexity"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]ReflectiveCompactSerializer"/>
+    <suppress checks="CyclomaticComplexity|MethodLength|NPathComplexity|ReturnCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactRecordQueryReader"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactWriter"/>
     <suppress checks="MethodCount"

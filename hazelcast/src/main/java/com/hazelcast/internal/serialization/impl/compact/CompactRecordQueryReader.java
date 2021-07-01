@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
+package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.TypeID;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
 import com.hazelcast.query.extractor.ValueReader;
@@ -32,15 +31,13 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.serialization.impl.compact.schema.FieldOperations.fieldOperations;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
 /**
- * Reads a field or array of fields from a `InternalGenericRecord` according to given query `path`
+ * Reads a field or array of fields from a `InternalCompactRecord` according to given query `path`
  *
- * @see InternalGenericRecord
- * Any format that exposes an `InternalGenericRecord` will benefit from hazelcast query.
- * @see PortableInternalGenericRecord for Portable InternalGenericRecord
  * <p>
  * Example queries
  * "age"
@@ -54,11 +51,11 @@ import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeN
  * <p>
  * It also implements ValueReader to support reading into `ValueCallback` and `ValueCollector`
  */
-public final class GenericRecordQueryReader implements ValueReader {
+public final class CompactRecordQueryReader implements ValueReader {
 
-    private final InternalGenericRecord rootRecord;
+    private final InternalCompactRecord rootRecord;
 
-    public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
+    public CompactRecordQueryReader(InternalCompactRecord rootRecord) {
         this.rootRecord = rootRecord;
     }
 
@@ -123,37 +120,37 @@ public final class GenericRecordQueryReader implements ValueReader {
             if (!path.contains("]")) {
                 // ex: attribute
                 while (iterator.hasNext()) {
-                    InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                    InternalCompactRecord record = (InternalCompactRecord) iterator.next();
                     if (!record.hasField(fieldName)) {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    InternalGenericRecord subGenericRecord = (InternalGenericRecord) record.getGenericRecord(fieldName);
-                    if (subGenericRecord == null) {
+                    InternalCompactRecord subCompactRecord = (InternalCompactRecord) record.getCompactRecord(fieldName);
+                    if (subCompactRecord == null) {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    iterator.set(subGenericRecord);
+                    iterator.set(subCompactRecord);
                 }
             } else if (path.endsWith("[any]")) {
                 // ex: attribute any
                 while (iterator.hasNext()) {
-                    InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                    InternalCompactRecord record = (InternalCompactRecord) iterator.next();
                     iterator.remove();
                     if (!record.hasField(fieldName)) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord[] genericRecords = record.getGenericRecordArray(fieldName);
-                    if (genericRecords == null || genericRecords.length == 0) {
+                    CompactRecord[] compactRecords = record.getCompactRecordArray(fieldName);
+                    if (compactRecords == null || compactRecords.length == 0) {
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    for (GenericRecord genericRecord : genericRecords) {
-                        if (genericRecord != null) {
-                            iterator.add(genericRecord);
+                    for (CompactRecord compactRecord : compactRecords) {
+                        if (compactRecord != null) {
+                            iterator.add(compactRecord);
                         } else {
                             multiResult.setNullOrEmptyTarget(true);
                         }
@@ -163,15 +160,15 @@ public final class GenericRecordQueryReader implements ValueReader {
                 // ex: attribute[2]
                 int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
                 while (iterator.hasNext()) {
-                    InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                    InternalCompactRecord record = (InternalCompactRecord) iterator.next();
                     if (!record.hasField(fieldName)) {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
                         continue;
                     }
-                    GenericRecord genericRecord = record.getGenericRecordFromArray(fieldName, index);
-                    if (genericRecord != null) {
-                        iterator.set(genericRecord);
+                    CompactRecord compactRecord = record.getCompactRecordFromArray(fieldName, index);
+                    if (compactRecord != null) {
+                        iterator.set(compactRecord);
                     } else {
                         iterator.remove();
                         multiResult.setNullOrEmptyTarget(true);
@@ -191,14 +188,14 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (!path.contains("]")) {
             // ex: attribute
             while (iterator.hasNext()) {
-                InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                InternalCompactRecord record = (InternalCompactRecord) iterator.next();
                 Object leaf = readLeaf(record, fieldName);
                 iterator.set(leaf);
             }
         } else if (path.endsWith("[any]")) {
             // ex: attribute any
             while (iterator.hasNext()) {
-                InternalGenericRecord record = (InternalGenericRecord) iterator.next();
+                InternalCompactRecord record = (InternalCompactRecord) iterator.next();
                 iterator.remove();
                 Object leaves = readLeaf(record, fieldName);
                 if (leaves == null) {
@@ -223,8 +220,8 @@ public final class GenericRecordQueryReader implements ValueReader {
             // ex: attribute[2]
             int index = Integer.parseInt(extractArgumentsFromAttributeName(path));
             while (iterator.hasNext()) {
-                GenericRecord record = (GenericRecord) iterator.next();
-                Object leaf = readIndexed((InternalGenericRecord) record, fieldName, index);
+                CompactRecord record = (CompactRecord) iterator.next();
+                Object leaf = readIndexed((InternalCompactRecord) record, fieldName, index);
                 iterator.set(leaf);
             }
         }
@@ -237,116 +234,20 @@ public final class GenericRecordQueryReader implements ValueReader {
         return multiResult;
     }
 
-    private Object readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
+    private Object readIndexed(InternalCompactRecord record, String path, int index) {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE_ARRAY:
-                return record.getByteFromArray(path, index);
-            case SHORT_ARRAY:
-                return record.getShortFromArray(path, index);
-            case INT_ARRAY:
-                return record.getIntFromArray(path, index);
-            case LONG_ARRAY:
-                return record.getLongFromArray(path, index);
-            case FLOAT_ARRAY:
-                return record.getFloatFromArray(path, index);
-            case DOUBLE_ARRAY:
-                return record.getDoubleFromArray(path, index);
-            case BOOLEAN_ARRAY:
-                return record.getBooleanFromArray(path, index);
-            case CHAR_ARRAY:
-                return record.getCharFromArray(path, index);
-            case UTF_ARRAY:
-                return record.getStringFromArray(path, index);
-            case PORTABLE_ARRAY:
-                return record.getObjectFromArray(path, index);
-            case DECIMAL_ARRAY:
-                return record.getDecimalFromArray(path, index);
-            case TIME_ARRAY:
-                return record.getTimeFromArray(path, index);
-            case DATE_ARRAY:
-                return record.getDateFromArray(path, index);
-            case TIMESTAMP_ARRAY:
-                return record.getTimestampFromArray(path, index);
-            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.getTimestampWithTimezoneFromArray(path, index);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        TypeID type = record.getFieldType(path);
+        return fieldOperations(type).readIndexed(record, path, index);
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path) throws IOException {
+    private Object readLeaf(InternalCompactRecord record, String path) {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE:
-                return record.getByte(path);
-            case BYTE_ARRAY:
-                return record.getByteArray(path);
-            case SHORT:
-                return record.getShort(path);
-            case SHORT_ARRAY:
-                return record.getShortArray(path);
-            case INT:
-                return record.getInt(path);
-            case INT_ARRAY:
-                return record.getIntArray(path);
-            case LONG:
-                return record.getLong(path);
-            case LONG_ARRAY:
-                return record.getLongArray(path);
-            case FLOAT:
-                return record.getFloat(path);
-            case FLOAT_ARRAY:
-                return record.getFloatArray(path);
-            case DOUBLE:
-                return record.getDouble(path);
-            case DOUBLE_ARRAY:
-                return record.getDoubleArray(path);
-            case BOOLEAN:
-                return record.getBoolean(path);
-            case BOOLEAN_ARRAY:
-                return record.getBooleanArray(path);
-            case CHAR:
-                return record.getChar(path);
-            case CHAR_ARRAY:
-                return record.getCharArray(path);
-            case UTF:
-                return record.getString(path);
-            case UTF_ARRAY:
-                return record.getStringArray(path);
-            case PORTABLE:
-                return record.getObject(path);
-            case PORTABLE_ARRAY:
-                return record.getObjectArray(path);
-            case DECIMAL:
-                return record.getDecimal(path);
-            case DECIMAL_ARRAY:
-                return record.getDecimalArray(path);
-            case TIME:
-                return record.getTime(path);
-            case TIME_ARRAY:
-                return record.getTimeArray(path);
-            case DATE:
-                return record.getDate(path);
-            case DATE_ARRAY:
-                return record.getDateArray(path);
-            case TIMESTAMP:
-                return record.getTimestamp(path);
-            case TIMESTAMP_ARRAY:
-                return record.getTimestampArray(path);
-            case TIMESTAMP_WITH_TIMEZONE:
-                return record.getTimestampWithTimezone(path);
-            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.getTimestampWithTimezoneArray(path);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        TypeID type = record.getFieldType(path);
+        return fieldOperations(type).readObject(record, path);
     }
 
 }

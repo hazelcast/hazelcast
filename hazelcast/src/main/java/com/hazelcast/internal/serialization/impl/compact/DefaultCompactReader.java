@@ -18,50 +18,50 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.compact.CompactReader;
-import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.BYTE;
-import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.CHAR;
-import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
-import static com.hazelcast.nio.serialization.FieldType.COMPOSED_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DATE;
-import static com.hazelcast.nio.serialization.FieldType.DATE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldType.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT;
-import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.INT;
-import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.LONG;
-import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.SHORT;
-import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
-import static com.hazelcast.nio.serialization.FieldType.UTF;
-import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.BOOLEAN;
+import static com.hazelcast.nio.serialization.compact.TypeID.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.BYTE;
+import static com.hazelcast.nio.serialization.compact.TypeID.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.CHAR;
+import static com.hazelcast.nio.serialization.compact.TypeID.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.COMPOSED;
+import static com.hazelcast.nio.serialization.compact.TypeID.COMPOSED_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.DATE;
+import static com.hazelcast.nio.serialization.compact.TypeID.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.DECIMAL;
+import static com.hazelcast.nio.serialization.compact.TypeID.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.DOUBLE;
+import static com.hazelcast.nio.serialization.compact.TypeID.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.FLOAT;
+import static com.hazelcast.nio.serialization.compact.TypeID.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.INT;
+import static com.hazelcast.nio.serialization.compact.TypeID.INT_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.LONG;
+import static com.hazelcast.nio.serialization.compact.TypeID.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.SHORT;
+import static com.hazelcast.nio.serialization.compact.TypeID.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.STRING;
+import static com.hazelcast.nio.serialization.compact.TypeID.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIME;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIMESTAMP;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.compact.TypeID.TIME_ARRAY;
 
 /**
- * Adapter to make CompactInternalGenericRecord provide `CompactReader` API
+ * Adapter to make CompactInternalCompactRecord provide `CompactReader` API
  */
-public class DefaultCompactReader extends CompactInternalGenericRecord implements CompactReader {
+public class DefaultCompactReader extends InternalCompactRecord implements CompactReader {
 
     public DefaultCompactReader(CompactStreamSerializer serializer, BufferObjectDataInput in, Schema schema,
                                 @Nullable Class associatedClass, boolean schemaIncludedInBinary) {
@@ -155,7 +155,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Override
     public String readString(@Nonnull String fieldName, String defaultValue) {
-        return isFieldExists(fieldName, UTF) ? getString(fieldName) : defaultValue;
+        return isFieldExists(fieldName, STRING) ? getString(fieldName) : defaultValue;
     }
 
     @Override
@@ -305,7 +305,7 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
 
     @Override
     public String[] readStringArray(@Nonnull String fieldName, String[] defaultValue) {
-        return isFieldExists(fieldName, UTF_ARRAY) ? this.getStringArray(fieldName) : defaultValue;
+        return isFieldExists(fieldName, STRING_ARRAY) ? this.getStringArray(fieldName) : defaultValue;
     }
 
     @Override

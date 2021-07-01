@@ -16,26 +16,26 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 import java.util.Set;
 import java.util.TreeMap;
 
-class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordBuilder {
+class DeserializedSchemaBoundCompactRecordBuilder extends AbstractCompactRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();
     private final Schema schema;
 
-    DeserializedSchemaBoundGenericRecordBuilder(Schema schema) {
+    DeserializedSchemaBoundCompactRecordBuilder(Schema schema) {
         this.schema = schema;
     }
 
     public @Nonnull
-    GenericRecord build() {
+    CompactRecord build() {
         Set<String> fieldNames = schema.getFieldNames();
         for (String fieldName : fieldNames) {
             if (!objects.containsKey(fieldName)) {
@@ -43,12 +43,12 @@ class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordB
                         + ". All the fields must be set before build");
             }
         }
-        return new DeserializedGenericRecord(schema, objects);
+        return new DeserializedCompactRecord(schema, objects);
     }
 
     @Override
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
-        checkTypeWithSchema(schema, fieldName, fieldType);
+    protected CompactRecordBuilder write(@Nonnull String fieldName, Object value, TypeID typeID) {
+        checkTypeWithSchema(schema, fieldName, typeID);
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

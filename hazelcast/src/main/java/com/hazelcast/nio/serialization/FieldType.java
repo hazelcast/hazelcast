@@ -58,9 +58,7 @@ public enum FieldType {
     TIMESTAMP(26, TIME.getTypeSize() + DATE.getTypeSize()),
     TIMESTAMP_ARRAY(27, MAX_VALUE),
     TIMESTAMP_WITH_TIMEZONE(28, TIMESTAMP.getTypeSize() + INT_SIZE_IN_BYTES),
-    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE),
-    COMPOSED(30, MAX_VALUE),
-    COMPOSED_ARRAY(31, MAX_VALUE);
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -47,6 +47,7 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
         this.objects = objects;
     }
 
+    @Override
     public ClassDefinition getClassDefinition() {
         return classDefinition;
     }
@@ -251,11 +252,6 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
     }
 
     @Override
-    protected Object getClassIdentifier() {
-        return classDefinition;
-    }
-
-    @Override
     public String toString() {
         return "PortableGenericRecord:" + super.toString();
     }
@@ -360,8 +356,8 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
 
     @Nullable
     @Override
-    public <T> T[] getObjectArray(@Nonnull String fieldName, Class<T> componentType) {
-        return (T[]) getGenericRecordArray(fieldName);
+    public Object[] getObjectArray(@Nonnull String fieldName) {
+        return getGenericRecordArray(fieldName);
     }
 
     @Nullable

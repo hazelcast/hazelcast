@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.compact.TypeID;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,9 +39,9 @@ public class RabinFingerPrintTest {
     @Test
     public void testRabinFingerPrinterConsistentWithWriteData() throws IOException {
         SchemaWriter writer = new SchemaWriter("className");
-        writer.addField(new FieldDescriptor("a", FieldType.BOOLEAN));
-        writer.addField(new FieldDescriptor("b", FieldType.BOOLEAN_ARRAY));
-        writer.addField(new FieldDescriptor("c", FieldType.TIMESTAMP_WITH_TIMEZONE));
+        writer.addField(new FieldDescriptor("a", TypeID.BOOLEAN));
+        writer.addField(new FieldDescriptor("b", TypeID.BOOLEAN_ARRAY));
+        writer.addField(new FieldDescriptor("c", TypeID.TIMESTAMP_WITH_TIMEZONE));
         Schema schema = writer.build();
 
         InternalSerializationService internalSerializationService = new DefaultSerializationServiceBuilder()

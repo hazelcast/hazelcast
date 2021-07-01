@@ -16,35 +16,35 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
-public class DeserializedGenericRecordCloner extends AbstractGenericRecordBuilder {
+public class DeserializedCompactRecordCloner extends AbstractCompactRecordBuilder {
     private final TreeMap<String, Object> objects;
     private final Schema schema;
     private final Set<String> overwrittenFields = new HashSet<>();
 
-    public DeserializedGenericRecordCloner(Schema schema, TreeMap<String, Object> objects) {
+    public DeserializedCompactRecordCloner(Schema schema, TreeMap<String, Object> objects) {
         this.objects = objects;
         this.schema = schema;
     }
 
     @Nonnull
     @Override
-    public GenericRecord build() {
-        return new DeserializedGenericRecord(schema, objects);
+    public CompactRecord build() {
+        return new DeserializedCompactRecord(schema, objects);
     }
 
 
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
-        checkTypeWithSchema(schema, fieldName, fieldType);
+    protected CompactRecordBuilder write(@Nonnull String fieldName, Object value, TypeID typeID) {
+        checkTypeWithSchema(schema, fieldName, typeID);
         if (!overwrittenFields.add(fieldName)) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

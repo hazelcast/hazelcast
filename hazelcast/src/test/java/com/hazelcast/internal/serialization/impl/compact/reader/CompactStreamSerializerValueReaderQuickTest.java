@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.reader;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.compact.CompactRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -342,7 +342,7 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
 
     @Test
     public void reusingTheReader_multipleCalls_stateResetCorrectly() throws IOException {
-        GenericRecordQueryReader reader = reader(PORSCHE);
+        CompactRecordQueryReader reader = reader(PORSCHE);
         assertEquals("rear", reader.read("wheels[1].name"));
         assertEquals(300, reader.read("engine.power"));
         assertEquals(46, reader.read("wheels[0].serial[0]"));
@@ -363,11 +363,11 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     // Utilities
     //
 
-    public GenericRecordQueryReader reader(Car car) throws IOException {
+    public CompactRecordQueryReader reader(Car car) throws IOException {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().setSchemaService(schemaService).build();
         Data data = ss.toData(car);
-        return new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
+        return new CompactRecordQueryReader(ss.readAsInternalCompactRecord(data));
     }
 
 

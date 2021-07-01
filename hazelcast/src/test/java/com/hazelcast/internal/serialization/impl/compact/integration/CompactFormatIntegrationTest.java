@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -142,7 +142,7 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
         IMap map2 = instance2.getMap("test");
         if (serverDoesNotHaveClasses) {
-            map2.executeOnEntries(new GenericIncreaseAgeEntryProcessor());
+            map2.executeOnEntries(new CompactIncreaseAgeEntryProcessor());
         } else {
             map2.executeOnEntries(new IncreaseAgeEntryProcessor());
         }
@@ -163,11 +163,11 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         }
     }
 
-    static class GenericIncreaseAgeEntryProcessor implements EntryProcessor<Integer, GenericRecord, Object>, Serializable {
+    static class CompactIncreaseAgeEntryProcessor implements EntryProcessor<Integer, CompactRecord, Object>, Serializable {
         @Override
-        public Object process(Map.Entry<Integer, GenericRecord> entry) {
-            GenericRecord value = entry.getValue();
-            GenericRecord newValue = value.cloneWithBuilder()
+        public Object process(Map.Entry<Integer, CompactRecord> entry) {
+            CompactRecord value = entry.getValue();
+            CompactRecord newValue = value.cloneWithBuilder()
                     .setInt("age", value.getInt("age") + 1000)
                     .build();
             entry.setValue(newValue);

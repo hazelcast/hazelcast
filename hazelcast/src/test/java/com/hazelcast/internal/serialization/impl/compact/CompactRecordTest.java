@@ -19,9 +19,9 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,13 +29,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.compact.CompactRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class GenericRecordTest {
+public class CompactRecordTest {
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
@@ -45,24 +45,24 @@ public class GenericRecordTest {
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setLong("bar", 1231L);
-        GenericRecord expectedGenericRecord = builder.build();
+        CompactRecord expectedCompactRecord = builder.build();
 
-        Data data = serializationService.toData(expectedGenericRecord);
+        Data data = serializationService.toData(expectedCompactRecord);
 
         Object object = serializationService.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
+        CompactRecord compactRecord = (CompactRecord) object;
 
-        GenericRecordBuilder cloneBuilder = genericRecord.cloneWithBuilder();
+        CompactRecordBuilder cloneBuilder = compactRecord.cloneWithBuilder();
         cloneBuilder.setInt("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
 
         assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
 
-        GenericRecord clone = cloneBuilder.build();
+        CompactRecord clone = cloneBuilder.build();
 
         assertEquals(2, clone.getInt("foo"));
         assertEquals(1231L, clone.getLong("bar"));
@@ -70,19 +70,19 @@ public class GenericRecordTest {
 
     @Test
     public void testCloneObjectCreatedViaAPI() {
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setLong("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
+        CompactRecord compactRecord = builder.build();
 
-        GenericRecordBuilder cloneBuilder = genericRecord.cloneWithBuilder();
+        CompactRecordBuilder cloneBuilder = compactRecord.cloneWithBuilder();
         cloneBuilder.setInt("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
 
         assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
 
-        GenericRecord clone = cloneBuilder.build();
+        CompactRecord clone = cloneBuilder.build();
 
         assertEquals(2, clone.getInt("foo"));
         assertEquals(1231L, clone.getLong("bar"));
@@ -94,18 +94,18 @@ public class GenericRecordTest {
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setLong("bar", 1231L);
-        GenericRecord expectedGenericRecord = builder.build();
+        CompactRecord expectedCompactRecord = builder.build();
 
-        Data data = serializationService.toData(expectedGenericRecord);
+        Data data = serializationService.toData(expectedCompactRecord);
 
         Object object = serializationService.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
+        CompactRecord compactRecord = (CompactRecord) object;
 
-        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
+        CompactRecordBuilder recordBuilder = compactRecord.newBuilder();
         recordBuilder.setInt("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
 
@@ -113,7 +113,7 @@ public class GenericRecordTest {
         assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
 
         recordBuilder.setLong("bar", 100);
-        GenericRecord newRecord = recordBuilder.build();
+        CompactRecord newRecord = recordBuilder.build();
 
         assertEquals(2, newRecord.getInt("foo"));
         assertEquals(100, newRecord.getLong("bar"));
@@ -121,13 +121,13 @@ public class GenericRecordTest {
 
     @Test
     public void testBuildFromObjectCreatedViaAPI() {
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setLong("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
+        CompactRecord compactRecord = builder.build();
 
-        GenericRecordBuilder recordBuilder = genericRecord.newBuilder();
+        CompactRecordBuilder recordBuilder = compactRecord.newBuilder();
         recordBuilder.setInt("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
 
@@ -135,13 +135,13 @@ public class GenericRecordTest {
         assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
 
         recordBuilder.setLong("bar", 100);
-        GenericRecord newRecord = recordBuilder.build();
+        CompactRecord newRecord = recordBuilder.build();
 
         assertEquals(2, newRecord.getInt("foo"));
         assertEquals(100, newRecord.getLong("bar"));
     }
 
-    private String trySetAndGetMessage(String fieldName, int value, GenericRecordBuilder cloneBuilder) {
+    private String trySetAndGetMessage(String fieldName, int value, CompactRecordBuilder cloneBuilder) {
         try {
             cloneBuilder.setInt(fieldName, value);
         } catch (HazelcastSerializationException e) {
@@ -150,7 +150,7 @@ public class GenericRecordTest {
         return null;
     }
 
-    private String tryBuildAndGetMessage(GenericRecordBuilder builder) {
+    private String tryBuildAndGetMessage(CompactRecordBuilder builder) {
         try {
             builder.build();
         } catch (HazelcastSerializationException e) {
@@ -158,6 +158,4 @@ public class GenericRecordTest {
         }
         return null;
     }
-
-
 }

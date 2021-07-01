@@ -22,11 +22,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -45,7 +43,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.compact.CompactRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -142,7 +140,7 @@ public class CompactStreamSerializerTest {
         // (4 byte length of byte array) + (1 byte for booleans array of 8 bits) + (1 byte offset bytes)
         assertEquals(31, data.toByteArray().length);
 
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(ss2.readAsInternalGenericRecord(data));
+        CompactRecordQueryReader reader = new CompactRecordQueryReader(ss2.readAsInternalCompactRecord(data));
         assertEquals(121, reader.read("id"));
         assertTrue((Boolean) reader.read("a"));
         assertFalse((Boolean) reader.read("b"));
@@ -290,44 +288,44 @@ public class CompactStreamSerializerTest {
             Thread.currentThread().setContextClassLoader(parentClassLoader);
             SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
                     .setSchemaService(schemaService).setClassLoader(parentClassLoader).build();
-            GenericRecord genericRecord = serializationService2.toObject(data);
+            CompactRecord compactRecord = serializationService2.toObject(data);
             //testing the field names introduced by the Serializer in EmployeeWithSerializerDTO, not reflection
-            assertEquals(30, genericRecord.getInt("a"));
-            assertEquals(102310312, genericRecord.getLong("i"));
+            assertEquals(30, compactRecord.getInt("a"));
+            assertEquals(102310312, compactRecord.getLong("i"));
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
         }
     }
 
     @Test
-    public void testGenericRecordHashcode_Equals() {
+    public void testCompactRecordHashcode_Equals() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         builder.setLong("bar", 1231L);
         builder.setLongArray("barArray", new long[]{1L, 2L});
         builder.setDecimal("dec", new BigDecimal(12131321));
-        builder.setGenericRecord("nestedField",
+        builder.setCompactRecord("nestedField",
                 compact("nested").setInt("a", 2).build());
-        builder.setGenericRecordArray("nestedFieldArray", new GenericRecord[]{
+        builder.setCompactRecordArray("nestedFieldArray", new CompactRecord[]{
                 compact("nested").setInt("a", 2).build(),
                 compact("nested").setInt("a", 3).build(),
         });
-        GenericRecord expectedGenericRecord = builder.build();
+        CompactRecord expectedCompactRecord = builder.build();
 
-        Data data = serializationService.toData(expectedGenericRecord);
+        Data data = serializationService.toData(expectedCompactRecord);
 
         Object object = serializationService.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
-        AbstractGenericRecord abstractGenericRecord = (AbstractGenericRecord) object;
-        abstractGenericRecord.readAny("bar");
+        CompactRecord compactRecord = (CompactRecord) object;
+        AbstractCompactRecord abstractCompactRecord = (AbstractCompactRecord) object;
+        abstractCompactRecord.readAny("bar");
 
-        assertTrue(expectedGenericRecord.equals(genericRecord));
-        assertTrue(genericRecord.equals(expectedGenericRecord));
-        assertEquals(expectedGenericRecord.hashCode(), genericRecord.hashCode());
+        assertTrue(expectedCompactRecord.equals(compactRecord));
+        assertTrue(compactRecord.equals(expectedCompactRecord));
+        assertEquals(expectedCompactRecord.hashCode(), compactRecord.hashCode());
     }
 
     @Test
@@ -348,7 +346,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testDeserializedToGenericRecordWhenClassNotFoundOnClassPath() {
+    public void testDeserializedToCompactRecordWhenClassNotFoundOnClassPath() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().register(EmployeeDTO.class, "employee");
 
@@ -363,10 +361,10 @@ public class CompactStreamSerializerTest {
         SerializationService readerService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
-        GenericRecord genericRecord = readerService.toObject(data);
+        CompactRecord compactRecord = readerService.toObject(data);
 
-        assertEquals(employeeDTO.getAge(), genericRecord.getInt("age"));
-        assertEquals(employeeDTO.getId(), genericRecord.getLong("id"));
+        assertEquals(employeeDTO.getAge(), compactRecord.getInt("age"));
+        assertEquals(employeeDTO.getId(), compactRecord.getLong("id"));
     }
 
     @Test
@@ -435,35 +433,35 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testSchemaEvolution_GenericRecord() {
+    public void testSchemaEvolution_CompactRecord() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecordBuilder builder = compact("fooBarClassName");
+        CompactRecordBuilder builder = compact("fooBarClassName");
         builder.setInt("foo", 1);
         builder.setLong("bar", 1231L);
-        GenericRecord expectedGenericRecord = builder.build();
+        CompactRecord expectedCompactRecord = builder.build();
 
-        Data data = serializationService.toData(expectedGenericRecord);
+        Data data = serializationService.toData(expectedCompactRecord);
 
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .build();
 
-        GenericRecordBuilder builder2 = compact("fooBarClassName");
+        CompactRecordBuilder builder2 = compact("fooBarClassName");
         builder2.setInt("foo", 1);
         builder2.setLong("bar", 1231L);
         builder2.setString("foobar", "new field");
         serializationService2.toData(builder2.build());
 
         Object object = serializationService2.toObject(data);
-        GenericRecord genericRecord = (GenericRecord) object;
+        CompactRecord compactRecord = (CompactRecord) object;
 
-        assertFalse(genericRecord.hasField("foobar"));
+        assertFalse(compactRecord.hasField("foobar"));
 
-        assertEquals(1, genericRecord.getInt("foo"));
-        assertEquals(1231L, genericRecord.getLong("bar"));
+        assertEquals(1, compactRecord.getInt("foo"));
+        assertEquals(1231L, compactRecord.getLong("bar"));
     }
 
     @Test

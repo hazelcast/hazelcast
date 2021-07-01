@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
+package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 
 import java.util.Objects;
 
@@ -26,24 +27,24 @@ import java.util.Objects;
  */
 public interface FieldTypeBasedOperations {
 
-    Object readObject(GenericRecord genericRecord, String fieldName);
+    Object readObject(CompactRecord compactRecord, String fieldName);
 
     /**
      * For primitives serialized form is same as readObject.
-     * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
+     * This method will be overridden for Compact and will return CompactRecord representation of objects
      */
-    default Object readInSerializedForm(GenericRecord genericRecord, String fieldName) {
-        return readObject(genericRecord, fieldName);
+    default Object readInSerializedForm(CompactRecord compactRecord, String fieldName) {
+        return readObject(compactRecord, fieldName);
     }
 
-    default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+    default Object readIndexed(InternalCompactRecord record, String fieldName, int index) {
         throw new UnsupportedOperationException("Not an array type. Does not support read with an index");
     }
 
 
-    default int hashCode(GenericRecord record, String fieldName) {
+    default int hashCode(CompactRecord record, String fieldName) {
         return Objects.hashCode(readInSerializedForm(record, fieldName));
     }
 
-    void readFromGenericRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
+    void readFromCompactRecordToWriter(DefaultCompactWriter defaultCompactWriter, CompactRecord compactRecord, String fieldName);
 }

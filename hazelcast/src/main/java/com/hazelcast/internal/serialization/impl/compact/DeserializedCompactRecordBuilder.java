@@ -16,47 +16,47 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 import java.util.TreeMap;
 
 /**
  * This builder is build by user thread via
- * {@link GenericRecordBuilder#compact(String)} method.
+ * {@link CompactRecordBuilder#compact(String)} method.
  * <p>
  * It is only job to carry the objects including their types and the class name.
  */
-public class DeserializedGenericRecordBuilder extends AbstractGenericRecordBuilder {
+public class DeserializedCompactRecordBuilder extends AbstractCompactRecordBuilder {
 
     private final TreeMap<String, Object> objects = new TreeMap<>();
     private final SchemaWriter schemaWriter;
 
-    public DeserializedGenericRecordBuilder(String className) {
+    public DeserializedCompactRecordBuilder(String className) {
         schemaWriter = new SchemaWriter(className);
     }
 
     /**
-     * @return newly created GenericRecord
+     * @return newly created CompactRecord
      * @throws HazelcastSerializationException if a field is not written when building with builder from
-     *                                         {@link GenericRecordBuilder#compact(String)} (ClassDefinition)} and
-     *                                         {@link GenericRecord#newBuilder()}
+     *                                         {@link CompactRecordBuilder#compact(String)} (ClassDefinition)} and
+     *                                         {@link CompactRecord#newBuilder()}
      */
     @Nonnull
     @Override
-    public GenericRecord build() {
-        return new DeserializedGenericRecord(schemaWriter.build(), objects);
+    public CompactRecord build() {
+        return new DeserializedCompactRecord(schemaWriter.build(), objects);
     }
 
 
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType) {
+    protected CompactRecordBuilder write(@Nonnull String fieldName, Object value, TypeID typeID) {
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }
-        schemaWriter.addField(new FieldDescriptor(fieldName, fieldType));
+        schemaWriter.addField(new FieldDescriptor(fieldName, typeID));
         return this;
     }
 

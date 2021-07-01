@@ -19,8 +19,8 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -58,16 +58,16 @@ public class Schema implements IdentifiedDataSerializable {
 
         List<FieldDescriptor> definiteSizedList = fieldDefinitionMap.values().stream()
                 .filter(fieldDescriptor -> fieldDescriptor.getType().hasDefiniteSize())
-                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .filter(fieldDescriptor -> !fieldDescriptor.getType().equals(TypeID.BOOLEAN))
                 .sorted(Comparator.comparingInt(o -> ((FieldDescriptor) o).getType().getTypeSize()).reversed())
                 .collect(Collectors.toList());
         for (FieldDescriptor fieldDefinition : definiteSizedList) {
             fieldDefinition.setOffset(offset);
-            offset += fieldDefinition.getType().getTypeSize();
+            offset += fieldDefinition.getType().getTypeSize() / Byte.SIZE;
         }
 
         List<FieldDescriptor> booleanFieldsList = fieldDefinitionMap.values().stream()
-                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(FieldType.BOOLEAN))
+                .filter(fieldDescriptor -> fieldDescriptor.getType().equals(TypeID.BOOLEAN))
                 .collect(Collectors.toList());
         for (FieldDescriptor fieldDefinition : booleanFieldsList) {
             fieldDefinition.setOffset(offset);
@@ -178,7 +178,7 @@ public class Schema implements IdentifiedDataSerializable {
         for (int i = 0; i < fieldDefinitionsSize; i++) {
             String fieldName = in.readString();
             byte type = in.readByte();
-            FieldType fieldType = FieldType.get(type);
+            TypeID fieldType = TypeID.get(type);
             FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
             fieldDefinitionMap.put(fieldName, descriptor);
         }

@@ -16,19 +16,19 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.compact.TypeID;
 
 import javax.annotation.Nonnull;
 
 public class FieldDescriptor {
 
     private final String fieldName;
-    private final FieldType type;
+    private final TypeID type;
     private int index = -1;
     private int offset = -1;
     private byte bitOffset = -1;
 
-    public FieldDescriptor(@Nonnull String fieldName, @Nonnull FieldType type) {
+    public FieldDescriptor(@Nonnull String fieldName, @Nonnull TypeID type) {
         this.fieldName = fieldName;
         this.type = type;
     }
@@ -45,7 +45,7 @@ public class FieldDescriptor {
         this.bitOffset = bitOffset;
     }
 
-    public FieldType getType() {
+    public TypeID getType() {
         return type;
     }
 

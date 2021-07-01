@@ -18,9 +18,9 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 
 public class CompactGetter extends Getter {
     private final InternalSerializationService serializationService;
@@ -32,13 +32,13 @@ public class CompactGetter extends Getter {
 
     @Override
     Object getValue(Object target, String fieldPath) throws Exception {
-        InternalGenericRecord record;
-        if (target instanceof CompactGenericRecord) {
-            record = (InternalGenericRecord) target;
+        InternalCompactRecord record;
+        if (target instanceof CompactRecord) {
+            record = (InternalCompactRecord) target;
         } else {
-            record = serializationService.readAsInternalGenericRecord((Data) target);
+            record = serializationService.readAsInternalCompactRecord((Data) target);
         }
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
+        CompactRecordQueryReader reader = new CompactRecordQueryReader(record);
         return reader.read(fieldPath);
     }
 

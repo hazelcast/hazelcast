@@ -19,8 +19,8 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
+import com.hazelcast.nio.serialization.compact.CompactRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
+public class SerializingCompactRecordBuilder implements CompactRecordBuilder {
 
     private final DefaultCompactWriter defaultCompactWriter;
     private final CompactStreamSerializer serializer;
@@ -42,7 +42,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     private final Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc;
     private final Set<String> writtenFields = new HashSet<>();
 
-    public SerializingGenericRecordBuilder(CompactStreamSerializer serializer, Schema schema,
+    public SerializingCompactRecordBuilder(CompactStreamSerializer serializer, Schema schema,
                                            Function<byte[], BufferObjectDataInput> bufferObjectDataInputFunc,
                                            Supplier<BufferObjectDataOutput> bufferObjectDataOutputSupplier) {
         this.serializer = serializer;
@@ -54,7 +54,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecord build() {
+    public CompactRecord build() {
         Set<String> fieldNames = schema.getFieldNames();
         for (String fieldName : fieldNames) {
             if (!writtenFields.contains(fieldName)) {
@@ -70,7 +70,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
+    public CompactRecordBuilder setInt(@Nonnull String fieldName, int value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeInt(fieldName, value);
         return this;
@@ -78,7 +78,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
+    public CompactRecordBuilder setLong(@Nonnull String fieldName, long value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeLong(fieldName, value);
         return this;
@@ -86,7 +86,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setString(@Nonnull String fieldName, String value) {
+    public CompactRecordBuilder setString(@Nonnull String fieldName, String value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeString(fieldName, value);
         return this;
@@ -94,7 +94,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value) {
+    public CompactRecordBuilder setBoolean(@Nonnull String fieldName, boolean value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeBoolean(fieldName, value);
         return this;
@@ -102,7 +102,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
+    public CompactRecordBuilder setByte(@Nonnull String fieldName, byte value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeByte(fieldName, value);
         return this;
@@ -110,7 +110,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
+    public CompactRecordBuilder setChar(@Nonnull String fieldName, char value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeChar(fieldName, value);
         return this;
@@ -118,7 +118,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
+    public CompactRecordBuilder setDouble(@Nonnull String fieldName, double value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDouble(fieldName, value);
         return this;
@@ -126,7 +126,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
+    public CompactRecordBuilder setFloat(@Nonnull String fieldName, float value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeFloat(fieldName, value);
         return this;
@@ -134,7 +134,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
+    public CompactRecordBuilder setShort(@Nonnull String fieldName, short value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeShort(fieldName, value);
         return this;
@@ -142,7 +142,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDecimal(@Nonnull String fieldName, BigDecimal value) {
+    public CompactRecordBuilder setDecimal(@Nonnull String fieldName, BigDecimal value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDecimal(fieldName, value);
         return this;
@@ -150,7 +150,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTime(@Nonnull String fieldName, LocalTime value) {
+    public CompactRecordBuilder setTime(@Nonnull String fieldName, LocalTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTime(fieldName, value);
         return this;
@@ -158,7 +158,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDate(@Nonnull String fieldName, LocalDate value) {
+    public CompactRecordBuilder setDate(@Nonnull String fieldName, LocalDate value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDate(fieldName, value);
         return this;
@@ -166,7 +166,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, LocalDateTime value) {
+    public CompactRecordBuilder setTimestamp(@Nonnull String fieldName, LocalDateTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestamp(fieldName, value);
         return this;
@@ -174,7 +174,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value) {
+    public CompactRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestampWithTimezone(fieldName, value);
         return this;
@@ -182,23 +182,23 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, GenericRecord value) {
+    public CompactRecordBuilder setCompactRecord(@Nonnull String fieldName, CompactRecord value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeGenericRecord(fieldName, value);
+        defaultCompactWriter.writeCompactRecord(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, GenericRecord[] value) {
+    public CompactRecordBuilder setCompactRecordArray(@Nonnull String fieldName, CompactRecord[] value) {
         checkIfAlreadyWritten(fieldName);
-        defaultCompactWriter.writeGenericRecordArray(fieldName, value);
+        defaultCompactWriter.writeCompactRecordArray(fieldName, value);
         return this;
     }
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
+    public CompactRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeByteArray(fieldName, value);
         return this;
@@ -206,7 +206,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
+    public CompactRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeBooleanArray(fieldName, value);
         return this;
@@ -214,7 +214,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
+    public CompactRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeCharArray(fieldName, value);
         return this;
@@ -222,7 +222,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
+    public CompactRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeIntArray(fieldName, value);
         return this;
@@ -230,7 +230,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
+    public CompactRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeLongArray(fieldName, value);
         return this;
@@ -238,7 +238,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
+    public CompactRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDoubleArray(fieldName, value);
         return this;
@@ -246,7 +246,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
+    public CompactRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeFloatArray(fieldName, value);
         return this;
@@ -254,7 +254,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
+    public CompactRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeShortArray(fieldName, value);
         return this;
@@ -262,7 +262,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
+    public CompactRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeStringArray(fieldName, value);
         return this;
@@ -270,7 +270,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
+    public CompactRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDecimalArray(fieldName, value);
         return this;
@@ -278,7 +278,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
+    public CompactRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimeArray(fieldName, value);
         return this;
@@ -286,7 +286,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
+    public CompactRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeDateArray(fieldName, value);
         return this;
@@ -294,7 +294,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
+    public CompactRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestampArray(fieldName, value);
         return this;
@@ -302,7 +302,7 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
 
     @Override
     @Nonnull
-    public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
+    public CompactRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeTimestampWithTimezoneArray(fieldName, value);
         return this;

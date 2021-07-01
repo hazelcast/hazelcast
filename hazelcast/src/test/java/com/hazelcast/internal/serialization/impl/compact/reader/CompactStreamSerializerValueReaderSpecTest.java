@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.reader;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.compact.CompactRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.query.impl.getters.MultiResult;
@@ -135,7 +135,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().setSchemaService(schemaService).build();
 
         Data data = ss.toData(inputObject);
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));
+        CompactRecordQueryReader reader = new CompactRecordQueryReader(ss.readAsInternalCompactRecord(data));
 
         Object result = reader.read(pathToRead);
         if (result instanceof MultiResult) {
@@ -145,7 +145,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
                 // explode null in case of a single multi-result target result
                 result = null;
             } else {
-                // in case of multi result while invoking generic "read" method deal with the multi results
+                // in case of multi result while invoking compact "read" method deal with the multi results
                 result = ((MultiResult) result).getResults().toArray();
             }
         }
@@ -187,7 +187,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
             } else {
                 adjustedResult = result;
             }
-            // generic method case
+            // compact method case
             scenarios.add(scenario(input, adjustedResult, pathToExplode.replace("primitive_", primitiveFields.field), parent));
         }
         return scenarios;

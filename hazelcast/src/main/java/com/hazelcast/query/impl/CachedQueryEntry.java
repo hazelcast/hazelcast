@@ -19,13 +19,13 @@ package com.hazelcast.query.impl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.io.IOException;
@@ -182,9 +182,8 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
             if (valueObject == null) {
                 targetObject = getTargetObjectFromData();
             } else {
-                if (valueObject instanceof PortableGenericRecord
-                        || valueObject instanceof CompactGenericRecord) {
-                    // These two classes should be able to be handled by respeective Getters
+                if (valueObject instanceof PortableGenericRecord || valueObject instanceof CompactRecord) {
+                    // These two classes should be able to be handled by respective Getters
                     // see PortableGetter and CompactGetter
                     // We get into this branch when in memory format is Object and
                     // - the cluster does not have PortableFactory configuration for Portable

@@ -32,62 +32,6 @@ import java.time.OffsetDateTime;
  */
 public interface CompactReader {
 
-    byte readByte(@Nonnull String fieldName);
-
-    byte readByte(@Nonnull String fieldName, byte defaultValue);
-
-    short readShort(@Nonnull String fieldName);
-
-    short readShort(@Nonnull String fieldName, short defaultValue);
-
-    int readInt(@Nonnull String fieldName);
-
-    int readInt(@Nonnull String fieldName, int defaultValue);
-
-    long readLong(@Nonnull String fieldName);
-
-    long readLong(@Nonnull String fieldName, long defaultValue);
-
-    float readFloat(@Nonnull String fieldName);
-
-    float readFloat(@Nonnull String fieldName, float defaultValue);
-
-    double readDouble(@Nonnull String fieldName);
-
-    double readDouble(@Nonnull String fieldName, double defaultValue);
-
-    boolean readBoolean(@Nonnull String fieldName);
-
-    boolean readBoolean(@Nonnull String fieldName, boolean defaultValue);
-
-    char readChar(@Nonnull String fieldName);
-
-    char readChar(@Nonnull String fieldName, char defaultValue);
-
-    String readString(@Nonnull String fieldName);
-
-    String readString(@Nonnull String fieldName, String defaultValue);
-
-    BigDecimal readDecimal(@Nonnull String fieldName);
-
-    BigDecimal readDecimal(@Nonnull String fieldName, BigDecimal defaultValue);
-
-    LocalTime readTime(@Nonnull String fieldName);
-
-    LocalTime readTime(@Nonnull String fieldName, LocalTime defaultValue);
-
-    LocalDate readDate(@Nonnull String fieldName);
-
-    LocalDate readDate(@Nonnull String fieldName, LocalDate defaultValue);
-
-    LocalDateTime readTimestamp(@Nonnull String fieldName);
-
-    LocalDateTime readTimestamp(@Nonnull String fieldName, LocalDateTime defaultValue);
-
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
-
-    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime defaultValue);
-
     /**
      * @throws com.hazelcast.core.HazelcastException If the object is not able to be created because the related class not be
      *                                               found in the classpath
@@ -96,64 +40,120 @@ public interface CompactReader {
 
     <T> T readObject(@Nonnull String fieldName, T defaultValue);
 
-    byte[] readByteArray(@Nonnull String fieldName);
+    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType);
 
-    byte[] readByteArray(@Nonnull String fieldName, byte[] defaultValue);
+    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType, T[] defaultValue);
+
+    boolean readBoolean(@Nonnull String fieldName);
+
+    boolean readBoolean(@Nonnull String fieldName, boolean defaultValue);
 
     boolean[] readBooleanArray(@Nonnull String fieldName);
 
     boolean[] readBooleanArray(@Nonnull String fieldName, boolean[] defaultValue);
 
-    char[] readCharArray(@Nonnull String fieldName);
+    byte readByte(@Nonnull String fieldName);
 
-    char[] readCharArray(@Nonnull String fieldName, char[] defaultValue);
+    byte readByte(@Nonnull String fieldName, byte defaultValue);
 
-    int[] readIntArray(@Nonnull String fieldName);
+    byte[] readByteArray(@Nonnull String fieldName);
 
-    int[] readIntArray(@Nonnull String fieldName, int[] defaultValue);
+    byte[] readByteArray(@Nonnull String fieldName, byte[] defaultValue);
 
-    long[] readLongArray(@Nonnull String fieldName);
+    char readChar(@Nonnull String fieldName);
 
-    long[] readLongArray(@Nonnull String fieldName, long[] defaultValue);
+    char readChar(@Nonnull String fieldName, char defaultValue);
 
-    double[] readDoubleArray(@Nonnull String fieldName);
+    short readShort(@Nonnull String fieldName);
 
-    double[] readDoubleArray(@Nonnull String fieldName, double[] defaultValue);
-
-    float[] readFloatArray(@Nonnull String fieldName);
-
-    float[] readFloatArray(@Nonnull String fieldName, float[] defaultValue);
+    short readShort(@Nonnull String fieldName, short defaultValue);
 
     short[] readShortArray(@Nonnull String fieldName);
 
     short[] readShortArray(@Nonnull String fieldName, short[] defaultValue);
 
+    char[] readCharArray(@Nonnull String fieldName);
+
+    char[] readCharArray(@Nonnull String fieldName, char[] defaultValue);
+
+    int readInt(@Nonnull String fieldName);
+
+    int readInt(@Nonnull String fieldName, int defaultValue);
+
+    int[] readIntArray(@Nonnull String fieldName);
+
+    int[] readIntArray(@Nonnull String fieldName, int[] defaultValue);
+
+    float readFloat(@Nonnull String fieldName);
+
+    float readFloat(@Nonnull String fieldName, float defaultValue);
+
+    float[] readFloatArray(@Nonnull String fieldName);
+
+    float[] readFloatArray(@Nonnull String fieldName, float[] defaultValue);
+
+    long readLong(@Nonnull String fieldName);
+
+    long readLong(@Nonnull String fieldName, long defaultValue);
+
+    long[] readLongArray(@Nonnull String fieldName);
+
+    long[] readLongArray(@Nonnull String fieldName, long[] defaultValue);
+
+    double readDouble(@Nonnull String fieldName);
+
+    double readDouble(@Nonnull String fieldName, double defaultValue);
+
+    double[] readDoubleArray(@Nonnull String fieldName);
+
+    double[] readDoubleArray(@Nonnull String fieldName, double[] defaultValue);
+
+    String readString(@Nonnull String fieldName);
+
+    String readString(@Nonnull String fieldName, String defaultValue);
+
     String[] readStringArray(@Nonnull String fieldName);
 
     String[] readStringArray(@Nonnull String fieldName, String[] defaultValue);
+
+    BigDecimal readDecimal(@Nonnull String fieldName);
+
+    BigDecimal readDecimal(@Nonnull String fieldName, BigDecimal defaultValue);
 
     BigDecimal[] readDecimalArray(@Nonnull String fieldName);
 
     BigDecimal[] readDecimalArray(@Nonnull String fieldName, BigDecimal[] defaultValue);
 
+    LocalTime readTime(@Nonnull String fieldName);
+
+    LocalTime readTime(@Nonnull String fieldName, LocalTime defaultValue);
+
     LocalTime[] readTimeArray(@Nonnull String fieldName);
 
     LocalTime[] readTimeArray(@Nonnull String fieldName, LocalTime[] defaultValue);
+
+    LocalDate readDate(@Nonnull String fieldName);
+
+    LocalDate readDate(@Nonnull String fieldName, LocalDate defaultValue);
 
     LocalDate[] readDateArray(@Nonnull String fieldName);
 
     LocalDate[] readDateArray(@Nonnull String fieldName, LocalDate[] defaultValue);
 
+    LocalDateTime readTimestamp(@Nonnull String fieldName);
+
+    LocalDateTime readTimestamp(@Nonnull String fieldName, LocalDateTime defaultValue);
+
     LocalDateTime[] readTimestampArray(@Nonnull String fieldName);
 
     LocalDateTime[] readTimestampArray(@Nonnull String fieldName, LocalDateTime[] defaultValue);
 
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
+
+    OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, OffsetDateTime defaultValue);
+
     OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName);
 
     OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] defaultValue);
-
-    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType);
-
-    <T> T[] readObjectArray(@Nonnull String fieldName, Class<T> componentType, T[] defaultValue);
 
 }

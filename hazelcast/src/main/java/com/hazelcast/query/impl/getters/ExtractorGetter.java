@@ -20,6 +20,9 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.serialization.impl.compact.CompactRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.compact.InternalCompactRecord;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultValueCollector;
 
@@ -43,9 +46,13 @@ final class ExtractorGetter extends Getter {
         // This part will be improved in 3.7 to avoid extra allocation
         DefaultValueCollector collector = new DefaultValueCollector();
         if (target instanceof Data) {
-            InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord((Data) target);
-            if (internalGenericRecord != null) {
+            if (((Data) target).isPortable()) {
+                InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord((Data) target);
                 extractionTarget = new GenericRecordQueryReader(internalGenericRecord);
+            } else if (((Data) target).getType() == SerializationConstants.TYPE_COMPACT
+                    || ((Data) target).getType() == SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
+                InternalCompactRecord internalCompactRecord = serializationService.readAsInternalCompactRecord((Data) target);
+                extractionTarget = new CompactRecordQueryReader(internalCompactRecord);
             }
         }
         extractor.extract(extractionTarget, arguments, collector);

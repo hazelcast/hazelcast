@@ -20,11 +20,11 @@ import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.compact.CompactRecord;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.query.impl.DefaultArgumentParser;
@@ -148,7 +148,7 @@ public final class Extractors {
                 portableGetter = new PortableGetter(ss);
             }
             return portableGetter;
-        } else if (targetObject instanceof CompactGenericRecord) {
+        } else if (targetObject instanceof CompactRecord) {
             if (compactGetter == null) {
                 // will be initialised a couple of times in the worst case
                 compactGetter = new CompactGetter(ss);
