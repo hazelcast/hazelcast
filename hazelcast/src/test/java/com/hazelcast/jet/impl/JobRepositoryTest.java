@@ -36,7 +36,6 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -84,8 +83,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -101,8 +98,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -223,7 +218,8 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {
-        return new JobRecord(Version.of(2, 4), jobId, dag, "", jobConfig, Collections.emptySet());
+        return new JobRecord(instance.getCluster().getLocalMember().getVersion().asVersion(),
+                jobId, dag, "", jobConfig, Collections.emptySet());
     }
 
     private void sleepUntilJobExpires() {

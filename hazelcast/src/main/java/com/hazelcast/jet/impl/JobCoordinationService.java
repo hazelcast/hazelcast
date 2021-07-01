@@ -472,7 +472,8 @@ public class JobCoordinationService {
 
         return submitToCoordinatorThread(() -> {
             if (onlyJobId != ALL_JOBS) {
-                if (lightMasterContexts.get(onlyJobId) != null) {
+                Object lmc = lightMasterContexts.get(onlyJobId);
+                if (lmc != null && lmc != UNINITIALIZED_LIGHT_JOB_MARKER) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
 
