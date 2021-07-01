@@ -59,4 +59,9 @@ public interface Hz3MapAdapter {
      * Returns replicated map with given name
      */
     <V, K> Map<K, V> getReplicatedMap(String mapName);
+
+    /**
+     * Wrap payload as Data using Hazelcast 3 version of HeapData
+     */
+    Object toHz3Data(byte[] bytes);
 }

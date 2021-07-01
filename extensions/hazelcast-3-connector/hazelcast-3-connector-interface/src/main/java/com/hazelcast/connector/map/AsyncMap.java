@@ -35,7 +35,8 @@ public interface AsyncMap<K, V> extends Map<K, V> {
      */
     CompletionStage<V> getAsync(@Nonnull K key);
 
-    <K, V> CompletionStage<Void> putAllAsync(
-            Map<? extends K, ? extends V> items
-    );
+    /**
+     * Asynchronously copies all of the mappings from the specified map to this map.
+     */
+    CompletionStage<Void> putAllAsync(Map<? extends K, ? extends V> items);
 }
