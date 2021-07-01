@@ -93,14 +93,14 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-class JetSqlBackend implements SqlBackend {
+public class JetSqlBackend implements SqlBackend {
 
     private final NodeEngine nodeEngine;
     private final JetPlanExecutor planExecutor;
 
     private final ILogger logger;
 
-    JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
+    public JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
         this.nodeEngine = nodeEngine;
         this.planExecutor = planExecutor;
 

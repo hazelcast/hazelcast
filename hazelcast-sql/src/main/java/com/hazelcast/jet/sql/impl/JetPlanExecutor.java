@@ -66,13 +66,13 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
 
-class JetPlanExecutor {
+public class JetPlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
     private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
 
-    JetPlanExecutor(
+    public JetPlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
             Map<Long, JetQueryResultProducer> resultConsumerRegistry
