@@ -64,7 +64,7 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
     // works only on primary. backups are retained
     // in PartitionBackupReplicaAntiEntropyTask
     final Collection<ServiceNamespace> retainAndGetNamespaces() {
-        PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, 0);
+        PartitionReplicationEvent event = new PartitionReplicationEvent(null, partitionId, 0);
         Collection<FragmentedMigrationAwareService> services
                 = nodeEngine.getServices(FragmentedMigrationAwareService.class);
 
