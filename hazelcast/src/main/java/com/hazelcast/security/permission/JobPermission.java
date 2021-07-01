@@ -18,13 +18,13 @@ package com.hazelcast.security.permission;
 
 public class JobPermission extends InstancePermission {
 
+    private static final int SUBMIT = 1;
+    private static final int CANCEL = 2;
     private static final int READ = 4;
-    private static final int LIST = 8;
-    private static final int SUSPEND = 16;
-    private static final int RESUME = 32;
-    private static final int EXPORT = 64;
-    private static final int UPLOAD = 128;
-    private static final int ALL = CREATE | DESTROY | READ | LIST | SUSPEND | RESUME | EXPORT | UPLOAD;
+    private static final int RESTART = 8;
+    private static final int EXPORT_SNAPSHOT = 16;
+    private static final int ADD_RESOURCES = 32;
+    private static final int ALL = SUBMIT | CANCEL | READ | RESTART | EXPORT_SNAPSHOT | ADD_RESOURCES;
 
 
     public JobPermission(String... actions) {
@@ -39,22 +39,18 @@ public class JobPermission extends InstancePermission {
                 return ALL;
             }
 
-            if (ActionConstants.ACTION_CREATE.equals(action)) {
-                mask |= CREATE;
-            } else if (ActionConstants.ACTION_DESTROY.equals(action)) {
-                mask |= DESTROY;
+            if (ActionConstants.ACTION_SUBMIT.equals(action)) {
+                mask |= SUBMIT;
+            } else if (ActionConstants.ACTION_CANCEL.equals(action)) {
+                mask |= CANCEL;
             } else if (ActionConstants.ACTION_READ.equals(action)) {
                 mask |= READ;
-            } else if (ActionConstants.ACTION_LIST.equals(action)) {
-                mask |= LIST;
-            } else if (ActionConstants.ACTION_SUSPEND.equals(action)) {
-                mask |= SUSPEND;
-            } else if (ActionConstants.ACTION_RESUME.equals(action)) {
-                mask |= RESUME;
-            } else if (ActionConstants.ACTION_EXPORT.equals(action)) {
-                mask |= EXPORT;
-            } else if (ActionConstants.ACTION_UPLOAD.equals(action)) {
-                mask |= UPLOAD;
+            } else if (ActionConstants.ACTION_RESTART.equals(action)) {
+                mask |= RESTART;
+            } else if (ActionConstants.ACTION_EXPORT_SNAPSHOT.equals(action)) {
+                mask |= EXPORT_SNAPSHOT;
+            } else if (ActionConstants.ACTION_ADD_RESOURCES.equals(action)) {
+                mask |= ADD_RESOURCES;
             } else {
                 throw new IllegalArgumentException("Configured action[" + action + "] is not supported");
             }

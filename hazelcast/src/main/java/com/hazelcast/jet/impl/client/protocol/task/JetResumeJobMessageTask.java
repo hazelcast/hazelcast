@@ -52,6 +52,6 @@ public class JetResumeJobMessageTask
     @Nullable
     @Override
     public String[] actions() {
-        return new String[]{ActionConstants.ACTION_RESUME};
+        return new String[]{ActionConstants.ACTION_RESTART};
     }
 }

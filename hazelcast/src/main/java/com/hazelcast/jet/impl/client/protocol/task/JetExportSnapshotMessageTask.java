@@ -53,8 +53,8 @@ public class JetExportSnapshotMessageTask extends AbstractJetMessageTask<JetExpo
     @Override
     public String[] actions() {
         if (parameters.cancelJob) {
-            return new String[]{ActionConstants.ACTION_EXPORT, ActionConstants.ACTION_DESTROY};
+            return new String[]{ActionConstants.ACTION_EXPORT_SNAPSHOT, ActionConstants.ACTION_CANCEL};
         }
-        return new String[]{ActionConstants.ACTION_EXPORT};
+        return new String[]{ActionConstants.ACTION_EXPORT_SNAPSHOT};
     }
 }

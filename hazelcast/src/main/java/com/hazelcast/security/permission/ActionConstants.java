@@ -66,11 +66,11 @@ public final class ActionConstants {
     public static final String ACTION_PROJECTION = "projection";
     public static final String ACTION_USER_CODE_DEPLOY = "deploy";
 
-    public static final String ACTION_LIST = "list";
-    public static final String ACTION_SUSPEND = "suspend";
-    public static final String ACTION_RESUME = "resume";
-    public static final String ACTION_EXPORT = "export";
-    public static final String ACTION_UPLOAD = "upload";
+    public static final String ACTION_SUBMIT = "submit";
+    public static final String ACTION_CANCEL = "cancel";
+    public static final String ACTION_RESTART = "restart";
+    public static final String ACTION_EXPORT_SNAPSHOT = "export-snapshot";
+    public static final String ACTION_ADD_RESOURCES = "add-resources";
     public static final String ACTION_WRITE = "write";
 
     public static final String LISTENER_INSTANCE = "instance";

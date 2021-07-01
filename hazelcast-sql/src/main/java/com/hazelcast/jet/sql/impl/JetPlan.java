@@ -40,10 +40,11 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Set;
 
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_EXPORT;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_LIST;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CANCEL;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_EXPORT_SNAPSHOT;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_RESTART;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
 
 abstract class JetPlan extends SqlPlan {
 
@@ -57,7 +58,7 @@ abstract class JetPlan extends SqlPlan {
         if (!context.isSecurityEnabled()) {
             return;
         }
-        context.checkPermission(new JobPermission(ACTION_CREATE));
+        context.checkPermission(new JobPermission(ACTION_SUBMIT));
         for (Vertex vertex : dag) {
             Permission permission = vertex.getMetaSupplier().getRequiredPermission();
             if (permission != null) {
@@ -279,7 +280,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(operation.getPermission());
+            context.checkPermission(new JobPermission(ACTION_RESTART));
         }
 
         @Override
@@ -340,9 +341,9 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             if (withSnapshotName == null) {
-                context.checkPermission(new JobPermission(ACTION_DESTROY));
+                context.checkPermission(new JobPermission(ACTION_CANCEL));
             } else {
-                context.checkPermission(new JobPermission(ACTION_DESTROY, ACTION_EXPORT));
+                context.checkPermission(new JobPermission(ACTION_CANCEL, ACTION_EXPORT_SNAPSHOT));
             }
         }
 
@@ -396,7 +397,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new JobPermission(ACTION_EXPORT));
+            context.checkPermission(new JobPermission(ACTION_EXPORT_SNAPSHOT));
         }
 
         @Override
@@ -449,7 +450,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new JobPermission(ACTION_EXPORT));
+            context.checkPermission(new JobPermission(ACTION_EXPORT_SNAPSHOT));
         }
 
         @Override
@@ -496,7 +497,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             if (showTarget != ShowStatementTarget.MAPPINGS) {
-                context.checkPermission(new JobPermission(ACTION_LIST));
+                context.checkPermission(new JobPermission(ACTION_READ));
             }
         }
 

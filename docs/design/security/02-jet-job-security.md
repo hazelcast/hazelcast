@@ -41,20 +41,18 @@ job-specific operations. Contrary to data structure-specific
 permissions, JobPermission does not have a name. It can be configured
 with actions below:
 
-- create: submit a new job, without uploading resources
-- destroy: cancel a running job
-- read: get the job (by id or name), get job config, get status,
-submission time... Every other action implies `read` action, for example
-if permission has `create` action, it means the permission has `read`
-action as well.
-- list: list the jobs
-- suspend: suspend a running job
-- resume: resume a suspended job
-- export: export the snapshot
-- upload: upload the resources/classes along with jobs. This means
-running custom code on the server, basically user can do anything with
-this permission.
-- all: all of the above
+- submit: submit a new job, without uploading resources
+- cancel: cancel a running job
+- read: all the readonly related to job like, list the jobs, get the
+job (by id or name), get job config, get status, submission time... 
+Every other action implies `read` action, for example if permission has
+`create` action, it means the permission has `read` action as well.
+- restart: suspend/resume a running job
+- export-snapshot: export the snapshot
+- add-resources: upload the resources/classes along with jobs. This
+means running custom code on the server, basically user can do anything
+with this permission.
+- all: all the above
 
 ### Connector Permission
 
@@ -67,7 +65,7 @@ actions:
 
 - read: for sources
 - write: for sinks
-- all: all of the above
+- all: all the above
 
 Configuration options for different connectors:
 
@@ -163,20 +161,13 @@ are limited to map/cache read/write permissions. We've extended them to
 apply the necessary job permissions as well as other connector
 permissions.
 
-We've added a `#getRequiredPermission` method to `Processor`, 
-`ProcessorSupplier` and `ProcessorMetaSupplier` interfaces. We get the
-required permissions from PMS, but some connectors don't have a
-concrete PMS implementations but use PS or `Supplier<Processor>` to
-create it, for example `MetaSupplierFromProcessorSupplier` and 
-`ProcessorSupplierFromSimpleSupplier`. For those cases, the
-implementation uses the supplied PS or the Processor to obtain the
-required permission.
+We've added a `#getRequiredPermission` method to `ProcessorMetaSupplier`
+interface. Before submitting a job, from the vertices of the DAG we
+obtain the PMSs and from them the required permissions. For each
+permission we ask the security context if the endpoint has the required
+permissions.
 
-Before submitting a job, from the vertices of the DAG we obtain the
-PMSs and from them the required permissions. For each permission we ask
-the security context if the endpoint has the required permissions.
-
-### Upload Permission
+### Add Resources Permission
 
 Jet jobs, by design, upload the custom code written by the user to the
 server and run it on the server side. The user can do whatever he wants

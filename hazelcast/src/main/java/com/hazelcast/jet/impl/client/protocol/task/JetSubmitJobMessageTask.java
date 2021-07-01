@@ -51,6 +51,6 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
     @Nullable
     @Override
     public String[] actions() {
-        return new String[]{ActionConstants.ACTION_CREATE};
+        return new String[]{ActionConstants.ACTION_SUBMIT};
     }
 }

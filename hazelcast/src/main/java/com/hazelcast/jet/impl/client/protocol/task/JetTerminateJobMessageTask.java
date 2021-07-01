@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.security.permission.ActionConstants;
@@ -27,10 +28,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_FORCEFUL;
-import static com.hazelcast.jet.impl.TerminationMode.SUSPEND_GRACEFUL;
 
 public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters, Void> {
 
@@ -58,13 +55,15 @@ public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTermin
     @Nullable
     @Override
     public String[] actions() {
-        TerminationMode terminationMode = TerminationMode.values()[parameters.terminateMode];
-        if (terminationMode == RESTART_GRACEFUL || terminationMode == RESTART_FORCEFUL) {
-            return new String[]{ActionConstants.ACTION_CREATE, ActionConstants.ACTION_DESTROY};
+        ActionAfterTerminate terminationMode = TerminationMode.values()[parameters.terminateMode].actionAfterTerminate();
+        switch (terminationMode) {
+            case RESTART:
+            case SUSPEND:
+                return new String[]{ActionConstants.ACTION_RESTART};
+            case CANCEL:
+                return new String[]{ActionConstants.ACTION_CANCEL};
+            default:
+                throw new IllegalArgumentException("Unknown action after termination mode " + terminationMode);
         }
-        if (terminationMode == SUSPEND_GRACEFUL || terminationMode == SUSPEND_FORCEFUL) {
-            return new String[]{ActionConstants.ACTION_SUSPEND};
-        }
-        return new String[]{ActionConstants.ACTION_DESTROY};
     }
 }

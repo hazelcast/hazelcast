@@ -100,6 +100,6 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Permission getRequiredPermission() {
-        return new JobPermission(ActionConstants.ACTION_LIST);
+        return new JobPermission(ActionConstants.ACTION_READ);
     }
 }
