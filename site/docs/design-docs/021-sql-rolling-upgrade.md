@@ -51,54 +51,59 @@ Fault-tolerant SQL jobs also won't be supported.
 
 ### Only implemented for light jobs
 
-We implemented this feature only for light jobs. Normal jobs use job
-metadata. They also can be fault-tolerant - to support restarting of a
-job on a new version, we would need most of the compatibility
-requirements listed above.
+We implemented this feature only for light jobs. Normal jobs can be
+fault-tolerant - to support restarting of a job on a new version, we
+would need most of the compatibility requirements listed above.
 
 ### SQL operations routing
 
 SQL commands submitted from a member are optimized and submitted
-locally, if the local member is a member of the larger group of members
-with the same version. Otherwise, the request is sent to a random member
-of the larger group.
+locally, but only to members with the same version as the coordinator.
+Even if it's the smaller same-version group.
 
-If the operation is sent from a client, it's also routed to a member
-from the larger group. For a non-smart client, the receiving member
-might redirect the operation.
+If the operation is sent from a client, it's routed to a member from the
+larger group. For a non-smart client, the receiving member can redirect
+the operation.
 
 ### Race in member upgrades
 
-When processing the `SubmitJobOperation`, the coordinator always deploys
-the job to members with the same version as the coordinator, even though
-the coordinator's version might no longer be a majority version.
-
-It can also happen that the coordinator sends `InitExecutionOperation`
-to a some member, but the member changed version in the meantime. This
-can happen because operations are routed using `Address` and the address
-can be reused by the upgraded member. To address this, we added
-`coordinatorVersion` parameter to the `InitExecutionOperation`. The
-target will check it and throw if its version is not equal to the
-received version.
+It can happen that the coordinator sends `InitExecutionOperation` to
+some member, but the member changed version in the meantime. This can
+happen because operations are routed using `Address` and the address can
+be reused by the upgraded member. To resolve this, we added
+`coordinatorVersion` parameter to `InitExecutionOperation`. The target
+will check it and throw if its version is not equal to the received
+version.
 
 ### Shutdown changes
 
-During rolling upgrades, members are gracefully shut down. We expect SQL
+During rolling upgrades, members are gracefully shut down. We want SQL
 engine to be available during this time. We'll add a new
 `JobConfig.blockShutdown` option. The SQL engine will enable this option
 for batch jobs, but not for streaming jobs.
 
+Jobs submitted during this time will not use the member in the shutdown
+process as a coordinator. Other members can handle new jobs, but they
+will not use the members being shut down. To do this, the existing
+`NotifyMemberShutdownOperation` will be broadcast to all members
+(currently it's sent just to the master).
+
 The shutdown procedure will block until all jobs with this option
-complete. Fault-tolerant jobs will be shut down immediately with a
-snapshot. Other jobs (non-fault-tolerant and without this option
-enabled) will block the shutdown for a configured timeout. The default
-timeout will be 30 seconds.
+complete.
+
+Fault-tolerant jobs will be shut down immediately with a snapshot,
+regardless of this option. Other jobs (non-fault-tolerant ones without
+this option enabled) will be cancelled (light jobs) or restarted (normal
+jobs).
 
 It can happen that the member will never shut down if the user submits a
-streaming job with the `blockShutdown` option. In this case the
-administrator must be able to see that job and cancel it manually, using
-either Management center or Java API. Another option is to kill the
-member, however in this case a proper migration will not take place.
+streaming job with the `blockShutdown` option. For this scenario there
+is a hard-coded timeout of 10 seconds after which the member proceeds
+with the shutdown without waiting for all jobs to terminate. In this
+case the administrator must be able to see that job and cancel it
+manually, using either Management center or Java API. Another option is
+to kill the member, however in this case a proper migration will not
+take place.
 
 ### Client compatibility
 
@@ -106,36 +111,28 @@ A client able to communicate with multiple versions of members is a
 prerequisite for rolling upgrades. When using Jet as a backing engine
 for SQL, the jobs are never submitted from the client. Instead, the
 client submits a SQL string using the SQL client messages, and on the
-member it is converted to a DAG and submitted to Jets. We must make sure
+member it is converted to a DAG and submitted to Jet. We must make sure
 that the member that optimizes the query is also the member that
 coordinates the Jet job. Otherwise, the processor behavior might not be
 compatible.
 
-Whether we'll provide client compatibility for JetService itself in 5.0
-is an open question.
+We don't plan to provide client compatibility for JetService in 5.0.
 
 ### Understandable error messages for unsupported scenarios.
 
 Unsupported features must fail with a clear error message. E.g. a normal
 job must fail with appropriate error message after a member with a newer
-version is added, even a fault-tolerant job.
+version is added, even in a fault-tolerant job.
 
 ### Changes to the SQL engine
 
-We need to ensure that not just the Jet jobs are run on same-version
-members, but that also the sql parsing and optimization is executed on
-the same version. For this reason, we'll add
-`JetInstanceImpl.newLightJob()` variant that takes the version argument.
-The `SqlExecute` client operation will route to a random member in the
-larger same-version subset of members.
-
-We also need to add member-to-member variants of `SqlExecute`,
-`SqlFetch` and `SqlCancel` operations so that a light job submitted from
-a member can be redirected to execute on a member from a larger
-same-version subset. This is most important for non-smart clients
-executing SQL to ensure that they're not executed by the smaller
-same-version group. This wil also address the current limitation that
-sql queries can't be submitted from lite members.
+For non-smart client, the `SqlExecute` client operation will route to a
+random member - it might not be from the larger same-version group. To
+address this, we need to add member-to-member variants of `SqlExecute`,
+`SqlFetch` and `SqlCancel` operations so that a query submitted from a
+non-smart client can be redirected to execute on a member from the
+larger same-version subset. This wil also address the current limitation
+that SQL queries can't be submitted from lite members.
 
 ### LoadBalancer changes
 
@@ -149,15 +146,14 @@ the SQL API required that the query was submitted to a data member. If
 the user had he's own LB implementation, SQL won't work from clients at
 all unless the LB was modified too.
 
-Due to rolling upgrades, we need another strategy to choosing the target
+Due to rolling upgrades, we need another strategy to choose the target
 member: any data member from the larger same-version group. It's not
 possible to add this without requiring a non-trivial implementation from
 the users in their LB implementations. Therefore we decided to not use
 the `LoadBalancer` interface for choosing the member for executing SQL.
 Instead, we'll manually choose a random member from the desired group.
 
-We'll also deprecate the `LB.nextDataMember()` method and mark it as
-unused.
+We'll deprecate the `LB.nextDataMember()` method and mark it as unused.
 
 `LoadBalancer` is used only for smart clients. Non-smart clients connect
 directly to just one member which needs to forward the request if it's
@@ -192,7 +188,7 @@ in the query. If this collection is empty, the query will be rejected
 
 ## Implementation parts
 
-The implementation will be split into 3 chunks:
+The implementation will be split into 3 parts:
 
 **PR#1**: Coordinator using only same-version members, smart clients
 sending to a correct member.
