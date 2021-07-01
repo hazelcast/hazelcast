@@ -395,7 +395,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                 }
                 partitionStateManager.storeSnapshot(member.getUuid());
                 if (isMaster) {
-                    migrationManager.triggerControlTask();
+                    migrationManager.triggerControlTaskWithDelay();
                 }
             }
 
