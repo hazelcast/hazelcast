@@ -29,15 +29,12 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.Permission;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 public final class WriteBufferedP<B, T> implements Processor {
 
-    private final Permission permission;
     private final FunctionEx<? super Context, B> createFn;
     private final ConsumerEx<? super B> flushFn;
     private final ConsumerEx<? super B> destroyFn;
@@ -46,13 +43,11 @@ public final class WriteBufferedP<B, T> implements Processor {
     private final Consumer<Object> inboxConsumer;
 
     WriteBufferedP(
-            @Nullable Permission permission,
             @Nonnull FunctionEx<? super Context, B> createFn,
             @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super B> flushFn,
             @Nonnull ConsumerEx<? super B> destroyFn
     ) {
-        this.permission = permission;
         this.createFn = createFn;
         this.flushFn = flushFn;
         this.destroyFn = destroyFn;
@@ -94,17 +89,11 @@ public final class WriteBufferedP<B, T> implements Processor {
         return false;
     }
 
-    @Override
-    public Permission getRequiredPermission() {
-        return permission;
-    }
-
     /**
      * This is private API. Call {@link SinkProcessors#writeBufferedP} instead.
      */
     @Nonnull
     public static <B, T> SupplierEx<Processor> supplier(
-            @Nullable Permission permission,
             @Nonnull FunctionEx<? super Context, ? extends B> createFn,
             @Nonnull BiConsumerEx<? super B, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super B> flushFn,
@@ -115,6 +104,6 @@ public final class WriteBufferedP<B, T> implements Processor {
         checkSerializable(flushFn, "flushFn");
         checkSerializable(destroyFn, "destroyFn");
 
-        return () -> new WriteBufferedP<>(permission, createFn, onReceiveFn, flushFn, destroyFn);
+        return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
     }
 }

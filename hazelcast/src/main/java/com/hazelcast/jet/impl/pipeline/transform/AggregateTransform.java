@@ -132,7 +132,7 @@ public class AggregateTransform<A, R> extends AbstractTransform {
         determinedLocalParallelism(1);
         PlannerVertex pv2 = p.addVertex(this, vertexName, determinedLocalParallelism(),
                 ProcessorMetaSupplier.forceTotalParallelismOne(
-                        ProcessorSupplier.of(combineP(aggrOp)), vertexName));
+                        ProcessorSupplier.of(combineP(aggrOp)), vertexName, null));
 
         p.dag.edge(between(v1, pv2.v)
                 .distributed()

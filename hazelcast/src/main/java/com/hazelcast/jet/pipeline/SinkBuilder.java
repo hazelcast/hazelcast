@@ -19,11 +19,11 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
@@ -210,7 +210,8 @@ public final class SinkBuilder<C, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        SupplierEx<Processor> supplier = writeBufferedP(permission, createFn, receiveFn, flushFn, destroyFn);
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, supplier));
+        return Sinks.fromProcessor(name,
+                ProcessorMetaSupplier.of(preferredLocalParallelism, permission,
+                        ProcessorSupplier.of(writeBufferedP(createFn, receiveFn, flushFn, destroyFn))));
     }
 }

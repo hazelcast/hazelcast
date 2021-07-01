@@ -63,7 +63,7 @@ public class SortTransform<T> extends AbstractTransform {
         }
         determinedLocalParallelism(1);
         PlannerVertex pv2 = p.addVertex(this, vertexName + COLLECT_STAGE_SUFFIX, determinedLocalParallelism(),
-                ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), vertexName));
+                ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(mapP(identity())), vertexName, null));
         p.dag.edge(between(v1, pv2.v)
                 .distributed()
                 .allToOne(vertexName)

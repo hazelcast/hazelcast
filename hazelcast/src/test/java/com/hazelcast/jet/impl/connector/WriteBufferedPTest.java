@@ -108,7 +108,6 @@ public class WriteBufferedPTest extends JetTestSupport {
     // returns a processor that will not write anywhere, just log the events
     private static SupplierEx<Processor> getLoggingBufferedWriter() {
         return SinkProcessors.writeBufferedP(
-                null,
                 idx -> {
                     events.add("new");
                     return "foo";

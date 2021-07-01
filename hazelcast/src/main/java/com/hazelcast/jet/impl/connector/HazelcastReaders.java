@@ -31,9 +31,11 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.Map.Entry;
 import java.util.Objects;
 
@@ -113,8 +115,9 @@ public final class HazelcastReaders {
                 hzInstance -> new RemoteMapQueryReader(hzInstance, mapName, predicate, projection));
     }
 
-    public static ProcessorMetaSupplier localOrRemoteListSupplier(String listName, ClientConfig clientConfig) {
+    public static ProcessorMetaSupplier localOrRemoteListSupplier(String name, ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
-        return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(listName, clientXml)), listName);
+        Permission permission = clientConfig == null ? null : new ListPermission(name, ACTION_CREATE, ACTION_READ);
+        return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(name, clientXml)), name, permission);
     }
 }

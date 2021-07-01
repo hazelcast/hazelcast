@@ -23,20 +23,14 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
-import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 import static java.util.stream.Collectors.toList;
 
 public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSupplier {
@@ -52,21 +46,12 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
 
     public static ProcessorSupplier ofMap(
             @Nullable String clientXml,
-            @Nonnull String name,
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
     ) {
         return new AbstractHazelcastConnectorSupplier(clientXml) {
             @Override
             protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
                 return procFn.apply(instance);
-            }
-
-            @Override
-            public Permission getRequiredPermission() {
-                if (clientXml != null) {
-                    return null;
-                }
-                return new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ);
             }
         };
     }

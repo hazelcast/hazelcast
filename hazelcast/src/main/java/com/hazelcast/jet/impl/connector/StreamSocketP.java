@@ -29,7 +29,6 @@ import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.security.Permission;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -158,16 +157,13 @@ public final class StreamSocketP extends AbstractProcessor {
         return host + ':' + port;
     }
 
-    @Override
-    public Permission getRequiredPermission() {
-        return ConnectorPermission.socket(host, port, ACTION_READ);
-    }
-
     /**
      * Internal API, use {@link SourceProcessors#streamSocketP(String, int, Charset)}.
      */
     public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
-                () -> new StreamSocketP(host, port, Charset.forName(charset)));
+                ConnectorPermission.socket(host, port, ACTION_READ),
+                () -> new StreamSocketP(host, port, Charset.forName(charset))
+        );
     }
 }

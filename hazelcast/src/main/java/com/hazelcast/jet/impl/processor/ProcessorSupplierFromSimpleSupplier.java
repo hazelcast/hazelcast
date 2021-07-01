@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,10 +66,5 @@ public class ProcessorSupplierFromSimpleSupplier implements ProcessorSupplier, I
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         simpleSupplier = in.readObject();
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return simpleSupplier.get().getRequiredPermission();
     }
 }

@@ -51,6 +51,7 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,6 +69,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
@@ -75,6 +77,7 @@ import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -391,9 +394,11 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ?> messageIdFn,
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
-        ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
-        return ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier);
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jms(destination, ACTION_READ),
+                new StreamJmsP.Supplier<>(
+                        maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn)
+        );
     }
 
     /**
@@ -418,10 +423,11 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
+                maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
+        ConnectorPermission permission = ConnectorPermission.jms(destination, ACTION_READ);
         return isSharedConsumer
-                ? ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier);
+                ? ProcessorMetaSupplier.preferLocalParallelismOne(permission, pSupplier)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString(), permission);
     }
 
     /**
@@ -496,7 +502,7 @@ public final class SourceProcessors {
                         new SourceBufferImpl.Plain<>(isBatch),
                         null));
         return preferredLocalParallelism != 0
-                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, null, procSup)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
     }
 

@@ -23,7 +23,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
-import java.security.Permission;
 
 /**
  * When Jet executes a DAG, it creates one or more instances of {@code
@@ -97,10 +96,6 @@ import java.security.Permission;
  * @since Jet 3.0
  */
 public interface Processor {
-
-    default Permission getRequiredPermission() {
-        return null;
-    }
 
     /**
      * Tells whether this processor is able to participate in cooperative

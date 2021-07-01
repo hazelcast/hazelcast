@@ -46,9 +46,4 @@ public interface SupplierEx<T> extends Supplier<T>, Serializable {
             throw ExceptionUtil.sneakyThrow(e);
         }
     }
-
-    static <T> SupplierEx<T> noop() {
-        return () -> null;
-    }
-
 }

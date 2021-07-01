@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.DISTRIBUTED_PARTITIONED;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
+import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -228,9 +229,9 @@ public final class CdcSinks {
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
                 record -> DELETE.equals(record.operation()) ? null : valueFn.apply(record);
-        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig), map,
+        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
                 instance -> new WriteCdcP<>(instance, map, keyFn, toValueFn));
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name), supplier);
         return new SinkImpl<>(name, metaSupplier, DISTRIBUTED_PARTITIONED, keyFn);
     }
 }

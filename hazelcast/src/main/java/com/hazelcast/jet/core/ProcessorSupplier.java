@@ -27,7 +27,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
-import java.security.Permission;
 import java.util.Collection;
 
 /**
@@ -38,10 +37,6 @@ import java.util.Collection;
  */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
-
-    default Permission getRequiredPermission() {
-        return null;
-    }
 
     /**
      * Called on each cluster member after deserialization.

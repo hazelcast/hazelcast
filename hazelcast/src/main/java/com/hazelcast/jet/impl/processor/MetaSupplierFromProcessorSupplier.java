@@ -34,14 +34,20 @@ import java.util.function.Function;
 public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier, DataSerializable {
     private int preferredLocalParallelism;
     private ProcessorSupplier processorSupplier;
+    private Permission permission;
 
     // for deserialization
     @SuppressWarnings("unused")
     public MetaSupplierFromProcessorSupplier() {
     }
 
-    public MetaSupplierFromProcessorSupplier(int preferredLocalParallelism, ProcessorSupplier processorSupplier) {
+    public MetaSupplierFromProcessorSupplier(
+            int preferredLocalParallelism,
+            Permission permission,
+            ProcessorSupplier processorSupplier
+    ) {
         this.preferredLocalParallelism = preferredLocalParallelism;
+        this.permission = permission;
         this.processorSupplier = processorSupplier;
     }
 
@@ -59,16 +65,18 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(preferredLocalParallelism);
         out.writeObject(processorSupplier);
+        out.writeObject(permission);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         preferredLocalParallelism = in.readInt();
         processorSupplier = in.readObject();
+        permission = in.readObject();
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return processorSupplier.getRequiredPermission();
+        return permission;
     }
 }

@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.JmsSourceBuilder;
-import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,7 +40,6 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -56,7 +54,6 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
@@ -258,13 +255,11 @@ public class StreamJmsP<T> extends AbstractProcessor {
         private final FunctionEx<? super Message, ?> messageIdFn;
         private final FunctionEx<? super Message, ? extends T> projectionFn;
         private final EventTimePolicy<? super T> eventTimePolicy;
-        private final String destination;
         private ProcessingGuarantee sourceGuarantee;
 
         private transient Connection connection;
 
         public Supplier(
-                String destination,
                 ProcessingGuarantee sourceGuarantee,
                 EventTimePolicy<? super T> eventTimePolicy,
                 SupplierEx<? extends Connection> newConnectionFn,
@@ -277,7 +272,6 @@ public class StreamJmsP<T> extends AbstractProcessor {
             checkSerializable(messageIdFn, "messageIdFn");
             checkSerializable(projectionFn, "projectionFn");
 
-            this.destination = destination;
             this.newConnectionFn = newConnectionFn;
             this.consumerFn = consumerFn;
             this.messageIdFn = messageIdFn;
@@ -306,11 +300,6 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     .mapToObj(i -> new StreamJmsP<>(
                             connection, consumerFn, messageIdFn, projectionFn, eventTimePolicy, sourceGuarantee))
                     .collect(Collectors.toList());
-        }
-
-        @Override
-        public Permission getRequiredPermission() {
-            return ConnectorPermission.jms(destination, ACTION_READ);
         }
     }
 }

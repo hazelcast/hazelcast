@@ -27,8 +27,6 @@ import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -36,6 +34,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -48,7 +47,6 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private final SupplierEx<? extends Connection> newConnectionFn;
     private final ToResultSetFunction resultSetFn;
     private final FunctionEx<? super ResultSet, ? extends T> mapOutputFn;
-    private final String connectionUrl;
 
     private Connection connection;
     private ResultSet resultSet;
@@ -57,12 +55,10 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int index;
 
     private ReadJdbcP(
-            @Nullable String connectionUrl,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        this.connectionUrl = connectionUrl;
         this.newConnectionFn = newConnectionFn;
         this.resultSetFn = resultSetFn;
         this.mapOutputFn = mapOutputFn;
@@ -85,8 +81,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(resultSetFn, "resultSetFn");
         checkSerializable(mapOutputFn, "mapOutputFn");
 
-        return ProcessorMetaSupplier.preferLocalParallelismOne(() ->
-                new ReadJdbcP<>(null, newConnectionFn, resultSetFn, mapOutputFn));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                () -> new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -96,21 +92,24 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
-        return ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(() ->
-                new ReadJdbcP<>(
-                        connectionURL,
-                        () -> DriverManager.getConnection(connectionURL),
-                        (connection, parallelism, index) -> {
-                            PreparedStatement statement = connection.prepareStatement(query);
-                            try {
-                                return statement.executeQuery();
-                            } catch (SQLException e) {
-                                statement.close();
-                                throw e;
-                            }
-                        },
-                        mapOutputFn)
-        ));
+        return ProcessorMetaSupplier.forceTotalParallelismOne(
+                ProcessorSupplier.of(() ->
+                        new ReadJdbcP<>(
+                                () -> DriverManager.getConnection(connectionURL),
+                                (connection, parallelism, index) -> {
+                                    PreparedStatement statement = connection.prepareStatement(query);
+                                    try {
+                                        return statement.executeQuery();
+                                    } catch (SQLException e) {
+                                        statement.close();
+                                        throw e;
+                                    }
+                                },
+                                mapOutputFn)
+                ),
+                newUnsecureUuidString(),
+                ConnectorPermission.jdbc(connectionURL, ACTION_READ)
+        );
     }
 
     @Override
@@ -161,10 +160,5 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             return e;
         }
         return null;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return ConnectorPermission.jdbc(connectionUrl, ACTION_READ);
     }
 }

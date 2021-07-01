@@ -49,7 +49,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.security.Permission;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -307,11 +306,6 @@ public final class WriteFileP<T> implements Processor {
         return dateFormatter.format(Instant.ofEpochMilli(clock.getAsLong()));
     }
 
-    @Override
-    public Permission getRequiredPermission() {
-        return ConnectorPermission.file(directory.toString(), ACTION_WRITE);
-    }
-
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nonnull String directoryName,
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
@@ -333,8 +327,9 @@ public final class WriteFileP<T> implements Processor {
             boolean exactlyOnce,
             @Nonnull LongSupplier clock
     ) {
-        return ProcessorMetaSupplier.preferLocalParallelismOne(() -> new WriteFileP<>(directoryName, toStringFn,
-                charset, datePattern, maxFileSize, exactlyOnce, clock));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.file(directoryName, ACTION_WRITE),
+                () -> new WriteFileP<>(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, clock));
     }
 
     private abstract class FileResource implements TransactionalResource<FileId> {

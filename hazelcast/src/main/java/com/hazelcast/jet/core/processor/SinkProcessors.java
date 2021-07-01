@@ -45,7 +45,6 @@ import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
-import java.security.Permission;
 import java.sql.PreparedStatement;
 import java.util.Map;
 
@@ -268,18 +267,20 @@ public final class SinkProcessors {
         checkSerializable(toStringFn, "toStringFn");
 
         String charsetName = charset.name();
-        return preferLocalParallelismOne(writeBufferedP(
+        return preferLocalParallelismOne(
                 ConnectorPermission.socket(host, port, ACTION_WRITE),
-                index -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
-                (bufferedWriter, item) -> {
-                    @SuppressWarnings("unchecked")
-                    T t = (T) item;
-                    bufferedWriter.write(toStringFn.apply(t));
-                    bufferedWriter.write('\n');
-                },
-                BufferedWriter::flush,
-                BufferedWriter::close
-        ));
+                writeBufferedP(
+                        index -> new BufferedWriter(
+                                new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
+                        (bufferedWriter, item) -> {
+                            @SuppressWarnings("unchecked")
+                            T t = (T) item;
+                            bufferedWriter.write(toStringFn.apply(t));
+                            bufferedWriter.write('\n');
+                        },
+                        BufferedWriter::flush,
+                        BufferedWriter::close
+                ));
     }
 
     /**
@@ -301,9 +302,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Shortcut for {@link #writeBufferedP(Permission, FunctionEx,
-     * BiConsumerEx, ConsumerEx, ConsumerEx)} with
-     * a no-op {@code destroyFn}.
+     * Shortcut for {@link #writeBufferedP(FunctionEx, BiConsumerEx,
+     * ConsumerEx, ConsumerEx)} with a no-op {@code destroyFn}.
      */
     @Nonnull
     public static <W, T> SupplierEx<Processor> writeBufferedP(
@@ -311,7 +311,7 @@ public final class SinkProcessors {
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn
     ) {
-        return writeBufferedP(null, createFn, onReceiveFn, flushFn, ConsumerEx.noop());
+        return writeBufferedP(createFn, onReceiveFn, flushFn, ConsumerEx.noop());
     }
 
     /**
@@ -336,13 +336,12 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <W, T> SupplierEx<Processor> writeBufferedP(
-            @Nullable Permission permission,
             @Nonnull FunctionEx<? super Context, ? extends W> createFn,
             @Nonnull BiConsumerEx<? super W, ? super T> onReceiveFn,
             @Nonnull ConsumerEx<? super W> flushFn,
             @Nonnull ConsumerEx<? super W> destroyFn
     ) {
-        return WriteBufferedP.supplier(permission, createFn, onReceiveFn, flushFn, destroyFn);
+        return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn);
     }
 
     /**
@@ -382,6 +381,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
+            @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -392,7 +392,7 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
     }
 
     /**

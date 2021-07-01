@@ -33,12 +33,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
-import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -94,6 +94,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
      * Use {@link SinkProcessors#writeJdbcP}.
      */
     public static <T> ProcessorMetaSupplier metaSupplier(
+            @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -105,6 +106,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         checkPositive(batchLimit, "batchLimit");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
                     private transient CommonDataSource dataSource;
 
@@ -119,16 +121,6 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                                         .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
                                                                exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
-                    }
-
-                    @Override
-                    public Permission getRequiredPermission() {
-                        CommonDataSource commonDataSource = dataSourceSupplier.get();
-                        String jdbcUrl = null;
-                        if (commonDataSource instanceof DataSourceFromConnectionSupplier) {
-                            jdbcUrl = ((DataSourceFromConnectionSupplier) commonDataSource).getJdbcUrl();
-                        }
-                        return ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE);
                     }
                 });
     }
