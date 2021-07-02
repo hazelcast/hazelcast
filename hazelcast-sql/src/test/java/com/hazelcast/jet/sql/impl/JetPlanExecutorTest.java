@@ -150,6 +150,6 @@ public class JetPlanExecutorTest {
     }
 
     private static Mapping mapping() {
-        return new Mapping("name", "name", "type", emptyList(), emptyMap());
+        return new Mapping("name", "name", "type", emptyList(), null, emptyMap());
     }
 }

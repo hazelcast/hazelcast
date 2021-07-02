@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -64,7 +65,8 @@ final class InfoSchemaConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         throw new UnsupportedOperationException();
     }
@@ -76,7 +78,8 @@ final class InfoSchemaConnector implements SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         throw new UnsupportedOperationException();
     }

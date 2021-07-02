@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
@@ -58,7 +59,8 @@ class SeriesSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         throw new UnsupportedOperationException("Resolving fields not supported for " + typeName());
     }
@@ -71,7 +73,8 @@ class SeriesSqlConnector implements SqlConnector {
             @Nonnull String name,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         throw new UnsupportedOperationException("Creating table not supported for " + typeName());
     }

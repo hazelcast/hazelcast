@@ -37,10 +37,11 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
     public static final int MAPPING = 0;
     public static final int MAPPING_FIELD = 1;
+    public static final int LAG_EVENT_TIME_POLICY_SUPPLIER = 2;
 
     // reserved for mapping related stuff
 
-    public static final int LEN = MAPPING_FIELD + 1;
+    public static final int LEN = LAG_EVENT_TIME_POLICY_SUPPLIER + 1;
 
     @Override
     public int getFactoryId() {
@@ -54,6 +55,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
 
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
+        constructors[LAG_EVENT_TIME_POLICY_SUPPLIER] = arg -> new EventTimePolicySupplier.LagEventTimePolicySupplier();
 
         return new ArrayDataSerializableFactory(constructors);
     }

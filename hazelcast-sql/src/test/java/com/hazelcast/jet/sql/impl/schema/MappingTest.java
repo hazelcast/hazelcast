@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -46,7 +47,8 @@ public class MappingTest {
                 "mapping-name",
                 "mapping-name",
                 "mapping-type",
-                new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.INT, null))),
+                new ArrayList<>(singletonList(new MappingField("field-name", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, null))),
+                new EventTimePolicySupplier.LagEventTimePolicySupplier("field-name", 100L),
                 new HashMap<>(ImmutableMap.of("option.key", "option.value"))
         );
 

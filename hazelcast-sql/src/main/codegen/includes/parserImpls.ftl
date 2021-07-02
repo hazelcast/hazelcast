@@ -92,6 +92,7 @@ SqlMappingColumn MappingColumn() :
     SqlIdentifier name;
     SqlDataType type;
     SqlIdentifier externalName = null;
+    SqlLiteral limitingLag = null;
 }
 {
     name = SimpleIdentifier() { span = span(); }
@@ -99,8 +100,15 @@ SqlMappingColumn MappingColumn() :
     [
         <EXTERNAL> <NAME> { externalName = SimpleIdentifier(); }
     ]
+    [
+        <WATERMARK>
+        <LAG>
+        <LPAREN>
+        limitingLag = IntervalLiteral()
+        <RPAREN>
+    ]
     {
-        return new SqlMappingColumn(name, type, externalName, span.end(this));
+        return new SqlMappingColumn(name, type, externalName, limitingLag, span.end(this));
     }
 }
 
@@ -521,4 +529,3 @@ boolean HazelcastTimeZoneOpt() :
 |
     { return false; }
 }
-

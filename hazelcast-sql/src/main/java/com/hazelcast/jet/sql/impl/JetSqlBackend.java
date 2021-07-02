@@ -184,14 +184,15 @@ class JetSqlBackend implements SqlBackend {
     }
 
     private SqlPlan toCreateMappingPlan(PlanKey planKey, SqlCreateMapping sqlCreateMapping) {
-        List<MappingField> mappingFields = sqlCreateMapping.columns()
+        List<MappingField> fields = sqlCreateMapping.columns()
                 .map(field -> new MappingField(field.name(), field.type(), field.externalName()))
                 .collect(toList());
         Mapping mapping = new Mapping(
                 sqlCreateMapping.nameWithoutSchema(),
                 sqlCreateMapping.externalName(),
                 sqlCreateMapping.type(),
-                mappingFields,
+                fields,
+                sqlCreateMapping.eventTypePolicySupplier(),
                 sqlCreateMapping.options()
         );
 

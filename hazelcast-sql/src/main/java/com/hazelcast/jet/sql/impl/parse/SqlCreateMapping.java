@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import org.apache.calcite.sql.SqlCreate;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -78,6 +79,10 @@ public class SqlCreateMapping extends SqlCreate {
         );
     }
 
+    public boolean ifNotExists() {
+        return ifNotExists;
+    }
+
     public String nameWithoutSchema() {
         return name.names.get(name.names.size() - 1);
     }
@@ -88,6 +93,14 @@ public class SqlCreateMapping extends SqlCreate {
 
     public Stream<SqlMappingColumn> columns() {
         return columns.getList().stream().map(node -> (SqlMappingColumn) node);
+    }
+
+    public EventTimePolicySupplier eventTypePolicySupplier() {
+        return columns()
+                .filter(SqlMappingColumn::isSourceOfEventTimestamps)
+                .map(SqlMappingColumn::eventTimePolicySupplier)
+                .findFirst()
+                .orElse(null);
     }
 
     public String type() {
@@ -102,10 +115,6 @@ public class SqlCreateMapping extends SqlCreate {
                               (map, option) -> map.putIfAbsent(option.keyString(), option.valueString()),
                               Map::putAll
                       );
-    }
-
-    public boolean ifNotExists() {
-        return ifNotExists;
     }
 
     @Nonnull
@@ -186,6 +195,10 @@ public class SqlCreateMapping extends SqlCreate {
                 throw validator.newValidationError(column, RESOURCE.duplicateColumn(name));
             }
         }
+        if (columns().filter(SqlMappingColumn::isSourceOfEventTimestamps).count() > 1) {
+            throw validator.newValidationError(columns, RESOURCE.multipleWatermarkColumns());
+        }
+        columns.forEach(column -> column.validate(validator, scope));
 
         Set<String> optionNames = new HashSet<>();
         for (SqlNode option : options.getList()) {

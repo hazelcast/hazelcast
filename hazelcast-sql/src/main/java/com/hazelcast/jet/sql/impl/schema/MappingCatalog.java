@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
@@ -103,15 +104,23 @@ public class MappingCatalog implements TableResolver {
 
     private Mapping resolveMapping(Mapping mapping) {
         String type = mapping.type();
+        EventTimePolicySupplier eventTimePolicySupplier = mapping.evenTimePolicySupplier();
         Map<String, String> options = mapping.options();
 
         SqlConnector connector = connectorCache.forType(type);
-        List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
+        List<MappingField> resolvedFields = connector.resolveAndValidateFields(
+                nodeEngine,
+                options,
+                mapping.fields(),
+                eventTimePolicySupplier
+        );
+
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),
                 type,
                 new ArrayList<>(resolvedFields),
+                eventTimePolicySupplier,
                 new LinkedHashMap<>(options)
         );
     }
@@ -156,7 +165,8 @@ public class MappingCatalog implements TableResolver {
                 mapping.name(),
                 mapping.externalName(),
                 mapping.options(),
-                mapping.fields()
+                mapping.fields(),
+                mapping.evenTimePolicySupplier()
         );
     }
 

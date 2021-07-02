@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +36,8 @@ public class Mapping implements IdentifiedDataSerializable {
     private String name;
     private String externalName;
     private String type;
-    private List<MappingField> mappingFields;
+    private List<MappingField> fields;
+    private EventTimePolicySupplier eventTimePolicySupplier;
     private Map<String, String> options;
 
     public Mapping() {
@@ -46,12 +48,14 @@ public class Mapping implements IdentifiedDataSerializable {
             String externalName,
             String type,
             List<MappingField> fields,
+            EventTimePolicySupplier eventTimePolicySupplier,
             Map<String, String> options
     ) {
         this.name = name;
         this.externalName = externalName;
         this.type = type;
-        this.mappingFields = fields;
+        this.fields = fields;
+        this.eventTimePolicySupplier = eventTimePolicySupplier;
         this.options = options;
     }
 
@@ -68,7 +72,11 @@ public class Mapping implements IdentifiedDataSerializable {
     }
 
     public List<MappingField> fields() {
-        return Collections.unmodifiableList(mappingFields);
+        return Collections.unmodifiableList(fields);
+    }
+
+    public EventTimePolicySupplier evenTimePolicySupplier() {
+        return eventTimePolicySupplier;
     }
 
     public Map<String, String> options() {
@@ -90,7 +98,8 @@ public class Mapping implements IdentifiedDataSerializable {
         out.writeString(name);
         out.writeString(externalName);
         out.writeString(type);
-        out.writeObject(mappingFields);
+        out.writeObject(fields);
+        out.writeObject(eventTimePolicySupplier);
         out.writeObject(options);
     }
 
@@ -99,10 +108,12 @@ public class Mapping implements IdentifiedDataSerializable {
         name = in.readString();
         externalName = in.readString();
         type = in.readString();
-        mappingFields = in.readObject();
+        fields = in.readObject();
+        eventTimePolicySupplier = in.readObject();
         options = in.readObject();
     }
 
+    // We use the equals method in tests to assert the mapping
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -115,12 +126,13 @@ public class Mapping implements IdentifiedDataSerializable {
         return Objects.equals(name, mapping.name) &&
                 Objects.equals(externalName, mapping.externalName) &&
                 Objects.equals(type, mapping.type) &&
-                Objects.equals(mappingFields, mapping.mappingFields) &&
+                Objects.equals(fields, mapping.fields) &&
+                Objects.equals(eventTimePolicySupplier, mapping.eventTimePolicySupplier) &&
                 Objects.equals(options, mapping.options);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, externalName, type, mappingFields, options);
+        return Objects.hash(name, externalName, type, fields, eventTimePolicySupplier, options);
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -95,8 +96,12 @@ public class IMapSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
+        if (eventTimePolicySupplier != null) {
+            throw QueryException.error("Watermarks are not supported for " + TYPE_NAME + " mappings");
+        }
         return METADATA_RESOLVERS.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
@@ -108,7 +113,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull String mappingName,
             @Nonnull String externalName,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> resolvedFields
+            @Nonnull List<MappingField> resolvedFields,
+            @Nullable EventTimePolicySupplier eventTimePolicySupplier
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
