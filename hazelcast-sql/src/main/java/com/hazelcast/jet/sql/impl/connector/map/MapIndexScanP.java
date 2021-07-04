@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
-import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
@@ -43,7 +42,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
@@ -51,7 +49,6 @@ import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,15 +56,15 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.Util.distributeObjects;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
 import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /*
@@ -84,157 +81,116 @@ Behavior of the processor
  */
 public final class MapIndexScanP extends AbstractProcessor {
     @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:MagicNumber"})
-    static int FETCH_SIZE_HINT = 64;
+    static int FETCH_SIZE_HINT = 128;
 
-    private final AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
-    private final List<Expression<?>> projection;
-    private final ExpressionEvalContext evalContext;
-    private final List<Expression<?>> fullProjection;
-    private final Expression<Boolean> filter;
-    private final ComparatorEx<Object[]> comparator;
-    private transient Context context;
+    private final MapIndexScanMetadata metadata;
+
+    private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
+    private ExpressionEvalContext evalContext;
+    private ComparatorEx<Object[]> comparator;
+    private Context context;
 
     private final ArrayList<Split> splits = new ArrayList<>();
-    private final MapScanRow row;
+    private MapScanRow row;
     private Object[] pendingItem;
 
-    public MapIndexScanP(
-            @Nonnull AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader,
-            @Nonnull HazelcastInstance hazelcastInstance,
-            @Nonnull ExpressionEvalContext evalContext,
-            @Nonnull int[] partitions,
-            @Nonnull MapIndexScanMetadata indexScanMetadata
-    ) {
-        this.reader = reader;
-        this.evalContext = evalContext;
-        this.projection = indexScanMetadata.getProjection();
-        this.fullProjection = indexScanMetadata.getFullProjection();
-        this.filter = indexScanMetadata.getRemainingFilter();
-        this.splits.add(
+    public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+        this.metadata = indexScanMetadata;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        super.init(context);
+        this.context = context;
+        evalContext = SimpleExpressionEvalContext.from(context);
+        reader = LocalMapIndexReader.create(context.hazelcastInstance(), evalContext.getSerializationService(), metadata);
+
+        int[] memberPartitions = context.processorPartitions();
+
+        splits.add(
                 new Split(
-                        new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), partitions),
-                        hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                        filtersToPointers(indexScanMetadata.getFilter())
-                )
+                        new PartitionIdSet(
+                                context.hazelcastInstance().getPartitionService().getPartitions().size(),
+                                memberPartitions),
+                        context.hazelcastInstance().getCluster().getLocalMember().getAddress(),
+                        filtersToPointers(metadata.getFilter()))
         );
 
-        this.row = MapScanRow.create(
-                indexScanMetadata.getKeyDescriptor(),
-                indexScanMetadata.getValueDescriptor(),
-                indexScanMetadata.getFieldPaths(),
-                indexScanMetadata.getFieldTypes(),
+        row = MapScanRow.create(
+                metadata.getKeyDescriptor(),
+                metadata.getValueDescriptor(),
+                metadata.getFieldPaths(),
+                metadata.getFieldTypes(),
                 Extractors.newBuilder(evalContext.getSerializationService()).build(),
                 evalContext.getSerializationService()
         );
 
-        if (indexScanMetadata.getComparator() != null) {
-            this.comparator = indexScanMetadata.getComparator();
+        if (metadata.getComparator() != null) {
+            this.comparator = metadata.getComparator();
         } else {
             this.comparator = null;
         }
     }
 
-    @Override
-    protected void init(@Nonnull Context context) throws Exception {
-        this.context = context;
-        super.init(context);
-    }
-
-    @SuppressWarnings({"rawtypes", "SingleStatementInBlock", "unchecked"})
+    @SuppressWarnings({"SingleStatementInBlock"})
     @Override
     public boolean complete() {
-        if (pendingItem != null && !tryEmit(pendingItem)) {
-            return false;
-        } else {
-            pendingItem = null;
-        }
+        // Loop for as long as we can.
+        for (; ; ) {
+            if (pendingItem != null && !tryEmit(pendingItem)) {
+                return false;
+            } else {
+                pendingItem = null;
+            }
 
-        if (splits.isEmpty()) {
-            return true;
-        }
-
-        Object[] extreme;
-        QueryableEntry<?, ?> extremeEntry;
-        int extremeIndex;
-        boolean loopFlag = true;
-
-        // We are looping until outbox filled completely.
-        while (loopFlag) {
-            extreme = null;
-            extremeEntry = null;
-            extremeIndex = -1;
-
+            Object[] extreme = null;
+            int extremeIndex = -1;
             for (int i = 0; i < splits.size(); ++i) {
                 Split s = splits.get(i);
-                if (s.start(reader)) {
+                try {
+                    s.peek();
+                } catch (MissingPartitionException e) {
+                    splits.addAll(splitOnMigration(s));
+                    splits.remove(i--);
                     continue;
                 }
-                if (s.batchIsDrained()) {
-                    if (!s.isDone()) {
+                if (s.currentRow == null) {
+                    if (s.done()) {
+                        // No more items to read, remove finished split.
+                        splits.remove(i--);
                         continue;
-                    } else {
-                        try {
-                            boolean readFlag = s.readBatch(reader);
-                            if (readFlag) {
-                                // No more items to read, remove finished split.
-                                splits.remove(i--);
-                                continue;
-                            }
-                        } catch (MissingPartitionException e) {
-                            List<Split> newSplits = splitOnMigration(i);
-                            splits.remove(i);
-                            splits.addAll(newSplits);
-                            extreme = null;
-                            break;
-                        }
                     }
+                    // waiting for more rows from this split
+                    return false;
                 }
-                QueryableEntry<?, ?> entry = s.readElement();
-                // Sometimes scan query may not include indexed field.
-                // So, additional projection is required to ability to merge-sort an output.
-                Object[] row = doFullProjectionAndFilter(entry, i);
-                if (row != null) {
-                    if (extreme == null || comparator.compare(row, extreme) > 0) {
-                        extreme = row;
-                        extremeEntry = entry;
-                        extremeIndex = i;
-                    }
-                } else {
-                    // if we can't peek the next element for some split, we must not continue finding the extreme.
-                    break;
+                if (extremeIndex < 0 || comparator.compare(s.currentRow, splits.get(extremeIndex).currentRow) > 0) {
+                    extremeIndex = i;
+                    extreme = s.currentRow;
                 }
             }
 
-            if (extreme != null) {
-                splits.get(extremeIndex).incrementBatchPosition();
-                extreme = project(extremeEntry);
-                if (!tryEmit(extreme)) {
-                    pendingItem = extreme;
-                    return false;
-                }
-            } else {
-                // else : no item was produced / item was filtered or no splits are executing at the moment;
-                loopFlag = false;
+            if (extremeIndex < 0) {
+                assert splits.isEmpty();
+                return true;
             }
+
+            pendingItem = extreme;
+            splits.get(extremeIndex).remove();
         }
-        return splits.isEmpty();
     }
 
     /**
-     * Perform splitting of split unit after receiving {@code MissingPartitionException}.
-     * Method gets current partition table and proceed with following procedure :
+     * Perform splitting of a {@link Split} after receiving {@link MissingPartitionException}.
+     * Method gets current partition table and proceeds with following procedure:
      * <p>
-     * It splits the partitions assigned to the processor
-     * according to the new partition table into disjoint sets,
-     * one for each member having some partition assigned to this processor.
-     * <p>
+     * It splits the partitions assigned to the split according to the new
+     * partition owner into disjoint sets, one for each owner.
      *
-     * @param splitIndex index of 'split' unit to make split
+     * @param split the split to split
      * @return collection of new split units
      */
-    List<Split> splitOnMigration(int splitIndex) {
-        Split split = splits.get(splitIndex);
-        IndexIterationPointer[] lastPointers = split.getPointers();
+    private List<Split> splitOnMigration(Split split) {
+        IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(context.hazelcastInstance()).getPartitionService();
         PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
         Map<Address, Split> newSplits = new HashMap<>();
@@ -257,111 +213,94 @@ public final class MapIndexScanP extends AbstractProcessor {
         return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
     }
 
-    private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry, int splitIndex) {
+    private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
-
-        if (filter != null && TernaryLogic.isNotTrue(filter.evalTop(row, evalContext))) {
-            assert splitIndex < splits.size();
-            // filtered items should be incremented manually after filter check failure.
-            splits.get(splitIndex).incrementBatchPosition();
+        if (metadata.getRemainingFilter() != null
+                && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {
             return null;
         }
 
-        Object[] row = new Object[fullProjection.size()];
-        for (int j = 0; j < fullProjection.size(); j++) {
-            row[j] = evaluate(fullProjection.get(j), this.row, evalContext);
-        }
-        return row;
-    }
-
-    private Object[] project(@Nonnull QueryableEntry<?, ?> entry) {
-        row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
-
-        Object[] row = new Object[projection.size()];
-        for (int j = 0; j < projection.size(); j++) {
-            row[j] = evaluate(projection.get(j), this.row, evalContext);
+        Object[] row = new Object[metadata.getFullProjection().size()];
+        for (int j = 0; j < metadata.getFullProjection().size(); j++) {
+            row[j] = evaluate(metadata.getFullProjection().get(j), this.row, evalContext);
         }
         return row;
     }
 
     /**
      * Basic unit of index scan execution bounded to concrete member and partitions set.
-     * Can be split on different units after migration detection and handling.
+     * Can be split into smaller splits after migration is detected.
      */
-    static final class Split {
+    final class Split {
         private final PartitionIdSet partitions;
-        private final Address address;
+        private final Address owner;
         private IndexIterationPointer[] pointers;
-        private List<QueryableEntry<?, ?>> currentBatch;
+        private List<QueryableEntry<?, ?>> currentBatch = emptyList();
+        private Object[] currentRow;
         private int currentBatchPosition;
         private CompletableFuture<MapFetchIndexOperationResult> future;
 
-        Split(PartitionIdSet partitions, Address address, IndexIterationPointer[] pointers) {
+        Split(PartitionIdSet partitions, Address owner, IndexIterationPointer[] pointers) {
             this.partitions = partitions;
-            this.address = address;
+            this.owner = owner;
             this.pointers = pointers;
-            this.currentBatch = new ArrayList<>();
             this.currentBatchPosition = 0;
             this.future = null;
         }
 
-        public boolean start(AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader) {
-            if (future == null) {
-                future = reader.readBatch(address, partitions, pointers);
-                return true;
+        /**
+         * After this call, {@link #currentRow} and {@link #currentEntry()} are
+         * will return the next entry to emit. They are set to null, if there's no
+         * row available because we're either done or waiting for more data.
+         */
+        public void peek() {
+            // start a new async call, if we're not done and one isn't in flight
+            if (future == null && pointers.length > 0) {
+                future = reader.readBatch(owner, partitions, pointers);
             }
-            return false;
-        }
 
-        public boolean readBatch(AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader) {
-            MapFetchIndexOperationResult result = null;
-            currentBatchPosition = 0;
-            try {
-                result = reader.toBatchResult(future);
+            // get the next batch from the future, if the current batch is done and one is in flight
+            if (currentBatch.size() == currentBatchPosition && future != null && future.isDone()) {
+                MapFetchIndexOperationResult result;
+                try {
+                    result = reader.toBatchResult(future);
+                } catch (ExecutionException e) {
+                    // unwrap the MissingPartitionException, throw other exceptions as is
+                    if (e.getCause() instanceof MissingPartitionException) {
+                        throw (MissingPartitionException) e.getCause();
+                    }
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 currentBatch = reader.toRecordSet(result);
+                currentBatchPosition = 0;
                 pointers = result.getPointers();
                 future = null;
-                return currentBatch.isEmpty();
-            } catch (ExecutionException e) {
-                Throwable peel = peel(e);
-                if (peel instanceof MissingPartitionException) {
-                    throw (MissingPartitionException) peel;
-                } else {
-                    e.printStackTrace();
-                    return true;
+            }
+
+            // project the next item
+            while (currentRow == null && currentBatchPosition < currentBatch.size()) {
+                // Sometimes scan query may not include indexed field.
+                // So, additional projection is required to ability to merge-sort an output.
+                currentRow = doFullProjectionAndFilter(currentBatch.get(currentBatchPosition));
+                if (currentRow == null) {
+                    currentBatchPosition++;
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                return true;
             }
         }
 
-        public QueryableEntry<?, ?> readElement() {
+        public QueryableEntry<?, ?> currentEntry() {
             return currentBatch.get(currentBatchPosition);
         }
 
-        public void incrementBatchPosition() {
-            ++currentBatchPosition;
+        public void remove() {
+            currentBatchPosition++;
+            currentRow = null;
         }
 
-        public boolean batchIsDrained() {
-            return currentBatchPosition == currentBatch.size();
-        }
-
-        public boolean isDone() {
-            return future.isDone();
-        }
-
-        public PartitionIdSet getPartitions() {
-            return partitions;
-        }
-
-        public Address getAddress() {
-            return address;
-        }
-
-        public IndexIterationPointer[] getPointers() {
-            return pointers;
+        public boolean done() {
+            return currentBatchPosition == currentBatch.size() && pointers.length == 0;
         }
     }
 
@@ -410,14 +349,8 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     public static final class MapIndexScanProcessorSupplier
             implements ProcessorSupplier, IdentifiedDataSerializable {
-        static final long serialVersionUID = 1L;
 
         private MapIndexScanMetadata indexScanMetadata;
-
-        private HazelcastInstance hzInstance;
-        private ExpressionEvalContext evalContext;
-        private InternalSerializationService serializationService;
-        private int[] memberPartitions;
 
         public MapIndexScanProcessorSupplier() {
             // no-op.
@@ -425,49 +358,24 @@ public final class MapIndexScanP extends AbstractProcessor {
 
         private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
             this.indexScanMetadata = indexScanMetadata;
-            this.memberPartitions = new int[0];
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            hzInstance = context.hazelcastInstance();
-            serializationService = ((ProcSupplierCtx) context).serializationService();
-            memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
-            evalContext = SimpleExpressionEvalContext.from(context);
         }
 
         @Override
         @Nonnull
         public List<Processor> get(int count) {
-            return Arrays.stream(distributeObjects(count, memberPartitions))
-                    .map(partitions ->
-                            new MapIndexScanP(
-                                    LocalMapIndexReader.create(hzInstance, serializationService, indexScanMetadata),
-                                    hzInstance,
-                                    evalContext,
-                                    memberPartitions,
-                                    indexScanMetadata
-                            )
-                    ).collect(toList());
+            return IntStream.range(0, count)
+                    .mapToObj(i -> new MapIndexScanP(indexScanMetadata))
+                    .collect(toList());
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(indexScanMetadata);
-            out.writeInt(memberPartitions.length);
-            for (int memberPartition : memberPartitions) {
-                out.writeInt(memberPartition);
-            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             indexScanMetadata = in.readObject();
-            int len = in.readInt();
-            memberPartitions = new int[len];
-            for (int i = 0; i < len; ++i) {
-                memberPartitions[i] = in.readInt();
-            }
         }
 
         @Override
@@ -509,7 +417,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                 PartitionIdSet partitions,
                 IndexIterationPointer[] pointers
         ) {
-            MapProxyImpl mapProxyImpl = (MapProxyImpl) hazelcastInstance.getMap(objectName);
+            MapProxyImpl<?, ?> mapProxyImpl = (MapProxyImpl<?, ?>) hazelcastInstance.getMap(objectName);
             MapOperationProvider operationProvider = mapProxyImpl.getOperationProvider();
             Operation op = operationProvider.createFetchIndexOperation(
                     mapProxyImpl.getName(),
@@ -544,3 +452,4 @@ public final class MapIndexScanP extends AbstractProcessor {
         return new MapIndexScanProcessorMetaSupplier(indexScanMetadata);
     }
 }
+

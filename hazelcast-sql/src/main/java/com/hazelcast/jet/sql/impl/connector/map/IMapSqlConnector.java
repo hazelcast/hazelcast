@@ -182,7 +182,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> reminderFilter,
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
-            @Nonnull IndexFilter filter,
+            @Nullable IndexFilter filter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;

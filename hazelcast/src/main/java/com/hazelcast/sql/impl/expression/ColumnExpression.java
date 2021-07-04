@@ -31,10 +31,14 @@ import java.io.IOException;
  * Column access expression.
  */
 public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
-    /** Index in the row. */
+    /**
+     * Index in the row.
+     */
     private int index;
 
-    /** Type of the returned value. */
+    /**
+     * Type of the returned value.
+     */
     private QueryDataType type;
 
     public ColumnExpression() {
@@ -83,6 +87,10 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     @Override
     public QueryDataType getType() {
         return type;
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     @Override

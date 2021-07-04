@@ -144,7 +144,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenNoFilterAndNoSpecificProjection_sorted() {
+    public void test_fullScan_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
@@ -154,7 +154,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
-        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
+        IndexFilter filter = new IndexRangeFilter(null, true, null, true);
         List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
@@ -222,51 +222,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_whenNoFilterButSpecificProjection_sorted() {
-        List<Object[]> expected = new ArrayList<>();
-        for (int i = count; i > 0; i--) {
-            map.put(i, new Person("value-" + i, i));
-            expected.add(new Object[]{(count - i + 1)});
-        }
-
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
-        map.addIndex(indexConfig);
-
-        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count), true);
-        List<Expression<?>> projection = singletonList(create(2, INT));
-        List<Expression<?>> fullProjection = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projection,
-                fullProjection,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
-        );
-
-        TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
-                .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
-                .disableSnapshots()
-                .disableProgressAssertion()
-                .expectOutput(expected);
-    }
-
-    @Test
     public void test_whenFilterAndSpecificProjectionExists_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
             if (i > count / 2) {
-                expected.add(new Object[]{(count - i + 1)});
+                expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
             }
         }
 
@@ -275,12 +236,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
-        List<Expression<?>> projection = singletonList(create(2, INT));
-        List<Expression<?>> fullProjection = asList(
-                create(0, INT),
-                create(1, VARCHAR),
-                create(2, INT)
-        );
+        List<Expression<?>> projection = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
 
         MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
                 map.getName(),
@@ -291,7 +247,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
                 projection,
-                fullProjection,
+                projection,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
         );

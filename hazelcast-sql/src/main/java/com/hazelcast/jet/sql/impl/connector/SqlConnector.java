@@ -250,7 +250,7 @@ public interface SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
-            @Nonnull IndexFilter filter,
+            @Nullable IndexFilter filter,
             @Nullable ComparatorEx<Object[]> comparator
     ) {
         throw new UnsupportedOperationException("Index scan not supported for " + typeName());

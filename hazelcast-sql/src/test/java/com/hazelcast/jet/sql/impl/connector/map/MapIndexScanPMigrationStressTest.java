@@ -62,7 +62,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(3, smallInstanceConfig());
+        initialize(4, smallInstanceConfig());
     }
 
     @Before
@@ -121,15 +121,17 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     @Test
     public void testWithSql() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
-        for (int i = ITEM_COUNT; i >= 0; i--) {
+//        for (int i = ITEM_COUNT; i >= 0; i--) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             map.put(i, i);
-            expected.add(new SqlTestSupport.Row(ITEM_COUNT - i, ITEM_COUNT - i));
+//            expected.add(new SqlTestSupport.Row(ITEM_COUNT - i, ITEM_COUNT - i));
+            expected.add(new SqlTestSupport.Row(i, i));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(instances());
+//        MutatorThread mutator = new MutatorThread(instances());
 //        mutator.start();
 
         assertRowsOrdered("SELECT * FROM " + MAP_NAME, expected);

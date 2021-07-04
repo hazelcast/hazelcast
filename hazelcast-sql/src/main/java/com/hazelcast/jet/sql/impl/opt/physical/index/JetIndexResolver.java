@@ -902,15 +902,15 @@ public final class JetIndexResolver {
                 scan.getCluster().getTypeFactory()
         );
 
-        // Extend on composite index.
-        composeFilter(createFullScanFilter(), index.getType(), index.getComponentsCount());
+        // Create index filter for full scan.
+        IndexFilter indexFilter = new IndexRangeFilter(null, true, null, true);
 
         return new IMapIndexScanPhysicalRel(
                 scan.getCluster(),
                 OptUtils.toPhysicalConvention(traitSet),
                 newRelTable,
                 index,
-                null,
+                indexFilter,
                 Collections.emptyList(),
                 null,
                 scanFilter
@@ -1292,18 +1292,6 @@ public final class JetIndexResolver {
             fromAllowNulls.add(false);
             toAllowNulls.add(false);
         }
-    }
-
-    private static List<IndexFilter> createFullScanFilter() {
-        IndexFilterValue leftBound = new IndexFilterValue(
-                singletonList(ConstantExpression.create(NEGATIVE_INFINITY, QueryDataType.OBJECT)),
-                singletonList(true)
-        );
-        IndexFilterValue rightBound = new IndexFilterValue(
-                singletonList(ConstantExpression.create(NEGATIVE_INFINITY, QueryDataType.OBJECT)),
-                singletonList(true)
-        );
-        return singletonList(new IndexRangeFilter(leftBound, true, rightBound, true));
     }
 
     /**

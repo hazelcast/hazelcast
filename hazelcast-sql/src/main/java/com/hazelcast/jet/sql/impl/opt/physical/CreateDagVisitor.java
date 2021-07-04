@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -68,6 +69,9 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
+import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
+import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.jet.sql.impl.connector.map.RowReducerSupplier.rowReducer;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
 
@@ -175,21 +179,22 @@ public class CreateDagVisitor {
                 comparator
         );
 
-        // Reused from onSort
-        Vertex combineVertex = dag.newUniqueVertex("SortCombine",
+        Vertex projectorVertex = dag.newUniqueVertex(
+                "Project(" + toString(table) + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
-                        ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                        rowReducer(rel.projection(parameterMetadata)),
                         localMemberAddress
                 )
         );
-        dag.edge(Edge
-                .from(indexScanner)
-                .to(combineVertex)
-                .ordered(comparator)
-                .distributeTo(localMemberAddress)
-                .allToOne(""));
 
-        return combineVertex;
+        dag.edge(
+                between(indexScanner, projectorVertex)
+                        .ordered(comparator)
+                        .distributeTo(localMemberAddress)
+                        .allToOne("")
+        );
+
+        return projectorVertex;
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -443,5 +448,9 @@ public class CreateDagVisitor {
 
         RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
         return (Expression<Boolean>) expression.accept(converter);
+    }
+
+    private static String toString(PartitionedMapTable table) {
+        return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
     }
 }
