@@ -65,7 +65,7 @@ public final class DataPersistenceAndHotRestartMerger {
 
         if (override) {
             LOGGER.warning(
-                    "Please not that HotRestart is deprecated and should not be used. "
+                    "Please note that HotRestart is deprecated and should not be used. "
                     + "Since both HotRestart and DataPersistence are enabled, "
                     + "and thus there is a conflict, the latter is used in persistence configuration."
             );

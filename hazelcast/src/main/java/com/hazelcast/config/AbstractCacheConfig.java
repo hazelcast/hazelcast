@@ -89,7 +89,6 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      */
     protected boolean isManagementEnabled;
 
-    // todo: to be removed
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
 
     protected DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();

@@ -159,7 +159,6 @@ public class ConfigXmlGenerator {
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
-        // todo: to be removed when hot-restart-persistence is completely removed from the Hazelcast
         hotRestartXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);

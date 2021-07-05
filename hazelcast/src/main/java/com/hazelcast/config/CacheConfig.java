@@ -482,7 +482,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
      *
      * @param merkleTreeConfig merkle tree config
-s     */
+     */
     public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
         this.merkleTreeConfig = merkleTreeConfig;
     }
@@ -548,6 +548,7 @@ s     */
         // RU_COMPAT_4_2
         if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             out.writeObject(merkleTreeConfig);
+            out.writeObject(dataPersistenceConfig);
         }
     }
 
@@ -613,6 +614,7 @@ s     */
         // RU_COMPAT_4_2
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             merkleTreeConfig = in.readObject();
+            dataPersistenceConfig = in.readObject();
         }
     }
 

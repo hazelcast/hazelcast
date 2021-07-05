@@ -2690,7 +2690,7 @@ public class Config {
 
     private void warnPersistenceOverwroteHotRestartPersistenceConfig() {
         logger.warning(
-                "Please not that HotRestartPersistence is deprecated and should not be used. "
+                "Please note that HotRestartPersistence is deprecated and should not be used. "
                 + "Since both HotRestartPersistence and Persistence are enabled, "
                 + "and thus there is a conflict, the latter is used in persistence configuration."
         );
@@ -3074,7 +3074,6 @@ public class Config {
                 + ", userContext=" + userContext
                 + ", memberAttributeConfig=" + memberAttributeConfig
                 + ", nativeMemoryConfig=" + nativeMemoryConfig
-                // todo: shall be removed in the future
                 + ", hotRestartPersistenceConfig=" + hotRestartPersistenceConfig
                 + ", persistenceConfig=" + persistenceConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig

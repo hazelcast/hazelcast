@@ -1005,16 +1005,6 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <!-- we already have 'hot-restart' (and now, data-persistence),
-                                    why do we need this? It does not even exist in hazelcast-config-5.0 -->
-                                <xs:attribute name="hot-restart-enabled" type="parameterized-boolean">
-                                    <xs:annotation>
-                                        <xs:documentation>
-                                            This boolean parameter enables hot-restart feature when set as true.
-                                            Only available on Hazelcast Enterprise.
-                                        </xs:documentation>
-                                    </xs:annotation>
-                                </xs:attribute>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">
@@ -4383,7 +4373,7 @@
         <xs:annotation>
             <xs:documentation>
                 DEPRECATED, use 'persistence' instead.
-                Note: If either, but not both, persistence hot-restart-persistence or
+                Note: If either, but not both, hot-restart-persistence or
                 persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
                 enabled, Hazelcast will use the persistence configuration.
                 hot-restart-persistence element will be removed in a future release.
@@ -4481,7 +4471,7 @@
         <xs:annotation>
             <xs:documentation>
                 Successor of hot-restart-persistence.
-                Note: If either, but not both, persistence hot-restart-persistence or
+                Note: If either, but not both, hot-restart-persistence or
                 persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
                 enabled, Hazelcast will use the persistence configuration.
                 hot-restart-persistence element will be removed in a future release.
@@ -4532,7 +4522,8 @@
         <xs:attribute name="data-load-timeout-seconds" type="parameterized-unsigned-int">
             <xs:annotation>
                 <xs:documentation>
-                    DEPRECATED. Data load timeout for the restart procedure,
+                    DEPRECATED. Please leave it to default.
+                    Data load timeout for the restart procedure,
                     all members in the cluster should complete restoring their local data
                     before this timeout.
                 </xs:documentation>
