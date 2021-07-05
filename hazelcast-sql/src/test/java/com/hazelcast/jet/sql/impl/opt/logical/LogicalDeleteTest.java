@@ -122,6 +122,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     private Object[] literals() {
         return new Object[]{
                 new Object[]{QueryDataType.BOOLEAN, "true"},
+                new Object[]{QueryDataType.BOOLEAN, "false"},
                 new Object[]{QueryDataType.TINYINT, '1'},
                 new Object[]{QueryDataType.SMALLINT, '1'},
                 new Object[]{QueryDataType.INT, '1'},
@@ -129,7 +130,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
                 new Object[]{QueryDataType.DECIMAL, '1'},
                 new Object[]{QueryDataType.REAL, '1'},
                 new Object[]{QueryDataType.DOUBLE, '1'},
-                new Object[]{VARCHAR, "'string'"},
+                new Object[]{QueryDataType.VARCHAR, "'string'"},
                 new Object[]{QueryDataType.TIME, "'12:23:34'"},
                 new Object[]{QueryDataType.DATE, "'2021-07-01'"},
                 new Object[]{QueryDataType.TIMESTAMP, "'2021-07-01T12:23:34'"},
@@ -174,7 +175,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
                 new Object[]{QueryDataType.DECIMAL},
                 new Object[]{QueryDataType.REAL},
                 new Object[]{QueryDataType.DOUBLE},
-                new Object[]{VARCHAR},
+                new Object[]{QueryDataType.VARCHAR},
                 new Object[]{QueryDataType.TIME},
                 new Object[]{QueryDataType.DATE},
                 new Object[]{QueryDataType.TIMESTAMP},

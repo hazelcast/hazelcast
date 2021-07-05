@@ -24,6 +24,10 @@ import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.logical.LogicalTableModify;
+import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
@@ -49,9 +53,9 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
 
     private DeleteByKeyMapLogicalRule() {
         super(
-                operand(
-                        DeleteLogicalRel.class,
-                        operandJ(FullScanLogicalRel.class, null, OptUtils::overPartitionedMapTable, none())
+                operandJ(
+                        LogicalTableModify.class, null, TableModify::isDelete,
+                        operandJ(LogicalTableScan.class, null, OptUtils::overPartitionedMapTable, none())
                 ),
                 RelFactories.LOGICAL_BUILDER,
                 DeleteByKeyMapLogicalRule.class.getSimpleName()
@@ -60,39 +64,55 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        DeleteLogicalRel delete = call.rel(0);
-        FullScanLogicalRel scan = call.rel(1);
+        LogicalTableModify delete = call.rel(0);
+        LogicalTableScan scan = call.rel(1);
 
         HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-        RexNode primaryKeyCondition = extractConstantExpression(table);
-        if (primaryKeyCondition != null) {
+        RexNode keyCondition = extractConstantExpression(table, delete.getCluster().getRexBuilder());
+        if (keyCondition != null) {
             DeleteByKeyMapLogicalRel rel = new DeleteByKeyMapLogicalRel(
                     delete.getCluster(),
                     OptUtils.toLogicalConvention(delete.getTraitSet()),
                     table.getTarget(),
-                    primaryKeyCondition
+                    keyCondition
             );
             call.transformTo(rel);
         }
     }
 
-    private RexNode extractConstantExpression(HazelcastTable hazelcastTable) {
-        RexNode filter = hazelcastTable.getFilter();
-        if (filter == null || filter.getKind() != SqlKind.EQUALS) {
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
+    private RexNode extractConstantExpression(HazelcastTable table, RexBuilder rexBuilder) {
+        RexNode filter = table.getFilter();
+        if (filter == null) {
             return null;
         }
 
-        Tuple2<Integer, RexNode> constantExpressionByIndex = extractConstantExpression((RexCall) filter);
-        if (constantExpressionByIndex == null) {
-            return null;
+        int keyIndex = findKeyIndex(table.getTarget());
+        switch (filter.getKind()) {
+            // __key = true
+            case INPUT_REF: {
+                return ((RexInputRef) filter).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(true)
+                        : null;
+            }
+            // __key = false
+            case NOT: {
+                RexNode operand = ((RexCall) filter).getOperands().get(0);
+                return operand.getKind() == SqlKind.INPUT_REF && ((RexInputRef) operand).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(false)
+                        : null;
+            }
+            // __key = ...
+            case EQUALS: {
+                Tuple2<Integer, RexNode> constantExpressionByIndex = extractConstantExpression((RexCall) filter);
+                //noinspection ConstantConditions
+                return constantExpressionByIndex != null && constantExpressionByIndex.getKey() == keyIndex
+                        ? constantExpressionByIndex.getValue()
+                        : null;
+            }
+            default:
+                return null;
         }
-
-        //noinspection ConstantConditions
-        if (constantExpressionByIndex.getKey() != findKeyIndex(hazelcastTable.getTarget())) {
-            return null;
-        }
-
-        return constantExpressionByIndex.getValue();
     }
 
     private int findKeyIndex(Table table) {

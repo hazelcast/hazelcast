@@ -35,26 +35,26 @@ import java.util.List;
 public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     private final PartitionedMapTable table;
-    private final RexNode primaryKeyCondition;
+    private final RexNode keyCondition;
 
     protected DeleteByKeyMapLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             PartitionedMapTable table,
-            RexNode primaryKeyCondition
+            RexNode keyCondition
     ) {
         super(cluster, traitSet);
 
         this.table = table;
-        this.primaryKeyCondition = primaryKeyCondition;
+        this.keyCondition = keyCondition;
     }
 
     public PartitionedMapTable table() {
         return table;
     }
 
-    public RexNode primaryKeyCondition() {
-        return primaryKeyCondition;
+    public RexNode keyCondition() {
+        return keyCondition;
     }
 
     @Override
@@ -64,19 +64,18 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        double rowCount = mq.getRowCount(this);
-        return planner.getCostFactory().makeCost(rowCount, 1, 1);
+        return planner.getCostFactory().makeTinyCost();
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
                 .item("table", table.getSqlName())
-                .item("primaryKeyCondition", primaryKeyCondition);
+                .item("keyCondition", keyCondition);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteByKeyMapLogicalRel(getCluster(), traitSet, table, primaryKeyCondition);
+        return new DeleteByKeyMapLogicalRel(getCluster(), traitSet, table, keyCondition);
     }
 }

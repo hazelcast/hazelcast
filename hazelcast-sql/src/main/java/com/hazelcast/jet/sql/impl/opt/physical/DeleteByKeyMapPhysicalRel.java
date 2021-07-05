@@ -39,18 +39,18 @@ import java.util.List;
 public class DeleteByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
     private final PartitionedMapTable table;
-    private final RexNode primaryKeyCondition;
+    private final RexNode keyCondition;
 
     DeleteByKeyMapPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             PartitionedMapTable table,
-            RexNode primaryKeyCondition
+            RexNode keyCondition
     ) {
         super(cluster, traitSet);
 
         this.table = table;
-        this.primaryKeyCondition = primaryKeyCondition;
+        this.keyCondition = keyCondition;
     }
 
     public String mapName() {
@@ -61,12 +61,12 @@ public class DeleteByKeyMapPhysicalRel extends AbstractRelNode implements Physic
         return table.getObjectKey();
     }
 
-    public Expression<?> primaryKeyCondition(QueryParameterMetadata parameterMetadata) {
+    public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
         RexToExpressionVisitor visitor = new RexToExpressionVisitor(
                 PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
                 parameterMetadata
         );
-        return primaryKeyCondition.accept(visitor);
+        return keyCondition.accept(visitor);
     }
 
     @Override
@@ -88,11 +88,11 @@ public class DeleteByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     public RelWriter explainTerms(RelWriter pw) {
         return pw
                 .item("table", table.getSqlName())
-                .item("primaryKeyCondition", primaryKeyCondition);
+                .item("keyCondition", keyCondition);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteByKeyMapPhysicalRel(getCluster(), traitSet, table, primaryKeyCondition);
+        return new DeleteByKeyMapPhysicalRel(getCluster(), traitSet, table, keyCondition);
     }
 }

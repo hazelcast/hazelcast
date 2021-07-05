@@ -278,7 +278,7 @@ public class JetSqlBackend implements SqlBackend {
         if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(planKey, deleteRel.objectKey(), parameterMetadata, deleteRel.mapName(),
-                    deleteRel.primaryKeyCondition(parameterMetadata), planExecutor, permissions);
+                    deleteRel.keyCondition(parameterMetadata), planExecutor, permissions);
         } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
