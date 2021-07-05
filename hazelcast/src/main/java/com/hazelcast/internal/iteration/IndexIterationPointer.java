@@ -17,6 +17,7 @@
 package com.hazelcast.internal.iteration;
 
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -183,7 +184,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             out.writeObject(to);
         }
-        out.writeObject(lastEntryKeyData);
+        out.writeByteArray(lastEntryKeyData.toByteArray());
     }
 
     @Override
@@ -195,7 +196,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         } else {
             to = from;
         }
-        lastEntryKeyData = in.readObject();
+        lastEntryKeyData = new HeapData(in.readByteArray());
     }
 
     @Override
