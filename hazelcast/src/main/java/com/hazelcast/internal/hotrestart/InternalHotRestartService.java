@@ -37,6 +37,13 @@ public interface InternalHotRestartService {
     String SERVICE_NAME = "hz:ee:internalHotRestartService";
 
     /**
+     * Key of internal member attribute for persistence.
+     * When the attribute is present and its value is {@code true},
+     * persistence is enabled.
+     */
+    String PERSISTENCE_ENABLED_ATTRIBUTE = "hazelcast.persistence.enabled";
+
+    /**
      * Returns whether hot-restart is enabled or not.
      */
     boolean isEnabled();

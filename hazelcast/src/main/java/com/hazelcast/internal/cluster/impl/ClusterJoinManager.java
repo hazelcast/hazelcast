@@ -71,6 +71,7 @@ import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIS
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
+import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -115,7 +116,6 @@ public class ClusterJoinManager {
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final long staleJoinPreventionDuration;
-    private final boolean isPersistenceEnabled;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
@@ -134,7 +134,6 @@ public class ClusterJoinManager {
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
         staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
-        isPersistenceEnabled = node.getConfig().getHotRestartPersistenceConfig().isEnabled();
     }
 
     boolean isJoinInProgress() {
@@ -706,8 +705,8 @@ public class ClusterJoinManager {
     }
 
     private boolean isMemberRestartingWithPersistence(Member member) {
-        return member.getAttributes().get("hot-restart") != null
-                && member.getAttributes().get("hot-restart").equals("true")
+        return member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
+                && member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true")
                 // may be already detected as crashed member or probably it is still in member list because
                 // connection timeout hasn't been reached yet
                 && (hasMemberLeft(member.getUuid())
@@ -715,8 +714,8 @@ public class ClusterJoinManager {
     }
 
     private boolean isMemberRestartingWithPersistence(MemberInfo member) {
-        return member.getAttributes().get("hot-restart") != null
-                && member.getAttributes().get("hot-restart").equals("true")
+        return member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
+                && member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true")
                 // may be already detected as crashed member or probably it is still in member list because
                 // connection timeout hasn't been reached yet
                 && (hasMemberLeft(member.getUuid())
@@ -1015,5 +1014,9 @@ public class ClusterJoinManager {
 
     public boolean hasMemberLeft(UUID memberUuid) {
         return leftMembersUuids.containsKey(memberUuid);
+    }
+
+    public void removeLeftMember(UUID memberUuid) {
+        leftMembersUuids.remove(memberUuid);
     }
 }
