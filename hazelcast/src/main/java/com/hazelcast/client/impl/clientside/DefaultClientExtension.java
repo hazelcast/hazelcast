@@ -231,9 +231,7 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public JetService getJet() {
-        if (client.getConfig().getJetConfig().isEnabled()) {
-            throw new IllegalStateException("Jet is disabled, see JetConfig#setEnabled to enable jet");
-        } else if (client.getCluster().getClusterVersion().isLessThan(Versions.V5_0)) {
+        if (client.getCluster().getClusterVersion().isLessThan(Versions.V5_0)) {
             throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
         }
         return jetClient;
