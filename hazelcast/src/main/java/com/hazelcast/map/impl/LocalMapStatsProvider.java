@@ -86,7 +86,7 @@ public class LocalMapStatsProvider {
     }
 
     private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
-        return new LocalMapStatsImpl(mapServiceContext.getMapContainer(mapName).getMapConfig().getInMemoryFormat() == OBJECT);
+        return new LocalMapStatsImpl(nodeEngine.getConfig().getMapConfig(mapName).getInMemoryFormat() == OBJECT);
     }
 
     protected MapServiceContext getMapServiceContext() {
