@@ -20,42 +20,21 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
-import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
-import org.apache.calcite.rel.RelFieldCollation;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
+import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
-import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanUtils.intValue;
-import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
-import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
-import static com.hazelcast.sql.impl.type.QueryDataType.INT;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 500;
+    static final int ITEM_COUNT = 500_000;
     static final String MAP_NAME = "map";
 
     private IMap<Integer, Integer> map;
@@ -70,97 +49,90 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         map = instance().getMap(MAP_NAME);
     }
 
-    @Ignore
+    // Ideologically, there is no sense in such kind of queries
+    // (scan on HASH index) but it is still a valid query.
     @Test
-    public void test() {
-        List<Object[]> expected = new ArrayList<>();
-        for (int i = ITEM_COUNT; i >= 0; i--) {
+    public void stressTestPointLookup() {
+        List<SqlTestSupport.Row> expected = new ArrayList<>();
+        for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
-            expected.add(new Object[]{ITEM_COUNT - i, ITEM_COUNT - i});
         }
+        Random random = new Random();
+        int nextInt = random.nextInt(ITEM_COUNT);
+        expected.add(new SqlTestSupport.Row(nextInt, nextInt));
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(ITEM_COUNT), true);
-        List<Expression<?>> projections = asList(create(0, INT), create(1, INT));
+        MutatorThread mutator = new MutatorThread(instances(), 2, 500L);
+        mutator.start();
 
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("this")),
-                Arrays.asList(INT, INT),
-                filter,
-                projections,
-                projections,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(1))))
-        );
+        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this=" + nextInt, expected);
 
-//        MutatorThread mutator = new MutatorThread(instances());
-//        mutator.start();
-
-        TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
-                .hazelcastInstance(instance())
-                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
-                .outputChecker(MapIndexScanPTest.LENIENT_SAME_ITEMS_IN_ORDER)
-                .disableSnapshots()
-                .disableProgressAssertion()
-                .expectOutput(expected);
-
-//        try {
-//            mutator.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            mutator.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
-    public void testWithSql() {
+    public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
-//        for (int i = ITEM_COUNT; i >= 0; i--) {
-        for (int i = 0; i < ITEM_COUNT; i++) {
+        for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
-//            expected.add(new SqlTestSupport.Row(ITEM_COUNT - i, ITEM_COUNT - i));
             expected.add(new SqlTestSupport.Row(i, i));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-//        MutatorThread mutator = new MutatorThread(instances());
-//        mutator.start();
+        MutatorThread mutator = new MutatorThread(instances(), instances().length - 1);
+        mutator.start();
 
         assertRowsOrdered("SELECT * FROM " + MAP_NAME, expected);
 
-//        try {
-//            mutator.join();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            mutator.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static class MutatorThread extends Thread {
         private final HazelcastInstance[] instances;
         private final Random random;
+        private final int iterations;
+        private final long delay;
 
-        MutatorThread(HazelcastInstance[] instances) {
+        MutatorThread(HazelcastInstance[] instances, int iterations) {
             super();
             this.instances = instances;
-            random = new Random(System.currentTimeMillis());
+            this.random = new Random(System.currentTimeMillis());
+            this.iterations = iterations;
+            this.delay = 2500L;
+        }
+
+        MutatorThread(HazelcastInstance[] instances, int iterations, long delay) {
+            super();
+            this.instances = instances;
+            this.random = new Random(System.currentTimeMillis());
+            this.iterations = iterations;
+            this.delay = delay;
         }
 
         @Override
         public void run() {
-            int instanceReplace = random.nextInt(instances.length);
-            instances[instanceReplace] = factory().newHazelcastInstance(smallInstanceConfig());
-            try {
-                Thread.sleep(2000L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            for (int i = 0; i < iterations; ++i) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                int instanceReplace = random.nextInt(instances.length);
+                instances[instanceReplace].shutdown();
+                instances[instanceReplace] = factory().newHazelcastInstance(smallInstanceConfig());
+                System.out.println("Instance was replaced : " + instanceReplace);
             }
         }
     }

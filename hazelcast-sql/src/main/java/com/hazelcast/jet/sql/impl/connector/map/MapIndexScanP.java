@@ -124,12 +124,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                 Extractors.newBuilder(evalContext.getSerializationService()).build(),
                 evalContext.getSerializationService()
         );
-
-        if (metadata.getComparator() != null) {
-            this.comparator = metadata.getComparator();
-        } else {
-            this.comparator = null;
-        }
+        this.comparator = metadata.getComparator();
     }
 
     @SuppressWarnings({"SingleStatementInBlock"})

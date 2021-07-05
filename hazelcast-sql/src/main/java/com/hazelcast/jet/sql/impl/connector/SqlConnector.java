@@ -251,7 +251,7 @@ public interface SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
             @Nullable IndexFilter filter,
-            @Nullable ComparatorEx<Object[]> comparator
+            @Nonnull ComparatorEx<Object[]> comparator
     ) {
         throw new UnsupportedOperationException("Index scan not supported for " + typeName());
     }

@@ -61,13 +61,12 @@ public final class RowReducerSupplier implements ProcessorSupplier, DataSerializ
     }
 
     public Object[] reduce(Object[] entry) {
-        Object[] row = new Object[entry.length];
+        Object[] row = new Object[usedColumns.size()];
         int idx = 0;
         for (Integer i : usedColumns) {
             assert i < entry.length;
             row[idx++] = entry[i];
         }
-
         return row;
     }
 

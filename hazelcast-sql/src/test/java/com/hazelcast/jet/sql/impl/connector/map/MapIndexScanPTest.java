@@ -104,6 +104,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map = instance().getMap(randomMapName());
     }
 
+    // We also don't test full hash index scan, because such plan aren't allowed to be created.
     @Test
     public void test_pointLookup_hashed() {
         List<Object[]> expected = new ArrayList<>();

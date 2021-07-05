@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
@@ -34,7 +35,6 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -70,7 +70,6 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
-import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.jet.sql.impl.connector.map.RowReducerSupplier.rowReducer;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
@@ -179,20 +178,29 @@ public class CreateDagVisitor {
                 comparator
         );
 
-        Vertex projectorVertex = dag.newUniqueVertex(
-                "Project(" + toString(table) + ")",
-                ProcessorMetaSupplier.forceTotalParallelismOne(
-                        rowReducer(rel.projection(parameterMetadata)),
-                        localMemberAddress
-                )
-        );
+        Vertex projectorVertex;
+        if (tableIndex.getType() == IndexType.SORTED) {
+            projectorVertex = dag.newUniqueVertex(
+                    "Project(" + toString(table) + ")",
+                    ProcessorMetaSupplier.forceTotalParallelismOne(
+                            rowReducer(rel.projection(parameterMetadata)),
+                            localMemberAddress
+                    )
+            );
 
-        dag.edge(
-                between(indexScanner, projectorVertex)
-                        .ordered(comparator)
-                        .distributeTo(localMemberAddress)
-                        .allToOne("")
-        );
+            dag.edge(between(indexScanner, projectorVertex)
+                    .ordered(comparator)
+                    .distributeTo(localMemberAddress)
+                    .allToOne("")
+            );
+        } else {
+            projectorVertex = dag.newUniqueVertex(
+                    "Project(" + toString(table) + ")",
+                    rowReducer(rel.projection(parameterMetadata))
+            );
+
+            dag.edge(between(indexScanner, projectorVertex).isolated());
+        }
 
         return projectorVertex;
     }
