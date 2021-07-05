@@ -402,25 +402,12 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
     ) {
         int runId = runIdGen++;
         // TODO: requires Jet parser to be enabled. Uncomment after parser switch.
-        checkPlan(expectedUseIndex, sql, params);
+        // checkPlan(expectedUseIndex, sql, params);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
 
         if (!sqlKeys.equals(expectedMapKeys)) {
-            System.out.println("ACTUAL KEYS");
-            for (Integer key : sqlKeys) {
-                System.out.print(key + " ");
-            }
-            System.out.println();
-            System.out.println("---------------------");
-
-            System.out.println("EXPECTED KEYS");
-            for (Integer key : expectedMapKeys) {
-                System.out.print(key + " ");
-            }
-            System.out.println();
-            System.out.println("---------------------");
             failOnDifference(
                     runId,
                     sql,
