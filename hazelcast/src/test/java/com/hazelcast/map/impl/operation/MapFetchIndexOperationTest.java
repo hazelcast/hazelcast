@@ -168,11 +168,11 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person1", 45, "Dep1"),
-                new Person("person4", 45, "Dep2"),
-                new Person("person9", 45, "Dep3"),
-                new Person("person10", 45, "Dep4"),
                 new Person("person11", 45, "Dep5"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person1", 45, "Dep1"),
                 new Person("person5", 43, "Dep2"),
                 new Person("person2", 39, "Dep1")
         ));
@@ -195,11 +195,11 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person1", 45, "Dep1"),
-                new Person("person4", 45, "Dep2"),
-                new Person("person9", 45, "Dep3"),
-                new Person("person10", 45, "Dep4"),
                 new Person("person11", 45, "Dep5"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person1", 45, "Dep1"),
                 new Person("person5", 43, "Dep2"),
                 new Person("person2", 39, "Dep1")
         ));
@@ -362,6 +362,52 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                     new Person("person10", 45, "Dep4"),
                     new Person("person11", 45, "Dep5"),
                     new Person("person3", 60, "Dep1")
+                ));
+
+        assertEquals(0, result.getPointers().length);
+    }
+
+    @Test
+    public void whenSizeLimitIsSmall_thenFetchInMultipleCalls_reverse() throws ExecutionException, InterruptedException {
+        PartitionIdSet partitions = getLocalPartitions(instance);
+
+        IndexIterationPointer[] pointers = new IndexIterationPointer[2];
+        pointers[0] = IndexIterationPointer.create(50, true, 60, true, true);
+        pointers[1] = IndexIterationPointer.create(30, true, 50, false, true);
+
+
+        MapOperationProvider operationProvider = getOperationProvider(map);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        OperationServiceImpl operationService = getOperationService(instance);
+
+        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+        assertResultSorted(result,
+                Arrays.asList(
+                        new Person("person3", 60, "Dep1"),
+                        new Person("person11", 45, "Dep5"),
+                        new Person("person10", 45, "Dep4"),
+                        new Person("person9", 45, "Dep3"),
+                        new Person("person4", 45, "Dep2")
+                ));
+
+        // First pointer is done in reverse case
+        assertEquals(1, result.getPointers().length);
+
+        operation = operationProvider.createFetchIndexOperation(
+                mapName, orderedIndexName, result.getPointers(), partitions, 5);
+
+        result = operationService.createInvocationBuilder(
+                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
+
+        assertResultSorted(result,
+                Arrays.asList(
+                        new Person("person1", 45 , "Dep1"),
+                        new Person("person5", 43, "Dep2"),
+                        new Person("person2", 39, "Dep1")
                 ));
 
         assertEquals(0, result.getPointers().length);

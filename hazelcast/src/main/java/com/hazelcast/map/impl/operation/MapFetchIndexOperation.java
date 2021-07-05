@@ -144,9 +144,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     while (keyEntries.hasNext()) {
                         QueryableEntry<?, ?> entry = keyEntries.next();
 
-                        // TODO: Non-HD index iterator is in ascending order for the same index key
-                        //       HD index iterator might be ascending or descending
                         int comparison = comparator.compare(entry.getKeyData(), lastEntryKeyData);
+                        if (isDescendingEntryKey(pointer)) {
+                            comparison = -comparison;
+                        }
 
                         if (comparison == 0) {
                             break;
@@ -216,6 +217,16 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
 
         return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
+    }
+
+    private static boolean isDescendingEntryKey(IndexIterationPointer pointer) {
+        if (((Comparable) pointer.getFrom()).compareTo((Comparable) pointer.getTo()) == 0) {
+            assert pointer.isFromInclusive() && pointer.isToInclusive()
+                    : "Point lookup limits should be all inclusive";
+            return false;
+        } else {
+            return pointer.isDescending();
+        }
     }
 
     private static Iterator<IndexKeyEntries> getEntryIterator(InternalIndex index, IndexIterationPointer pointer) {
