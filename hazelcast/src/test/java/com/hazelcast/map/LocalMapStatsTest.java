@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -54,30 +55,40 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Config config = getConfig().addMapConfig(new MapConfig()
-                .setName(mapWithObjectFormat)
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
-        );
-        instance = createHazelcastInstance(config);
+        instance = createHazelcastInstance(createMemberConfig());
     }
 
-    protected LocalMapStats getMapStats() {
+    protected final LocalMapStats getMapStats() {
+        return getMapStats(mapName);
+    }
+
+    protected LocalMapStats getMapStats(String mapName) {
         return instance.getMap(mapName).getLocalMapStats();
     }
 
-    protected <K, V> IMap<K, V> getMap() {
+    protected final <K, V> IMap<K, V> getMap() {
+        return getMap(mapName);
+    }
+
+    protected <K, V> IMap<K, V> getMap(String mapName) {
         warmUpPartitions(instance);
         return instance.getMap(mapName);
     }
 
+    protected Config createMemberConfig() {
+        return getConfig().addMapConfig(new MapConfig()
+                .setName(mapWithObjectFormat)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+        );
+    }
+
     @Test
     public void memoryCostIsMinusOne_ifInMemoryFormat_is_OBJECT() {
-        warmUpPartitions(instance);
-        IMap<Object, Object> map = instance.getMap(mapWithObjectFormat);
+        IMap<Object, Object> map = getMap(mapWithObjectFormat);
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
-        LocalMapStats localMapStats = instance.getMap(mapWithObjectFormat).getLocalMapStats();
+        LocalMapStats localMapStats = getMapStats(mapWithObjectFormat);
         assertEquals(-1, localMapStats.getOwnedEntryMemoryCost());
         assertEquals(-1, localMapStats.getBackupEntryMemoryCost());
     }
