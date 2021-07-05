@@ -24,13 +24,13 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
@@ -49,34 +49,8 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         map = instance().getMap(MAP_NAME);
     }
 
-    // Ideologically, there is no sense in such kind of queries
-    // (scan on HASH index) but it is still a valid query.
     @Test
-    public void stressTestPointLookup() {
-        List<SqlTestSupport.Row> expected = new ArrayList<>();
-        for (int i = 0; i <= ITEM_COUNT; i++) {
-            map.put(i, i);
-        }
-        Random random = new Random();
-        int nextInt = random.nextInt(ITEM_COUNT);
-        expected.add(new SqlTestSupport.Row(nextInt, nextInt));
-
-        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
-        map.addIndex(indexConfig);
-
-        MutatorThread mutator = new MutatorThread(instances(), 2, 500L);
-        mutator.start();
-
-        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this=" + nextInt, expected);
-
-        try {
-            mutator.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {

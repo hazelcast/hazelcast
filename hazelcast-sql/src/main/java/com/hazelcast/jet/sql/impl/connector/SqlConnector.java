@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
-import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
@@ -24,7 +23,6 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
 
@@ -229,31 +227,6 @@ public interface SqlConnector {
             @Nonnull List<Expression<?>> projection
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
-    }
-
-    /**
-     * Returns a supplier for a source vertex reading the index according to
-     * the {@code filter} with {@code projection} and {@code predicate}.
-     * The output type of the source is Object[].
-     *
-     * @param table      the table object
-     * @param predicate  SQL expression to filter the rows
-     * @param projection the list of field names to return
-     * @param filter     internal index filter
-     * @return The DAG Vertex handling the reading
-     */
-    @Nonnull
-    default Vertex indexScanReader(
-            @Nonnull DAG dag,
-            @Nonnull Table table,
-            @Nonnull String indexName,
-            @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
-            @Nonnull List<Expression<?>> fullProjection,
-            @Nullable IndexFilter filter,
-            @Nonnull ComparatorEx<Object[]> comparator
-    ) {
-        throw new UnsupportedOperationException("Index scan not supported for " + typeName());
     }
 
     /**

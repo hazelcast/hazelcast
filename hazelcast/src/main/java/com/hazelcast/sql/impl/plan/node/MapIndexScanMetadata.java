@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.sql.impl.plan.node;
 
 import com.hazelcast.function.ComparatorEx;
@@ -30,14 +29,13 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 /**
  * POJO that contains all specific information to scan a partitioned map index by Jet processor.
  */
-public class MapIndexScanMetadata implements IdentifiedDataSerializable, Serializable {
+public class MapIndexScanMetadata implements IdentifiedDataSerializable {
 
     protected String mapName;
     protected String indexName;

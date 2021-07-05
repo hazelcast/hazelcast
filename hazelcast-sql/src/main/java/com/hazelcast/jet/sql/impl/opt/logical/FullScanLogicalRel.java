@@ -17,8 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
@@ -41,7 +39,4 @@ public class FullScanLogicalRel extends AbstractScanRel implements LogicalRel {
         return new FullScanLogicalRel(getCluster(), traitSet, getTable());
     }
 
-    private Table getTableUnwrapped(RelOptTable table) {
-        return table.unwrap(HazelcastTable.class).getTarget();
-    }
 }

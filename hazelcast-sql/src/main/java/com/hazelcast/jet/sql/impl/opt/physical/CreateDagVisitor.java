@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.config.IndexType;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
@@ -35,23 +34,20 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
@@ -70,7 +66,6 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
-import static com.hazelcast.jet.sql.impl.connector.map.RowReducerSupplier.rowReducer;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
 
@@ -151,58 +146,28 @@ public class CreateDagVisitor {
 
     public Vertex onMapIndexScan(IMapIndexScanPhysicalRel rel) {
         Table table0 = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-        final MapTableIndex tableIndex = rel.getIndex();
         final PartitionedMapTable table = (PartitionedMapTable) table0;
-        final ComparatorEx<Object[]> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 
-        String indexName = tableIndex.getName();
         IndexFilter filter = rel.getIndexFilter();
-        Expression<Boolean> remFilter = convertFilter(
-                new PlanNodeSchema(table.fieldTypes()),
-                rel.getRemainderExp(),
-                parameterMetadata
-        );
+        Expression<Boolean> remFilter = rel.filter(parameterMetadata);
 
         collectObjectKeys(table);
 
         SqlConnector sqlConnector = getJetSqlConnector(table);
+        assert sqlConnector instanceof IMapSqlConnector;
+        IMapSqlConnector mapConnector = (IMapSqlConnector) sqlConnector;
 
-        Vertex indexScanner = sqlConnector.indexScanReader(
+        return mapConnector.indexScanReader(
                 dag,
+                localMemberAddress,
                 table,
-                indexName,
+                rel.getIndex(),
                 remFilter,
                 rel.projection(parameterMetadata),
                 rel.fullProjection(parameterMetadata),
                 filter,
-                comparator
+                ExpressionUtil.comparisonFn(rel.getCollations())
         );
-
-        Vertex projectorVertex;
-        if (tableIndex.getType() == IndexType.SORTED) {
-            projectorVertex = dag.newUniqueVertex(
-                    "Project(" + toString(table) + ")",
-                    ProcessorMetaSupplier.forceTotalParallelismOne(
-                            rowReducer(rel.projection(parameterMetadata)),
-                            localMemberAddress
-                    )
-            );
-
-            dag.edge(between(indexScanner, projectorVertex)
-                    .ordered(comparator)
-                    .distributeTo(localMemberAddress)
-                    .allToOne("")
-            );
-        } else {
-            projectorVertex = dag.newUniqueVertex(
-                    "Project(" + toString(table) + ")",
-                    rowReducer(rel.projection(parameterMetadata))
-            );
-
-            dag.edge(between(indexScanner, projectorVertex).isolated());
-        }
-
-        return projectorVertex;
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -443,19 +408,6 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private Expression<Boolean> convertFilter(
-            PlanNodeSchema schema,
-            RexNode expression,
-            QueryParameterMetadata parameterMetadata
-    ) {
-        if (expression == null) {
-            return null;
-        }
-
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
-        return (Expression<Boolean>) expression.accept(converter);
     }
 
     private static String toString(PartitionedMapTable table) {

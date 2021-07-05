@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
+import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -81,7 +82,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
-        return filter(schema, remainderExp, parameterMetadata);
+        return convertFilter(schema, getRemainderExp(), parameterMetadata);
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
@@ -182,5 +183,18 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
                 .item("index", index.getName())
                 .item("indexExp", indexExp)
                 .item("remainderExp", remainderExp);
+    }
+
+    private Expression<Boolean> convertFilter(
+            PlanNodeSchema schema,
+            RexNode expression,
+            QueryParameterMetadata parameterMetadata
+    ) {
+        if (expression == null) {
+            return null;
+        }
+
+        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
+        return (Expression<Boolean>) expression.accept(converter);
     }
 }

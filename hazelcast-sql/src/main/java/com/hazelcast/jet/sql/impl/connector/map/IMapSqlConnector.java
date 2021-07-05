@@ -16,12 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -49,10 +52,12 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +67,9 @@ import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
+import static com.hazelcast.jet.sql.impl.connector.map.RowReducerSupplier.rowReducer;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Collections.singletonList;
@@ -173,12 +180,13 @@ public class IMapSqlConnector implements SqlConnector {
         return vEnd;
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     @Nonnull
-    @Override
     public Vertex indexScanReader(
             @Nonnull DAG dag,
+            @Nonnull Address localMemberAddress,
             @Nonnull Table table0,
-            @Nonnull String indexName,
+            @Nonnull MapTableIndex tableIndex,
             @Nullable Expression<Boolean> reminderFilter,
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
@@ -188,11 +196,11 @@ public class IMapSqlConnector implements SqlConnector {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         MapIndexScanMetadata mapScanMetadata = new MapIndexScanMetadata(
                 table.getMapName(),
-                indexName,
+                tableIndex.getName(),
                 table.getKeyDescriptor(),
                 table.getValueDescriptor(),
-                table.fieldPaths(),
-                table.fieldTypes(),
+                Arrays.asList(table.paths()),
+                Arrays.asList(table.types()),
                 filter,
                 projection,
                 fullProjection,
@@ -201,7 +209,32 @@ public class IMapSqlConnector implements SqlConnector {
         );
 
         String vertexName = "Index(" + toString(table) + ")";
-        return dag.newUniqueVertex(vertexName, MapIndexScanP.readMapIndexSupplier(mapScanMetadata));
+        final Vertex indexScanner = dag.newUniqueVertex(vertexName, readMapIndexSupplier(mapScanMetadata));
+
+        Vertex projectorVertex;
+        if (tableIndex.getType() == IndexType.SORTED) {
+            projectorVertex = dag.newUniqueVertex(
+                    "Project(" + toString(table) + ")",
+                    ProcessorMetaSupplier.forceTotalParallelismOne(
+                            rowReducer(projection),
+                            localMemberAddress
+                    )
+            );
+
+            dag.edge(between(indexScanner, projectorVertex)
+                    .ordered(comparator)
+                    .distributeTo(localMemberAddress)
+                    .allToOne("")
+            );
+        } else {
+            projectorVertex = dag.newUniqueVertex(
+                    "Project(" + toString(table) + ")",
+                    rowReducer(projection)
+            );
+
+            dag.edge(between(indexScanner, projectorVertex).isolated());
+        }
+        return projectorVertex;
     }
 
     @Nonnull

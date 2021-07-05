@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -35,7 +34,7 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -61,34 +60,28 @@ import java.util.stream.IntStream;
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
-import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.F_ID;
-import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
-import static com.hazelcast.jet.sql.impl.JetSqlSerializerHook.IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /*
 Behavior of the processor
-- Converts `IndexFilter` to `IndexIterationPointer[]`.
-- Replaces `ParameterExpression` with `ConstantExpression`
 - initially it assumes that all assigned partitions are local. Sends IndexFetchOp with all local partitions
 - When response is received, saves the new `pointers` to `lastPointers` and
   sends another one immediately with the new pointers and then emits to processor's outbox
 */
 
 /**
- * // TODO: [sasha] detailed description
+ * Implementation of partition-tolerant IMap index scan processor.
  */
 public final class MapIndexScanP extends AbstractProcessor {
     @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:MagicNumber"})
-    static int FETCH_SIZE_HINT = 128;
+    static final int FETCH_SIZE_HINT = 128;
 
     private final MapIndexScanMetadata metadata;
 
     private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
     private ExpressionEvalContext evalContext;
-    private ComparatorEx<Object[]> comparator;
-    private Context context;
+    private HazelcastInstance hazelcastInstance;
 
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
@@ -101,16 +94,16 @@ public final class MapIndexScanP extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        this.context = context;
+        this.hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
-        reader = LocalMapIndexReader.create(context.hazelcastInstance(), evalContext.getSerializationService(), metadata);
+        reader = LocalMapIndexReader.create(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
 
         splits.add(
                 new Split(
                         new PartitionIdSet(
-                                context.hazelcastInstance().getPartitionService().getPartitions().size(),
+                                hazelcastInstance.getPartitionService().getPartitions().size(),
                                 memberPartitions),
                         context.hazelcastInstance().getCluster().getLocalMember().getAddress(),
                         filtersToPointers(metadata.getFilter()))
@@ -124,7 +117,6 @@ public final class MapIndexScanP extends AbstractProcessor {
                 Extractors.newBuilder(evalContext.getSerializationService()).build(),
                 evalContext.getSerializationService()
         );
-        this.comparator = metadata.getComparator();
     }
 
     @SuppressWarnings({"SingleStatementInBlock"})
@@ -158,7 +150,8 @@ public final class MapIndexScanP extends AbstractProcessor {
                     // waiting for more rows from this split
                     return false;
                 }
-                if (extremeIndex < 0 || comparator.compare(s.currentRow, splits.get(extremeIndex).currentRow) > 0) {
+                if (extremeIndex < 0
+                        || metadata.getComparator().compare(s.currentRow, splits.get(extremeIndex).currentRow) > 0) {
                     extremeIndex = i;
                     extreme = s.currentRow;
                 }
@@ -186,7 +179,7 @@ public final class MapIndexScanP extends AbstractProcessor {
      */
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
-        InternalPartitionService partitionService = getNodeEngine(context.hazelcastInstance()).getPartitionService();
+        InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
         PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
         Map<Address, Split> newSplits = new HashMap<>();
         while (partitionIterator.hasNext()) {
@@ -198,10 +191,6 @@ public final class MapIndexScanP extends AbstractProcessor {
             ).partitions.add(partitionId);
         }
         return new ArrayList<>(newSplits.values());
-    }
-
-    List<Split> getActiveSplits() {
-        return splits;
     }
 
     private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter) {
@@ -300,7 +289,7 @@ public final class MapIndexScanP extends AbstractProcessor {
     }
 
     public static final class MapIndexScanProcessorMetaSupplier
-            implements ProcessorMetaSupplier, IdentifiedDataSerializable {
+            implements ProcessorMetaSupplier, DataSerializable {
         private static final long serialVersionUID = 1L;
 
         private MapIndexScanMetadata indexScanMetadata;
@@ -330,20 +319,10 @@ public final class MapIndexScanP extends AbstractProcessor {
         public void readData(ObjectDataInput in) throws IOException {
             indexScanMetadata = in.readObject();
         }
-
-        @Override
-        public int getFactoryId() {
-            return F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return IMAP_INDEX_SCAN_PROCESSOR_META_SUPPLIER;
-        }
     }
 
     public static final class MapIndexScanProcessorSupplier
-            implements ProcessorSupplier, IdentifiedDataSerializable {
+            implements ProcessorSupplier, DataSerializable {
 
         private MapIndexScanMetadata indexScanMetadata;
 
@@ -371,16 +350,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             indexScanMetadata = in.readObject();
-        }
-
-        @Override
-        public int getFactoryId() {
-            return F_ID;
-        }
-
-        @Override
-        public int getClassId() {
-            return IMAP_INDEX_SCAN_PROCESSOR_SUPPLIER;
         }
     }
 
