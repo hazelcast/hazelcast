@@ -104,7 +104,6 @@ import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterable;
 import com.hazelcast.client.map.impl.iterator.ClientMapQueryPartitionIterator;
 import com.hazelcast.client.map.impl.querycache.ClientQueryCacheContext;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -165,7 +164,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
