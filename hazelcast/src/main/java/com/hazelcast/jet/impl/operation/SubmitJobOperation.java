@@ -33,8 +33,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
     private Data jobDefinition;
     private Data serializedConfig;
     private boolean isLightJob;
-
-    private transient Subject subject;
+    private Subject subject;
 
     public SubmitJobOperation() {
     }
@@ -73,6 +72,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
         IOUtil.writeData(out, jobDefinition);
         IOUtil.writeData(out, serializedConfig);
         out.writeBoolean(isLightJob);
+        out.writeObject(subject);
     }
 
     @Override
@@ -81,5 +81,6 @@ public class SubmitJobOperation extends AsyncJobOperation {
         jobDefinition = IOUtil.readData(in);
         serializedConfig = IOUtil.readData(in);
         isLightJob = in.readBoolean();
+        subject = in.readObject();
     }
 }

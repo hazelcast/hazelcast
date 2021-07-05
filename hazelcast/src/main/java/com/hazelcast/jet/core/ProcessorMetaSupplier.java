@@ -78,6 +78,11 @@ import static java.util.Collections.singletonList;
 @FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
 
+    /**
+     * Returns the required permission to execute the vertex which has
+     * this ProcessorMetaSupplier. This is an Enterprise feature.
+     */
+    @Nullable
     default Permission getRequiredPermission() {
         return null;
     }

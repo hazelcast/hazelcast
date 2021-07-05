@@ -2792,12 +2792,15 @@
                         <xs:enumeration value="aggregate"/>
                         <xs:enumeration value="projection"/>
                         <xs:enumeration value="deploy"/>
-                        <xs:enumeration value="list"/>
-                        <xs:enumeration value="suspend"/>
-                        <xs:enumeration value="resume"/>
-                        <xs:enumeration value="export"/>
-                        <xs:enumeration value="upload"/>
+                        <xs:enumeration value="submit"/>
+                        <xs:enumeration value="cancel"/>
+                        <xs:enumeration value="restart"/>
+                        <xs:enumeration value="export-snapshot"/>
+                        <xs:enumeration value="add-resources"/>
                         <xs:enumeration value="write"/>
+                        <xs:enumeration value="instance"/>
+                        <xs:enumeration value="member"/>
+                        <xs:enumeration value="migration"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>

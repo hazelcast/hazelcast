@@ -137,7 +137,7 @@ Hazelcast connectors:
         <action>read</action>
     </actions>
 </map-permission>
-<map-permission name="source_map">
+<map-permission name="sink_map">
     <actions>
         <action>create</action>
         <action>write</action>
