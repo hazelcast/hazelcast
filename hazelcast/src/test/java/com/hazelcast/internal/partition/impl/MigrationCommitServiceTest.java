@@ -575,7 +575,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     }
 
     private Config createConfig() {
-        Config config = new Config();
+        Config config = smallInstanceConfig();
 
         ServiceConfig serviceConfig = TestMigrationAwareService.createServiceConfig(BACKUP_COUNT);
         ConfigAccessor.getServicesConfig(config).addServiceConfig(serviceConfig);
