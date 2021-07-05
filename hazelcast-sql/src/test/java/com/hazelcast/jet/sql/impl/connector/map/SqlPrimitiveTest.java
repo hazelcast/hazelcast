@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -52,7 +52,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String name = randomName();
 
         instance().getMap(name).put(BigInteger.valueOf(1), "Alice");
@@ -72,7 +72,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertSelect() {
+    public void test_sinkSelect() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -94,7 +94,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertValues() {
+    public void test_sinkValues() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -110,7 +110,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertWithProject() {
+    public void test_sinkWithProject() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -126,7 +126,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertWithDynamicParameters() {
+    public void test_sinkWithDynamicParameters() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
@@ -296,12 +296,41 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_insertInto_then_throws() {
+    public void when_insert() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
 
-        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " (__key, this) VALUES (1, '2')"))
-                .hasMessageContaining("INSERT INTO clause is not supported for IMap");
+        assertMapEventually(
+                name,
+                "INSERT INTO " + name + " (this, __key) VALUES ('1', 1), ('2', 2)",
+                createMap(1, "1", 2, "2")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                asList(
+                        new Row(1, "1"),
+                        new Row(2, "2")
+                )
+        );
+    }
+
+    @Test
+    public void when_insertAndKeyAlreadyExists_then_fail() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2')"))
+                .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
+    public void when_insertDuplicateKey_then_fail() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '1'), (1, '2')"))
+                .hasMessageContaining("Duplicate key");
     }
 
     @Test

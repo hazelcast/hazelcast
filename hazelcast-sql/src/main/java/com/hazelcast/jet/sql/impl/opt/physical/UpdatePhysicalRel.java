@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toMap;
+import static org.apache.calcite.rel.core.TableModify.Operation.UPDATE;
 
 public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
@@ -43,12 +44,11 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             RelOptTable table,
             Prepare.CatalogReader catalogReader,
             RelNode input,
-            Operation operation,
             List<String> updateColumnList,
             List<RexNode> sourceExpressionList,
             boolean flattened
     ) {
-        super(cluster, traitSet, table, catalogReader, input, operation, updateColumnList, sourceExpressionList, flattened);
+        super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
     }
 
     public Map<String, Expression<?>> updates(QueryParameterMetadata parameterMetadata) {
@@ -59,7 +59,7 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
 
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return OptUtils.schema(getTable());
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -75,7 +75,6 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 getTable(),
                 getCatalogReader(),
                 sole(inputs),
-                getOperation(),
                 getUpdateColumnList(),
                 getSourceExpressionList(),
                 isFlattened()

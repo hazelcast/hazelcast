@@ -779,6 +779,7 @@
                         <xs:element name="cache" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
+                                    <xs:element name="merkle-tree" type="merkle-tree" minOccurs="0"/>
                                     <xs:element name="eviction" type="eviction" minOccurs="0">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -5466,6 +5467,7 @@
             <xs:element name="tls" type="tls-authentication"/>
             <xs:element name="ldap" type="ldap-authentication"/>
             <xs:element name="kerberos" type="kerberos-authentication"/>
+            <xs:element name="simple" type="simple-authentication"/>
         </xs:choice>
     </xs:complexType>
 
@@ -5525,6 +5527,22 @@
             <xs:element name="keytab-file" type="xs:string" minOccurs="0"/>
             <xs:element name="ldap" type="ldap-authentication" minOccurs="0"/>
         </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="simple-authentication">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="user" type="simple-user" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="role-separator" type="xs:string" minOccurs="0" default=","/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="simple-user">
+        <xs:complexContent>
+            <xs:extension base="username-password">
+                <xs:choice maxOccurs="unbounded">
+                    <xs:element name="role" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:choice>
+            </xs:extension>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="identity">

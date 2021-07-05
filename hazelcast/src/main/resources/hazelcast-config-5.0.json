@@ -2097,6 +2097,22 @@
               }
             }
           },
+          "merkle-tree": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "depth": {
+                "type": "integer",
+                "minimum": 2,
+                "maximum": 27,
+                "default": 10
+              }
+            }
+          },
           "disable-per-entry-invalidation-events": {
             "type": "boolean",
             "default": false,
@@ -2475,7 +2491,8 @@
                     "jaas",
                     "tls",
                     "ldap",
-                    "kerberos"
+                    "kerberos",
+                    "simple"
                   ]
                 },
                 "maxProperties": 1,
@@ -2585,6 +2602,38 @@
                       },
                       "security-realm": {
                         "type": "string"
+                      }
+                    }
+                  },
+                  "simple": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "role-separator": {
+                        "type": "string"
+                      },
+                      "users": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "username": {
+                              "type": "string"
+                            },
+                            "password": {
+                              "type": "string"
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "username", "password"
+                          ]
+                        }
                       }
                     }
                   }

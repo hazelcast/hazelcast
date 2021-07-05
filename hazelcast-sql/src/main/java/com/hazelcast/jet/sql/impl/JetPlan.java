@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -29,9 +29,9 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -52,7 +52,7 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments);
+    abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
 
     protected void checkPermissions(SqlSecurityContext context, DAG dag) {
         if (!context.isSecurityEnabled()) {
@@ -120,8 +120,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
+            JetPlan.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -172,8 +173,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP MAPPING", arguments);
+            JetPlan.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -237,7 +239,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            JetPlan.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
@@ -289,8 +292,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("ALTER JOB", arguments);
+            JetPlan.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -353,8 +357,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP JOB", arguments);
+            JetPlan.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -406,8 +411,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -459,8 +465,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -507,8 +514,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
+            JetPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
@@ -577,14 +585,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
-        }
-    }
-
-    private static void ensureNoArguments(String name, List<Object> arguments) {
-        if (!arguments.isEmpty()) {
-            throw QueryException.error(name + " does not support dynamic parameters");
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
         }
     }
 
@@ -612,7 +614,7 @@ abstract class JetPlan extends SqlPlan {
             this.planExecutor = planExecutor;
         }
 
-        public Operation getOperation() {
+        Operation getOperation() {
             return operation;
         }
 
@@ -645,8 +647,20 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
+        }
+    }
+
+    private static void ensureNoTimeout(String name, long timeout) {
+        if (timeout > 0) {
+            throw QueryException.error(name + " does not support timeout");
         }
     }
 }

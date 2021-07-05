@@ -38,6 +38,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordReaderWriter;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -142,7 +143,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
-        record.setLastAccessTime(now);
+        if (record.getMatchingRecordReaderWriter()
+                == RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER) {
+            // To distinguish last-access-time from creation-time we
+            // set last-access-time for only LRU records. A LRU record
+            // has no creation-time field but last-access-time field.
+            record.setLastAccessTime(now);
+        }
 
         updateStatsOnPut(false, now);
         return record;

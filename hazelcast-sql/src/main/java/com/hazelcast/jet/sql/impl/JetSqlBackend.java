@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -265,16 +265,15 @@ class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
 
         if (physicalRel instanceof TableModify) {
-            CreateDagVisitor result = traverseRel(physicalRel, parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata, result.getObjectKeys(), result.getDag(),
-                    planExecutor);
+            return new DmlPlan(operation, planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), planExecutor);
         } else {
-            CreateDagVisitor result =
-                    traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows,
-                    rowMetadata, planExecutor);
+            return new SelectPlan(planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows, rowMetadata, planExecutor);
         }
     }
 

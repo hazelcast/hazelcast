@@ -27,6 +27,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -171,7 +172,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testSecurityInterceptorConfig() {
+    public void testSecurityConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<security enabled=\"true\">"
                 + "  <security-interceptors>"
@@ -242,6 +243,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          <use-canonical-hostname>true</use-canonical-hostname>"
                 + "        </kerberos>"
                 + "      </identity>"
+                + "    </realm>"
+                + "    <realm name='simple'>"
+                + "      <authentication>"
+                + "        <simple>"
+                + "          <skip-role>true</skip-role>"
+                + "          <role-separator>:</role-separator>"
+                + "          <user username='test' password='a1234'>"
+                + "            <role>monitor</role>"
+                + "            <role>hazelcast</role>"
+                + "          </user>"
+                + "          <user username='dev' password='secret'>"
+                + "            <role>root</role>"
+                + "          </user>"
+                + "        </simple>"
+                + "      </authentication>"
                 + "    </realm>"
                 + "  </realms>"
                 + "  <member-authentication realm='mr'/>\n"
@@ -325,6 +341,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
         assertNotNull(kerbLdapAuthentication);
         assertEquals("ldap://127.0.0.1", kerbLdapAuthentication.getUrl());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simple");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        assertEquals(":", simpleAuthnCfg.getRoleSeparator());
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
+        assertEquals(Boolean.TRUE, simpleAuthnCfg.getSkipRole());
 
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
@@ -2025,6 +2055,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <capacity>120</capacity>\n"
                 + "            <time-to-live-seconds>20</time-to-live-seconds>\n"
                 + "          </event-journal>"
+                + "        <merkle-tree enabled=\"true\">\n"
+                + "            <depth>20</depth>\n"
+                + "          </merkle-tree>"
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
@@ -2077,6 +2110,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(1, cacheConfig.getCacheEntryListeners().size());
         assertEquals("com.example.cache.MyEntryListenerFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryListenerFactory());
         assertEquals("com.example.cache.MyEntryEventFilterFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryEventFilterFactory());
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
     }
 
     @Override

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -20,7 +20,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.prepare.Prepare.CatalogReader;
@@ -36,6 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,7 +46,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryParserTest {
 
@@ -132,7 +133,7 @@ public class QueryParserTest {
         verify(sqlBackend, never()).unsupportedOperationVisitor(any());
     }
 
-    @Test(expected = QueryException.class)
+    @Test
     public void when_neitherImdgOrJetCanHandleSql_then_throwsException() {
         // given
         given(sqlValidator.validate(isA(SqlNode.class))).willThrow(new CalciteException("expected test exception", null));
@@ -140,6 +141,23 @@ public class QueryParserTest {
 
         // when
         // then
-        parser.parse("SELECT * FROM t");
+        assertThatThrownBy(() -> parser.parse("SELECT * FROM t"))
+                .isInstanceOf(QueryException.class);
+    }
+
+    @Test
+    public void test_trailingSemicolon() {
+        given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
+        given(sqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
+
+        parser.parse("SELECT * FROM t;");
+        parser.parse("SELECT * FROM t;;");
+    }
+
+    @Test
+    public void when_multipleStatements_then_fails() {
+        assertThatThrownBy(() -> parser.parse("SELECT * FROM t; SELECT * FROM t"))
+                .isInstanceOf(QueryException.class)
+                .hasMessage("The command must contain a single statement");
     }
 }
