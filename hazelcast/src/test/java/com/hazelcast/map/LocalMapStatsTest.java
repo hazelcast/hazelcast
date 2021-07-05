@@ -16,6 +16,9 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -47,10 +50,15 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     HazelcastInstance instance;
     private String mapName = "mapName";
+    private String mapWithObjectFormat = "mapWithObjectFormat";
 
     @Before
     public void setUp() {
-        instance = createHazelcastInstance(getConfig());
+        Config config = getConfig().addMapConfig(new MapConfig()
+                .setName(mapWithObjectFormat)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+        );
+        instance = createHazelcastInstance(config);
     }
 
     protected LocalMapStats getMapStats() {
@@ -60,6 +68,18 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     protected <K, V> IMap<K, V> getMap() {
         warmUpPartitions(instance);
         return instance.getMap(mapName);
+    }
+
+    @Test
+    public void memoryCostIsMinusOne_ifInMemoryFormat_is_OBJECT() {
+        warmUpPartitions(instance);
+        IMap<Object, Object> map = instance.getMap(mapWithObjectFormat);
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        LocalMapStats localMapStats = instance.getMap(mapWithObjectFormat).getLocalMapStats();
+        assertEquals(-1, localMapStats.getOwnedEntryMemoryCost());
+        assertEquals(-1, localMapStats.getBackupEntryMemoryCost());
     }
 
     @Test

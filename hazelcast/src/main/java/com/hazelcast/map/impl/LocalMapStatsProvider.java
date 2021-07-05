@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -72,7 +73,11 @@ public class LocalMapStatsProvider {
     private final IPartitionService partitionService;
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap;
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            key -> new LocalMapStatsImpl();
+            this::createLocalMapStatsImpl;
+
+    private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
+        return new LocalMapStatsImpl(mapServiceContext.getMapContainer(mapName).getMapConfig().getInMemoryFormat() == OBJECT);
+    }
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
