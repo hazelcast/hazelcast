@@ -39,9 +39,9 @@ public final class PermissionsUtil {
     @Nullable
     public static Permission checkRemote(@Nullable ClientConfig clientConfig, @Nonnull Permission permission) {
         if (clientConfig == null) {
-            return null;
+            return permission;
         }
-        return permission;
+        return null;
     }
 
 
