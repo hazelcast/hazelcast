@@ -183,6 +183,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             out.writeObject(to);
         }
+        out.writeObject(lastEntryKeyData);
     }
 
     @Override
@@ -194,6 +195,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         } else {
             to = from;
         }
+        lastEntryKeyData = in.readObject();
     }
 
     @Override
