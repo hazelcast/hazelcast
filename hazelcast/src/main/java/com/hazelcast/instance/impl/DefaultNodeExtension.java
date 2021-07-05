@@ -110,6 +110,7 @@ import com.hazelcast.version.Version;
 import com.hazelcast.wan.impl.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,7 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension {
-    private static final String PLATFORM_LOGO
+    private static final String HAZELCAST_LOGO
             = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
             + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
             + "\t+ + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |   \n"
@@ -262,7 +263,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     protected void printBannersBeforeNodeInfo() {
-        logoLogger.info('\n' + PLATFORM_LOGO);
+        logoLogger.info('\n' + HAZELCAST_LOGO);
         systemLogger.info(COPYRIGHT_LINE);
     }
 
@@ -620,5 +621,11 @@ public class DefaultNodeExtension implements NodeExtension {
             throw new IllegalStateException("Jet is disabled, see JetConfig#setEnabled to enable jet");
         }
         return jetServiceBackend.getJet();
+    }
+
+    @Override
+    @Nullable
+    public JetServiceBackend getJetServiceBackend() {
+        return jetServiceBackend;
     }
 }

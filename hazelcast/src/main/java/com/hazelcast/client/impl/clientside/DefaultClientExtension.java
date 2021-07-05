@@ -35,7 +35,6 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -231,9 +230,6 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public JetService getJet() {
-        if (client.getCluster().getClusterVersion().isLessThan(Versions.V5_0)) {
-            throw new IllegalStateException("Jet is disabled because the current cluster version is less than 5.0");
-        }
         return jetClient;
     }
 }

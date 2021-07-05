@@ -154,7 +154,6 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -560,7 +559,8 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Nonnull
     private Consumer<Packet> getJetPacketConsumer() {
-        JetServiceBackend jetServiceBackend = serviceManager.getService(JetServiceBackend.SERVICE_NAME);
+        // Here, JetServiceBackend is not registered to service manager yet
+        JetServiceBackend jetServiceBackend = node.getNodeExtension().getJetServiceBackend();
         if (jetServiceBackend != null) {
             return jetServiceBackend;
         } else {

@@ -42,11 +42,13 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
@@ -293,5 +295,11 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public JetService getJet() {
         throw new IllegalArgumentException();
+    }
+
+    @Nullable
+    @Override
+    public JetServiceBackend getJetServiceBackend() {
+        return null;
     }
 }
