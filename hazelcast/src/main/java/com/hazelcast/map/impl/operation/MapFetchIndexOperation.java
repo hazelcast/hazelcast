@@ -54,7 +54,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     private String indexName;
     private PartitionIdSet partitionIdSet;
     private IndexIterationPointer[] pointers;
-    private int sizeHint;
+    private int sizeLimit;
 
     private transient MapFetchIndexOperationResult response;
 
@@ -65,13 +65,13 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             String indexName,
             IndexIterationPointer[] pointers,
             PartitionIdSet partitionIdSet,
-            int sizeHint
+            int sizeLimit
     ) {
         super(mapName);
         this.indexName = indexName;
         this.partitionIdSet = partitionIdSet;
         this.pointers = pointers;
-        this.sizeHint = sizeHint;
+        this.sizeLimit = sizeLimit;
     }
 
     @Override
@@ -124,7 +124,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
-        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeHint + 1);
+        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeLimit + 1);
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         DataComparator comparator = new DataComparator();
 
@@ -159,7 +159,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
                 // Read and add until size hint is reached or iterator ends
                 while (keyEntries.hasNext()) {
-                    if (entries.size() >= sizeHint) {
+                    if (entries.size() >= sizeLimit) {
                         break;
                     }
                     QueryableEntry<?, ?> entry = keyEntries.next();
@@ -175,19 +175,35 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                     }
                 }
 
-                if (entries.size() >= sizeHint) {
+                if (!keyEntries.hasNext()) {
+                    lastEntryKeyData = null;
+                }
+
+                if (entries.size() >= sizeLimit) {
                     IndexIterationPointer[] newPointers;
-                    if (entryIterator.hasNext()) {
+                    if (entryIterator.hasNext() || lastEntryKeyData != null) {
                         Comparable<?> currentIndexKey = indexKeyEntries.getIndexKey();
                         newPointers = new IndexIterationPointer[pointers.length - i];
-                        newPointers[0] = IndexIterationPointer.create(
-                                pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                pointer.isDescending() ? pointer.isFromInclusive() : false,
-                                pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                pointer.isDescending() ? false : pointer.isToInclusive(),
-                                pointer.isDescending(),
-                                lastEntryKeyData
-                        );
+                        if (lastEntryKeyData != null) {
+                            newPointers[0] = IndexIterationPointer.create(
+                                    pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
+                                    pointer.isDescending() ? pointer.isFromInclusive() : true,
+                                    pointer.isDescending() ? currentIndexKey : pointer.getTo(),
+                                    pointer.isDescending() ? true : pointer.isToInclusive(),
+                                    pointer.isDescending(),
+                                    lastEntryKeyData
+                            );
+                        } else {
+                            newPointers[0] = IndexIterationPointer.create(
+                                    pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
+                                    pointer.isDescending() ? pointer.isFromInclusive() : false,
+                                    pointer.isDescending() ? currentIndexKey : pointer.getTo(),
+                                    pointer.isDescending() ? false : pointer.isToInclusive(),
+                                    pointer.isDescending(),
+                                    null
+                            );
+                        }
+
 
                         System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);
                     } else {
@@ -247,7 +263,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
         int pointerIndex;
-        for (pointerIndex = 0; pointerIndex < pointers.length && entries.size() < sizeHint; pointerIndex++) {
+        for (pointerIndex = 0; pointerIndex < pointers.length && entries.size() < sizeLimit; pointerIndex++) {
             IndexIterationPointer pointer = pointers[pointerIndex];
 
             // For hash lookups, pointer begin and end points must be the same
@@ -283,7 +299,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         indexName = in.readString();
         partitionIdSet = in.readObject();
         pointers = in.readObject();
-        sizeHint = in.readInt();
+        sizeLimit = in.readInt();
     }
 
     @Override
@@ -292,7 +308,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         out.writeString(indexName);
         out.writeObject(partitionIdSet);
         out.writeObject(pointers);
-        out.writeInt(sizeHint);
+        out.writeInt(sizeLimit);
     }
 
     @Override

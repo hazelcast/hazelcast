@@ -62,7 +62,6 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -110,7 +109,10 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                         new Person("person5", 43, "Dep2"),
                         new Person("person6", null, "Dep1"),
                         new Person("person7", null, null),
-                        new Person("person8", 79, null)
+                        new Person("person8", 79, null),
+                        new Person("person9", 45, "Dep3"),
+                        new Person("person10", 45, "Dep4"),
+                        new Person("person11", 45, "Dep5")
                 )
         );
 
@@ -130,7 +132,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(30, true, 60, false, false);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 7);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -141,8 +143,11 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         assertResultSorted(result, Arrays.asList(
                 new Person("person2", 39, "Dep1"),
                 new Person("person5", 43, "Dep2"),
+                new Person("person1", 45, "Dep1"),
                 new Person("person4", 45, "Dep2"),
-                new Person("person1", 45, "Dep1")
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5")
         ));
     }
 
@@ -154,7 +159,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(null, true, 60, false, true);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -163,8 +168,11 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person4", 45, "Dep2"),
                 new Person("person1", 45, "Dep1"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
                 new Person("person5", 43, "Dep2"),
                 new Person("person2", 39, "Dep1")
         ));
@@ -178,7 +186,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(30, true, 60, false, true);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -187,8 +195,11 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person4", 45, "Dep2"),
                 new Person("person1", 45, "Dep1"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
                 new Person("person5", 43, "Dep2"),
                 new Person("person2", 39, "Dep1")
         ));
@@ -221,6 +232,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 new Person("person5", 43, "Dep2"),
                 new Person("person1", 45 , "Dep1"),
                 new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
                 new Person("person3", 60, "Dep1"),
                 new Person("person8", 79, null)
         ));
@@ -234,7 +248,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(null, true, null, true, false);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 20);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -243,12 +257,15 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
         assertResultSorted(result, Arrays.asList(
-                new Person("person7", null, null),
                 new Person("person6", null, "Dep1"),
+                new Person("person7", null, null),
                 new Person("person2", 39, "Dep1"),
                 new Person("person5", 43, "Dep2"),
-                new Person("person4", 45, "Dep2"),
                 new Person("person1", 45, "Dep1"),
+                new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5"),
                 new Person("person3", 60, "Dep1"),
                 new Person("person8", 79, null)
         ));
@@ -264,7 +281,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[2] = IndexIterationPointer.create(45, true, 45, true, false);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 5);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 10);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -275,7 +292,10 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         assertResult(result, Arrays.asList(
                 new Person("person2", 39, "Dep1"),
                 new Person("person1", 45, "Dep1"),
-                new Person("person4", 45, "Dep2")
+                new Person("person4", 45, "Dep2"),
+                new Person("person9", 45, "Dep3"),
+                new Person("person10", 45, "Dep4"),
+                new Person("person11", 45, "Dep5")
         ));
     }
 
@@ -303,15 +323,15 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenSizeHintIsSmall_thenFetchInMultipleCalls() throws ExecutionException, InterruptedException {
+    public void whenSizeLimitIsSmall_thenFetchInMultipleCalls() throws ExecutionException, InterruptedException {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
-        pointers[0] = IndexIterationPointer.create(30, true, 40, true, false);
+        pointers[0] = IndexIterationPointer.create(30, true, 50, false, false);
         pointers[1] = IndexIterationPointer.create(50, true, 60, true, false);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 1);
+        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
         Address address = instance.getCluster().getLocalMember().getAddress();
         OperationServiceImpl operationService = getOperationService(instance);
@@ -319,46 +339,32 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
-        assertResultSorted(result, Collections.singletonList(new Person("person2", 39, "Dep1")));
+        assertResultSorted(result,
+                Arrays.asList(
+                        new Person("person2", 39, "Dep1"),
+                        new Person("person5", 43, "Dep2"),
+                        new Person("person1", 45 , "Dep1"),
+                        new Person("person4", 45, "Dep2"),
+                        new Person("person9", 45, "Dep3")
+                ));
 
-        assertEquals(1, result.getPointers().length);
+        // First pointer is not done yet
+        assertEquals(2, result.getPointers().length);
 
         operation = operationProvider.createFetchIndexOperation(
-                mapName, orderedIndexName, result.getPointers(), partitions, 4);
+                mapName, orderedIndexName, result.getPointers(), partitions, 5);
 
         result = operationService.createInvocationBuilder(
                 MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
 
-        assertResultSorted(
-                result,
-                Collections.singletonList(new Person("person3", 60, "Dep1")
+        assertResultSorted(result,
+                Arrays.asList(
+                    new Person("person10", 45, "Dep4"),
+                    new Person("person11", 45, "Dep5"),
+                    new Person("person3", 60, "Dep1")
                 ));
 
         assertEquals(0, result.getPointers().length);
-    }
-
-    @Test
-    public void whenMultipleObjectsHaveSameValue_thenOperationCanReturnMoreThanSizeHint() throws ExecutionException, InterruptedException {
-        PartitionIdSet partitions = getLocalPartitions(instance);
-
-        IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(30, true, 60, true, false);
-
-        MapOperationProvider operationProvider = getOperationProvider(map);
-        MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 3);
-
-        Address address = instance.getCluster().getLocalMember().getAddress();
-        OperationServiceImpl operationService = getOperationService(instance);
-
-        MapFetchIndexOperationResult result = operationService.createInvocationBuilder(
-                MapService.SERVICE_NAME, operation, address).<MapFetchIndexOperationResult>invoke().get();
-
-        assertResultSorted(result, Arrays.asList(
-                new Person("person2", 39, "Dep1"),
-                new Person("person5", 43, "Dep2"),
-                new Person("person4", 45, "Dep2"),
-                new Person("person1", 45, "Dep1")
-        ));
     }
 
     // This test has different requirements, therefore depends on local variables.
