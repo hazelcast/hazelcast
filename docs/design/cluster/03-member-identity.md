@@ -69,3 +69,14 @@ connect to the other one simultaneously, and both connections stay there
 and get used). Right now, the fixes handle this problem, but again, this
 is yet another thing that requires testing to keep in place.x
 
+## Scope
+
+The changes implemented have been considered and tested from the 
+perspective of clusters with TCP/IP based join and WAN replication 
+(which is basically almost identical to regular TCP/IP joins). 
+
+One aspect that has not been specifically considered is the feature 
+of "public addresses", as defined in the context of advanced network 
+configs. Scenarios related to this feature should be included and 
+checked if current fixes are enough for them. 
+
