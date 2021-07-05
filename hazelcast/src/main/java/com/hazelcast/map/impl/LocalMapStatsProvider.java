@@ -72,12 +72,7 @@ public class LocalMapStatsProvider {
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap;
-    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            this::createLocalMapStatsImpl;
-
-    private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
-        return new LocalMapStatsImpl(mapServiceContext.getMapContainer(mapName).getMapConfig().getInMemoryFormat() == OBJECT);
-    }
+    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = this::createLocalMapStatsImpl;
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -88,6 +83,10 @@ public class LocalMapStatsProvider {
         this.partitionService = nodeEngine.getPartitionService();
         this.localAddress = clusterService.getThisAddress();
         this.statsMap = MapUtil.createConcurrentHashMap(nodeEngine.getConfig().getMapConfigs().size());
+    }
+
+    private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
+        return new LocalMapStatsImpl(mapServiceContext.getMapContainer(mapName).getMapConfig().getInMemoryFormat() == OBJECT);
     }
 
     protected MapServiceContext getMapServiceContext() {
