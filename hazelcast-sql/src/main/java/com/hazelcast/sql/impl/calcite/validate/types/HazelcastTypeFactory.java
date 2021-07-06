@@ -234,4 +234,9 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
         return HazelcastIntegerType.create((HazelcastIntegerType) maxBitWidthType, targetType.isNullable());
     }
+
+    @Override
+    public RelDataType createJoinType(RelDataType... types) {
+        return createUnknownType();
+    }
 }
