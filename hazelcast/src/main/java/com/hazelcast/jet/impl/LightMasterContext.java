@@ -101,8 +101,8 @@ public class LightMasterContext {
             throw new JetException("No data member with version equal to the coordinator version found");
         }
         if (members.size() < membersView.size()) {
-            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members",
-                    idToString(jobId), members.size(), membersView.size());
+            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
+                    idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();

@@ -16,12 +16,10 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -171,11 +169,6 @@ public final class QueryUtils {
         res.add(Collections.emptyList());
 
         return res;
-    }
-
-    public static Address memberOfLargerSameVersionGroup(NodeEngineImpl nodeEngine) {
-        return memberOfLargerSameVersionGroup(nodeEngine.getClusterService().getMembers(), nodeEngine.getLocalMember())
-                .getAddress();
     }
 
     /**

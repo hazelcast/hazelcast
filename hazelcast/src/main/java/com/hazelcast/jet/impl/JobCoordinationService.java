@@ -736,7 +736,7 @@ public class JobCoordinationService {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         for (Member m : nodeEngine.getClusterService().getMembers()) {
             if (!clusterVersion.equals(m.getVersion().asVersion())) {
-                logger.fine("Not starting jobs because rolling upgrade is in progress");
+                logger.fine("Not starting non-light jobs because rolling upgrade is in progress");
                 return false;
             }
         }
