@@ -62,25 +62,27 @@ final class FullScanPhysicalRule extends ConverterRule {
         RelNode rel = call.rel(0);
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        List<RelNode> transforms = new ArrayList<>();
+        List<RelNode> transforms = new ArrayList<>(1);
+
         // Only PartitionedMapTable supposed to have indices.
         if (table instanceof PartitionedMapTable) {
             PartitionedMapTable partitionedMapTable = (PartitionedMapTable) table;
+
+            // Normal scan is supported for HD.
+            transforms.add(convert(rel));
+
             if (partitionedMapTable.getIndexes().isEmpty()) {
-                call.transformTo(convert(rel));
+                for (RelNode transform : transforms) {
+                    call.transformTo(transform);
+                }
                 return;
             }
 
             List<MapTableIndex> indexes = partitionedMapTable.getIndexes();
             FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
             Collection<RelNode> indexScans = JetIndexResolver.createIndexScans(logicalScan, indexes);
-            // TODO: HD indices will be added to this transforms list later.
+            // TODO: HD index scans will be added to this transforms list later.
             transforms.addAll(indexScans);
-        }
-
-        // Produce simple map scan if Calcite haven't produce index scan or indexes aren't suppose to be.
-        if (transforms.isEmpty()) {
-            transforms.add(convert(rel));
         }
 
         for (RelNode transform : transforms) {

@@ -37,6 +37,7 @@ import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
@@ -117,6 +118,7 @@ public final class OptUtils {
         return traitSet.plus(trait).simplify();
     }
 
+
     public static LogicalTableScan createLogicalScan(
             RelOptCluster cluster,
             HazelcastTable hazelcastTable
@@ -146,6 +148,31 @@ public final class OptUtils {
                 null
         );
         return new HazelcastRelOptTable(relTable);
+    }
+
+    /**
+     * Get possible physical rels from the given subset.
+     * Every returned input is guaranteed to have a unique trait set.
+     *
+     * @param input Subset.
+     * @return Physical rels.
+     */
+    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode input) {
+        Set<RelTraitSet> traitSets = new HashSet<>();
+
+        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
+            if (!isPhysical(rel)) {
+                continue;
+            }
+
+            if (traitSets.add(rel.getTraitSet())) {
+                res.add(rel);
+            }
+        }
+
+        return res;
     }
 
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode node) {
