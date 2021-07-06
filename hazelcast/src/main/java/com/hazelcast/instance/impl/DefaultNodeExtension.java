@@ -204,8 +204,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     private void checkLosslessRestartAllowed() {
-        Config config = node.config.getStaticConfig();
-        JetConfig jetConfig = config.getJetConfig();
+        JetConfig jetConfig = node.getConfig().getJetConfig();
         if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");

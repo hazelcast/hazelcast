@@ -60,7 +60,7 @@ public class JetTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         // Then
-        assertThrows(IllegalArgumentException.class, instance::getJet);
+        assertThrows(IllegalStateException.class, instance::getJet);
     }
 
     @Test

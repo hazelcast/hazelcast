@@ -36,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -79,6 +80,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         Node node = Mockito.mock(Node.class);
         when(node.getConfig()).thenReturn(config);
         when(node.getProperties()).thenReturn(new HazelcastProperties(config));
+        when(node.getVersion()).thenReturn(new MemberVersion(0, 0, 0));
         nodeExtension = new DefaultNodeExtension(node);
         handlerFactory = new DummyOperationRunnerFactory();
 
