@@ -63,15 +63,24 @@ import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
-/*
-Behavior of the processor
-- initially it assumes that all assigned partitions are local. Sends IndexFetchOp with all local partitions
-- When response is received, saves the new `pointers` to `lastPointers` and
-  sends another one immediately with the new pointers and then emits to processor's outbox
-*/
-
 /**
  * Implementation of partition-tolerant IMap index scan processor.
+ * <p>
+ * The key component of partition-tolerant index scan is so-called 'split'.
+ * It's the basic unit of execution that is attached to the concrete member
+ * and exists in a single exemplar during normal execution.
+ * <p>
+ * Scan algorithm initially assumes that all assigned partitions are local.
+ * Processor sends FetchIndexOp to the local member during normal execution,
+ * and to all members which owns partitions were owned by local member before migration.
+ * After response is received, processor saves the new `pointers` to `lastPointers`
+ * emits to processor's outbox, and sends another operation  with the new pointers.
+ * <p>
+ * During partition migration processor will search all migrated partitions
+ * on all available cluster members. Found partitions with bounded member
+ * will be formed in separate 'split' unit.
+ * If all partitions in 'split' were read -> 'split' unit should be removed from execution.
+ * <p>
  */
 public final class MapIndexScanP extends AbstractProcessor {
     @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:MagicNumber"})
