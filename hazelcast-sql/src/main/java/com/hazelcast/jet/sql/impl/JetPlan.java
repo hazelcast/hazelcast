@@ -20,7 +20,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;

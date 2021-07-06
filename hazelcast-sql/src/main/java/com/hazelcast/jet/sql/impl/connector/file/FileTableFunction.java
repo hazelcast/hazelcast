@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.file;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;

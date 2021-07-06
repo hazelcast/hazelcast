@@ -167,8 +167,19 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe(name = MAP_METRIC_INDEXED_QUERY_COUNT)
     private volatile long indexedQueryCount;
 
-    public LocalMapStatsImpl() {
+    private final boolean ignoreMemoryCosts;
+
+    public LocalMapStatsImpl(boolean ignoreMemoryCosts) {
+        this.ignoreMemoryCosts = ignoreMemoryCosts;
         creationTime = Clock.currentTimeMillis();
+        if (ignoreMemoryCosts) {
+            ownedEntryMemoryCost = -1;
+            backupEntryMemoryCost = -1;
+        }
+    }
+
+    public LocalMapStatsImpl() {
+        this(false);
     }
 
     @Override
@@ -204,7 +215,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        }
     }
 
     @Override
@@ -213,7 +226,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
-        this.backupEntryMemoryCost = backupEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.backupEntryMemoryCost = backupEntryMemoryCost;
+        }
     }
 
     @Override

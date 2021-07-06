@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.Mapping;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
