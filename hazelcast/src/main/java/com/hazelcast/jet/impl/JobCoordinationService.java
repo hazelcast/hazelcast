@@ -242,7 +242,8 @@ public class JobCoordinationService {
                     serializedDag = serializedJobDefinition;
                 }
                 Set<String> ownedObservables = ownedObservables(dag);
-                JobRecord jobRecord = new JobRecord(jobId, serializedDag, dagToJson(dag), jobConfig, ownedObservables);
+                JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId, serializedDag,
+                        dagToJson(dag), jobConfig, ownedObservables);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -471,7 +472,8 @@ public class JobCoordinationService {
 
         return submitToCoordinatorThread(() -> {
             if (onlyJobId != ALL_JOBS) {
-                if (lightMasterContexts.get(onlyJobId) != null) {
+                Object lmc = lightMasterContexts.get(onlyJobId);
+                if (lmc != null && lmc != UNINITIALIZED_LIGHT_JOB_MARKER) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
 

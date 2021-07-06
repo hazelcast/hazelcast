@@ -285,6 +285,14 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract JobConfig doGetJobConfig();
 
     /**
+     * Return the ID of the coordinator - the master member for normal jobs and
+     * the {@link #lightJobCoordinator} for light jobs.
+     */
+    protected M coordinatorId() {
+        return lightJobCoordinator != null ? lightJobCoordinator : masterId();
+    }
+
+    /**
      * Get the current master ID.
      *
      * @throws IllegalStateException if the master isn't known

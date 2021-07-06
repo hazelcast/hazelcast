@@ -259,6 +259,13 @@ public class MasterJobContext {
             if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
                 return null;
             }
+            Version jobClusterVersion = mc.jobRecord().getClusterVersion();
+            Version currentClusterVersion = mc.nodeEngine().getClusterService().getClusterVersion();
+            if (!jobClusterVersion.equals(currentClusterVersion)) {
+                throw new JetException("Cancelling job " + mc.jobName() + ": the cluster was upgraded since the job was "
+                        + "submitted. Submitted to version: " + jobClusterVersion + ", current cluster version: "
+                        + currentClusterVersion);
+            }
             mc.setJobStatus(STARTING);
 
             // ensure JobExecutionRecord exists
