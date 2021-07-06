@@ -3823,7 +3823,7 @@
         <xs:annotation>
             <xs:documentation>
                 DEPRECATED, use 'persistence' instead.
-                Note: If either, but not both, persistence hot-restart-persistence or
+                Note: If either, but not both, hot-restart-persistence or
                 persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
                 enabled, Hazelcast will use the persistence configuration.
                 hot-restart-persistence element will be removed in a future release.
@@ -3849,7 +3849,7 @@
             <xs:element name="parallelism" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        DEPRECATED. Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
+                        Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
                         each writing in parallel to its own files. During the Hot Restart procedure, this many
                         IO threads will be reading the files and this many Rebuilder threads will be rebuilding
                         the HR metadata.
@@ -3923,7 +3923,7 @@
         <xs:annotation>
             <xs:documentation>
                 Successor of hot-restart-persistence.
-                Note: If either, but not both, persistence hot-restart-persistence or
+                Note: If either, but not both, hot-restart-persistence or
                 persistence is enabled, Hazelcast will use the configuration of the enabled element. If both are
                 enabled, Hazelcast will use the persistence configuration.
                 hot-restart-persistence element will be removed in a future release.
@@ -3949,7 +3949,8 @@
             <xs:element name="parallelism" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        DEPRECATED. Level of parallelism in Persistence. There will be this many IO threads,
+                        DEPRECATED. Please leave it to default.
+                        Level of parallelism in Persistence. There will be this many IO threads,
                         each writing in parallel to its own files. During the restart procedure, this many
                         IO threads will be reading the files and this many Rebuilder threads will be rebuilding
                         the Persistence metadata.
@@ -3967,7 +3968,8 @@
             <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        DEPRECATED. Data load timeout for the restart procedure. All members in the cluster should
+                        DEPRECATED. Please leave it to default.
+                        Data load timeout for the persistence procedure. All members in the cluster should
                         complete restoring their local data before this timeout.
                     </xs:documentation>
                 </xs:annotation>

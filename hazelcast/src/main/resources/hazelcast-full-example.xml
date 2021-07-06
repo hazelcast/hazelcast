@@ -2595,15 +2595,17 @@
             on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
             contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`.
         * <parallelism>:
+            Deprecated. Please leave it to default.
             Level of parallelism in Persistence. There will be this many IO threads,
             each writing in parallel to its own files. During the restart procedure, this many
             IO threads will be reading the files and this many Rebuilder threads will be rebuilding
-            the Hot Restart metadata.
+            the Persistence metadata.
         * <validation-timeout-seconds>:
             Validation timeout for the restart process when validating the cluster members expected to join and the partition
             table on the whole cluster.
         * <data-load-timeout-seconds>:
-            Data load timeout for the restart process. All members in the cluster should finish restoring their local data
+            Deprecated. Please leave it to default.
+            Data load timeout for the Restart process. All members in the cluster should finish restoring their local data
             before this timeout period.
         * <cluster-data-recovery-policy>:
             Specifies the data recovery policy that will be respected during restart cluster start. Valid values are;
@@ -2634,7 +2636,6 @@
         <base-dir>/mnt/persistence</base-dir>
         <backup-dir>/mnt/persistence-backup</backup-dir>
         <validation-timeout-seconds>120</validation-timeout-seconds>
-        <data-load-timeout-seconds>900</data-load-timeout-seconds>
         <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
         <encryption-at-rest enabled="true">
             <algorithm>AES/CBC/PKCS5Padding</algorithm>

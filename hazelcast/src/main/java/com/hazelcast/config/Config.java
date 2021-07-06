@@ -27,6 +27,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
@@ -35,6 +36,7 @@ import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
+import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
@@ -228,9 +230,8 @@ public class Config {
 
     private static Config applyEnvAndSystemVariableOverrides(Config cfg) {
         cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
-        if (cfg.mergePersistenceAndHotRestartPersistence()) {
-            cfg.warnPersistenceOverwroteHotRestartPersistenceConfig();
-        }
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(cfg.getHotRestartPersistenceConfig(), cfg.getPersistenceConfig());
         return cfg;
     }
 
@@ -2610,9 +2611,8 @@ public class Config {
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
         checkNotNull(hrConfig, "Hot restart config cannot be null!");
         this.hotRestartPersistenceConfig = hrConfig;
-        if (mergePersistenceAndHotRestartPersistence()) {
-            warnPersistenceOverwroteHotRestartPersistenceConfig();
-        }
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
         return this;
     }
 
@@ -2626,74 +2626,9 @@ public class Config {
     public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
         checkNotNull(persistenceConfig, "Persistence config cannot be null!");
         this.persistenceConfig = persistenceConfig;
-        if (mergePersistenceAndHotRestartPersistence()) {
-            warnPersistenceOverwroteHotRestartPersistenceConfig();
-        }
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
         return this;
-    }
-
-    /**
-     * if hot-restart-persistence: enabled="true" and persistence: enabled="false"
-     * => enable persistence (HR) and use the config from hot-restart-persistence.
-     * Does not break current deployments.
-     *
-     * <br><br>
-     *
-     * if hot-restart-persistence: enabled="false" and persistence: enabled="true"
-     * => enable persistence (HR) and use the config from persistence. This is
-     * for the new users.
-     *
-     * <br><br>
-     *
-     * if hot-restart-persistence: enabled="true" and persistence: enabled="true"
-     * => enable persistence (HR) and use the config from persistence. We prefer
-     * the new element, and the old one might get removed at some point.
-     *
-     * @return true if hotRestartPersistenceConfig has been overridden by
-     * persistenceConfig
-     */
-    private boolean mergePersistenceAndHotRestartPersistence() {
-        final HotRestartPersistenceConfig hotCfg = this.hotRestartPersistenceConfig;
-
-        if (hotCfg.isEnabled() && !persistenceConfig.isEnabled()) {
-            persistenceConfig.setEnabled(true)
-                    .setBaseDir(hotCfg.getBaseDir())
-                    .setBackupDir(hotCfg.getBackupDir())
-                    .setAutoRemoveStaleData(hotCfg.isAutoRemoveStaleData())
-                    .setEncryptionAtRestConfig(hotCfg.getEncryptionAtRestConfig())
-                    .setDataLoadTimeoutSeconds(hotCfg.getDataLoadTimeoutSeconds())
-                    .setParallelism(hotCfg.getParallelism())
-                    .setValidationTimeoutSeconds(hotCfg.getValidationTimeoutSeconds())
-                    .setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy
-                            .valueOf(hotCfg.getClusterDataRecoveryPolicy().name()));
-            return false;
-        }
-
-        if (!persistenceConfig.isEnabled()) {
-            return false;
-        }
-
-        boolean override = hotCfg.isEnabled() && persistenceConfig.isEnabled();
-
-        hotCfg.setEnabled(persistenceConfig.isEnabled())
-                .setBaseDir(persistenceConfig.getBaseDir())
-                .setBackupDir(persistenceConfig.getBackupDir())
-                .setAutoRemoveStaleData(persistenceConfig.isAutoRemoveStaleData())
-                .setEncryptionAtRestConfig(persistenceConfig.getEncryptionAtRestConfig())
-                .setDataLoadTimeoutSeconds(persistenceConfig.getDataLoadTimeoutSeconds())
-                .setParallelism(persistenceConfig.getParallelism())
-                .setValidationTimeoutSeconds(persistenceConfig.getValidationTimeoutSeconds())
-                .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.
-                        valueOf(persistenceConfig.getClusterDataRecoveryPolicy().name()));
-        return override;
-    }
-
-    private void warnPersistenceOverwroteHotRestartPersistenceConfig() {
-        logger.warning(
-                "Please note that HotRestartPersistence is deprecated and should not be used. "
-                + "Since both HotRestartPersistence and Persistence are enabled, "
-                + "and thus there is a conflict, the latter is used in persistence configuration."
-        );
     }
 
     public CRDTReplicationConfig getCRDTReplicationConfig() {

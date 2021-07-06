@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -127,7 +128,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     private List<QueryCacheConfig> queryCacheConfigs;
     private PartitioningStrategyConfig partitioningStrategyConfig;
     private MetadataPolicy metadataPolicy = DEFAULT_METADATA_POLICY;
-    // todo: to be removed when we get rid of hot-restart
     private HotRestartConfig hotRestartConfig = new HotRestartConfig();
     private DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
     private MerkleTreeConfig merkleTreeConfig = new MerkleTreeConfig();
@@ -972,13 +972,15 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         out.writeObject(partitioningStrategyConfig);
         out.writeString(splitBrainProtectionName);
         out.writeObject(hotRestartConfig);
-        out.writeObject(dataPersistenceConfig);
         out.writeObject(merkleTreeConfig);
         out.writeObject(eventJournalConfig);
         out.writeShort(metadataPolicy.getId());
 
         if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
             out.writeBoolean(perEntryStatsEnabled);
+        }
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            out.writeObject(dataPersistenceConfig);
         }
     }
 
@@ -1006,13 +1008,15 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         partitioningStrategyConfig = in.readObject();
         splitBrainProtectionName = in.readString();
         hotRestartConfig = in.readObject();
-        dataPersistenceConfig = in.readObject();
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());
 
         if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
             perEntryStatsEnabled = in.readBoolean();
+        }
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
+            setDataPersistenceConfig(in.readObject());
         }
     }
 }

@@ -159,7 +159,6 @@ public class ConfigXmlGenerator {
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
-        hotRestartXmlGenerator(gen, config);
         persistenceXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
@@ -1452,27 +1451,6 @@ public class ConfigXmlGenerator {
                 .node("fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup())
                 .node("parallel-mode", icmpFailureDetectorConfig.isParallelMode())
                 .close();
-        gen.close();
-    }
-
-    private void hotRestartXmlGenerator(XmlGenerator gen, Config config) {
-        HotRestartPersistenceConfig hrCfg = config.getHotRestartPersistenceConfig();
-        if (hrCfg == null) {
-            gen.node("hot-restart-persistence", "enabled", "false");
-            return;
-        }
-        gen.open("hot-restart-persistence", "enabled", hrCfg.isEnabled())
-                .node("base-dir", hrCfg.getBaseDir().getAbsolutePath());
-        if (hrCfg.getBackupDir() != null) {
-            gen.node("backup-dir", hrCfg.getBackupDir().getAbsolutePath());
-        }
-        gen.node("parallelism", hrCfg.getParallelism())
-                .node("validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds())
-                .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
-                .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData());
-
-        encryptionAtRestXmlGenerator(gen, hrCfg.getEncryptionAtRestConfig());
         gen.close();
     }
 

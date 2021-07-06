@@ -380,25 +380,25 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestartPersistenceConfig() {
+    public void testPersistenceConfig() {
         Config cfg = new Config();
 
-        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        PersistenceConfig expectedConfig = cfg.getPersistenceConfig();
         expectedConfig.setEnabled(true)
-                .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
+                .setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
                 .setValidationTimeoutSeconds(100)
                 .setDataLoadTimeoutSeconds(130)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5).setAutoRemoveStaleData(false);
 
-        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+        PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
 
-    private void configureHotRestartPersistence(Config cfg) {
-        cfg.getHotRestartPersistenceConfig()
+    private void configurePersistence(Config cfg) {
+        cfg.getPersistenceConfig()
                 .setEnabled(true)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
                 .setEncryptionAtRestConfig(
@@ -414,25 +414,25 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingDisabled() {
+    public void testPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingDisabled() {
         Config cfg = new Config();
 
-        configureHotRestartPersistence(cfg);
+        configurePersistence(cfg);
 
-        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        PersistenceConfig expectedConfig = cfg.getPersistenceConfig();
 
-        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+        PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
 
     @Test
-    public void testHotRestartPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingEnabled() {
+    public void testPersistenceEncryptionAtRestConfig_whenJavaKeyStore_andMaskingEnabled() {
         Config cfg = new Config();
 
-        configureHotRestartPersistence(cfg);
+        configurePersistence(cfg);
 
-        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+        PersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
 
         EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof JavaKeyStoreSecureStoreConfig);
@@ -441,10 +441,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingEnabled() {
+    public void testPersistenceEncryptionAtRestConfig_whenVault_andMaskingEnabled() {
         Config cfg = new Config();
 
-        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        PersistenceConfig expectedConfig = cfg.getPersistenceConfig();
         expectedConfig.setEnabled(true)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
 
@@ -464,9 +464,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
 
-        HotRestartPersistenceConfig hrConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
+        PersistenceConfig persistenceConfig = getNewConfigViaXMLGenerator(cfg).getPersistenceConfig();
 
-        EncryptionAtRestConfig actualConfig = hrConfig.getEncryptionAtRestConfig();
+        EncryptionAtRestConfig actualConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertTrue(actualConfig.getSecureStoreConfig() instanceof VaultSecureStoreConfig);
         VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) actualConfig.getSecureStoreConfig();
         assertEquals(MASK_FOR_SENSITIVE_DATA, vaultConfig.getToken());
@@ -475,10 +475,10 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestartPersistenceEncryptionAtRestConfig_whenVault_andMaskingDisabled() {
+    public void testPersistenceEncryptionAtRestConfig_whenVault_andMaskingDisabled() {
         Config cfg = new Config();
 
-        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        PersistenceConfig expectedConfig = cfg.getPersistenceConfig();
         expectedConfig.setEnabled(true)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile());
 
@@ -498,7 +498,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.setEncryptionAtRestConfig(encryptionAtRestConfig);
 
-        HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getHotRestartPersistenceConfig();
+        PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
     }
@@ -887,7 +887,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setKeyType("keyType")
                 .setValueType("valueType")
                 .setReadThrough(true)
-                .setHotRestartConfig(hotRestartConfig())
+                .setDataPersistenceConfig(dataPersistenceConfig())
                 .setEventJournalConfig(eventJournalConfig())
                 .setCacheEntryListeners(singletonList(cacheSimpleEntryListenerConfig()))
                 .setWriteThrough(true)
@@ -1588,7 +1588,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setPartitioningStrategyConfig(new PartitioningStrategyConfig("partitionStrategyClass"))
                 .setMerkleTreeConfig(merkleTreeConfig())
                 .setEventJournalConfig(eventJournalConfig())
-                .setHotRestartConfig(hotRestartConfig())
+                .setDataPersistenceConfig(dataPersistenceConfig())
                 .addEntryListenerConfig(listenerConfig)
                 .setIndexConfigs(singletonList(indexConfig))
                 .addAttributeConfig(attrConfig)
@@ -2258,12 +2258,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMergePolicyClassName("mergePolicy")
                 .setRepublishingEnabled(true)
                 .setFilters(Arrays.asList("filter1", "filter2"));
-    }
-
-    private static HotRestartConfig hotRestartConfig() {
-        return new HotRestartConfig()
-                .setEnabled(true)
-                .setFsync(true);
     }
 
     private static DataPersistenceConfig dataPersistenceConfig() {

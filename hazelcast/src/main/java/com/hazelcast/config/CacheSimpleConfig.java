@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -829,7 +830,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         // RU_COMPAT_4_2
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             merkleTreeConfig = in.readObject();
-            dataPersistenceConfig = in.readObject();
+            setDataPersistenceConfig(in.readObject());
         }
     }
 

@@ -2534,6 +2534,7 @@ hazelcast:
   #     on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
   #     contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`.
   # * "parallelism":
+  #     Deprecated. Please leave it to default.
   #     Level of parallelism in Persistence restart. There will be this many IO threads,
   #     each writing in parallel to its own files. During the restart procedure, this many
   #     IO threads will be reading the files and this many Rebuilder threads will be rebuilding
@@ -2542,6 +2543,7 @@ hazelcast:
   #     Validation timeout for the Restart process when validating the cluster members expected to join and the partition
   #     table on the whole cluster.
   # * "data-load-timeout-seconds":
+  #     Deprecated. Please leave it to default.
   #     Data load timeout for the Restart process. All members in the cluster should finish restoring their local data
   #     before this timeout period.
   # * "cluster-data-recovery-policy":
@@ -2574,7 +2576,6 @@ hazelcast:
     base-dir: /mnt/persistence
     backup-dir: /mnt/persistence-backup
     validation-timeout-seconds: 120
-    data-load-timeout-seconds: 900
     cluster-data-recovery-policy: PARTIAL_RECOVERY_MOST_COMPLETE
     encryption-at-rest:
       enabled: true

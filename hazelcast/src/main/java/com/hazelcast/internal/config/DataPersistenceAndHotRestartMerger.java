@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.internal.config;
 
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -44,17 +46,14 @@ public final class DataPersistenceAndHotRestartMerger {
      * => enable persistence and use the config from data-persistence. We prefer
      * the new element, and the old one might get removed at some point.
      *
-     * @return true if hotRestartConfig has been overridden by
-     * dataPersistenceConfig
+     * if hot-restart: enabled="false" and data-persistence: enabled="false"
+     * => we still do override hot-restart using data-persistence.
+     * It is necessary to maintain equality consistency.
      */
     public static void merge(HotRestartConfig hotRestartConfig, DataPersistenceConfig dataPersistenceConfig) {
 
         if (hotRestartConfig.isEnabled() && !dataPersistenceConfig.isEnabled()) {
             dataPersistenceConfig.setEnabled(true).setFsync(hotRestartConfig.isFsync());
-            return;
-        }
-
-        if (!dataPersistenceConfig.isEnabled()) {
             return;
         }
 

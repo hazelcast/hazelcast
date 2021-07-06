@@ -614,7 +614,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         // RU_COMPAT_4_2
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             merkleTreeConfig = in.readObject();
-            dataPersistenceConfig = in.readObject();
+            setDataPersistenceConfig(in.readObject());
         }
     }
 

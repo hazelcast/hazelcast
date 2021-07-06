@@ -165,7 +165,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     private void checkPersistenceAllowed() {
-        // todo: to be replaced with PersistenceConfig
         HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
         if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
