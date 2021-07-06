@@ -83,8 +83,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -100,8 +98,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -222,7 +218,8 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {
-        return new JobRecord(jobId, dag, "", jobConfig, Collections.emptySet());
+        return new JobRecord(instance.getCluster().getLocalMember().getVersion().asVersion(),
+                jobId, dag, "", jobConfig, Collections.emptySet());
     }
 
     private void sleepUntilJobExpires() {

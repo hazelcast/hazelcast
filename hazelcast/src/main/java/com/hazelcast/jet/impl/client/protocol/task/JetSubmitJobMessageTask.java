@@ -25,11 +25,17 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJobCodec.RequestParameters, Void> {
     protected JetSubmitJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection, JetSubmitJobCodec::decodeRequest,
                 o -> JetSubmitJobCodec.encodeResponse());
+    }
+
+    @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.isLightJob ? nodeEngine.getLocalMember().getUuid() : null;
     }
 
     @Override

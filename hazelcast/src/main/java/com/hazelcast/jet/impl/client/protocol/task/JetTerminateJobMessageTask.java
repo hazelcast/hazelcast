@@ -28,6 +28,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 
+import java.util.UUID;
 
 public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTerminateJobCodec.RequestParameters, Void> {
 
@@ -37,9 +38,14 @@ public class JetTerminateJobMessageTask extends AbstractJetMessageTask<JetTermin
     }
 
     @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
     protected Operation prepareOperation() {
         return new TerminateJobOperation(parameters.jobId, TerminationMode.values()[parameters.terminateMode],
-                parameters.isLightJob);
+                parameters.lightJobCoordinator != null);
     }
 
     @Override

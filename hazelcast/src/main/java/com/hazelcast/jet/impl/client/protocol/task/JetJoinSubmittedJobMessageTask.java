@@ -25,6 +25,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
+import java.util.UUID;
 
 public class JetJoinSubmittedJobMessageTask
         extends AbstractJetMessageTask<JetJoinSubmittedJobCodec.RequestParameters, Void> {
@@ -35,8 +36,13 @@ public class JetJoinSubmittedJobMessageTask
     }
 
     @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
     protected Operation prepareOperation() {
-        return new JoinSubmittedJobOperation(parameters.jobId, parameters.isLightJob);
+        return new JoinSubmittedJobOperation(parameters.jobId, parameters.lightJobCoordinator != null);
     }
 
     @Override

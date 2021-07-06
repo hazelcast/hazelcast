@@ -116,13 +116,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int ROW_BATCH_LIST = 5;
     public static final int ROW_BATCH_EMPTY = 6;
 
-    public static final int OPERATION_EXECUTE = 7;
-    public static final int OPERATION_EXECUTE_FRAGMENT = 8;
-    public static final int OPERATION_BATCH = 9;
-    public static final int OPERATION_FLOW_CONTROL = 10;
-    public static final int OPERATION_CANCEL = 11;
-    public static final int OPERATION_CHECK = 12;
-    public static final int OPERATION_CHECK_RESPONSE = 13;
+    public static final int QUERY_OPERATION_EXECUTE = 7;
+    public static final int QUERY_OPERATION_EXECUTE_FRAGMENT = 8;
+    public static final int QUERY_OPERATION_BATCH = 9;
+    public static final int QUERY_OPERATION_FLOW_CONTROL = 10;
+    public static final int QUERY_OPERATION_CANCEL = 11;
+    public static final int QUERY_OPERATION_CHECK = 12;
+    public static final int QUERY_OPERATION_CHECK_RESPONSE = 13;
 
     public static final int NODE_ROOT = 14;
     public static final int NODE_SEND = 15;
@@ -196,13 +196,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_REPLACE = 69;
     public static final int EXPRESSION_POSITION = 70;
-
     public static final int EXPRESSION_CASE = 71;
-
     public static final int EXPRESSION_EXTRACT = 72;
-
     public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
-
     public static final int EXPRESSION_TO_EPOCH_MILLIS = 74;
 
     public static final int LEN = EXPRESSION_TO_EPOCH_MILLIS + 1;
@@ -227,13 +223,13 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[ROW_BATCH_LIST] = arg -> new ListRowBatch();
         constructors[ROW_BATCH_EMPTY] = arg -> EmptyRowBatch.INSTANCE;
 
-        constructors[OPERATION_EXECUTE] = arg -> new QueryExecuteOperation();
-        constructors[OPERATION_EXECUTE_FRAGMENT] = arg -> new QueryExecuteOperationFragment();
-        constructors[OPERATION_BATCH] = arg -> new QueryBatchExchangeOperation();
-        constructors[OPERATION_FLOW_CONTROL] = arg -> new QueryFlowControlExchangeOperation();
-        constructors[OPERATION_CANCEL] = arg -> new QueryCancelOperation();
-        constructors[OPERATION_CHECK] = arg -> new QueryCheckOperation();
-        constructors[OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
+        constructors[QUERY_OPERATION_EXECUTE] = arg -> new QueryExecuteOperation();
+        constructors[QUERY_OPERATION_EXECUTE_FRAGMENT] = arg -> new QueryExecuteOperationFragment();
+        constructors[QUERY_OPERATION_BATCH] = arg -> new QueryBatchExchangeOperation();
+        constructors[QUERY_OPERATION_FLOW_CONTROL] = arg -> new QueryFlowControlExchangeOperation();
+        constructors[QUERY_OPERATION_CANCEL] = arg -> new QueryCancelOperation();
+        constructors[QUERY_OPERATION_CHECK] = arg -> new QueryCheckOperation();
+        constructors[QUERY_OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
 
         constructors[NODE_ROOT] = arg -> new RootPlanNode();
         constructors[NODE_SEND] = arg -> new SendPlanNode();
@@ -311,7 +307,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
 
         constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
-
         constructors[EXPRESSION_TO_EPOCH_MILLIS] = arg -> new ToEpochMillisFunction();
 
         return new ArrayDataSerializableFactory(constructors);
