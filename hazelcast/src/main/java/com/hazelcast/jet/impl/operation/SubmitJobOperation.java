@@ -47,7 +47,6 @@ public class SubmitJobOperation extends AsyncJobOperation {
     public CompletableFuture<Void> doRun() {
         JobConfig jobConfig = getNodeEngine().getSerializationService().toObject(serializedConfig);
         if (isLightJob) {
-            assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
             return getJobCoordinationService().submitLightJob(jobId(), jobDefinition, jobConfig);
         } else {
             return getJobCoordinationService().submitJob(jobId(), jobDefinition, jobConfig);
