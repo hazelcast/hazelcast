@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,8 +27,6 @@ import org.junit.Test;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.sql.SqlTestSupport.javaSerializableMapDdl;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
 
@@ -72,15 +69,5 @@ public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() ->
                 assertEquals(1, getJetServiceBackend(instances()[1]).getJobExecutionService().getExecutionContexts().size()));
         assertEquals(0, getJetServiceBackend(instances()[0]).getJobExecutionService().getExecutionContexts().size());
-    }
-
-    private void assertLightJobExecuting(Job job, HazelcastInstance instance) {
-        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
-        assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
-    }
-
-    private void assertLightJobNotExecuting(Job job, HazelcastInstance instance) {
-        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
-        assertNull("Job should not be executing on member " + instance + ", but is", execCtx);
     }
 }

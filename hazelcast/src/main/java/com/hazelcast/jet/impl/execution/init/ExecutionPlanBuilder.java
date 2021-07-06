@@ -135,6 +135,11 @@ public final class ExecutionPlanBuilder {
         return list;
     }
 
+    /**
+     * Assign the partitions to their owners. Partitions whose owner isn't in
+     * the {@code memberList}, are assigned to one of the members in a
+     * round-robin way.
+     */
     public static Map<MemberInfo, int[]> getPartitionAssignment(NodeEngine nodeEngine, List<MemberInfo> memberList) {
         IPartitionService partitionService = nodeEngine.getPartitionService();
         Map<Address, MemberInfo> membersByAddress = memberList.stream().collect(toMap(MemberInfo::getAddress, identity()));

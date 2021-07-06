@@ -30,10 +30,13 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
 
     @Test
     public void test_submittedFromLiteMember() {
-        createHazelcastInstance();
+        HazelcastInstance nonLiteInst = createHazelcastInstance();
         HazelcastInstance liteInst = createHazelcastInstance(smallInstanceConfig().setLiteMember(true));
+        // lite members can be coordinators, though they won't execute the job
+        Job job = liteInst.getJet().newLightJob(batchDag());
 
-        liteInst.getJet().newLightJob(batchDag()).join();
+        assertLightJobExecuting(job, nonLiteInst);
+        assertLightJobNotExecuting(job, liteInst);
     }
 
     @Test
