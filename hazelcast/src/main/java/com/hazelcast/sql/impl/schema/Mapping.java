@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.schema;
+package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -77,12 +77,12 @@ public class Mapping implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.MAPPING;
+        return SqlDataSerializerHook.MAPPING;
     }
 
     @Override
