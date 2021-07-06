@@ -69,6 +69,21 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
     }
 
+    protected static void initializeExceptLast(int memberCount, @Nullable Config config) {
+        assert memberCount > 1;
+        assert factory == null : "already initialized";
+        factory = new TestHazelcastFactory();
+        instances = new HazelcastInstance[memberCount];
+        if (config == null) {
+            config = smallInstanceConfig();
+        }
+        SimpleTestInClusterSupport.config = config;
+        // create members
+        for (int i = 0; i < memberCount - 1; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+        }
+    }
+
     protected static void initializeWithClient(
             int memberCount,
             @Nullable Config config,

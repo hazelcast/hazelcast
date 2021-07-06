@@ -76,6 +76,9 @@ public final class ExpressionUtil {
 
                 Comparable o1 = (Comparable) row1[index];
                 Object o2 = row2[index];
+                System.out.print(row1[0] + " - " + row1[1] +
+                        " | " + row2[0] + " - " + row2[1] +
+                        " : " + o1.compareTo(o2) + " \n");
 
                 Direction direction = fieldCollation.getDirection();
 

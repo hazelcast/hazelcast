@@ -43,7 +43,6 @@ import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -95,6 +94,7 @@ public final class MapIndexScanP extends AbstractProcessor {
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
     private Object[] pendingItem;
+    private Object[] lastSentItem;
 
     public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         this.metadata = indexScanMetadata;
@@ -136,6 +136,9 @@ public final class MapIndexScanP extends AbstractProcessor {
             if (pendingItem != null && !tryEmit(pendingItem)) {
                 return false;
             } else {
+                if (pendingItem != null) {
+                    lastSentItem = pendingItem;
+                }
                 pendingItem = null;
             }
 
@@ -160,7 +163,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                     return false;
                 }
                 if (extremeIndex < 0
-                        || metadata.getComparator().compare(s.currentRow, splits.get(extremeIndex).currentRow) > 0) {
+                        || metadata.getComparator().compare(s.currentRow, splits.get(extremeIndex).currentRow) < 0) {
                     extremeIndex = i;
                     extreme = s.currentRow;
                 }
@@ -172,6 +175,12 @@ public final class MapIndexScanP extends AbstractProcessor {
             }
 
             pendingItem = extreme;
+
+            if (lastSentItem != null) {
+                assert ((Integer) pendingItem[1]).compareTo((Integer) lastSentItem[1]) ==
+                        metadata.getComparator().compare(pendingItem, lastSentItem)
+                        : "Current : " + pendingItem[1] + ", last sent : " + lastSentItem[1];
+            }
             splits.get(extremeIndex).remove();
         }
     }

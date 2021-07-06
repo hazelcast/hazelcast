@@ -24,24 +24,22 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 500_000;
+    static final int ITEM_COUNT = 5000;
     static final String MAP_NAME = "map";
 
     private IMap<Integer, Integer> map;
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(4, smallInstanceConfig());
+        initializeExceptLast(3, smallInstanceConfig());
     }
 
     @Before
@@ -50,7 +48,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+//    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -71,26 +69,24 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
     }
 
     private static class MutatorThread extends Thread {
         private final HazelcastInstance[] instances;
-        private final Random random;
         private final int iterations;
         private final long delay;
 
         MutatorThread(HazelcastInstance[] instances, int iterations) {
             super();
             this.instances = instances;
-            this.random = new Random(System.currentTimeMillis());
             this.iterations = iterations;
-            this.delay = 2500L;
+            this.delay = 2000L;
         }
 
         MutatorThread(HazelcastInstance[] instances, int iterations, long delay) {
             super();
             this.instances = instances;
-            this.random = new Random(System.currentTimeMillis());
             this.iterations = iterations;
             this.delay = delay;
         }
@@ -103,10 +99,11 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                int instanceReplace = random.nextInt(instances.length);
-                instances[instanceReplace].shutdown();
-                instances[instanceReplace] = factory().newHazelcastInstance(smallInstanceConfig());
-                System.out.println("Instance was replaced : " + instanceReplace);
+                if (i != 0) {
+                    instances[instances.length - 1].shutdown();
+                }
+                instances[instances.length - 1] = factory().newHazelcastInstance(smallInstanceConfig());
+                System.out.println("Instance was initialized.");
             }
         }
     }

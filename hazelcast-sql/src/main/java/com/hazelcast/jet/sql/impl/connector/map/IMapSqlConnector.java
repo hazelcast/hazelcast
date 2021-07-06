@@ -47,12 +47,12 @@ import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 import javax.annotation.Nonnull;
@@ -133,6 +133,10 @@ public class IMapSqlConnector implements SqlConnector {
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
+        List<MapTableIndex> mapIndexes = container != null
+                ? MapTableUtils.getPartitionedMapIndexes(container, fields)
+                : Collections.emptyList();
+
 
         return new PartitionedMapTable(
                 schemaName,
@@ -144,7 +148,7 @@ public class IMapSqlConnector implements SqlConnector {
                 valueMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
-                Collections.emptyList(),
+                mapIndexes,
                 hd
         );
     }
