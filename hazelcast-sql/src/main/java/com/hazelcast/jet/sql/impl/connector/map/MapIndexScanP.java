@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MissingPartitionException;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -63,23 +64,23 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Implementation of partition-tolerant IMap index scan processor.
+ * Implementation of migration-tolerant IMap index scan processor.
  * <p>
- * The key component of partition-tolerant index scan is so-called 'split'.
- * It's the basic unit of execution that is attached to the concrete member
- * and exists in a single exemplar during normal execution.
+ * The key component of migration-tolerant index scan is so-called 'split'.
+ * It's the basic unit of execution that is attached to a concrete member
+ * and there exists a single instance during normal execution.
  * <p>
  * Scan algorithm initially assumes that all assigned partitions are local.
- * Processor sends FetchIndexOp to the local member during normal execution,
- * and to all members which owns partitions were owned by local member before migration.
- * After response is received, processor saves the new `pointers` to `lastPointers`
- * emits to processor's outbox, and sends another operation  with the new pointers.
+ * Processor sends {@link MapFetchIndexOperation} to the local member
+ * during normal execution, and to all members which own partitions
+ * assigned to the processor after migration. After response is received,
+ * processor saves the new `pointers` to `lastPointers`, emits to
+ * processor's outbox, and sends another operation with the new pointers.
  * <p>
- * During partition migration processor will search all migrated partitions
- * on all available cluster members. Found partitions with bounded member
- * will be formed in separate 'split' unit.
- * If all partitions in 'split' were read -> 'split' unit should be removed from execution.
- * <p>
+ * During partition migration processor will split the partitions in the
+ * original `split` into disjoint parts, according to the owner, and retry
+ * with the new owners. If all partitions in a `split` were read, the
+ * `split` is removed from execution.
  */
 public final class MapIndexScanP extends AbstractProcessor {
 
