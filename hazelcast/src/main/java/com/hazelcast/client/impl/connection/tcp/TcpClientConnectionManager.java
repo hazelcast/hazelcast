@@ -124,6 +124,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
             EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
+    private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
+
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -840,7 +842,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             // There might be a race - the chosen member just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
                 Member member = QueryUtils.memberOfLargerSameVersionGroup(
                         client.getClientClusterService().getMemberList(), null);
                 if (member != null) {
