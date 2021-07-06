@@ -92,6 +92,8 @@ import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.JoinRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
@@ -201,7 +203,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
     public static final int EXPRESSION_TO_EPOCH_MILLIS = 74;
 
-    public static final int LEN = EXPRESSION_TO_EPOCH_MILLIS + 1;
+    public static final int MAPPING = 75;
+    public static final int MAPPING_FIELD = 76;
+
+    public static final int LEN = MAPPING_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -308,6 +313,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
         constructors[EXPRESSION_TO_EPOCH_MILLIS] = arg -> new ToEpochMillisFunction();
+
+        constructors[MAPPING] = arg -> new Mapping();
+        constructors[MAPPING_FIELD] = arg -> new MappingField();
 
         return new ArrayDataSerializableFactory(constructors);
     }
