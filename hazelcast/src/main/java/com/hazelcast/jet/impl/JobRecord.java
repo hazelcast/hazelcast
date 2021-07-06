@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Set;
 
@@ -51,7 +52,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     public JobRecord() {
     }
 
-    public JobRecord(Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
+    public JobRecord(@Nonnull Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
                      Set<String> ownedObservables) {
         this.clusterVersion = clusterVersion;
         this.jobId = jobId;
