@@ -2605,7 +2605,7 @@ public class Config {
      * @return this config instance
      * @throws NullPointerException if the {@code hrConfig} parameter is {@code null}
      *
-     * @deprecated since 5.0
+     * @deprecated since 5.0 use {@link Config#setPersistenceConfig(PersistenceConfig)}
      */
     @Deprecated
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {

@@ -19,7 +19,7 @@ package com.hazelcast.config;
 /**
  * Specifies the policy that will be respected during hot restart cluster start
  *
- * @deprecated since 5.0
+ * @deprecated since 5.0 use {@link PersistenceClusterDataRecoveryPolicy}
  */
 @Deprecated
 public enum HotRestartClusterDataRecoveryPolicy {
