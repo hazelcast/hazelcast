@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -86,7 +87,16 @@ public class LocalMapStatsProvider {
     }
 
     private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
-        return new LocalMapStatsImpl(nodeEngine.getConfig().getMapConfig(mapName).getInMemoryFormat() == OBJECT);
+        // intentionally not using nodeEngine.getConfig().getMapConfig(mapName)
+        // since that breaks TestFullApplicationContext#testMapConfig()
+        MapConfig mapConfig = nodeEngine.getConfig().getMapConfigs().get(mapName);
+        InMemoryFormat inMemoryFormat;
+        if (mapConfig == null) {
+            inMemoryFormat = InMemoryFormat.BINARY;
+        } else {
+            inMemoryFormat = mapConfig.getInMemoryFormat();
+        }
+        return new LocalMapStatsImpl(inMemoryFormat == OBJECT);
     }
 
     protected MapServiceContext getMapServiceContext() {
