@@ -32,19 +32,17 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
@@ -65,7 +63,6 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.sortP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSourceP;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
-import static com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector.TYPE_NAME;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.singletonList;
 
@@ -145,29 +142,21 @@ public class CreateDagVisitor {
     }
 
     public Vertex onMapIndexScan(IMapIndexScanPhysicalRel rel) {
-        Table table0 = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-        final PartitionedMapTable table = (PartitionedMapTable) table0;
-
-        IndexFilter filter = rel.getIndexFilter();
-        Expression<Boolean> remFilter = rel.filter(parameterMetadata);
-
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        SqlConnector sqlConnector = getJetSqlConnector(table);
-        assert sqlConnector instanceof IMapSqlConnector;
-        IMapSqlConnector mapConnector = (IMapSqlConnector) sqlConnector;
-
-        return mapConnector.indexScanReader(
-                dag,
-                localMemberAddress,
-                table,
-                rel.getIndex(),
-                remFilter,
-                rel.projection(parameterMetadata),
-                rel.fullProjection(parameterMetadata),
-                filter,
-                ExpressionUtil.comparisonFn(rel.getCollations())
-        );
+        return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
+                .indexScanReader(
+                        dag,
+                        localMemberAddress,
+                        table,
+                        rel.getIndex(),
+                        rel.filter(parameterMetadata),
+                        rel.projection(parameterMetadata),
+                        rel.fullProjection(parameterMetadata),
+                        rel.getIndexFilter(),
+                        ExpressionUtil.comparisonFn(rel.getCollations())
+                );
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -408,9 +397,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private static String toString(PartitionedMapTable table) {
-        return TYPE_NAME + "[" + table.getSchemaName() + "." + table.getSqlName() + "]";
     }
 }

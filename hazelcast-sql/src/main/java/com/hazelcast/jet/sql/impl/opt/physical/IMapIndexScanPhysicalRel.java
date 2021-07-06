@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -34,7 +33,6 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
-import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.type.RelDataType;
@@ -46,9 +44,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
-import static org.apache.calcite.rel.RelFieldCollation.Direction;
 
 /**
  * Map index scan operator.
@@ -82,7 +77,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
-        return convertFilter(schema, getRemainderExp(), parameterMetadata);
+        return filter(schema, remainderExp, parameterMetadata);
     }
 
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
@@ -103,11 +98,11 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public List<Expression<?>> fullProjection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
+
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+
         int fieldCount = table.getTarget().getFieldCount();
-
         List<RexNode> projection = new ArrayList<>(fieldCount);
-
         for (int index = 0; index < fieldCount; index++) {
             TableField field = table.getTarget().getField(index);
             RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
@@ -127,23 +122,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
     public List<QueryDataType> getConverterTypes() {
         return converterTypes;
-    }
-
-    public RexNode getRemainderExp() {
-        return remainderExp;
-    }
-
-    public List<Boolean> getAscs() {
-        RelCollation collation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        assert collation != null;
-        int size = collation.getFieldCollations().size();
-
-        List<Boolean> ascs = new ArrayList<>(size);
-        for (RelFieldCollation fieldCollation : collation.getFieldCollations()) {
-            Boolean asc = fieldCollation.getDirection() == Direction.ASCENDING ? TRUE : FALSE;
-            ascs.add(asc);
-        }
-        return ascs;
     }
 
     public List<FieldCollation> getCollations() {
@@ -183,18 +161,5 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
                 .item("index", index.getName())
                 .item("indexExp", indexExp)
                 .item("remainderExp", remainderExp);
-    }
-
-    private Expression<Boolean> convertFilter(
-            PlanNodeSchema schema,
-            RexNode expression,
-            QueryParameterMetadata parameterMetadata
-    ) {
-        if (expression == null) {
-            return null;
-        }
-
-        RexToExpressionVisitor converter = new RexToExpressionVisitor(schema, parameterMetadata);
-        return (Expression<Boolean>) expression.accept(converter);
     }
 }

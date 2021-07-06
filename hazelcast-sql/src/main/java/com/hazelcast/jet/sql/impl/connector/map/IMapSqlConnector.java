@@ -58,7 +58,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
@@ -72,6 +71,7 @@ import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupp
 import static com.hazelcast.jet.sql.impl.connector.map.RowReducerSupplier.rowReducer;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
@@ -133,10 +133,9 @@ public class IMapSqlConnector implements SqlConnector {
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
-        List<MapTableIndex> mapIndexes = container != null
+        List<MapTableIndex> indexes = container != null
                 ? MapTableUtils.getPartitionedMapIndexes(container, fields)
-                : Collections.emptyList();
-
+                : emptyList();
 
         return new PartitionedMapTable(
                 schemaName,
@@ -148,7 +147,7 @@ public class IMapSqlConnector implements SqlConnector {
                 valueMetadata.getQueryTargetDescriptor(),
                 keyMetadata.getUpsertTargetDescriptor(),
                 valueMetadata.getUpsertTargetDescriptor(),
-                mapIndexes,
+                indexes,
                 hd
         );
     }
@@ -198,6 +197,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull ComparatorEx<Object[]> comparator
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
+
         MapIndexScanMetadata mapScanMetadata = new MapIndexScanMetadata(
                 table.getMapName(),
                 tableIndex.getName(),
@@ -211,34 +211,32 @@ public class IMapSqlConnector implements SqlConnector {
                 reminderFilter,
                 comparator
         );
+        Vertex indexScanner = dag.newUniqueVertex(
+                "Index(" + toString(table) + ")",
+                readMapIndexSupplier(mapScanMetadata)
+        );
 
-        String vertexName = "Index(" + toString(table) + ")";
-        final Vertex indexScanner = dag.newUniqueVertex(vertexName, readMapIndexSupplier(mapScanMetadata));
-
-        Vertex projectorVertex;
+        Vertex projector;
         if (tableIndex.getType() == IndexType.SORTED) {
-            projectorVertex = dag.newUniqueVertex(
+            projector = dag.newUniqueVertex(
                     "Project(" + toString(table) + ")",
-                    ProcessorMetaSupplier.forceTotalParallelismOne(
-                            rowReducer(projection),
-                            localMemberAddress
-                    )
+                    ProcessorMetaSupplier.forceTotalParallelismOne(rowReducer(projection), localMemberAddress)
             );
 
-            dag.edge(between(indexScanner, projectorVertex)
+            dag.edge(between(indexScanner, projector)
                     .ordered(comparator)
                     .distributeTo(localMemberAddress)
                     .allToOne("")
             );
         } else {
-            projectorVertex = dag.newUniqueVertex(
+            projector = dag.newUniqueVertex(
                     "Project(" + toString(table) + ")",
                     rowReducer(projection)
             );
 
-            dag.edge(between(indexScanner, projectorVertex).isolated());
+            dag.edge(between(indexScanner, projector).isolated());
         }
-        return projectorVertex;
+        return projector;
     }
 
     @Nonnull

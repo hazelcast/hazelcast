@@ -82,14 +82,14 @@ import static java.util.stream.Collectors.toList;
  * <p>
  */
 public final class MapIndexScanP extends AbstractProcessor {
-    @SuppressWarnings({"checkstyle:StaticVariableName", "checkstyle:MagicNumber"})
-    static final int FETCH_SIZE_HINT = 128;
+
+    private static final int FETCH_SIZE_HINT = 128;
 
     private final MapIndexScanMetadata metadata;
 
-    private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
-    private ExpressionEvalContext evalContext;
     private HazelcastInstance hazelcastInstance;
+    private ExpressionEvalContext evalContext;
+    private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
 
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
@@ -103,20 +103,17 @@ public final class MapIndexScanP extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         super.init(context);
-        this.hazelcastInstance = context.hazelcastInstance();
+
+        hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
         reader = LocalMapIndexReader.create(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
-
-        splits.add(
-                new Split(
-                        new PartitionIdSet(
-                                hazelcastInstance.getPartitionService().getPartitions().size(),
-                                memberPartitions),
-                        context.hazelcastInstance().getCluster().getLocalMember().getAddress(),
-                        filtersToPointers(metadata.getFilter()))
-        );
+        splits.add(new Split(
+                new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
+                hazelcastInstance.getCluster().getLocalMember().getAddress(),
+                filtersToPointers(metadata.getFilter())
+        ));
 
         row = MapScanRow.create(
                 metadata.getKeyDescriptor(),
@@ -306,14 +303,12 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
-    public static final class MapIndexScanProcessorMetaSupplier
-            implements ProcessorMetaSupplier, DataSerializable {
-        private static final long serialVersionUID = 1L;
+    public static final class MapIndexScanProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
 
         private MapIndexScanMetadata indexScanMetadata;
 
-        public MapIndexScanProcessorMetaSupplier() {
-            // No-op.
+        @SuppressWarnings("unused")
+        private MapIndexScanProcessorMetaSupplier() {
         }
 
         public MapIndexScanProcessorMetaSupplier(
@@ -339,13 +334,12 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
-    public static final class MapIndexScanProcessorSupplier
-            implements ProcessorSupplier, DataSerializable {
+    public static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
         private MapIndexScanMetadata indexScanMetadata;
 
-        public MapIndexScanProcessorSupplier() {
-            // no-op.
+        @SuppressWarnings("unused")
+        private MapIndexScanProcessorSupplier() {
         }
 
         private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
@@ -371,9 +365,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
-    static final class LocalMapIndexReader extends AbstractIndexReader<
-            MapFetchIndexOperationResult,
-            QueryableEntry<?, ?>> {
+    static final class LocalMapIndexReader extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
         private HazelcastInstance hazelcastInstance;
         private String indexName;

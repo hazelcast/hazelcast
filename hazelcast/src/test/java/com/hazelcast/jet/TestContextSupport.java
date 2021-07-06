@@ -105,7 +105,7 @@ public final class TestContextSupport {
         }
     }
 
-    public static final class TestProcessorAdapter extends ProcessorWrapper {
+    private static final class TestProcessorAdapter extends ProcessorWrapper {
 
         private TestProcessorAdapter(Processor wrapped) {
             super(wrapped);

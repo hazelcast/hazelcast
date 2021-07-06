@@ -25,7 +25,6 @@ import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 
@@ -61,22 +60,21 @@ final class FullScanPhysicalRule extends ConverterRule {
     @Override
     public void onMatch(RelOptRuleCall call) {
         RelNode rel = call.rel(0);
-        Table tableUnwrapped = getTableUnwrapped(rel.getTable());
-        List<RelNode> transforms = new ArrayList<>();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
+        List<RelNode> transforms = new ArrayList<>();
         // Only PartitionedMapTable supposed to have indices.
-        if (tableUnwrapped instanceof PartitionedMapTable) {
-            PartitionedMapTable table = (PartitionedMapTable) tableUnwrapped;
-            if (table.getIndexes().isEmpty()) {
+        if (table instanceof PartitionedMapTable) {
+            PartitionedMapTable partitionedMapTable = (PartitionedMapTable) table;
+            if (partitionedMapTable.getIndexes().isEmpty()) {
                 call.transformTo(convert(rel));
                 return;
             }
 
-            List<MapTableIndex> indexes = table.getIndexes();
+            List<MapTableIndex> indexes = partitionedMapTable.getIndexes();
             FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
             Collection<RelNode> indexScans = JetIndexResolver.createIndexScans(logicalScan, indexes);
             // TODO: HD indices will be added to this transforms list later.
-            //noinspection CollectionAddAllCanBeReplacedWithConstructor
             transforms.addAll(indexScans);
         }
 
@@ -88,9 +86,5 @@ final class FullScanPhysicalRule extends ConverterRule {
         for (RelNode transform : transforms) {
             call.transformTo(transform);
         }
-    }
-
-    private Table getTableUnwrapped(RelOptTable table) {
-        return table.unwrap(HazelcastTable.class).getTarget();
     }
 }
