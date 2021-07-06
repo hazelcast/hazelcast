@@ -48,7 +48,7 @@ import static org.junit.Assert.assertFalse;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberCompatibilityTest_2_0_1 {
-    private List<ClientMessage> clientMessages = new ArrayList<>();
+    private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {

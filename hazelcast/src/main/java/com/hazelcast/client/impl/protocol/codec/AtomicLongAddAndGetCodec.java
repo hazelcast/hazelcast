@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Atomically adds the given value to the current value.
  */
-@Generated("4e3edd3721efd115236a275e72c3f705")
+@Generated("9a359aa0f9b4c334078529ba2af40de2")
 public final class AtomicLongAddAndGetCodec {
     //hex: 0x090300
     public static final int REQUEST_MESSAGE_TYPE = 590592;
@@ -111,5 +111,4 @@ public final class AtomicLongAddAndGetCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }
