@@ -388,8 +388,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public void tryStartScanningForJobs(Version clusterVersion) {
-        if (nodeEngine != null && nodeEngine.isRunning() && clusterVersion.isGreaterThan(Versions.V5_0)
-                && isJobScanStarted.compareAndSet(false, true)) {
+        if (nodeEngine != null
+                && nodeEngine.isRunning()
+                && clusterVersion.isGreaterOrEqual(Versions.V5_0)
+                && isJobScanStarted.compareAndSet(false, true)
+        ) {
             jobCoordinationService.startScanningForJobs();
         }
     }
