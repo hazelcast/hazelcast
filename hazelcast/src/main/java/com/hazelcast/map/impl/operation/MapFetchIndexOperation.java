@@ -153,6 +153,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                             break;
                         } else if (comparison > 0) {
                             entries.add(entry);
+                            lastEntryKeyData = entry.getKeyData();
                             break;
                         }
                     }
