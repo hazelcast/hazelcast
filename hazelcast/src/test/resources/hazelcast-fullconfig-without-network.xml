@@ -630,7 +630,20 @@
 
     <security enabled="false">
         <realms>
-            <realm name="mr">
+            <realm name="simpleRealm">
+                <authentication>
+                    <simple>
+                        <user username="test" password="a1234">
+                            <role>monitor</role>
+                            <role>hazelcast</role>
+                        </user>
+                        <user username="dev" password="secret">
+                            <role>root</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+            <realm name="jaasRealm">
                 <authentication>
                     <jaas>
                         <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
@@ -647,22 +660,6 @@
                         </properties>
                     </credentials-factory>
                 </identity>
-            </realm>
-            <realm name="cr">
-                <authentication>
-                    <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                    </jaas>
-                </authentication>
             </realm>
             <realm name="ldapRealm">
                 <authentication>
@@ -781,8 +778,8 @@
                 </authentication>
             </realm>
         </realms>
-        <member-authentication realm="mr"/>
-        <client-authentication realm="cr"/>
+        <member-authentication realm="jaasRealm"/>
+        <client-authentication realm="simpleRealm"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>

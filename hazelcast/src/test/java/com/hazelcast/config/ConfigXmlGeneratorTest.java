@@ -36,6 +36,7 @@ import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.LdapRoleMappingMode;
 import com.hazelcast.config.security.LdapSearchScope;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -640,6 +641,20 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         SecurityConfig expectedConfig = new SecurityConfig().setClientRealmConfig("tlsRealm", realmConfig);
         cfg.setSecurityConfig(expectedConfig);
 
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testSimpleAuthenticationConfig() {
+        Config cfg = new Config();
+        RealmConfig realmConfig = new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig()
+                .setRoleSeparator(":")
+                .addUser("test", "1234", "monitor", "hazelcast")
+                .addUser("dev", "secret", "root")
+                );
+        SecurityConfig expectedConfig = new SecurityConfig().setMemberRealmConfig("simpleRealm", realmConfig);
+        cfg.setSecurityConfig(expectedConfig);
         SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
         assertEquals(expectedConfig, actualConfig);
     }

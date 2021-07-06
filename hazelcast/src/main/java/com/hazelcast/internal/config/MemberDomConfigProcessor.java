@@ -126,6 +126,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -148,9 +149,11 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -3003,6 +3006,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 realmConfig.setLdapAuthenticationConfig(createLdapAuthentication(child));
             } else if (matches("kerberos", nodeName)) {
                 handleKerberosAuthentication(realmConfig, child);
+            } else if (matches("simple", nodeName)) {
+                handleSimpleAuthentication(realmConfig, child);
             }
         }
     }
@@ -3134,6 +3139,34 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         realmConfig.setKerberosAuthenticationConfig(krbCfg);
     }
 
+    protected void handleSimpleAuthentication(RealmConfig realmConfig, Node node) {
+        SimpleAuthenticationConfig simpleCfg = new SimpleAuthenticationConfig();
+        fillClusterLoginConfig(simpleCfg, node);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("user", nodeName)) {
+                addSimpleUser(simpleCfg, child);
+            } else if (matches("role-separator", nodeName)) {
+                simpleCfg.setRoleSeparator(getTextContent(child));
+            }
+        }
+        realmConfig.setSimpleAuthenticationConfig(simpleCfg);
+    }
+
+    private void addSimpleUser(SimpleAuthenticationConfig simpleCfg, Node node) {
+        String username = getAttribute(node, "username");
+        List<String> roles = new ArrayList<>();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("role", nodeName)) {
+                roles.add(getTextContent(child));
+            }
+        }
+        SimpleAuthenticationConfig.UserDto userDto = new SimpleAuthenticationConfig.UserDto(getAttribute(node, "password"),
+                roles.toArray(new String[roles.size()]));
+        simpleCfg.addUser(username, userDto);
+    }
+
     private void handleCredentialsFactory(RealmConfig realmConfig, Node node) {
         String className = getAttribute(node, "class-name");
         CredentialsFactoryConfig credentialsFactoryConfig = new CredentialsFactoryConfig(className);
@@ -3146,7 +3179,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         }
     }
 
-    private void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
+    protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("skip-identity", nodeName)) {
