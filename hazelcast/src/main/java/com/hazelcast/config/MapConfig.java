@@ -1007,7 +1007,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         statisticsEnabled = in.readBoolean();
         partitioningStrategyConfig = in.readObject();
         splitBrainProtectionName = in.readString();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         merkleTreeConfig = in.readObject();
         eventJournalConfig = in.readObject();
         metadataPolicy = MetadataPolicy.getById(in.readShort());

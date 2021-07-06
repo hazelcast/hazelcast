@@ -592,7 +592,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
 
         splitBrainProtectionName = in.readString();

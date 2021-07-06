@@ -824,7 +824,7 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable, NamedConfi
         splitBrainProtectionName = in.readString();
         partitionLostListenerConfigs = readNullableList(in);
         mergePolicyConfig = in.readObject();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
 
         // RU_COMPAT_4_2
