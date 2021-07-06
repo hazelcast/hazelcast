@@ -17,12 +17,15 @@
 package com.hazelcast.security;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.security.Permission;
 
+import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
@@ -53,7 +56,21 @@ public final class PermissionsUtil {
 
     @Nullable
     public static Permission mapPutPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig,
-                new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+        return checkRemote(clientConfig, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+    }
+
+    @Nullable
+    public static Permission cachePutPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+        return checkRemote(clientConfig, new CachePermission(name, ACTION_CREATE, ACTION_PUT));
+    }
+
+    @Nullable
+    public static Permission listAddPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+        return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_ADD));
+    }
+
+    @Nullable
+    public static Permission listReadPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+        return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_READ));
     }
 }

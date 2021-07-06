@@ -36,8 +36,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.RingBufferPermission;
 
 import javax.annotation.Nonnull;
@@ -57,9 +55,10 @@ import java.util.function.Function;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.PermissionsUtil.cachePutPermission;
+import static com.hazelcast.security.PermissionsUtil.listAddPermission;
 import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static java.util.Collections.singletonMap;
@@ -154,15 +153,13 @@ public final class HazelcastWriters {
 
     @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return ProcessorMetaSupplier.of(2,
-                clientConfig == null ? null : new CachePermission(name, ACTION_CREATE, ACTION_PUT),
+        return preferLocalParallelismOne(cachePutPermission(clientConfig, name),
                 new WriteCachePSupplier<>(clientConfig, name));
     }
 
     @Nonnull
     public static ProcessorMetaSupplier writeListSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return preferLocalParallelismOne(
-                clientConfig == null ? null : new ListPermission(name, ACTION_CREATE, ACTION_ADD),
+        return preferLocalParallelismOne(listAddPermission(clientConfig, name),
                 new WriteListPSupplier<>(clientConfig, name));
     }
 

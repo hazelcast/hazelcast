@@ -30,8 +30,8 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
 import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.permission.CachePermission;
-import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
@@ -117,7 +117,7 @@ public final class HazelcastReaders {
 
     public static ProcessorMetaSupplier localOrRemoteListSupplier(String name, ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
-        Permission permission = clientConfig == null ? null : new ListPermission(name, ACTION_CREATE, ACTION_READ);
+        Permission permission = PermissionsUtil.listReadPermission(clientConfig, name);
         return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(name, clientXml)), name, permission);
     }
 }
