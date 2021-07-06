@@ -32,7 +32,7 @@ import java.util.List;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 5000;
+    static final int ITEM_COUNT = 500_000;
     static final String MAP_NAME = "map";
 
     private IMap<Integer, Integer> map;
@@ -62,7 +62,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         MutatorThread mutator = new MutatorThread(instances(), instances().length - 1);
         mutator.start();
 
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME, expected);
+        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this ASC", expected);
 
         try {
             mutator.join();

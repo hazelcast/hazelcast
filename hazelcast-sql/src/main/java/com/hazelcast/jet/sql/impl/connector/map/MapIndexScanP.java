@@ -172,12 +172,6 @@ public final class MapIndexScanP extends AbstractProcessor {
             }
 
             pendingItem = extreme;
-
-            if (lastSentItem != null) {
-                assert ((Integer) pendingItem[1]).compareTo((Integer) lastSentItem[1]) ==
-                        metadata.getComparator().compare(pendingItem, lastSentItem)
-                        : "Current : " + pendingItem[1] + ", last sent : " + lastSentItem[1];
-            }
             splits.get(extremeIndex).remove();
         }
     }

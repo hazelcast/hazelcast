@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
+import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -29,12 +30,16 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMdUtil;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -161,5 +166,72 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
                 .item("index", index.getName())
                 .item("indexExp", indexExp)
                 .item("remainderExp", remainderExp);
+    }
+
+    @Override
+    public double estimateRowCount(RelMetadataQuery mq) {
+        double rowCount = table.getRowCount();
+
+        if (indexExp != null) {
+            rowCount = CostUtils.adjustFilteredRowCount(rowCount, RelMdUtil.guessSelectivity(indexExp));
+        }
+
+        if (remainderExp != null) {
+            rowCount = CostUtils.adjustFilteredRowCount(rowCount, RelMdUtil.guessSelectivity(remainderExp));
+        }
+
+        return rowCount;
+    }
+
+    @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // Get the number of rows being scanned. This is either the whole index (scan), or only part of the index (lookup)
+        double scanRowCount = table.getRowCount();
+
+        if (indexExp != null) {
+            scanRowCount = CostUtils.adjustFilteredRowCount(scanRowCount, RelMdUtil.guessSelectivity(indexExp));
+        }
+
+        // Get the number of rows that we expect after the remainder filter is applied.
+        boolean hasFilter = remainderExp != null;
+        double filterRowCount = scanRowCount;
+
+        if (hasFilter) {
+            filterRowCount = CostUtils.adjustFilteredRowCount(filterRowCount, RelMdUtil.guessSelectivity(remainderExp));
+        }
+
+        return computeSelfCost(
+                planner,
+                scanRowCount,
+                CostUtils.indexScanCpuMultiplier(index.getType()),
+                hasFilter,
+                filterRowCount,
+                getTableUnwrapped().getProjects().size()
+        );
+    }
+
+    protected RelOptCost computeSelfCost(
+            RelOptPlanner planner,
+            double scanRowCount,
+            double scanCostMultiplier,
+            boolean hasFilter,
+            double filterRowCount,
+            int projectCount
+    ) {
+        // 1. Get cost of the scan itself.
+        double scanCpu = scanRowCount * scanCostMultiplier;
+
+        // 2. Get cost of the filter, if any.
+        double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
+
+        // 3. Get cost of the project taking into account the filter and number of expressions. Project never produces IO.
+        double projectCpu = CostUtils.adjustCpuForConstrainedScan(CostUtils.getProjectCpu(filterRowCount, projectCount));
+
+        // 4. Finally, return sum of both scan and project.
+        return planner.getCostFactory().makeCost(
+                filterRowCount,
+                scanCpu + filterCpu + projectCpu,
+                0
+        );
     }
 }
