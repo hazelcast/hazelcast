@@ -53,21 +53,19 @@ import static com.hazelcast.jet.impl.util.Util.toList;
 /**
  * Map index scan operator.
  */
-public class IMapIndexScanPhysicalRel extends AbstractScanRel implements PhysicalRel {
+public class IndexScanMapPhysicalRel extends AbstractScanRel implements PhysicalRel {
 
     private final MapTableIndex index;
     private final IndexFilter indexFilter;
-    private final List<QueryDataType> converterTypes;
     private final RexNode indexExp;
     private final RexNode remainderExp;
 
-    public IMapIndexScanPhysicalRel(
+    public IndexScanMapPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
             MapTableIndex index,
             IndexFilter indexFilter,
-            List<QueryDataType> converterTypes,
             RexNode indexExp,
             RexNode remainderExp
     ) {
@@ -75,9 +73,35 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
 
         this.index = index;
         this.indexFilter = indexFilter;
-        this.converterTypes = converterTypes;
         this.indexExp = indexExp;
         this.remainderExp = remainderExp;
+    }
+
+    public MapTableIndex getIndex() {
+        return index;
+    }
+
+    public IndexFilter getIndexFilter() {
+        return indexFilter;
+    }
+
+    public List<FieldCollation> getCollations() {
+        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        return relCollation.getFieldCollations().stream()
+                .map(FieldCollation::new)
+                .collect(Collectors.toList());
+    }
+
+    public boolean determineSortOrder() {
+        boolean descending = false;
+        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        // TODO: enhance for composite indexes.
+        if (!relCollation.getFieldCollations().isEmpty()) {
+            descending = relCollation.getFieldCollations().get(0).getDirection().isDescending();
+        }
+
+        return descending;
     }
 
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
@@ -117,24 +141,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         return project(schema, projection, parameterMetadata);
     }
 
-    public MapTableIndex getIndex() {
-        return index;
-    }
-
-    public IndexFilter getIndexFilter() {
-        return indexFilter;
-    }
-
-    public List<QueryDataType> getConverterTypes() {
-        return converterTypes;
-    }
-
-    public List<FieldCollation> getCollations() {
-        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        return relCollation.getFieldCollations()
-                .stream().map(FieldCollation::new).collect(Collectors.toList());
-    }
-
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         List<QueryDataType> fieldTypes = toList(projection(parameterMetadata), Expression::getType);
@@ -144,28 +150,6 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onMapIndexScan(this);
-    }
-
-    @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new IMapIndexScanPhysicalRel(
-                getCluster(),
-                traitSet,
-                getTable(),
-                index,
-                indexFilter,
-                converterTypes,
-                indexExp,
-                remainderExp
-        );
-    }
-
-    @Override
-    public RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw)
-                .item("index", index.getName())
-                .item("indexExp", indexExp)
-                .item("remainderExp", remainderExp);
     }
 
     @Override
@@ -210,19 +194,7 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         );
     }
 
-    public boolean determineSortOrder() {
-        boolean descending = false;
-        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-
-        // TODO: enhance for composite indexes.
-        if (!relCollation.getFieldCollations().isEmpty()) {
-            descending = relCollation.getFieldCollations().get(0).getDirection().isDescending();
-        }
-
-        return descending;
-    }
-
-    protected RelOptCost computeSelfCost(
+    private static RelOptCost computeSelfCost(
             RelOptPlanner planner,
             double scanRowCount,
             double scanCostMultiplier,
@@ -245,5 +217,18 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
                 scanCpu + filterCpu + projectCpu,
                 0
         );
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new IndexScanMapPhysicalRel(getCluster(), traitSet, getTable(), index, indexFilter, indexExp, remainderExp);
+    }
+
+    @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .item("index", index.getName())
+                .item("indexExp", indexExp)
+                .item("remainderExp", remainderExp);
     }
 }
