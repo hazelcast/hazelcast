@@ -89,13 +89,13 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
 
         int keyIndex = findKeyIndex(table.getTarget());
         switch (filter.getKind()) {
-            // __key = true
+            // WHERE __key = true, calcite simplifies to just `WHERE __key`
             case INPUT_REF: {
                 return ((RexInputRef) filter).getIndex() == keyIndex
                         ? rexBuilder.makeLiteral(true)
                         : null;
             }
-            // __key = false
+            // WHERE __key = false, calcite simplifies to `WHERE NOT __key`
             case NOT: {
                 RexNode operand = ((RexCall) filter).getOperands().get(0);
                 return operand.getKind() == SqlKind.INPUT_REF && ((RexInputRef) operand).getIndex() == keyIndex

@@ -46,7 +46,7 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    protected abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
+    abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
