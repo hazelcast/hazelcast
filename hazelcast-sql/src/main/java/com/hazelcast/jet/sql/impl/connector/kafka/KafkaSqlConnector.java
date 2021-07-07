@@ -31,7 +31,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataNullResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -143,10 +143,17 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Vertex sinkProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table0
-    ) {
+    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return new VertexWithInputConfig(writeProcessor(dag, table));
+    }
+
+    @Nonnull @Override
+    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return writeProcessor(dag, table);
+    }
+
+    @Nonnull
+    private Vertex writeProcessor(DAG dag, Table table0) {
         KafkaTable table = (KafkaTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(

@@ -25,7 +25,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
-import com.hazelcast.jet.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
@@ -138,7 +138,7 @@ public class JetPlanExecutorTest {
         given(jet.newLightJob(eq(dag), isA(JobConfig.class))).willReturn(job);
 
         // when
-        SqlResult result = planExecutor.execute(plan, queryId, emptyList());
+        SqlResult result = planExecutor.execute(plan, queryId, emptyList(), 0L);
 
         // then
         assertThat(result.updateCount()).isEqualTo(0);

@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Applies the user defined EntryProcessor to entry mapped by the key.
  * Returns the result of the processing, if any, defined by the implementation.
  */
-@Generated("121cd534cb778198f5cad3b4260d852d")
+@Generated("42d857f56b5b1ebaf23928e9fa6aa328")
 public final class CacheEntryProcessorCodec {
     //hex: 0x130800
     public static final int REQUEST_MESSAGE_TYPE = 1247232;
@@ -128,5 +128,4 @@ public final class CacheEntryProcessorCodec {
         iterator.next();
         return CodecUtil.decodeNullable(iterator, DataCodec::decode);
     }
-
 }

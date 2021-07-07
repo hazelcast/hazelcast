@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * The actual replica count may be less, depending on the number of data
  * members in the cluster (members that own data).
  */
-@Generated("0467deab9b4fd1ca0ea866e8f9118ff4")
+@Generated("b3085017af7fb32cc3b72939bfc3d347")
 public final class PNCounterGetConfiguredReplicaCountCodec {
     //hex: 0x1D0300
     public static final int REQUEST_MESSAGE_TYPE = 1901312;
@@ -92,5 +92,4 @@ public final class PNCounterGetConfiguredReplicaCountCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,7 +72,7 @@ public class JetInitDataSerializerHookTest {
         return asList(
                 new Object[]{
                         "JobRecord",
-                        new JobRecord(1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
+                        new JobRecord(Version.of(2, 4), 1, new HeapData(new byte[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
                                 "dagJson", new JobConfig(), Collections.emptySet()),
                         singleton("config")},
 

@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTarget;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import org.apache.avro.generic.GenericRecord;
 
 import java.util.List;

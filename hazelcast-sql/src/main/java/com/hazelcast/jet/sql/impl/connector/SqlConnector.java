@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
@@ -283,24 +283,19 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
-     * INSERT INTO} statements.
-     * <p>
-     * Unused for connectors that don't override {@link #sinkProcessor}.
+     * Returns the supplier for the insert processor.
      */
-    default boolean requiresSink() {
-        return false;
+    @Nonnull
+    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sinkProcessor(
-            @Nonnull DAG dag,
-            @Nonnull Table table
-    ) {
-        throw new UnsupportedOperationException("INSERT INTO or SINK INTO not supported for " + typeName());
+    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
     }
 
     /**

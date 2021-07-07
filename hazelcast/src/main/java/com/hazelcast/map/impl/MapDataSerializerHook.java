@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
+import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
@@ -66,6 +67,7 @@ import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -316,8 +318,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE_MAP_OPERATION_PROCESSOR = 152;
     public static final int MAP_ENTRY_REPLACING_PROCESSOR = 153;
     public static final int LOCAL_RECORD_STORE_STATS = 154;
+    public static final int MAP_FETCH_INDEX_OPERATION = 155;
+    public static final int INDEX_ITERATION_POINTER = 156;
 
-    private static final int LEN = LOCAL_RECORD_STORE_STATS + 1;
+
+    private static final int LEN = INDEX_ITERATION_POINTER + 1;
 
     @Override
     public int getFactoryId() {
@@ -479,6 +484,8 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE_MAP_OPERATION_PROCESSOR] = arg -> new MergeEntryProcessor<>();
         constructors[MAP_ENTRY_REPLACING_PROCESSOR] = arg -> new MapEntryReplacingEntryProcessor<>();
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
+        constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
+        constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
 
         return new ArrayDataSerializableFactory(constructors);
     }

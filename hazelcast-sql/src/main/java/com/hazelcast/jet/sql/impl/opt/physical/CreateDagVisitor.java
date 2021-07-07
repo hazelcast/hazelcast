@@ -100,6 +100,16 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
+        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn());
+        return vertex;
+    }
+
+    public Vertex onSink(SinkPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+
         Vertex vertex = getJetSqlConnector(table).sinkProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
@@ -148,7 +158,6 @@ public class CreateDagVisitor {
                         ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
-
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -265,8 +274,9 @@ public class CreateDagVisitor {
                 rel.rightProjection(parameterMetadata),
                 rel.joinInfo(parameterMetadata)
         );
-        connectInput(rel.getLeft(), vertexWithConfig.vertex(), vertexWithConfig.configureEdgeFn());
-        return vertexWithConfig.vertex();
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
+        return vertex;
     }
 
     public Vertex onRoot(JetRootRel rootRel) {

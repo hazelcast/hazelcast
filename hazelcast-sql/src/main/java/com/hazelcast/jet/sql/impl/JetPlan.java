@@ -20,7 +20,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -44,7 +44,7 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments);
+    abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
@@ -99,8 +99,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
+            JetPlan.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -151,8 +152,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP MAPPING", arguments);
+            JetPlan.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -216,7 +218,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            JetPlan.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
@@ -267,8 +270,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("ALTER JOB", arguments);
+            JetPlan.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -326,8 +330,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP JOB", arguments);
+            JetPlan.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -378,8 +383,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -430,8 +436,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -475,8 +482,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
+            JetPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
@@ -550,14 +558,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
-        }
-    }
-
-    private static void ensureNoArguments(String name, List<Object> arguments) {
-        if (!arguments.isEmpty()) {
-            throw QueryException.error(name + " does not support dynamic parameters");
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
         }
     }
 
@@ -588,7 +590,7 @@ abstract class JetPlan extends SqlPlan {
             this.permissions = permissions;
         }
 
-        public Operation getOperation() {
+        Operation getOperation() {
             return operation;
         }
 
@@ -623,8 +625,20 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
+        }
+    }
+
+    private static void ensureNoTimeout(String name, long timeout) {
+        if (timeout > 0) {
+            throw QueryException.error(name + " does not support timeout");
         }
     }
 }

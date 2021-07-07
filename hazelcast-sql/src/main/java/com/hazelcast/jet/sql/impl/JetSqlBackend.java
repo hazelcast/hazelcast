@@ -43,8 +43,8 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.Mapping;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.JetSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
@@ -274,15 +274,14 @@ class JetSqlBackend implements SqlBackend {
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (physicalRel instanceof TableModify) {
-            CreateDagVisitor result = traverseRel(physicalRel, parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata, result.getObjectKeys(), result.getDag(),
+            return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),
                     planExecutor, permissions);
         } else {
-            CreateDagVisitor result =
-                    traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata, result.getObjectKeys(), result.getDag(), isInfiniteRows,
+            return new SelectPlan(planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows,
                     rowMetadata, planExecutor, permissions);
         }
     }

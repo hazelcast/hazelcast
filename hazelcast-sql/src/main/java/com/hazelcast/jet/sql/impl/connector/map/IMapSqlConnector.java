@@ -29,9 +29,10 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -54,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
@@ -191,9 +193,27 @@ public class IMapSqlConnector implements SqlConnector {
         return IMapJoiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
+    @Nonnull
     @Override
-    public boolean requiresSink() {
-        return true;
+    public VertexWithInputConfig insertProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table0
+    ) {
+        PartitionedMapTable table = (PartitionedMapTable) table0;
+
+        Vertex vertex = dag.newUniqueVertex(
+                toString(table),
+                new InsertProcessorSupplier(
+                        table.getMapName(),
+                        KvProjector.supplier(
+                                table.paths(),
+                                table.types(),
+                                (UpsertTargetDescriptor) table.getKeyJetMetadata(),
+                                (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        )
+                )
+        ).localParallelism(1);
+        return new VertexWithInputConfig(vertex, edge -> edge.distributed().allToOne(newUnsecureUuidString()));
     }
 
     @Nonnull

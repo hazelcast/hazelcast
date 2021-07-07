@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns the number of values matching the given key in the multimap.
  */
-@Generated("15de0572232088b78a24027ed4ec61af")
+@Generated("704e3ea18edf688eb7e804d36136d8a1")
 public final class TransactionalMultiMapValueCountCodec {
     //hex: 0x0F0500
     public static final int REQUEST_MESSAGE_TYPE = 984320;
@@ -119,5 +119,4 @@ public final class TransactionalMultiMapValueCountCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

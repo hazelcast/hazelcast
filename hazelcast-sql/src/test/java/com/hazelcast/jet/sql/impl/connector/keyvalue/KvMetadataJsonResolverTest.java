@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.jet.sql.impl.extract.JsonQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.JsonUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.map.MapTableField;

@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.JetMapMetadataResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -80,12 +79,9 @@ public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService 
 
     @Override
     public SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> arguments, long timeout, int pageSize) {
-        if (timeout > 0) {
-            throw new JetException("Query timeout not yet supported");
-        }
         // TODO: query page size defaults to 4096
 
-        return ((JetPlan) plan).execute(queryId, arguments);
+        return ((JetPlan) plan).execute(queryId, arguments, timeout);
     }
 
     public Map<Long, JetQueryResultProducer> getResultConsumerRegistry() {

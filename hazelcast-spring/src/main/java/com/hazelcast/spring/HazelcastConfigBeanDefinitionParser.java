@@ -119,6 +119,7 @@ import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.LdapRoleMappingMode;
 import com.hazelcast.config.security.LdapSearchScope;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -1665,13 +1666,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("realm".equals(nodeName)) {
-                    realms.put(getAttribute(child, "name"), handleRealm(child, securityConfigBuilder));
+                    realms.put(getAttribute(child, "name"), handleRealm(child));
                 }
             }
             securityConfigBuilder.addPropertyValue("realmConfigs", realms);
         }
 
-        private AbstractBeanDefinition handleRealm(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+        private AbstractBeanDefinition handleRealm(Node node) {
             BeanDefinitionBuilder realmConfigBuilder = createBeanBuilder(RealmConfig.class);
             AbstractBeanDefinition beanDefinition = realmConfigBuilder.getBeanDefinition();
             for (Node child : childElements(node)) {
@@ -1697,6 +1698,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLdapAuthenticationConfig(realmConfigBuilder, child);
                 } else if ("kerberos".equals(nodeName)) {
                     handleKerberosAuthenticationConfig(realmConfigBuilder, child);
+                } else if ("simple".equals(nodeName)) {
+                    handleSimpleAuthenticationConfig(realmConfigBuilder, child);
                 }
             }
         }
@@ -1725,6 +1728,34 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             return builder;
+        }
+
+        private BeanDefinitionBuilder handleSimpleAuthenticationConfig(BeanDefinitionBuilder realmConfigBuilder, Node node) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, SimpleAuthenticationConfig.class,
+                    "SimpleAuthenticationConfig", realmConfigBuilder, "user");
+            ManagedMap<String, BeanDefinition> users = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("user".equals(nodeName)) {
+                    users.put(getAttribute(child, "username"), handleSimpleUser(child));
+                }
+            }
+            builder.addPropertyValue("userMap", users);
+            return builder;
+        }
+
+        private BeanDefinition handleSimpleUser(Node node) {
+            BeanDefinitionBuilder simpleUserBuilder = createBeanBuilder(SimpleAuthenticationConfig.UserDto.class);
+            simpleUserBuilder.addConstructorArgValue(getAttribute(node, "password"));
+            List<String> roles = new ArrayList<String>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("role".equals(nodeName)) {
+                    roles.add(getTextContent(child));
+                }
+            }
+            simpleUserBuilder.addConstructorArgValue(roles.toArray(new String[roles.size()]));
+            return simpleUserBuilder.getBeanDefinition();
         }
 
         private void handleIdentity(Node node, BeanDefinitionBuilder realmConfigBuilder) {
