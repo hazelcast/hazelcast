@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
  * modified while the operation is in progress.
  */
-@Generated("67b5c4957ad36aa99c12a12a2611004a")
+@Generated("5ebdf0ab816cf0697a49c8199dd1b5c6")
 public final class QueueDrainToMaxSizeCodec {
     //hex: 0x030A00
     public static final int REQUEST_MESSAGE_TYPE = 199168;
@@ -108,5 +108,4 @@ public final class QueueDrainToMaxSizeCodec {
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
-
 }

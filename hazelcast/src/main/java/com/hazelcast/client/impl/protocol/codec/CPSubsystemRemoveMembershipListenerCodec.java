@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Deregisters CP membership listener.
  */
-@Generated("80fdf528baa9d0a7e408ee1357f05675")
+@Generated("25f51289274f5eb83619099d682f628e")
 public final class CPSubsystemRemoveMembershipListenerCodec {
     //hex: 0x220200
     public static final int REQUEST_MESSAGE_TYPE = 2228736;
@@ -89,5 +89,4 @@ public final class CPSubsystemRemoveMembershipListenerCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

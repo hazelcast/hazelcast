@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityTest_2_2 {
-    private List<ClientMessage> clientMessages = new ArrayList<>();
+    private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
