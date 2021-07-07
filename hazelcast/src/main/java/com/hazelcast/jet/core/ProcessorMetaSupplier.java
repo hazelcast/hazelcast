@@ -328,8 +328,30 @@ public interface ProcessorMetaSupplier extends Serializable {
      * where the node for the supplier will be chosen randomly.
      */
     @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nullable Permission permission) {
+        return forceTotalParallelismOne(supplier, newUnsecureUuidString(), permission);
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * where the node for the supplier will be chosen randomly and
+     * without any required permission.
+     */
+    @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(@Nonnull ProcessorSupplier supplier) {
         return forceTotalParallelismOne(supplier, newUnsecureUuidString(), null);
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * without any required permission.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
+    ) {
+        return forceTotalParallelismOne(supplier, partitionKey, null);
     }
 
     /**
@@ -387,17 +409,6 @@ public interface ProcessorMetaSupplier extends Serializable {
                 return permission;
             }
         };
-    }
-
-    /**
-     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
-     * where the required permission is {@code null}.
-     */
-    @Nonnull
-    static ProcessorMetaSupplier forceTotalParallelismOne(
-            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
-    ) {
-        return forceTotalParallelismOne(supplier, partitionKey, null);
     }
 
     /**

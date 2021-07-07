@@ -62,6 +62,7 @@ import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Permission;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -484,7 +485,8 @@ public final class SourceProcessors {
             @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
             @Nonnull ConsumerEx<? super C> destroyFn,
             int preferredLocalParallelism,
-            boolean isBatch
+            boolean isBatch,
+            @Nullable Permission permission
     ) {
         checkSerializable(createFn, "createFn");
         checkSerializable(fillBufferFn, "fillBufferFn");
@@ -502,8 +504,8 @@ public final class SourceProcessors {
                         new SourceBufferImpl.Plain<>(isBatch),
                         null));
         return preferredLocalParallelism != 0
-                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, permission, procSup)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(procSup, permission);
     }
 
     /**
