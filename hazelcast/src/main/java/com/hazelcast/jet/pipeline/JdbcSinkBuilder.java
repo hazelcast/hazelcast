@@ -187,7 +187,8 @@ public class JdbcSinkBuilder<T> {
             throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
         }
         if (dataSourceSupplier == null) {
-            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(jdbcUrl);
+            String connectionUrl = jdbcUrl;
+            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
         }
         return Sinks.fromProcessor("jdbcSink",
                 SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,

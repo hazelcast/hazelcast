@@ -183,8 +183,7 @@ public final class HazelcastWriters {
 
             @Override
             public Permission getRequiredPermission() {
-                String ringbufferName = ObservableImpl.ringbufferName(name);
-                return new RingBufferPermission(ringbufferName, ACTION_CREATE, ACTION_PUT);
+                return new RingBufferPermission(name, ACTION_CREATE, ACTION_PUT);
             }
         };
     }
