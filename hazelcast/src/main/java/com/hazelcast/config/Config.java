@@ -51,8 +51,6 @@ import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -155,8 +153,6 @@ public class Config {
     private final Map<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigMap = new ConcurrentHashMap<>();
 
     private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<>();
-
-    private final ILogger logger = Logger.getLogger(Config.class);
 
     // @since 3.12
     private AdvancedNetworkConfig advancedNetworkConfig = new AdvancedNetworkConfig();
