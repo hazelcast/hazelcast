@@ -92,6 +92,18 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
                 .collect(Collectors.toList());
     }
 
+    public boolean determineSortOrder() {
+        boolean descending = false;
+        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        // TODO: enhance for composite indexes.
+        if (!relCollation.getFieldCollations().isEmpty()) {
+            descending = relCollation.getFieldCollations().get(0).getDirection().isDescending();
+        }
+
+        return descending;
+    }
+
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
         return filter(schema, remainderExp, parameterMetadata);

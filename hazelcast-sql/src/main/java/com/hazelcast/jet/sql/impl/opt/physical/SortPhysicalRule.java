@@ -56,7 +56,7 @@ final class SortPhysicalRule extends RelOptRule {
         List<RelNode> sortTransforms = new ArrayList<>(1);
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
-        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(logicalSort.getInput())) {
+        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromAllSubsets(logicalSort.getInput())) {
             boolean requiresSort = requiresLocalSort(
                     logicalSort.getCollation(),
                     physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)

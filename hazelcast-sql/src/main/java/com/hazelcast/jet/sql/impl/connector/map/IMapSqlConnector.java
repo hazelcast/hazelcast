@@ -194,10 +194,10 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nonnull List<Expression<?>> fullProjection,
             @Nullable IndexFilter filter,
-            @Nonnull ComparatorEx<Object[]> comparator
+            @Nonnull ComparatorEx<Object[]> comparator,
+            boolean descending
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
-
         MapIndexScanMetadata mapScanMetadata = new MapIndexScanMetadata(
                 table.getMapName(),
                 tableIndex.getName(),
@@ -209,8 +209,10 @@ public class IMapSqlConnector implements SqlConnector {
                 projection,
                 fullProjection,
                 reminderFilter,
-                comparator
+                comparator,
+                descending
         );
+
         Vertex scanner = dag.newUniqueVertex(
                 "Index(" + toString(table) + ")",
                 readMapIndexSupplier(mapScanMetadata)
