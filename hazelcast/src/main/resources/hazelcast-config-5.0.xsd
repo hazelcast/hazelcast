@@ -3867,7 +3867,8 @@
             <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        DEPRECATED. Data load timeout for Hot Restart procedure. All members in the cluster should
+                        DEPRECATED. Please leave it to default.
+                        Data load timeout for Hot Restart procedure. All members in the cluster should
                         complete restoring their local data before this timeout.
                     </xs:documentation>
                 </xs:annotation>
@@ -4832,7 +4833,8 @@
             <xs:element name="data-load-timeout-seconds" type="xs:unsignedInt" minOccurs="0" default="120">
                 <xs:annotation>
                     <xs:documentation>
-                        DEPRECATED. Timeout duration for CP members to restore their data from disk.
+                        DEPRECATED. Please leave it to default.
+                        Timeout duration for CP members to restore their data from disk.
                         A CP member fails its startup if it cannot complete its CP data restore
                         process in the configured duration.
                     </xs:documentation>
