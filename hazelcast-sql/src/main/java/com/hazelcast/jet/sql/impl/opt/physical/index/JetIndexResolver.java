@@ -900,14 +900,14 @@ public final class JetIndexResolver {
         );
 
         // Create index filter for full scan.
-        IndexFilter indexFilter = new IndexRangeFilter(null, true, null, true);
+//        IndexFilter indexFilter = new IndexRangeFilter(null, true, null, true);
 
         return new IndexScanMapPhysicalRel(
                 scan.getCluster(),
                 OptUtils.toPhysicalConvention(traitSet),
                 newRelTable,
                 index,
-                indexFilter,
+                null,
                 null,
                 scanFilter
         );

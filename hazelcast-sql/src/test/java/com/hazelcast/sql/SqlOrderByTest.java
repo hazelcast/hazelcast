@@ -661,6 +661,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             }
         }
         String sql = sqlWithOrderBy(orders.toString());
+        System.out.println(sql);
         assertSqlResultOrdered(sql, orderFields, orderDirections, map.size());
     }
 
