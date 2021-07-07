@@ -153,10 +153,9 @@ public class CreateDagVisitor {
                         rel.getIndex(),
                         rel.filter(parameterMetadata),
                         rel.projection(parameterMetadata),
-                        rel.fullProjection(parameterMetadata),
                         rel.getIndexFilter(),
                         ExpressionUtil.comparisonFn(rel.getCollations()),
-                        rel.determineSortOrder()
+                        rel.isDescending()
                 );
     }
 

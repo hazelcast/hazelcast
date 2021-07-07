@@ -92,7 +92,7 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
                 .collect(Collectors.toList());
     }
 
-    public boolean determineSortOrder() {
+    public boolean isDescending() {
         boolean descending = false;
         RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
 
@@ -117,22 +117,6 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
         List<Integer> projects = table.getProjects();
         List<RexNode> projection = new ArrayList<>(projects.size());
         for (Integer index : projects) {
-            TableField field = table.getTarget().getField(index);
-            RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
-            projection.add(new RexInputRef(index, relDataType));
-        }
-
-        return project(schema, projection, parameterMetadata);
-    }
-
-    public List<Expression<?>> fullProjection(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = OptUtils.schema(getTable());
-
-        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-
-        int fieldCount = table.getTarget().getFieldCount();
-        List<RexNode> projection = new ArrayList<>(fieldCount);
-        for (int index = 0; index < fieldCount; index++) {
             TableField field = table.getTarget().getField(index);
             RelDataType relDataType = OptUtils.convert(field, getCluster().getTypeFactory());
             projection.add(new RexInputRef(index, relDataType));
@@ -220,15 +204,15 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new IndexScanMapPhysicalRel(getCluster(), traitSet, getTable(), index, indexFilter, indexExp, remainderExp);
-    }
-
-    @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
                 .item("index", index.getName())
                 .item("indexExp", indexExp)
                 .item("remainderExp", remainderExp);
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new IndexScanMapPhysicalRel(getCluster(), traitSet, getTable(), index, indexFilter, indexExp, remainderExp);
     }
 }
