@@ -204,7 +204,8 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
                 optimizeLogical("DELETE FROM m WHERE __key = ? + 1", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, DeleteLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class)
                 )
         );
     }

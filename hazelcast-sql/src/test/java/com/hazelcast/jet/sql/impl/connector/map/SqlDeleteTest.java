@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -35,18 +34,6 @@ public class SqlDeleteTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
         initialize(2, null);
-    }
-
-    @Test
-    @Ignore
-    public void t() {
-        instance().getSql().execute(javaSerializableMapDdl("test_map", Long.class, Integer.class));
-
-        long start = System.nanoTime();
-        for (int i = 0; i < 10_000; i++) {
-            execute("delete from test_map where __key = ?", i);
-        }
-        System.out.println("" + (System.nanoTime() - start));
     }
 
     @Test
