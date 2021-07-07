@@ -52,6 +52,9 @@ final class SortPhysicalRule extends RelOptRule {
         }
     }
 
+    // Project
+    //   Sort
+    //     Scan -> NormalPScan / IndexPScan
     private static List<RelNode> toTransforms(SortLogicalRel logicalSort) {
         List<RelNode> sortTransforms = new ArrayList<>(1);
         List<RelNode> nonSortTransforms = new ArrayList<>(1);

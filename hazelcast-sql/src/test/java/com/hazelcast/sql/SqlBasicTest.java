@@ -572,7 +572,7 @@ public class SqlBasicTest extends SqlTestSupport {
         return fieldName + "_p";
     }
 
-    abstract static class AbstractPojoKey implements Serializable {
+    abstract static class AbstractPojoKey implements Serializable, Comparable {
 
         protected long key;
 
@@ -586,6 +586,16 @@ public class SqlBasicTest extends SqlTestSupport {
 
         public long getKey() {
             return key;
+        }
+
+        @Override
+        public int compareTo(Object o) {
+            return Long.compare(this.key, ((AbstractPojoKey) o).getKey());
+        }
+
+        @Override
+        public String toString() {
+            return "AbstractPojoKey{key=" + key + '}';
         }
     }
 

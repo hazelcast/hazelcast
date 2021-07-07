@@ -95,6 +95,7 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
+    private Object[] lastSentItem;
     private Object[] pendingItem;
 
     public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
@@ -134,6 +135,9 @@ public final class MapIndexScanP extends AbstractProcessor {
             if (pendingItem != null && !tryEmit(pendingItem)) {
                 return false;
             } else {
+                if (pendingItem != null) {
+                    lastSentItem = pendingItem;
+                }
                 pendingItem = null;
             }
 
@@ -170,6 +174,12 @@ public final class MapIndexScanP extends AbstractProcessor {
             }
 
             pendingItem = extreme;
+            if (lastSentItem != null) {
+                assert ((Comparable) pendingItem[1]).compareTo(lastSentItem[1]) ==
+                        metadata.getComparator().compare(pendingItem, lastSentItem) :
+                        "seen : " + pendingItem[3] + ", last sent : " + lastSentItem[3] + ", " +
+                                "bytes value : " + pendingItem[16] + ", last sent : " + lastSentItem[16];
+            }
             splits.get(extremeIndex).remove();
         }
     }
@@ -201,7 +211,6 @@ public final class MapIndexScanP extends AbstractProcessor {
     }
 
     private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter, boolean descending) {
-        // TODO: Pass descending argument correctly.
         return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 

@@ -154,9 +154,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         newPointers = new IndexIterationPointer[pointers.length - i];
                         newPointers[0] = IndexIterationPointer.create(
                                 pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                pointer.isDescending() ? pointer.isFromInclusive() : false,
+                                pointer.isDescending() && pointer.isFromInclusive(),
                                 pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                pointer.isDescending() ? false : pointer.isToInclusive(),
+                                !pointer.isDescending() && pointer.isToInclusive(),
                                 pointer.isDescending());
 
                         System.arraycopy(pointers, i + 1, newPointers, 1, newPointers.length - 1);
