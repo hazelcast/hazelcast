@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.schema.Mapping;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

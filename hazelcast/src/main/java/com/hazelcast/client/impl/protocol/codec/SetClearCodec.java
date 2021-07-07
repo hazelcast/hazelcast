@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
  */
-@Generated("236c1523ccca7ed003bed11224eabfc1")
+@Generated("ab5eda805acce12e83e44a905196ce8f")
 public final class SetClearCodec {
     //hex: 0x060900
     public static final int REQUEST_MESSAGE_TYPE = 395520;
@@ -78,6 +78,4 @@ public final class SetClearCodec {
 
         return clientMessage;
     }
-
-
 }

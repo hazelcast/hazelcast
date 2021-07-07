@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Reads the recorded metrics starting with the smallest sequence number
  * greater or equals to the sequence number set in fromSequence.
  */
-@Generated("8d33712bda78af4565b34542c7357eaa")
+@Generated("9acd73eedce5adbca0a9690f7e8e8dc5")
 public final class MCReadMetricsCodec {
     //hex: 0x200100
     public static final int REQUEST_MESSAGE_TYPE = 2097408;
@@ -101,6 +101,7 @@ public final class MCReadMetricsCodec {
          */
         public long nextSequence;
     }
+
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.Long, byte[]>> elements, long nextSequence) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -120,5 +121,4 @@ public final class MCReadMetricsCodec {
         response.elements = EntryListLongByteArrayCodec.decode(iterator);
         return response;
     }
-
 }
