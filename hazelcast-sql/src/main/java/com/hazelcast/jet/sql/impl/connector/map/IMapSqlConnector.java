@@ -200,7 +200,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> reminderFilter,
             @Nonnull List<Expression<?>> projection,
             @Nullable IndexFilter filter,
-            @Nonnull ComparatorEx<Object[]> comparator,
+            @Nullable ComparatorEx<Object[]> comparator,
             boolean descending
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
