@@ -14,7 +14,7 @@ this mechanism for Jet jobs too.
 - Disable Jet: One can disable Jet engine completely using
 `JetConfig#enable`. We don't create the internal Jet service and don't
 start the threads. If a user tries to obtain `JetService`, we throw an
-exception. Jet is enabled by default.
+exception. Jet is disabled by default.
 - Disable Jet class/resource upload: Jet uploads the job resources and
 classes along with the job. This is disabled by default and can be
 enabled using `JetConfig:resourceUploadEnabled`. Since this config is

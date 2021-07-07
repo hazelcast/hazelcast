@@ -502,7 +502,7 @@ public final class SourceProcessors {
                         new SourceBufferImpl.Plain<>(isBatch),
                         null));
         return preferredLocalParallelism != 0
-                ? ProcessorMetaSupplier.of(preferredLocalParallelism, null, procSup)
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
                 : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
     }
 

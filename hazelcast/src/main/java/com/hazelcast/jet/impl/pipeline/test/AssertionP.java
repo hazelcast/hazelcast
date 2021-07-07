@@ -92,7 +92,7 @@ public final class AssertionP<S, T> extends AbstractProcessor {
         @Nonnull ConsumerEx<? super A> completeFn
     ) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(ProcessorSupplier.of(
-            () -> new AssertionP<>(createFn, receiveFn, timerFn, completeFn)), name, null
+            () -> new AssertionP<>(createFn, receiveFn, timerFn, completeFn)), name
         );
     }
 }

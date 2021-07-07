@@ -64,7 +64,6 @@ import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
  */
 public class StreamJmsP<T> extends AbstractProcessor {
 
-    public static final int PREFERRED_LOCAL_PARALLELISM = 1;
     private static final BroadcastKey<String> SEEN_IDS_KEY = broadcastKey("seen");
     private static final long RESTORED_IDS_TTL = MINUTES.toNanos(1);
 

@@ -390,6 +390,17 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * where the required permission is {@code null}.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
+    ) {
+        return forceTotalParallelismOne(supplier, partitionKey, null);
+    }
+
+    /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
      * will only use the given {@code ProcessorSupplier} on a node with the
      * given {@link Address}. This is mainly provided as a convenience for
