@@ -636,7 +636,7 @@ abstract class JetPlan extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
-        private final Expression<?> condition;
+        private final Expression<?> keyCondition;
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
@@ -645,7 +645,7 @@ abstract class JetPlan extends SqlPlan {
                 PlanObjectKey objectKey,
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
-                Expression<?> condition,
+                Expression<?> keyCondition,
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
@@ -654,7 +654,7 @@ abstract class JetPlan extends SqlPlan {
             this.objectKeys = Collections.singleton(objectKey);
             this.parameterMetadata = parameterMetadata;
             this.mapName = mapName;
-            this.condition = condition;
+            this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
         }
@@ -667,8 +667,8 @@ abstract class JetPlan extends SqlPlan {
             return mapName;
         }
 
-        Expression<?> condition() {
-            return condition;
+        Expression<?> keyCondition() {
+            return keyCondition;
         }
 
         @Override

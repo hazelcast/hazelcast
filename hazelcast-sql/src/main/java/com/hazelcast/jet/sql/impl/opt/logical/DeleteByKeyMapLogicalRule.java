@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.RelFactories;
@@ -29,24 +30,22 @@ import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexCorrelVariable;
-import org.apache.calcite.rex.RexDynamicParam;
-import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexOver;
-import org.apache.calcite.rex.RexPatternFieldRef;
-import org.apache.calcite.rex.RexRangeRef;
-import org.apache.calcite.rex.RexSubQuery;
-import org.apache.calcite.rex.RexTableInputRef;
-import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
-import java.util.Objects;
 
+/**
+ * Planner rule that matches single key, constant expression,
+ * {@link PartitionedMapTable} DELETE.
+ * <p>For example,</p>
+ * <blockquote><code>DELETE FROM map WHERE __key = 1</code></blockquote>
+ * <p>
+ * Such DELETE is translated to optimized, direct key {@code IMap} operation
+ * which does not involve starting any job.
+ */
 public final class DeleteByKeyMapLogicalRule extends RelOptRule {
 
     static final RelOptRule INSTANCE = new DeleteByKeyMapLogicalRule();
@@ -55,7 +54,11 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
         super(
                 operandJ(
                         LogicalTableModify.class, null, TableModify::isDelete,
-                        operandJ(LogicalTableScan.class, null, OptUtils::overPartitionedMapTable, none())
+                        operandJ(LogicalTableScan.class,
+                                null,
+                                delete -> OptUtils.hasTableType(delete, PartitionedMapTable.class),
+                                none()
+                        )
                 ),
                 RelFactories.LOGICAL_BUILDER,
                 DeleteByKeyMapLogicalRule.class.getSimpleName()
@@ -135,77 +138,10 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
         if (firstOperand.getKind() == SqlKind.INPUT_REF) {
             int index = ((RexInputRef) firstOperand).getIndex();
             RexNode secondOperand = condition.getOperands().get(1 - i);
-            if (secondOperand.accept(ConstantExpressionVisitor.INSTANCE)) {
+            if (RexUtil.isConstant(secondOperand)) {
                 return Tuple2.tuple2(index, secondOperand);
             }
         }
         return null;
-    }
-
-    private static final class ConstantExpressionVisitor implements RexVisitor<Boolean> {
-
-        private static final ConstantExpressionVisitor INSTANCE = new ConstantExpressionVisitor();
-
-        @Override
-        public Boolean visitInputRef(RexInputRef inputRef) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitLocalRef(RexLocalRef localRef) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitLiteral(RexLiteral literal) {
-            return true;
-        }
-
-        @Override
-        public Boolean visitCall(RexCall call) {
-            return call.getOperands().stream()
-                    .filter(Objects::nonNull)
-                    .allMatch(operand -> operand.accept(this));
-        }
-
-        @Override
-        public Boolean visitOver(RexOver over) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitCorrelVariable(RexCorrelVariable correlVariable) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitDynamicParam(RexDynamicParam dynamicParam) {
-            return true;
-        }
-
-        @Override
-        public Boolean visitRangeRef(RexRangeRef rangeRef) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitFieldAccess(RexFieldAccess fieldAccess) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitSubQuery(RexSubQuery subQuery) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitTableInputRef(RexTableInputRef fieldRef) {
-            return false;
-        }
-
-        @Override
-        public Boolean visitPatternFieldRef(RexPatternFieldRef fieldRef) {
-            return false;
-        }
     }
 }

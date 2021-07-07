@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.RelOptCluster;
@@ -248,8 +247,8 @@ public final class OptUtils {
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
     }
 
-    public static boolean overPartitionedMapTable(TableScan scan) {
+    public static boolean hasTableType(TableScan scan, Class<? extends Table> tableClass) {
         HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-        return table != null && table.getTarget() instanceof PartitionedMapTable;
+        return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
     }
 }

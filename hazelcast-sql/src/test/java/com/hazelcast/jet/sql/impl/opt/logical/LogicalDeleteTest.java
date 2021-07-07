@@ -198,7 +198,7 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void test_deleteByKeyWithDynamicParamExpression() {
+    public void test_deleteByKeyWithDynamicParamAndImplicitCastOnKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
                 optimizeLogical("DELETE FROM m WHERE __key = ? + 1", table),
@@ -206,6 +206,18 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
                         planRow(0, RootLogicalRel.class),
                         planRow(1, DeleteLogicalRel.class),
                         planRow(2, FullScanLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
+    public void test_deleteByKeyWithDynamicParamExpression() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
+        assertPlan(
+                optimizeLogical("DELETE FROM m WHERE __key = CAST(? + 1 AS INT)", table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, DeleteByKeyMapLogicalRel.class)
                 )
         );
     }

@@ -237,9 +237,9 @@ public class JetPlanExecutor {
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         String mapName = plan.mapName();
-        Expression<?> condition = plan.condition();
+        Expression<?> keyCondition = plan.keyCondition();
 
-        Object key = condition.eval(
+        Object key = keyCondition.eval(
                 EmptyRow.INSTANCE,
                 new SimpleExpressionEvalContext(args, ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService())
         );
