@@ -210,6 +210,18 @@ public class IMapIndexScanPhysicalRel extends AbstractScanRel implements Physica
         );
     }
 
+    public boolean determineSortOrder() {
+        boolean descending = false;
+        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+
+        // TODO: enhance for composite indexes.
+        if (!relCollation.getFieldCollations().isEmpty()) {
+            descending = relCollation.getFieldCollations().get(0).getDirection().isDescending();
+        }
+
+        return descending;
+    }
+
     protected RelOptCost computeSelfCost(
             RelOptPlanner planner,
             double scanRowCount,

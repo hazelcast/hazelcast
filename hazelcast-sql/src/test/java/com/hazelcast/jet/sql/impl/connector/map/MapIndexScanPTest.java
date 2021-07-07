@@ -130,7 +130,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 projections,
                 projections,
                 null,
-                null
+                null,
+                false
         );
 
         TestSupport
@@ -144,7 +145,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void test_fullScan_sorted() {
+    public void test_fullScanAsc_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
@@ -168,7 +169,47 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 projections,
                 projections,
                 null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
+                false
+        );
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
+    public void test_fullScanDesc_sorted() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = 0; i <= count; i++) {
+            map.put(i, new Person("value-" + i, i));
+            expected.add(new Object[]{(count - i), "value-" + (count - i), (count - i)});
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
+        map.addIndex(indexConfig);
+
+        IndexFilter filter = new IndexRangeFilter(null, true, null, true);
+        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
+
+        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
+                map.getName(),
+                indexConfig.getName(),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
+                Arrays.asList(INT, VARCHAR, INT),
+                filter,
+                projections,
+                projections,
+                null,
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
+                true
         );
 
         TestSupport
@@ -208,7 +249,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 projections,
                 projections,
                 null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2))))
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
+                false
         );
 
         TestSupport
@@ -249,7 +291,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 projection,
                 projection,
                 null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0))))
+                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0)))),
+                false
         );
 
         TestSupport

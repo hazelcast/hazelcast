@@ -66,7 +66,7 @@ final class SortPhysicalRule extends ConverterRule {
         List<RelNode> sortTransforms = new ArrayList<>(1);
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
-        for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(input)) {
+        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromAllSubsets(input)) {
             boolean requiresSort = requiresLocalSort(sortRel.getCollation(),
                     physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE));
             if (requiresSort) {

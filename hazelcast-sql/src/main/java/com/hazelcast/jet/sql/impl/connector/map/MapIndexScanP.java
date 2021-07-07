@@ -95,7 +95,6 @@ public final class MapIndexScanP extends AbstractProcessor {
     private final ArrayList<Split> splits = new ArrayList<>();
     private MapScanRow row;
     private Object[] pendingItem;
-    private Object[] lastSentItem;
 
     public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         this.metadata = indexScanMetadata;
@@ -113,7 +112,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                filtersToPointers(metadata.getFilter())
+                filtersToPointers(metadata.getFilter(), metadata.isDescending())
         ));
 
         row = MapScanRow.create(
@@ -134,9 +133,6 @@ public final class MapIndexScanP extends AbstractProcessor {
             if (pendingItem != null && !tryEmit(pendingItem)) {
                 return false;
             } else {
-                if (pendingItem != null) {
-                    lastSentItem = pendingItem;
-                }
                 pendingItem = null;
             }
 
@@ -203,9 +199,9 @@ public final class MapIndexScanP extends AbstractProcessor {
         return new ArrayList<>(newSplits.values());
     }
 
-    private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter) {
+    private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter, boolean descending) {
         // TODO: Pass descending argument correctly.
-        return IndexIterationPointer.createFromIndexFilter(filter, false, evalContext);
+        return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 
     private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry) {

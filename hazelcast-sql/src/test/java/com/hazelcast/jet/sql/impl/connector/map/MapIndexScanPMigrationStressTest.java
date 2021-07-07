@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import java.util.List;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 500_000;
+    static final int ITEM_COUNT = 250_000;
     static final int MEMBERS_COUNT = 3;
     static final String MAP_NAME = "map";
 
@@ -49,12 +50,12 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-//    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
-            map.put(ITEM_COUNT - i, ITEM_COUNT - i);
-            expected.add(new SqlTestSupport.Row(i, i));
+            map.put(i, i);
+            expected.add(new SqlTestSupport.Row(ITEM_COUNT - i, ITEM_COUNT - i));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
@@ -63,7 +64,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         MutatorThread mutator = new MutatorThread(instances(), instances().length - 1);
         mutator.start();
 
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this ASC", expected);
+        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
 
         try {
             mutator.join();

@@ -48,6 +48,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected Expression<Boolean> remainingFilter;
     protected IndexFilter filter;
     protected ComparatorEx<Object[]> comparator;
+    protected boolean descending;
 
     public MapIndexScanMetadata() {
         // No-op.
@@ -65,7 +66,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
             List<Expression<?>> projections,
             List<Expression<?>> fullProjection,
             Expression<Boolean> remainingFilter,
-            ComparatorEx<Object[]> comparator
+            ComparatorEx<Object[]> comparator,
+            boolean descending
     ) {
         this.mapName = mapName;
         this.indexName = indexName;
@@ -78,6 +80,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         this.remainingFilter = remainingFilter;
         this.filter = filter;
         this.comparator = comparator;
+        this.descending = descending;
     }
 
     public String getMapName() {
@@ -124,6 +127,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         return comparator;
     }
 
+    public boolean isDescending() {
+        return descending;
+    }
+
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public boolean equals(Object o) {
@@ -144,7 +151,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
                 && fullProjection.equals(that.fullProjection)
                 && Objects.equals(remainingFilter, that.remainingFilter)
                 && Objects.equals(filter, that.filter)
-                && Objects.equals(comparator, that.comparator);
+                && Objects.equals(comparator, that.comparator)
+                && descending == that.descending;
     }
 
     @Override
@@ -160,7 +168,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
                 fullProjection,
                 remainingFilter,
                 filter,
-                comparator
+                comparator,
+                descending
         );
     }
 
@@ -177,6 +186,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         out.writeObject(filter);
         out.writeObject(remainingFilter);
         out.writeObject(comparator);
+        out.writeBoolean(descending);
     }
 
     @Override
@@ -192,6 +202,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         filter = in.readObject();
         remainingFilter = in.readObject();
         comparator = in.readObject();
+        descending = in.readBoolean();
     }
 
     @Override

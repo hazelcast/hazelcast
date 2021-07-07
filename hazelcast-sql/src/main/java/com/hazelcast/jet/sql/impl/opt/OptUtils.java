@@ -157,7 +157,7 @@ public final class OptUtils {
      * @param input Subset.
      * @return Physical rels.
      */
-    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode input) {
+    public static Collection<RelNode> extractPhysicalRelsFromAllSubsets(RelNode input) {
         Set<RelTraitSet> traitSets = new HashSet<>();
 
         Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
