@@ -839,7 +839,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     @Override
     public ClientConnection getConnectionForSql() {
         if (isSmartRoutingEnabled) {
-            // There might be a race - the chosen member just connected or disconnected - try a
+            // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
             for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
