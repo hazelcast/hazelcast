@@ -126,32 +126,32 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_EQUALS() {
-        check(sql("(1=?) || (1=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) = ?) || (1 = CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_NOT_EQUALS() {
-        check(sql("(1!=?) || (1!=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) != ?) || (1 != CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN() {
-        check(sql("(1>?) || (1>?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) > ?) || (1 > CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN_OR_EQUAL() {
-        check(sql("(1>=?) || (1>=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) >= ?) || (1 >= CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN() {
-        check(sql("(1<?) || (1<?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) < ?) || (1 < CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN_OR_EQUAL() {
-        check(sql("(1<=?) || (1<=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) <= ?) || (1 <= CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test

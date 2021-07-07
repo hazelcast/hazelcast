@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the collection of values associated with the key. The collection is NOT backed by the map, so changes to
  * the map are NOT reflected in the collection, and vice-versa.
  */
-@Generated("882e8d24f1299f82f790326a768f828c")
+@Generated("18af6327235f666238076693a335479f")
 public final class MultiMapGetCodec {
     //hex: 0x020200
     public static final int REQUEST_MESSAGE_TYPE = 131584;
@@ -112,5 +112,4 @@ public final class MultiMapGetCodec {
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
-
 }

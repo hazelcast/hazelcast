@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
  * has expired or has been evicted.
  */
-@Generated("352a8ae4325d9db244b17df9c153fe82")
+@Generated("916d2159f8f809c5f5341c6d5a56b58c")
 public final class CacheIterateCodec {
     //hex: 0x130E00
     public static final int REQUEST_MESSAGE_TYPE = 1248768;
@@ -108,6 +108,7 @@ public final class CacheIterateCodec {
          */
         public java.util.List<com.hazelcast.internal.serialization.Data> keys;
     }
+
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, java.util.Collection<com.hazelcast.internal.serialization.Data> keys) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -128,5 +129,4 @@ public final class CacheIterateCodec {
         response.keys = ListMultiFrameCodec.decode(iterator, DataCodec::decode);
         return response;
     }
-
 }

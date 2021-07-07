@@ -75,7 +75,7 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CANCEL;
+        return SqlDataSerializerHook.QUERY_OPERATION_CANCEL;
     }
 
     @Override
