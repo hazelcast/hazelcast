@@ -150,31 +150,6 @@ public final class OptUtils {
         return new HazelcastRelOptTable(relTable);
     }
 
-    /**
-     * Get possible physical rels from the given subset.
-     * Every returned input is guaranteed to have a unique trait set.
-     *
-     * @param input Subset.
-     * @return Physical rels.
-     */
-    public static Collection<RelNode> getPhysicalRelsFromSubset(RelNode input) {
-        Set<RelTraitSet> traitSets = new HashSet<>();
-
-        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
-
-        for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
-            if (!isPhysical(rel)) {
-                continue;
-            }
-
-            if (traitSets.add(rel.getTraitSet())) {
-                res.add(rel);
-            }
-        }
-
-        return res;
-    }
-
     public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode node) {
         if (node instanceof RelSubset) {
             RelSubset subset = (RelSubset) node;

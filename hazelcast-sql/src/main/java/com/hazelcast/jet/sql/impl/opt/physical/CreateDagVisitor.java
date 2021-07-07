@@ -141,7 +141,7 @@ public class CreateDagVisitor {
                 .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
     }
 
-    public Vertex onMapIndexScan(IMapIndexScanPhysicalRel rel) {
+    public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 

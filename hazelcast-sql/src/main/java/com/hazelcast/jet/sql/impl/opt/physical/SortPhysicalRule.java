@@ -24,64 +24,51 @@ import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.convert.ConverterRule;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
-import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
+import static java.util.Collections.singletonList;
 
-final class SortPhysicalRule extends ConverterRule {
+final class SortPhysicalRule extends RelOptRule {
 
     static final RelOptRule INSTANCE = new SortPhysicalRule();
 
     private SortPhysicalRule() {
         super(
-                SortLogicalRel.class, LOGICAL, PHYSICAL,
+                operand(SortLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()))),
                 SortPhysicalRule.class.getSimpleName()
         );
     }
 
     @Override
-    public RelNode convert(RelNode rel) {
-        SortLogicalRel logicalRel = (SortLogicalRel) rel;
+    public void onMatch(RelOptRuleCall call) {
+        SortLogicalRel logicalSort = call.rel(0);
 
-        return new SortPhysicalRel(
-                logicalRel.getCluster(),
-                OptUtils.toPhysicalConvention(logicalRel.getTraitSet()),
-                OptUtils.toPhysicalInput(logicalRel.getInput()),
-                logicalRel.getCollation(),
-                logicalRel.offset,
-                logicalRel.getFetch(),
-                logicalRel.getRowType()
-        );
+        List<RelNode> transforms = toTransforms(logicalSort);
+        for (RelNode transform : transforms) {
+            call.transformTo(transform);
+        }
     }
 
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        RelNode rel = call.rel(0);
-        SortLogicalRel sortRel = call.rel(0);
-        RelNode input = sortRel.getInput();
+    private static List<RelNode> toTransforms(SortLogicalRel logicalSort) {
         List<RelNode> sortTransforms = new ArrayList<>(1);
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
-        for (RelNode physicalInput : OptUtils.getPhysicalRelsFromSubset(input)) {
-            boolean requiresSort = requiresLocalSort(sortRel.getCollation(),
-                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE));
+        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(logicalSort.getInput())) {
+            boolean requiresSort = requiresLocalSort(
+                    logicalSort.getCollation(),
+                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+            );
             if (requiresSort) {
-                sortTransforms.add(convert(rel));
+                sortTransforms.add(convert(logicalSort));
             } else {
                 nonSortTransforms.add(physicalInput);
             }
         }
         List<RelNode> transforms = nonSortTransforms.isEmpty() ? sortTransforms : nonSortTransforms;
-        if (transforms.isEmpty()) {
-            transforms.add(convert(rel));
-        }
-        for (RelNode transform : transforms) {
-            call.transformTo(transform);
-        }
+        return !transforms.isEmpty() ? transforms : singletonList(convert(logicalSort));
     }
 
     private static boolean requiresLocalSort(RelCollation sortCollation, RelCollation inputCollation) {
@@ -112,4 +99,17 @@ final class SortPhysicalRule extends ConverterRule {
         }
     }
 
+    private static RelNode convert(RelNode rel) {
+        SortLogicalRel logicalSort = (SortLogicalRel) rel;
+
+        return new SortPhysicalRel(
+                logicalSort.getCluster(),
+                OptUtils.toPhysicalConvention(logicalSort.getTraitSet()),
+                OptUtils.toPhysicalInput(logicalSort.getInput()),
+                logicalSort.getCollation(),
+                logicalSort.offset,
+                logicalSort.getFetch(),
+                logicalSort.getRowType()
+        );
+    }
 }

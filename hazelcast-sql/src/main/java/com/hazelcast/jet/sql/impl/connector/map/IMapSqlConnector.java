@@ -211,7 +211,7 @@ public class IMapSqlConnector implements SqlConnector {
                 reminderFilter,
                 comparator
         );
-        Vertex indexScanner = dag.newUniqueVertex(
+        Vertex scanner = dag.newUniqueVertex(
                 "Index(" + toString(table) + ")",
                 readMapIndexSupplier(mapScanMetadata)
         );
@@ -223,7 +223,7 @@ public class IMapSqlConnector implements SqlConnector {
                     ProcessorMetaSupplier.forceTotalParallelismOne(rowReducer(projection), localMemberAddress)
             );
 
-            dag.edge(between(indexScanner, projector)
+            dag.edge(between(scanner, projector)
                     .ordered(comparator)
                     .distributeTo(localMemberAddress)
                     .allToOne("")
@@ -234,7 +234,7 @@ public class IMapSqlConnector implements SqlConnector {
                     rowReducer(projection)
             );
 
-            dag.edge(between(indexScanner, projector).isolated());
+            dag.edge(between(scanner, projector).isolated());
         }
         return projector;
     }

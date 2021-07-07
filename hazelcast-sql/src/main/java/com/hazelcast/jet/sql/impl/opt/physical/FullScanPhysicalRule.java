@@ -18,19 +18,9 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.index.JetIndexResolver;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
-import com.hazelcast.sql.impl.schema.map.MapTableIndex;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
@@ -55,38 +45,5 @@ final class FullScanPhysicalRule extends ConverterRule {
                 OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),
                 logicalScan.getTable()
         );
-    }
-
-    @Override
-    public void onMatch(RelOptRuleCall call) {
-        RelNode rel = call.rel(0);
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-
-        List<RelNode> transforms = new ArrayList<>(1);
-
-        // Only PartitionedMapTable supposed to have indices.
-        if (table instanceof PartitionedMapTable) {
-            PartitionedMapTable partitionedMapTable = (PartitionedMapTable) table;
-
-            // Normal scan is supported for HD.
-            transforms.add(convert(rel));
-
-            if (partitionedMapTable.getIndexes().isEmpty()) {
-                for (RelNode transform : transforms) {
-                    call.transformTo(transform);
-                }
-                return;
-            }
-
-            List<MapTableIndex> indexes = partitionedMapTable.getIndexes();
-            FullScanLogicalRel logicalScan = (FullScanLogicalRel) rel;
-            Collection<RelNode> indexScans = JetIndexResolver.createIndexScans(logicalScan, indexes);
-            // TODO: HD index scans will be added to this transforms list later.
-            transforms.addAll(indexScans);
-        }
-
-        for (RelNode transform : transforms) {
-            call.transformTo(transform);
-        }
     }
 }

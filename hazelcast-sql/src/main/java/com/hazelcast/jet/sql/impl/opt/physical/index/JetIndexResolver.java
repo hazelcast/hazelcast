@@ -20,7 +20,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.IMapIndexScanPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -97,7 +97,7 @@ public final class JetIndexResolver {
     /**
      * The main entry point for index planning.
      * <p>
-     * Analyzes the filter of the input scan operator, and produces zero, one or more {@link IMapIndexScanPhysicalRel}
+     * Analyzes the filter of the input scan operator, and produces zero, one or more {@link IndexScanMapPhysicalRel}
      * operators.
      * <p>
      * First, the full index scans are created and the covered (prefix-based) scans are excluded.
@@ -752,7 +752,7 @@ public final class JetIndexResolver {
         return createIndexScan(scan, index, conjunctions, filters, ascs);
     }
 
-    private static IMapIndexScanPhysicalRel createIndexScan(
+    private static IndexScanMapPhysicalRel createIndexScan(
             FullScanLogicalRel scan,
             MapTableIndex index,
             List<RexNode> conjunctions,
@@ -761,12 +761,10 @@ public final class JetIndexResolver {
     ) {
         // Collect filters and relevant expressions
         List<IndexFilter> filters = new ArrayList<>(filterDescriptors.size());
-        List<QueryDataType> converterTypes = new ArrayList<>(filterDescriptors.size());
         Set<RexNode> exps = new HashSet<>();
 
         for (IndexComponentFilter filterDescriptor : filterDescriptors) {
             filters.add(filterDescriptor.getFilter());
-            converterTypes.add(filterDescriptor.getConverterType());
             exps.addAll(filterDescriptor.getExpressions());
         }
 
@@ -804,13 +802,12 @@ public final class JetIndexResolver {
         }
 
         // Construct the scan
-        return new IMapIndexScanPhysicalRel(
+        return new IndexScanMapPhysicalRel(
                 scan.getCluster(),
                 OptUtils.toPhysicalConvention(traitSet),
                 newRelTable,
                 index,
                 filter,
-                converterTypes,
                 exp,
                 remainderExp
         );
@@ -905,13 +902,12 @@ public final class JetIndexResolver {
         // Create index filter for full scan.
         IndexFilter indexFilter = new IndexRangeFilter(null, true, null, true);
 
-        return new IMapIndexScanPhysicalRel(
+        return new IndexScanMapPhysicalRel(
                 scan.getCluster(),
                 OptUtils.toPhysicalConvention(traitSet),
                 newRelTable,
                 index,
                 indexFilter,
-                Collections.emptyList(),
                 null,
                 scanFilter
         );
