@@ -70,14 +70,19 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to);
     }
 
-    public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
+    public static IndexIterationPointer[] createFromIndexFilter(
+            IndexFilter indexFilter,
+            boolean descending,
+            ExpressionEvalContext evalContext
+    ) {
         ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, evalContext, result);
+        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
     private static void createFromIndexFilterInt(
             IndexFilter indexFilter,
+            boolean descending,
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
     ) {
@@ -106,15 +111,15 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to = toValue;
             }
 
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
+            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, false));
+            result.add(create(value, true, value, true, descending));
         } else if (indexFilter instanceof IndexInFilter) {
             IndexInFilter inFilter = (IndexInFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, evalContext, result);
+                createFromIndexFilterInt(filter, descending, evalContext, result);
             }
         }
     }

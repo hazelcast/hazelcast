@@ -204,7 +204,8 @@ public final class MapIndexScanP extends AbstractProcessor {
     }
 
     private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter) {
-        return IndexIterationPointer.createFromIndexFilter(filter, evalContext);
+        // TODO: Pass descending argument correctly.
+        return IndexIterationPointer.createFromIndexFilter(filter, false, evalContext);
     }
 
     private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
