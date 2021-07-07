@@ -60,18 +60,18 @@ public final class ExecutionPlanBuilder {
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
     ) {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
-        final Map<MemberInfo, int[]> partitionAssignment = getPartitionAssignment(nodeEngine, memberInfos);
-        final Map<Address, int[]> partitionAssignment2 =
-                partitionAssignment.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
-        final List<Address> addresses = toList(partitionAssignment.keySet(), MemberInfo::getAddress);
-        final int clusterSize = partitionAssignment.size();
+        final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
+        final Map<Address, int[]> partitionsByAddress =
+                partitionsByMember.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));
+        final List<Address> addresses = toList(partitionsByMember.keySet(), MemberInfo::getAddress);
+        final int clusterSize = partitionsByMember.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = nodeEngine.getConfig().getJetConfig().getDefaultEdgeConfig();
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
-        for (MemberInfo member : partitionAssignment.keySet()) {
+        for (MemberInfo member : partitionsByMember.keySet()) {
             plans.put(member,
-                    new ExecutionPlan(partitionAssignment2, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
+                    new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
 
@@ -94,7 +94,7 @@ public final class ExecutionPlanBuilder {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
             try {
                 metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId, jobConfig, logger,
-                        vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob, partitionAssignment2));
+                        vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob, partitionsByAddress));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }

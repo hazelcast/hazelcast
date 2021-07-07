@@ -869,7 +869,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             return connectionEntry.getValue();
         }
 
-        // Failed to get a connection
+        // Failed to get a connection to a data member
         return firstConnection;
     }
 

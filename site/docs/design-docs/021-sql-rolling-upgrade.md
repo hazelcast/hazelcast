@@ -143,8 +143,8 @@ implementations: `StaticLB`, `RoundRobinLB` and `RandomLB`. The
 In 4.2 `LoadBalancer.nextDataMember()` method was added that throws
 `UnsupportedOperationException` in the default implementation. In 4.2,
 the SQL API required that the query was submitted to a data member. If
-the user had he's own LB implementation, SQL won't work from clients at
-all unless the LB was modified too.
+the user had his own LB implementation, SQL wouldn't work from clients
+at all unless the LB was modified too.
 
 Due to rolling upgrades, we need another strategy to choose the target
 member: any data member from the larger same-version group. It's not
@@ -182,9 +182,9 @@ validates the query. And since the query can be forwarded to a different
 member, we need to forward the authentication information to the
 coordinating member. Therefore we add `Collection<Principal>` to the
 `SqlExecuteOperation`. If this collection is not null, the recipient
-will check if som of the principals has access to the objects referenced
-in the query. If this collection is empty, the query will be rejected
-(no access to anything).
+will check if some of the principals has access to the objects
+referenced in the query. If this collection is empty, the query will be
+rejected (no access to anything).
 
 ## Implementation parts
 

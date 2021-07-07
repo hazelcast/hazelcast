@@ -172,7 +172,7 @@ public final class QueryUtils {
     }
 
     /**
-     * Finds a larger same-version group of data members from a collection
+     * Finds a larger same-version group of data members from a collection of
      * members and, if {@code localMember} is from that group, return that.
      * Otherwise return a random member from the group. If the same-version
      * groups have the same size, return a member from the newer group
