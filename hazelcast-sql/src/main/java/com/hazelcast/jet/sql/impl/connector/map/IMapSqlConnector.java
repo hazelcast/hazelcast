@@ -71,14 +71,13 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
+    public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
             MetadataPortableResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
-
-    private static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     @Override
     public String typeName() {
