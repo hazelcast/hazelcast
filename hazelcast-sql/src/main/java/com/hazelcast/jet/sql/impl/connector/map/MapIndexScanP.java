@@ -247,16 +247,16 @@ public final class MapIndexScanP extends AbstractProcessor {
         return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 
-    private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+    private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         if (metadata.getRemainingFilter() != null
                 && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {
             return null;
         }
 
-        Object[] row = new Object[metadata.getFullProjection().size()];
-        for (int j = 0; j < metadata.getFullProjection().size(); j++) {
-            row[j] = evaluate(metadata.getFullProjection().get(j), this.row, evalContext);
+        Object[] row = new Object[metadata.getProjection().size()];
+        for (int j = 0; j < metadata.getProjection().size(); j++) {
+            row[j] = evaluate(metadata.getProjection().get(j), this.row, evalContext);
         }
         return row;
     }
@@ -317,7 +317,7 @@ public final class MapIndexScanP extends AbstractProcessor {
             while (currentRow == null && currentBatchPosition < currentBatch.size()) {
                 // Sometimes scan query may not include indexed field.
                 // So, additional projection is required to ability to merge-sort an output.
-                currentRow = doFullProjectionAndFilter(currentBatch.get(currentBatchPosition));
+                currentRow = projectAndFilter(currentBatch.get(currentBatchPosition));
                 if (currentRow == null) {
                     currentBatchPosition++;
                 }

@@ -129,7 +129,6 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
                 projections,
-                projections,
                 null,
                 null,
                 false
@@ -168,7 +167,6 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
                 projections,
-                projections,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
                 false
@@ -206,7 +204,6 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
-                projections,
                 projections,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
@@ -248,7 +245,6 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
                 projections,
-                projections,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
                 false
@@ -289,7 +285,6 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
-                projection,
                 projection,
                 null,
                 comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0)))),

@@ -70,6 +70,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
@@ -213,7 +214,6 @@ public class IMapSqlConnector implements SqlConnector {
                 Arrays.asList(table.types()),
                 filter,
                 projection,
-                identityProjection(table),
                 reminderFilter,
                 comparator,
                 descending
@@ -224,27 +224,24 @@ public class IMapSqlConnector implements SqlConnector {
                 readMapIndexSupplier(indexScanMetadata)
         );
 
-        Vertex projector;
         if (tableIndex.getType() == IndexType.SORTED) {
-            projector = dag.newUniqueVertex(
-                    "Project(" + toString(table) + ")",
-                    ProcessorMetaSupplier.forceTotalParallelismOne(reducer(projection), localMemberAddress)
+            Vertex sorter = dag.newUniqueVertex(
+                    "SortCombine",
+                    ProcessorMetaSupplier.forceTotalParallelismOne(
+                            ProcessorSupplier.of(mapP(FunctionEx.identity())),
+                            localMemberAddress
+                    )
             );
 
-            dag.edge(between(scanner, projector)
+            assert comparator != null;
+            dag.edge(between(scanner, sorter)
                     .ordered(comparator)
                     .distributeTo(localMemberAddress)
                     .allToOne("")
             );
-        } else {
-            projector = dag.newUniqueVertex(
-                    "Project(" + toString(table) + ")",
-                    reducer(projection)
-            );
-
-            dag.edge(between(scanner, projector).isolated());
+            return sorter;
         }
-        return projector;
+        return scanner;
     }
 
     private static ProcessorSupplier reducer(List<Expression<?>> projection) {
