@@ -86,6 +86,9 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
     ) {
+        if (indexFilter == null) {
+            result.add(create(null, true, null, true, descending));
+        }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
 

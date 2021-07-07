@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.map;
+package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
-import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -207,11 +207,11 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
+        return SqlDataSerializerHook.F_ID;
     }
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.MAP_INDEX_SCAN_METADATA;
+        return SqlDataSerializerHook.MAP_INDEX_SCAN_METADATA;
     }
 }
