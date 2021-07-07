@@ -20,12 +20,10 @@ fi
 
 readJvmOptionsFile "jvm.options"
 
-#TODO -Djet.home= ????
 JAVA_OPTS_ARRAY=(\
 "$JDK_OPTS" \
 "-Dhazelcast.logging.type=log4j2" \
 "-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
-"-Djet.home=$HAZELCAST_HOME" \
 "-Dhazelcast.config=$HAZELCAST_HOME/config/hazelcast.yaml" \
 "-Dhazelcast.jet.config=$HAZELCAST_HOME/config/hazelcast-jet.yaml" \
 "$PROMETHEUS" \

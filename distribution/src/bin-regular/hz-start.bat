@@ -11,7 +11,6 @@ set JAVA_OPTS=%JAVA_OPTS%^
  "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
  "-Dhazelcast.config=%HAZELCAST_HOME%\config\hazelcast.yaml"^
  "-Dhazelcast.jet.config=%HAZELCAST_HOME%\config\hazelcast-jet.yaml"^
- "-Djet.home=%HAZELCAST_HOME%"
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*";%CLASSPATH%
 
