@@ -845,11 +845,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
                 Member member = QueryUtils.memberOfLargerSameVersionGroup(
                         client.getClientClusterService().getMemberList(), null);
-                if (member != null) {
-                    ClientConnection connection = activeConnections.get(member.getUuid());
-                    if (connection != null) {
-                        return connection;
-                    }
+                if (member == null) {
+                    break;
+                }
+                ClientConnection connection = activeConnections.get(member.getUuid());
+                if (connection != null) {
+                    return connection;
                 }
             }
         }

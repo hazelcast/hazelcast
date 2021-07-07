@@ -40,6 +40,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -136,15 +137,9 @@ public class QueryUtilsTest extends SqlTestSupport {
         when(mv3.getVersion()).thenReturn(v3);
 
         // failing cases
-        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(emptyList(), null))
-                .isInstanceOf(QueryException.class)
-                .hasMessage("No data member found");
-        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), null))
-                .isInstanceOf(QueryException.class)
-                .hasMessage("No data member found");
-        assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), mv1_lite))
-                .isInstanceOf(QueryException.class)
-                .hasMessage("No data member found");
+        assertNull(QueryUtils.memberOfLargerSameVersionGroup(emptyList(), null));
+        assertNull(QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), null));
+        assertNull(QueryUtils.memberOfLargerSameVersionGroup(singletonList(mv1_lite), mv1_lite));
         assertThatThrownBy(() -> QueryUtils.memberOfLargerSameVersionGroup(asList(mv1, mv2, mv3), null))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("More than 2 distinct member versions found: 0.1, 0.2, 0.3");
