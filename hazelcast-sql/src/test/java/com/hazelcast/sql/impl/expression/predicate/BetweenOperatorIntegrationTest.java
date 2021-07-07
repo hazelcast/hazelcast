@@ -153,12 +153,6 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void test_dynamicParamTypeWidening() {
-        putAll((byte) 0);
-        checkValue0(sqlQuery("NOT BETWEEN ? AND ?"), SqlColumnType.TINYINT, (byte) 0, 1000, 1000);
-    }
-
-    @Test
     public void betweenAsymmetricPredicateTypeCheckTest() {
         for (ExpressionType<?> fieldType : TESTED_TYPES) {
             putAll(fieldType.nonNullValues().toArray());

@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Set;
@@ -38,6 +39,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
  */
 public class JobRecord implements IdentifiedDataSerializable {
 
+    private Version clusterVersion;
     private long jobId;
     private long creationTime;
     private Data dag;
@@ -49,13 +51,19 @@ public class JobRecord implements IdentifiedDataSerializable {
     public JobRecord() {
     }
 
-    public JobRecord(long jobId, Data dag, String dagJson, JobConfig config, Set<String> ownedObservables) {
+    public JobRecord(Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
+                     Set<String> ownedObservables) {
+        this.clusterVersion = clusterVersion;
         this.jobId = jobId;
         this.creationTime = Clock.currentTimeMillis();
         this.dag = dag;
         this.dagJson = dagJson;
         this.config = config;
         this.ownedObservables = ownedObservables;
+    }
+
+    public Version getClusterVersion() {
+        return clusterVersion;
     }
 
     public long getJobId() {
@@ -99,6 +107,7 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(clusterVersion);
         out.writeLong(jobId);
         out.writeLong(creationTime);
         IOUtil.writeData(out, dag);
@@ -109,6 +118,7 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        clusterVersion = in.readObject();
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = IOUtil.readData(in);

@@ -267,7 +267,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testNodeStartup() {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
-        Config config = getDiscoverySPIConfig(xmlFileName);
+        Config config = getDiscoverySPIConfig(xmlFileName, false);
 
         try {
             final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
@@ -376,7 +376,27 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     @Test
     public void testSPIAwareMemberGroupFactoryCreateMemberGroups() throws Exception {
         String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
-        Config config = getDiscoverySPIConfig(xmlFileName);
+        Config config = getDiscoverySPIConfig(xmlFileName, false);
+        // we create this instance in order to fully create Node
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        Node node = getNode(hazelcastInstance);
+        assertNotNull(node);
+
+        MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());
+        Collection<Member> members = createMembers();
+        Collection<MemberGroup> memberGroups = groupFactory.createMemberGroups(members);
+
+        assertEquals("Member Groups: " + String.valueOf(memberGroups), 2, memberGroups.size());
+        for (MemberGroup memberGroup : memberGroups) {
+            assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
+        }
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void testSPIAwareMemberGroupFactoryCreateMemberGroups_withDeprecated() throws Exception {
+        String xmlFileName = "test-hazelcast-discovery-spi-metadata.xml";
+        Config config = getDiscoverySPIConfig(xmlFileName, true);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
         Node node = getNode(hazelcastInstance);
@@ -470,6 +490,23 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void noBreakingChangeInPartitionGroupStrategyAbstractClass() {
+        TestBreakingChangesDiscoveryStrategy strategy = new TestBreakingChangesDiscoveryStrategy();
+        assertNull(strategy.getPartitionGroupStrategy());
+    }
+
+    static class TestBreakingChangesDiscoveryStrategy extends AbstractDiscoveryStrategy {
+        TestBreakingChangesDiscoveryStrategy() {
+            super(null, Collections.<String, Comparable>emptyMap());
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return null;
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static void setEnvironment(String key, String value) throws Exception {
         Class[] classes = Collections.class.getDeclaredClasses();
@@ -552,13 +589,20 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return null;
         }
 
         @Override
         public Map<String, String> discoverLocalMetadata() {
             return Collections.emptyMap();
+        }
+    }
+
+    private static class DeprecatedTestDiscoveryStrategy extends TestDiscoveryStrategy {
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return null;
         }
     }
 
@@ -594,9 +638,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
     public static class CollectingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        private final List<DiscoveryNode> discoveryNodes;
+        protected final List<DiscoveryNode> discoveryNodes;
 
-        private CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+        CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
             this.discoveryNodes = discoveryNodes;
         }
 
@@ -613,6 +657,22 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
             return null;
+        }
+    }
+
+    private static class DeprecatedCollectingDiscoveryStrategyFactory extends CollectingDiscoveryStrategyFactory {
+        DeprecatedCollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+            super(discoveryNodes);
+        }
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return DeprecatedCollectingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
+            return new DeprecatedCollectingDiscoveryStrategy(node, discoveryNodes, logger, properties);
         }
     }
 
@@ -638,7 +698,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         // need to provide a custom impl
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return new SPIPartitionGroupStrategy();
         }
 
@@ -651,6 +711,18 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         public void destroy() {
             super.destroy();
             discoveryNodes.remove(discoveryNode);
+        }
+    }
+
+    private static class DeprecatedCollectingDiscoveryStrategy extends CollectingDiscoveryStrategy {
+        DeprecatedCollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                              Map<String, Comparable> properties) {
+            super(discoveryNode, discoveryNodes, logger, properties);
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
         }
     }
 
@@ -706,7 +778,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public PartitionGroupStrategy getPartitionGroupStrategy() {
+        public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
             return new SPIPartitionGroupStrategy();
         }
 
@@ -715,6 +787,17 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("test-string", "TEST");
             return metadata;
+        }
+    }
+
+    private static class DeprecatedMetadataProvidingDiscoveryStrategy extends MetadataProvidingDiscoveryStrategy {
+        DeprecatedMetadataProvidingDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties) {
+            super(discoveryNode, logger, properties);
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return new SPIPartitionGroupStrategy();
         }
     }
 
@@ -743,7 +826,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         return members;
     }
 
-    private static Config getDiscoverySPIConfig(String xmlFileName) {
+    private static Config getDiscoverySPIConfig(String xmlFileName, boolean isDeprecated) {
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Config config = new XmlConfigBuilder(xmlResource).build();
         config.getNetworkConfig().setPort(50001);
@@ -753,7 +836,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         interfaces.addInterface("127.0.0.1");
 
         List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
-        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
+        DiscoveryStrategyFactory factory = isDeprecated ? new DeprecatedCollectingDiscoveryStrategyFactory(discoveryNodes)
+                : new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
         DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
         discoveryConfig.getDiscoveryStrategyConfigs().clear();

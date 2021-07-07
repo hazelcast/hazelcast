@@ -34,7 +34,6 @@ public class PhoneHomeParameterCreator {
 
     public PhoneHomeParameterCreator() {
         builder = new StringBuilder();
-        builder.append("?");
     }
 
     Map<String, String> getParameters() {

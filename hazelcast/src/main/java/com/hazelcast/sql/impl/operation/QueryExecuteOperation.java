@@ -131,7 +131,7 @@ public class QueryExecuteOperation extends QueryAbstractIdAwareOperation {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_EXECUTE;
+        return SqlDataSerializerHook.QUERY_OPERATION_EXECUTE;
     }
 
     @Override

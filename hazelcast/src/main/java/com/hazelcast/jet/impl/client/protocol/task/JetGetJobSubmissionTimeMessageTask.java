@@ -23,6 +23,8 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSubmissionTimeCodec
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import java.util.UUID;
+
 public class JetGetJobSubmissionTimeMessageTask
         extends AbstractJetMessageTask<JetGetJobSubmissionTimeCodec.RequestParameters, Long> {
 
@@ -33,8 +35,13 @@ public class JetGetJobSubmissionTimeMessageTask
     }
 
     @Override
+    protected UUID getLightJobCoordinator() {
+        return parameters.lightJobCoordinator;
+    }
+
+    @Override
     protected Operation prepareOperation() {
-        return new GetJobSubmissionTimeOperation(parameters.jobId, parameters.isLightJob);
+        return new GetJobSubmissionTimeOperation(parameters.jobId, parameters.lightJobCoordinator != null);
     }
 
     @Override
