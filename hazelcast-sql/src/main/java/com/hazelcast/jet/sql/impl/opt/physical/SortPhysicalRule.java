@@ -52,13 +52,9 @@ final class SortPhysicalRule extends RelOptRule {
         }
     }
 
-    // Project
-    //   Sort
-    //     Scan -> NormalPScan / IndexPScan
     private static List<RelNode> toTransforms(SortLogicalRel logicalSort) {
         List<RelNode> sortTransforms = new ArrayList<>(1);
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
-
         for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromAllSubsets(logicalSort.getInput())) {
             boolean requiresSort = requiresLocalSort(
                     logicalSort.getCollation(),
@@ -67,7 +63,22 @@ final class SortPhysicalRule extends RelOptRule {
             if (requiresSort) {
                 sortTransforms.add(convert(logicalSort));
             } else {
-                nonSortTransforms.add(physicalInput);
+                if (logicalSort.offset != null || logicalSort.fetch != null) {
+                    SortPhysicalRel top = (SortPhysicalRel) convert(logicalSort);
+                    // TODO: [sasha], [Hakan] optimize redundant sort in relations tree.
+                    top = new SortPhysicalRel(
+                            top.getCluster(),
+                            top.getTraitSet(),
+                            physicalInput,
+                            top.getCollation(),
+                            top.offset,
+                            top.fetch,
+                            top.getRowType()
+                    );
+                    nonSortTransforms.add(top);
+                } else {
+                    nonSortTransforms.add(physicalInput);
+                }
             }
         }
         List<RelNode> transforms = nonSortTransforms.isEmpty() ? sortTransforms : nonSortTransforms;

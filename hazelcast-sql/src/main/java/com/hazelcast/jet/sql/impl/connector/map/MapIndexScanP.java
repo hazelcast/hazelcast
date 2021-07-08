@@ -285,9 +285,9 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
 
         /**
-         * After this call, {@link #currentRow} and {@link #currentEntry()} are
-         * will return the next entry to emit. They are set to null, if there's no
-         * row available because we're either done or waiting for more data.
+         * After this call, {@link #currentRow} will return the next entry to emit.
+         * They are set to null, if there's no row available
+         * because we're either done or waiting for more data.
          */
         private void peek() {
             // start a new async call, if we're not done and one isn't in flight

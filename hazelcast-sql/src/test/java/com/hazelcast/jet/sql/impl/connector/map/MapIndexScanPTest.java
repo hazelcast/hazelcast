@@ -71,7 +71,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     @Parameterized.Parameters(name = "count:{0}")
     public static Collection<Integer> parameters() {
-        return asList(100, 10_000);
+        return asList(1_000, 50_000);
     }
 
     @Parameterized.Parameter(0)
