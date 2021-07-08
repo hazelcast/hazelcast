@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -29,9 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataJavaResolver;
@@ -65,16 +62,13 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
-import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -242,13 +236,6 @@ public class IMapSqlConnector implements SqlConnector {
             return sorter;
         }
         return scanner;
-    }
-
-    private static ProcessorSupplier reducer(List<Expression<?>> projection) {
-        return mapUsingServiceP(
-                nonSharedService(ctx -> ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
-                (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
-        );
     }
 
     @Nonnull

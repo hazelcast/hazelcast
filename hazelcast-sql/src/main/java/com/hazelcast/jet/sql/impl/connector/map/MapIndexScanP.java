@@ -87,8 +87,6 @@ import static java.util.stream.Collectors.toList;
  */
 public final class MapIndexScanP extends AbstractProcessor {
 
-    private static final int FETCH_SIZE_HINT = 128;
-
     private final MapIndexScanMetadata metadata;
 
     private HazelcastInstance hazelcastInstance;
@@ -101,7 +99,7 @@ public final class MapIndexScanP extends AbstractProcessor {
     private Object[] pendingItem;
     private boolean isIndexSorted;
 
-    public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+    private MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         this.metadata = indexScanMetadata;
     }
 
@@ -111,13 +109,13 @@ public final class MapIndexScanP extends AbstractProcessor {
 
         hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
-        reader = LocalMapIndexReader.create(hazelcastInstance, evalContext.getSerializationService(), metadata);
+        reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         int[] memberPartitions = context.processorPartitions();
         splits.add(new Split(
                 new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
                 hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                filtersToPointers(metadata.getFilter(), metadata.isDescending())
+                filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
         ));
 
         row = MapScanRow.create(
@@ -131,45 +129,18 @@ public final class MapIndexScanP extends AbstractProcessor {
         isIndexSorted = metadata.getComparator() != null;
     }
 
+    private static IndexIterationPointer[] filtersToPointers(
+            @Nonnull IndexFilter filter,
+            boolean descending,
+            ExpressionEvalContext evalContext
+    ) {
+        return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
+    }
+
     @SuppressWarnings({"SingleStatementInBlock"})
     @Override
     public boolean complete() {
         return isIndexSorted ? runSortedIndex() : runHashIndex();
-    }
-
-    private boolean runHashIndex() {
-        for (; ; ) {
-            while (!itemsToSend.isEmpty()) {
-                Object[] item = itemsToSend.poll();
-                if (!tryEmit(item)) {
-                    itemsToSend.offer(item);
-                    return false;
-                }
-            }
-
-            for (int i = 0; i < splits.size(); ++i) {
-                Split s = splits.get(i);
-                try {
-                    s.peek();
-                } catch (MissingPartitionException e) {
-                    splits.addAll(splitOnMigration(s));
-                    splits.remove(i--);
-                    continue;
-                }
-                if (s.currentRow == null) {
-                    if (s.done()) {
-                        // No more items to read, remove finished split.
-                        splits.remove(i--);
-                        if (splits.isEmpty()) {
-                            return true;
-                        }
-                    }
-                } else {
-                    itemsToSend.offer(s.currentRow);
-                    splits.get(i).remove();
-                }
-            }
-        }
     }
 
     private boolean runSortedIndex() {
@@ -217,6 +188,41 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
+    private boolean runHashIndex() {
+        for (; ; ) {
+            while (!itemsToSend.isEmpty()) {
+                Object[] item = itemsToSend.poll();
+                if (!tryEmit(item)) {
+                    itemsToSend.offer(item);
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < splits.size(); ++i) {
+                Split s = splits.get(i);
+                try {
+                    s.peek();
+                } catch (MissingPartitionException e) {
+                    splits.addAll(splitOnMigration(s));
+                    splits.remove(i--);
+                    continue;
+                }
+                if (s.currentRow == null) {
+                    if (s.done()) {
+                        // No more items to read, remove finished split.
+                        splits.remove(i--);
+                        if (splits.isEmpty()) {
+                            return true;
+                        }
+                    }
+                } else {
+                    itemsToSend.offer(s.currentRow);
+                    splits.get(i).remove();
+                }
+            }
+        }
+    }
+
     /**
      * Perform splitting of a {@link Split} after receiving {@link MissingPartitionException}.
      * Method gets current partition table and proceeds with following procedure:
@@ -243,10 +249,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         return new ArrayList<>(newSplits.values());
     }
 
-    private IndexIterationPointer[] filtersToPointers(@Nonnull IndexFilter filter, boolean descending) {
-        return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
-    }
-
     private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         if (metadata.getRemainingFilter() != null
@@ -265,7 +267,7 @@ public final class MapIndexScanP extends AbstractProcessor {
      * Basic unit of index scan execution bounded to concrete member and partitions set.
      * Can be split into smaller splits after migration is detected.
      */
-    final class Split {
+    private final class Split {
         private final PartitionIdSet partitions;
         private final Address owner;
         private IndexIterationPointer[] pointers;
@@ -274,7 +276,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         private int currentBatchPosition;
         private CompletableFuture<MapFetchIndexOperationResult> future;
 
-        Split(PartitionIdSet partitions, Address owner, IndexIterationPointer[] pointers) {
+        private Split(PartitionIdSet partitions, Address owner, IndexIterationPointer[] pointers) {
             this.partitions = partitions;
             this.owner = owner;
             this.pointers = pointers;
@@ -287,7 +289,7 @@ public final class MapIndexScanP extends AbstractProcessor {
          * will return the next entry to emit. They are set to null, if there's no
          * row available because we're either done or waiting for more data.
          */
-        public void peek() {
+        private void peek() {
             // start a new async call, if we're not done and one isn't in flight
             if (future == null && pointers.length > 0) {
                 future = reader.readBatch(owner, partitions, pointers);
@@ -324,102 +326,37 @@ public final class MapIndexScanP extends AbstractProcessor {
             }
         }
 
-        public QueryableEntry<?, ?> currentEntry() {
-            return currentBatch.get(currentBatchPosition);
-        }
-
-        public void remove() {
+        private void remove() {
             currentBatchPosition++;
             currentRow = null;
         }
 
-        public boolean done() {
+        private boolean done() {
             return currentBatchPosition == currentBatch.size() && pointers.length == 0;
         }
     }
 
-    public static final class MapIndexScanProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
+    private static final class LocalMapIndexReader
+            extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
-        private MapIndexScanMetadata indexScanMetadata;
-
-        @SuppressWarnings("unused")
-        private MapIndexScanProcessorMetaSupplier() {
-        }
-
-        public MapIndexScanProcessorMetaSupplier(
-                @Nonnull MapIndexScanMetadata indexScanMetadata
-        ) {
-            this.indexScanMetadata = indexScanMetadata;
-        }
-
-        @Override
-        @Nonnull
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(indexScanMetadata);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            indexScanMetadata = in.readObject();
-        }
-    }
-
-    public static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
-
-        private MapIndexScanMetadata indexScanMetadata;
-
-        @SuppressWarnings("unused")
-        private MapIndexScanProcessorSupplier() {
-        }
-
-        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
-            this.indexScanMetadata = indexScanMetadata;
-        }
-
-        @Override
-        @Nonnull
-        public List<Processor> get(int count) {
-            return IntStream.range(0, count)
-                    .mapToObj(i -> new MapIndexScanP(indexScanMetadata))
-                    .collect(toList());
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(indexScanMetadata);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            indexScanMetadata = in.readObject();
-        }
-    }
-
-    static final class LocalMapIndexReader extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
+        private static final int FETCH_SIZE_HINT = 128;
 
         private HazelcastInstance hazelcastInstance;
         private String indexName;
 
-        private LocalMapIndexReader(@Nonnull HazelcastInstance hzInstance,
-                                    @Nonnull InternalSerializationService serializationService,
-                                    @Nonnull MapIndexScanMetadata indexScanMetadata) {
+        private LocalMapIndexReader(
+                @Nonnull HazelcastInstance hzInstance,
+                @Nonnull InternalSerializationService serializationService,
+                @Nonnull MapIndexScanMetadata indexScanMetadata
+        ) {
             super(indexScanMetadata.getMapName(), MapFetchIndexOperationResult::getEntries);
+
             this.hazelcastInstance = hzInstance;
             this.indexName = indexScanMetadata.getIndexName();
             this.serializationService = serializationService;
         }
 
-        public static LocalMapIndexReader create(@Nonnull HazelcastInstance hzInstance,
-                                                 @Nonnull InternalSerializationService serializationService,
-                                                 @Nonnull MapIndexScanMetadata indexScanMetadata) {
-            return new LocalMapIndexReader(hzInstance, serializationService, indexScanMetadata);
-        }
-
+        @Override
         @Nonnull
         public InternalCompletableFuture<MapFetchIndexOperationResult> readBatch(
                 Address address,
@@ -459,6 +396,66 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     static MapIndexScanProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
         return new MapIndexScanProcessorMetaSupplier(indexScanMetadata);
+    }
+
+    public static final class MapIndexScanProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
+
+        private MapIndexScanMetadata indexScanMetadata;
+
+        @SuppressWarnings("unused")
+        private MapIndexScanProcessorMetaSupplier() {
+        }
+
+        private MapIndexScanProcessorMetaSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+            this.indexScanMetadata = indexScanMetadata;
+        }
+
+        @Override
+        @Nonnull
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(indexScanMetadata);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            indexScanMetadata = in.readObject();
+        }
+    }
+
+    private static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
+
+        private MapIndexScanMetadata indexScanMetadata;
+
+        @SuppressWarnings("unused")
+        private MapIndexScanProcessorSupplier() {
+        }
+
+        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+            this.indexScanMetadata = indexScanMetadata;
+        }
+
+        @Override
+        @Nonnull
+        public List<Processor> get(int count) {
+            return IntStream.range(0, count)
+                    .mapToObj(i -> new MapIndexScanP(indexScanMetadata))
+                    .collect(toList());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(indexScanMetadata);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            indexScanMetadata = in.readObject();
+        }
     }
 }
 
