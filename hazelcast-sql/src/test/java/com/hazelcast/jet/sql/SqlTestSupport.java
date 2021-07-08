@@ -28,7 +28,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
