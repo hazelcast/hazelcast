@@ -234,4 +234,11 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
 
         return HazelcastIntegerType.create((HazelcastIntegerType) maxBitWidthType, targetType.isNullable());
     }
+
+    @Override
+    public RelDataType createJoinType(RelDataType... types) {
+        // Calcite's implementation of createJoinType() returns RelCrossType.
+        // RelCrossType.getSqlTypeName() returns null. We assume in several places that it's non null...
+        return createUnknownType();
+    }
 }

@@ -199,7 +199,7 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
     public void test_dynamicParams() {
         put(1);
 
-        checkValue0("select ? = this from map", SqlColumnType.BOOLEAN, true, 1L);
+        checkValue0("select ? = this from map", SqlColumnType.BOOLEAN, true, 1);
 
         checkFailure0("select case when ? = ? then 1 end from map", SqlErrorCode.PARSING,
                 "Cannot apply '=' operator to [UNKNOWN, UNKNOWN]");

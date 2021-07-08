@@ -18,15 +18,10 @@ package com.hazelcast.sql.impl.calcite.validate.operators;
 
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
-import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.Arrays;
-
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createType;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public final class BetweenOperatorOperandTypeInference implements SqlOperandTypeInference {
 
@@ -48,26 +43,7 @@ public final class BetweenOperatorOperandTypeInference implements SqlOperandType
             }
         }
 
-        // Check if we have parameters. If yes, we will upcast integer literals to BIGINT as explained below
-        boolean hasParameters = callBinding.operands().stream().anyMatch((operand) -> operand.getKind() == SqlKind.DYNAMIC_PARAM);
-
         // Fill all types with first-known inferred type.
         Arrays.fill(operandTypes, knownType);
-
-        // Also wide all integer numeric types to BIGINT.
-        for (int i = 0; i < operandTypes.length; i++) {
-            RelDataType operandType = operandTypes[i];
-            if (hasParameters && toHazelcastType(operandType.getSqlTypeName()).getTypeFamily().isNumericInteger()) {
-                // We upcast the type of the numeric expression to BIGINT,
-                // so, an expression `1 > ?` is resolved to `(BIGINT)1 > (BIGINT)?` rather than `(TINYINT)1 > (TINYINT)?`
-                RelDataType newOperandType = createType(
-                        callBinding.getTypeFactory(),
-                        SqlTypeName.BIGINT,
-                        operandType.isNullable()
-                );
-
-                operandTypes[i] = newOperandType;
-            }
-        }
     }
 }

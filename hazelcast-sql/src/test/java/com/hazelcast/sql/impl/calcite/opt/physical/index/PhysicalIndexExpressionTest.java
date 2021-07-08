@@ -104,33 +104,33 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("f>=1 AND f<5", "AND(<($1, 5), >=($1, 1))");
         checkIndexForCondition("f>=1 AND f<=5", "AND(<=($1, 5), >=($1, 1))");
 
-        checkIndexForCondition("f>?", ">(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("f>=?", ">=(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("f<?", "<(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("f<=?", "<=(CAST($1):BIGINT(63), ?0)");
+        checkIndexForCondition("f>?", ">($1, ?0)");
+        checkIndexForCondition("f>=?", ">=($1, ?0)");
+        checkIndexForCondition("f<?", "<($1, ?0)");
+        checkIndexForCondition("f<=?", "<=($1, ?0)");
 
-        checkIndexForCondition("f>? AND f<?", "AND(>(CAST($1):BIGINT(63), ?0), <(CAST($1):BIGINT(63), ?1))");
-        checkIndexForCondition("f>? AND f<=?", "AND(<=(CAST($1):BIGINT(63), ?1), >(CAST($1):BIGINT(63), ?0))");
-        checkIndexForCondition("f>=? AND f<?", "AND(>=(CAST($1):BIGINT(63), ?0), <(CAST($1):BIGINT(63), ?1))");
-        checkIndexForCondition("f>=? AND f<=?", "AND(<=(CAST($1):BIGINT(63), ?1), >=(CAST($1):BIGINT(63), ?0))");
+        checkIndexForCondition("f>? AND f<?", "AND(>($1, ?0), <($1, ?1))");
+        checkIndexForCondition("f>? AND f<=?", "AND(<=($1, ?1), >($1, ?0))");
+        checkIndexForCondition("f>=? AND f<?", "AND(<($1, ?1), >=($1, ?0))");
+        checkIndexForCondition("f>=? AND f<=?", "AND(<=($1, ?1), >=($1, ?0))");
     }
 
     @Test
     public void test_column_parameter() {
-        checkIndexForCondition("f=?", "=(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("?=f", "=(?0, CAST($1):BIGINT(63))");
+        checkIndexForCondition("f=?", "=($1, ?0)");
+        checkIndexForCondition("?=f", "=(?0, $1)");
 
-        checkIndexForCondition("f>?", ">(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("?<f", "<(?0, CAST($1):BIGINT(63))");
+        checkIndexForCondition("f>?", ">($1, ?0)");
+        checkIndexForCondition("?<f", "<(?0, $1)");
 
-        checkIndexForCondition("f>=?", ">=(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("?<=f", "<=(?0, CAST($1):BIGINT(63))");
+        checkIndexForCondition("f>=?", ">=($1, ?0)");
+        checkIndexForCondition("?<=f", "<=(?0, $1)");
 
-        checkIndexForCondition("f<?", "<(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("?>f", ">(?0, CAST($1):BIGINT(63))");
+        checkIndexForCondition("f<?", "<($1, ?0)");
+        checkIndexForCondition("?>f", ">(?0, $1)");
 
-        checkIndexForCondition("f<=?", "<=(CAST($1):BIGINT(63), ?0)");
-        checkIndexForCondition("?>=f", ">=(?0, CAST($1):BIGINT(63))");
+        checkIndexForCondition("f<=?", "<=($1, ?0)");
+        checkIndexForCondition("?>=f", ">=(?0, $1)");
     }
 
     @Test
@@ -150,8 +150,8 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
         checkIndexForCondition("f=1 OR f=2 OR f=3", "OR(=($1, 1), =($1, 2), =($1, 3))");
         checkIndexForCondition("f=1 OR (f=2 OR f=3)", "OR(=($1, 1), =($1, 2), =($1, 3))");
 
-        checkIndexForCondition("f=1 OR f=?", "OR(=($1, 1), =(CAST($1):BIGINT(63), ?0))");
-        checkIndexForCondition("f=? OR f=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))");
+        checkIndexForCondition("f=1 OR f=?", "OR(=($1, 1), =($1, ?0))");
+        checkIndexForCondition("f=? OR f=?", "OR(=($1, ?0), =($1, ?1))");
 
         checkNoIndexForCondition("f=1 OR ret=2", "OR(=($1, 1), =($0, 2))");
         checkNoIndexForCondition("f=1 OR f>2", "OR(=($1, 1), >($1, 2))");
@@ -165,7 +165,7 @@ public class PhysicalIndexExpressionTest extends IndexOptimizerTestSupport {
 
     @Test
     public void test_not() {
-        checkNoIndexForCondition("NOT f=?", "<>(CAST($1):BIGINT(63), ?0)");
+        checkNoIndexForCondition("NOT f=?", "<>($1, ?0)");
     }
 
     @Test

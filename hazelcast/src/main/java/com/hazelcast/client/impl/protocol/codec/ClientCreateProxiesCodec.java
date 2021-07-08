@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Exceptions related to a proxy creation failure is not send to the client.
  * A proxy creation failure does not cancel this operation, all proxies will be attempted to be created.
  */
-@Generated("ea4d4df3fc72d2b091ec03650582b517")
+@Generated("095e9ead09f8869093f7b33de0af353e")
 public final class ClientCreateProxiesCodec {
     //hex: 0x000E00
     public static final int REQUEST_MESSAGE_TYPE = 3584;
@@ -85,6 +85,4 @@ public final class ClientCreateProxiesCodec {
 
         return clientMessage;
     }
-
-
 }

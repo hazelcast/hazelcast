@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Add a new hash in the estimation set. This is the method you want to
  * use to feed hash values into the estimator.
  */
-@Generated("bfdee9b800a242f4d7196a64558b31a3")
+@Generated("6534a2a152aa506b20cd1f956ea7f4fa")
 public final class CardinalityEstimatorAddCodec {
     //hex: 0x190100
     public static final int REQUEST_MESSAGE_TYPE = 1638656;
@@ -96,6 +96,4 @@ public final class CardinalityEstimatorAddCodec {
 
         return clientMessage;
     }
-
-
 }
