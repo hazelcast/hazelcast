@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.iteration;
 
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,16 +50,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     private IndexIterationPointer(
             byte flags,
             Comparable<?> from,
-            Comparable<?> to
-    ) {
-        this.flags = flags;
-        this.from = from;
-        this.to = to;
-    }
-
-    private IndexIterationPointer(
-            byte flags,
-            Comparable<?> from,
             Comparable<?> to,
             Data lastEntryKeyData
     ) {
@@ -67,22 +57,6 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         this.from = from;
         this.to = to;
         this.lastEntryKeyData = lastEntryKeyData;
-    }
-
-    public static IndexIterationPointer create(
-            Comparable<?> from,
-            boolean fromInclusive,
-            Comparable<?> to,
-            boolean toInclusive,
-            boolean descending
-    ) {
-        return new IndexIterationPointer(
-                (byte) ((descending ? FLAG_DESCENDING : 0)
-                        | (fromInclusive ? FLAG_FROM_INCLUSIVE : 0)
-                        | (toInclusive ? FLAG_TO_INCLUSIVE : 0)
-                        | (from == to ? FLAG_POINT_LOOKUP : 0)),
-                from,
-                to);
     }
 
     public static IndexIterationPointer create(
@@ -140,11 +114,11 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to = toValue;
             }
 
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
+            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false, null));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, false));
+            result.add(create(value, true, value, true, false, null));
         } else if (indexFilter instanceof IndexInFilter) {
             IndexInFilter inFilter = (IndexInFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
@@ -184,7 +158,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             out.writeObject(to);
         }
-        out.writeByteArray(lastEntryKeyData.toByteArray());
+        IOUtil.writeData(out, lastEntryKeyData);
     }
 
     @Override
@@ -196,7 +170,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         } else {
             to = from;
         }
-        lastEntryKeyData = new HeapData(in.readByteArray());
+        lastEntryKeyData = IOUtil.readData(in);
     }
 
     @Override
