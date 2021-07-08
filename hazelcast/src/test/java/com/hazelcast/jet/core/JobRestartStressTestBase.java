@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
@@ -37,19 +37,19 @@ public class JobRestartStressTestBase extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
+    private HazelcastInstance instance1;
 
     @Before
     public void setup() {
         Config config = new Config();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(4);
 
-        instance1 = createJetMember(config);
-        createJetMember(config);
+        instance1 = createHazelcastInstance(config);
+        createHazelcastInstance(config);
     }
 
     @SuppressWarnings("WeakerAccess") // has sub-classes in jet-enterprise
-    protected void stressTest(Function<Tuple3<JetInstance, DAG, Job>, Job> action) throws Exception {
+    protected void stressTest(Function<Tuple3<HazelcastInstance, DAG, Job>, Job> action) throws Exception {
         JobRepository jobRepository = new JobRepository(instance1);
         TestProcessors.reset(2);
 
@@ -57,7 +57,7 @@ public class JobRestartStressTestBase extends JetTestSupport {
         dag.newVertex("dummy-stateful-p", DummyStatefulP::new)
            .localParallelism(1);
 
-        Job[] job = {instance1.newJob(dag,
+        Job[] job = {instance1.getJet().newJob(dag,
                 new JobConfig().setSnapshotIntervalMillis(10)
                                .setProcessingGuarantee(EXACTLY_ONCE))};
 

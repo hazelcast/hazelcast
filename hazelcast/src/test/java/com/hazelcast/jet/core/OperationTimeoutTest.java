@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -51,25 +51,25 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Test
     public void when_slowRunningOperationOnSingleNode_then_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         DAG dag = new DAG();
         dag.newVertex("slow", SlowProcessor::new);
 
         // When
-        executeAndPeel(instance.newJob(dag));
+        executeAndPeel(instance.getJet().newJob(dag));
     }
 
     @Test
     public void when_slowRunningOperationOnMultipleNodes_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = createJetMember(config);
-        createJetMember(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        createHazelcastInstance(config);
 
         DAG dag = new DAG();
         dag.newVertex("slow", SlowProcessor::new);
 
         // When
-        executeAndPeel(instance.newJob(dag));
+        executeAndPeel(instance.getJet().newJob(dag));
     }
 
     private static class SlowProcessor extends AbstractProcessor {

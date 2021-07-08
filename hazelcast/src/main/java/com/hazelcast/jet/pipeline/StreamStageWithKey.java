@@ -49,7 +49,7 @@ import static com.hazelcast.internal.util.MapUtil.entry;
  * @param <T> type of the stream items
  * @param <K> type of the key
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface StreamStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
 

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.hadoop.file;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.hadoop.file.generated.SpecificUser;
 import com.hazelcast.jet.hadoop.file.model.IncorrectUser;
 import com.hazelcast.jet.hadoop.file.model.User;
@@ -103,17 +103,17 @@ public class ParquetFileFormatTest extends BaseFileFormatTest {
          .map(IncorrectUser::getSurname)
          .writeTo(Sinks.logger());
 
-        JetInstance[] jets = createJetMembers(1);
+        HazelcastInstance[] instances = createHazelcastInstances(1);
 
         try {
-            assertThatThrownBy(() -> jets[0].newJob(p).join())
+            assertThatThrownBy(() -> instances[0].getJet().newJob(p).join())
                     .hasCauseInstanceOf(JetException.class)
                     .hasRootCauseInstanceOf(ClassCastException.class)
                     .hasMessageContaining("com.hazelcast.jet.hadoop.file.generated.SpecificUser")
                     .hasMessageContaining("com.hazelcast.jet.hadoop.file.model.IncorrectUser");
         } finally {
-            for (JetInstance jet : jets) {
-                jet.shutdown();
+            for (HazelcastInstance instance : instances) {
+                instance.shutdown();
             }
         }
     }

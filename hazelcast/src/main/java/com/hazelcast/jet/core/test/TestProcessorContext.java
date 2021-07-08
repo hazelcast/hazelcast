@@ -16,19 +16,21 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 /**
  * {@link Processor.Context} implementation suitable to be used in tests.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class TestProcessorContext extends TestProcessorSupplierContext implements Processor.Context {
 
@@ -79,8 +81,8 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     }
 
     @Nonnull @Override
-    public TestProcessorContext setJetInstance(@Nonnull JetInstance jetInstance) {
-        return (TestProcessorContext) super.setJetInstance(jetInstance);
+    public TestProcessorContext setHazelcastInstance(@Nonnull HazelcastInstance instance) {
+        return (TestProcessorContext) super.setHazelcastInstance(instance);
     }
 
     @Nonnull @Override
@@ -111,6 +113,11 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
     @Nonnull @Override
     public TestProcessorContext setIsLightJob(boolean isLightJob) {
         return (TestProcessorContext) super.setIsLightJob(isLightJob);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setPartitionAssignment(Map<Address, int[]> partitionAssignment) {
+        return (TestProcessorContext) super.setPartitionAssignment(partitionAssignment);
     }
 
     @Nonnull @Override

@@ -37,7 +37,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * Contains factory methods for various mock sources which can be used for
  * pipeline testing and development.
  *
- * @since 3.2
+ * @since Jet 3.2
  */
 @EvolvingApi
 public final class TestSources {
@@ -49,7 +49,7 @@ public final class TestSources {
      * Returns a batch source which iterates through the supplied iterable and
      * then terminates. The source is non-distributed.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @Nonnull
     public static <T> BatchSource<T> items(@Nonnull Iterable<? extends T> items) {
@@ -65,7 +65,7 @@ public final class TestSources {
      * Returns a batch source which iterates through the supplied items and
      * then terminates. The source is non-distributed.
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @Nonnull
     public static <T> BatchSource<T> items(@Nonnull T... items) {
@@ -78,7 +78,7 @@ public final class TestSources {
      * then terminates. The source is distributed - a slice of the items is
      * emitted on each member with local parallelism of 1.
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public static <T> BatchSource<T> itemsDistributed(@Nonnull Iterable<? extends T> items) {
@@ -94,7 +94,7 @@ public final class TestSources {
      * then terminates. The source is distributed - a slice of the items is
      * emitted on each member with local parallelism of 1.
      *
-     * @since 4.4
+     * @since Jet 4.4
      */
     @Nonnull
     public static <T> BatchSource<T> itemsDistributed(@Nonnull T... items) {
@@ -120,7 +120,7 @@ public final class TestSources {
      *
      * @param itemsPerSecond how many items should be emitted each second
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @EvolvingApi
     @Nonnull
@@ -148,7 +148,7 @@ public final class TestSources {
      * @param generatorFn a function which takes the timestamp and the sequence of the generated
      *                    item and maps it to the desired type
      *
-     * @since 3.2
+     * @since Jet 3.2
      */
     @EvolvingApi
     @Nonnull
@@ -196,7 +196,7 @@ public final class TestSources {
      * @param eventsPerSecond the desired event rate
      * @param initialDelayMillis initial delay in milliseconds before emitting values
      *
-     * @since 4.3
+     * @since Jet 4.3
      */
     @Nonnull
     public static StreamSource<Long> longStream(long eventsPerSecond, long initialDelayMillis) {

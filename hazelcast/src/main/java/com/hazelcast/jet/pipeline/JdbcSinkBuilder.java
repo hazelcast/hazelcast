@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
  *
  * @param <T> type of the items the sink accepts
  *
- * @since 4.1
+ * @since Jet 4.1
  */
 public class JdbcSinkBuilder<T> {
     /**
@@ -168,7 +168,7 @@ public class JdbcSinkBuilder<T> {
      *
      * @param batchLimit the batch size limit for the sink
      * @return this instance for fluent API
-     * @since 4.5
+     * @since Jet 4.5
      */
     @Nonnull
     public JdbcSinkBuilder<T> batchLimit(int batchLimit) {

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -39,8 +39,8 @@ public class JetClientInstanceImplTest extends JetTestSupport {
     @Test
     public void given_singleMapOnMember_when_getDistributedObjectsCalled_then_ReturnedObjectInfo() {
         // Given
-        JetInstance member = createJetMember();
-        JetClientInstanceImpl client = (JetClientInstanceImpl) createJetClient();
+        HazelcastInstance member = createHazelcastInstance();
+        JetClientInstanceImpl client = (JetClientInstanceImpl) createHazelcastClient().getJet();
         String mapName = randomMapName();
         member.getMap(mapName);
 

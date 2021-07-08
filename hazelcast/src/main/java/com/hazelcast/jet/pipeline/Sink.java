@@ -26,7 +26,7 @@ import java.io.Serializable;
  *
  * @param <T> the type of the data the sink will receive
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface Sink<T> extends Serializable {
 

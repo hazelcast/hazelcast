@@ -36,7 +36,7 @@ import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.DISTRIBUTED_PARTITIO
  * Contains factory methods for creating Amazon Kinesis Data Streams
  * (KDS) sinks.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public final class KinesisSinks {
 

@@ -38,17 +38,16 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
-
 import com.hazelcast.jet.JetCacheManager;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.LightJob;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.AbstractJetInstance;
+import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ConcurrentMemoizingSupplier;
 import com.hazelcast.jet.impl.util.JetConsoleLogHandler;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -70,8 +69,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
-import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -84,6 +81,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,8 +93,6 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.stream.Collectors;
-import java.util.UUID;
-
 
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
@@ -185,7 +182,7 @@ public final class HazelcastBootstrap {
     }
 
     private static void awaitJobsStarted() {
-        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJetInstance()).submittedJobs();
+        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             System.out.println("The JAR didn't submit any jobs.");
@@ -306,7 +303,7 @@ public final class HazelcastBootstrap {
     @SuppressWarnings({"checkstyle:methodcount"})
     private static class BootstrappedInstanceProxy implements HazelcastInstance {
         private final HazelcastInstance instance;
-        private final JetInstance jetProxy;
+        private final JetService jetProxy;
 
         BootstrappedInstanceProxy(@Nonnull HazelcastInstance instance) {
             this(instance, null, null, null);
@@ -319,7 +316,7 @@ public final class HazelcastBootstrap {
                 @Nullable String jobName
         ) {
             this.instance = instance;
-            this.jetProxy = new BootstrappedJetProxy(instance.getJetInstance(), jar, snapshotName, jobName);
+            this.jetProxy = new BootstrappedJetProxy(instance.getJet(), jar, snapshotName, jobName);
         }
 
         @Nonnull
@@ -432,7 +429,7 @@ public final class HazelcastBootstrap {
             return instance.getCluster();
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Endpoint getLocalEndpoint() {
             return instance.getLocalEndpoint();
@@ -539,7 +536,7 @@ public final class HazelcastBootstrap {
 
         @Nonnull
         @Override
-        public JetInstance getJetInstance() {
+        public JetService getJet() {
             return jetProxy;
         }
 
@@ -547,24 +544,23 @@ public final class HazelcastBootstrap {
         public void shutdown() {
             getLifecycleService().shutdown();
         }
-
     }
 
-    private static class BootstrappedJetProxy extends AbstractJetInstance {
-        private final AbstractJetInstance jet;
+    private static class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
+        private final AbstractJetInstance<M> jet;
         private final String jar;
         private final String snapshotName;
         private final String jobName;
         private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
         BootstrappedJetProxy(
-                @Nonnull JetInstance jet,
+                @Nonnull JetService jet,
                 @Nullable String jar,
                 @Nullable String snapshotName,
                 @Nullable String jobName
         ) {
-            super(jet.getHazelcastInstance());
-            this.jet = (AbstractJetInstance) jet;
+            super(((AbstractJetInstance) jet).getHazelcastInstance());
+            this.jet = (AbstractJetInstance<M>) jet;
             this.jar = jar;
             this.snapshotName = snapshotName;
             this.jobName = jobName;
@@ -606,11 +602,6 @@ public final class HazelcastBootstrap {
         }
 
         @Nonnull @Override
-        public LightJob newLightJobInt(Object jobDefinition) {
-            return jet.newLightJobInt(jobDefinition);
-        }
-
-        @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
         }
@@ -635,16 +626,6 @@ public final class HazelcastBootstrap {
                 config.setName(jobName);
             }
             return config;
-        }
-
-        @Nonnull @Override
-        public List<Job> getJobs() {
-            return jet.getJobs();
-        }
-
-        @Override
-        public Job getJob(long jobId) {
-            return jet.getJob(jobId);
         }
 
         @Nonnull @Override
@@ -698,18 +679,23 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public Job newJobProxy(long jobId) {
-            return jet.newJobProxy(jobId);
+        public Job newJobProxy(long jobId, M lightJobCoordinator) {
+            return jet.newJobProxy(jobId, lightJobCoordinator);
         }
 
         @Override
-        public Job newJobProxy(long jobId, Object jobDefinition, JobConfig config) {
-            return jet.newJobProxy(jobId, jobDefinition, config);
+        public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
+            return jet.newJobProxy(jobId, isLightJob, jobDefinition, config);
         }
 
         @Override
-        public List<Long> getJobIdsByName(String name) {
-            return jet.getJobIdsByName(name);
+        public M getMasterId() {
+            return jet.getMasterId();
+        }
+
+        @Override
+        public Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
+            return jet.getJobsInt(onlyName, onlyJobId);
         }
     }
 }

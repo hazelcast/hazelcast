@@ -25,7 +25,6 @@ public enum PhoneHomeMetrics {
     CLIENT_ENDPOINT_COUNT("cssz"),
     JAVA_VERSION_OF_SYSTEM("jvmv"),
     BUILD_VERSION("version"),
-    JET_BUILD_VERSION("jetv"),
     JAVA_CLASSPATH("classpath"),
 
     //CLIENT INFO METRICS

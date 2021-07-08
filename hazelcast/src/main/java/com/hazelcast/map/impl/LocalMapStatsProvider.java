@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -71,8 +73,7 @@ public class LocalMapStatsProvider {
     private final MapNearCacheManager mapNearCacheManager;
     private final IPartitionService partitionService;
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap;
-    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction =
-            key -> new LocalMapStatsImpl();
+    private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction = this::createLocalMapStatsImpl;
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -83,6 +84,19 @@ public class LocalMapStatsProvider {
         this.partitionService = nodeEngine.getPartitionService();
         this.localAddress = clusterService.getThisAddress();
         this.statsMap = MapUtil.createConcurrentHashMap(nodeEngine.getConfig().getMapConfigs().size());
+    }
+
+    private LocalMapStatsImpl createLocalMapStatsImpl(String mapName) {
+        // intentionally not using nodeEngine.getConfig().getMapConfig(mapName)
+        // since that breaks TestFullApplicationContext#testMapConfig()
+        MapConfig mapConfig = nodeEngine.getConfig().getMapConfigs().get(mapName);
+        InMemoryFormat inMemoryFormat;
+        if (mapConfig == null) {
+            inMemoryFormat = InMemoryFormat.BINARY;
+        } else {
+            inMemoryFormat = mapConfig.getInMemoryFormat();
+        }
+        return new LocalMapStatsImpl(inMemoryFormat == OBJECT);
     }
 
     protected MapServiceContext getMapServiceContext() {

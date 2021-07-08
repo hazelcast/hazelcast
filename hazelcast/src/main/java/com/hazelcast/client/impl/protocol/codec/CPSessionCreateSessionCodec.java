@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates a session for the caller on the given CP group.
  */
-@Generated("777a1f9476cc9381b61757f299b9ef30")
+@Generated("a7b33b6d711fbf48996b4fd32a0c890c")
 public final class CPSessionCreateSessionCodec {
     //hex: 0x1F0100
     public static final int REQUEST_MESSAGE_TYPE = 2031872;
@@ -106,6 +106,7 @@ public final class CPSessionCreateSessionCodec {
          */
         public long heartbeatMillis;
     }
+
     public static ClientMessage encodeResponse(long sessionId, long ttlMillis, long heartbeatMillis) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -127,5 +128,4 @@ public final class CPSessionCreateSessionCodec {
         response.heartbeatMillis = decodeLong(initialFrame.content, RESPONSE_HEARTBEAT_MILLIS_FIELD_OFFSET);
         return response;
     }
-
 }

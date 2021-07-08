@@ -70,6 +70,15 @@ public abstract class Table {
         return (T) fields.get(index);
     }
 
+    public int getFieldIndex(String fieldName) {
+        for (int i = 0; i < getFieldCount(); i++) {
+            if (getField(i).getName().equals(fieldName)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public TableStatistics getStatistics() {
         return statistics;
     }

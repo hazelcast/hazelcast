@@ -19,6 +19,7 @@ package com.hazelcast.spi.discovery;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -69,17 +70,35 @@ public interface DiscoveryStrategy {
      * default behavior of zone aware backup strategies {@link com.hazelcast.spi.partitiongroup.PartitionGroupMetaData}
      * or to provide a specific behavior in case the discovery environment does not provide
      * information about the infrastructure to be used for automatic configuration.
+     * @param allMembers Current state of Cluster data members, excluding lite members
+     * @return a custom implementation of a <code>PartitionGroupStrategy</code> otherwise <code>null</code>
+     * in case of the default implementation is to be used
+     * @since 4.2.1
+     */
+    default PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
+        return null;
+    }
+
+    /**
+     * @deprecated - use the above method that takes allMember arguments
+     * Returns a custom implementation of a {@link PartitionGroupStrategy} to override
+     * default behavior of zone aware backup strategies {@link com.hazelcast.spi.partitiongroup.PartitionGroupMetaData}
+     * or to provide a specific behavior in case the discovery environment does not provide
+     * information about the infrastructure to be used for automatic configuration.
      *
      * @return a custom implementation of a <code>PartitionGroupStrategy</code> otherwise <code>null</code>
      * in case of the default implementation is to be used
      * @since 3.7
      */
-    PartitionGroupStrategy getPartitionGroupStrategy();
+    @Deprecated
+    default PartitionGroupStrategy getPartitionGroupStrategy() {
+        return null;
+    }
 
     /**
      * Returns a map with discovered metadata provided by the runtime environment. Those information
-     * may include, but are not limited, to location information like datacenter, rack, host,
-     * node name or additional tags to be used for custom purpose.
+     * may include, but are not limited, to location information like datacenter, node name
+     * or additional tags to be used for custom purpose.
      * <p>
      * Information discovered from this method are shaded into the {@link Member}s
      * attributes. Existing attributes will not be overridden, that way local attribute configuration

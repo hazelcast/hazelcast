@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Bits;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -52,10 +52,10 @@ public class SnapshotLargeChunk_IntegrationTest extends JetTestSupport {
 
     @Test
     public void test_snapshotRestoreLargeChunk() {
-        JetInstance instance = createJetMember();
+        HazelcastInstance instance = createHazelcastInstance();
         DAG dag = new DAG();
         dag.newVertex("src", LargeStateP::new).localParallelism(1);
-        Job job = instance.newJob(dag, new JobConfig()
+        Job job = instance.getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(DAYS.toMillis(1)));
 

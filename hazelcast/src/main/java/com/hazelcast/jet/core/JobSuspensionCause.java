@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  * When the job has been suspended due to an error, then the cause of that
  * error is provided.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public interface JobSuspensionCause {
 

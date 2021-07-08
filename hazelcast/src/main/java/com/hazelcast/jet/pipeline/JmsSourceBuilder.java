@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * See {@link Sources#jmsQueueBuilder} or {@link Sources#jmsTopicBuilder}.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class JmsSourceBuilder {
 

@@ -1,30 +1,36 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,12 +39,12 @@ import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlSelect;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
@@ -52,7 +58,8 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParserNameResolutionTest {
+public class ParserNameResolutionTest extends SqlTestSupport {
+    private static OptimizerContext context;
 
     private static final String BAD_CATALOG = "badCatalog";
 
@@ -71,10 +78,18 @@ public class ParserNameResolutionTest {
     private static final String TABLE_1_FQN = SqlIdentifier.getString(Arrays.asList(CATALOG, SCHEMA_1, TABLE_1));
     private static final String TABLE_2_FQN = SqlIdentifier.getString(Arrays.asList(CATALOG, SCHEMA_2, TABLE_2));
 
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, smallInstanceConfig());
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
+        JetSqlCoreBackend jetSqlService = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
+        context = createContext(new HazelcastSqlBackend(nodeEngine), (SqlBackend) jetSqlService.sqlBackend());
+    }
+
     @Test
     public void testNameResolution() {
+
         // Lookup for table without default path.
-        checkFailure(errorObjectNotFound(TABLE_1), FIELD_1, TABLE_1);
         checkSuccess(FIELD_1, TABLE_1_FQN, SCHEMA_1, TABLE_1);
         checkSuccess(FIELD_1, TABLE_1_FQN, CATALOG, SCHEMA_1, TABLE_1);
 
@@ -84,7 +99,7 @@ public class ParserNameResolutionTest {
         checkSuccess(FIELD_2, TABLE_2_FQN, CATALOG, SCHEMA_2, TABLE_2);
 
         // Test overridden search path.
-        checkSuccess(createContext(SCHEMA_1), FIELD_1, TABLE_1_FQN, TABLE_1);
+        checkSuccess(context, FIELD_1, TABLE_1_FQN, TABLE_1);
 
         // Wrong field
         checkFailure(errorColumnNotFound(BAD_FIELD), BAD_FIELD, SCHEMA_1, TABLE_1);
@@ -109,7 +124,7 @@ public class ParserNameResolutionTest {
     }
 
     private static void checkSuccess(String fieldName, String tableFqn, String... tableComponents) {
-        checkSuccess(createContext(), fieldName, tableFqn, tableComponents);
+        checkSuccess(context, fieldName, tableFqn, tableComponents);
     }
 
     private static void checkSuccess(OptimizerContext context, String fieldName, String tableFqn, String... tableComponents) {
@@ -131,7 +146,7 @@ public class ParserNameResolutionTest {
 
     private static void checkFailure(String errorMessage, String fieldName, String... tableComponents) {
         try {
-            createContext().parse(composeSelect(fieldName, tableComponents));
+            context.parse(composeSelect(fieldName, tableComponents));
 
             fail();
         } catch (QueryException e) {
@@ -172,37 +187,46 @@ public class ParserNameResolutionTest {
         return res.toString();
     }
 
-    private static OptimizerContext createContext() {
-        return createContext(null);
-    }
-
-    private static OptimizerContext createContext(String additionalSearchPath) {
-        TableResolver resolverWithoutSearchPath = TestTableResolver.create(
-                TestMapTable.create(SCHEMA_1, TABLE_1, TestMapTable.field(FIELD_1))
+    private static OptimizerContext createContext(SqlBackend hzBackend, SqlBackend jetBackend) {
+        PartitionedMapTable table1 = new PartitionedMapTable(
+                SCHEMA_1,
+                TABLE_1,
+                TABLE_1,
+                Arrays.asList(TestMapTable.field(FIELD_1), TestMapTable.field(FIELD_2)),
+                new ConstantTableStatistics(100L),
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
         );
-
-        TableResolver resolverWithSearchPath = TestTableResolver.create(
+        PartitionedMapTable table2 = new PartitionedMapTable(
                 SCHEMA_2,
-                TestMapTable.create(SCHEMA_2, TABLE_2, TestMapTable.field(FIELD_2))
+                TABLE_2,
+                TABLE_2,
+                Arrays.asList(TestMapTable.field(FIELD_1), TestMapTable.field(FIELD_2)),
+                new ConstantTableStatistics(100L),
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
         );
 
-        List<TableResolver> tableResolvers = Arrays.asList(resolverWithoutSearchPath, resolverWithSearchPath);
-
-        List<List<String>> additionalSearchPaths = additionalSearchPath != null
-                ? Collections.singletonList(Arrays.asList(CATALOG, additionalSearchPath)) : emptyList();
-
-        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
-                additionalSearchPaths,
-                tableResolvers
-        );
+        TableResolver resolver1 = TestTableResolver.create(SCHEMA_1, table1);
+        TableResolver resolver2 = TestTableResolver.create(SCHEMA_2, table2);
+        List<TableResolver> tableResolvers = Arrays.asList(resolver1, resolver2);
+        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(emptyList(), tableResolvers);
 
         return OptimizerContext.create(
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
                 1,
-                new HazelcastSqlBackend(null),
-                null
+                hzBackend,
+                jetBackend
         );
     }
 

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -82,16 +82,16 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         );
 
         String from = randomName();
-        TestBatchSqlConnector.create(sqlService, from, 2);
+        TestBatchSqlConnector.create(sqlService, from, 4);
 
         assertTopicEventually(
                 name,
                 "INSERT INTO " + name + " SELECT v, 'value-' || v FROM " + from,
-                createMap(0, "value-0", 1, "value-1")
+                createMap(0, "value-0", 1, "value-1", 2, "value-2", 3, "value-3")
         );
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM " + name,
-                asList(new Row(0, "value-0"), new Row(1, "value-1"))
+                "SELECT * FROM " + name + " WHERE __key > 0 AND __key < 3",
+                asList(new Row(1, "value-1"), new Row(2, "value-2"))
         );
     }
 
@@ -472,7 +472,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + topicName + " VALUES(42)");
+        sqlService.execute("INSERT INTO " + topicName + " VALUES(42)");
 
         assertRowsEventuallyInAnyOrder("SELECT * FROM " + topicName, singletonList(new Row(42)));
     }

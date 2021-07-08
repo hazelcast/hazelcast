@@ -46,7 +46,8 @@ public class StartExecutionOperation extends AsyncJobOperation {
 
     @Override
     protected CompletableFuture<RawJobMetrics> doRun() {
-        return getJetService().getJobExecutionService().beginExecution(getCallerAddress(), jobId(), executionId, collectMetrics);
+        return getJetServiceBackend().getJobExecutionService()
+                .beginExecution(getCallerAddress(), jobId(), executionId, collectMetrics);
     }
 
     @Override

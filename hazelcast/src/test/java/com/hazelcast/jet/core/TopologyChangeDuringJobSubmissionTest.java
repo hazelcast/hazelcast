@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -44,8 +44,8 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
 
     private static final int PARALLELISM = 1;
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
@@ -56,27 +56,27 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         NoOutputSourceP.proceedLatch = new CountDownLatch(1);
         NoOutputSourceP.executionStarted = new CountDownLatch(PARALLELISM);
 
-        instance1 = createJetMember(smallInstanceConfig().setLiteMember(true));
-        instance2 = createJetMember();
+        instance1 = createHazelcastInstance(smallInstanceConfig().setLiteMember(true));
+        instance2 = createHazelcastInstance();
 
-        warmUpPartitions(instance1.getHazelcastInstance(), instance2.getHazelcastInstance());
+        warmUpPartitions(instance1, instance2);
     }
 
     @Test
     public void when_coordinatorLeavesDuringSubmission_then_submissionCallReturnsSuccessfully() throws Throwable {
         // Given that the job has submitted
-        dropOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
+        dropOperationsBetween(instance1, instance2,
                 SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
 
         Future<Job> future = spawn(() -> {
             DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, 1)));
-            return instance2.newJob(dag);
+            return instance2.getJet().newJob(dag);
         });
 
         NoOutputSourceP.executionStarted.await();
 
         // When the coordinator leaves before the submission response is received
-        instance1.getHazelcastInstance().getLifecycleService().terminate();
+        instance1.getLifecycleService().terminate();
         Job job = future.get();
 
         // Then the job completes successfully
@@ -91,22 +91,22 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
         String jobName = "job1";
         Future<Job> future = spawn(() -> {
             DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, 1)));
-            return instance2.newJob(dag, new JobConfig().setName(jobName));
+            return instance2.getJet().newJob(dag, new JobConfig().setName(jobName));
         });
 
         NoOutputSourceP.executionStarted.await();
 
-        dropOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
+        dropOperationsBetween(instance1, instance2,
                 SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
 
-        Job submittedJob = instance1.getJob(jobName);
+        Job submittedJob = instance1.getJet().getJob(jobName);
         assertNotNull(submittedJob);
         NoOutputSourceP.proceedLatch.countDown();
 
         submittedJob.join();
 
         // When the coordinator leaves before the submission response is received
-        instance1.getHazelcastInstance().getLifecycleService().terminate();
+        instance1.getLifecycleService().terminate();
         Job job = future.get();
 
         // Then the job does not run for the second time

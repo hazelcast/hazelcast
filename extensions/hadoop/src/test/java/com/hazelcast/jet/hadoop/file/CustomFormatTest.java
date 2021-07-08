@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.hadoop.file;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.hadoop.impl.JobConfigurer;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -70,8 +70,8 @@ public class CustomFormatTest extends BaseFileFormatTest {
             p.readFrom(source)
              .writeTo(Sinks.logger());
 
-            JetInstance jet = createJetMember();
-            jet.newJob(p).join();
+            HazelcastInstance hz = createHazelcastInstance();
+            hz.getJet().newJob(p).join();
         }).hasMessageContaining("FileFormat: unknown-integer-format");
     }
 

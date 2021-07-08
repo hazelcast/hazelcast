@@ -83,7 +83,7 @@ class MockJoiner extends AbstractJoiner {
                 break;
             }
             try {
-                clusterService.blockOnJoin(500);
+                Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;

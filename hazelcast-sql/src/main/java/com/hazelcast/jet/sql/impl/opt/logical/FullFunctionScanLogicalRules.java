@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
@@ -56,7 +55,7 @@ final class FullFunctionScanLogicalRules {
             JetSpecificTableFunction specificFunction = extractSpecificFunction(scan);
             List<RexNode> operands = ((RexCall) scan.getCall()).getOperands();
             RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(
-                    FailingFieldTypeProvider.INSTANCE,
+                    PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
                     ((HazelcastRelOptCluster) scan.getCluster()).getParameterMetadata()
             );
             List<Expression<?>> argumentExpressions = IntStream.range(0, specificFunction.getOperandCountRange().getMax())
@@ -111,15 +110,5 @@ final class FullFunctionScanLogicalRules {
             return null;
         }
         return (JetDynamicTableFunction) call.getOperator();
-    }
-
-    private static final class FailingFieldTypeProvider implements PlanNodeFieldTypeProvider {
-
-        private static final FailingFieldTypeProvider INSTANCE = new FailingFieldTypeProvider();
-
-        @Override
-        public QueryDataType getType(int index) {
-            throw new IllegalStateException("The operation should not be called.");
-        }
     }
 }

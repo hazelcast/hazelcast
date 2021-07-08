@@ -51,6 +51,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -162,9 +163,9 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetService().getConfig()
+        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig()
               .getInstanceConfig().getCooperativeThreadCount();
-        this.defaultQueueSize = mc.getJetService().getJetInstance().getConfig()
+        this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
     }
 
@@ -258,6 +259,13 @@ public class MasterJobContext {
             if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
                 return null;
             }
+            Version jobClusterVersion = mc.jobRecord().getClusterVersion();
+            Version currentClusterVersion = mc.nodeEngine().getClusterService().getClusterVersion();
+            if (!jobClusterVersion.equals(currentClusterVersion)) {
+                throw new JetException("Cancelling job " + mc.jobName() + ": the cluster was upgraded since the job was "
+                        + "submitted. Submitted to version: " + jobClusterVersion + ", current cluster version: "
+                        + currentClusterVersion);
+            }
             mc.setJobStatus(STARTING);
 
             // ensure JobExecutionRecord exists
@@ -270,7 +278,7 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
             }
-            ClassLoader classLoader = mc.getJetService().getClassLoader(mc.jobId());
+            ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
             try {
                 dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
@@ -582,6 +590,12 @@ public class MasterJobContext {
                     // have to use Async version, the future is completed inside a synchronized block
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
+            if (error instanceof ExecutionNotFoundException) {
+                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
+                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
+                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
+                error = new JobTerminateRequestedException(requestedTerminationMode);
+            }
             finalizeJob(error);
         }
     }

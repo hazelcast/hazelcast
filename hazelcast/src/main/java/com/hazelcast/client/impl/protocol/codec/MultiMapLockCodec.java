@@ -40,7 +40,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
  * unlocked N times before another thread can acquire it.
  */
-@Generated("83fe8eb533747e2df289c39e772e4988")
+@Generated("113f636f65093797e80a866e3a857afe")
 public final class MultiMapLockCodec {
     //hex: 0x021000
     public static final int REQUEST_MESSAGE_TYPE = 135168;
@@ -120,6 +120,4 @@ public final class MultiMapLockCodec {
 
         return clientMessage;
     }
-
-
 }

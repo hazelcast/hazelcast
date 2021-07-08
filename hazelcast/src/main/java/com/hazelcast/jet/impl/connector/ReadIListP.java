@@ -66,7 +66,7 @@ public final class ReadIListP extends AbstractProcessor {
             instance = client = newHazelcastClient(asClientConfig(clientXml));
             serializationService = ((HazelcastClientProxy) instance).getSerializationService();
         } else {
-            instance = context.jetInstance().getHazelcastInstance();
+            instance = context.hazelcastInstance();
             serializationService = ((ProcCtx) context).serializationService();
         }
         traverser = createTraverser(instance, name).map(serializationService::toObject);

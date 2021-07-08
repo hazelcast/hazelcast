@@ -40,6 +40,9 @@ import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.kafka.common.utils.Time;
+
+import com.hazelcast.internal.util.StringUtil;
+
 import scala.Option;
 import scala.collection.Seq;
 
@@ -146,7 +149,7 @@ public class KafkaTestSupport {
     }
 
     private static boolean isWindows() {
-        return System.getProperty("os.name").toLowerCase().contains("windows");
+        return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows");
     }
 
     public void createTopic(String topicId, int partitionCount) {

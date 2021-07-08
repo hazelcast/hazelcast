@@ -33,7 +33,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -57,7 +56,6 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -69,9 +67,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
@@ -86,8 +82,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.Util.distributeObjects;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -268,26 +262,14 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
-        private transient Map<Address, List<Integer>> addrToPartitions;
-
         LocalProcessorMetaSupplier(
                 @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier) {
             this.readerSupplier = readerSupplier;
         }
 
-        @Override
-        public void init(@Nonnull ProcessorMetaSupplier.Context context) {
-            Set<Partition> partitions = context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions();
-            addrToPartitions = partitions.stream()
-                                         .collect(groupingBy(
-                                                 partition -> partition.getOwner().getAddress(),
-                                                 mapping(Partition::getPartitionId, toList()))
-                                         );
-        }
-
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new LocalProcessorSupplier<>(readerSupplier, addrToPartitions.get(address));
+            return address -> new LocalProcessorSupplier<>(readerSupplier);
         }
 
         @Override
@@ -301,29 +283,27 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         static final long serialVersionUID = 1L;
 
         private final BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
-        private final List<Integer> memberPartitions;
 
-        private transient HazelcastInstanceImpl hzInstance;
+        private transient int[] memberPartitions;
+        private transient HazelcastInstance hzInstance;
         private transient InternalSerializationService serializationService;
 
         private LocalProcessorSupplier(
-                @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
-                @Nonnull List<Integer> memberPartitions
+                @Nonnull BiFunction<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
-            this.memberPartitions = memberPartitions;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            hzInstance = (HazelcastInstanceImpl) context.jetInstance().getHazelcastInstance();
+            hzInstance = context.hazelcastInstance();
             serializationService = ((ProcSupplierCtx) context).serializationService();
+            memberPartitions = context.partitionAssignment().get(hzInstance.getCluster().getLocalMember().getAddress());
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return distributeObjects(count, memberPartitions).values().stream()
-                    .map(partitions -> partitions.stream().mapToInt(Integer::intValue).toArray())
+            return Arrays.stream(distributeObjects(count, memberPartitions))
                     .map(partitions ->
                             new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
                     .collect(toList());

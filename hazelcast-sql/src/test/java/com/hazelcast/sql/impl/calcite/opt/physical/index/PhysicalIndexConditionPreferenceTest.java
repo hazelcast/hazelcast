@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -80,31 +80,31 @@ public class PhysicalIndexConditionPreferenceTest extends IndexOptimizerTestSupp
     @Test
     public void test_equality_preference() {
         // Prefer over IN
-        checkIndexForCondition("f=? AND (f=? OR f=?)", "=(CAST($1):BIGINT(63), ?0)", "OR(=(CAST($1):BIGINT(63), ?1), =(CAST($1):BIGINT(63), ?2))");
+        checkIndexForCondition("f=? AND (f=? OR f=?)", "=($1, ?0)", "OR(=($1, ?1), =($1, ?2))");
 
         // Prefer over range
-        checkIndexForCondition("f=? AND f>?", "=(CAST($1):BIGINT(63), ?0)", ">(CAST($1):BIGINT(63), ?1)");
-        checkIndexForCondition("f=? AND f>=?", "=(CAST($1):BIGINT(63), ?0)", ">=(CAST($1):BIGINT(63), ?1)");
-        checkIndexForCondition("f=? AND f<?", "=(CAST($1):BIGINT(63), ?0)", "<(CAST($1):BIGINT(63), ?1)");
-        checkIndexForCondition("f=? AND f<=?", "=(CAST($1):BIGINT(63), ?0)", "<=(CAST($1):BIGINT(63), ?1)");
+        checkIndexForCondition("f=? AND f>?", "=($1, ?0)", ">($1, ?1)");
+        checkIndexForCondition("f=? AND f>=?", "=($1, ?0)", ">=($1, ?1)");
+        checkIndexForCondition("f=? AND f<?", "=($1, ?0)", "<($1, ?1)");
+        checkIndexForCondition("f=? AND f<=?", "=($1, ?0)", "<=($1, ?1)");
 
-        checkIndexForCondition("f=? AND f>? AND f<?", "=(CAST($1):BIGINT(63), ?0)", "AND(>(CAST($1):BIGINT(63), ?1), <(CAST($1):BIGINT(63), ?2))");
-        checkIndexForCondition("f=? AND f>? AND f<=?", "=(CAST($1):BIGINT(63), ?0)", "AND(>(CAST($1):BIGINT(63), ?1), <=(CAST($1):BIGINT(63), ?2))");
-        checkIndexForCondition("f=? AND f>=? AND f<?", "=(CAST($1):BIGINT(63), ?0)", "AND(>=(CAST($1):BIGINT(63), ?1), <(CAST($1):BIGINT(63), ?2))");
-        checkIndexForCondition("f=? AND f>=? AND f<=?", "=(CAST($1):BIGINT(63), ?0)", "AND(>=(CAST($1):BIGINT(63), ?1), <=(CAST($1):BIGINT(63), ?2))");
+        checkIndexForCondition("f=? AND f>? AND f<?", "=($1, ?0)", "AND(>($1, ?1), <($1, ?2))");
+        checkIndexForCondition("f=? AND f>? AND f<=?", "=($1, ?0)", "AND(>($1, ?1), <=($1, ?2))");
+        checkIndexForCondition("f=? AND f>=? AND f<?", "=($1, ?0)", "AND(>=($1, ?1), <($1, ?2))");
+        checkIndexForCondition("f=? AND f>=? AND f<=?", "=($1, ?0)", "AND(>=($1, ?1), <=($1, ?2))");
     }
 
     @Test
     public void test_in_preference() {
-        checkIndexForCondition("(f=? OR f=?) AND f>?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", ">(CAST($1):BIGINT(63), ?2)");
-        checkIndexForCondition("(f=? OR f=?) AND f>=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", ">=(CAST($1):BIGINT(63), ?2)");
-        checkIndexForCondition("(f=? OR f=?) AND f<?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "<(CAST($1):BIGINT(63), ?2)");
-        checkIndexForCondition("(f=? OR f=?) AND f<=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "<=(CAST($1):BIGINT(63), ?2)");
+        checkIndexForCondition("(f=? OR f=?) AND f>?", "OR(=($1, ?0), =($1, ?1))", ">($1, ?2)");
+        checkIndexForCondition("(f=? OR f=?) AND f>=?", "OR(=($1, ?0), =($1, ?1))", ">=($1, ?2)");
+        checkIndexForCondition("(f=? OR f=?) AND f<?", "OR(=($1, ?0), =($1, ?1))", "<($1, ?2)");
+        checkIndexForCondition("(f=? OR f=?) AND f<=?", "OR(=($1, ?0), =($1, ?1))", "<=($1, ?2)");
 
-        checkIndexForCondition("(f=? OR f=?) AND f>? AND f<?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "AND(>(CAST($1):BIGINT(63), ?2), <(CAST($1):BIGINT(63), ?3))");
-        checkIndexForCondition("(f=? OR f=?) AND f>? AND f<=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "AND(>(CAST($1):BIGINT(63), ?2), <=(CAST($1):BIGINT(63), ?3))");
-        checkIndexForCondition("(f=? OR f=?) AND f>=? AND f<?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "AND(>=(CAST($1):BIGINT(63), ?2), <(CAST($1):BIGINT(63), ?3))");
-        checkIndexForCondition("(f=? OR f=?) AND f>=? AND f<=?", "OR(=(CAST($1):BIGINT(63), ?0), =(CAST($1):BIGINT(63), ?1))", "AND(>=(CAST($1):BIGINT(63), ?2), <=(CAST($1):BIGINT(63), ?3))");
+        checkIndexForCondition("(f=? OR f=?) AND f>? AND f<?", "OR(=($1, ?0), =($1, ?1))", "AND(>($1, ?2), <($1, ?3))");
+        checkIndexForCondition("(f=? OR f=?) AND f>? AND f<=?", "OR(=($1, ?0), =($1, ?1))", "AND(>($1, ?2), <=($1, ?3))");
+        checkIndexForCondition("(f=? OR f=?) AND f>=? AND f<?", "OR(=($1, ?0), =($1, ?1))", "AND(>=($1, ?2), <($1, ?3))");
+        checkIndexForCondition("(f=? OR f=?) AND f>=? AND f<=?", "OR(=($1, ?0), =($1, ?1))", "AND(>=($1, ?2), <=($1, ?3))");
     }
 
     private void checkIndexForCondition(

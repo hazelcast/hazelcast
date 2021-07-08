@@ -84,6 +84,18 @@ public final class TestProcessors {
         CollectPerProcessorSink.lists = null;
     }
 
+    public static DAG batchDag() {
+        DAG dag = new DAG();
+        dag.newVertex("v", MockP::new);
+        return dag;
+    }
+
+    public static DAG streamingDag() {
+        DAG dag = new DAG();
+        dag.newVertex("v", () -> new MockP().streaming());
+        return dag;
+    }
+
     public static class Identity extends AbstractProcessor {
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
@@ -558,7 +570,7 @@ public final class TestProcessors {
                 @Override
                 protected void init(@Nonnull Context context) {
                     this.list = lists.get(context.globalProcessorIndex());
-                    members.set(context.memberIndex(), context.jetInstance().getCluster().getLocalMember().getAddress());
+                    members.set(context.memberIndex(), context.hazelcastInstance().getCluster().getLocalMember().getAddress());
                 }
 
                 @Override

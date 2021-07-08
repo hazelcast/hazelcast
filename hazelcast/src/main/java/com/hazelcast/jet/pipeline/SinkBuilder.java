@@ -37,7 +37,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @param <C> type of the context object
  * @param <T> type of the items the sink will accept
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class SinkBuilder<C, T> {
 
@@ -98,7 +98,7 @@ public final class SinkBuilder<C, T> {
      *     processor context. It must be stateless.
      * @param <C> type of the context object
      *
-     * @since 3.0
+     * @since Jet 3.0
      */
     @Nonnull
     public static <C> SinkBuilder<C, Void> sinkBuilder(

@@ -129,7 +129,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                         assertTrue(windowResults.size() > 1); //multiple windows, so watermark works
                     }));
 
-            jet().newJob(pipeline).join();
+            hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
@@ -159,7 +159,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     private void staticStream(int shards) {
         HELPER.createStream(shards);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
 
         Map<String, List<String>> expectedMessages = sendMessages();
         assertMessages(expectedMessages, true, false);
@@ -178,7 +178,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         HELPER.waitForStreamToActivate();
         assertOpenShards(1, shard1, shard2);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
 
         Map<String, List<String>> expectedMessages = sendMessages();
         assertMessages(expectedMessages, true, false);
@@ -200,7 +200,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     private void dynamicStream_mergesDuringData(int shards, int merges) {
         HELPER.createStream(shards);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
 
         Map<String, List<String>> expectedMessages = sendMessages();
 
@@ -234,7 +234,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         HELPER.waitForStreamToActivate();
         assertOpenShards(2, shard);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
 
         Map<String, List<String>> expectedMessages = sendMessages();
         assertMessages(expectedMessages, true, false);
@@ -255,7 +255,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     private void dynamicStream_splitsDuringData(int shards, int splits) {
         HELPER.createStream(shards);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
 
         Map<String, List<String>> expectedMessages = sendMessages();
 
@@ -294,7 +294,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         JobConfig jobConfig = new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
                 .setSnapshotIntervalMillis(SECONDS.toMillis(1));
-        Job job = jet().newJob(getPipeline(kinesisSource().build()), jobConfig);
+        Job job = hz().getJet().newJob(getPipeline(kinesisSource().build()), jobConfig);
 
         Map<String, List<String>> expectedMessages = sendMessages();
 
@@ -324,7 +324,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         JobConfig jobConfig = new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
                 .setSnapshotIntervalMillis(SECONDS.toMillis(1));
-        Job job = jet().newJob(getPipeline(kinesisSource().build()), jobConfig);
+        Job job = hz().getJet().newJob(getPipeline(kinesisSource().build()), jobConfig);
 
         Map<String, List<String>> expectedMessages = sendMessages();
 
@@ -354,7 +354,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     @Category(SerialTest.class)
     public void jobsStartedBeforeStreamExists() {
         Map<String, List<String>> expectedMessages = sendMessages(100);
-        Job job = jet().newJob(getPipeline(kinesisSource().build()));
+        Job job = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
 
         HELPER.createStream(1);
@@ -380,7 +380,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
@@ -393,7 +393,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", AT_TIMESTAMP.name(), Long.toString(timestamp))
                 .build();
-        Job job = jet().newJob(getPipeline(source));
+        Job job = hz().getJet().newJob(getPipeline(source));
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         //check job has read only records from after the marked time
@@ -406,7 +406,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
@@ -415,7 +415,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", LATEST.name(), null)
                 .build();
-        Job job = jet().newJob(getPipeline(source));
+        Job job = hz().getJet().newJob(getPipeline(source));
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         // need to be sure that reading the shard has commenced ...
@@ -432,7 +432,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
@@ -441,7 +441,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", TRIM_HORIZON.name(), null)
                 .build();
-        Job job = jet().newJob(getPipeline(source));
+        Job job = hz().getJet().newJob(getPipeline(source));
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         //send some more messages and check that the job reads both old and new records
@@ -455,14 +455,14 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
 
         //start a new job which reads records in its default way
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource().build();
-        Job job = jet().newJob(getPipeline(source));
+        Job job = hz().getJet().newJob(getPipeline(source));
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
         //send some more messages and check that the job reads both old and new records
@@ -476,7 +476,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         PutRecordsResult putRecordsResult = HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
@@ -487,7 +487,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", AT_SEQUENCE_NUMBER.name(), sequenceNumber)
                 .build();
-        jet().newJob(getPipeline(source));
+        hz().getJet().newJob(getPipeline(source));
         assertMessages(expectedMessages(50, 100), true, false);
     }
 
@@ -497,7 +497,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
         //send out some records, make sure they are in the shard
         PutRecordsResult putRecordsResult = HELPER.putRecords(messages(0, 100));
-        Job initialJob = jet().newJob(getPipeline(kinesisSource().build()));
+        Job initialJob = hz().getJet().newJob(getPipeline(kinesisSource().build()));
         assertMessages(expectedMessages(0, 100), true, false);
         initialJob.cancel();
         results.clear();
@@ -508,7 +508,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withInitialShardIteratorRule(".*", AFTER_SEQUENCE_NUMBER.name(), sequenceNumber)
                 .build();
-        jet().newJob(getPipeline(source));
+        hz().getJet().newJob(getPipeline(source));
         assertMessages(expectedMessages(51, 100), true, false);
     }
 

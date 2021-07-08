@@ -333,9 +333,15 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     @SuppressWarnings("unchecked")
     public <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op, int partitionId) {
+        return invokeOnPartitionAsync(serviceName, op, partitionId, DEFAULT_REPLICA_INDEX);
+    }
+
+    @Override
+    public <E> InvocationFuture<E> invokeOnPartitionAsync(String serviceName, Operation op,
+                                                          int partitionId, int replicaIndex) {
         op.setServiceName(serviceName)
                 .setPartitionId(partitionId)
-                .setReplicaIndex(DEFAULT_REPLICA_INDEX);
+                .setReplicaIndex(replicaIndex);
 
         return new PartitionInvocation(
                 invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,

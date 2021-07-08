@@ -39,7 +39,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <T> type of the items the sink accepts
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class JmsSinkBuilder<T> {
 

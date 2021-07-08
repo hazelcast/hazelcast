@@ -17,7 +17,7 @@
 package com.hazelcast.jet.core.metrics;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -52,7 +52,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
     private static final int MEMBER_COUNT = 2;
 
-    private JetInstance[] jetInstances;
+    private HazelcastInstance[] hzInstances;
 
     @Before
     public void before() throws Exception {
@@ -62,13 +62,13 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.setProperty("hazelcast.jmx", "true");
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
-        jetInstances = createJetMembers(config, MEMBER_COUNT);
+        hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
     }
 
     @Test
     public void multipleJobsSubmittedAndCompleted() {
         //when
-        Job job1 = jetInstances[0].newJob(batchPipeline());
+        Job job1 = hzInstances[0].getJet().newJob(batchPipeline());
         job1.join();
         job1.cancel();
 
@@ -84,7 +84,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         dag.edge(between(source, process));
 
         //when
-        Job job2 = jetInstances[0].newJob(dag);
+        Job job2 = hzInstances[0].getJet().newJob(dag);
         try {
             job2.join();
             fail("Expected exception not thrown!");
@@ -99,7 +99,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     @Test
     public void jobSuspendedThenResumed() {
         //init
-        Job job = jetInstances[0].newJob(streamingPipeline());
+        Job job = hzInstances[0].getJet().newJob(streamingPipeline());
         assertJobStatusEventually(job, RUNNING);
 
         //when
@@ -120,7 +120,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     @Test
     public void jobRestarted() {
         //init
-        Job job = jetInstances[0].newJob(streamingPipeline());
+        Job job = hzInstances[0].getJet().newJob(streamingPipeline());
         assertJobStatusEventually(job, RUNNING);
 
         assertTrueEventually(() -> assertJobStats(1, 1, 0, 0, 0));
@@ -137,7 +137,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     @Test
     public void jobCancelled() {
         //init
-        Job job = jetInstances[0].newJob(streamingPipeline());
+        Job job = hzInstances[0].getJet().newJob(streamingPipeline());
         assertJobStatusEventually(job, RUNNING);
 
         assertTrueEventually(() -> assertJobStats(1, 1, 0, 0, 0));
@@ -152,7 +152,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
     @Test
     public void executionRelatedMetrics() {
-        Job job = jetInstances[0].newJob(batchPipeline(), new JobConfig().setStoreMetricsAfterJobCompletion(true));
+        Job job = hzInstances[0].getJet().newJob(batchPipeline(), new JobConfig().setStoreMetricsAfterJobCompletion(true));
         job.join();
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
@@ -178,17 +178,17 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
 
     private void assertJobStats(int submitted, int executionsStarted, int executionsTerminated,
                                 int completedSuccessfully, int completedWithFailure) {
-        assertJobStatsOnMember(jetInstances[0], submitted, executionsStarted, executionsTerminated,
+        assertJobStatsOnMember(hzInstances[0], submitted, executionsStarted, executionsTerminated,
                 completedSuccessfully, completedWithFailure);
-        for (int i = 1; i < jetInstances.length; i++) {
-            assertJobStatsOnMember(jetInstances[i], 0, executionsStarted, executionsTerminated, 0, 0);
+        for (int i = 1; i < hzInstances.length; i++) {
+            assertJobStatsOnMember(hzInstances[i], 0, executionsStarted, executionsTerminated, 0, 0);
         }
     }
 
-    private void assertJobStatsOnMember(JetInstance jetInstance, int submitted, int executionsStarted,
+    private void assertJobStatsOnMember(HazelcastInstance instance, int submitted, int executionsStarted,
                                    int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
         try {
-            JmxMetricsChecker jmxChecker = new JmxMetricsChecker(jetInstance.getName());
+            JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance.getName());
             jmxChecker.assertMetricValue(MetricNames.JOBS_SUBMITTED, submitted);
             jmxChecker.assertMetricValue(MetricNames.JOB_EXECUTIONS_STARTED, executionsStarted);
             jmxChecker.assertMetricValue(MetricNames.JOB_EXECUTIONS_COMPLETED, executionsTerminated);

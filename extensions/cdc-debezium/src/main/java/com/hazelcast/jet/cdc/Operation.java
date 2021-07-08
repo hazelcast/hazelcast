@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * database changelog), and "unspecified", used for a few special CDC
  * events (like heartbeats).
  *
- * @since 4.2
+ * @since Jet 4.2
  */
 @EvolvingApi
 public enum Operation {

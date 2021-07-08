@@ -20,11 +20,8 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.Properties;
 
-import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 /**
@@ -84,35 +81,7 @@ public final class BuildInfoProvider {
             ignore(e);
         }
 
-        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
-        return withJetProperties(jetProperties, buildInfo);
-    }
-
-    private static BuildInfo withJetProperties(Properties properties, BuildInfo buildInfo) {
-        if (properties.isEmpty()) {
-            return buildInfo;
-        }
-        String version = properties.getProperty("jet.version");
-        String build = properties.getProperty("jet.build");
-        String revision = properties.getProperty("jet.git.revision");
-
-        JetBuildInfo jetBuildInfo = new JetBuildInfo(version, build, revision);
-        return buildInfo.withJetBuildInfo(jetBuildInfo);
-    }
-
-    private static Properties loadPropertiesFromResource(String resourceName) {
-        InputStream properties = BuildInfoProvider.class.getClassLoader().getResourceAsStream(resourceName);
-        Properties runtimeProperties = new Properties();
-        try {
-            if (properties != null) {
-                runtimeProperties.load(properties);
-            }
-        } catch (Exception ignored) {
-            ignore(ignored);
-        } finally {
-            closeResource(properties);
-        }
-        return runtimeProperties;
+        return buildInfo;
     }
 
     private static BuildInfo readBuildPropertiesClass(Class<?> clazz, BuildInfo upstreamBuildInfo, Overrides overrides) {

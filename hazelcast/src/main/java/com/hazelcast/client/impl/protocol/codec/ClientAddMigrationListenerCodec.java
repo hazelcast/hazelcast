@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a migration listener to the cluster.
  */
-@Generated("80b81dadb307fb9aed0f33182e0d3d84")
+@Generated("a8f7dda6af4ac51e9a0d9d18bef5779a")
 public final class ClientAddMigrationListenerCodec {
     //hex: 0x001100
     public static final int REQUEST_MESSAGE_TYPE = 4352;
@@ -117,6 +117,7 @@ public final class ClientAddMigrationListenerCodec {
         MigrationStateCodec.encode(clientMessage, migrationState);
         return clientMessage;
     }
+
     public static ClientMessage encodeReplicaMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId, int replicaIndex, @Nullable java.util.UUID sourceUuid, @Nullable java.util.UUID destUuid, boolean success, long elapsedTime) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_REPLICA_MIGRATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

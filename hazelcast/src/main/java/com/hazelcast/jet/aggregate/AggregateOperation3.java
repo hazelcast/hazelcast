@@ -50,7 +50,7 @@ import javax.annotation.Nonnull;
  * @param <A> the type of the accumulator
  * @param <R> the type of the aggregation result
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public interface AggregateOperation3<T0, T1, T2, A, R> extends AggregateOperation<A, R> {
 

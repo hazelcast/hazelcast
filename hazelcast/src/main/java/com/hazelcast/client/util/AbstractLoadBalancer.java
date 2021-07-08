@@ -30,7 +30,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * An abstract {@link com.hazelcast.client.LoadBalancer} implementation.
+ * An abstract {@link LoadBalancer} implementation.
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 

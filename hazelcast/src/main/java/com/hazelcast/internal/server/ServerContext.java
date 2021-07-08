@@ -37,7 +37,6 @@ import java.net.Socket;
 import java.util.Collection;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
 /**
  * Contains many of the dependencies passed to the {@link Server}.
@@ -102,7 +101,7 @@ public interface ServerContext {
 
     void onDisconnect(Address endpoint, Throwable cause);
 
-    Future<Void> submitAsync(Runnable runnable);
+    void executeAsync(Runnable runnable);
 
     EventService getEventService();
 

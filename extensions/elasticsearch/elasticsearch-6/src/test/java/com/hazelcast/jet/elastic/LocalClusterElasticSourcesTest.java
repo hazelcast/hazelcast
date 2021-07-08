@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.elastic;
 
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.util.Util;
 import org.junit.AfterClass;
 
@@ -28,12 +28,12 @@ import java.util.function.Supplier;
  */
 public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
 
-    private static JetInstance[] instances;
+    private static HazelcastInstance[] instances;
 
     // Cluster startup takes >1s, reusing the cluster between tests
-    private static Supplier<JetInstance> jet = Util.memoize(() -> {
-        JetTestInstanceFactory factory = new JetTestInstanceFactory();
-        instances = factory.newMembers(config(), 3);
+    private static Supplier<HazelcastInstance> supplierHz = Util.memoize(() -> {
+        TestHazelcastFactory factory = new TestHazelcastFactory();
+        instances = factory.newInstances(config(), 3);
         return instances[0];
     });
 
@@ -41,7 +41,7 @@ public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
     @AfterClass
     public static void afterClass() {
         if (instances != null) {
-            for (JetInstance instance : instances) {
+            for (HazelcastInstance instance : instances) {
                 instance.shutdown();
             }
             instances = null;
@@ -49,7 +49,7 @@ public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
     }
 
     @Override
-    protected JetInstance createJetInstance() {
-        return jet.get();
+    protected HazelcastInstance createHazelcastInstance() {
+        return supplierHz.get();
     }
 }

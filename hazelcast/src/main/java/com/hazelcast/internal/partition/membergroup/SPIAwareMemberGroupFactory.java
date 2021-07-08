@@ -25,6 +25,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
+import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.util.Collection;
 import java.util.Set;
@@ -62,10 +63,12 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
                                 + "check service definitions under META_INF.services folder. ");
                     } else {
                         for (DiscoveryStrategy discoveryStrategy : defaultDiscoveryService.getDiscoveryStrategies()) {
-                            checkNotNull(discoveryStrategy.getPartitionGroupStrategy());
-                            Iterable<MemberGroup> spiGroupsIterator =
-                                    discoveryStrategy.getPartitionGroupStrategy().getMemberGroups();
-                            for (MemberGroup group : spiGroupsIterator) {
+                            PartitionGroupStrategy groupStrategy = discoveryStrategy.getPartitionGroupStrategy(allMembers);
+                            if (groupStrategy == null) {
+                                groupStrategy = discoveryStrategy.getPartitionGroupStrategy();
+                            }
+                            checkNotNull(groupStrategy);
+                            for (MemberGroup group : groupStrategy.getMemberGroups()) {
                                 memberGroups.add(group);
                             }
                             return memberGroups;

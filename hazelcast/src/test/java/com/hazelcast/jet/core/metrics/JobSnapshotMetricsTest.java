@@ -50,7 +50,7 @@ public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        Job job = instance().newJob(pipeline(), jobConfig);
+        Job job = instance().getJet().newJob(pipeline(), jobConfig);
 
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);
@@ -66,7 +66,7 @@ public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(3600 * 1000);
-        Job job = instance().newJob(pipeline(), jobConfig);
+        Job job = instance().getJet().newJob(pipeline(), jobConfig);
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
         assertTrueEventually(() -> checker.assertSummedMetricValue(MetricNames.SNAPSHOT_KEYS, 0));
@@ -79,7 +79,7 @@ public class JobSnapshotMetricsTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        Job job = instance().newJob(pipeline(), jobConfig);
+        Job job = instance().getJet().newJob(pipeline(), jobConfig);
 
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);

@@ -17,12 +17,10 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.util.MutableInteger;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Collaborator of {@link ExecutionPlan} that takes care of assigning
@@ -41,33 +39,14 @@ class PartitionArrangement {
     /** Array of local partitions */
     private final int[] localPartitions;
 
-    PartitionArrangement(Address[] partitionOwners, Address thisAddress) {
-        Map<Address, MutableInteger> memberCounts = new HashMap<>();
-        for (Address partitionOwner : partitionOwners) {
-            memberCounts.computeIfAbsent(partitionOwner, x -> new MutableInteger()).value++;
+    PartitionArrangement(Map<Address, int[]> partitionAssignment, Address thisAddress) {
+        remotePartitionAssignment = new HashMap<>(partitionAssignment);
+        localPartitions = remotePartitionAssignment.remove(thisAddress);
+        int partitionCount = 0;
+        for (int[] value : partitionAssignment.values()) {
+            partitionCount += value.length;
         }
-        localPartitions = new int[memberCounts.get(thisAddress).value];
-        remotePartitionAssignment = new HashMap<>();
-        for (Entry<Address, MutableInteger> en : memberCounts.entrySet()) {
-            if (!en.getKey().equals(thisAddress)) {
-                MutableInteger count = en.getValue();
-                remotePartitionAssignment.put(en.getKey(), new int[count.value]);
-                count.value = 0;
-            }
-        }
-
-        int localPartitionIndex = 0;
-        for (int i = 0; i < partitionOwners.length; i++) {
-            Address address = partitionOwners[i];
-            if (address.equals(thisAddress)) {
-                localPartitions[localPartitionIndex++] = i;
-            } else {
-                int index = memberCounts.get(address).value++;
-                remotePartitionAssignment.get(address)[index] = i;
-            }
-        }
-
-        allPartitions = new int[partitionOwners.length];
+        allPartitions = new int[partitionCount];
         for (int i = 0; i < allPartitions.length; i++) {
             allPartitions[i] = i;
         }

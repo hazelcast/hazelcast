@@ -52,7 +52,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
     public void testExecutionMetricsBatchJob() {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
-        Job job = instance().newJob(batchPipeline(), jobConfig);
+        Job job = instance().getJet().newJob(batchPipeline(), jobConfig);
         job.join();
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
@@ -66,7 +66,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
     public void testExecutionMetricsStreamJob() throws Exception {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setStoreMetricsAfterJobCompletion(true);
-        Job job = instance().newJob(streamPipeline(), jobConfig);
+        Job job = instance().getJet().newJob(streamPipeline(), jobConfig);
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
@@ -78,7 +78,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testExecutionMetricsJobRestart() throws Exception {
-        Job job = instance().newJob(streamPipeline());
+        Job job = instance().getJet().newJob(streamPipeline());
 
         JobMetricsChecker jobChecker = new JobMetricsChecker(job);
         assertTrueEventually(() -> jobChecker.assertSummedMetricValueAtLeast(EXECUTION_START_TIME, 1));
@@ -98,7 +98,7 @@ public class JobExecutionMetricsTest extends SimpleTestInClusterSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        Job job = instance().newJob(snapshotPipeline(), jobConfig);
+        Job job = instance().getJet().newJob(snapshotPipeline(), jobConfig);
 
         JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 20, false);

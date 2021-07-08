@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -31,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,14 +41,27 @@ import java.util.List;
 public class HazelcastBootstrapTest {
 
     @AfterClass
-    public static void teardown() {
+    public static void teardown() throws NoSuchFieldException, IllegalAccessException {
         Hazelcast.bootstrappedInstance().shutdown();
+        cleanUpHazelcastBootstrapSupplier();
+    }
+
+    private static void cleanUpHazelcastBootstrapSupplier() throws NoSuchFieldException, IllegalAccessException {
+        // Set the static instance supplier field of HazelcastBootstrap
+        // to null. Because of the lifetime of this field spans many
+        // test classes run on the same JVM, HazelcastBootstrapTest
+        // and HazelcastCommandLineTest were interfering with each
+        // other before this cleanup step added.
+        // See: https://github.com/hazelcast/hazelcast/issues/18725
+        Field field = HazelcastBootstrap.class.getDeclaredField("supplier");
+        field.setAccessible(true);
+        field.set(null, null);
     }
 
     @Test
     public void testHazelcast_bootstrappedInstance() {
         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
-        JetInstance jet = hz.getJetInstance();
+        JetService jet = hz.getJet();
         executeWithBootstrappedInstance(jet);
     }
 
@@ -57,7 +72,7 @@ public class HazelcastBootstrapTest {
     }
 
 
-    public void executeWithBootstrappedInstance(JetInstance jet) {
+    public void executeWithBootstrappedInstance(JetService jet) {
         List<Integer> expected = Arrays.asList(1, 2, 3);
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))

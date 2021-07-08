@@ -41,7 +41,7 @@ import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.ByteArrayProcessor;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
@@ -291,7 +291,7 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         throw new IllegalArgumentException();
     }
 }

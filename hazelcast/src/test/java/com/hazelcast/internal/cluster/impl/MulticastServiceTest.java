@@ -116,6 +116,22 @@ public class MulticastServiceTest {
         verify(multicastSocket).joinGroup(InetAddress.getByName(multicastConfig.getMulticastGroup()));
     }
 
+    @Test
+    public void testMulticastGroupProperty() throws Exception {
+        Config config = createConfig(null);
+        String customMulticastGroup = "225.225.225.225";
+        config.setProperty(ClusterProperty.MULTICAST_GROUP.getName(), customMulticastGroup);
+        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastSocket multicastSocket = mock(MulticastSocket.class);
+        Address address = new Address("10.0.0.2",  5701);
+        HazelcastProperties hzProperties = new HazelcastProperties(config);
+        MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
+        verify(multicastSocket).bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
+        verify(multicastSocket).setTimeToLive(multicastConfig.getMulticastTimeToLive());
+        verify(multicastSocket).setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+        verify(multicastSocket).joinGroup(InetAddress.getByName(customMulticastGroup));
+    }
+
     private Config createConfig(Boolean callSetInterface) {
         Config config = new Config();
         if (callSetInterface != null) {

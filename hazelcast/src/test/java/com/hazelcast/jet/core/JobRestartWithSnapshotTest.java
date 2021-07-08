@@ -17,9 +17,9 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -86,16 +86,16 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetInstance instance1;
-    private JetInstance instance2;
+    private HazelcastInstance instance1;
+    private HazelcastInstance instance2;
 
     @Before
     public void setup() {
         Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
-        instance1 = createJetMember(config);
-        instance2 = createJetMember(config);
+        instance1 = createHazelcastInstance(config);
+        instance2 = createHazelcastInstance(config);
     }
 
     @Test
@@ -200,7 +200,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(1200);
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJet().newJob(dag, config);
 
         JobRepository jobRepository = new JobRepository(instance1);
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis() * 3) + 8);
@@ -210,7 +210,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         // wait a little more to emit something, so that it will be overwritten in the sink map
         Thread.sleep(300);
 
-        instance2.getHazelcastInstance().getLifecycleService().terminate();
+        instance2.getLifecycleService().terminate();
 
         // Now the job should detect member shutdown and restart from snapshot.
         // Let's wait until the next snapshot appears.
@@ -269,7 +269,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     public void when_snapshotStartedBeforeExecution_then_firstSnapshotIsSuccessful() {
         // instance1 is always coordinator
         // delay ExecuteOperation so that snapshot is started before execution is started on the worker member
-        delayOperationsFrom(hz(instance1), JetInitDataSerializerHook.FACTORY_ID,
+        delayOperationsFrom(instance1, JetInitDataSerializerHook.FACTORY_ID,
                 singletonList(JetInitDataSerializerHook.START_EXECUTION_OP)
         );
 
@@ -279,7 +279,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(0);
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJet().newJob(dag, config);
         JobRepository repository = new JobRepository(instance1);
 
         // the first snapshot should succeed
@@ -304,7 +304,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
         config.setSnapshotIntervalMillis(3600_000); // set long interval so that the first snapshot does not execute
-        Job job = instance1.newJob(dag, config);
+        Job job = instance1.getJet().newJob(dag, config);
 
         // wait for the job to start producing output
         List<Entry<Integer, Integer>> sinkList = instance1.getList("sink");

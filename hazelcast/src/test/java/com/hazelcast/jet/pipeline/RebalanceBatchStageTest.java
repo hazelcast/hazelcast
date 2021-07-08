@@ -642,10 +642,11 @@ public class RebalanceBatchStageTest extends PipelineTestSupport {
                 .setName("filter trues 1")
                 .filter(simpleEvent -> true)
                 .setName("filter trues 2")
-                .writeTo(SinkBuilder.sinkBuilder("sink", context -> context.jetInstance().getList("result" + context.globalProcessorIndex()))
+                .writeTo(SinkBuilder.sinkBuilder("sink",
+                        context -> context.hazelcastInstance().getList("result" + context.globalProcessorIndex()))
                 .receiveFn((list, o) -> list.add(o)).build());
 
-        member.newJob(p).join();
+        member.getJet().newJob(p).join();
 
         IList<Object> result0 = member.getList("result0");
         IList<Object> result1 = member.getList("result1");

@@ -1,21 +1,22 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.jet;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.processor.Processors;
@@ -28,11 +29,11 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class LightJobBench extends JetTestSupport {
 
-    private JetInstance inst;
+    private HazelcastInstance inst;
 
     @Before
     public void before() {
-        inst = createJetMember();
+        inst = createHazelcastInstance();
     }
 
     @Test
@@ -43,7 +44,7 @@ public class LightJobBench extends JetTestSupport {
         dag.newVertex("v", Processors.noopP());
         logger.info("will submit " + warmUpIterations + " jobs");
         for (int i = 0; i < warmUpIterations; i++) {
-            inst.newLightJob(dag).join();
+            inst.getJet().newLightJob(dag).join();
         }
 //        for (int i = 20; i >= 0; i--) {
 //            System.out.println("attach profiler " + i);
@@ -52,7 +53,7 @@ public class LightJobBench extends JetTestSupport {
         logger.info("warmup jobs done, starting benchmark");
         long start = System.nanoTime();
         for (int i = 0; i < realIterations; i++) {
-            inst.newLightJob(dag).join();
+            inst.getJet().newLightJob(dag).join();
         }
         long elapsedMicros = NANOSECONDS.toMicros(System.nanoTime() - start);
         System.out.println(realIterations + " jobs run in " + (elapsedMicros / realIterations) + " us/job");

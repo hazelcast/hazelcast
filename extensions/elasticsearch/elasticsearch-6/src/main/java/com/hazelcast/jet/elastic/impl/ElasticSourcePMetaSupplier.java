@@ -73,12 +73,12 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
             if (configuration.isCoLocatedReadingEnabled()) {
                 Set<Address> addresses = context
-                        .jetInstance().getCluster().getMembers().stream()
+                        .hazelcastInstance().getCluster().getMembers().stream()
                         .map(Member::getAddress)
                         .collect(toSet());
                 assignedShards = assignShards(shards, addresses);
             } else {
-                ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                ownerAddress = context.hazelcastInstance().getPartitionService()
                                       .getPartition(context.jobId()).getOwner().getAddress();
                 assignedShards = emptyMap();
             }
@@ -92,8 +92,8 @@ public class ElasticSourcePMetaSupplier<T> implements ProcessorMetaSupplier {
 
         if (!addresses.stream().map(Address::getHost).collect(toSet())
                       .containsAll(nodeCandidates.keySet())) {
-            throw new JetException("Shard locations are not equal to Jet nodes locations, " +
-                    "shards=" + nodeCandidates.keySet() + ", Jet nodes=" + addresses);
+            throw new JetException("Shard locations are not equal to Hazelcast members locations, " +
+                    "shards=" + nodeCandidates.keySet() + ", Hazelcast members=" + addresses);
         }
 
         int uniqueShards = (int) shards.stream().map(Shard::indexShard).distinct().count();

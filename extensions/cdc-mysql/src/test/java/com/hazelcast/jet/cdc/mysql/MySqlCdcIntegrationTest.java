@@ -17,7 +17,7 @@
 package com.hazelcast.jet.cdc.mysql;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.CdcSinks;
@@ -84,11 +84,11 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
                 .writeTo(Sinks.map("results"));
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         //then
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //when
         try (Connection connection = getConnection(mysql, "inventory")) {
@@ -101,7 +101,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -141,12 +141,12 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
                 .writeTo(Sinks.map("results"));
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -183,17 +183,17 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
-        Job job = jet.newJob(pipeline, jobConfig);
+        Job job = hz.getJet().newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
-        assertEqualsEventually(() -> jet.getMap("results").size(), 4);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 4);
 
         //then
-        jet.getMap("results").destroy();
+        hz.getMap("results").destroy();
 
         //when
-        assertEqualsEventually(() -> jet.getMap("results").size(), 0);
+        assertEqualsEventually(() -> hz.getMap("results").size(), 0);
 
         //then
         job.restart();
@@ -212,7 +212,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
         //then
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("results")), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("results")), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -232,12 +232,12 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
         JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE);
-        Job job = jet.newJob(pipeline, jobConfig);
+        Job job = hz.getJet().newJob(pipeline, jobConfig);
         JetTestSupport.assertJobStatusEventually(job, JobStatus.RUNNING);
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
@@ -256,7 +256,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
             statement.executeBatch();
         }
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",
@@ -271,7 +271,7 @@ public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
             connection.createStatement().execute("DELETE FROM customers WHERE id=1005");
         }
         //then
-        assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap("cache")),
+        assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap("cache")),
                 Arrays.asList(
                         "1001:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",
                         "1002:Customer {id=1002, firstName=George, lastName=Bailey, email=gbailey@foobar.com}",

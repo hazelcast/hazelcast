@@ -17,9 +17,9 @@
 package com.hazelcast.jet.elastic;
 
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -39,10 +39,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AuthElasticSourcesTest extends BaseElasticTest {
 
-    private final JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void afterClass() throws Exception {
+    public void afterClass() {
         factory.terminateAll();
     }
 
@@ -51,8 +51,8 @@ public class AuthElasticSourcesTest extends BaseElasticTest {
     }
 
     @Override
-    protected JetInstance createJetInstance() {
-        return factory.newMember(config());
+    protected HazelcastInstance createHazelcastInstance() {
+        return factory.newHazelcastInstance(config());
     }
 
     @Test

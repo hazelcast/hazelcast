@@ -146,7 +146,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
                 .withIngestionTimestamps()
                 .writeTo(Sinks.list(sinkList));
 
-        instance.newJob(p);
+        instance.getJet().newJob(p);
         assertTrueEventually(() -> assertEquals(Arrays.asList(1, 2), new ArrayList<>(sinkList)), 5);
     }
 
@@ -162,7 +162,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
                 .aggregate(AggregateOperations.counting())
                 .writeTo(Sinks.list(sinkList));
 
-        Job job = instance.newJob(p);
+        Job job = instance.getJet().newJob(p);
         assertEquals(0, sinkList.size());
         map.put(3, 3);
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 10);
@@ -186,7 +186,7 @@ public class StreamSourceStageTest extends StreamSourceStageTestBase {
                 .writeTo(Sinks.list(sinkList));
 
         long start = System.nanoTime();
-        Job job = instance.newJob(p);
+        Job job = instance.getJet().newJob(p);
         assertEquals(0, sinkList.size());
         map.put(5, 5);
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 30);

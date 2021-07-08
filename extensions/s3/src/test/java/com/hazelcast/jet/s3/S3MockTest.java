@@ -115,7 +115,7 @@ public class S3MockTest extends S3TestBase {
         p.readFrom(TestSources.items(expected))
          .writeTo(S3Sinks.s3(SINK_BUCKET, null, UTF_8, clientSupplier(), Object::toString));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         try (S3Client client = clientSupplier().get()) {
             List<String> lines = client

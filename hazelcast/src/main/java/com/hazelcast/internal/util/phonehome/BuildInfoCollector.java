@@ -17,7 +17,6 @@
 package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.impl.Node;
 
 import java.io.IOException;
@@ -33,17 +32,14 @@ import static java.lang.Math.min;
  */
 class BuildInfoCollector implements MetricsCollector {
 
-    static final int CLASSPATH_MAX_LENGTH = 10_000;
+    static final int CLASSPATH_MAX_LENGTH = 100_000;
 
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         BuildInfo imdgInfo = node.getBuildInfo();
-        JetBuildInfo jetInfo = imdgInfo.getJetBuildInfo();
         metricsConsumer.accept(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID, getDownloadId());
         metricsConsumer.accept(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM, System.getProperty("java.version"));
         metricsConsumer.accept(PhoneHomeMetrics.BUILD_VERSION, imdgInfo.getVersion());
-        metricsConsumer.accept(PhoneHomeMetrics.JET_BUILD_VERSION,
-                jetInfo == null ? "" : jetInfo.getVersion());
         String classpath = System.getProperty("java.class.path");
         if (classpath != null) {
             metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,

@@ -247,7 +247,7 @@ public class TcpServerConnection implements ServerConnection {
             logger.warning(e);
         }
 
-        lifecycleListener.onConnectionClose(this, null, false);
+        lifecycleListener.onConnectionClose(this, cause, false);
         serverContext.onDisconnect(remoteAddress, cause);
 
         LoginContext lc = (LoginContext) attributeMap.remove(LoginContext.class);

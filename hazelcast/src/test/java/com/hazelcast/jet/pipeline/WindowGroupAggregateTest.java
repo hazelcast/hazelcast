@@ -208,7 +208,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         // Then
         windowed.aggregate(SUMMING)
                 .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(fx.input.stream())
                 .stringResults(MOCK_FORMAT_FN);
@@ -255,7 +255,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
         // Then
         windowed.aggregate(SUMMING)
                 .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         String expectedString = new SlidingWindowSimulator(wDef)
                 .acceptStream(fx.input.stream())
                 .stringResults(MOCK_FORMAT_FN);
@@ -351,7 +351,7 @@ public class WindowGroupAggregateTest extends PipelineStreamTestSupport {
                 // suppress incomplete windows to get predictable results
                 .filter(wr -> wr.end() - wr.start() == sessionLength + sessionTimeout - 1)
                 .writeTo(sink);
-        jet().newJob(p);
+        hz().getJet().newJob(p);
         String expectedString = new SessionWindowSimulator(wDef, sessionLength + sessionTimeout)
                 .acceptStream(fx.input.stream())
                 .stringResults(MOCK_FORMAT_FN);

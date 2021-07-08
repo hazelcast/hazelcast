@@ -18,16 +18,15 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.CustomByteArrayOutputStream;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl.SnapshotDataKey;
@@ -89,9 +88,9 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .setEnabled(true)
               .setImplementation(new AlwaysFailingMapStore());
 
-        JetInstance instance = createJetMember(config);
-        nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
-        serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
+        HazelcastInstance instance = createHazelcastInstance(config);
+        nodeEngine = Util.getNodeEngine(instance);
+        serializationService = Util.getSerializationService(instance);
         partitionService = nodeEngine.getPartitionService();
         snapshotContext = mock(SnapshotContext.class);
         when(snapshotContext.currentMapName()).thenReturn("map1");
@@ -99,7 +98,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
                 nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
-        map = instance.getHazelcastInstance().getMap("map1");
+        map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
     }
 
@@ -217,7 +216,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void when_cannotAutoFlush_then_offerReturnsFalse() {
         // When
         // artificially increase number of async ops so that the writer cannot proceed
-        writer.numConcurrentAsyncOps.set(JetService.MAX_PARALLEL_ASYNC_OPS);
+        writer.numConcurrentAsyncOps.set(JetServiceBackend.MAX_PARALLEL_ASYNC_OPS);
         Entry<Data, Data> entry = entry(serialize("k"), serialize("v"));
         int entriesInChunk =
                 (writer.usableChunkCapacity - writer.serializedByteArrayHeader.length) / serializedLength(entry);
@@ -238,7 +237,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
     public void when_cannotFlushRemaining_then_returnsFalse() {
         // When
         // artificially increase number of async ops so that the writer cannot proceed
-        writer.numConcurrentAsyncOps.set(JetService.MAX_PARALLEL_ASYNC_OPS);
+        writer.numConcurrentAsyncOps.set(JetServiceBackend.MAX_PARALLEL_ASYNC_OPS);
         Entry<Data, Data> entry1 = entry(serialize("k"), serialize("v"));
         Entry<Data, Data> entry2 = entry(serialize("kk"), serialize("vv"));
         assertTrue(writer.offer(entry1));

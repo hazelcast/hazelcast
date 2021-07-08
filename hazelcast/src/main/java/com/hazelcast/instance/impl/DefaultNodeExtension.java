@@ -93,8 +93,8 @@ import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
@@ -132,16 +132,17 @@ import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceC
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     private static final String PLATFORM_LOGO
-            = "\to  o   O   o---o o--o o      o-o   O    o-o  o-O-o     o--o    o-o  \n"
-            + "\t|  |  / \\     /  |    |     /     / \\  |       |       |      o  /o \n"
-            + "\tO--O o---o  -O-  O-o  |    O     o---o  o-o    |       o-o    | / | \n"
-            + "\t|  | |   |  /    |    |     \\    |   |     |   |          |   o/  o \n"
-            + "\to  o o   o o---o o--o O---o  o-o o   o o--o    o       o-o  O  o-o";
+            = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
+            + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
+            + "\t+ + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |   \n"
+            + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
+            + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
     private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
+    protected final ILogger logoLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
@@ -152,13 +153,14 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     public DefaultNodeExtension(Node node) {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
+        this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
 
         if (node.getConfig().getJetConfig().isEnabled()) {
-            jetExtension = new JetExtension(node, createService(JetService.class));
+            jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
         }
     }
 
@@ -251,7 +253,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     protected void printBannersBeforeNodeInfo() {
-        systemLogger.info('\n' + PLATFORM_LOGO);
+        logoLogger.info('\n' + PLATFORM_LOGO);
         systemLogger.info(COPYRIGHT_LINE);
     }
 
@@ -345,8 +347,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
-        } else if (JetService.class.isAssignableFrom(clazz)) {
-            return (T) new JetService(node);
+        } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
+            return (T) new JetServiceBackend(node);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
@@ -603,11 +605,11 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         if (jetExtension == null) {
             throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
         }
-        return jetExtension.getJetInstance();
+        return jetExtension.getJet();
     }
 
     @Override

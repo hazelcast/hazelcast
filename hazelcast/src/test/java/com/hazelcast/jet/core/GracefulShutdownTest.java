@@ -18,30 +18,26 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.MapStore;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,33 +57,20 @@ import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class GracefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
 
-    private JetInstance[] instances;
-    private JetInstance client;
-
-    /**
-     * If {@code true} shutdown HazelcastInstance otherwise shutdown
-     * JetInstance. See {@link #shutdown(JetInstance)}.
-     */
-    @Parameter
-    public boolean shutdownHazelcastInstance;
-
-    @Parameters(name = "shutdownHazelcastInstance: {0}")
-    public static Collection<Boolean> shutdownFns() {
-        return Arrays.asList(true, false);
-    }
+    private HazelcastInstance[] instances;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
         TestProcessors.reset(0);
-        instances = createJetMembers(NODE_COUNT);
-        client = createJetClient();
+        instances = createHazelcastInstances(NODE_COUNT);
+        client = createHazelcastClient();
         EmitIntegersP.savedCounters.clear();
     }
 
@@ -118,7 +101,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
 
-        Job job = client.newJob(dag, new JobConfig()
+        Job job = client.getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1)));
         assertJobStatusEventually(job, JobStatus.RUNNING);
@@ -130,7 +113,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         // When
         logger.info("Shutting down instance...");
-        shutdown(instances[shutDownInstance]);
+        instances[shutDownInstance].shutdown();
         logger.info("Joining job...");
         job.join();
         logger.info("Joined");
@@ -161,12 +144,12 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_liteMemberShutDown_then_jobKeepsRunning() throws Exception {
         Config liteMemberConfig = smallInstanceConfig();
         liteMemberConfig.setLiteMember(true);
-        JetInstance liteMember = createJetMember(liteMemberConfig);
+        HazelcastInstance liteMember = createHazelcastInstance(liteMemberConfig);
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJet().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
-        Future future = spawn(() -> shutdown(liteMember));
+        Future future = spawn(() -> liteMember.shutdown());
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
     }
@@ -175,12 +158,12 @@ public class GracefulShutdownTest extends JetTestSupport {
     public void when_nonParticipatingMemberShutDown_then_jobKeepsRunning() throws Exception {
         DAG dag = new DAG();
         dag.newVertex("v", (SupplierEx<Processor>) NoOutputSourceP::new);
-        Job job = instances[0].newJob(dag);
+        Job job = instances[0].getJet().newJob(dag);
         assertJobStatusEventually(job, JobStatus.RUNNING, 10);
         Future future = spawn(() -> {
-            JetInstance nonParticipatingMember = createJetMember();
+            HazelcastInstance nonParticipatingMember = createHazelcastInstance();
             sleepSeconds(1);
-            shutdown(nonParticipatingMember);
+            nonParticipatingMember.shutdown();
         });
         assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 5);
         future.get();
@@ -192,7 +175,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         mapConfig.getMapStoreConfig()
                 .setClassName(BlockingMapStore.class.getName())
                 .setEnabled(true);
-        Config config = instances[0].getHazelcastInstance().getConfig();
+        Config config = instances[0].getConfig();
         ((DynamicConfigurationAwareConfig) config).getStaticConfig().addMapConfig(mapConfig);
         BlockingMapStore.shouldBlock = false;
         BlockingMapStore.wasBlocked = false;
@@ -203,13 +186,13 @@ public class GracefulShutdownTest extends JetTestSupport {
         Vertex sink = dag.newVertex("sink", SinkProcessors.writeListP("sink"));
         dag.edge(between(source, sink));
         source.localParallelism(1);
-        Job job = instances[0].newJob(dag, new JobConfig()
+        Job job = instances[0].getJet().newJob(dag, new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(2000));
 
         // wait for the first snapshot
-        JetService jetService = getNode(instances[0]).nodeEngine.getService(JetService.SERVICE_NAME);
-        JobRepository jobRepository = jetService.getJobCoordinationService().jobRepository();
+        JetServiceBackend jetServiceBackend = getNode(instances[0]).nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+        JobRepository jobRepository = jetServiceBackend.getJobCoordinationService().jobRepository();
         assertJobStatusEventually(job, RUNNING);
         assertTrueEventually(() -> assertTrue(
                 jobRepository.getJobExecutionRecord(job.getId()).dataMapIndex() >= 0));
@@ -219,7 +202,7 @@ public class GracefulShutdownTest extends JetTestSupport {
         job.restart();
         assertTrueEventually(() -> assertTrue("blocking did not happen", BlockingMapStore.wasBlocked), 5);
 
-        Future shutdownFuture = spawn(() -> shutdown(instances[1]));
+        Future shutdownFuture = spawn(() -> instances[1].shutdown());
         logger.info("savedCounters=" + EmitIntegersP.savedCounters);
         int minCounter = EmitIntegersP.savedCounters.values().stream().mapToInt(Integer::intValue).min().getAsInt();
         BlockingMapStore.shouldBlock = false;
@@ -233,14 +216,6 @@ public class GracefulShutdownTest extends JetTestSupport {
         Map<Integer, Integer> expected = IntStream.range(0, numItems).boxed()
                 .collect(Collectors.toMap(Function.identity(), item -> item < minCounter ? 2 : 1));
         assertEquals(expected, actual);
-    }
-
-    private void shutdown(JetInstance jetInstance) {
-        if (shutdownHazelcastInstance) {
-            jetInstance.getHazelcastInstance().shutdown();
-        } else {
-            jetInstance.shutdown();
-        }
     }
 
     private static final class EmitIntegersP extends AbstractProcessor {

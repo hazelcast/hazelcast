@@ -60,7 +60,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
                             File directory = createTempDirectory();
                             File file = new File(directory, randomName());
                             assertTrue(file.createNewFile());
-                            context.jetInstance().getList(listName).add(directory.toPath().toString());
+                            context.hazelcastInstance().getList(listName).add(directory.toPath().toString());
                             return file;
                         })
                 .receiveFn((File sink1, Integer item) -> appendToFile(sink1, item.toString()))
@@ -69,7 +69,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
         //Then
         stage.writeTo(sink);
         execute();
-        List<String> paths = new ArrayList<>(jet().getList(listName));
+        List<String> paths = new ArrayList<>(hz().getList(listName));
         long count = paths.stream().map(Paths::get)
                           .flatMap(path -> uncheckCall(() -> Files.list(path)))
                           .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))

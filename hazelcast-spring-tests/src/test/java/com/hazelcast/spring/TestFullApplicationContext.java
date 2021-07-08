@@ -117,6 +117,7 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
@@ -127,7 +128,7 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -208,8 +209,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Resource(name = "instance")
     private HazelcastInstance instance;
 
-    @Resource(name = "jetInstance")
-    private JetInstance jet;
+    @Resource(name = "jetService")
+    private JetService jet;
 
     @Resource(name = "map1")
     private IMap<Object, Object> map1;
@@ -328,9 +329,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanRef.getMergePolicyClassName());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
     }
 
     @Test
@@ -415,7 +418,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
 
         assertEquals(1000, testMapConfig2.getEvictionConfig().getSize());
@@ -482,7 +485,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
     }
 
     @Test
@@ -629,6 +632,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals(TRUE, kerbIdentity.getUseCanonicalHostname());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simpleRealm");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
     }
 
     @Test
@@ -1155,7 +1170,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
         assertEquals(10, nativeMemoryConfig.getMinBlockSize());
         List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
-                                                                                   .getDirectoryConfigs();
+                .getDirectoryConfigs();
 
         assertEquals(2, directoryConfigs.size());
         assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());

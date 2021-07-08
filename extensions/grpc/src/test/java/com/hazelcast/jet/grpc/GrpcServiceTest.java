@@ -94,7 +94,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // Then
         List<String> expected = Arrays.asList("Hello one", "Hello two", "Hello three", "Hello four");
         mapped.writeTo(AssertionSinks.assertAnyOrder(expected));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -118,7 +118,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
             assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
         }));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -142,7 +142,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
             assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
         }));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -164,7 +164,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // Then
         mapped.writeTo(Sinks.noop());
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
             Throwable ex = ExceptionUtil.peel(e);
@@ -192,7 +192,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // Then
         List<String> expected = Arrays.asList("Hello one", "Hello two", "Hello three", "Hello four");
         mapped.writeTo(AssertionSinks.assertAnyOrder(expected));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -217,7 +217,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
             assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
         }));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -242,7 +242,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
             assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
         }));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -266,7 +266,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(Sinks.noop());
 
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
             Throwable ex = ExceptionUtil.peel(e);
@@ -297,7 +297,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         List<String> expected = IntStream.range(0, ITEM_COUNT).boxed()
                 .map(t -> "Hello " + Integer.toString(t)).collect(toList());
         mapped.writeTo(AssertionSinks.assertAnyOrder(expected));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -322,7 +322,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         mapped.writeTo(AssertionSinks.assertCollected(e -> {
             assertEquals("unexpected number of items received", ITEM_COUNT, e.size());
         }));
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
     }
 
     @Test
@@ -347,7 +347,7 @@ public class GrpcServiceTest extends SimpleTestInClusterSupport {
         // Then
         mapped.writeTo(Sinks.noop());
         try {
-            instance().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail("Job should have failed");
         } catch (Exception e) {
             Throwable ex = ExceptionUtil.peel(e);

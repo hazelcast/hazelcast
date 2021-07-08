@@ -19,7 +19,6 @@ package com.hazelcast.jet.cdc;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cdc.impl.ChangeRecordImpl;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -28,6 +27,7 @@ import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -63,31 +64,43 @@ public class CdcSinksTest extends PipelineTestSupport {
             "{\"" + ID + "\":1002,\"first_name\":\"George\",\"last_name\":\"Bailey\",\"" + EMAIL + "\":" +
                     "\"gbailey@foobar.com\",\"__op\":\"d\",\"__ts_ms\":1588927306269,\"__deleted\":\"true\"}");
 
+    private List<HazelcastInstance> remoteCluster;
+
+    @After
+    public void after() {
+        if (remoteCluster != null) {
+            for (HazelcastInstance instance : remoteCluster) {
+                instance.getLifecycleService().terminate();
+            }
+            remoteCluster = null;
+        }
+    }
+
     @Test
     public void insertIntoLocalMap() {
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sally.thomas@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
     public void insertIntoRemoteMap() {
-        HazelcastInstance remoteHz =
-                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
-        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
+        remoteCluster = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1);
+        HazelcastInstance remoteInstance = remoteCluster.get(0);
+
+        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
-        assertMap(remoteHz, "sally.thomas@acme.com", "gbailey@foobar.com");
+        assertMap(remoteInstance, "sally.thomas@acme.com", "gbailey@foobar.com");
 
-        remoteHz.getMap(MAP).destroy();
-        remoteHz.shutdown();
+        remoteInstance.getMap(MAP).destroy();
     }
 
     @Test
@@ -96,24 +109,25 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sthomas@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
     public void updateRemoteMap() {
-        HazelcastInstance remoteHz = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
-        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
+        remoteCluster = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1);
+        HazelcastInstance remoteInstance = remoteCluster.get(0);
+
+        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, UPDATE1).iterator()))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
-        assertMap(remoteHz, "sthomas@acme.com", "gbailey@foobar.com");
+        assertMap(remoteInstance, "sthomas@acme.com", "gbailey@foobar.com");
 
-        remoteHz.getMap(MAP).destroy();
-        remoteHz.shutdown();
+        remoteInstance.getMap(MAP).destroy();
     }
 
     @Test
@@ -122,25 +136,25 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", null);
+        assertMap(hz(), "sally.thomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
     public void deleteFromRemoteMap() {
-        HazelcastInstance remoteHz =
-                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1).get(0);
-        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
+        remoteCluster = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 1);
+        HazelcastInstance remoteInstance = remoteCluster.get(0);
+
+        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2, DELETE2).iterator()))
                 .writeTo(remoteSync(clientConfig));
         execute().join();
 
-        assertMap(remoteHz, "sally.thomas@acme.com", null);
+        assertMap(remoteInstance, "sally.thomas@acme.com", null);
 
-        remoteHz.getMap(MAP).destroy();
-        remoteHz.shutdown();
+        remoteInstance.getMap(MAP).destroy();
     }
 
     @Test
@@ -157,16 +171,17 @@ public class CdcSinksTest extends PipelineTestSupport {
                 ));
         execute().join();
 
-        assertMap(jet(), null, "gbailey@foobar.com");
+        assertMap(hz(), null, "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
     public void deleteFromRemoteMap_ViaValueProjection() {
-        HazelcastInstance remoteHz =
-                createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 2).get(0);
-        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteHz);
+        remoteCluster = createRemoteCluster(smallInstanceConfig().setClusterName(randomName()), 2);
+        HazelcastInstance remoteInstance = remoteCluster.get(0);
+
+        ClientConfig clientConfig = getClientConfigForRemoteCluster(remoteInstance);
 
         p.readFrom(items(() -> Arrays.asList(SYNC1, INSERT2).iterator()))
                 .writeTo(remoteSync(clientConfig));
@@ -180,10 +195,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 ));
         execute().join();
 
-        assertMap(remoteHz, null, "gbailey@foobar.com");
+        assertMap(remoteInstance, null, "gbailey@foobar.com");
 
-        remoteHz.getMap(MAP).destroy();
-        remoteHz.shutdown();
+        remoteInstance.getMap(MAP).destroy();
     }
 
     @Test
@@ -207,9 +221,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas5@acme.com", null);
+        assertMap(hz(), "sthomas5@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -218,9 +232,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", null);
+        assertMap(hz(), "sthomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -229,9 +243,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), null, null);
+        assertMap(hz(), null, null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -240,9 +254,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sthomas@acme.com", null);
+        assertMap(hz(), "sthomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -251,9 +265,9 @@ public class CdcSinksTest extends PipelineTestSupport {
                 .writeTo(localSync());
         execute().join();
 
-        assertMap(jet(), "sally.thomas@acme.com", null);
+        assertMap(hz(), "sally.thomas@acme.com", null);
 
-        jet().getMap(MAP).destroy();
+        hz().getMap(MAP).destroy();
     }
 
     @Test
@@ -267,13 +281,9 @@ public class CdcSinksTest extends PipelineTestSupport {
 
         execute().join();
 
-        assertMap(jet(), "sthomas2@acme.com", "gbailey@foobar.com");
+        assertMap(hz(), "sthomas2@acme.com", "gbailey@foobar.com");
 
-        jet().getMap(MAP).destroy();
-    }
-
-    private void assertMap(JetInstance jetInstance, String email1, String email2) {
-        assertMap(jetInstance.getHazelcastInstance(), email1, email2);
+        hz().getMap(MAP).destroy();
     }
 
     private void assertMap(HazelcastInstance instance, String email1, String email2) {

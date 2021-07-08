@@ -34,7 +34,7 @@ import java.util.Set;
  * and {@code ItemsByTag} has a variable number of tag-indexed fields whose
  * whose static type is encoded in the tags.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public final class ItemsByTag {
     private static final Object NONE = new Object();

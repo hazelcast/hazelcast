@@ -17,6 +17,6 @@
 /**
  * Apache Kafka reader/writer support for Hazelcast Jet.
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 package com.hazelcast.jet.kafka;

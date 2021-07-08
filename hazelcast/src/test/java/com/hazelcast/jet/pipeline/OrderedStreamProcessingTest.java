@@ -80,7 +80,7 @@ public class OrderedStreamProcessingTest extends JetTestSupport implements Seria
 
     @BeforeClass
     public static void setupClass() {
-        jet = Hazelcast.newHazelcastInstance().getJetInstance();
+        jet = (JetInstance) Hazelcast.newHazelcastInstance().getJet();
     }
 
     @Before

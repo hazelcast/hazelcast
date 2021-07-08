@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
  * {@code FileFormat} for binary files where the whole file is one {@code
  * byte[]} item. See {@link FileFormat#bytes} for more details.
  *
- * @since 4.4
+ * @since Jet 4.4
  */
 public class RawBytesFileFormat implements FileFormat<byte[]> {
 

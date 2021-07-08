@@ -47,7 +47,7 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -229,7 +229,7 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public JetInstance getJetInstance() {
+    public JetService getJet() {
         return jetClient;
     }
 }

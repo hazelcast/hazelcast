@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -17,8 +17,11 @@
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.EventTimePolicy;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.KafkaProcessors;
+import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataAvroResolver;
@@ -28,7 +31,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataNullResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolvers;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -41,9 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.EventTimePolicy.noEventTime;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
@@ -122,37 +123,37 @@ public class KafkaSqlConnector implements SqlConnector {
     ) {
         KafkaTable table = (KafkaTable) table0;
 
-        Vertex vStart = dag.newUniqueVertex(
+        return dag.newUniqueVertex(
                 table.toString(),
-                KafkaProcessors.streamKafkaP(
-                        table.kafkaConsumerProperties(),
-                        record -> entry(record.key(), record.value()),
-                        noEventTime(),
-                        table.topicName()
+                ProcessorMetaSupplier.of(
+                        StreamKafkaP.PREFERRED_LOCAL_PARALLELISM,
+                        new RowProjectorProcessorSupplier(
+                                table.kafkaConsumerProperties(),
+                                table.topicName(),
+                                EventTimePolicy.noEventTime(),
+                                table.paths(),
+                                table.types(),
+                                table.keyQueryDescriptor(),
+                                table.valueQueryDescriptor(),
+                                predicate,
+                                projections
+                        )
                 )
         );
-
-        Vertex vEnd = dag.newUniqueVertex(
-                "Project(" + table + ")",
-                KvProcessors.rowProjector(
-                        table.paths(),
-                        table.types(),
-                        table.keyQueryDescriptor(),
-                        table.valueQueryDescriptor(),
-                        predicate,
-                        projections
-                )
-        );
-
-        dag.edge(between(vStart, vEnd).isolated());
-        return vEnd;
     }
 
     @Nonnull @Override
-    public Vertex sink(
-            @Nonnull DAG dag,
-            @Nonnull Table table0
-    ) {
+    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return new VertexWithInputConfig(writeProcessor(dag, table));
+    }
+
+    @Nonnull @Override
+    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        return writeProcessor(dag, table);
+    }
+
+    @Nonnull
+    private Vertex writeProcessor(DAG dag, Table table0) {
         KafkaTable table = (KafkaTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(

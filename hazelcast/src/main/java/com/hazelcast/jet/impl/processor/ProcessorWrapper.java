@@ -71,16 +71,16 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
     protected Context initContext(Context context) {
         // Pass a logger with real class name to processor
         // We do this only if context is ProcCtx (that is, not for tests where TestProcessorContext can be used
-        // and also other objects could be mocked or null, such as jetInstance())
+        // and also other objects could be mocked or null, such as hazelcastInstance())
         if (context instanceof ProcCtx) {
             ProcCtx c = (ProcCtx) context;
-            LoggingService loggingService = c.jetInstance().getHazelcastInstance().getLoggingService();
+            LoggingService loggingService = c.hazelcastInstance().getLoggingService();
             String prefix = prefix(c.jobConfig().getName(), c.jobId(), c.vertexName(), c.globalProcessorIndex());
             ILogger newLogger = prefixedLogger(loggingService.getLogger(wrapped.getClass()), prefix);
-            context = new ProcCtx(c.jetInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+            context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
                     newLogger, c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
-                    c.isLightJob(), c.localParallelism(), c.memberIndex(), c.memberCount(), c.tempDirectories(),
-                    c.serializationService());
+                    c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),
+                    c.tempDirectories(), c.serializationService());
         }
         return context;
     }

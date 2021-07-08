@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.MockPMS;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
@@ -50,8 +50,8 @@ public class ClusterStateChangeTest extends JetTestSupport {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    private JetInstance[] members;
-    private JetInstance jet;
+    private HazelcastInstance[] members;
+    private HazelcastInstance hz;
     private Cluster cluster;
     private DAG dag;
 
@@ -60,22 +60,22 @@ public class ClusterStateChangeTest extends JetTestSupport {
         TestProcessors.reset(TOTAL_PARALLELISM);
         Config config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
-        members = createJetMembers(config, NODE_COUNT);
+        members = createHazelcastInstances(config, NODE_COUNT);
 
         assertTrueEventually(() -> {
-            for (JetInstance instance : members) {
-                assertClusterSizeEventually(NODE_COUNT, instance.getHazelcastInstance());
+            for (HazelcastInstance instance : members) {
+                assertClusterSizeEventually(NODE_COUNT, instance);
             }
         });
 
-        for (JetInstance member : members) {
+        for (HazelcastInstance member : members) {
             if (!getNodeEngineImpl(member).getClusterService().isMaster()) {
-                jet = member;
+                hz = member;
                 break;
             }
         }
 
-        cluster = jet.getCluster();
+        cluster = hz.getCluster();
         dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(NoOutputSourceP::new, NODE_COUNT))));
     }
@@ -86,13 +86,13 @@ public class ClusterStateChangeTest extends JetTestSupport {
         assertEquals("Cluster state", PASSIVE, cluster.getClusterState());
 
         thrown.expect(IllegalStateException.class);
-        jet.newJob(dag);
+        hz.getJet().newJob(dag);
     }
 
     @Test
     public void when_enterPassiveState_then_executionTerminated() throws Exception {
         // Given
-        Job job = jet.newJob(dag);
+        Job job = hz.getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
 
         // When
@@ -108,7 +108,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     @Test
     public void when_goPassiveAndBack_then_jobResumes() throws Exception {
         // Given
-        jet.newJob(dag);
+        hz.getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
 
         // When

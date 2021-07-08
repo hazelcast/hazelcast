@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <T> type of the request object
  * @param <R> type of the response object
  *
- * @since 4.1
+ * @since Jet 4.1
  */
 @FunctionalInterface
 public interface GrpcService<T, R> {

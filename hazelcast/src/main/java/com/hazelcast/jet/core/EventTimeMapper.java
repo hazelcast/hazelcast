@@ -123,7 +123,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  *
  * @param <T> the event type
  *
- * @since 3.0
+ * @since Jet 3.0
  */
 public class EventTimeMapper<T> {
 

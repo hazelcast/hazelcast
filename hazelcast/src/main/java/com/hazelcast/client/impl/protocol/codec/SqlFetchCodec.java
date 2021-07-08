@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches the next row page.
  */
-@Generated("0f14f163ec60d295d176e49ce84f97e6")
+@Generated("667f5de463321ccdc77d110498f79389")
 public final class SqlFetchCodec {
     //hex: 0x210500
     public static final int REQUEST_MESSAGE_TYPE = 2163968;
@@ -98,6 +98,7 @@ public final class SqlFetchCodec {
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
+
     public static ClientMessage encodeResponse(@Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -118,5 +119,4 @@ public final class SqlFetchCodec {
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }
-
 }

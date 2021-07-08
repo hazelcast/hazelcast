@@ -48,9 +48,9 @@ methods:
           nullable: false
           since: 2.0
           doc: ''
-        - name: isLightJob
-          type: boolean
-          nullable: false
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
           since: 2.3
           doc: ''
     response: {}
@@ -81,13 +81,23 @@ methods:
     request:
       retryable: true
       partitionIdentifier: -1
-      params: []
+      params:
+        - name: onlyName
+          type: String
+          nullable: true
+          since: 2.3
+          doc: ''
+        - name: onlyJobId
+          type: long
+          nullable: false
+          since: 2.3
+          doc: ''
     response:
       params:
         - name: response
-          type: List_Long
+          type: Data
           nullable: false
-          since: 2.0
+          since: 2.3
           doc: ''
   - id: 5
     name: joinSubmittedJob
@@ -102,27 +112,12 @@ methods:
           nullable: false
           since: 2.0
           doc: ''
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
+          since: 2.3
+          doc: ''
     response: {}
-  - id: 6
-    name: getJobIdsByName
-    since: 2.0
-    doc: ''
-    request:
-      retryable: true
-      partitionIdentifier: -1
-      params:
-        - name: name
-          type: String
-          nullable: false
-          since: 2.0
-          doc: ''
-    response:
-      params:
-        - name: response
-          type: List_Long
-          nullable: false
-          since: 2.0
-          doc: ''
   - id: 7
     name: getJobSubmissionTime
     since: 2.0
@@ -135,6 +130,11 @@ methods:
           type: long
           nullable: false
           since: 2.0
+          doc: ''
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
+          since: 2.3
           doc: ''
     response:
       params:

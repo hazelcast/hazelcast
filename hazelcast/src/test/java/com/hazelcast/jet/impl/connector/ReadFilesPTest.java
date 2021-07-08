@@ -72,7 +72,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file2 = new File(directory, randomName());
         appendToFile(file2, "hello2", "world2");
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(4, list.size());
 
@@ -87,7 +87,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         final int listLength = 10000;
         appendToFile(file1, IntStream.range(0, listLength).mapToObj(String::valueOf).toArray(String[]::new));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(listLength, list.size());
 
@@ -103,7 +103,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file2 = new File(directory, "file2.txt");
         appendToFile(file2, "hello2", "world2");
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(Arrays.asList(entry("file2.txt", "hello2"), entry("file2.txt", "world2")), new ArrayList<>(list));
 
@@ -117,7 +117,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File file1 = new File(directory, randomName());
         assertTrue(file1.mkdir());
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(0, list.size());
 
@@ -148,7 +148,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(false);
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(4, listJson.size());
         TestPerson testPerson = (TestPerson) listJson.get(0);
@@ -161,7 +161,7 @@ public class ReadFilesPTest extends SimpleTestInClusterSupport {
         File[] jsonFiles = createJsonFiles(prettyPrinted);
 
         Pipeline p = pipelineJson(true);
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         assertEquals(4, listJson.size());
         Map<String, Object> testPersonMap = (Map) listJson.get(0);

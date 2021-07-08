@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
@@ -71,14 +71,14 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationFromNodeToClient() {
         // create one member and one client
-        createJetMember();
-        JetInstance client = createJetClient();
+        createHazelcastInstance();
+        HazelcastInstance client = createHazelcastClient();
 
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
-            client.newJob(dag).join();
+            client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertContains(caught.toString(), exc.toString());
         }
@@ -87,13 +87,14 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void test_serializationOnNode() {
         // create one member and one client
-        JetInstance client = createJetMember();
+        createHazelcastInstance();
+        HazelcastInstance client = createHazelcastClient();
 
         RuntimeException exc = new RuntimeException("myException");
         try {
             DAG dag = new DAG();
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
-            client.newJob(dag).join();
+            client.getJet().newJob(dag).join();
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
         }

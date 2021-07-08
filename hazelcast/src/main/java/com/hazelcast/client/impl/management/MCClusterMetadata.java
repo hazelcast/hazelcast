@@ -22,7 +22,6 @@ public class MCClusterMetadata {
     private ClusterState currentState;
     private long clusterTime;
     private String memberVersion;
-    private String jetVersion;
 
     public ClusterState getCurrentState() {
         return currentState;
@@ -46,13 +45,5 @@ public class MCClusterMetadata {
 
     public void setMemberVersion(String memberVersion) {
         this.memberVersion = memberVersion;
-    }
-
-    public String getJetVersion() {
-        return jetVersion;
-    }
-
-    public void setJetVersion(String jetVersion) {
-        this.jetVersion = jetVersion;
     }
 }

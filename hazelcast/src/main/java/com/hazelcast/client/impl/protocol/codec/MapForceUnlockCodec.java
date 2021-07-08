@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
  * never blocks,and returns immediately.
  */
-@Generated("4d7982ea61638c99914f07b6130c54d9")
+@Generated("631790efd10c9fe5b41e023d52808479")
 public final class MapForceUnlockCodec {
     //hex: 0x013300
     public static final int REQUEST_MESSAGE_TYPE = 78592;
@@ -101,6 +101,4 @@ public final class MapForceUnlockCodec {
 
         return clientMessage;
     }
-
-
 }

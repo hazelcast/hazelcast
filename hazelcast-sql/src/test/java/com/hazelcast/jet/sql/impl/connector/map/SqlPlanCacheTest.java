@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -100,6 +100,25 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         instance().getMap("map").put(1, "1");
+        sqlService.execute("DROP MAPPING map");
+        assertThat(planCache(instance()).size()).isZero();
+    }
+
+    @Test
+    public void test_dmlCaching() {
+        createMapping("map", "m", "id", PersonId.class, "varchar");
+        sqlService.execute("INSERT INTO map VALUES(0, 'value-0')");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
+        assertThat(planCache(instance()).size()).isEqualTo(2);
+
+        sqlService.execute("UPDATE map SET this = 'value-1' WHERE id = 0");
+        assertThat(planCache(instance()).size()).isEqualTo(3);
+
+        sqlService.execute("DELETE FROM map WHERE id = 0");
+        assertThat(planCache(instance()).size()).isEqualTo(4);
+
         sqlService.execute("DROP MAPPING map");
         assertThat(planCache(instance()).size()).isZero();
     }

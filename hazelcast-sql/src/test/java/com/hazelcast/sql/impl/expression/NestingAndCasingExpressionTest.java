@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -35,6 +35,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.fail;
 
@@ -125,32 +126,32 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
 
     @Test
     public void test_EQUALS() {
-        check(sql("(1=?) || (1=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) = ?) || (1 = CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_NOT_EQUALS() {
-        check(sql("(1!=?) || (1!=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) != ?) || (1 != CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN() {
-        check(sql("(1>?) || (1>?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) > ?) || (1 > CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_GREATER_THAN_OR_EQUAL() {
-        check(sql("(1>=?) || (1>=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) >= ?) || (1 >= CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN() {
-        check(sql("(1<?) || (1<?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) < ?) || (1 < CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
     public void test_LESS_THAN_OR_EQUAL() {
-        check(sql("(1<=?) || (1<=?)"), 1, 1);
+        check(sql("(CAST(1 AS INT) <= ?) || (1 <= CAST(? AS TINYINT))"), 1, 1);
     }
 
     @Test
@@ -466,14 +467,23 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         check(sql("COALESCE('1', ?) || COALESCE('2', ?)"), "1", "2");
     }
 
+    @Test
+    public void test_TO_TIMESTAMP_TZ() {
+        check(sql("TO_TIMESTAMP_TZ(?) || TO_TIMESTAMP_TZ(?)"), 1L, 1L);
+    }
+
+    public void test_TO_EPOCH_MILLIS() {
+        check(sql("TO_EPOCH_MILLIS(?) || TO_EPOCH_MILLIS(?)"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
-        checkValue0(sql.toLowerCase(), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
+        checkValue0(lowerCaseInternal(sql), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
     }
 
     private void check(String sql, SqlColumnType type, Object... params) {
         checkValue0(sql, type, SKIP_VALUE_CHECK, params);
-        checkValue0(sql.toLowerCase(), type, SKIP_VALUE_CHECK, params);
+        checkValue0(lowerCaseInternal(sql), type, SKIP_VALUE_CHECK, params);
     }
 
     private String sql(String expression) {
