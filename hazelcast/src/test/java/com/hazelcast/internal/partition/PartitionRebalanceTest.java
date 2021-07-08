@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.assertAllPartitionsBelongTo;
 import static com.hazelcast.internal.partition.TestPartitionUtils.assertSomePartitionsBelongTo;
-import static com.hazelcast.internal.partition.TestPartitionUtils.dumpPartitionTable;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -144,44 +143,28 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
         instance1 = factory.newHazelcastInstance(getConfig(1000));
         getPartitionService(instance1).firstArrangement();
 
-        AtomicBoolean done = new AtomicBoolean(true);
-
         instance2 = factory.newHazelcastInstance(getConfig(1000));
         assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
         // terminate second member
         instance2.getLifecycleService().terminate();
         sleepSeconds(1);
 
-        try {
-            // when member rejoins, partition rebalancing happens immediately, before configured delay
-            instance2 = factory.newHazelcastInstance(getConfig(1000));
-            assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
-        } finally {
-            done.set(false);
-        }
+        // when member rejoins, partition rebalancing happens immediately, before configured delay
+        instance2 = factory.newHazelcastInstance(getConfig(1000));
+        assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT);
     }
 
-    /** Configuration with manual rebalance mode */
     @Override
     protected Config getConfig() {
         Config config = smallInstanceConfig();
         return config;
     }
 
-    /** Configuration with auto rebalance mode and given rebalance delay */
+    /** Configuration with given rebalance delay */
     protected Config getConfig(int rebalanceDelaySeconds) {
         Config config = smallInstanceConfig()
                 .setProperty(ClusterProperty.PARTITION_REBALANCE_DELAY_SECONDS.getName(), "" + rebalanceDelaySeconds);
         config.getMapConfig("nobackup").setBackupCount(0);
         return config;
-    }
-
-    public static void spawnPartitionTableDumper(HazelcastInstance instance, AtomicBoolean done) {
-        spawn(() -> {
-            while (!done.get()) {
-                sleepMillis(700);
-                System.out.println(">\n" + dumpPartitionTable(getPartitionService(instance).createPartitionTableView()));
-            }
-        });
     }
 }
