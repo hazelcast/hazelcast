@@ -72,7 +72,7 @@ import static java.util.Arrays.asList;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class ConfigXmlGenerator {
 
-    protected static final String MASK_FOR_SENSITIVE_DATA = "****";
+    public static final String MASK_FOR_SENSITIVE_DATA = "****";
 
     private static final int INDENT = 5;
 
