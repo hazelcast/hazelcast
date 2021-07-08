@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.TestProcessors.batchDag;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -33,7 +34,7 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
         HazelcastInstance nonLiteInst = createHazelcastInstance();
         HazelcastInstance liteInst = createHazelcastInstance(smallInstanceConfig().setLiteMember(true));
         // lite members can be coordinators, though they won't execute processors
-        Job job = liteInst.getJet().newLightJob(batchDag());
+        Job job = liteInst.getJet().newLightJob(streamingDag());
 
         assertTrueEventually(() -> assertLightJobExecuting(job, nonLiteInst));
         assertLightJobNotExecuting(job, liteInst);
