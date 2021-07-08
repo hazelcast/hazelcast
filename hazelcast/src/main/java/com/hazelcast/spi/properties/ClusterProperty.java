@@ -655,9 +655,6 @@ public final class ClusterProperty {
      * programmatic termination (eg {@link LifecycleService#terminate()}), a
      * process crash or network partition.
      * Default is 0, which means rebalancing is triggered immediately.
-     * Rebalancing delay is only applied when using the automatic partition
-     * rebalancing mode. When in manual mode, explicit user trigger is required
-     * to initiate partition rebalancing and it will not be subject to delay.
      *
      * Setting this to a higher value will allow some time for members that are gone
      * to rejoin the cluster. The benefit is that partition rebalancing in this
@@ -667,7 +664,8 @@ public final class ClusterProperty {
      * the member rejoins or operation timeout is exceeded.
      * Notice that this delay only applies when cluster members leave the cluster;
      * when the cluster is being scaled up and members are being added, partition
-     * rebalancing will be triggered immediately (assuming automatic rebalancing).
+     * rebalancing will be triggered immediately (subject to limitations imposed
+     * by current {@link com.hazelcast.cluster.ClusterState}).
      */
     public static final HazelcastProperty PARTITION_REBALANCE_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.partition.rebalance.delay.seconds", 0, SECONDS);
