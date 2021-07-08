@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.config.IndexType;
+import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -46,9 +49,9 @@ import org.apache.calcite.rex.RexNode;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Map index scan operator.
@@ -85,11 +88,16 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
         return indexFilter;
     }
 
-    public List<FieldCollation> getCollations() {
-        RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        return relCollation.getFieldCollations().stream()
-                .map(FieldCollation::new)
-                .collect(Collectors.toList());
+    public ComparatorEx<Object[]> getComparator() {
+        if (index.getType() == IndexType.SORTED) {
+            RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+            List<FieldCollation> collations = relCollation.getFieldCollations().stream()
+                    .map(FieldCollation::new)
+                    .collect(toList());
+            return ExpressionUtil.comparisonFn(collations);
+        } else {
+            return null;
+        }
     }
 
     public boolean isDescending() {
