@@ -50,7 +50,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {

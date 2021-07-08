@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BiPredicateEx;
 import com.hazelcast.function.ComparatorEx;
@@ -144,6 +145,9 @@ public class CreateDagVisitor {
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
+        ComparatorEx<Object[]> comparator = rel.getIndex().getType() == IndexType.SORTED
+                ? ExpressionUtil.comparisonFn(rel.getCollations())
+                : null;
 
         return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
                 .indexScanReader(
@@ -153,10 +157,9 @@ public class CreateDagVisitor {
                         rel.getIndex(),
                         rel.filter(parameterMetadata),
                         rel.projection(parameterMetadata),
-                        rel.fullProjection(parameterMetadata),
                         rel.getIndexFilter(),
-                        ExpressionUtil.comparisonFn(rel.getCollations()),
-                        rel.determineSortOrder()
+                        comparator,
+                        rel.isDescending()
                 );
     }
 

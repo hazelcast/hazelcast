@@ -48,11 +48,13 @@ import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -94,9 +96,10 @@ public final class MapIndexScanP extends AbstractProcessor {
     private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
 
     private final ArrayList<Split> splits = new ArrayList<>();
+    private final Queue<Object[]> itemsToSend = new ArrayDeque<>();
     private MapScanRow row;
-    private Object[] lastSentItem;
     private Object[] pendingItem;
+    private boolean isIndexSorted;
 
     public MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         this.metadata = indexScanMetadata;
@@ -125,19 +128,55 @@ public final class MapIndexScanP extends AbstractProcessor {
                 Extractors.newBuilder(evalContext.getSerializationService()).build(),
                 evalContext.getSerializationService()
         );
+        isIndexSorted = metadata.getComparator() != null;
     }
 
     @SuppressWarnings({"SingleStatementInBlock"})
     @Override
     public boolean complete() {
-        // Loop for as long as we can.
+        return isIndexSorted ? runSortedIndex() : runHashIndex();
+    }
+
+    private boolean runHashIndex() {
+        for (; ; ) {
+            while (!itemsToSend.isEmpty()) {
+                Object[] item = itemsToSend.poll();
+                if (!tryEmit(item)) {
+                    itemsToSend.offer(item);
+                    return false;
+                }
+            }
+
+            for (int i = 0; i < splits.size(); ++i) {
+                Split s = splits.get(i);
+                try {
+                    s.peek();
+                } catch (MissingPartitionException e) {
+                    splits.addAll(splitOnMigration(s));
+                    splits.remove(i--);
+                    continue;
+                }
+                if (s.currentRow == null) {
+                    if (s.done()) {
+                        // No more items to read, remove finished split.
+                        splits.remove(i--);
+                        if (splits.isEmpty()) {
+                            return true;
+                        }
+                    }
+                } else {
+                    itemsToSend.offer(s.currentRow);
+                    splits.get(i).remove();
+                }
+            }
+        }
+    }
+
+    private boolean runSortedIndex() {
         for (; ; ) {
             if (pendingItem != null && !tryEmit(pendingItem)) {
                 return false;
             } else {
-                if (pendingItem != null) {
-                    lastSentItem = pendingItem;
-                }
                 pendingItem = null;
             }
 
@@ -174,12 +213,6 @@ public final class MapIndexScanP extends AbstractProcessor {
             }
 
             pendingItem = extreme;
-            if (lastSentItem != null) {
-                assert ((Comparable) pendingItem[1]).compareTo(lastSentItem[1]) ==
-                        metadata.getComparator().compare(pendingItem, lastSentItem) :
-                        "seen : " + pendingItem[3] + ", last sent : " + lastSentItem[3] + ", " +
-                                "bytes value : " + pendingItem[16] + ", last sent : " + lastSentItem[16];
-            }
             splits.get(extremeIndex).remove();
         }
     }
@@ -214,16 +247,16 @@ public final class MapIndexScanP extends AbstractProcessor {
         return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 
-    private Object[] doFullProjectionAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+    private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         if (metadata.getRemainingFilter() != null
                 && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {
             return null;
         }
 
-        Object[] row = new Object[metadata.getFullProjection().size()];
-        for (int j = 0; j < metadata.getFullProjection().size(); j++) {
-            row[j] = evaluate(metadata.getFullProjection().get(j), this.row, evalContext);
+        Object[] row = new Object[metadata.getProjection().size()];
+        for (int j = 0; j < metadata.getProjection().size(); j++) {
+            row[j] = evaluate(metadata.getProjection().get(j), this.row, evalContext);
         }
         return row;
     }
@@ -284,7 +317,7 @@ public final class MapIndexScanP extends AbstractProcessor {
             while (currentRow == null && currentBatchPosition < currentBatch.size()) {
                 // Sometimes scan query may not include indexed field.
                 // So, additional projection is required to ability to merge-sort an output.
-                currentRow = doFullProjectionAndFilter(currentBatch.get(currentBatchPosition));
+                currentRow = projectAndFilter(currentBatch.get(currentBatchPosition));
                 if (currentRow == null) {
                     currentBatchPosition++;
                 }
