@@ -146,7 +146,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
         SqlClientService clientService = (SqlClientService) client.getSql();
 
-        ClientConnection connection = clientService.getRandomConnection();
+        ClientConnection connection = clientService.getQueryConnection();
 
         // Get the first page through the "execute" request
         QueryId queryId = QueryId.create(connection.getRemoteUuid());
