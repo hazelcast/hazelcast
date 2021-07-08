@@ -10,21 +10,22 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo
     echo "Parameters:"
     echo "  -o, --operation    : Specifies the operation to perform, one of 'get-state', 'change-state',"
-    echo "                       'shutdown', 'force-start', 'get-cluster-version', 'change-cluster-version'."
-    echo "  -s, --state        : Changes the cluster state. Valid states: 'active', 'frozen', 'passive'."
+    echo "                       'shutdown', 'force-start', 'partial-start', 'get-cluster-version',"
+    echo "                       'change-cluster-version'."
+    echo "  -s, --state        : Changes the cluster state. Valid states: 'active', 'frozen', 'passive', 'no_migration'."
     echo "  -a, --address      : IP address to connect to. The default is 127.0.0.1."
     echo "  -p, --port         : TCP port to connect to. The default is 5701."
-    echo "  -c, --cluster-name : The name of the cluster. The default is 'dev'."
-    echo "  -P, --password     : The password of the cluster. The default is 'hz-pass'."
-    echo "  -d, --debug        : Show verbose output from curl"
+    echo "  -c, --clustername : The name of the cluster. The default is 'dev'."
+    echo "  -P, --password     : The password of the cluster. The default is 'dev-pass'."
     echo "  -v, --version      : The cluster version to change to. To be used with '-o change-cluster-version'."
+    echo "  -d, --debug        : Show verbose output from curl"
     echo
     echo "HTTPS-related (relevant only when TLS is enabled on the Hazelcast cluster):"
     echo "      --https        : Use the HTTPS protocol for REST calls."
-    echo "      --insecure     : Disable member certificate verification."
-    echo "      --ca-cert      : Path to the trusted PEM-encoded certificate, used to verify member certificates."
+    echo "      --cacert       : Path to the trusted PEM-encoded certificate, used to verify member certificates."
     echo "      --cert         : Path to the PEM-encoded client certificate. Needed for client certificate authentication."
     echo "      --key          : Path to the PEM-encoded client private key. Needed for client certificate authentication."
+    echo "      --insecure     : Disable member certificate verification."
     exit 0
 fi
 
@@ -51,8 +52,8 @@ case "$key" in
     PORT="$2"
     shift
     ;;
-    -c|--cluster-name)
-    CLUSTER_NAME="$2"
+    -c|--clustername)
+    CLUSTERNAME="$2"
     shift
     ;;
     -P|--password)
@@ -77,7 +78,7 @@ case "$key" in
     CURL_ARGS="$CURL_ARGS $1 $2"
     shift
     ;;
-    --ca-cert)
+    --cacert)
     CURL_ARGS="$CURL_ARGS --capath /dev/null $1 $2"
     shift
     ;;
@@ -100,14 +101,14 @@ if [[ -z "$PORT" ]]; then
     PORT="5701"
 fi
 
-if [[ -z "$CLUSTER_NAME" ]]; then
+if [[ -z "$CLUSTERNAME" ]]; then
     echo "No cluster name specified, using 'dev'."
-    CLUSTER_NAME="dev"
+    CLUSTERNAME="dev"
 fi
 
 if [[ -z "$PASSWORD" ]]; then
-    echo "No password specified, using 'hz-pass'."
-    PASSWORD="hz-pass"
+    echo "No password specified, using 'dev-pass'."
+    PASSWORD="dev-pass"
 fi
 
 if [[ -z "$ADDRESS" ]]; then
@@ -122,7 +123,7 @@ make_request () {
     if [[ "$1" = "version" ]] && [[ -z "$2" ]]; then
         RESPONSE=$(${curl_cmd} "$url");
     else
-        local data="${CLUSTER_NAME}&${PASSWORD}"
+        local data="${CLUSTERNAME}&${PASSWORD}"
         if [[ "$2" ]]; then
             data="${data}&$2"
         fi
@@ -146,7 +147,7 @@ make_request () {
         exit 0
     fi
     if [[ "$STATUS" = "forbidden" ]]; then
-        echo "Operation forbidden, wrong group name or password.";
+        echo "Operation forbidden, wrong cluster name/password (or username/password combination when the Hazelcast security is enabled).";
         exit 0
     fi
     if [[ "$STATUS" != "success" ]] && [[ "$STATUS" != "fail" ]]; then
@@ -166,11 +167,11 @@ fi
 
 if [[ "$OPERATION" = "change-state" ]]; then
     if [[ -z "$DESIRED_STATE" ]]; then
-        echo "Please specify the desired new cluster state: --state 'active' | 'frozen' | 'passive'"
+        echo "Please specify the desired new cluster state: --state 'active' | 'no_migration' | 'frozen' | 'passive'"
         exit 0
     fi
-    if [[ "$DESIRED_STATE" != "frozen" ]] && [[ "$DESIRED_STATE" != "active" ]] && [[ "$DESIRED_STATE" != "passive" ]]; then
-        echo "$DESIRED_STATE is not a valid cluster state, must be one of 'active', 'frozen' or 'passive'"
+    if [[ "$DESIRED_STATE" != "frozen" ]] && [[ "$DESIRED_STATE" != "active" ]] && [[ "$DESIRED_STATE" != "no_migration" ]]  && [[ "$DESIRED_STATE" != "passive" ]]; then
+        echo "$DESIRED_STATE is not a valid cluster state, must be one of 'active', 'frozen', 'passive' or 'no_migration'"
         exit 0
     fi
     echo "Changing cluster state to ${DESIRED_STATE}"
