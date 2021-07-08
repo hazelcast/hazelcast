@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -113,7 +114,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
                 return false;
             }
 
-            Entry<Object, Object> entry = projector.project((Object[]) row);
+            Entry<Object, Object> entry = projector.project((JetSqlRow) row);
             if (entry.getKey() == null) {
                 throw QueryException.error("Key cannot be null");
             }

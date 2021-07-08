@@ -40,6 +40,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -93,7 +94,11 @@ public class ExpressionUtilTest {
     private void test_join(Expression<Boolean> predicate, Object[] leftRow, Object[] rightRow, Object[] expected) {
         JetSqlRow joined = ExpressionUtil.join(new JetSqlRow(leftRow), new JetSqlRow(rightRow), predicate, mock(ExpressionEvalContext.class));
 
-        assertThat(joined.getValues()).isEqualTo(expected);
+        if (expected == null) {
+            assertNull(joined);
+        } else {
+            assertThat(joined.getValues()).isEqualTo(expected);
+        }
     }
 
     @Test

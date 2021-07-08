@@ -27,6 +27,7 @@ import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
@@ -146,7 +147,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
         @Override
         public Object process(Map.Entry<Object, Object> entry) {
-            Object[] row = rowProjector.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+            JetSqlRow row = rowProjector.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
             Object value = valueProjector.get(evalContext).project(row);
             if (value == null) {
                 throw QueryException.error("Cannot assign null to value");

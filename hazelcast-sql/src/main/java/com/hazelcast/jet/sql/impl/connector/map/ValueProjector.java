@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -76,8 +77,8 @@ class ValueProjector {
         return injectors;
     }
 
-    Object project(Object[] values) {
-        HeapRow row = new HeapRow(values);
+    Object project(JetSqlRow values) {
+        HeapRow row = new HeapRow(values.getValues());
         target.init();
         for (int i = 0; i < injectors.length; i++) {
             Object projected = evaluate(projection.get(i), row, evalContext);

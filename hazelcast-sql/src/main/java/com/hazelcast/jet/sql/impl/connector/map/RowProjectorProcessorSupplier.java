@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -65,9 +66,9 @@ public final class RowProjectorProcessorSupplier implements ProcessorSupplier, D
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            ResettableSingletonTraverser<Object[]> traverser = new ResettableSingletonTraverser<>();
+            ResettableSingletonTraverser<JetSqlRow> traverser = new ResettableSingletonTraverser<>();
             KvRowProjector projector = projectorSupplier.get(evalContext, extractors);
-            Processor processor = new TransformP<Map.Entry<Object, Object>, Object[]>(entry -> {
+            Processor processor = new TransformP<Map.Entry<Object, Object>, JetSqlRow>(entry -> {
                 traverser.accept(projector.project(entry.getKey(), entry.getValue()));
                 return traverser;
             });

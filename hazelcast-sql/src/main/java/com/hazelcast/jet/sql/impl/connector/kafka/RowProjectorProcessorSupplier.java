@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -50,7 +51,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     private Properties properties;
     private String topic;
-    private EventTimePolicy<Object[]> eventTimePolicy;
+    private EventTimePolicy<JetSqlRow> eventTimePolicy;
     private KvRowProjector.Supplier projectorSupplier;
 
     private transient ExpressionEvalContext evalContext;
@@ -63,7 +64,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     RowProjectorProcessorSupplier(
             Properties properties,
             String topic,
-            EventTimePolicy<Object[]> eventTimePolicy,
+            EventTimePolicy<JetSqlRow> eventTimePolicy,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,

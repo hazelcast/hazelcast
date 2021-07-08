@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
+import com.hazelcast.jet.sql.impl.processors.JetSqlRow;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -53,7 +54,7 @@ public class ValueProjectorTest {
                 mock(ExpressionEvalContext.class)
         );
 
-        Object value = projector.project(new Object[]{1});
+        Object value = projector.project(new JetSqlRow(new Object[]{1}));
 
         assertThat(value).isEqualTo(2L);
     }
