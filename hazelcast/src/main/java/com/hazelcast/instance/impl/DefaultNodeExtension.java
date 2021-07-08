@@ -24,10 +24,10 @@ import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -165,8 +165,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     private void checkPersistenceAllowed() {
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
-        if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
+        PersistenceConfig persistenceConfig = node.getConfig().getPersistenceConfig();
+        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
             }
