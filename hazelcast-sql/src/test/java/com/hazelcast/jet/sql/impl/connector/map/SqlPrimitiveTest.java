@@ -302,6 +302,22 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
+                "INSERT INTO " + name + " (this, __key) VALUES ('1', 1)",
+                createMap(1, "1")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "1"))
+        );
+    }
+
+    @Test
+    public void when_insertMultipleEntries() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertMapEventually(
+                name,
                 "INSERT INTO " + name + " (this, __key) VALUES ('1', 1), ('2', 2)",
                 createMap(1, "1", 2, "2")
         );
@@ -321,6 +337,16 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2')"))
+                .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
+    public void when_insertMultipleEntriesAndKeyAlreadyExists_then_fail() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2'), (2, '2')"))
                 .hasMessageContaining("Duplicate key");
     }
 

@@ -40,6 +40,8 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class ExpressionValues implements Serializable {
 
+    public abstract int size();
+
     public abstract List<Object[]> toValues(ExpressionEvalContext context);
 
     /**
@@ -54,6 +56,11 @@ public abstract class ExpressionValues implements Serializable {
             this.expressions = tuples.stream()
                     .map(tuple -> tuple.stream().map(RexToExpression::convertLiteral).collect(toList()))
                     .collect(toList());
+        }
+
+        @Override
+        public int size() {
+            return expressions.size();
         }
 
         @Override
@@ -94,6 +101,11 @@ public abstract class ExpressionValues implements Serializable {
             this.predicate = filter == null ? null : (Expression<Boolean>) filter.accept(converter);
             this.projection = project == null ? null : toList(project, node -> node.accept(converter));
             this.values = values;
+        }
+
+        @Override
+        public int size() {
+            return values.stream().mapToInt(ExpressionValues::size).sum();
         }
 
         @Override

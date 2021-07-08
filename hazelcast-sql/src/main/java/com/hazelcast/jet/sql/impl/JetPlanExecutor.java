@@ -17,12 +17,12 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -32,11 +32,13 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -49,17 +51,20 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -234,14 +239,44 @@ public class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
-    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
+        String mapName = plan.mapName();
+        Function<ExpressionEvalContext, Entry<Object, Object>> entryFn = plan.entryFn();
+
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        Entry<Object, Object> entry = entryFn.apply(
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
+        );
+        CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(mapName))
+                .putIfAbsentAsync(entry.getKey(), entry.getValue())
+                .toCompletableFuture();
+        try {
+            Object previous;
+            if (timeout > 0) {
+                previous = future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                previous = future.get();
+            }
+            if (previous != null) {
+                throw QueryException.error("Duplicate key");
+            }
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while inserting entry");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
+        return SqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         String mapName = plan.mapName();
         Expression<?> keyCondition = plan.keyCondition();
 
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         Object key = keyCondition.eval(
                 EmptyRow.INSTANCE,
-                new SimpleExpressionEvalContext(args, ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService())
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
         );
         CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
