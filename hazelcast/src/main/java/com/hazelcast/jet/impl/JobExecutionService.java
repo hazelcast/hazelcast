@@ -206,7 +206,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
-    Collection<ExecutionContext> getExecutionContexts() {
+    public Collection<ExecutionContext> getExecutionContexts() {
         return executionContexts.values();
     }
 
