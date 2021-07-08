@@ -52,7 +52,6 @@ import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
@@ -786,7 +785,7 @@ public final class JetIndexResolver {
 
         // Prepare table
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = getHazelcastTable(scan);
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
         RelOptTable newRelTable = createRelTable(
                 originalRelTable,
@@ -881,7 +880,7 @@ public final class JetIndexResolver {
 
         RexNode scanFilter = scan.table().getFilter();
 
-        RelTraitSet traitSet = scan.getTraitSet();
+        RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet());
 
         RelCollation relCollation = buildCollationTrait(scan, index, ascs);
         if (nonEmptyCollation && relCollation.getFieldCollations().size() == 0) {
@@ -891,20 +890,17 @@ public final class JetIndexResolver {
         traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = getHazelcastTable(scan);
+        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
 
-        RelOptTable newRelTable = createRelTable(
-                originalRelTable,
-                originalHazelcastTable.withFilter(null),
+        RelOptTable newRelTable = OptUtils.createRelTable(
+                originalRelTable.getDelegate().getQualifiedName(),
+                originalHazelcastTable,
                 scan.getCluster().getTypeFactory()
         );
 
-        // Create index filter for full scan.
-//        IndexFilter indexFilter = new IndexRangeFilter(null, true, null, true);
-
         return new IndexScanMapPhysicalRel(
                 scan.getCluster(),
-                OptUtils.toPhysicalConvention(traitSet),
+                traitSet,
                 newRelTable,
                 index,
                 null,
@@ -1412,14 +1408,6 @@ public final class JetIndexResolver {
         }
 
         return res;
-    }
-
-    private static HazelcastTable getHazelcastTable(TableScan scan) {
-        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-
-        assert table != null;
-
-        return table;
     }
 
     /**

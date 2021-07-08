@@ -41,6 +41,7 @@ import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -250,6 +251,13 @@ public final class OptUtils {
             QueryParameterMetadata parameterMetadata
     ) {
         return new RexToExpressionVisitor(schema, parameterMetadata);
+    }
+
+    public static HazelcastTable getHazelcastTable(TableScan scan) {
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        assert table != null;
+        return table;
     }
 
     /**

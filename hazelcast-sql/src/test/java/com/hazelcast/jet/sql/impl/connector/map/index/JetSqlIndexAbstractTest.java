@@ -402,7 +402,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
     ) {
         int runId = runIdGen++;
         // TODO: requires Jet parser to be enabled. Uncomment after parser switch.
-        // checkPlan(expectedUseIndex, sql, params);
+        checkPlan(expectedUseIndex, sql, params);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
@@ -474,7 +474,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         if (withIndex) {
             final String indexVertexName = String.format("Index(IMap[partitioned.%s])", mapName);
             final Vertex indexVertexCandidate = dag.getVertex(indexVertexName);
-            assertNotNull(indexVertexCandidate);
+            assertNotNull("Index Scan wasn't triggered", indexVertexCandidate);
             assertInstanceOf(MapIndexScanProcessorMetaSupplier.class, indexVertexCandidate.getMetaSupplier());
 
         } else {
