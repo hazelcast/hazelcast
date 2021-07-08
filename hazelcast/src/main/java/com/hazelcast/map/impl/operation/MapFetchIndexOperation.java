@@ -133,6 +133,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             Data lastEntryKeyData = pointer.getLastEntryKeyData();
 
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
+            boolean isDescendingEntryKeyOrder = isDescendingEntryKey(pointer);
 
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
@@ -145,8 +146,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         QueryableEntry<?, ?> entry = keyEntries.next();
 
                         int comparison = comparator.compare(entry.getKeyData(), lastEntryKeyData);
-                        if (isDescendingEntryKey(pointer)) {
-                            comparison = -comparison;
+                        if (isDescendingEntryKeyOrder) {
+                            comparison = reverse(comparison);
                         }
 
                         if (comparison == 0) {
@@ -298,6 +299,16 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length - pointerIndex];
         System.arraycopy(pointers, pointerIndex, newPointers, 0, newPointers.length);
         return new MapFetchIndexOperationResult(entries, newPointers);
+    }
+
+    private static int reverse(int order) {
+        if (order < 0) {
+            return 1;
+        } else if (order > 0) {
+            return -1;
+        } else {
+            return 0;
+        }
     }
 
     @Override
