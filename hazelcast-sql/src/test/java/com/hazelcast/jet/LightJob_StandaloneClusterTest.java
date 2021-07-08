@@ -36,8 +36,8 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
         // lite members can be coordinators, though they won't execute processors
         Job job = liteInst.getJet().newLightJob(streamingDag());
 
-        assertTrueEventually(() -> assertLightJobExecuting(job, nonLiteInst));
-        assertLightJobNotExecuting(job, liteInst);
+        assertTrueEventually(() -> assertJobExecuting(job, nonLiteInst));
+        assertJobNotExecuting(job, liteInst);
     }
 
     @Test

@@ -374,19 +374,19 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
-     * Asserts that the job {@code job} has an {@link ExecutionContext} on the
+     * Asserts that the {@code job} has an {@link ExecutionContext} on the
      * given {@code instance}.
      */
-    public static void assertLightJobExecuting(Job job, HazelcastInstance instance) {
+    public static void assertJobExecuting(Job job, HazelcastInstance instance) {
         ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
         assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
     }
 
     /**
-     * Asserts that the job {@code job} does not have an {@link
-     * ExecutionContext} on the given {@code instance}.
+     * Asserts that the {@code job} does not have an {@link ExecutionContext}
+     * on the given {@code instance}.
      */
-    public static void assertLightJobNotExecuting(Job job, HazelcastInstance instance) {
+    public static void assertJobNotExecuting(Job job, HazelcastInstance instance) {
         ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
         assertNull("Job should not be executing on member " + instance + ", but is", execCtx);
     }

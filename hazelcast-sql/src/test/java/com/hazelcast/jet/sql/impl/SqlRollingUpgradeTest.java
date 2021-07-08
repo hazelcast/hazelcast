@@ -52,12 +52,12 @@ public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
         // A light job must be submitted to the local member. Since members have different version, the
         // job will run on the submitting member, but must not run on the other member.
         Job job1 = instances()[0].getJet().newLightJob(streamingDag());
-        assertTrueEventually(() -> assertLightJobExecuting(job1, instances()[0]));
-        assertLightJobNotExecuting(job1, instances()[1]);
+        assertTrueEventually(() -> assertJobExecuting(job1, instances()[0]));
+        assertJobNotExecuting(job1, instances()[1]);
 
         Job job2 = instances()[1].getJet().newLightJob(streamingDag());
-        assertTrueEventually(() -> assertLightJobExecuting(job2, instances()[1]));
-        assertLightJobNotExecuting(job2, instances()[0]);
+        assertTrueEventually(() -> assertJobExecuting(job2, instances()[1]));
+        assertJobNotExecuting(job2, instances()[0]);
     }
 
     @Test
