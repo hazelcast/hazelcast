@@ -129,7 +129,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(30, true, 60, false, false);
+        pointers[0] = IndexIterationPointer.create(30, true, 60, false, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 7);
@@ -156,7 +156,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(null, true, 60, false, true);
+        pointers[0] = IndexIterationPointer.create(null, true, 60, false, true, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
@@ -183,7 +183,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(30, true, 60, false, true);
+        pointers[0] = IndexIterationPointer.create(30, true, 60, false, true, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
@@ -215,7 +215,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
                 true,
                 new CompositeValue(new Comparable[] {CompositeValue.POSITIVE_INFINITY, CompositeValue.POSITIVE_INFINITY}),
                 true,
-                false
+                false,
+                null
         );
 
         MapOperationProvider operationProvider = getOperationProvider(map);
@@ -245,7 +246,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(null, true, null, true, false);
+        pointers[0] = IndexIterationPointer.create(null, true, null, true, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 20);
@@ -276,9 +277,9 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[3];
-        pointers[0] = IndexIterationPointer.create(30, true, 30, true, false);
-        pointers[1] = IndexIterationPointer.create(39, true, 39, true, false);
-        pointers[2] = IndexIterationPointer.create(45, true, 45, true, false);
+        pointers[0] = IndexIterationPointer.create(30, true, 30, true, false, null);
+        pointers[1] = IndexIterationPointer.create(39, true, 39, true, false, null);
+        pointers[2] = IndexIterationPointer.create(45, true, 45, true, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, hashIndexName, pointers, partitions, 10);
@@ -304,8 +305,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
-        pointers[0] = IndexIterationPointer.create(30, true, 40, true, false);
-        pointers[1] = IndexIterationPointer.create(50, true, 60, true, false);
+        pointers[0] = IndexIterationPointer.create(30, true, 40, true, false, null);
+        pointers[1] = IndexIterationPointer.create(50, true, 60, true, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
@@ -327,8 +328,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
-        pointers[0] = IndexIterationPointer.create(30, true, 50, false, false);
-        pointers[1] = IndexIterationPointer.create(50, true, 60, true, false);
+        pointers[0] = IndexIterationPointer.create(30, true, 50, false, false, null);
+        pointers[1] = IndexIterationPointer.create(50, true, 60, true, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
@@ -372,8 +373,8 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         PartitionIdSet partitions = getLocalPartitions(instance);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[2];
-        pointers[0] = IndexIterationPointer.create(50, true, 60, true, true);
-        pointers[1] = IndexIterationPointer.create(30, true, 50, false, true);
+        pointers[0] = IndexIterationPointer.create(50, true, 60, true, true, null);
+        pointers[1] = IndexIterationPointer.create(30, true, 50, false, true, null);
 
 
         MapOperationProvider operationProvider = getOperationProvider(map);
@@ -435,7 +436,7 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         insertIntoMap(map, people);
 
         IndexIterationPointer[] pointers = new IndexIterationPointer[1];
-        pointers[0] = IndexIterationPointer.create(10, true, 100, true, false);
+        pointers[0] = IndexIterationPointer.create(10, true, 100, true, false, null);
 
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 10);
