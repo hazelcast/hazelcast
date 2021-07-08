@@ -75,9 +75,6 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction AVRO_FILE = new FileTableFunction("AVRO_FILE", AvroFileFormat.FORMAT_AVRO);
     public static final SqlFunction PARQUET_FILE = new FileTableFunction("PARQUET_FILE", ParquetFileFormat.FORMAT_PARQUET);
 
-    public static final SqlPostfixOperator NULLS_FIRST = HazelcastDescOperator.NULLS_FIRST;
-    public static final SqlPostfixOperator NULLS_LAST = HazelcastDescOperator.NULLS_LAST;
-
     private static final JetSqlOperatorTable INSTANCE = new JetSqlOperatorTable();
 
     static {
