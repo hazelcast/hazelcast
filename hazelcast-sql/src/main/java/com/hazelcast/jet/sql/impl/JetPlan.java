@@ -26,6 +26,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -35,6 +36,7 @@ import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
 import java.security.Permission;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -627,6 +629,73 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    static class IMapDeletePlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Expression<?> keyCondition;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapDeletePlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Expression<?> keyCondition,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.keyCondition = keyCondition;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Expression<?> keyCondition() {
+            return keyCondition;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            for (Permission permission : permissions) {
+                context.checkPermission(permission);
+            }
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, arguments, timeout);
         }
     }
 
