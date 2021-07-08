@@ -186,6 +186,23 @@ will check if some of the principals has access to the objects
 referenced in the query. If this collection is empty, the query will be
 rejected (no access to anything).
 
+### Partition assignment
+
+Before, the partition assignment for the job always mirrored the
+assignment for the cluster. That means, the `partitioned` edges sent
+objects with a particular partitioning key to the same member where that
+partitioning key would be located in an IMap. Therefore, processors
+accessing HZ data structures were assigned partitions that were local.
+
+However, this wasn't a strict requirement and only was true initially.
+After a partition migration, the job was able to continue to run - just
+the operations to HZ data structure became remote.
+
+For rolling upgrades, if the job runs on a subset of members, we can't
+match the partition table for the job even initially. This means
+somewhat reduced performance because part of the operations will be
+remote, but the correctness of results will be preserved.
+
 ## Implementation parts
 
 The implementation will be split into 3 parts:
