@@ -145,8 +145,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
 
         // Ordering
-        SUPPORTED_KINDS.add(SqlKind.NULLS_FIRST);
-        SUPPORTED_KINDS.add(SqlKind.NULLS_LAST);
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
 
         // Supported operators

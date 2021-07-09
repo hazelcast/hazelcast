@@ -18,8 +18,8 @@ package com.hazelcast.spring.hotrestart;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EncryptionAtRestConfig;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.JavaKeyStoreSecureStoreConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -30,34 +30,34 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.annotation.Resource;
 import java.io.File;
 
-import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
+import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"hot-restart-encryption-keystore-applicationContext-hazelcast.xml"})
+@ContextConfiguration(locations = {"persistence-encryption-keystore-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestHotRestartEncryptionKeyStoreApplicationContext {
+public class TestPersistenceEncryptionKeyStoreApplicationContext {
 
     @Resource(name = "theConfig")
     private Config config;
 
     @Test
-    public void testHotRestart() {
-        File dir = new File("/mnt/hot-restart/");
-        File hotBackupDir = new File("/mnt/hot-backup/");
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+    public void testPersistence() {
+        File dir = new File("/mnt/persistence/");
+        File hotBackupDir = new File("/mnt/persistence-backup/");
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
-        assertFalse(hotRestartPersistenceConfig.isEnabled());
-        assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
-        assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
-        assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
-        assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
-        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
-        assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
-        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertFalse(persistenceConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(hotBackupDir.getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
+        assertEquals(1111, persistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, persistenceConfig.getDataLoadTimeoutSeconds());
+        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(persistenceConfig.isAutoRemoveStaleData());
+        EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertNotNull(encryptionAtRestConfig);
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());

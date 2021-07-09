@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -30,10 +31,12 @@ import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -45,25 +48,31 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.singletonList;
 
-class JetPlanExecutor {
+public class JetPlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
     private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
 
-    JetPlanExecutor(
+    public JetPlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
             Map<Long, JetQueryResultProducer> resultConsumerRegistry
@@ -222,6 +231,33 @@ class JetPlanExecutor {
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
+        return SqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        String mapName = plan.mapName();
+        Expression<?> keyCondition = plan.keyCondition();
+
+        Object key = keyCondition.eval(
+                EmptyRow.INSTANCE,
+                new SimpleExpressionEvalContext(args, ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService())
+        );
+        CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
+                .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
+                .toCompletableFuture();
+        try {
+            if (timeout > 0) {
+                future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while deleting an entry");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
         return SqlResultImpl.createUpdateCountResult(0);
     }
 

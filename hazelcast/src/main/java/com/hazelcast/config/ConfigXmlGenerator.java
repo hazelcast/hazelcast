@@ -160,7 +160,7 @@ public class ConfigXmlGenerator {
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
-        hotRestartXmlGenerator(gen, config);
+        persistenceXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
@@ -1011,6 +1011,12 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
+    private static void appendDataPersistenceConfig(XmlGenerator gen, DataPersistenceConfig p) {
+        gen.open("data-persistence", "enabled", p != null && p.isEnabled())
+                .node("fsync", p != null && p.isFsync())
+                .close();
+    }
+
     private static void appendEventJournalConfig(XmlGenerator gen, EventJournalConfig c) {
         gen.open("event-journal", "enabled", c.isEnabled())
                 .node("capacity", c.getCapacity())
@@ -1467,24 +1473,24 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private void hotRestartXmlGenerator(XmlGenerator gen, Config config) {
-        HotRestartPersistenceConfig hrCfg = config.getHotRestartPersistenceConfig();
-        if (hrCfg == null) {
-            gen.node("hot-restart-persistence", "enabled", "false");
+    private void persistenceXmlGenerator(XmlGenerator gen, Config config) {
+        PersistenceConfig prCfg = config.getPersistenceConfig();
+        if (prCfg == null) {
+            gen.node("persistence", "enabled", "false");
             return;
         }
-        gen.open("hot-restart-persistence", "enabled", hrCfg.isEnabled())
-                .node("base-dir", hrCfg.getBaseDir().getAbsolutePath());
-        if (hrCfg.getBackupDir() != null) {
-            gen.node("backup-dir", hrCfg.getBackupDir().getAbsolutePath());
+        gen.open("persistence", "enabled", prCfg.isEnabled())
+                .node("base-dir", prCfg.getBaseDir().getAbsolutePath());
+        if (prCfg.getBackupDir() != null) {
+            gen.node("backup-dir", prCfg.getBackupDir().getAbsolutePath());
         }
-        gen.node("parallelism", hrCfg.getParallelism())
-                .node("validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds())
-                .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
-                .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData());
+        gen.node("parallelism", prCfg.getParallelism())
+                .node("validation-timeout-seconds", prCfg.getValidationTimeoutSeconds())
+                .node("data-load-timeout-seconds", prCfg.getDataLoadTimeoutSeconds())
+                .node("cluster-data-recovery-policy", prCfg.getClusterDataRecoveryPolicy())
+                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData());
 
-        encryptionAtRestXmlGenerator(gen, hrCfg.getEncryptionAtRestConfig());
+        encryptionAtRestXmlGenerator(gen, prCfg.getEncryptionAtRestConfig());
         gen.close();
     }
 

@@ -17,12 +17,14 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +52,17 @@ public class SqlDeleteTest extends SqlTestSupport {
 
         put(1, 1);
         checkUpdateCount("delete from test_map where __key = this", 0);
+        assertMapDoesNotContainKey(1);
+    }
+
+    @Test
+    public void deleteBySingleKeyExpression() {
+        put(2);
+        checkUpdateCount("delete from test_map where __key = 1 + 1 ", 0);
+        assertMapDoesNotContainKey(2);
+
+        put(1, 1);
+        checkUpdateCount("delete from test_map where __key = this + 0", 0);
         assertMapDoesNotContainKey(1);
     }
 
@@ -122,6 +135,11 @@ public class SqlDeleteTest extends SqlTestSupport {
         assertMapContainsKey(name, 1);
         execute("delete from " + name + " where __key = 1");
         assertMapDoesNotContainKey(name, 1);
+
+        instance().getMap(name).put(1, 1);
+        assertMapContainsKey(name, 1);
+        execute("delete from " + name + " where this = 1");
+        assertMapDoesNotContainKey(name, 1);
     }
 
     @Test
@@ -135,6 +153,16 @@ public class SqlDeleteTest extends SqlTestSupport {
         assertMapContainsKey(1);
         assertMapDoesNotContainKey(2);
         assertMapContainsKey(3);
+    }
+
+    @Test
+    public void deleteByComplexKey() {
+        instance().getSql().execute(javaSerializableMapDdl("test_map", PersonId.class, Integer.class));
+        Map<PersonId, Integer> map = instance().getMap("test_map");
+        map.put(new PersonId(1), 1);
+
+        instance().getSql().execute("DELETE FROM test_map WHERE __key = ?", new PersonId(1));
+        assertThat(map).isEmpty();
     }
 
     @Test

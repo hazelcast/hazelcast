@@ -175,12 +175,9 @@ public class JetSqlValidator extends HazelcastSqlValidator {
 
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate update) {
-        SqlNode sourceTable = update.getTargetTable();
-        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
-
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
-        if (validatorTable != null) {
-            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+        Table table = extractTable((SqlIdentifier) update.getTargetTable());
+        if (table != null) {
             SqlConnector connector = getJetSqlConnector(table);
 
             // only tables with primary keys can be updated
@@ -199,6 +196,8 @@ public class JetSqlValidator extends HazelcastSqlValidator {
             selectList.add(SqlValidatorUtil.addAlias(exp, alias));
             ++ordinal;
         }
+
+        SqlNode sourceTable = update.getTargetTable();
         if (update.getAlias() != null) {
             sourceTable = SqlValidatorUtil.addAlias(sourceTable, update.getAlias().getSimple());
         }
@@ -235,28 +234,31 @@ public class JetSqlValidator extends HazelcastSqlValidator {
     }
 
     @Override
-    protected SqlSelect createSourceSelectForDelete(SqlDelete call) {
-        SqlNode sourceTable = call.getTargetTable();
-        SqlValidatorTable validatorTable = getCatalogReader().getTable(((SqlIdentifier) sourceTable).names);
-
+    protected SqlSelect createSourceSelectForDelete(SqlDelete delete) {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
-        if (validatorTable != null) {
-            Table table = validatorTable.unwrap(HazelcastTable.class).getTarget();
+        Table table = extractTable((SqlIdentifier) delete.getTargetTable());
+        if (table != null) {
             SqlConnector connector = getJetSqlConnector(table);
 
             // We need to feed primary keys to the delete processor so that it can directly delete the records.
             // Therefore we use the primary key for the select list.
             connector.getPrimaryKey(table).forEach(name -> selectList.add(new SqlIdentifier(name, SqlParserPos.ZERO)));
             if (selectList.size() == 0) {
-                throw QueryException.error("Cannot DELETE from " + call.getTargetTable() + ": it doesn't have a primary key");
+                throw QueryException.error("Cannot DELETE from " + delete.getTargetTable() + ": it doesn't have a primary key");
             }
         }
 
-        if (call.getAlias() != null) {
-            sourceTable = SqlValidatorUtil.addAlias(sourceTable, call.getAlias().getSimple());
+        SqlNode sourceTable = delete.getTargetTable();
+        if (delete.getAlias() != null) {
+            sourceTable = SqlValidatorUtil.addAlias(sourceTable, delete.getAlias().getSimple());
         }
         return new SqlSelect(SqlParserPos.ZERO, null, selectList, sourceTable,
-                call.getCondition(), null, null, null, null, null, null, null);
+                delete.getCondition(), null, null, null, null, null, null, null);
+    }
+
+    private Table extractTable(SqlIdentifier identifier) {
+        SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
+        return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
     }
 
     @Override

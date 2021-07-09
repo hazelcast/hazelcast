@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
@@ -83,14 +85,14 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-class JetSqlBackend implements SqlBackend {
+public class JetSqlBackend implements SqlBackend {
 
     private final NodeEngine nodeEngine;
     private final JetPlanExecutor planExecutor;
 
     private final ILogger logger;
 
-    JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
+    public JetSqlBackend(NodeEngine nodeEngine, JetPlanExecutor planExecutor) {
         this.nodeEngine = nodeEngine;
         this.planExecutor = planExecutor;
 
@@ -264,7 +266,11 @@ class JetSqlBackend implements SqlBackend {
 
         Address localAddress = nodeEngine.getThisAddress();
 
-        if (physicalRel instanceof TableModify) {
+        if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
+            DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
+            return new IMapDeletePlan(planKey, deleteRel.objectKey(), parameterMetadata, deleteRel.mapName(),
+                    deleteRel.keyCondition(parameterMetadata), planExecutor);
+        } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
             return new DmlPlan(operation, planKey, parameterMetadata,

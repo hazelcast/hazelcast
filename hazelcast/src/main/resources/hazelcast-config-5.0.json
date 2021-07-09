@@ -107,6 +107,9 @@
         "hot-restart-persistence": {
           "$ref": "#/definitions/HotRestartPersistence"
         },
+        "persistence": {
+          "$ref": "#/definitions/Persistence"
+        },
         "user-code-deployment": {
           "$ref": "#/definitions/UserCodeDeployment"
         },
@@ -1152,6 +1155,22 @@
               }
             }
           },
+          "data-persistence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "description": "Sets whether persistence is enabled on related data structure.",
+                "type": "boolean",
+                "default": false
+              },
+              "fsync": {
+                "description": "Sets whether disk write should be followed by an fsync() system call.",
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
           "event-journal": {
             "type": "object",
             "additionalProperties": false,
@@ -2063,6 +2082,22 @@
             "type": "object",
             "additionalProperties": false,
             "description": "Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast Enterprise HD. Set its \"enabled\" to true to enable the feature. By default, it is disabled.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "fsync": {
+                "type": "boolean",
+                "default": false,
+                "description": "Set as true if the writing to disk should be followed by an fsync() system call."
+              }
+            }
+          },
+          "data-persistence": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Used to enable Hazelcast's Persistence feature for the cache. It is available only in Hazelcast Enterprise HD. Set its \"enabled\" to true to enable the feature. By default, it is disabled.",
             "properties": {
               "enabled": {
                 "type": "boolean",
@@ -3287,6 +3322,179 @@
         "encryption-at-rest": {
           "type": "object",
           "description": "Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute \"enabled\" to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the \"secure-store\" sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.\\n \"keystore\": Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and (optionally) a polling interval for checking for changes in the KeyStore.\\n \"vault\": Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace, the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for changes in Vault.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "algorithm": {
+              "type": "string",
+              "description": "Symmetric encryption algorithm",
+              "default": "AES/CBC/PKCS5Padding"
+            },
+            "salt": {
+              "type": "string",
+              "default": "thesalt"
+            },
+            "key-size": {
+              "type": "integer"
+            },
+            "secure-store": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "keystore": {
+                      "description": "Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and (optionally) a polling interval for checking for changes in the KeyStore.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "default": "PKCS12",
+                          "description": "For information about standard keystore types see https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore"
+                        },
+                        "password": {
+                          "type": "string",
+                          "description": "The keystore password"
+                        },
+                        "current-key-alias": {
+                          "type": "string"
+                        },
+                        "polling-interval": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "default": 0,
+                          "description": "Interval (in seconds) for polling for changes in the KeyStore. 0 (default) means no polling"
+                        }
+                      },
+                      "required": [
+                        "path",
+                        "password",
+                        "current-key-alias"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "vault": {
+                      "description": "Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace, the (optional) \"ssl\" configuration for HTTPS support, and an (optional) polling interval for checking for changes in Vault.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "address": {
+                          "type": "string"
+                        },
+                        "secret-path": {
+                          "type": "string"
+                        },
+                        "token": {
+                          "type": "string"
+                        },
+                        "polling-interval": {
+                          "type": "integer",
+                          "default": 0,
+                          "description": "Interval (in seconds) for polling for changes to the encryption key. 0 (default) means polling disabled."
+                        },
+                        "ssl": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "factory-class-name": {
+                              "type": "string",
+                              "examples": [
+                                "com.hazelcast.nio.ssl.BasicSSLContextFactory"
+                              ]
+                            },
+                            "properties": {
+                              "type": "object",
+                              "examples": [
+                                {
+                                  "protocol": "TLS",
+                                  "mutualAuthentication": "REQUIRED",
+                                  "keyStore": "/opt/hazelcast.keystore",
+                                  "keyStorePassword": "secret.97531",
+                                  "keyStoreType": "JKS",
+                                  "trustStore": "/opt/hazelcast.truststore",
+                                  "trustStorePassword": "changeit",
+                                  "trustStoreType": "JKS"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "address",
+                        "secret-path",
+                        "token"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "Persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "base-dir": {
+          "type": "string",
+          "description": "Specifies the directory where the Persistence data will be stored. This directory will be created automatically if it does not exist.",
+          "default": "persistence"
+        },
+        "backup-dir": {
+          "type": "string",
+          "description": "Specifies the directory where the Persistence backup data will be stored. If this element is not defined, backup will be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`."
+        },
+        "parallelism": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Level of parallelism in Persistence. There will be this many IO threads, each writing in parallel to its own files. During the restart procedure, this many IO threads will be reading the files and this many Rebuilder threads will be rebuilding the Persistence metadata."
+        },
+        "validation-timeout-seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 120,
+          "description": " Validation timeout for the restart process when validating the cluster members expected to join and the partition table on the whole cluster."
+        },
+        "data-load-timeout-seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 900,
+          "description": "Data load timeout for the restart process. All members in the cluster should finish restoring their local data before this timeout period."
+        },
+        "cluster-data-recovery-policy": {
+          "enum": [
+            "FULL_RECOVERY_ONLY",
+            "PARTIAL_RECOVERY_MOST_RECENT",
+            "PARTIAL_RECOVERY_MOST_COMPLETE"
+          ],
+          "default": "FULL_RECOVERY_ONLY",
+          "description": " Specifies the data recovery policy that will be respected during restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
+        },
+        "encryption-at-rest": {
+          "type": "object",
+          "description": "Specifies the (optional) encryption settings for persistence. It has the required attribute \"enabled\" to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the \"secure-store\" sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.\\n \"keystore\": Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and (optionally) a polling interval for checking for changes in the KeyStore.\\n \"vault\": Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace, the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for changes in Vault.",
           "properties": {
             "enabled": {
               "type": "boolean",
