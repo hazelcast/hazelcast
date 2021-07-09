@@ -39,7 +39,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
-import static java.lang.Thread.currentThread;
 
 /**
  * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
@@ -117,11 +116,7 @@ public final class PartitionReplicaSyncRequestOffloadable
             UrgentPartitionRunnable partitionRunnable = new UrgentPartitionRunnable(partitionId(),
                     () -> sendOperations(operations, ns));
             getNodeEngine().getOperationService().execute(partitionRunnable);
-            try {
-                partitionRunnable.done.await();
-            } catch (InterruptedException e) {
-                currentThread().interrupt();
-            }
+            partitionRunnable.future.joinInternal();
         }
     }
 

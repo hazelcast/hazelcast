@@ -21,12 +21,10 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 
 final class UrgentPartitionRunnable<T>
         implements PartitionSpecificRunnable, UrgentSystemOperation {
 
-    final CountDownLatch done = new CountDownLatch(1);
     final InternalCompletableFuture<T> future = new InternalCompletableFuture<>();
     private final int partitionId;
     private final Callable<T> callable;
@@ -55,8 +53,6 @@ final class UrgentPartitionRunnable<T>
             future.complete(callable.call());
         } catch (Exception e) {
             future.completeExceptionally(e);
-        } finally {
-            done.countDown();
         }
     }
 }
