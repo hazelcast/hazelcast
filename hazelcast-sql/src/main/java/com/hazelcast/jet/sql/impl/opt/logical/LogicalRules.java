@@ -85,6 +85,7 @@ public final class LogicalRules {
                 SinkLogicalRule.INSTANCE,
                 UpdateLogicalRule.INSTANCE,
                 DeleteLogicalRule.INSTANCE,
+                DeleteByKeyMapLogicalRule.INSTANCE,
 
                 // Miscellaneous
                 PruneEmptyRules.PROJECT_INSTANCE,
