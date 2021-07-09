@@ -262,10 +262,9 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAscDesc() {
-        assertThrows(HazelcastSqlException.class,
-                () -> checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
-                        Arrays.asList("intVal", "varcharVal"),
-                        Arrays.asList(false, true)));
+        checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
+                Arrays.asList("intVal", "varcharVal"),
+                Arrays.asList(false, true));
     }
 
     @Test
@@ -277,33 +276,9 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByDescDescAsc() {
-        assertThrows(HazelcastSqlException.class,
-                () -> checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                        Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                        Arrays.asList(true, true, false)));
-    }
-
-    @Test
-    public void testSelectWithOrderByNoIndex() {
-        try {
-            checkSelectWithOrderBy(Collections.emptyList(),
-                    Arrays.asList("intVal"),
-                    Arrays.asList(true));
-            fail("Order by without matching index should fail");
-        } catch (HazelcastSqlException e) {
-            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.",
-                    e.getMessage());
-        }
-
-        try {
-            checkSelectWithOrderBy(Collections.emptyList(),
-                    Arrays.asList("intVal", "realVal"),
-                    Arrays.asList(true, true));
-            fail("Order by without matching index should fail");
-        } catch (HazelcastSqlException e) {
-            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.",
-                    e.getMessage());
-        }
+        checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+                Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+                Arrays.asList(true, true, false));
     }
 
     @Test
@@ -321,18 +296,14 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndProject2() {
-        //SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
+        // SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
         String sql = String.format("SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM %s) ORDER BY a, b", mapName());
-        try {
-            checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
-                    sql,
-                    Collections.emptyList(),
-                    Collections.emptyList());
-            fail("Order by on top of project should fail");
-        } catch (HazelcastSqlException e) {
-            assertEquals("Cannot execute ORDER BY clause, because its input is not sorted. Consider adding a SORTED index to the data source.", e.getMessage());
-        }
-
+        checkSelectWithOrderBy(
+                Arrays.asList("intVal", "bigIntVal"),
+                sql,
+                Collections.emptyList(),
+                Collections.emptyList()
+        );
     }
 
     @Test
@@ -757,7 +728,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     private void assertOrdered(SqlRow prevRow, SqlRow row,
-            List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata
+                               List<String> orderFields, List<Boolean> orderDirections, SqlRowMetadata rowMetadata
     ) {
         if (prevRow == null) {
             return;

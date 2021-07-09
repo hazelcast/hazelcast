@@ -160,6 +160,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                 } catch (MissingPartitionException e) {
                     splits.addAll(splitOnMigration(s));
                     splits.remove(i--);
+                    System.err.println("PARTITION MISSING!!");
                     continue;
                 }
                 if (s.currentRow == null) {

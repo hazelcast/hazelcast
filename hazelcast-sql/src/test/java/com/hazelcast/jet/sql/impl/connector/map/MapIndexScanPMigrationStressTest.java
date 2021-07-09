@@ -32,7 +32,7 @@ import java.util.List;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 250_000;
+    static final int ITEM_COUNT = 750_000;
     static final int MEMBERS_COUNT = 3;
     static final String MAP_NAME = "map";
 
@@ -82,7 +82,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
             super();
             this.instances = instances;
             this.iterations = iterations;
-            this.delay = 3000L;
+            this.delay = 2000L;
         }
 
         MutatorThread(HazelcastInstance[] instances, int iterations, long delay) {
