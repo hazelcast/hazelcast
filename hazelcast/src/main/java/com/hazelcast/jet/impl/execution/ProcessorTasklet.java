@@ -119,7 +119,6 @@ public class ProcessorTasklet implements Tasklet {
     private final boolean isSource;
 
     private Processor processor;
-//    private ClassLoader processorCl;
     private int numActiveOrdinals; // counter for remaining active ordinals
     private CircularListCursor<InboundEdgeStream> instreamCursor;
     private InboundEdgeStream currInstream;

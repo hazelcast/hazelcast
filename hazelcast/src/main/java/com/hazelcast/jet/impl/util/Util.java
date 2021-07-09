@@ -514,8 +514,6 @@ public final class Util {
         }
     }
 
-
-
     /**
      * Returns the lower of the given guarantees.
      */

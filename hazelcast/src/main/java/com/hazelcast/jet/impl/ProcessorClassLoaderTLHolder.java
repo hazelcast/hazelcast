@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public final class ProcessorClassLoaderTLHolder {
 
-    private static final ThreadLocal<Map<String, ClassLoader>> CLASS_LOADERS = new ThreadLocal<>();
+    private static final ThreadLocal<Map<String, ClassLoader>> CLASS_LOADERS = ThreadLocal.withInitial(HashMap::new);
 
     private ProcessorClassLoaderTLHolder() {
     }
@@ -40,12 +40,7 @@ public final class ProcessorClassLoaderTLHolder {
     }
 
     static void putAll(Map<String, ClassLoader> map) {
-        Map<String, ClassLoader> classLoaderMap = CLASS_LOADERS.get();
-        if (classLoaderMap == null) {
-            classLoaderMap = new HashMap<>();
-            CLASS_LOADERS.set(classLoaderMap);
-        }
-        classLoaderMap.putAll(map);
+        CLASS_LOADERS.get().putAll(map);
     }
 
     static void remove() {
