@@ -6,10 +6,10 @@ SCRIPT_DIR="$(dirname "$0")"
 readJvmOptionsFile "jvm-client.options"
 
 JAVA_OPTS_ARRAY=(\
-"$JDK_OPTS" \
+$JDK_OPTS \
 "-Dhazelcast.client.config=$HAZELCAST_HOME/config/hazelcast-client.yaml" \
-"$JVM_OPTIONS" \
-"$JAVA_OPTS" \
+$JVM_OPTIONS \
+$JAVA_OPTS \
 )
 
 $JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"
