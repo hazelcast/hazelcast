@@ -23,30 +23,27 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
- * Configures the Hot Restart stores.
+ * Configures the Persistence stores.
  * <p>
- * Hot restart stores are used to hold copy of in-memory data in
+ * Persistence stores are used to hold copy of in-memory data in
  * disk to be able to restart very fast without needing to load
  * data from a central storage.
  * <p>
- * HotRestartConfig configures whether hot restart is enabled,
+ * PersistenceConfig configures whether persistence is enabled,
  * where disk data will be stored, should data be persisted
  * sync or async etc.
  *
- *<br><br>
+ * <br><br>
  * Note: If either, but not both, persistence ({@code PersistenceConfig}) or
  * hot-restart-persistence ({@code HotRestartPersistenceConfig}) is enabled,
  * Hazelcast will use the configuration of the enabled element. If both are
  * enabled, Hazelcast will use the persistence ({@code PersistenceConfig})
  * configuration. hot-restart-persistence element (and thus {@code HotRestartPersistenceConfig})
  * will be removed in a future release.
- *
- * @deprecated since 5.0 use {@link PersistenceConfig}
  */
-@Deprecated
-public class HotRestartPersistenceConfig {
-    /** Default directory name for the Hot Restart store's home */
-    public static final String HOT_RESTART_BASE_DIR_DEFAULT = "hot-restart";
+public class PersistenceConfig {
+    /** Default directory name for the Persistence store's home */
+    public static final String PERSISTENCE_BASE_DIR_DEFAULT = "persistence";
 
     /**
      * Default validation timeout
@@ -59,38 +56,38 @@ public class HotRestartPersistenceConfig {
     public static final int DEFAULT_DATA_LOAD_TIMEOUT = 15 * 60;
 
     /**
-     * Default level of parallelism in Hot Restart Persistence. Controls the number
-     * of Hot Restart Store instances, each operating with a single IO thread and a
+     * Default level of parallelism in Persistence. Controls the number
+     * of instances operating with a single IO thread and a
      * single GC thread.
      */
     public static final int DEFAULT_PARALLELISM = 1;
 
     private boolean enabled;
-    private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
+    private File baseDir = new File(PERSISTENCE_BASE_DIR_DEFAULT);
     private File backupDir;
     private int parallelism = DEFAULT_PARALLELISM;
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
-    private HotRestartClusterDataRecoveryPolicy clusterDataRecoveryPolicy
-            = HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+    private PersistenceClusterDataRecoveryPolicy clusterDataRecoveryPolicy
+            = PersistenceClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
     private boolean autoRemoveStaleData = true;
     private EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
 
     /**
-     * Returns whether hot restart enabled on this member.
+     * Returns whether persistence enabled on this member.
      *
-     * @return true if hot restart enabled, false otherwise
+     * @return true if persistence enabled, false otherwise
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * Sets whether hot restart is enabled on this member.
+     * Sets whether persistence is enabled on this member.
      *
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setEnabled(boolean enabled) {
+    public PersistenceConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -100,7 +97,7 @@ public class HotRestartPersistenceConfig {
      *
      * @return the policy to be used when the cluster is started
      */
-    public HotRestartClusterDataRecoveryPolicy getClusterDataRecoveryPolicy() {
+    public PersistenceClusterDataRecoveryPolicy getClusterDataRecoveryPolicy() {
         return clusterDataRecoveryPolicy;
     }
 
@@ -109,35 +106,35 @@ public class HotRestartPersistenceConfig {
      *
      * @param clusterDataRecoveryPolicy the policy to be used when the cluster is started
      *
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy
+    public PersistenceConfig setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy
                                                                             clusterDataRecoveryPolicy) {
         this.clusterDataRecoveryPolicy = clusterDataRecoveryPolicy;
         return this;
     }
 
     /**
-     * Base directory for all Hot Restart stores. Can be an absolute or relative path to the node startup directory.
+     * Base directory for all Persistence stores. Can be an absolute or relative path to the node startup directory.
      */
     public File getBaseDir() {
         return baseDir;
     }
 
     /**
-     * Sets base directory for all Hot Restart stores. Can be an absolute or relative path to the node startup directory.
+     * Sets base directory for all Persistence stores. Can be an absolute or relative path to the node startup directory.
      *
      * @param baseDir home directory
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setBaseDir(File baseDir) {
+    public PersistenceConfig setBaseDir(File baseDir) {
         checkNotNull(baseDir, "Base directory cannot be null!");
         this.baseDir = baseDir;
         return this;
     }
 
     /**
-     * Base directory for hot backups. Each new backup will be created in a separate directory inside this one.
+     * Base directory for persistence backups. Each new backup will be created in a separate directory inside this one.
      * Can be an absolute or relative path to the node startup directory.
      */
     public File getBackupDir() {
@@ -148,31 +145,31 @@ public class HotRestartPersistenceConfig {
      * Sets base directory for all Hot Restart stores.
      *
      * @param backupDir home directory
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setBackupDir(File backupDir) {
+    public PersistenceConfig setBackupDir(File backupDir) {
         this.backupDir = backupDir;
         return this;
     }
 
     /**
-     * Gets the configured number of Hot Restart store instance to create for one Hazelcast instance.
+     * Gets the configured number of Persistence store instance to create for one Hazelcast instance.
      */
     public int getParallelism() {
         return parallelism;
     }
 
     /**
-     * Sets the number of Hot Restart store instances to create for one Hazelcast instance.
+     * Sets the number of Persistence store instances to create for one Hazelcast instance.
      */
-    public HotRestartPersistenceConfig setParallelism(int parallelism) {
+    public PersistenceConfig setParallelism(int parallelism) {
         checkPositive(parallelism, "Palallelism must be a positive integer");
         this.parallelism = parallelism;
         return this;
     }
 
     /**
-     * Returns configured validation timeout for hot-restart process.
+     * Returns configured validation timeout for restart process.
      *
      * @return validation timeout in seconds
      */
@@ -181,20 +178,20 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Sets validation timeout for hot-restart process, includes validating
+     * Sets validation timeout for persistence restart process, includes validating
      * cluster members expected to join and partition table on all cluster.
      *
      * @param validationTimeoutSeconds validation timeout in seconds
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setValidationTimeoutSeconds(int validationTimeoutSeconds) {
+    public PersistenceConfig setValidationTimeoutSeconds(int validationTimeoutSeconds) {
         checkPositive(validationTimeoutSeconds, "Validation timeout should be positive!");
         this.validationTimeoutSeconds = validationTimeoutSeconds;
         return this;
     }
 
     /**
-     * Returns configured data load timeout for hot-restart process.
+     * Returns configured data load timeout for persistence restart process.
      *
      * @return data load timeout in seconds
      */
@@ -203,21 +200,21 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Sets data load timeout for hot-restart process,
+     * Sets data load timeout for persistence restart process,
      * all members in the cluster should complete restoring their local data
      * before this timeout.
      *
      * @param dataLoadTimeoutSeconds data load timeout in seconds
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
+    public PersistenceConfig setDataLoadTimeoutSeconds(int dataLoadTimeoutSeconds) {
         checkPositive(dataLoadTimeoutSeconds, "Load timeout should be positive!");
         this.dataLoadTimeoutSeconds = dataLoadTimeoutSeconds;
         return this;
     }
 
     /**
-     * Returns whether or not automatically removal of stale Hot Restart data is enabled.
+     * Returns whether or not automatic removal of stale Persistence restart data is enabled.
      *
      * @return whether or not automatically removal of stale data is enabled
      */
@@ -226,36 +223,36 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Sets whether or not automatically removal of stale Hot Restart data is enabled.
+     * Sets whether or not automatic removal of stale Persistence restart data is enabled.
      * <p>
      * When a member terminates or crashes when cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE},
      * remaining members redistributes data among themselves and data persisted on terminated member's storage becomes
-     * stale. That terminated member cannot rejoin the cluster without removing Hot Restart data.
-     * When auto-removal of stale Hot Restart data is enabled, while restarting that member, Hot Restart data is
+     * stale. That terminated member cannot rejoin the cluster without removing Persistence data.
+     * When auto-removal of stale Persistence data is enabled, while restarting that member, Persistence data is
      * automatically removed and it joins the cluster as a completely new member.
-     * Otherwise, Hot Restart data should be removed manually.
+     * Otherwise, Persistence data should be removed manually.
      *
      * @param autoRemoveStaleData {@code true} to enable auto-removal of stale data, {@code false} otherwise
-     * @return HotRestartPersistenceConfig
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setAutoRemoveStaleData(boolean autoRemoveStaleData) {
+    public PersistenceConfig setAutoRemoveStaleData(boolean autoRemoveStaleData) {
         this.autoRemoveStaleData = autoRemoveStaleData;
         return this;
     }
 
     /**
-     * Sets the Hot Restart Encryption at Rest configuration.
+     * Sets the Persistence Encryption at Rest configuration.
      * @param encryptionAtRestConfig the Encryption at Rest configuration
-     * @return HotRestartPersistenceConfig§
+     * @return PersistenceConfig
      */
-    public HotRestartPersistenceConfig setEncryptionAtRestConfig(EncryptionAtRestConfig encryptionAtRestConfig) {
+    public PersistenceConfig setEncryptionAtRestConfig(EncryptionAtRestConfig encryptionAtRestConfig) {
         checkNotNull(encryptionAtRestConfig, "Encryption at rest config cannot be null!");
         this.encryptionAtRestConfig = encryptionAtRestConfig;
         return this;
     }
 
     /**
-     * Returns the Hot Restart Encryption at Rest configuration.
+     * Returns the Persistence Encryption at Rest configuration.
      * @return the Encryption at Rest configuration
      */
     public EncryptionAtRestConfig getEncryptionAtRestConfig() {
@@ -268,11 +265,11 @@ public class HotRestartPersistenceConfig {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HotRestartPersistenceConfig)) {
+        if (!(o instanceof PersistenceConfig)) {
             return false;
         }
 
-        HotRestartPersistenceConfig that = (HotRestartPersistenceConfig) o;
+        PersistenceConfig that = (PersistenceConfig) o;
         if (enabled != that.enabled) {
             return false;
         }
@@ -316,7 +313,7 @@ public class HotRestartPersistenceConfig {
 
     @Override
     public String toString() {
-        return "HotRestartPersistenceConfig{"
+        return "PersistenceConfig{"
                 + "enabled=" + enabled
                 + ", baseDir=" + baseDir
                 + ", backupDir=" + backupDir

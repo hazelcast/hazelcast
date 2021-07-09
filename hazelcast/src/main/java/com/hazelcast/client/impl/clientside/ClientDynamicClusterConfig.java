@@ -65,6 +65,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -831,6 +832,16 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public PersistenceConfig getPersistenceConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
