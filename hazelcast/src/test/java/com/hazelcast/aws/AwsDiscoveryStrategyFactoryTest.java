@@ -90,7 +90,7 @@ public class AwsDiscoveryStrategyFactoryTest {
 
     @Test
     public void parseAndCreateDiscoveryStrategyPasses() {
-        final Config config = createConfig("test-aws-config.xml");
+        final Config config = createConfig("aws/test-aws-config.xml");
         validateConfig(config);
     }
 

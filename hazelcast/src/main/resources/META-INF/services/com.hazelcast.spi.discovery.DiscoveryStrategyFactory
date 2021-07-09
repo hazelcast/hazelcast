@@ -18,3 +18,4 @@
 com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategyFactory
 com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategyFactory
 com.hazelcast.gcp.GcpDiscoveryStrategyFactory
+com.hazelcast.aws.AwsDiscoveryStrategyFactory
