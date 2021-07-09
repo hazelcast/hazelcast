@@ -156,7 +156,7 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
     /** Configuration with given rebalance delay */
     protected Config getConfig(int rebalanceDelaySeconds) {
         Config config = smallInstanceConfig()
-                .setProperty(ClusterProperty.PARTITION_REBALANCE_DELAY_SECONDS.getName(), "" + rebalanceDelaySeconds);
+                .setProperty(ClusterProperty.PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS.getName(), "" + rebalanceDelaySeconds);
         config.getMapConfig("nobackup").setBackupCount(0);
         return config;
     }

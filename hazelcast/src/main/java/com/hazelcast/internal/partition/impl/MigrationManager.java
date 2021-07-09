@@ -106,7 +106,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_REBALANCE_DELAY_SECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS;
 
 /**
  * Maintains migration system state and manages migration operations performed within the cluster.
@@ -181,9 +181,9 @@ public class MigrationManager {
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
         nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
-        this.autoRebalanceDelaySeconds = properties.getInteger(PARTITION_REBALANCE_DELAY_SECONDS);
+        this.autoRebalanceDelaySeconds = properties.getInteger(PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS);
         checkNotNegative(autoRebalanceDelaySeconds,
-                PARTITION_REBALANCE_DELAY_SECONDS.getName() + " must be not negative");
+                PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS.getName() + " must be not negative");
         this.asyncExecutor = node.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
     }
 

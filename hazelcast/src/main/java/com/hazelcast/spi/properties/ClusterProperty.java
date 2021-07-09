@@ -667,8 +667,8 @@ public final class ClusterProperty {
      * rebalancing will be triggered immediately (subject to limitations imposed
      * by current {@link com.hazelcast.cluster.ClusterState}).
      */
-    public static final HazelcastProperty PARTITION_REBALANCE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.partition.rebalance.delay.seconds", 0, SECONDS);
+    public static final HazelcastProperty PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS
+            = new HazelcastProperty("hazelcast.partition.rebalance.after.member.left.delay.seconds", 0, SECONDS);
 
     /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
