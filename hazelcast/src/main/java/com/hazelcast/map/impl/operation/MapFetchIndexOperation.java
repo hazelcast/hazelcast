@@ -222,8 +222,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     private static boolean isDescendingEntryKey(IndexIterationPointer pointer) {
-        if (pointer.getFrom() != null && pointer.getTo() != null &&
-                ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
+        if (pointer.getFrom() != null && pointer.getTo() != null
+                && ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
             assert pointer.isFromInclusive() && pointer.isToInclusive()
                     : "Point lookup limits should be all inclusive";
             return false;
