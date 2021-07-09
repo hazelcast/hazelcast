@@ -41,7 +41,7 @@ IF NOT "%JAVA_VERSION%" == "8" (
 
 set JAVA_OPTS=%JAVA_OPTS%^
  "-Dhazelcast.logging.type=log4j2"^
- "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
+ "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*";%CLASSPATH%
 
