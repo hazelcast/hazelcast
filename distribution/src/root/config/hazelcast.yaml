@@ -18,7 +18,7 @@ hazelcast:
       enabled: false
       interfaces:
         - 127.0.0.1
-    # Hazelcast has several techniques that simplify the formation of the
+    # Hazelcast has several techniques that simplify the formation of the
     # cluster by automatically discovering the other nodes. This config section
     # lists some. Hazelcast will form a cluster only with nodes using the same discovery
     # mechanism, so make sure to enable only one.
@@ -81,7 +81,7 @@ hazelcast:
         scale-set: SCALE-SET-NAME
         use-public-ip: true
     # Selectively opens some of Hazelcast's REST API endpoints.
-    # The "jet-cluster-admin" command-line tool uses REST and you may get an
+    # The "hz-cluster-admin" command-line tool uses REST and you may get an
     # error message telling you which endpoint group you must enable for the
     # operation to be allowed. Here's the place to add it.
     rest-api:
