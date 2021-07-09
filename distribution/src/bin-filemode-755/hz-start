@@ -24,6 +24,7 @@ JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
 "-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
+"-Dhz.home=$HAZELCAST_HOME" \
 $PROMETHEUS \
 $JVM_OPTIONS \
 $JAVA_OPTS \
