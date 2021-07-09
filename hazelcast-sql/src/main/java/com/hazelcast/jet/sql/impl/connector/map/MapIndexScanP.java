@@ -60,7 +60,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.instance.impl.HazelcastInstanceFactory.getHazelcastInstance;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static java.util.Collections.emptyList;
@@ -159,7 +158,6 @@ public final class MapIndexScanP extends AbstractProcessor {
                 } catch (MissingPartitionException e) {
                     splits.addAll(splitOnMigration(s));
                     splits.remove(i--);
-                    System.err.println("PARTITION MISSING!!");
                     continue;
                 }
                 if (s.currentRow == null) {
@@ -373,24 +371,6 @@ public final class MapIndexScanP extends AbstractProcessor {
                     FETCH_SIZE_HINT
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeString(objectName);
-            out.writeString(indexName);
-            out.writeString(hazelcastInstance.getName());
-            out.writeObject(serializationService);
-            out.writeObject(toRecordSetFn);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            objectName = in.readString();
-            indexName = in.readString();
-            hazelcastInstance = getHazelcastInstance(in.readString());
-            serializationService = in.readObject();
-            toRecordSetFn = in.readObject();
         }
     }
 

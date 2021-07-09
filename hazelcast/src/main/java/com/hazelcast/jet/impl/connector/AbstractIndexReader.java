@@ -22,7 +22,6 @@ import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -35,7 +34,7 @@ import java.util.concurrent.ExecutionException;
  * @param <B> type of the batch object
  * @param <R> type of the record
  */
-public abstract class AbstractIndexReader<B, R> implements DataSerializable {
+public abstract class AbstractIndexReader<B, R> {
     protected String objectName;
     protected InternalSerializationService serializationService;
 

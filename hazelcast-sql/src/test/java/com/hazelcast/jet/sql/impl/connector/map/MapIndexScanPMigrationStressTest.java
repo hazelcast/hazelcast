@@ -33,6 +33,7 @@ import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
     static final int ITEM_COUNT = 750_000;
+    static final int COUNT_DIVIDER = 3;
     static final int MEMBERS_COUNT = 3;
     static final String MAP_NAME = "map";
 
@@ -73,6 +74,35 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
 
     }
 
+    @Test
+    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    public void stressTestSameOrderMultipleQueries() {
+        List<SqlTestSupport.Row> expected = new ArrayList<>();
+        for (int i = 0; i <= (ITEM_COUNT / COUNT_DIVIDER); i++) {
+            map.put(i, i);
+            expected.add(new SqlTestSupport.Row((ITEM_COUNT / COUNT_DIVIDER) - i, (ITEM_COUNT / COUNT_DIVIDER) - i));
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
+        map.addIndex(indexConfig);
+
+        MutatorThread mutator = new MutatorThread(instances(), instances().length - 1, 2500L);
+        QueryThread requester = new QueryThread(expected, instances().length - 1);
+
+        mutator.start();
+        requester.start();
+
+        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+
+        try {
+            mutator.join();
+            requester.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private static class MutatorThread extends Thread {
         private final HazelcastInstance[] instances;
         private final int iterations;
@@ -105,6 +135,31 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
                 }
                 instances[MEMBERS_COUNT - 1] = factory().newHazelcastInstance(smallInstanceConfig());
                 System.out.println("Instance was re-initialized.");
+            }
+        }
+    }
+
+    private static class QueryThread extends Thread {
+        private final List<SqlTestSupport.Row> expectedElements;
+        private final int iterations;
+        private final long delay;
+
+        QueryThread(List<SqlTestSupport.Row> expectedElements, int iterations) {
+            super();
+            this.expectedElements = expectedElements;
+            this.iterations = iterations;
+            this.delay = 3000L;
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < iterations; ++i) {
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expectedElements);
             }
         }
     }
