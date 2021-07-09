@@ -88,12 +88,6 @@
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
-        <!-- External Hazelcast modules -->
-        <hazelcast.aws.version>3.3</hazelcast.aws.version>
-        <hazelcast.kubernetes.version>2.2.3</hazelcast.kubernetes.version>
-        <hazelcast.gcp.version>2.1</hazelcast.gcp.version>
-        <hazelcast.azure.version>2.1</hazelcast.azure.version>
-
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <avro.version>1.10.2</avro.version>
