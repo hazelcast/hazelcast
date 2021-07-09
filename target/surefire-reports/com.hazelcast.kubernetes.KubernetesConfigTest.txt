@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.hazelcast.kubernetes.KubernetesConfigTest
+-------------------------------------------------------------------------------
+Tests run: 16, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.678 s - in com.hazelcast.kubernetes.KubernetesConfigTest

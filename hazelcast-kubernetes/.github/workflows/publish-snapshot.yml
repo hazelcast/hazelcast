@@ -1,0 +1,48 @@
+name: Publish-Snapshot
+on:
+  push:
+    branches: master
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+    name: Build with JDK ${{ matrix.java }} on ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+
+      - uses: actions/cache@v2.1.6
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn -B verify
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Maven Central Repository
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+          server-id: snapshot-repository
+          server-username: MAVEN_CENTRAL_USERNAME
+          server-password: MAVEN_CENTRAL_PASSWORD
+      - name: Publish Snapshot JARs
+        run: mvn -B deploy -Prelease-snapshot -DskipTests
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}

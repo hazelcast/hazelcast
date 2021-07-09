@@ -1,0 +1,8 @@
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/KubernetesPropertiesTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/KubernetesApiEndpointResolverTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/DnsEndpointResolverTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/KubernetesConfigTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/KubernetesClientTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactoryTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/RestClientTest.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/test/java/com/hazelcast/kubernetes/RetryUtilsTest.java

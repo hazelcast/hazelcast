@@ -1,0 +1,30 @@
+name: IMDG-Snapshot
+on:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        hazelcast: [ '5.0-SNAPSHOT' ]
+    name: Build against IMDG ${{ matrix.hazelcast }} with JDK ${{ matrix.java }} on ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+
+      - uses: actions/cache@v2.1.6
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: Build with Maven
+        run: mvn -Dhazelcast.version=${{ matrix.hazelcast }} -U verify

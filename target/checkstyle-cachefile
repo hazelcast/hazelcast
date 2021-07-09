@@ -1,0 +1,16 @@
+#Tue Nov 17 14:28:16 EET 2020
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClientException.java=1605612593075
+configuration*?=937E88CC7D3563202028FA69ED94608B0F6CB32
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RetryUtils.java=1605612593076
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClient.java=1605612593076
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java=1605615604809
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClient.java=1605612593075
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/package-info.java=1605612593076
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesApiEndpointResolver.java=1605612593074
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesConfig.java=1605612593075
+module-resource*?\:file\:/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/checkstyle/ClassHeader.txt=BBD9787B2267BD89D703B397F513B253754124A4
+module-resource*?\:/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/checkstyle/suppressions.xml=4E36A31D06476C23D263000B11D780AF688C2043
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesProperties.java=1605615175712
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategy.java=1605612593074
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/DnsEndpointResolver.java=1605612593074
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClientException.java=1605612593076

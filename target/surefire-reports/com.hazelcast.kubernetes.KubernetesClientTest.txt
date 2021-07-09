@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.hazelcast.kubernetes.KubernetesClientTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.612 s - in com.hazelcast.kubernetes.KubernetesClientTest

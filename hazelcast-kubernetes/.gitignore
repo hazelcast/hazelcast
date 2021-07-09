@@ -1,0 +1,16 @@
+target/
+build/
+.gradle/
+.project
+.classpath
+.settings/
+.idea/
+.patch
+.diff
+*.iml
+*.ipr
+*.iws
+.DS_Store
+atlassian-ide-plugin.xml
+.checkstyle
+.fbExcludeFilterFile
