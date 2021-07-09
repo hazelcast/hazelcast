@@ -1,16 +1,17 @@
 /*
- * Copyright 2020 Hazelcast Inc.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License"); you may not use
- * this file except in compliance with the License. You may obtain a copy of the
- * License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.hazelcast.aws;
@@ -63,9 +64,6 @@ public class AwsDiscoveryStrategy
     private static final Integer DEFAULT_CONNECTION_RETRIES = 3;
     private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_READ_TIMEOUT_SECONDS = 10;
-
-    // Corresponds to PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT
-    static final String PARTITION_GROUP_PLACEMENT = "hazelcast.partition.group.placement";
 
     private final AwsClient awsClient;
     private final PortRange portRange;
@@ -139,7 +137,7 @@ public class AwsDiscoveryStrategy
             memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, availabilityZone);
 
             getPlacementGroup().ifPresent(pg ->
-                    memberMetadata.put(PARTITION_GROUP_PLACEMENT, availabilityZone + '-' + pg));
+                    memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT, availabilityZone + '-' + pg));
         }
         return memberMetadata;
     }

@@ -1,16 +1,17 @@
 /*
- * Copyright 2020 Hazelcast Inc.
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License"); you may not use
- * this file except in compliance with the License. You may obtain a copy of the
- * License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.hazelcast.aws;
@@ -18,6 +19,7 @@ package com.hazelcast.aws;
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -161,7 +163,7 @@ public class AwsDiscoveryStrategyTest {
         // then
         assertEquals(2, localMetaData.size());
         assertEquals(ZONE, localMetaData.get(PARTITION_GROUP_ZONE));
-        assertEquals(expectedPartitionGroup, localMetaData.get(AwsDiscoveryStrategy.PARTITION_GROUP_PLACEMENT));
+        assertEquals(expectedPartitionGroup, localMetaData.get(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT));
     }
 
     @Test
@@ -178,7 +180,7 @@ public class AwsDiscoveryStrategyTest {
         // then
         assertEquals(2, localMetaData.size());
         assertEquals(ZONE, localMetaData.get(PARTITION_GROUP_ZONE));
-        assertEquals(expectedPartitionGroup, localMetaData.get(AwsDiscoveryStrategy.PARTITION_GROUP_PLACEMENT));
+        assertEquals(expectedPartitionGroup, localMetaData.get(PartitionGroupMetaData.PARTITION_GROUP_PLACEMENT));
     }
 
     @Test
