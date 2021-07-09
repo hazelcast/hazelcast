@@ -49,13 +49,13 @@ public class GcpDiscoveryStrategyFactoryTest {
 
     @Test
     public void validConfiguration() {
-        DiscoveryStrategy strategy = createStrategy("test-gcp-config.xml");
+        DiscoveryStrategy strategy = createStrategy("gcp/test-gcp-config.xml");
         assertTrue(strategy instanceof GcpDiscoveryStrategy);
     }
 
     @Test(expected = RuntimeException.class)
     public void invalidConfiguration() {
-        createStrategy("test-gcp-config-invalid.xml");
+        createStrategy("gcp/test-gcp-config-invalid.xml");
     }
 
     private static DiscoveryStrategy createStrategy(String xmlFileName) {

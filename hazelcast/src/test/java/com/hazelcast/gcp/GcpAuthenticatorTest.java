@@ -28,7 +28,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMoc
 import static org.junit.Assert.assertEquals;
 
 public class GcpAuthenticatorTest {
-    private static final String PRIVATE_KEY_PATH = "src/test/resources/test-private-key.json";
+    private static final String PRIVATE_KEY_PATH = "src/test/resources/gcp/test-private-key.json";
     private static final long CURRENT_TIME_MS = 1328550785000L;
     // START_OF_REQUEST_BODY taken the Google's example: https://developers.google.com/identity/protocols/OAuth2ServiceAccount
     private static final String START_OF_REQUEST_BODY = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI3NjEzMjY3OTgwNjktcjVtbGpsbG4xcmQ0bHJiaGc3NWVmZ2lncDM2bTc4ajVAZGV2ZWxvcGVyLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJzY29wZSI6Imh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2F1dGgv";
