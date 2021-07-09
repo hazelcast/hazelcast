@@ -1,0 +1,12 @@
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/package-info.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClient.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClientException.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClient.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesConfig.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RetryUtils.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesApiEndpointResolver.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClientException.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/DnsEndpointResolver.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesProperties.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategy.java
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java

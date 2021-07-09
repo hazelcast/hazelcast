@@ -1,0 +1,66 @@
+/Users/sergebishyr/.sdkman/candidates/java/current/bin/javadoc
+@options
+@argfile
+-classpath
+'/Users/sergebishyr/.m2/repository/com/hazelcast/hazelcast/4.1/hazelcast-4.1.jar:/Users/sergebishyr/.m2/repository/com/google/code/findbugs/annotations/3.0.1u2/annotations-3.0.1u2.jar:/Users/sergebishyr/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar:/Users/sergebishyr/.m2/repository/com/google/code/findbugs/jsr305/3.0.1/jsr305-3.0.1.jar'
+-encoding
+'UTF-8'
+-public
+-source
+'8'
+-sourcepath
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java:/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/generated-sources/annotations'
+-author
+-bottom
+'Copyright &#169; 2015&#x2013;2020. All rights reserved.'
+-charset
+'UTF-8'
+-d
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs'
+-docencoding
+'UTF-8'
+-doctitle
+'Kubernetes Discovery Plugin for Hazelcast 2.2.1-SNAPSHOT API'
+-link
+'https://docs.hazelcast.org/docs/3.7/javadoc'
+-linkoffline
+'https://docs.oracle.com/javase/8/docs/api' '/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/javadoc-bundle-options'
+-use
+-version
+-windowtitle
+'Kubernetes Discovery Plugin for Hazelcast 2.2.1-SNAPSHOT API'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClient.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RetryUtils.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesProperties.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/DnsEndpointResolver.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesApiEndpointResolver.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategy.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesConfig.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClientException.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/KubernetesClientException.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/package-info.java'
+'/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java/com/hazelcast/kubernetes/RestClient.java'
+/Users/sergebishyr/.m2/repository/com/hazelcast/hazelcast/4.1/hazelcast-4.1.jar = 1605612856028
+/Users/sergebishyr/.m2/repository/com/google/code/findbugs/annotations/3.0.1u2/annotations-3.0.1u2.jar = 1605612820975
+/Users/sergebishyr/.m2/repository/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar = 1605612820932
+/Users/sergebishyr/.m2/repository/com/google/code/findbugs/jsr305/3.0.1/jsr305-3.0.1.jar = 1605096796790
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/src/main/java = 1605612593073
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/generated-sources/annotations = 1605616064020
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/constant-values.html = 1605616100946
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/tag-search-index.js = 1605616100974
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/overview-tree.html = 1605616100956
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/module-search-index.js = 1605616100972
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/index.html = 1605616100982
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/package-search-index.js = 1605616100973
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/jquery-ui.overrides.css = 1605616100999
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/index-all.html = 1605616100975
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/allpackages-index.html = 1605616100980
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/deprecated-list.html = 1605616100958
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/member-search-index.js = 1605616100974
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/script.js = 1605616100987
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/stylesheet.css = 1605616100986
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/help-doc.html = 1605616100984
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/element-list = 1605616100919
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/allclasses-index.html = 1605616100979
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/type-search-index.js = 1605616100973
+/Users/sergebishyr/IdeaProjects/hazelcast/hazelcast-kubernetes/target/apidocs/search.js = 1605616100988
