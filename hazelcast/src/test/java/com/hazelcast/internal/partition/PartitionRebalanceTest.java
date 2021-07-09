@@ -34,7 +34,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.assertAllPartitionsBelongTo;
 import static com.hazelcast.internal.partition.TestPartitionUtils.assertSomePartitionsBelongTo;
@@ -73,20 +72,14 @@ public class PartitionRebalanceTest extends HazelcastTestSupport {
         instance1 = factory.newHazelcastInstance(getConfig(PARTITION_REBALANCE_TIMEOUT));
         getPartitionService(instance1).firstArrangement();
 
-        AtomicBoolean done = new AtomicBoolean(true);
-
         instance2 = factory.newHazelcastInstance(getConfig());
         // assert partition rebalancing occurs automatically without delay on member join
         assertTrueEventually(() -> assertSomePartitionsBelongTo(instance2), PARTITION_REBALANCE_TIMEOUT / 2);
         instance2.getLifecycleService().terminate();
 
-        try {
-            sleepAtLeastSeconds(PARTITION_REBALANCE_TIMEOUT);
-            // after configured delay, partition rebalancing occurs automatically
-            assertTrueEventually(() -> assertAllPartitionsBelongTo(instance1), PARTITION_REBALANCE_TIMEOUT);
-        } finally {
-            done.set(false);
-        }
+        sleepAtLeastSeconds(PARTITION_REBALANCE_TIMEOUT);
+        // after configured delay, partition rebalancing occurs automatically
+        assertTrueEventually(() -> assertAllPartitionsBelongTo(instance1), PARTITION_REBALANCE_TIMEOUT);
     }
 
     @Test
