@@ -76,14 +76,17 @@ public class SelectWithoutFromStatementTest extends SqlTestSupport {
     @Test
     public void when_multipleColumnsSelected_returnCorrectResult() {
         final SqlRow row = execute("SELECT 1 as A, 'B' as B");
+        assertEquals(SqlColumnType.TINYINT, row.getMetadata().getColumn(0).getType());
+        assertEquals(SqlColumnType.VARCHAR, row.getMetadata().getColumn(1).getType());
         assertEquals((byte) 1, (byte) row.getObject("A"));
         assertEquals("B", row.getObject("B"));
     }
 
     private void checkWithType(String sql, SqlColumnType type, Object expected) {
         final SqlRow row = execute(sql);
-        assertEquals(expected, row.getObject(0));
+        assertEquals(1, row.getMetadata().getColumnCount());
         assertEquals(type, row.getMetadata().getColumn(0).getType());
+        assertEquals(expected, row.getObject(0));
     }
 
     private SqlRow execute(String sql) {
