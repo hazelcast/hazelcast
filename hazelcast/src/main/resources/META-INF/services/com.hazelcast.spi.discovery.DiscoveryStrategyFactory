@@ -16,3 +16,4 @@
 
 
 com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategyFactory
+com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategyFactory
