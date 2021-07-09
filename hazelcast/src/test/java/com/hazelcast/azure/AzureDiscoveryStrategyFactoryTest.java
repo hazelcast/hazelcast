@@ -49,13 +49,13 @@ public class AzureDiscoveryStrategyFactoryTest {
 
     @Test
     public void validConfiguration() {
-        DiscoveryStrategy strategy = createStrategy("test-azure-config.xml");
+        DiscoveryStrategy strategy = createStrategy("azure/test-azure-config.xml");
         assertTrue(strategy instanceof AzureDiscoveryStrategy);
     }
 
     @Test(expected = RuntimeException.class)
     public void invalidConfiguration() {
-        createStrategy("test-azure-config-invalid.xml");
+        createStrategy("azure/test-azure-config-invalid.xml");
     }
 
     private static DiscoveryStrategy createStrategy(String xmlFileName) {
