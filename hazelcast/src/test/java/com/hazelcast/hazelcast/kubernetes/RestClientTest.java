@@ -39,7 +39,7 @@ public class RestClientTest {
     @Rule
     public WireMockRule wireMockRule = new WireMockRule(wireMockConfig()
             .dynamicHttpsPort()
-            .keystorePath(pathTo("keystore.jks"))
+            .keystorePath(pathTo("kubernetes/keystore.jks"))
     );
 
     private String address;
@@ -64,7 +64,7 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withCaCertificates(readFile("ca.crt"))
+                .withCaCertificates(readFile("kubernetes/ca.crt"))
                 .get();
 
         // then
@@ -83,7 +83,7 @@ public class RestClientTest {
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
                 .withHeader(headerKey, headerValue)
-                .withCaCertificates(readFile("ca.crt"))
+                .withCaCertificates(readFile("kubernetes/ca.crt"))
                 .get();
 
         // then
@@ -98,7 +98,7 @@ public class RestClientTest {
 
         // when
         RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                .withCaCertificates(readFile("ca.crt"))
+                .withCaCertificates(readFile("kubernetes/ca.crt"))
                 .get();
 
         // then
@@ -115,7 +115,7 @@ public class RestClientTest {
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
                 .withBody(BODY_REQUEST)
-                .withCaCertificates(readFile("ca.crt"))
+                .withCaCertificates(readFile("kubernetes/ca.crt"))
                 .post();
 
         // then
