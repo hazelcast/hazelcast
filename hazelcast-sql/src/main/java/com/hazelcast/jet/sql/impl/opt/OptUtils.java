@@ -119,7 +119,6 @@ public final class OptUtils {
         return traitSet.plus(trait).simplify();
     }
 
-
     public static LogicalTableScan createLogicalScan(
             RelOptCluster cluster,
             HazelcastTable hazelcastTable
@@ -253,9 +252,8 @@ public final class OptUtils {
         return new RexToExpressionVisitor(schema, parameterMetadata);
     }
 
-    public static HazelcastTable getHazelcastTable(TableScan scan) {
+    public static HazelcastTable extractHazelcastTable(TableScan scan) {
         HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-
         assert table != null;
         return table;
     }

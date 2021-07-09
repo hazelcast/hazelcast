@@ -785,7 +785,7 @@ public final class JetIndexResolver {
 
         // Prepare table
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalHazelcastTable = OptUtils.extractHazelcastTable(scan);
 
         RelOptTable newRelTable = createRelTable(
                 originalRelTable,
@@ -890,7 +890,7 @@ public final class JetIndexResolver {
         traitSet = OptUtils.traitPlus(traitSet, relCollation);
 
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
-        HazelcastTable originalHazelcastTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalHazelcastTable = OptUtils.extractHazelcastTable(scan);
 
         RelOptTable newRelTable = OptUtils.createRelTable(
                 originalRelTable.getDelegate().getQualifiedName(),

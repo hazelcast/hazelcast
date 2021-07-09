@@ -88,37 +88,30 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
     }
 
     @Override
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new FullScanPhysicalRel(getCluster(), traitSet, getTable());
-    }
-
-    @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        HazelcastTable table0 = getTable().unwrap(HazelcastTable.class);
-        double totalRowCount = table0.getStatistic().getRowCount() != null
-                ? table0.getTotalRowCount()
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        double totalRowCount = table.getStatistic() != null
+                ? table.getTotalRowCount()
                 : getTable().getRowCount();
 
         return computeSelfCost(
                 planner,
                 totalRowCount,
-                CostUtils.TABLE_SCAN_CPU_MULTIPLIER,
-                table0.getFilter() != null,
+                table.getFilter() != null,
                 this.table.getRowCount(),
-                table0.getProjects().size()
+                table.getProjects().size()
         );
     }
 
-    protected RelOptCost computeSelfCost(
+    private static RelOptCost computeSelfCost(
             RelOptPlanner planner,
             double scanRowCount,
-            double scanCostMultiplier,
             boolean hasFilter,
             double filterRowCount,
             int projectCount
     ) {
         // 1. Get cost of the scan itself.
-        double scanCpu = scanRowCount * scanCostMultiplier;
+        double scanCpu = scanRowCount * CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
         // 2. Get cost of the filter, if any.
         double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;
@@ -132,5 +125,10 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
                 scanCpu + filterCpu + projectCpu,
                 0
         );
+    }
+
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable());
     }
 }

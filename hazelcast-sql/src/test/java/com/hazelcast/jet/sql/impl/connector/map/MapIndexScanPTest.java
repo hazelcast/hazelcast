@@ -23,16 +23,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -46,7 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -74,14 +70,15 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         return asList(1_000, 50_000);
     }
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter()
     public int count;
 
     private IMap<Integer, Person> map;
 
-    public static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_IN_ORDER =
+    @SuppressWarnings("unchecked")
+    private static final BiPredicate<List<?>, List<?>> LENIENT_SAME_ITEMS_IN_ORDER =
             (expected, actual) -> {
-                if (expected.size() != actual.size()) { // shortcut
+                if (expected.size() != actual.size()) {
                     return false;
                 }
                 List<Object[]> expectedList = (List<Object[]>) expected;
@@ -95,7 +92,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             };
 
     @BeforeClass
-    public static void setUp() {
+    public static void beforeClass() {
         initialize(1, null);
     }
 
@@ -111,31 +108,16 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         for (int i = count; i > 0; i--) {
             map.put(i, new Person("value-" + i, i));
         }
-
         expected.add(new Object[]{(5), "value-5", 5});
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexEqualsFilter(intValue(5));
-        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projections,
-                null,
-                null,
-                false
-        );
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, -1, false);
 
         TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
@@ -156,24 +138,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(null, true, null, true);
-        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projections,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
-                false
-        );
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, 2, false);
 
         TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
@@ -194,24 +162,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(null, true, null, true);
-        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projections,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
-                true
-        );
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, 2, true);
 
         TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
@@ -234,24 +188,10 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
-        List<Expression<?>> projections = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projections,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(2)))),
-                false
-        );
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, 2, false);
 
         TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
@@ -270,29 +210,14 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
             }
         }
 
-        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age");
-        indexConfig.setName(randomName());
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
         map.addIndex(indexConfig);
 
         IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
-        List<Expression<?>> projection = asList(create(0, INT), create(1, VARCHAR), create(2, INT));
-
-        MapIndexScanMetadata scanMetadata = new MapIndexScanMetadata(
-                map.getName(),
-                indexConfig.getName(),
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
-                Arrays.asList(INT, VARCHAR, INT),
-                filter,
-                projection,
-                null,
-                comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(0)))),
-                false
-        );
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, 0, false);
 
         TestSupport
-                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(scanMetadata)))
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
                 .hazelcastInstance(instance())
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
                 .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
@@ -301,37 +226,34 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 .expectOutput(expected);
     }
 
-    static class Person implements DataSerializable {
-        private String name;
-        private int age;
+    private MapIndexScanMetadata metadata(String indexName, IndexFilter filter, int fieldIndex, boolean descending) {
+        return new MapIndexScanMetadata(
+                map.getName(),
+                indexName,
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                Arrays.asList(QueryPath.KEY_PATH, valuePath("name"), valuePath("age")),
+                Arrays.asList(INT, VARCHAR, INT),
+                filter,
+                asList(create(0, INT), create(1, VARCHAR), create(2, INT)),
+                null,
+                fieldIndex == -1 ? null : comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(fieldIndex)))),
+                descending
+        );
+    }
 
-        Person() {
-            // no op.
+    public static class Person implements Serializable {
+
+        public String name;
+        public int age;
+
+        @SuppressWarnings("unused")
+        private Person() {
         }
 
-        public String getName() {
-            return name;
-        }
-
-        public int getAge() {
-            return age;
-        }
-
-        Person(String name, int age) {
+        private Person(String name, int age) {
             this.name = name;
             this.age = age;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeString(name);
-            out.writeInt(age);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            this.name = in.readString();
-            this.age = in.readInt();
         }
     }
 
@@ -349,5 +271,4 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     private static ConstantExpression constant(Object value, QueryDataType type) {
         return ConstantExpression.create(value, type);
     }
-
 }

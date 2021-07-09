@@ -137,7 +137,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         return IndexIterationPointer.createFromIndexFilter(filter, descending, evalContext);
     }
 
-    @SuppressWarnings({"SingleStatementInBlock"})
     @Override
     public boolean complete() {
         return isIndexSorted ? runSortedIndex() : runHashIndex();
