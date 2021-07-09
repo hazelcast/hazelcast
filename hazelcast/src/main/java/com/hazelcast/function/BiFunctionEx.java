@@ -34,7 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable {
+public interface BiFunctionEx<T, U, R> extends BiFunction<T, U, R>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link BiFunction#apply}.

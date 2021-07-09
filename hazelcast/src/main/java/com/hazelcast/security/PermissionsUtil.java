@@ -17,12 +17,16 @@
 package com.hazelcast.security;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.function.SecuredFunction;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.security.permission.MapPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.security.Permission;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD;
@@ -72,5 +76,17 @@ public final class PermissionsUtil {
     @Nullable
     public static Permission listReadPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_READ));
+    }
+
+    public static void checkPermission(SecuredFunction function, ProcessorMetaSupplier.Context context) {
+        if (context instanceof Contexts.MetaSupplierCtx) {
+            Contexts.MetaSupplierCtx metaSupplierCtx = (Contexts.MetaSupplierCtx) context;
+            Permission permission = function.permission();
+            SecurityContext securityContext = metaSupplierCtx.nodeEngine().getNode().securityContext;
+            Subject subject = metaSupplierCtx.subject();
+            if (securityContext != null && permission != null && subject != null) {
+                securityContext.checkPermission(subject, permission);
+            }
+        }
     }
 }

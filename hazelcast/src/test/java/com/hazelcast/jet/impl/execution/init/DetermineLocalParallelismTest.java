@@ -24,7 +24,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -43,7 +43,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
 
     private static final int DEFAULT_PARALLELISM = 2;
 
-    private static NodeEngine nodeEngine;
+    private static NodeEngineImpl nodeEngine;
 
     @BeforeClass
     public static void before() {
@@ -89,7 +89,7 @@ public class DetermineLocalParallelismTest extends SimpleTestInClusterSupport {
         ExecutionPlanBuilder.createExecutionPlans(
                 nodeEngine,
                 ((ClusterServiceImpl) nodeEngine.getClusterService()).getMembershipManager().getMembersView(),
-                dag, 1, 1, new JobConfig(), NO_SNAPSHOT, false);
+                dag, 1, 1, new JobConfig(), NO_SNAPSHOT, false, null);
     }
 
     private static class ValidatingMetaSupplier implements ProcessorMetaSupplier {

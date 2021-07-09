@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
@@ -91,7 +92,7 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
             String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
                     (IMap<Object, Object> map, Object[] left) -> {

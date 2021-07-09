@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
@@ -79,7 +80,7 @@ public class LightMasterContext {
     private final Set<Vertex> vertices;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId, JobConfig config) {
+    public LightMasterContext(NodeEngineImpl nodeEngine, DAG dag, long jobId, JobConfig config) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
 
@@ -99,7 +100,7 @@ public class LightMasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, config, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, config, 0, true, null);
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);

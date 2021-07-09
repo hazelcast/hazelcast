@@ -40,7 +40,7 @@ import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Re
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -106,7 +106,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     // future which can only be used to cancel the local execution.
     private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
 
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private volatile SnapshotContext snapshotContext;
     private JobConfig jobConfig;
 
@@ -116,7 +116,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private InternalSerializationService serializationService;
     private final AtomicBoolean executionCompleted = new AtomicBoolean();
 
-    public ExecutionContext(NodeEngine nodeEngine, long jobId, long executionId, boolean isLightJob) {
+    public ExecutionContext(NodeEngineImpl nodeEngine, long jobId, long executionId, boolean isLightJob) {
         this.jobId = jobId;
         this.executionId = executionId;
         this.isLightJob = isLightJob;

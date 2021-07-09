@@ -23,6 +23,7 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Observable;
@@ -845,7 +846,7 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> reliableTopic(@Nonnull String reliableTopicName) {
         return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                ctx -> ctx.hazelcastInstance().getReliableTopic(reliableTopicName))
+                SecuredFunctions.reliableTopicFn(reliableTopicName))
                 .<T>receiveFn(ITopic::publish)
                 .permission(new ReliableTopicPermission(reliableTopicName, ACTION_CREATE, ACTION_PUBLISH))
                 .build();

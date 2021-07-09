@@ -19,6 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.map.IMap;
@@ -71,7 +72,7 @@ public final class ServiceFactories {
     @Nonnull
     public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
         ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapFactory =
-                ServiceFactories.sharedService(ctx -> ctx.hazelcastInstance().getReplicatedMap(mapName));
+                ServiceFactories.sharedService(SecuredFunctions.replicatedMapFn(mapName));
         return replicatedMapFactory.withPermission(new ReplicatedMapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
@@ -99,7 +100,7 @@ public final class ServiceFactories {
     @Nonnull
     public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
         ServiceFactory<?, IMap<K, V>> iMapServiceFactory =
-                ServiceFactories.sharedService(ctx -> ctx.hazelcastInstance().getMap(mapName));
+                ServiceFactories.sharedService(SecuredFunctions.iMapFn(mapName));
         return iMapServiceFactory.withPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
@@ -159,7 +160,7 @@ public final class ServiceFactories {
             @Nonnull FunctionEx<? super ProcessorSupplier.Context, S> createServiceFn,
             @Nonnull ConsumerEx<S> destroyServiceFn
     ) {
-        return ServiceFactory.withCreateContextFn(c -> createServiceFn.apply(c))
+        return ServiceFactory.withCreateContextFn(createServiceFn)
                              .withCreateServiceFn((ctx, c) -> c)
                              .withDestroyContextFn(destroyServiceFn);
     }
@@ -222,7 +223,7 @@ public final class ServiceFactories {
             @Nonnull ConsumerEx<? super S> destroyServiceFn
     ) {
         return ServiceFactory.<Void>withCreateContextFn(c -> null)
-                .<S>withCreateServiceFn((ctx, c) -> createServiceFn.apply(ctx))
+                .<S>withCreateServiceFn(SecuredFunctions.createServiceFn(createServiceFn))
                 .withDestroyServiceFn(destroyServiceFn);
     }
 }

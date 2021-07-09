@@ -295,7 +295,7 @@ public class JobCoordinationService {
             } finally {
                 res.complete(null);
             }
-            tryStartJob(masterContext);
+            tryStartJob(masterContext, subject);
         });
         return res;
     }
@@ -958,7 +958,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
-        tryStartJob(masterContext);
+        tryStartJob(masterContext, null);
     }
 
     private void checkOperationalState() {
@@ -1089,7 +1089,7 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
-            tryStartJob(masterContext);
+            tryStartJob(masterContext, null);
         }
 
         return masterContext.jobContext().jobCompletionFuture();
@@ -1116,8 +1116,8 @@ public class JobCoordinationService {
         return false;
     }
 
-    private void tryStartJob(MasterContext masterContext) {
-        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId);
+    private void tryStartJob(MasterContext masterContext, Subject subject) {
+        masterContext.jobContext().tryStartJob(jobRepository::newExecutionId, subject);
 
         if (masterContext.hasTimeout()) {
             long remainingTime = masterContext.remainingTime(Clock.currentTimeMillis());
