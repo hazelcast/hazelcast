@@ -665,10 +665,7 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
-                boolean deferPartitionProcessing = false;
-                if (isMemberRestartingWithPersistence(member)) {
-                    deferPartitionProcessing = true;
-                }
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getUuid(), member.getAttributes());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
@@ -704,22 +701,13 @@ public class ClusterJoinManager {
         return true;
     }
 
-    private boolean isMemberRestartingWithPersistence(Member member) {
-        return member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
-                && member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true")
+    private boolean isMemberRestartingWithPersistence(UUID memberUuid, Map<String, String> attributes) {
+        return attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
+                && attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true")
                 // may be already detected as crashed member or probably it is still in member list because
                 // connection timeout hasn't been reached yet
-                && (hasMemberLeft(member.getUuid())
-                    || clusterService.getMembershipManager().getMember(member.getUuid()) != null);
-    }
-
-    private boolean isMemberRestartingWithPersistence(MemberInfo member) {
-        return member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
-                && member.getAttributes().get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true")
-                // may be already detected as crashed member or probably it is still in member list because
-                // connection timeout hasn't been reached yet
-                && (hasMemberLeft(member.getUuid())
-                    || clusterService.getMembershipManager().getMember(member.getUuid()) != null);
+                && (hasMemberLeft(memberUuid)
+                    || clusterService.getMembershipManager().getMember(memberUuid) != null);
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
@@ -784,7 +772,7 @@ public class ClusterJoinManager {
                 // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
-                    if (isMemberRestartingWithPersistence(member)) {
+                    if (isMemberRestartingWithPersistence(member.getUuid(), member.getAttributes())) {
                         if (logger.isFineEnabled()) {
                             logger.fine(member + " is rejoining the cluster");
                         }

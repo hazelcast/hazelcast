@@ -247,7 +247,7 @@ abstract class AbstractPartitionOperation extends Operation implements Identifie
         return PartitionDataSerializerHook.F_ID;
     }
 
-    // return a new thread-safe Set populated with all elements from previouis
+    // return a new thread-safe Set populated with all elements from previous
     Set<Operation> newOperationSet(Collection<Operation> previous) {
         Set<Operation> newSet = newSetFromMap(new ConcurrentHashMap<>());
         newSet.addAll(previous);
