@@ -52,6 +52,6 @@ ECHO # CLASSPATH=%CLASSPATH%
 ECHO ########################################
 ECHO Starting Hazelcast
 
-start "hazelcast" "%RUN_JAVA%" %JAVA_OPTS% -cp %CLASSPATH% com.hazelcast.core.server.HazelcastMemberStarter
+"%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.HazelcastMemberStarter"
 
 ENDLOCAL
