@@ -20,6 +20,7 @@ import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -810,6 +811,7 @@ public class KubernetesClientTest {
     }
 
     @Test
+    @Ignore
     public void rbacYamlFileExists() {
         // rbac.yaml file is mentioned in logs, so the file must exist in the repo
         assertTrue(new File("rbac.yaml").exists());

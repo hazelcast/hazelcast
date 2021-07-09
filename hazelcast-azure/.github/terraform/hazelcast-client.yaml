@@ -1,5 +1,0 @@
-hazelcast-client:
-  network:
-    azure:
-      enabled: true
-      tag: TAG_KEY=TAG_VALUE
