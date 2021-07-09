@@ -68,8 +68,8 @@ function readJvmOptionsFile {
       fi
 
       JVM_OPTIONS="$JVM_OPTIONS $line"
-    done < "$HAZELCAST_HOME"/config/"$1"
+    done < $HAZELCAST_HOME/config/$1
 
     # Evaluate variables in the options, allowing to use e.g. HAZELCAST_HOME variable
-    JVM_OPTIONS=$(eval echo "$JVM_OPTIONS")
+    JVM_OPTIONS=$(eval echo $JVM_OPTIONS)
 }

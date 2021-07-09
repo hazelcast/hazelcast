@@ -50,11 +50,11 @@ echo "# CLASSPATH=$CLASSPATH"
 echo "########################################"
 
 if [[ "$DAEMON" = "true" ]]; then
-    mkdir -p "$HAZELCAST_HOME"/logs
+    mkdir -p $HAZELCAST_HOME/logs
     DATE=$(date "+%Y-%m-%d.%H.%M.%S")
     HAZELCAST_LOG="$HAZELCAST_HOME/logs/hazelcast.$DATE.out"
     echo "Starting Hazelcast in daemon mode. Standard out and error will be written to $HAZELCAST_LOG"
-    nohup "$JAVA" "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.core.server.HazelcastMemberStarter > "$HAZELCAST_LOG" 2>&1 &
+    nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.core.server.HazelcastMemberStarter > "$HAZELCAST_LOG" 2>&1 &
 else
     echo "Starting Hazelcast"
     set -x
