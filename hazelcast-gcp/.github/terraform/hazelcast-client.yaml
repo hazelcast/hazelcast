@@ -1,5 +1,0 @@
-hazelcast-client:
-  network:
-    gcp:
-      enabled: true
-      label: LABEL_KEY=LABEL_VALUE
