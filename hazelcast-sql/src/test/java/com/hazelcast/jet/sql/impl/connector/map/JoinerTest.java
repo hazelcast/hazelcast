@@ -42,7 +42,7 @@ import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 
 @RunWith(JUnitParamsRunner.class)
-public class IMapJoinerTest {
+public class JoinerTest {
 
     @Mock
     private DAG dag;
@@ -71,7 +71,7 @@ public class IMapJoinerTest {
         given(dag.newUniqueVertex(contains("Lookup"), isA(JoinByPrimitiveKeyProcessorSupplier.class))).willReturn(vertex);
 
         // when
-        VertexWithInputConfig vertexWithConfig = IMapJoiner.join(
+        VertexWithInputConfig vertexWithConfig = Joiner.join(
                 dag,
                 "imap-name",
                 "table-name",
@@ -92,7 +92,7 @@ public class IMapJoinerTest {
         given(dag.newUniqueVertex(contains("Predicate"), isA(ProcessorMetaSupplier.class))).willReturn(vertex);
 
         // when
-        VertexWithInputConfig vertexWithConfig = IMapJoiner.join(
+        VertexWithInputConfig vertexWithConfig = Joiner.join(
                 dag,
                 "imap-name",
                 "table-name",
@@ -113,7 +113,7 @@ public class IMapJoinerTest {
         given(dag.newUniqueVertex(contains("Scan"), isA(JoinScanProcessorSupplier.class))).willReturn(vertex);
 
         // when
-        VertexWithInputConfig vertexWithConfig = IMapJoiner.join(
+        VertexWithInputConfig vertexWithConfig = Joiner.join(
                 dag,
                 "imap-name",
                 "table-name",

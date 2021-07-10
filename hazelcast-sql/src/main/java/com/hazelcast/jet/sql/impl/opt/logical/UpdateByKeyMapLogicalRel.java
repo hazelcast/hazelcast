@@ -32,21 +32,27 @@ import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
 
-public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
+public class UpdateByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     private final PartitionedMapTable table;
     private final RexNode keyCondition;
+    private final List<String> updatedColumns;
+    private final List<RexNode> sourceExpressions;
 
-    DeleteByKeyMapLogicalRel(
+    UpdateByKeyMapLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             PartitionedMapTable table,
-            RexNode keyCondition
+            RexNode keyCondition,
+            List<String> updatedColumns,
+            List<RexNode> sourceExpressions
     ) {
         super(cluster, traitSet);
 
         this.table = table;
         this.keyCondition = keyCondition;
+        this.updatedColumns = updatedColumns;
+        this.sourceExpressions = sourceExpressions;
     }
 
     public PartitionedMapTable table() {
@@ -57,9 +63,17 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
         return keyCondition;
     }
 
+    public List<String> updatedColumns() {
+        return updatedColumns;
+    }
+
+    public List<RexNode> sourceExpressions() {
+        return sourceExpressions;
+    }
+
     @Override
     public RelDataType deriveRowType() {
-        return RelOptUtil.createDmlRowType(SqlKind.DELETE, getCluster().getTypeFactory());
+        return RelOptUtil.createDmlRowType(SqlKind.UPDATE, getCluster().getTypeFactory());
     }
 
     @Override
@@ -71,11 +85,13 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
     public RelWriter explainTerms(RelWriter pw) {
         return pw
                 .item("table", table.getSqlName())
-                .item("keyCondition", keyCondition);
+                .item("keyCondition", keyCondition)
+                .item("updatedColumns", updatedColumns)
+                .item("sourceExpressions", sourceExpressions);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteByKeyMapLogicalRel(getCluster(), traitSet, table, keyCondition);
+        return new UpdateByKeyMapLogicalRel(getCluster(), traitSet, table, keyCondition, updatedColumns, sourceExpressions);
     }
 }
