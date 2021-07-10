@@ -66,32 +66,6 @@ public final class JetProperties {
             = new HazelcastProperty("jet.job.results.max.size", 1_000);
 
     /**
-     * Root of Jet installation. Used as default location for the lossless
-     * restart store. By default it will be automatically set to the start of
-     * the Jet installation path.
-     *
-     * @since Jet 3.2
-     */
-    public static final HazelcastProperty JET_HOME
-            = new HazelcastProperty("jet.home", "");
-
-    /**
-     * Hazelcast Jet normally checks that the version of IMDG on the classpath
-     * matches exactly the version it is built for, and fails on mismatch.
-     * Setting this property to {@code true} allows Jet to start up even on
-     * mismatch. This may be helpful if the user needs some slight IMDG version
-     * change (eg. to use a hotfix).
-     * <p>
-     * <strong>NOTE:</strong> since Jet must read this property at a very early
-     * point in startup, it doesn't have an effect when you set it in a
-     * Hazelcast configuration file. You must set it as a system property.
-     *
-     * @since Jet 4.4
-     */
-    public static final HazelcastProperty JET_IMDG_VERSION_CHECK_DISABLED
-            = new HazelcastProperty("jet.imdg.version.mismatch.check.disabled", "false");
-
-    /**
      * The minimum time in microseconds the cooperative worker threads will
      * sleep if none of the tasklets made any progress. Lower values increase
      * idle CPU usage but may result in decreased latency. Higher values will

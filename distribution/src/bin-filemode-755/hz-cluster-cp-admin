@@ -1,14 +1,14 @@
 #!/bin/bash
 
 if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
-    echo "Sends CP subsystem management operations to a Jet instance."
+    echo "Sends CP subsystem management operations to a Hazelcast instance."
     echo "Parameters:"
     echo "  -o, --operation   : Operation to be called."
-    echo "  -c, --group       : Name of the CP group. Must be provided for 'get-group', 'force-destroy-group', 'get-sessions', 'force-close-session'."
+    echo "  -g, --group       : Name of the CP group. Must be provided for 'get-group', 'force-destroy-group', 'get-sessions', 'force-close-session'."
     echo "  -m, --member      : UUID of the CP member. Must be provided for 'remove-member'."
     echo "  -s, --session-id  : CP Session ID. Must be provided for 'force-close-session'."
-    echo "  -a, --address     : Defines which ip address jet is running. Default value is '127.0.0.1'."
-    echo "  -p, --port        : Defines which port jet is running. Default value is '5701'."
+    echo "  -a, --address     : Defines which ip address hazelcast is running. Default value is '127.0.0.1'."
+    echo "  -p, --port        : Defines which port hazelcast is running. Default value is '5701'."
     echo "  -c, --clustername : Defines clustername of the cluster. Default value is 'dev'."
     echo "  -P, --password    : Defines password of the cluster. Default value is 'dev-pass'."
     echo "  -d, --debug       : Prints curl error output."
@@ -19,7 +19,7 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "      --key         : Defines PEM-encoded client private key file path. Only needed when client certificate authentication is used."
     echo "      --insecure    : Disables member certificate verification. (no parameter value expected)"
     echo "Operations:"
-    echo "  - 'get-local-member' returns the local CP member information from the accessed Jet member."
+    echo "  - 'get-local-member' returns the local CP member information from the accessed Hazelcast member."
     echo "  - 'get-groups' returns the list of active CP groups."
     echo "  - 'get-group' expects a CP group name (-c or --group) and returns a its details."
     echo "  - 'force-destroy-group' destroys a CP group (-c or --group) non-gracefully."
@@ -32,13 +32,13 @@ if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
     echo "  - 'remove-member' removes the given CP member (-m) from the active CP member list."
     echo "     The removed member will be removed from the CP groups as well."
     echo "     Before removing a CP member, please make sure that the missing member is actually crashed, not partitioned away."
-    echo "  - 'promote-member' promotes the contacted Jet member to the CP member role."
+    echo "  - 'promote-member' promotes the contacted Hazelcast member to the CP member role."
     echo "  - 'get-sessions' returns the list of CP sessions created in the requested CP group (-c)."
     echo "  - 'force-close-session' closes the given CP session (-s) on the given CP group (-c)."
     echo "     Once the CP session is closed, all CP resources (locks, semaphore permits, etc.) will be released."
     echo "     Before force-closing a CP session, please make sure that owner endpoint of the CP session is crashed and will not show up."
     echo "  - 'reset' wipes out all CP subsystem state and restarts it from scratch."
-    echo "     Please call this API only on the Jet master member (i.e., the first member in the Jet cluster member list)."
+    echo "     Please call this API only on the Hazelcast master member (i.e., the first member in the Hazelcast cluster member list)."
     echo "     Please make sure that you call this API only once. Once you make the call, please observe the cluster to see if the CP subsystem initialization is successful."
     echo "If you query a non-existing CP group or a CP session, the call fails with 'Not found'."
     echo "If you trigger an operation with invalid credentials, the call fails with 'Invalid credentials'."
@@ -64,7 +64,7 @@ case "$key" in
     OPERATION="$2"
     shift # past argument
     ;;
-    -c|--group)
+    -g|--group)
     CP_GROUP_NAME="$2"
     shift # past argument
     ;;
@@ -107,7 +107,7 @@ case "$key" in
     shift # past argument
     ;;
     --insecure)
-    echo "WARNING: You're using the insecure switch. Jet member TLS certificates will not be verified!" >&2
+    echo "WARNING: You're using the insecure switch. Hazelcast member TLS certificates will not be verified!" >&2
     CURL_ARGS="$CURL_ARGS $1"
     ;;
     *)
@@ -127,14 +127,14 @@ if [[ -z "$PORT" ]]; then
     PORT="5701"
 fi
 
-if [[ -z "CLUSTERNAME" ]]; then
-    echo "No clustername is defined, running script with default clustername: 'jet'."
-    CLUSTERNAME="jet"
+if [[ -z "$CLUSTERNAME" ]]; then
+    echo "No clustername is defined, running script with default clustername: 'dev'."
+    CLUSTERNAME="dev"
 fi
 
 if [[ -z "$PASSWORD" ]]; then
-    echo "No password is defined, running script with default password: 'jet-pass'."
-    PASSWORD="jet-pass"
+    echo "No password is defined, running script with default password: 'dev-pass'."
+    PASSWORD="dev-pass"
 fi
 
 if [[ -z "$ADDRESS" ]]; then
@@ -142,7 +142,7 @@ if [[ -z "$ADDRESS" ]]; then
     ADDRESS="127.0.0.1"
 fi
 
-command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit -1; }
+command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires curl but it's not installed. Aborting."; exit 1; }
 
 URL_BASE="${URL_SCHEME}://${ADDRESS}:${PORT}/hazelcast/rest/cp-subsystem"
 CURL_CMD="curl $CURL_ARGS"
@@ -154,7 +154,7 @@ if [[ "$OPERATION" = "get-local-member" ]]; then
     status_code=$(echo "$response" | tail -n1)
 
     if [[ "$status_code" = "200" ]];then
-        echo "${json}\nOK"
+        printf "%s\nOK" "${json}"
         exit 0
     fi
     if [[ "$status_code" = "404" ]];then
@@ -173,7 +173,7 @@ if [[ "$OPERATION" = "get-groups" ]]; then
     status_code=$(echo "$response" | tail -n1)
 
     if [[ "$status_code" = "200" ]];then
-        echo "${json}\nOK"
+        printf "%s\nOK" "${json}"
         exit 0
     fi
 
@@ -193,7 +193,7 @@ if [[ "$OPERATION" = "get-group" ]]; then
     status_code=$(echo "$response" | tail -n1)
 
     if [[ "$status_code" = "200" ]];then
-        echo "${json}\nOK"
+        printf "%s\nOK" "${json}"
         exit 0
     fi
     if [[ "$status_code" = "404" ]];then
@@ -212,7 +212,7 @@ if [[ "$OPERATION" = "get-members" ]]; then
     status_code=$(echo "$response" | tail -n1)
 
     if [[ "$status_code" = "200" ]];then
-        echo "${json}\nOK"
+        printf "%s\nOK" "${json}"
         exit 0
     fi
 
@@ -232,7 +232,7 @@ if [[ "$OPERATION" = "get-sessions" ]]; then
     status_code=$(echo "$response" | tail -n1)
 
     if [[ "$status_code" = "200" ]];then
-        echo "${json}\nOK"
+        printf "%s\nOK" "${json}"
         exit 0
     fi
     if [[ "$status_code" = "404" ]];then

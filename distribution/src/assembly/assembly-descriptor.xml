@@ -41,6 +41,7 @@
                 <include>org.slf4j:*</include>
                 <include>info.picocli:picocli</include>
                 <include>org.jline:*</include>
+                <include>org.fusesource.jansi:jansi</include>
                 <include>com.hazelcast.jet:hazelcast-jet-avro</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
                 <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
