@@ -16,10 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.JetPlan;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -123,6 +130,19 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isZero();
     }
 
+    @Ignore // TODO: [sasha] requires Jet parser to be enabled. Uncomment after IMDG removal.
+    @Test
+    public void test_indexCaching() {
+        fillMapAndCreateIndex(instance(), "m", IndexType.SORTED, "__key.id");
+        createMapping("map", "m", "id", PersonId.class, "varchar");
+        sqlService.execute("SELECT * FROM map ORDER BY id");
+
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+        SqlPlan plan = planCache(instance()).getPlans().values().iterator().next();
+        assertThat(plan).isInstanceOf(JetPlan.SelectPlan.class);
+        assertThat(((JetPlan.SelectPlan) plan).getDag().getVertex("Index(IMap[public.map])")).isNotNull();
+    }
+
     @SuppressWarnings("SameParameterValue")
     private static void createMapping(
             String name,
@@ -161,5 +181,19 @@ public class SqlPlanCacheTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
                 + ")"
         );
+    }
+
+    private static void fillMapAndCreateIndex(
+            HazelcastInstance instance,
+            String mapName,
+            IndexType indexType,
+            String... attributes) {
+        // Empty map doesn't have converters, so, map filling is required to create converters.
+        IMap<PersonId, String> map = instance.getMap(mapName);
+        map.put(new PersonId(1), "Ann");
+        map.put(new PersonId(2), "Boris");
+
+        IndexConfig indexConfig = new IndexConfig(indexType, attributes).setName(randomName());
+        map.addIndex(indexConfig);
     }
 }

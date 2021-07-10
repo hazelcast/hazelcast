@@ -401,8 +401,8 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
         int runId = runIdGen++;
-        // TODO: requires Jet parser to be enabled. Uncomment after parser switch.
-        checkPlan(expectedUseIndex, sql, params);
+        // TODO: [sasha] requires Jet parser to be enabled. Uncomment after IMDG removal.
+        // checkPlan(expectedUseIndex, sql, params);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);

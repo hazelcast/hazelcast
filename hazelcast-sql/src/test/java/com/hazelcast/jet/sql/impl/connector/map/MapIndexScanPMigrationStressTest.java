@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
     static final int ITEM_COUNT = 750_000;
+    static final int ITEM_TO_LOOKUP = 250_000;
     static final int COUNT_DIVIDER = 3;
     static final int MEMBERS_COUNT = 3;
     static final String MAP_NAME = "map";
@@ -50,7 +52,31 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    public void stressTestPointLookup() {
+        List<SqlTestSupport.Row> expected = new ArrayList<>();
+        for (int i = 0; i <= ITEM_COUNT; i++) {
+            map.put(i, i);
+        }
+        expected.add(new SqlTestSupport.Row(ITEM_TO_LOOKUP, ITEM_TO_LOOKUP));
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
+        map.addIndex(indexConfig);
+
+        MutatorThread mutator = new MutatorThread(instances(), instances().length - 1, 500L);
+        mutator.start();
+
+        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " WHERE this=" + ITEM_TO_LOOKUP, expected);
+
+        try {
+            mutator.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrder() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -75,7 +101,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestSameOrderMultipleQueries() {
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= (ITEM_COUNT / COUNT_DIVIDER); i++) {

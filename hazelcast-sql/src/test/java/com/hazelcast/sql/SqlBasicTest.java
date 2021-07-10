@@ -588,11 +588,6 @@ public class SqlBasicTest extends SqlTestSupport {
             return key;
         }
 
-//        @Override
-        public int compareTo(Object o) {
-            return Long.compare(this.key, ((AbstractPojoKey) o).getKey());
-        }
-
         @Override
         public String toString() {
             return "AbstractPojoKey{key=" + key + '}';

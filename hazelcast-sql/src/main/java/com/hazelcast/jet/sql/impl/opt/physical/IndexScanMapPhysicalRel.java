@@ -104,7 +104,8 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
         boolean descending = false;
         RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
 
-        // TODO: enhance for composite indexes.
+        // Take first direction as main direction.
+        // In case of different directions Scan + Sort relations combination should be used.
         if (!relCollation.getFieldCollations().isEmpty()) {
             descending = relCollation.getFieldCollations().get(0).getDirection().isDescending();
         }
