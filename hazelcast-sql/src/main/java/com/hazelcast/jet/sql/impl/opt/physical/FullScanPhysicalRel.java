@@ -90,7 +90,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         HazelcastTable table = getTable().unwrap(HazelcastTable.class);
-        double totalRowCount = table.getStatistic() != null
+        double totalRowCount = table.getStatistic().getRowCount() != null
                 ? table.getTotalRowCount()
                 : getTable().getRowCount();
 
