@@ -337,4 +337,38 @@
         <executor-pool-size>-1</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
+
+    <jet enabled="true" resource-upload-enabled="false">
+        <instance>
+            <!-- time spacing of flow-control (ack) packets -->
+            <flow-control-period>100</flow-control-period>
+            <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
+            <backup-count>1</backup-count>
+            <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
+                 cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
+            <scale-up-delay-millis>10000</scale-up-delay-millis>
+            <!-- Sets whether Lossless Job Restart is enabled for the node. With
+                 Lossless Restart, Jet persists job snapshots to disk automatically
+                 and you can restart the whole cluster without losing the jobs and
+                 their state.
+
+                 This feature requires Jet Enterprise and is implemented on top of the
+                 Hot Restart feature of Hazelcast IMDG. Therefore you should configure
+                 Hot Restart in the hazelcast IMDG configuration, especially the base
+                 directory where to store the recovery files. If you don't, Jet will
+                 force-enable Hot Restart and apply some reasonable defaults.
+             -->
+            <lossless-restart-enabled>false</lossless-restart-enabled>
+        </instance>
+        <edge-defaults>
+            <!-- capacity of the concurrent SPSC queue between each two processors -->
+            <queue-size>1024</queue-size>
+
+            <!-- network packet size limit in bytes, only applies to distributed edges -->
+            <packet-size-limit>16384</packet-size-limit>
+
+            <!-- receive window size multiplier, only applies to distributed edges -->
+            <receive-window-multiplier>3</receive-window-multiplier>
+        </edge-defaults>
+    </jet>
 </hazelcast>
