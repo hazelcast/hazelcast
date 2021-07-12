@@ -32,13 +32,14 @@ hazelcast:
     # convention is to use 5701 and it is the default both here and in
     # various tools connecting to Hazelcast.
     port:
-      # Whether to automatically try higher port numbers when the preferred
-      # one is taken.
+      # Determines whether if the member automatically tries higher port
+      # numbers when the preferred one is occupied by another process.
       auto-increment: true
-      # The number of port that Hazelcast will try to bind.
-      # If you set the value of port as 5701, as members join the cluster, Hazelcast tries
-      # to find ports between 5701 and 5801. You can change the port count in cases like
-      # having large instances on a single machine or you are willing to have only a few
+      # The number of port that Hazelcast will try to bind. The default trial
+      # count is 100. With this default, if you set the value of port as 5701,
+      # as members join the cluster, Hazelcast tries to find ports between 5701
+      # and 5801. You can change the port count in cases like having large
+      # instances on a single machine or you are willing to have only a few
       # ports assigned.
       port-count: 100
       port: 5701
