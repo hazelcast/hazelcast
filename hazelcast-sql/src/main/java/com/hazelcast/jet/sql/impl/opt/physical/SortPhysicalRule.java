@@ -65,8 +65,8 @@ final class SortPhysicalRule extends RelOptRule {
             } else {
                 if (logicalSort.offset != null || logicalSort.fetch != null) {
                     SortPhysicalRel top = (SortPhysicalRel) convert(logicalSort);
-                    // TODO: [sasha], [Hakan] additional Sort relation is used for FETCH OFFSET.
-                    // TODO: It's required for correct work, but should be optimized in next revisions.
+                    // TODO: [sasha], [Hakan] additional Sort relation is used for FETCH OFFSET with index scan.
+                    // TODO: It's required for correct work of index scan, but should be optimized in next revisions.
                     top = new SortPhysicalRel(
                             top.getCluster(),
                             top.getTraitSet(),
