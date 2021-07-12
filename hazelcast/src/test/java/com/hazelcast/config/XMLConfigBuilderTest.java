@@ -27,6 +27,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -171,7 +172,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
-    public void testSecurityInterceptorConfig() {
+    public void testSecurityConfig() {
         String xml = HAZELCAST_START_TAG
                 + "<security enabled=\"true\">"
                 + "  <security-interceptors>"
@@ -242,6 +243,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          <use-canonical-hostname>true</use-canonical-hostname>"
                 + "        </kerberos>"
                 + "      </identity>"
+                + "    </realm>"
+                + "    <realm name='simple'>"
+                + "      <authentication>"
+                + "        <simple>"
+                + "          <skip-role>true</skip-role>"
+                + "          <role-separator>:</role-separator>"
+                + "          <user username='test' password='a1234'>"
+                + "            <role>monitor</role>"
+                + "            <role>hazelcast</role>"
+                + "          </user>"
+                + "          <user username='dev' password='secret'>"
+                + "            <role>root</role>"
+                + "          </user>"
+                + "        </simple>"
+                + "      </authentication>"
                 + "    </realm>"
                 + "  </realms>"
                 + "  <member-authentication realm='mr'/>\n"
@@ -325,6 +341,20 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         LdapAuthenticationConfig kerbLdapAuthentication = kerbAuthentication.getLdapAuthenticationConfig();
         assertNotNull(kerbLdapAuthentication);
         assertEquals("ldap://127.0.0.1", kerbLdapAuthentication.getUrl());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simple");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        assertEquals(":", simpleAuthnCfg.getRoleSeparator());
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
+        assertEquals(Boolean.TRUE, simpleAuthnCfg.getSkipRole());
 
         // client-permission-policy
         PermissionPolicyConfig permissionPolicyConfig = securityConfig.getClientPolicyConfig();
@@ -2031,6 +2061,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
+                + "        <data-persistence enabled=\"true\">\n"
+                + "            <fsync>true</fsync>\n"
+                + "          </data-persistence>"
                 + "        <partition-lost-listeners>\n"
                 + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
                 + "          </partition-lost-listeners>"
@@ -2068,8 +2101,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("LatestAccessMergePolicy", cacheConfig.getMergePolicyConfig().getPolicy());
         assertEquals(111, cacheConfig.getMergePolicyConfig().getBatchSize());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
-        assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
-        assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+        // overrides by the conflicting dataPersistenceConfig
+        assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
+        assertTrue(cacheConfig.getHotRestartConfig().isFsync());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isFsync());
         EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
         assertEquals(120, journalConfig.getCapacity());
@@ -2370,6 +2406,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "        <hot-restart enabled=\"false\">\n"
                 + "            <fsync>false</fsync>\n"
                 + "          </hot-restart>"
+                + "        <data-persistence enabled=\"true\">\n"
+                + "            <fsync>true</fsync>\n"
+                + "          </data-persistence>"
                 + "        <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
                 + "            <class-name>com.hazelcast.examples.DummyStore</class-name>\n"
                 + "            <write-delay-seconds>42</write-delay-seconds>\n"
@@ -2444,8 +2483,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
         assertTrue(mapConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, mapConfig.getMerkleTreeConfig().getDepth());
-        assertFalse(mapConfig.getHotRestartConfig().isEnabled());
-        assertFalse(mapConfig.getHotRestartConfig().isFsync());
+        // because of conflict with dataPersistence, override will occur
+        assertTrue(mapConfig.getHotRestartConfig().isEnabled());
+        assertTrue(mapConfig.getHotRestartConfig().isFsync());
+        assertTrue(mapConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(mapConfig.getDataPersistenceConfig().isFsync());
 
         EventJournalConfig journalConfig = mapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
@@ -2956,6 +2998,40 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testPersistence() {
+        String dir = "/mnt/persistence-root/";
+        String backupDir = "/mnt/persistence-backup/";
+        int parallelism = 3;
+        int validationTimeout = 13131;
+        int dataLoadTimeout = 45454;
+        PersistenceClusterDataRecoveryPolicy policy = PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
+        String xml = HAZELCAST_START_TAG
+                + "<persistence enabled=\"true\">"
+                + "    <base-dir>" + dir + "</base-dir>"
+                + "    <backup-dir>" + backupDir + "</backup-dir>"
+                + "    <parallelism>" + parallelism + "</parallelism>"
+                + "    <validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
+                + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
+                + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
+                + "    <auto-remove-stale-data>false</auto-remove-stale-data>"
+                + "</persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
+
+        assertTrue(persistenceConfig.isEnabled());
+        assertEquals(new File(dir).getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(new File(backupDir).getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
+        assertEquals(parallelism, persistenceConfig.getParallelism());
+        assertEquals(validationTimeout, persistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
+        assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(persistenceConfig.isAutoRemoveStaleData());
+    }
+
+    @Override
+    @Test
     public void testHotRestartEncryptionAtRest_whenJavaKeyStore() {
         int keySize = 16;
         String keyStorePath = "/tmp/keystore.p12";
@@ -2987,6 +3063,53 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(hotRestartPersistenceConfig.isEnabled());
 
         EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof JavaKeyStoreSecureStoreConfig);
+        JavaKeyStoreSecureStoreConfig keyStoreConfig = (JavaKeyStoreSecureStoreConfig) secureStoreConfig;
+        assertEquals(new File(keyStorePath).getAbsolutePath(), keyStoreConfig.getPath().getAbsolutePath());
+        assertEquals(keyStoreType, keyStoreConfig.getType());
+        assertEquals(keyStorePassword, keyStoreConfig.getPassword());
+        assertEquals(pollingInterval, keyStoreConfig.getPollingInterval());
+        assertEquals(currentKeyAlias, keyStoreConfig.getCurrentKeyAlias());
+    }
+
+    @Override
+    @Test
+    public void testPersistenceEncryptionAtRest_whenJavaKeyStore() {
+        int keySize = 16;
+        String keyStorePath = "/tmp/keystore.p12";
+        String keyStoreType = "PKCS12";
+        String keyStorePassword = "password";
+        int pollingInterval = 60;
+        String currentKeyAlias = "current";
+        String xml = HAZELCAST_START_TAG
+                + "<persistence enabled=\"true\">"
+                + "    <encryption-at-rest enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
+                + "        <secure-store>\n"
+                + "            <keystore>\n"
+                + "                <path>" + keyStorePath + "</path>\n"
+                + "                <type>" + keyStoreType + "</type>\n"
+                + "                <password>" + keyStorePassword + "</password>\n"
+                + "                <polling-interval>" + pollingInterval + "</polling-interval>\n"
+                + "                <current-key-alias>" + currentKeyAlias + "</current-key-alias>\n"
+                + "            </keystore>\n"
+                + "        </secure-store>\n"
+                + "    </encryption-at-rest>"
+                + "</persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
+        assertTrue(persistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());
@@ -3040,6 +3163,63 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(hotRestartPersistenceConfig.isEnabled());
 
         EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertTrue(encryptionAtRestConfig.isEnabled());
+        assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
+        assertEquals("some-salt", encryptionAtRestConfig.getSalt());
+        assertEquals(keySize, encryptionAtRestConfig.getKeySize());
+        SecureStoreConfig secureStoreConfig = encryptionAtRestConfig.getSecureStoreConfig();
+        assertTrue(secureStoreConfig instanceof VaultSecureStoreConfig);
+        VaultSecureStoreConfig vaultConfig = (VaultSecureStoreConfig) secureStoreConfig;
+        assertEquals(address, vaultConfig.getAddress());
+        assertEquals(secretPath, vaultConfig.getSecretPath());
+        assertEquals(token, vaultConfig.getToken());
+        assertEquals(pollingInterval, vaultConfig.getPollingInterval());
+        SSLConfig sslConfig = vaultConfig.getSSLConfig();
+        assertTrue(sslConfig.isEnabled());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
+        assertEquals(1, sslConfig.getProperties().size());
+        assertEquals("TLS", sslConfig.getProperties().get("protocol"));
+    }
+
+    @Override
+    @Test
+    public void testPersistenceEncryptionAtRest_whenVault() {
+        int keySize = 16;
+        String address = "https://localhost:1234";
+        String secretPath = "secret/path";
+        String token = "token";
+        int pollingInterval = 60;
+        String xml = HAZELCAST_START_TAG
+                + "<persistence enabled=\"true\">"
+                + "    <encryption-at-rest enabled=\"true\">\n"
+                + "        <algorithm>AES</algorithm>\n"
+                + "        <salt>some-salt</salt>\n"
+                + "        <key-size>" + keySize + "</key-size>\n"
+                + "        <secure-store>\n"
+                + "            <vault>\n"
+                + "                <address>" + address + "</address>\n"
+                + "                <secret-path>" + secretPath + "</secret-path>\n"
+                + "                <token>" + token + "</token>\n"
+                + "                <polling-interval>" + pollingInterval + "</polling-interval>\n"
+                + "                <ssl enabled=\"true\">\n"
+                + "                  <factory-class-name>\n"
+                + "                      com.hazelcast.nio.ssl.BasicSSLContextFactory\n"
+                + "                  </factory-class-name>\n"
+                + "                  <properties>\n"
+                + "                    <property name=\"protocol\">TLS</property>\n"
+                + "                  </properties>\n"
+                + "                </ssl>\n"
+                + "            </vault>\n"
+                + "        </secure-store>\n"
+                + "    </encryption-at-rest>"
+                + "</persistence>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = new InMemoryXmlConfig(xml);
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
+        assertTrue(persistenceConfig.isEnabled());
+
+        EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES", encryptionAtRestConfig.getAlgorithm());
         assertEquals("some-salt", encryptionAtRestConfig.getSalt());

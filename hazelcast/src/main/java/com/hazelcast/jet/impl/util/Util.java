@@ -22,6 +22,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
@@ -720,5 +722,10 @@ public final class Util {
     public static <T> Predicate<T> distinctBy(Function<? super T, ?> keyFn) {
         Set<Object> seen = new HashSet<>();
         return t -> seen.add(keyFn.apply(t));
+    }
+
+    public static MembersView getMembersView(NodeEngine nodeEngine) {
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        return clusterService.getMembershipManager().getMembersView();
     }
 }

@@ -20,14 +20,11 @@ fi
 
 readJvmOptionsFile "jvm.options"
 
-#TODO -Djet.home= ????
 JAVA_OPTS_ARRAY=(\
 $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
 "-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
-"-Djet.home=$HAZELCAST_HOME" \
-"-Dhazelcast.config=$HAZELCAST_HOME/config/hazelcast.yaml" \
-"-Dhazelcast.jet.config=$HAZELCAST_HOME/config/hazelcast-jet.yaml" \
+"-Dhz.home=$HAZELCAST_HOME" \
 $PROMETHEUS \
 $JVM_OPTIONS \
 $JAVA_OPTS \
@@ -55,7 +52,7 @@ echo "########################################"
 
 if [[ "$DAEMON" = "true" ]]; then
     mkdir -p $HAZELCAST_HOME/logs
-    DATE=`date "+%Y-%m-%d.%H.%M.%S"`
+    DATE=$(date "+%Y-%m-%d.%H.%M.%S")
     HAZELCAST_LOG="$HAZELCAST_HOME/logs/hazelcast.$DATE.out"
     echo "Starting Hazelcast in daemon mode. Standard out and error will be written to $HAZELCAST_LOG"
     nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.core.server.HazelcastMemberStarter > "$HAZELCAST_LOG" 2>&1 &

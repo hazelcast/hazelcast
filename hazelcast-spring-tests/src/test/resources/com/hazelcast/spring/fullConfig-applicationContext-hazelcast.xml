@@ -673,6 +673,19 @@
                             <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
                         </hz:identity>
                     </hz:realm>
+                    <hz:realm name="simpleRealm">
+                        <hz:authentication>
+                            <hz:simple>
+                                <hz:user username="test" password="a1234">
+                                    <hz:role>monitor</hz:role>
+                                    <hz:role>hazelcast</hz:role>
+                                </hz:user>
+                                <hz:user username="root" password="secret">
+                                    <hz:role>root</hz:role>
+                                </hz:user>
+                            </hz:simple>
+                        </hz:authentication>
+                    </hz:realm>
                     <hz:realm name="kerberosRealm">
                         <hz:authentication>
                             <hz:kerberos>
@@ -911,13 +924,13 @@
                 <hz:recently-active-split-brain-protection heartbeat-tolerance-millis="5123"/>
             </hz:split-brain-protection>
 
-            <hz:hot-restart-persistence enabled="false"
+            <hz:persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
                                         cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
-                <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
-                <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
+                <hz:base-dir>/mnt/persistence/</hz:base-dir>
+                <hz:backup-dir>/mnt/persistence-backup/</hz:backup-dir>
                 <hz:encryption-at-rest enabled="true">
                     <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
                     <hz:salt>sugar</hz:salt>
@@ -933,7 +946,7 @@
                         </hz:vault>
                     </hz:secure-store>
                 </hz:encryption-at-rest>
-            </hz:hot-restart-persistence>
+            </hz:persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"
                                    epochStart="1514764800001" nodeIdOffset="30"

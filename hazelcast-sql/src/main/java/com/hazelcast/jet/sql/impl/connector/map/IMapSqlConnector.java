@@ -32,7 +32,7 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -71,14 +71,13 @@ public class IMapSqlConnector implements SqlConnector {
     public static final IMapSqlConnector INSTANCE = new IMapSqlConnector();
 
     public static final String TYPE_NAME = "IMap";
+    public static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
             MetadataPortableResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
-
-    private static final List<String> PRIMARY_KEY_LIST = singletonList(QueryPath.KEY);
 
     @Override
     public String typeName() {

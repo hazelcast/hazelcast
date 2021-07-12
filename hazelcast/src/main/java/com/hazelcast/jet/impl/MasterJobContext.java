@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -51,6 +50,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -217,20 +217,21 @@ public class MasterJobContext {
                 } else {
                     logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
                 }
-                MembersView membersView = getMembersView();
+                MembersView membersView = Util.getMembersView(mc.nodeEngine());
                 logger.info("Start executing " + mc.jobIdString()
                         + ", execution graph in DOT format:\n" + dotRepresentation
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
+                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(), dag, mc.jobId(),
                                 mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false)));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
                 Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), participants,
-                                mc.nodeEngine().getSerializationService().toData(plan), false);
+                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
                 mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
             } catch (Throwable e) {
                 finalizeJob(e);
@@ -257,6 +258,13 @@ public class MasterJobContext {
             }
             if (scheduleRestartIfQuorumAbsent() || scheduleRestartIfClusterIsNotSafe()) {
                 return null;
+            }
+            Version jobClusterVersion = mc.jobRecord().getClusterVersion();
+            Version currentClusterVersion = mc.nodeEngine().getClusterService().getClusterVersion();
+            if (!jobClusterVersion.equals(currentClusterVersion)) {
+                throw new JetException("Cancelling job " + mc.jobName() + ": the cluster was upgraded since the job was "
+                        + "submitted. Submitted to version: " + jobClusterVersion + ", current cluster version: "
+                        + currentClusterVersion);
             }
             mc.setJobStatus(STARTING);
 
@@ -417,11 +425,6 @@ public class MasterJobContext {
         }
         mc.setJobStatus(NOT_RUNNING);
         mc.coordinationService().scheduleRestart(mc.jobId());
-    }
-
-    private MembersView getMembersView() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) mc.nodeEngine().getClusterService();
-        return clusterService.getMembershipManager().getMembersView();
     }
 
     // Called as callback when all InitOperation invocations are done

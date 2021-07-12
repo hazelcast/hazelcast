@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Commits a heartbeat for the given session on the given cP group and
  * extends its session expiration time.
  */
-@Generated("56f3555a1031a8589fb4504183a94a2a")
+@Generated("0d5ce285396805675f9715293adfb49c")
 public final class CPSessionHeartbeatSessionCodec {
     //hex: 0x1F0300
     public static final int REQUEST_MESSAGE_TYPE = 2032384;
@@ -94,6 +94,4 @@ public final class CPSessionHeartbeatSessionCodec {
 
         return clientMessage;
     }
-
-
 }

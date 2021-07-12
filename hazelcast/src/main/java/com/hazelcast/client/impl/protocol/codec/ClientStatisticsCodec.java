@@ -195,7 +195,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * 
  * The metrics blob constructed this way is then gets ZLIB compressed.
  */
-@Generated("051c714519613f47ca7f3f8390a085d2")
+@Generated("79f11731603b70d9c2b014648e5f3a37")
 public final class ClientStatisticsCodec {
     //hex: 0x000C00
     public static final int REQUEST_MESSAGE_TYPE = 3072;
@@ -259,6 +259,4 @@ public final class ClientStatisticsCodec {
 
         return clientMessage;
     }
-
-
 }
