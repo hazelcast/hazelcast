@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlService;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -29,12 +30,12 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
+import static org.junit.Assert.assertTrue;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 750_000;
-    static final int ITEM_TO_LOOKUP = 250_000;
+    static final int ITEM_COUNT = 500_000;
     static final int COUNT_DIVIDER = 3;
     static final int MEMBERS_COUNT = 3;
     static final String MAP_NAME = "map";
@@ -54,19 +55,24 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     @Test
     @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestPointLookup() {
+        Random random = new Random();
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
         }
-        expected.add(new SqlTestSupport.Row(ITEM_TO_LOOKUP, ITEM_TO_LOOKUP));
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(instances(), instances().length - 1, 500L);
+        MutatorThread mutator = new MutatorThread(instances(), (instances().length - 1) * 2, 500L);
         mutator.start();
 
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " WHERE this=" + ITEM_TO_LOOKUP, expected);
+        for (int i = 0; i < instances().length; ++i) {
+            expected.clear();
+            int itemToFind = random.nextInt(ITEM_COUNT);
+            expected.add(new SqlTestSupport.Row(itemToFind, itemToFind));
+            assertRowsOrdered("SELECT * FROM " + MAP_NAME + " WHERE this=" + itemToFind, expected);
+        }
 
         try {
             mutator.join();
@@ -87,10 +93,12 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(instances(), instances().length - 1);
+        MutatorThread mutator = new MutatorThread(instances(), (instances().length - 1) * 2);
         mutator.start();
 
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+        for (int i = 0; i < instances().length; i++) {
+            assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+        }
 
         try {
             mutator.join();
@@ -101,8 +109,9 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
-    public void stressTestSameOrderMultipleQueries() {
+    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    public void stressTestSameOrderMultipleQueryThreads() {
+        List<Boolean> results = new ArrayList<Boolean>();
         List<SqlTestSupport.Row> expected = new ArrayList<>();
         for (int i = 0; i <= (ITEM_COUNT / COUNT_DIVIDER); i++) {
             map.put(i, i);
@@ -113,12 +122,10 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         map.addIndex(indexConfig);
 
         MutatorThread mutator = new MutatorThread(instances(), instances().length - 1, 2500L);
-        QueryThread requester = new QueryThread(expected, instances().length - 1);
+        QueryThread requester = new QueryThread(expected, results, instances().length - 1);
 
         mutator.start();
         requester.start();
-
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
 
         try {
             mutator.join();
@@ -126,7 +133,9 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
+        for (boolean result : results) {
+            assertTrue(result);
+        }
     }
 
     private static class MutatorThread extends Thread {
@@ -167,12 +176,14 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
 
     private static class QueryThread extends Thread {
         private final List<SqlTestSupport.Row> expectedElements;
+        private final List<Boolean> testResults;
         private final int iterations;
         private final long delay;
 
-        QueryThread(List<SqlTestSupport.Row> expectedElements, int iterations) {
+        QueryThread(List<SqlTestSupport.Row> expectedElements, List<Boolean> testResults, int iterations) {
             super();
             this.expectedElements = expectedElements;
+            this.testResults = testResults;
             this.iterations = iterations;
             this.delay = 3000L;
         }
@@ -185,8 +196,25 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expectedElements);
+                testResults.add(
+                        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expectedElements)
+                );
             }
         }
+    }
+
+    private static boolean assertRowsOrdered(String sql, List<SqlTestSupport.Row> expectedRows) {
+        SqlService sqlService = instance().getSql();
+        List<SqlTestSupport.Row> actualRows = new ArrayList<>();
+        sqlService.execute(sql).iterator().forEachRemaining(r -> actualRows.add(new SqlTestSupport.Row(r)));
+        if (actualRows.size() != expectedRows.size()) {
+            return false;
+        }
+        for (int i = 0; i < actualRows.size(); i++) {
+            if (!actualRows.get(i).equals(expectedRows.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

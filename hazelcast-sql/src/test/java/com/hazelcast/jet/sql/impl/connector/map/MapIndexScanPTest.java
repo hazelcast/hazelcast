@@ -29,6 +29,8 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -201,6 +203,38 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void test_whenBothFiltersAndSpecificProjectionExists_sorted() {
+        List<Object[]> expected = new ArrayList<>();
+        for (int i = count; i > 0; i--) {
+            map.put(i, new Person("value-" + i, i));
+            if (i > count / 2) {
+                if (i % 2 == 1) {
+                    expected.add(new Object[]{(count - i + 1), "value-" + (count - i + 1), (count - i + 1)});
+                }
+            }
+        }
+
+        IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "age").setName(randomName());
+        map.addIndex(indexConfig);
+
+        Expression<Boolean> remainingFilter = new FunctionalPredicateExpression(row -> {
+            int value = row.get(0);
+            return value % 2 == 0;
+        });
+        IndexFilter filter = new IndexRangeFilter(intValue(0), true, intValue(count / 2), true);
+        MapIndexScanMetadata metadata = metadata(indexConfig.getName(), filter, remainingFilter, 0, false);
+
+        TestSupport
+                .verifyProcessor(adaptSupplier(MapIndexScanP.readMapIndexSupplier(metadata)))
+                .hazelcastInstance(instance())
+                .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, emptyList()))
+                .outputChecker(LENIENT_SAME_ITEMS_IN_ORDER)
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(expected);
+    }
+
+    @Test
     public void test_whenFilterAndSpecificProjectionExists_sorted() {
         List<Object[]> expected = new ArrayList<>();
         for (int i = count; i > 0; i--) {
@@ -227,6 +261,15 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
     }
 
     private MapIndexScanMetadata metadata(String indexName, IndexFilter filter, int fieldIndex, boolean descending) {
+        return metadata(indexName, filter, null, fieldIndex, descending);
+    }
+
+    private MapIndexScanMetadata metadata(
+            String indexName,
+            IndexFilter filter,
+            Expression<Boolean> reminderFilter,
+            int fieldIndex,
+            boolean descending) {
         return new MapIndexScanMetadata(
                 map.getName(),
                 indexName,
@@ -236,7 +279,7 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 Arrays.asList(INT, VARCHAR, INT),
                 filter,
                 asList(create(0, INT), create(1, VARCHAR), create(2, INT)),
-                null,
+                reminderFilter,
                 fieldIndex == -1 ? null : comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(fieldIndex)))),
                 descending
         );
