@@ -17,7 +17,6 @@
 package com.hazelcast.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
@@ -88,7 +87,7 @@ public final class SecuredFunctions {
     mapEventJournalReaderFn(String name) {
         return new FunctionEx<HazelcastInstance, EventJournalReader<EventJournalMapEvent<K, V>>>() {
             @Override
-            public EventJournalReader<EventJournalMapEvent<K, V>> applyEx(HazelcastInstance instance) throws Exception {
+            public EventJournalReader<EventJournalMapEvent<K, V>> applyEx(HazelcastInstance instance) {
                 return (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(name);
             }
 
@@ -104,7 +103,7 @@ public final class SecuredFunctions {
     cacheEventJournalReaderFn(String name) {
         return new FunctionEx<HazelcastInstance, EventJournalReader<EventJournalCacheEvent<K, V>>>() {
             @Override
-            public EventJournalReader<EventJournalCacheEvent<K, V>> applyEx(HazelcastInstance instance) throws Exception {
+            public EventJournalReader<EventJournalCacheEvent<K, V>> applyEx(HazelcastInstance instance) {
                 return (EventJournalReader<EventJournalCacheEvent<K, V>>) instance.getCacheManager().getCache(name);
             }
 
@@ -176,7 +175,7 @@ public final class SecuredFunctions {
     public static SupplierEx<Processor> streamSocketProcessorFn(String host, int port, String charset) {
         return new SupplierEx<Processor>() {
             @Override
-            public Processor getEx() throws Exception {
+            public Processor getEx() {
                 return new StreamSocketP(host, port, Charset.forName(charset));
             }
 
@@ -216,7 +215,7 @@ public final class SecuredFunctions {
     ) {
         return new SupplierEx<Processor>() {
             @Override
-            public Processor getEx() throws Exception {
+            public Processor getEx() {
                 return new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob,
                         sharedFileSystem, mapOutputFn);
             }
@@ -236,7 +235,7 @@ public final class SecuredFunctions {
     ) {
         return new SupplierEx<Processor>() {
             @Override
-            public Processor getEx() throws Exception {
+            public Processor getEx() {
                 return new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn);
             }
 
@@ -274,7 +273,7 @@ public final class SecuredFunctions {
     ) {
         return new SupplierEx<Processor>() {
             @Override
-            public Processor getEx() throws Exception {
+            public Processor getEx() {
                 return new WriteFileP<>(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, clock);
             }
 
@@ -287,28 +286,28 @@ public final class SecuredFunctions {
 
     public static <T, K, V> FunctionEx<HazelcastInstance, Processor> updateMapProcessorFn(
             String name,
-            ClientConfig clientConfig,
+            String clientXml,
             FunctionEx<? super T, ? extends K> toKeyFn,
             BiFunctionEx<? super V, ? super T, ? extends V> updateFn
     ) {
         return new FunctionEx<HazelcastInstance, Processor>() {
 
             @Override
-            public Processor applyEx(HazelcastInstance instance) throws Exception {
+            public Processor applyEx(HazelcastInstance instance) {
                 return new UpdateMapP<>(instance, name, toKeyFn, updateFn);
             }
 
             @Override
             public Permission permission() {
-                return mapUpdatePermission(clientConfig, name);
+                return mapUpdatePermission(clientXml, name);
             }
         };
     }
 
     public static <T, R, K, V> FunctionEx<HazelcastInstance, Processor> updateWithEntryProcessorFn(
-            String name,
             int maxParallelAsyncOps,
-            ClientConfig clientConfig,
+            String name,
+            String clientXml,
             FunctionEx<? super T, ? extends K> toKeyFn,
             FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
     ) {
@@ -321,7 +320,7 @@ public final class SecuredFunctions {
 
             @Override
             public Permission permission() {
-                return mapUpdatePermission(clientConfig, name);
+                return mapUpdatePermission(clientXml, name);
             }
         };
     }

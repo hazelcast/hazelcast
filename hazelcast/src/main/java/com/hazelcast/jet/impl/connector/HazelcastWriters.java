@@ -116,9 +116,10 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
 
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
-                AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                        SecuredFunctions.updateMapProcessorFn(name, clientConfig, toKeyFn, updateFn)));
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
     }
 
     @Nonnull
@@ -131,9 +132,10 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
-                AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                        SecuredFunctions.updateWithEntryProcessorFn(name, MAX_PARALLEL_ASYNC_OPS_DEFAULT, clientConfig,
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateWithEntryProcessorFn(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, clientXml,
                                 toKeyFn, toEntryProcessorFn)));
     }
 
@@ -148,9 +150,10 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
-                AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                        SecuredFunctions.updateWithEntryProcessorFn(name, maxParallelAsyncOps, clientConfig,
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateWithEntryProcessorFn(maxParallelAsyncOps, name, clientXml,
                                 toKeyFn, toEntryProcessorFn)));
     }
 
