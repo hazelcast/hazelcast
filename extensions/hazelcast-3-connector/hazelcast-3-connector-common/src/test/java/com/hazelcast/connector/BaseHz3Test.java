@@ -18,7 +18,7 @@ package com.hazelcast.connector;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.starter.hz3.Hazelcast3Starter;
 import org.junit.After;
@@ -75,7 +75,7 @@ public class BaseHz3Test extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         customLibDir = Files.createTempDirectory("source");
-        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(),
+        System.setProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName(),
                 customLibDir.toAbsolutePath().toString());
 
         Files.copy(
