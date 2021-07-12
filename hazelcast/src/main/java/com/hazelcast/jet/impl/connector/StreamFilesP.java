@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -111,7 +112,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private int parallelism;
     private int processorIndex;
 
-    StreamFilesP(
+    public StreamFilesP(
             @Nonnull String watchedDirectory,
             @Nonnull Charset charset,
             @Nonnull String glob,
@@ -365,7 +366,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.of(2, ConnectorPermission.file(watchedDirectory, ACTION_READ),
-                ProcessorSupplier.of(() -> new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob,
+                ProcessorSupplier.of(SecuredFunctions.streamFileProcessorFn(watchedDirectory, charset, glob,
                         sharedFileSystem, mapOutputFn)));
     }
 

@@ -39,6 +39,7 @@ import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import java.security.Permission;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -121,6 +122,11 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                                         .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
                                                                exactlyOnce, batchLimit))
                                         .collect(Collectors.toList());
+                    }
+
+                    @Override
+                    public Permission permission() {
+                        return ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE);
                     }
                 });
     }

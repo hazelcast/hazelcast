@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -49,6 +50,11 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
         this.preferredLocalParallelism = preferredLocalParallelism;
         this.permission = permission;
         this.processorSupplier = processorSupplier;
+    }
+
+    @Override
+    public void init(@Nonnull Context context) throws Exception {
+        PermissionsUtil.checkPermission(processorSupplier, context);
     }
 
     @Override

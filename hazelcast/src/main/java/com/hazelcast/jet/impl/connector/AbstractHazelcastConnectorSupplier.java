@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +36,7 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSupplier {
 
-    private final String clientXml;
+    protected final String clientXml;
 
     private transient HazelcastInstance instance;
     private transient SerializationService serializationService;
@@ -49,6 +50,13 @@ public abstract class AbstractHazelcastConnectorSupplier implements ProcessorSup
             @Nonnull FunctionEx<HazelcastInstance, Processor> procFn
     ) {
         return new AbstractHazelcastConnectorSupplier(clientXml) {
+
+            @Override
+            public void init(@Nonnull Context context) {
+                PermissionsUtil.checkPermission(procFn, context);
+                super.init(context);
+            }
+
             @Override
             protected Processor createProcessor(HazelcastInstance instance, SerializationService serializationService) {
                 return procFn.apply(instance);

@@ -30,7 +30,7 @@ import java.util.function.Supplier;
  * @since 4.0
  */
 @FunctionalInterface
-public interface SupplierEx<T> extends Supplier<T>, Serializable {
+public interface SupplierEx<T> extends Supplier<T>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Supplier#get}.

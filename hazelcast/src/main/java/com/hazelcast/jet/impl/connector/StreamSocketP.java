@@ -54,7 +54,7 @@ public final class StreamSocketP extends AbstractProcessor {
     private boolean socketDone;
     private boolean maybeLfExpected;
 
-    private StreamSocketP(String host, int port, Charset charset) {
+    public StreamSocketP(String host, int port, Charset charset) {
         this.host = host;
         this.port = port;
         this.charsetDecoder = charset.newDecoder();

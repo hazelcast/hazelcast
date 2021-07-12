@@ -35,6 +35,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.XAConnection;
 import javax.jms.XASession;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -173,6 +174,11 @@ public final class WriteJmsP<T> extends XaSinkProcessorBase {
             if (connection != null) {
                 connection.close();
             }
+        }
+
+        @Override
+        public Permission permission() {
+            return ConnectorPermission.jms(destinationName, ACTION_WRITE);
         }
     }
 }

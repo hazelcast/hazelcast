@@ -34,6 +34,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -384,14 +385,14 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             @Override
             public void init(@Nonnull Context context) {
+                PermissionsUtil.checkPermission(supplier, context);
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                ownerAddress = context.hazelcastInstance().getPartitionService()
-                                      .getPartition(key).getOwner().getAddress();
+                ownerAddress = context.hazelcastInstance().getPartitionService().getPartition(
+                        StringPartitioningStrategy.getPartitionKey(partitionKey)).getOwner().getAddress();
             }
 
             @Nonnull @Override
@@ -458,6 +459,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             @Override
             public void init(@Nonnull Context context) throws Exception {
+                PermissionsUtil.checkPermission(supplier, context);
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
@@ -102,7 +103,7 @@ public final class WriteFileP<T> implements Processor {
     /**
      * Rolling by date is based on system clock, not on event time.
      */
-    private WriteFileP(
+    public WriteFileP(
             @Nonnull String directoryName,
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
@@ -327,9 +328,9 @@ public final class WriteFileP<T> implements Processor {
             boolean exactlyOnce,
             @Nonnull LongSupplier clock
     ) {
-        return ProcessorMetaSupplier.preferLocalParallelismOne(
-                ConnectorPermission.file(directoryName, ACTION_WRITE),
-                () -> new WriteFileP<>(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, clock));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.file(directoryName, ACTION_WRITE),
+                SecuredFunctions.writeFileProcessorFn(directoryName, toStringFn, charset, datePattern,
+                        maxFileSize, exactlyOnce, clock));
     }
 
     private abstract class FileResource implements TransactionalResource<FileId> {

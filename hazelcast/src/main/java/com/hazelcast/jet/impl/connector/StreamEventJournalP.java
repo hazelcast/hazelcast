@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
@@ -46,6 +47,7 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.MapPermission;
 
@@ -382,6 +384,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (clientXml != null) {
                 initRemote();
             } else {
+                PermissionsUtil.checkPermission(eventJournalReaderSupplier, context);
                 initLocal(context.hazelcastInstance().getPartitionService().getPartitions());
             }
         }
@@ -514,7 +517,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(projection, "projection");
 
         return new ClusterMetaSupplier<>(null,
-                instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
+                SecuredFunctions.mapEventJournalReaderFn(mapName),
                 predicate, projection, initialPos, eventTimePolicy,
                 () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
@@ -531,7 +534,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(projection, "projection");
 
         return new ClusterMetaSupplier<>(clientXml,
-                instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
+                SecuredFunctions.mapEventJournalReaderFn(mapName),
                 predicate, projection, initialPos, eventTimePolicy,
                 () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
@@ -547,7 +550,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(projection, "projection");
 
         return new ClusterMetaSupplier<>(null,
-                inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
+                SecuredFunctions.cacheEventJournalReaderFn(cacheName),
                 predicate, projection, initialPos, eventTimePolicy,
                 () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
     }
@@ -564,7 +567,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         checkSerializable(projection, "projection");
 
         return new ClusterMetaSupplier<>(clientXml,
-                inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
+                SecuredFunctions.cacheEventJournalReaderFn(cacheName),
                 predicate, projection, initialPos, eventTimePolicy,
                 () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ));
     }

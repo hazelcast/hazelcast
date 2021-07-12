@@ -16,24 +16,54 @@
 
 package com.hazelcast.function;
 
+import com.hazelcast.cache.EventJournalCacheEvent;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
+import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.jet.impl.connector.ReadIListP;
+import com.hazelcast.jet.impl.connector.ReadJdbcP;
+import com.hazelcast.jet.impl.connector.StreamFilesP;
+import com.hazelcast.jet.impl.connector.StreamSocketP;
+import com.hazelcast.jet.impl.connector.UpdateMapP;
+import com.hazelcast.jet.impl.connector.UpdateMapWithEntryProcessorP;
+import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.security.PermissionsUtil;
+import com.hazelcast.security.permission.CachePermission;
+import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Permission;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.util.function.LongSupplier;
+import java.util.stream.Stream;
 
+import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * Factory methods for functions which requires a permission to run.
  */
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public final class SecuredFunctions {
 
     private SecuredFunctions() {
@@ -53,6 +83,38 @@ public final class SecuredFunctions {
         };
     }
 
+    @SuppressWarnings("unchecked")
+    public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalMapEvent<K, V>>>
+    mapEventJournalReaderFn(String name) {
+        return new FunctionEx<HazelcastInstance, EventJournalReader<EventJournalMapEvent<K, V>>>() {
+            @Override
+            public EventJournalReader<EventJournalMapEvent<K, V>> applyEx(HazelcastInstance instance) throws Exception {
+                return (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(name);
+            }
+
+            @Override
+            public Permission permission() {
+                return new MapPermission(name, ACTION_CREATE, ACTION_READ);
+            }
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> FunctionEx<HazelcastInstance, EventJournalReader<EventJournalCacheEvent<K, V>>>
+    cacheEventJournalReaderFn(String name) {
+        return new FunctionEx<HazelcastInstance, EventJournalReader<EventJournalCacheEvent<K, V>>>() {
+            @Override
+            public EventJournalReader<EventJournalCacheEvent<K, V>> applyEx(HazelcastInstance instance) throws Exception {
+                return (EventJournalReader<EventJournalCacheEvent<K, V>>) instance.getCacheManager().getCache(name);
+            }
+
+            @Override
+            public Permission permission() {
+                return new CachePermission(name, ACTION_CREATE, ACTION_READ);
+            }
+        };
+    }
+
     public static <K, V> FunctionEx<? super Context, ReplicatedMap<K, V>> replicatedMapFn(String name) {
         return new FunctionEx<Context, ReplicatedMap<K, V>>() {
             @Override
@@ -63,6 +125,20 @@ public final class SecuredFunctions {
             @Override
             public Permission permission() {
                 return new ReplicatedMapPermission(name, ACTION_CREATE, ACTION_READ);
+            }
+        };
+    }
+
+    public static SupplierEx<Processor> readListProcessorFn(String name, String clientXml) {
+        return new SupplierEx<Processor>() {
+            @Override
+            public Processor getEx() {
+                return new ReadIListP(name, clientXml);
+            }
+
+            @Override
+            public Permission permission() {
+                return PermissionsUtil.listReadPermission(clientXml, name);
             }
         };
     }
@@ -97,4 +173,156 @@ public final class SecuredFunctions {
         };
     }
 
+    public static SupplierEx<Processor> streamSocketProcessorFn(String host, int port, String charset) {
+        return new SupplierEx<Processor>() {
+            @Override
+            public Processor getEx() throws Exception {
+                return new StreamSocketP(host, port, Charset.forName(charset));
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.socket(host, port, ACTION_READ);
+            }
+        };
+    }
+
+    public static <T> FunctionEx<? super Path, Stream<T>> readFileFn(
+            String directory,
+            String charsetName,
+            BiFunctionEx<? super String, ? super String, ? extends T> mapOutputFn
+    ) {
+        return new FunctionEx<Path, Stream<T>>() {
+            @Override
+            public Stream<T> applyEx(Path path) throws Exception {
+                String fileName = path.getFileName().toString();
+                return Files.lines(path, Charset.forName(charsetName))
+                        .map(l -> mapOutputFn.apply(fileName, l));
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(directory, ACTION_READ);
+            }
+        };
+    }
+
+    public static SupplierEx<Processor> streamFileProcessorFn(
+            String watchedDirectory,
+            String charset,
+            String glob,
+            boolean sharedFileSystem,
+            BiFunctionEx<? super String, ? super String, ?> mapOutputFn
+    ) {
+        return new SupplierEx<Processor>() {
+            @Override
+            public Processor getEx() throws Exception {
+                return new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob,
+                        sharedFileSystem, mapOutputFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(watchedDirectory, ACTION_READ);
+            }
+        };
+    }
+
+    public static <T> SupplierEx<Processor> readJdbcProcessorFn(
+            String connectionUrl,
+            SupplierEx<? extends Connection> newConnectionFn,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return new SupplierEx<Processor>() {
+            @Override
+            public Processor getEx() throws Exception {
+                return new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.jdbc(connectionUrl, ACTION_READ);
+            }
+        };
+    }
+
+    public static FunctionEx<? super Processor.Context, ? extends BufferedWriter> createBufferedWriterFn(
+            String host, int port, String charsetName
+    ) {
+        return new FunctionEx<Processor.Context, BufferedWriter>() {
+            @Override
+            public BufferedWriter applyEx(Processor.Context context) throws Exception {
+                return new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName));
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.socket(host, port, ACTION_WRITE);
+            }
+        };
+    }
+
+    public static <T> SupplierEx<Processor> writeFileProcessorFn(
+            String directoryName,
+            FunctionEx<? super T, ? extends String> toStringFn,
+            String charset,
+            String datePattern,
+            long maxFileSize,
+            boolean exactlyOnce,
+            LongSupplier clock
+    ) {
+        return new SupplierEx<Processor>() {
+            @Override
+            public Processor getEx() throws Exception {
+                return new WriteFileP<>(directoryName, toStringFn, charset, datePattern, maxFileSize, exactlyOnce, clock);
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(directoryName, ACTION_WRITE);
+            }
+        };
+    }
+
+    public static <T, K, V> FunctionEx<HazelcastInstance, Processor> updateMapProcessorFn(
+            String name,
+            ClientConfig clientConfig,
+            FunctionEx<? super T, ? extends K> toKeyFn,
+            BiFunctionEx<? super V, ? super T, ? extends V> updateFn
+    ) {
+        return new FunctionEx<HazelcastInstance, Processor>() {
+
+            @Override
+            public Processor applyEx(HazelcastInstance instance) throws Exception {
+                return new UpdateMapP<>(instance, name, toKeyFn, updateFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return mapUpdatePermission(clientConfig, name);
+            }
+        };
+    }
+
+    public static <T, R, K, V> FunctionEx<HazelcastInstance, Processor> updateWithEntryProcessorFn(
+            String name,
+            int maxParallelAsyncOps,
+            ClientConfig clientConfig,
+            FunctionEx<? super T, ? extends K> toKeyFn,
+            FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
+    ) {
+        return new FunctionEx<HazelcastInstance, Processor>() {
+            @Override
+            public Processor applyEx(HazelcastInstance instance) throws Exception {
+                return new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name,
+                        toKeyFn, toEntryProcessorFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return mapUpdatePermission(clientConfig, name);
+            }
+        };
+    }
 }

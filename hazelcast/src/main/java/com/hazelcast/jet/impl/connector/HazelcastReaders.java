@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -138,6 +139,7 @@ public final class HazelcastReaders {
     public static ProcessorMetaSupplier localOrRemoteListSupplier(String name, ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
         Permission permission = PermissionsUtil.listReadPermission(clientConfig, name);
-        return forceTotalParallelismOne(ProcessorSupplier.of(() -> new ReadIListP(name, clientXml)), name, permission);
+        return forceTotalParallelismOne(
+                ProcessorSupplier.of(SecuredFunctions.readListProcessorFn(name, clientXml)), name, permission);
     }
 }

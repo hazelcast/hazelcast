@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -54,7 +55,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
     private int parallelism;
     private int index;
 
-    private ReadJdbcP(
+    public ReadJdbcP(
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
@@ -82,7 +83,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
-                () -> new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn));
+                SecuredFunctions.readJdbcProcessorFn(null, newConnectionFn, resultSetFn, mapOutputFn));
     }
 
     public static <T> ProcessorMetaSupplier supplier(
@@ -93,8 +94,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                ProcessorSupplier.of(() ->
-                        new ReadJdbcP<>(
+                ProcessorSupplier.of(
+                        SecuredFunctions.readJdbcProcessorFn(connectionURL,
                                 () -> DriverManager.getConnection(connectionURL),
                                 (connection, parallelism, index) -> {
                                     PreparedStatement statement = connection.prepareStatement(query);
@@ -104,8 +105,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                                         statement.close();
                                         throw e;
                                     }
-                                },
-                                mapOutputFn)
+                                }, mapOutputFn)
                 ),
                 newUnsecureUuidString(),
                 ConnectorPermission.jdbc(connectionURL, ACTION_READ)

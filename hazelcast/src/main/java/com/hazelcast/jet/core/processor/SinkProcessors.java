@@ -22,6 +22,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -42,8 +43,6 @@ import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
 import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.util.Map;
@@ -270,8 +269,7 @@ public final class SinkProcessors {
         return preferLocalParallelismOne(
                 ConnectorPermission.socket(host, port, ACTION_WRITE),
                 writeBufferedP(
-                        index -> new BufferedWriter(
-                                new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
+                        SecuredFunctions.createBufferedWriterFn(host, port, charsetName),
                         (bufferedWriter, item) -> {
                             @SuppressWarnings("unchecked")
                             T t = (T) item;

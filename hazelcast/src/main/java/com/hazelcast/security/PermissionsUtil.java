@@ -16,7 +16,6 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.function.SecuredFunction;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
@@ -44,7 +43,7 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission checkRemote(@Nullable ClientConfig clientConfig, @Nonnull Permission permission) {
+    public static Permission checkRemote(@Nullable Object clientConfig, @Nonnull Permission permission) {
         if (clientConfig == null) {
             return permission;
         }
@@ -53,28 +52,28 @@ public final class PermissionsUtil {
 
 
     @Nullable
-    public static Permission mapUpdatePermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+    public static Permission mapUpdatePermission(@Nullable Object clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig,
                 new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ));
     }
 
     @Nullable
-    public static Permission mapPutPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+    public static Permission mapPutPermission(@Nullable Object clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
     }
 
     @Nullable
-    public static Permission cachePutPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+    public static Permission cachePutPermission(@Nullable Object clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig, new CachePermission(name, ACTION_CREATE, ACTION_PUT));
     }
 
     @Nullable
-    public static Permission listAddPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+    public static Permission listAddPermission(@Nullable Object clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_ADD));
     }
 
     @Nullable
-    public static Permission listReadPermission(@Nullable ClientConfig clientConfig, @Nonnull String name) {
+    public static Permission listReadPermission(@Nullable Object clientConfig, @Nonnull String name) {
         return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_READ));
     }
 
@@ -89,4 +88,5 @@ public final class PermissionsUtil {
             }
         }
     }
+
 }

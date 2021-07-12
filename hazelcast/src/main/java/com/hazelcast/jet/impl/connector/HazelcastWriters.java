@@ -27,6 +27,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;
@@ -53,6 +54,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
+import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLEL_ASYNC_OPS_DEFAULT;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.security.PermissionsUtil.cachePutPermission;
@@ -115,8 +117,8 @@ public final class HazelcastWriters {
         checkSerializable(updateFn, "updateFn");
 
         return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
-                AbstractHazelcastConnectorSupplier.ofMap(
-                        asXmlString(clientConfig), instance -> new UpdateMapP<>(instance, name, toKeyFn, updateFn)));
+                AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
+                        SecuredFunctions.updateMapProcessorFn(name, clientConfig, toKeyFn, updateFn)));
     }
 
     @Nonnull
@@ -131,7 +133,8 @@ public final class HazelcastWriters {
 
         return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
                 AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                        instance -> new UpdateMapWithEntryProcessorP<>(instance, name, toKeyFn, toEntryProcessorFn)));
+                        SecuredFunctions.updateWithEntryProcessorFn(name, MAX_PARALLEL_ASYNC_OPS_DEFAULT, clientConfig,
+                                toKeyFn, toEntryProcessorFn)));
     }
 
     @Nonnull
@@ -147,8 +150,8 @@ public final class HazelcastWriters {
 
         return ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name),
                 AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                        instance -> new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name, toKeyFn,
-                                toEntryProcessorFn)));
+                        SecuredFunctions.updateWithEntryProcessorFn(name, maxParallelAsyncOps, clientConfig,
+                                toKeyFn, toEntryProcessorFn)));
     }
 
     @Nonnull
@@ -225,6 +228,11 @@ public final class HazelcastWriters {
 
             return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop());
         }
+
+        @Override
+        public Permission permission() {
+            return cachePutPermission(clientXml, name);
+        }
     }
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
@@ -254,6 +262,11 @@ public final class HazelcastWriters {
             };
 
             return new WriteBufferedP<>(bufferCreator, itemReceiver, bufferFlusher, ConsumerEx.noop());
+        }
+
+        @Override
+        public Permission permission() {
+            return listAddPermission(clientXml, name);
         }
     }
 

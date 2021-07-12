@@ -23,6 +23,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -60,7 +61,6 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.ResultSet;
@@ -326,11 +326,7 @@ public final class SourceProcessors {
                     directory,
                     glob,
                     sharedFileSystem,
-                    path -> {
-                        String fileName = path.getFileName().toString();
-                        return Files.lines(path, Charset.forName(charsetName))
-                                    .map(l -> mapOutputFn.apply(fileName, l));
-                    }
+                    SecuredFunctions.readFileFn(directory, charsetName, mapOutputFn)
                 );
     }
 
@@ -397,8 +393,8 @@ public final class SourceProcessors {
     ) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jms(destination, ACTION_READ),
-                new StreamJmsP.Supplier<>(
-                        maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn)
+                new StreamJmsP.Supplier<>(destination, maxGuarantee, eventTimePolicy,
+                        newConnectionFn, consumerFn, messageIdFn, projectionFn)
         );
     }
 
@@ -424,7 +420,7 @@ public final class SourceProcessors {
             @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
+                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
         ConnectorPermission permission = ConnectorPermission.jms(destination, ACTION_READ);
         return isSharedConsumer
                 ? ProcessorMetaSupplier.preferLocalParallelismOne(permission, pSupplier)
