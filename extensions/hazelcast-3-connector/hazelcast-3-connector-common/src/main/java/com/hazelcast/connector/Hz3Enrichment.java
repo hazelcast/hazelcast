@@ -28,7 +28,40 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * TODO documentation how to use
+ * Provides a way to perform enrichment using a Map or ReplicatedMap from Hazelcast 3 cluster.
+ * The usage is similar to {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)}
+ * and other similarly named methods. The difference is that instead of providing a name of
+ * the map, a {@link ServiceFactory} to Hazelcast 3 Map is used. This class provides a utility
+ * methods to create and use this service factory.
+ * <p>
+ * Usage:
+ * <p>
+ * First you need to obtain a ServiceFactory for a Hazelcast 3 Map/ReplicatedMap:
+ * <pre>{@code
+ * ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
+ *     hz3MapServiceFactory("test-map", HZ3_CLIENT_CONFIG);
+ * }</pre>
+ * Then use this service factory in a pipeline step {@link GeneralStage#mapUsingService(ServiceFactory, BiFunctionEx)}:
+ * <pre>{@code
+ * BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
+ *     .mapUsingService(
+ *             hz3MapSF,
+ *             mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
+ *     );
+ * mapStage.writeTo(Sinks.list(results));
+ * }</pre>
+ * And finally, a custom classpath element for the {@code mapUsingService} stage must be set with the Hazelcast 3
+ * client:
+ * <pre>{@code
+ * List<String> jars = new ArrayList<>();
+ * jars.add("hazelcast-3.12.12.jar");
+ * jars.add("hazelcast-client-3.12.12.jar");
+ * jars.add("hazelcast-3-connector-impl.jar");
+ * config.addCustomClasspaths(name, jars);
+ * } </pre>
+ * The jars must exist in the directory specified by the
+ * {@link com.hazelcast.jet.core.JetProperties#PROCESSOR_CUSTOM_LIB_DIR}
+ * directory. This is already set up for the regular zip distribution.
  */
 public final class Hz3Enrichment {
 
