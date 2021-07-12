@@ -166,6 +166,7 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;
     private final InternalSerializationService serializationService;
+    private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
     private final NodeExtension nodeExtension;
     private final HazelcastProperties properties;
@@ -239,6 +240,7 @@ public class Node {
 
             memberSchemaService = new MemberSchemaService();
             serializationService = nodeExtension.createSerializationService();
+            compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
             warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
             nodeEngine = new NodeEngineImpl(this);
@@ -402,6 +404,10 @@ public class Node {
 
     public InternalSerializationService getSerializationService() {
         return serializationService;
+    }
+
+    public InternalSerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
     }
 
     public ClusterServiceImpl getClusterService() {
