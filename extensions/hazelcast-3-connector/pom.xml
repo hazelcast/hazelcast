@@ -17,8 +17,6 @@
     <name>hazelcast-3-connector-root</name>
 
     <properties>
-        <hazelcast-3.version>3.12.12</hazelcast-3.version>
-
         <!-- needed for CheckStyle (we need to repeat this here because this module has hazelcast-root as parent) -->
         <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
         <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
