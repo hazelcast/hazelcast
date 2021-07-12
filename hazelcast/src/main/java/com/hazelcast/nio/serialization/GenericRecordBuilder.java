@@ -56,7 +56,8 @@ interface GenericRecordBuilder {
     }
 
     /**
-     * @return a new constructed GenericRecord
+     * @return a new constructed GenericRecord which the resulting record will be serialized in Compact Format
+     * see {@link com.hazelcast.config.CompactSerializationConfig}
      * @since Hazelcast 5.0 as BETA
      */
     @Beta
