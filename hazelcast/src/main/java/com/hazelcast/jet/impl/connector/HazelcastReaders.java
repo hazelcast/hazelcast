@@ -138,7 +138,7 @@ public final class HazelcastReaders {
 
     public static ProcessorMetaSupplier localOrRemoteListSupplier(String name, ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
-        Permission permission = PermissionsUtil.listReadPermission(clientConfig, name);
+        Permission permission = PermissionsUtil.listReadPermission(clientXml, name);
         return forceTotalParallelismOne(
                 ProcessorSupplier.of(SecuredFunctions.readListProcessorFn(name, clientXml)), name, permission);
     }

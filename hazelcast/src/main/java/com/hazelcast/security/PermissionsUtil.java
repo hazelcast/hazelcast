@@ -43,8 +43,8 @@ public final class PermissionsUtil {
     }
 
     @Nullable
-    public static Permission checkRemote(@Nullable Object clientConfig, @Nonnull Permission permission) {
-        if (clientConfig == null) {
+    public static Permission checkRemote(@Nullable String clientXml, @Nonnull Permission permission) {
+        if (clientXml == null) {
             return permission;
         }
         return null;
@@ -52,29 +52,29 @@ public final class PermissionsUtil {
 
 
     @Nullable
-    public static Permission mapUpdatePermission(@Nullable Object clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig,
+    public static Permission mapUpdatePermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml,
                 new MapPermission(name, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE, ACTION_READ));
     }
 
     @Nullable
-    public static Permission mapPutPermission(@Nullable Object clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
+    public static Permission mapPutPermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml, new MapPermission(name, ACTION_CREATE, ACTION_PUT));
     }
 
     @Nullable
-    public static Permission cachePutPermission(@Nullable Object clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig, new CachePermission(name, ACTION_CREATE, ACTION_PUT));
+    public static Permission cachePutPermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml, new CachePermission(name, ACTION_CREATE, ACTION_PUT));
     }
 
     @Nullable
-    public static Permission listAddPermission(@Nullable Object clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_ADD));
+    public static Permission listAddPermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml, new ListPermission(name, ACTION_CREATE, ACTION_ADD));
     }
 
     @Nullable
-    public static Permission listReadPermission(@Nullable Object clientConfig, @Nonnull String name) {
-        return checkRemote(clientConfig, new ListPermission(name, ACTION_CREATE, ACTION_READ));
+    public static Permission listReadPermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml, new ListPermission(name, ACTION_CREATE, ACTION_READ));
     }
 
     public static void checkPermission(SecuredFunction function, ProcessorMetaSupplier.Context context) {

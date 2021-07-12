@@ -233,14 +233,15 @@ public final class CdcSinks {
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
                 record -> DELETE.equals(record.operation()) ? null : valueFn.apply(record);
-        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(asXmlString(clientConfig),
-                procFn(name, map, clientConfig, keyFn, toValueFn));
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(mapUpdatePermission(clientConfig, name), supplier);
+        String clientXml = asXmlString(clientConfig);
+        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                procFn(name, map, clientXml, keyFn, toValueFn));
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name), supplier);
         return new SinkImpl<>(name, metaSupplier, DISTRIBUTED_PARTITIONED, keyFn);
     }
 
     private static <K, V> FunctionEx<HazelcastInstance, Processor> procFn(
-            String name, String map, ClientConfig clientConfig,
+            String name, String map, String clientXml,
             FunctionEx<? super ChangeRecord, ? extends K> keyFn,
             FunctionEx<? super ChangeRecord, ? extends V> valueFn
     ) {
@@ -252,7 +253,7 @@ public final class CdcSinks {
 
             @Override
             public Permission permission() {
-                return clientConfig != null ? null : mapUpdatePermission(clientConfig, name);
+                return mapUpdatePermission(clientXml, name);
             }
         };
     }

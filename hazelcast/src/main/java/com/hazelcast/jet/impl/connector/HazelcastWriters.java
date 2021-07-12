@@ -81,8 +81,9 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        return preferLocalParallelismOne(mapPutPermission(clientConfig, name),
-                new WriteMapP.Supplier<>(asXmlString(clientConfig), name, toKeyFn, toValueFn));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(mapPutPermission(clientXml, name),
+                new WriteMapP.Supplier<>(clientXml, name, toKeyFn, toValueFn));
     }
 
     @Nonnull
@@ -159,14 +160,16 @@ public final class HazelcastWriters {
 
     @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return preferLocalParallelismOne(cachePutPermission(clientConfig, name),
-                new WriteCachePSupplier<>(clientConfig, name));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(cachePutPermission(clientXml, name),
+                new WriteCachePSupplier<>(clientXml, name));
     }
 
     @Nonnull
     public static ProcessorMetaSupplier writeListSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return preferLocalParallelismOne(listAddPermission(clientConfig, name),
-                new WriteListPSupplier<>(clientConfig, name));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(listAddPermission(clientXml, name),
+                new WriteListPSupplier<>(clientXml, name));
     }
 
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
@@ -205,8 +208,8 @@ public final class HazelcastWriters {
 
         private final String name;
 
-        WriteCachePSupplier(@Nullable ClientConfig clientConfig, @Nonnull String name) {
-            super(asXmlString(clientConfig));
+        WriteCachePSupplier(@Nullable String clientXml, @Nonnull String name) {
+            super(clientXml);
             this.name = name;
         }
 
@@ -244,8 +247,8 @@ public final class HazelcastWriters {
 
         private final String name;
 
-        WriteListPSupplier(@Nullable ClientConfig clientConfig, @Nonnull String name) {
-            super(asXmlString(clientConfig));
+        WriteListPSupplier(@Nullable String clientXml, @Nonnull String name) {
+            super(clientXml);
             this.name = name;
         }
 
