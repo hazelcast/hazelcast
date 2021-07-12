@@ -1604,14 +1604,6 @@ public final class ClusterProperty {
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
-    /**
-     * The directory containing jars, that can be used to specify custom classpath for
-     * a stage in a pipeline.
-     * The default value is `custom-lib`, relative to the current directory.
-     */
-    public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
-            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
-
     private ClusterProperty() {
     }
 }

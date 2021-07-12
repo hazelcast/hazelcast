@@ -37,6 +37,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
@@ -58,7 +59,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.net.MalformedURLException;
@@ -218,7 +218,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        String customLibDir = nodeEngine.getConfig().getProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName());
+        String customLibDir = nodeEngine.getConfig().getProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName());
         Map<String, ClassLoader> classLoaderMap = new HashMap<>();
         ClassLoader parent = getClassLoader(jobConfig, jobId);
         for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {

@@ -24,12 +24,12 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -87,7 +87,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
 
         // Setup the path for custom lib directory, this is by default set to `custom-lib` directory in hazelcast
         // distribution zip
-        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
+        System.setProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
     }
 
     private static String classToPath(Class<?> clazz) {

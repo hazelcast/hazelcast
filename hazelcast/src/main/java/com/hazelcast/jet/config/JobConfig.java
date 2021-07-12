@@ -649,7 +649,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <pre>{@code
      * BatchSource<String> source = ...
      * JobConfig config = new JobConfig();
-     * config.addCustomClasspath(source.name(), "hazelcast-client-3.12.12.jar");
+     * config.addCustomClasspaths(source.name(), jarList);
      * }</pre>
      *
      * @param name name of the stage, must be unique for the whole pipeline
@@ -1099,6 +1099,10 @@ public class JobConfig implements IdentifiedDataSerializable {
         return resourceConfigs;
     }
 
+    /**
+     * Returns configured custom classpath elements,
+     * See {@link #addCustomClasspath(String, String)} and {@link #addCustomClasspaths(String, List)}
+     */
     public Map<String, List<String>> getCustomClassPaths() {
         return customClassPaths;
     }
