@@ -54,6 +54,7 @@ public class MapGetMessageTask
     protected Operation prepareOperation() {
         MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         MapOperation operation = operationProvider.createGetOperation(parameters.name, parameters.key);
+        operation.setOpSentByClient(true);
         operation.setThreadId(parameters.threadId);
         return operation;
     }
