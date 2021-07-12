@@ -214,11 +214,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public Map<String, ClassLoader> getProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        return processorCls.computeIfAbsent(jobId,
-                key -> {
-                    Map<String, ClassLoader> processorClassLoaders = createProcessorClassLoaders(jobId, jobConfig);
-                    return processorClassLoaders;
-                });
+        return processorCls.computeIfAbsent(jobId, key -> createProcessorClassLoaders(jobId, jobConfig));
     }
 
     private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig) {
@@ -336,13 +332,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
         }
 
-        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
         try {
+            prepareProcessorClassLoaders(jobId, plan.getJobConfig());
+            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
             doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
         } catch (Throwable e) {
             completeExecution(execCtx, new CancellationException());
             throw e;
+        } finally {
+            clearProcessorClassLoaders();
         }
 
         // initial log entry with all of jobId, jobName, executionId

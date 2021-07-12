@@ -289,7 +289,7 @@ public class JobCoordinationService {
     }
 
     public CompletableFuture<Void> submitLightJob(long jobId, Data serializedJobDefinition, JobConfig jobConfig) {
-        Object jobDefinition = deserializeJobDefinition(jobId, jobConfig, serializedJobDefinition);
+        Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         DAG dag;
         if (jobDefinition instanceof DAG) {
             dag = (DAG) jobDefinition;
