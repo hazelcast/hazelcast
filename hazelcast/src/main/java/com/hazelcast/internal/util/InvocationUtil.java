@@ -55,7 +55,7 @@ public final class InvocationUtil {
      * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
      */
-    public static InternalCompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
+    public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(NodeEngine nodeEngine,
                                                                          Supplier<? extends Operation> operationSupplier,
                                                                          int maxRetries) {
 

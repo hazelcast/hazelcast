@@ -209,12 +209,17 @@ public final class ClassLoaderUtil {
     @SuppressWarnings("unchecked")
     private static <T> T newInstance0(ClassLoader classLoader, String className) throws Exception {
         Class klass = classLoader == null ? Class.forName(className) : tryLoadClass(className, classLoader);
+        return newInstance(classLoader, klass);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(ClassLoader classLoader, Class klass) throws Exception {
         final Constructor constructor = klass.getDeclaredConstructor();
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
         if (!shouldBypassCache(klass) && classLoader != null) {
-            CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
+            CONSTRUCTOR_CACHE.put(classLoader, klass.getName(), constructor);
         }
         return (T) constructor.newInstance();
     }
