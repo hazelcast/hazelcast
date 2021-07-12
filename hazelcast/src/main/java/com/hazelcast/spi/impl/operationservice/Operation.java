@@ -77,7 +77,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
     static final int BITMASK_CLIENT_CALL_ID_SET = 1 << 7;
-    static final int BITMASK_OP_SEND_BY_CLIENT = 1 << 8;
+    static final int BITMASK_OP_SENT_BY_CLIENT = 1 << 8;
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
@@ -118,11 +118,11 @@ public abstract class Operation implements DataSerializable, Tenantable {
     }
 
     public final void setOpSentByClient(boolean value) {
-        setFlag(value, BITMASK_OP_SEND_BY_CLIENT);
+        setFlag(value, BITMASK_OP_SENT_BY_CLIENT);
     }
 
     protected final boolean isOpSentByClient() {
-        return isFlagSet(BITMASK_OP_SEND_BY_CLIENT);
+        return isFlagSet(BITMASK_OP_SENT_BY_CLIENT);
     }
 
     /**
