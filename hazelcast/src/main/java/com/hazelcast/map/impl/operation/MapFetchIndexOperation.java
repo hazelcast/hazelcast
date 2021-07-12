@@ -150,11 +150,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                             comparison = reverse(comparison);
                         }
 
-                        if (comparison == 0) {
-                            break;
-                        } else if (comparison > 0) {
-                            entries.add(entry);
-                            lastEntryKeyData = entry.getKeyData();
+                        if (comparison >= 0) {
+                            if (comparison > 0 && isInPartitionSet(entry, partitionIdSet, partitionCount)) {
+                                entries.add(entry);
+                                lastEntryKeyData = entry.getKeyData();
+                            }
                             break;
                         }
                     }
@@ -166,15 +166,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         break;
                     }
                     QueryableEntry<?, ?> entry = keyEntries.next();
-                    if (partitionIdSet == null) {
+                    if (isInPartitionSet(entry, partitionIdSet, partitionCount)) {
                         entries.add(entry);
                         lastEntryKeyData = entry.getKeyData();
-                    } else {
-                        int partitionId = HashUtil.hashToIndex(entry.getKeyData().getPartitionHash(), partitionCount);
-                        if (partitionIdSet.contains(partitionId)) {
-                            lastEntryKeyData = entry.getKeyData();
-                            entries.add(entry);
-                        }
                     }
                 }
 
@@ -289,8 +283,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                 entries.addAll(keyEntries);
             } else {
                 for (QueryableEntry<?, ?> entry : keyEntries) {
-                    int partitionId = HashUtil.hashToIndex(entry.getKeyData().getPartitionHash(), partitionCount);
-                    if (partitionIdSet.contains(partitionId)) {
+                    if (isInPartitionSet(entry, partitionIdSet, partitionCount)) {
                         entries.add(entry);
                     }
                 }
@@ -300,6 +293,18 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         IndexIterationPointer[] newPointers = new IndexIterationPointer[pointers.length - pointerIndex];
         System.arraycopy(pointers, pointerIndex, newPointers, 0, newPointers.length);
         return new MapFetchIndexOperationResult(entries, newPointers);
+    }
+
+    private static boolean isInPartitionSet(
+            QueryableEntry entry,
+            PartitionIdSet partitionIdSet,
+            int partitionCount
+    ) {
+        if (partitionIdSet == null) {
+            return true;
+        }
+        int partitionId = HashUtil.hashToIndex(entry.getKeyData().getPartitionHash(), partitionCount);
+        return partitionIdSet.contains(partitionId);
     }
 
     private static int reverse(int order) {
