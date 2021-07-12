@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -128,17 +129,23 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isZero();
     }
 
-    // @Ignore // TODO: [sasha] requires Jet parser to be enabled. Uncomment after IMDG removal.
     @Test
     public void test_indexCaching() {
         fillMapAndCreateIndex(instance(), "m", IndexType.SORTED, "__key.id");
         createMapping("map", "m", "id", PersonId.class, "varchar");
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
+        SqlPlan firstPlan = planCache(instance()).getPlans().values().iterator().next();
 
         removeAllIndexes(instance(), "m");
-        fillMapAndCreateIndex(instance(), "m", IndexType.HASH, "__key.id");
+
+        fillMapAndCreateIndex(instance(), "m2", IndexType.HASH, "__key.id");
+        createMapping("map", "m2", "id", PersonId.class, "varchar");
+        sqlService.execute("SELECT * FROM map WHERE id = 0");
         assertThat(planCache(instance()).size()).isEqualTo(1);
+        SqlPlan secondPlan = planCache(instance()).getPlans().values().iterator().next();
+
+        assertThat(firstPlan).isNotEqualTo(secondPlan);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -197,6 +204,6 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
     private static void removeAllIndexes(HazelcastInstance instance, String mapName) {
         IMap<PersonId, String> map = instance.getMap(mapName);
-        getMapContainer(map).getIndexes().clearAll();
+        getMapContainer(map).getIndexes().destroyIndexes();
     }
 }

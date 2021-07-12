@@ -156,11 +156,9 @@ public final class MapIndexScanP extends AbstractProcessor {
                 try {
                     s.peek();
                 } catch (MissingPartitionException e) {
-//                    splits.addAll(splitOnMigration(s));
-//                    splits.remove(i--);
-                    System.err.println("MISSING PARTITION");
-//                    continue;
-                    return true;
+                    splits.addAll(splitOnMigration(s));
+                    splits.remove(i--);
+                    continue;
                 }
                 if (s.currentRow == null) {
                     if (s.done()) {
