@@ -486,7 +486,7 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <jet enabled="true" resource-upload-enabled="false">
+    <jet enabled="false" resource-upload-enabled="false">
         <instance>
             <!-- time spacing of flow-control (ack) packets -->
             <flow-control-period>100</flow-control-period>

@@ -797,7 +797,7 @@ hazelcast:
 
   jet:
     # Specifies whether if the jet is enabled or not in this member
-    enabled: true
+    enabled: false
     # Specifies whether uploading resources when submitting the job is enabled or not
     resource-upload-enabled: false
     instance:
