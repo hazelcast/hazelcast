@@ -44,6 +44,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class Hz3EnrichmentTest extends BaseHz3Test {
 
     @Test
+    public void testMapUsingIMap() {
+        IMap<Object, Object> map = hz3.getMap("test-map");
+        map.put(1, "a");
+        map.put(2, "b");
+
+        HazelcastInstance hz = createHazelcastInstance();
+        IList<String> results = hz.getList("result-list");
+        Pipeline p = Pipeline.create();
+
+        ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
+                hz3MapServiceFactory("test-map", HZ3_CLIENT_CONFIG);
+
+        BiFunctionEx<? super Map<Integer, String>, ? super Integer, String> mapFn =
+                mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s);
+        BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
+                .mapUsingService(
+                        hz3MapSF,
+                        mapFn
+                );
+        mapStage.writeTo(Sinks.list(results));
+
+        JobConfig config = getJobConfig(mapStage.name());
+        hz.getJet().newJob(p, config).join();
+        assertThat(results).containsOnly("a", "b");
+    }
+
+    @Test
     public void testMapUsingIMapAsync() {
         IMap<Object, Object> map = hz3.getMap("test-map");
         map.put(1, "a");
