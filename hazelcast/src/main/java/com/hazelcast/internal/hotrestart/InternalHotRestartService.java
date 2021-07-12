@@ -127,6 +127,8 @@ public interface InternalHotRestartService {
      */
     void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit);
 
+    void setRejoiningActiveCluster(boolean rejoiningActiveCluster);
+
     /**
      * Apply given {@link PartitionRuntimeState} after recovery is successfully completed.
      *

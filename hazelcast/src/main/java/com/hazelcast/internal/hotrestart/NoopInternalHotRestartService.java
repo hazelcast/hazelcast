@@ -83,6 +83,10 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
+    public void setRejoiningActiveCluster(boolean rejoiningActiveCluster) {
+    }
+
+    @Override
     public void deferApplyPartitionState(PartitionRuntimeState partitionRuntimeState) {
     }
 
