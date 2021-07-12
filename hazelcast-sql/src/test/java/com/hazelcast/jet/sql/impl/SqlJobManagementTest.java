@@ -339,7 +339,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("CREATE OR REPLACE SNAPSHOT mySnapshot FOR JOB testJob"))
-                .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
+                .hasMessageContaining("You need Hazelcast Enterprise to use this feature");
     }
 
     @Test
@@ -362,7 +362,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         assertThatThrownBy(() -> sqlService.execute("DROP JOB testJob WITH SNAPSHOT mySnapshot"))
-                .hasMessageContaining("You need Hazelcast Jet Enterprise to use this feature");
+                .hasMessageContaining("You need Hazelcast Enterprise to use this feature");
     }
 
     @Test
