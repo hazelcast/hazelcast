@@ -32,7 +32,9 @@ import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -58,9 +60,10 @@ public final class ExecutionPlanBuilder {
     private ExecutionPlanBuilder() {
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
-            NodeEngine nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
-            JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
+            NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
+            JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
@@ -73,8 +76,8 @@ public final class ExecutionPlanBuilder {
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : partitionsByMember.keySet()) {
-            plans.put(member,
-                    new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
+            plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
+                    clusterSize, isLightJob, subject));
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
 
@@ -101,9 +104,9 @@ public final class ExecutionPlanBuilder {
             ClassLoader processorClassLoader = jobExecutionService.getClassLoader(jobConfig, jobId);
             try {
                 doWithClassLoader(processorClassLoader, () ->
-                        metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId,
+                        metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
                                 jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
-                                isLightJob, partitionsByAddress, processorClassLoader)));
+                                isLightJob, partitionsByAddress, subject, processorClassLoader)));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }

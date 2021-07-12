@@ -64,6 +64,7 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -257,13 +258,14 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         return result;
     }
 
-    static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
+    abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
 
         LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier) {
+                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
+        ) {
             this.readerSupplier = readerSupplier;
         }
 
@@ -276,6 +278,9 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         public int preferredLocalParallelism() {
             return 1;
         }
+
+        @Override
+        public abstract Permission getRequiredPermission();
     }
 
     private static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {
