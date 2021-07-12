@@ -1429,6 +1429,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(name, jobConfig.name)
                 && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
+                && Objects.equals(customClassPaths, jobConfig.customClassPaths)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
                 && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
@@ -1441,8 +1442,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords,
-                timeoutMillis);
+                customClassPaths, serializerConfigs, arguments, classLoaderFactory, initialSnapshotName,
+                maxProcessorAccumulatedRecords, timeoutMillis);
     }
 
     @Override
