@@ -17,12 +17,13 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -32,11 +33,14 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -234,6 +238,38 @@ public class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        String mapName = plan.mapName();
+        Expression<?> keyCondition = plan.keyCondition();
+        KvRowProjector.Supplier rowProjectorSupplier = plan.rowProjectorSupplier();
+
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        SimpleExpressionEvalContext evalContext = new SimpleExpressionEvalContext(args, serializationService);
+
+        Object key = keyCondition.eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Object[]> future = hazelcastInstance.getMap(mapName)
+                .getAsync(key)
+                .toCompletableFuture()
+                .thenApply(value -> rowProjectorSupplier
+                        .get(evalContext, Extractors.newBuilder(serializationService).build())
+                        .project(key, value));
+        try {
+            Object[] row;
+            if (timeout > 0) {
+                row = future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                row = future.get();
+            }
+            return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), plan.rowMetadata(), false); // TODO: pull in other imap ops
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while fetching entry");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
+    }
+
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
         String mapName = plan.mapName();
@@ -241,7 +277,7 @@ public class JetPlanExecutor {
 
         Object key = keyCondition.eval(
                 EmptyRow.INSTANCE,
-                new SimpleExpressionEvalContext(args, ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService())
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
         );
         CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
@@ -252,13 +288,13 @@ public class JetPlanExecutor {
             } else {
                 future.get();
             }
+            return SqlResultImpl.createUpdateCountResult(0);
         } catch (TimeoutException e) {
             future.cancel(true);
             throw QueryException.error("Timeout occurred while deleting an entry");
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

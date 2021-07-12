@@ -18,11 +18,11 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
@@ -30,27 +30,32 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
+public class SelectByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     private final RelOptTable table;
     private final RexNode keyCondition;
+    private final List<? extends RexNode> projections;
 
-    DeleteByKeyMapLogicalRel(
+    SelectByKeyMapLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
+            RelDataType rowType,
             RelOptTable table,
-            RexNode keyCondition
+            RexNode keyCondition,
+            List<? extends RexNode> projections
     ) {
         super(cluster, traitSet);
+        this.rowType = rowType;
 
         assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.keyCondition = keyCondition;
+        this.projections = projections;
     }
 
     public RelOptTable table() {
@@ -61,26 +66,31 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
         return keyCondition;
     }
 
-    @Override
-    public RelDataType deriveRowType() {
-        return RelOptUtil.createDmlRowType(SqlKind.DELETE, getCluster().getTypeFactory());
+    public List<? extends RexNode> projections() {
+        return projections;
     }
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
         // zero as not starting any job is required
-        return planner.getCostFactory().makeZeroCost();
+        return planner.getCostFactory().makeZeroCost(); // TODO: zero other imap rels
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getQualifiedName())
-                .item("keyCondition", keyCondition);
+                .item("table", table.getQualifiedName()) // TODO: use it for other imap rels
+                .item("keyCondition", keyCondition)
+                .item("projections", Ord.zip(rowType.getFieldList()).stream()
+                        .map(field -> {
+                            String fieldName = field.e.getName() == null ? "field#" + field.i : field.e.getName();
+                            return fieldName + "=[" + projections.get(field.i) + "]";
+                        }).collect(Collectors.joining(", "))
+                );
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DeleteByKeyMapLogicalRel(getCluster(), traitSet, table, keyCondition);
+        return new SelectByKeyMapLogicalRel(getCluster(), traitSet, rowType, table, keyCondition, projections);
     }
 }

@@ -33,7 +33,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 
 @RunWith(JUnitParamsRunner.class)
-public class LogicalDeleteTest extends OptimizerTestSupport {
+public class LogicalSelectTest extends OptimizerTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
@@ -41,79 +41,73 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void test_deleteWithoutWhere() {
+    public void test_selectWithoutWhere() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m", table),
+                optimizeLogical("SELECT * FROM m", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByValue() {
+    public void test_selectByValue() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE this = '1'", table),
+                optimizeLogical("SELECT * FROM m WHERE this = '1'", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyAndValue() {
+    public void test_selectByKeyAndValue() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = 1 AND this = '1'", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = 1 AND this = '1'", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyAndKey() {
+    public void test_selectByKeyAndKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = 1 AND __key = 2", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = 1 AND __key = 2", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, ValuesLogicalRel.class)
+                        planRow(1, ValuesLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyOrKey() {
+    public void test_selectByKeyOrKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = 1 OR __key = 2", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = 1 OR __key = 2", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteWithConstantCondition() {
+    public void test_selectWithConstantCondition() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE 1 = 1", table),
+                optimizeLogical("SELECT * FROM m WHERE 1 = 1", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -141,32 +135,32 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
 
     @Test
     @Parameters(method = "literals")
-    public void test_deleteByKeyWithLiteral(QueryDataType type, String literalValue) {
+    public void test_selectByKeyWithLiteral(QueryDataType type, String literalValue) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = " + literalValue, table),
+                optimizeLogical("SELECT * FROM m WHERE __key = " + literalValue, table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, SelectByKeyMapLogicalRel.class)
                 )
         );
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE " + literalValue + " = __key", table),
+                optimizeLogical("SELECT * FROM m WHERE " + literalValue + " = __key", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyWithLiteralExpression() {
+    public void test_selectByKeyWithLiteralExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = 1 + 1", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = 1 + 1", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -193,38 +187,61 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
 
     @Test
     @Parameters(method = "types")
-    public void test_deleteByKeyWithDynamicParam(QueryDataType type) {
+    public void test_selectByKeyWithDynamicParam(QueryDataType type) {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, type), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = ?", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = ?", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyWithDynamicParamAndImplicitCastOnKey() {
+    public void test_selectByKeyWithDynamicParamAndImplicitCastOnKey() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = ? + 1", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = ? + 1", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
 
     @Test
-    public void test_deleteByKeyWithDynamicParamExpression() {
+    public void test_selectByKeyWithDynamicParamExpression() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
         assertPlan(
-                optimizeLogical("DELETE FROM m WHERE __key = CAST(? + 1 AS INT)", table),
+                optimizeLogical("SELECT * FROM m WHERE __key = CAST(? + 1 AS INT)", table),
                 plan(
                         planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                        planRow(1, SelectByKeyMapLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
+    public void test_selectByKeyWithProject() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
+        assertPlan(
+                optimizeLogical("SELECT this FROM m WHERE __key = 1", table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, SelectByKeyMapLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
+    public void test_selectByKeyWithProjectExpression() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 1);
+        assertPlan(
+                optimizeLogical("SELECT this || '-s' FROM m WHERE __key = 1", table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, SelectByKeyMapLogicalRel.class)
                 )
         );
     }

@@ -18,9 +18,9 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -31,6 +31,7 @@ import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
@@ -549,9 +550,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -616,14 +615,91 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
         public boolean producesRows() {
             return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    static class IMapSelectPlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Expression<?> keyCondition;
+        private final KvRowProjector.Supplier rowProjectorSupplier;
+        private final SqlRowMetadata rowMetadata;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapSelectPlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Expression<?> keyCondition,
+                KvRowProjector.Supplier rowProjectorSupplier,
+                SqlRowMetadata rowMetadata,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.keyCondition = keyCondition;
+            this.rowProjectorSupplier = rowProjectorSupplier;
+            this.rowMetadata = rowMetadata;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Expression<?> keyCondition() {
+            return keyCondition;
+        }
+
+        KvRowProjector.Supplier rowProjectorSupplier() {
+            return rowProjectorSupplier;
+        }
+
+        SqlRowMetadata rowMetadata() {
+            return rowMetadata;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
         }
 
         @Override
@@ -683,9 +759,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
