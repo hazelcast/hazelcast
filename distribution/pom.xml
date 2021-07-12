@@ -174,26 +174,6 @@
 
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-aws</artifactId>
-            <version>${hazelcast.aws.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-kubernetes</artifactId>
-            <version>${hazelcast.kubernetes.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-gcp</artifactId>
-            <version>${hazelcast.gcp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-azure</artifactId>
-            <version>${hazelcast.azure.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate53</artifactId>
             <version>2.1.1</version>
             <exclusions>
