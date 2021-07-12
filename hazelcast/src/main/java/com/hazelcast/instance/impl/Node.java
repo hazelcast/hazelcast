@@ -69,6 +69,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
@@ -142,19 +143,16 @@ public class Node {
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
 
     public final HazelcastInstanceImpl hazelcastInstance;
-
     public final DynamicConfigurationAwareConfig config;
-
     public final NodeEngineImpl nodeEngine;
     public final ClientEngine clientEngine;
-
     public final InternalPartitionServiceImpl partitionService;
     public final ClusterServiceImpl clusterService;
     public final MulticastService multicastService;
     public final DiscoveryService discoveryService;
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
-
+    public final MemberSchemaService memberSchemaService;
     public final Server server;
 
     /**
@@ -163,29 +161,18 @@ public class Node {
      * For accessing a full address-map, see {@link AddressPicker#getPublicAddressMap()}
      */
     public final Address address;
-
     public final SecurityContext securityContext;
-
     private final ILogger logger;
-
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-
     private final NodeShutdownHookThread shutdownHookThread;
-
     private final InternalSerializationService serializationService;
-
     private final InternalSerializationService compatibilitySerializationService;
-
     private final ClassLoader configClassLoader;
-
     private final NodeExtension nodeExtension;
-
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
     private final HealthMonitor healthMonitor;
-
     private final Joiner joiner;
-
     private ManagementCenterService managementCenterService;
 
     private volatile NodeState state = NodeState.STARTING;
@@ -251,6 +238,7 @@ public class Node {
             nodeExtension.beforeStart();
             nodeExtension.logInstanceTrackingMetadata();
 
+            memberSchemaService = new MemberSchemaService();
             serializationService = nodeExtension.createSerializationService();
             compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;

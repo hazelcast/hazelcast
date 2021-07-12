@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -30,6 +31,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationClassNameFilter;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactoryImpl;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassNameFilter;
@@ -54,46 +56,32 @@ import static java.nio.ByteOrder.nativeOrder;
 
 public class DefaultSerializationServiceBuilder implements SerializationServiceBuilder {
 
-    public static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
-
+    static final ByteOrder DEFAULT_BYTE_ORDER = BIG_ENDIAN;
     // System property to override configured byte order for tests
     private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
     private static final int DEFAULT_OUT_BUFFER_SIZE = 4 * 1024;
-
     protected final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<>();
-
     protected final Map<Integer, PortableFactory> portableFactories = new HashMap<>();
-
     protected final Set<ClassDefinition> classDefinitions = new HashSet<>();
-
     protected ClassLoader classLoader;
     protected SerializationConfig config;
-
     protected byte version = -1;
     protected int portableVersion = -1;
-
     protected boolean checkClassDefErrors = true;
-
     protected ManagedContext managedContext;
-
     protected boolean useNativeByteOrder;
     protected ByteOrder byteOrder = DEFAULT_BYTE_ORDER;
-
     protected boolean enableCompression;
     protected boolean enableSharedObject;
     protected boolean allowUnsafe;
-
     protected boolean allowOverrideDefaultSerializers;
-
     protected int initialOutputBufferSize = DEFAULT_OUT_BUFFER_SIZE;
-
     protected PartitioningStrategy partitioningStrategy;
-
     protected HazelcastInstance hazelcastInstance;
-
+    protected CompactSerializationConfig compactSerializationConfig;
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
-
     protected ClassNameFilter classNameFilter;
+    protected SchemaService schemaService;
     protected boolean isCompatibility;
 
     @Override
@@ -137,6 +125,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         allowOverrideDefaultSerializers = config.isAllowOverrideDefaultSerializers();
         JavaSerializationFilterConfig filterConfig = config.getJavaSerializationFilterConfig();
         classNameFilter = filterConfig == null ? null : new SerializationClassNameFilter(filterConfig);
+        compactSerializationConfig = config.getCompactSerializationConfig();
         return this;
     }
 
@@ -228,6 +217,12 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
+    public SerializationServiceBuilder setSchemaService(SchemaService schemaService) {
+        this.schemaService = schemaService;
+        return this;
+    }
+
+    @Override
     public SerializationServiceBuilder isCompatibility(boolean isCompatibility) {
         this.isCompatibility = isCompatibility;
         return this;
@@ -308,6 +303,8 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withClassNameFilter(classNameFilter)
                     .withCheckClassDefErrors(checkClassDefErrors)
                     .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
+                    .withCompactSerializationConfig(compactSerializationConfig)
+                    .withSchemaService(schemaService)
                     .withCompatibility(isCompatibility)
                     .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);

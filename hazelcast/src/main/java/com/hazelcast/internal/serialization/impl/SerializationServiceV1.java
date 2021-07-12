@@ -131,9 +131,9 @@ import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaD
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.DateSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.HazelcastJsonValueSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.JavaSerializer;
-import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalTimeSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalDateTimeSerializer;
+import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.LocalTimeSerializer;
 import static com.hazelcast.internal.serialization.impl.defaultserializers.JavaDefaultSerializers.OffsetDateTimeSerializer;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
@@ -191,11 +191,14 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
-        if (!data.isPortable()) {
-            throw new IllegalArgumentException("Given data is not Portable! -> " + data.getType());
+        if (data.isPortable()) {
+            BufferObjectDataInput in = createObjectDataInput(data);
+            return portableSerializer.readAsInternalGenericRecord(in);
         }
-        BufferObjectDataInput in = createObjectDataInput(data);
-        return portableSerializer.readAsInternalGenericRecord(in);
+        if (data.isCompact()) {
+            return compactStreamSerializer.readAsInternalGenericRecord(createObjectDataInput(data));
+        }
+        throw new IllegalArgumentException("Given type does not support query over data, type id " + data.getType());
     }
 
     public PortableContext getPortableContext() {
@@ -203,7 +206,9 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     private void registerConstantSerializers(boolean isCompatibility) {
-        registerConstant(null, nullSerializerAdapter);
+        registerConstant(nullSerializerAdapter);
+        registerConstant(compactSerializerAdapter);
+        registerConstant(compactWithSchemaSerializerAdapter);
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         //primitives and String

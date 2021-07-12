@@ -69,6 +69,7 @@ public class JobRepositoryTest extends JetTestSupport {
     public void setup() {
         Config config = new Config();
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
+        config.getJetConfig().setEnabled(true);
 
         instance = createHazelcastInstance(config);
         jobRepository = new JobRepository(instance);
