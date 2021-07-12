@@ -207,8 +207,10 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private void registerConstantSerializers(boolean isCompatibility) {
         registerConstant(nullSerializerAdapter);
-        registerConstant(compactSerializerAdapter);
-        registerConstant(compactWithSchemaSerializerAdapter);
+        if (!isCompatibility) {
+            registerConstant(compactSerializerAdapter);
+            registerConstant(compactWithSchemaSerializerAdapter);
+        }
         registerConstant(DataSerializable.class, dataSerializerAdapter);
         registerConstant(Portable.class, portableSerializerAdapter);
         //primitives and String
@@ -281,18 +283,17 @@ public class SerializationServiceV1 extends AbstractSerializationService {
             registerConstant(DelayQueue.class, new DelayQueueStreamSerializer());
             registerConstant(SynchronousQueue.class, new SynchronousQueueStreamSerializer());
             registerConstant(LinkedTransferQueue.class, new LinkedTransferQueueStreamSerializer());
+
+            registerConstant(LocalTime.class, new LocalTimeSerializer());
+            registerConstant(LocalDate.class, new LocalDateSerializer());
+            registerConstant(LocalDateTime.class, new LocalDateTimeSerializer());
+            registerConstant(OffsetDateTime.class, new OffsetDateTimeSerializer());
         }
 
         if (isCompatibility) {
             // compatibility (3.x) members have these serializers
             registerConstant(Enum.class, new EnumSerializer());
         }
-
-        registerConstant(LocalTime.class, new LocalTimeSerializer());
-        registerConstant(LocalDate.class, new LocalDateSerializer());
-        registerConstant(LocalDateTime.class, new LocalDateTimeSerializer());
-        registerConstant(OffsetDateTime.class, new OffsetDateTimeSerializer());
-
         safeRegister(Serializable.class, javaSerializerAdapter);
         safeRegister(Externalizable.class, javaExternalizableAdapter);
         safeRegister(HazelcastJsonValue.class, new HazelcastJsonValueSerializer());
