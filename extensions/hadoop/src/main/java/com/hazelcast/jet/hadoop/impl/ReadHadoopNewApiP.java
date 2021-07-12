@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -187,6 +188,7 @@ public final class ReadHadoopNewApiP<K, V, R> extends AbstractProcessor {
         @Override
         public void init(@Nonnull Context context) throws Exception {
             super.init(context);
+            PermissionsUtil.checkPermission(configureFn, context);
             updateConfiguration();
 
             if (shouldSplitOnMembers(configuration)) {

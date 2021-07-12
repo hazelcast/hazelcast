@@ -33,7 +33,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.iteration.IterationPointer;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -259,18 +258,15 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         return result;
     }
 
-    static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
+    abstract static class LocalProcessorMetaSupplier<F extends CompletableFuture, B, R> implements ProcessorMetaSupplier {
 
         private static final long serialVersionUID = 1L;
         private final BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier;
-        private final SupplierEx<Permission> permissionFn;
 
         LocalProcessorMetaSupplier(
-                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier,
-                @Nonnull SupplierEx<Permission> permissionFn
+                @Nonnull BiFunctionEx<HazelcastInstance, InternalSerializationService, Reader<F, B, R>> readerSupplier
         ) {
             this.readerSupplier = readerSupplier;
-            this.permissionFn = permissionFn;
         }
 
         @Override @Nonnull
@@ -284,9 +280,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Override
-        public Permission getRequiredPermission() {
-            return permissionFn.get();
-        }
+        public abstract Permission getRequiredPermission();
     }
 
     private static final class LocalProcessorSupplier<F extends CompletableFuture, B, R> implements ProcessorSupplier {

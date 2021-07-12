@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.LocalCacheReader;
@@ -28,11 +30,15 @@ import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapQueryReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteMapReader;
 import com.hazelcast.jet.impl.connector.ReadMapOrCacheP.RemoteProcessorSupplier;
 import com.hazelcast.jet.impl.util.ImdgUtil;
+import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
+import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.ResultSegment;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.PermissionsUtil;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
 import java.security.Permission;
@@ -52,10 +58,15 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalCacheSupplier(@Nonnull String cacheName) {
-        return new LocalProcessorMetaSupplier<>(
-                (hzInstance, serializationService) -> new LocalCacheReader(hzInstance, serializationService, cacheName),
-                () -> new CachePermission(cacheName, ACTION_CREATE, ACTION_READ)
-        );
+        return new LocalProcessorMetaSupplier<
+                InternalCompletableFuture<CacheEntriesWithCursor>, CacheEntriesWithCursor, Entry<Data, Data>>(
+                (hzInstance, serializationService) -> new LocalCacheReader(hzInstance, serializationService, cacheName)
+        ) {
+            @Override
+            public Permission getRequiredPermission() {
+                return new CachePermission(cacheName, ACTION_CREATE, ACTION_READ);
+            }
+        };
     }
 
     @Nonnull
@@ -69,10 +80,15 @@ public final class HazelcastReaders {
 
     @Nonnull
     public static ProcessorMetaSupplier readLocalMapSupplier(@Nonnull String mapName) {
-        return new LocalProcessorMetaSupplier<>(
-                (hzInstance, serializationService) -> new LocalMapReader(hzInstance, serializationService, mapName),
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ)
-        );
+        return new LocalProcessorMetaSupplier<
+                InternalCompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>>(
+                (hzInstance, serializationService) -> new LocalMapReader(hzInstance, serializationService, mapName)
+        ) {
+            @Override
+            public Permission getRequiredPermission() {
+                return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+            }
+        };
     }
 
     @Nonnull
@@ -84,11 +100,15 @@ public final class HazelcastReaders {
         checkSerializable(Objects.requireNonNull(predicate), "predicate");
         checkSerializable(Objects.requireNonNull(projection), "projection");
 
-        return new LocalProcessorMetaSupplier<>(
+        return new LocalProcessorMetaSupplier<InternalCompletableFuture<ResultSegment>, ResultSegment, QueryResultRow>(
                 (hzInstance, serializationService) ->
-                        new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection),
-                () -> new MapPermission(mapName, ACTION_CREATE, ACTION_READ)
-        );
+                        new LocalMapQueryReader(hzInstance, serializationService, mapName, predicate, projection)
+        ) {
+            @Override
+            public Permission getRequiredPermission() {
+                return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+            }
+        };
     }
 
     @Nonnull

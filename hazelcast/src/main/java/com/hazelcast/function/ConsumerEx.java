@@ -32,7 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface ConsumerEx<T> extends Consumer<T>, Serializable {
+public interface ConsumerEx<T> extends Consumer<T>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Consumer#accept}
