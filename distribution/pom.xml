@@ -30,6 +30,7 @@
     <packaging>pom</packaging>
 
     <properties>
+        <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
     </properties>
 
@@ -49,6 +50,29 @@
                         <includedLicense>The Go license</includedLicense>
                     </includedLicenses>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast</artifactId>
+                                    <outputDirectory>${configs.from.jar}</outputDirectory>
+                                    <includes>**/*.xml,**/*.yaml</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -111,7 +135,7 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-all</artifactId>
+            <artifactId>hazelcast</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -140,6 +164,12 @@
             <artifactId>jline-reader</artifactId>
             <version>${jline.version}</version>
         </dependency>
+        <!-- for windows -->
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal-jansi</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
         <!-- Logging -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -166,26 +196,6 @@
             <version>${jsr107.api.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-aws</artifactId>
-            <version>${hazelcast.aws.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-kubernetes</artifactId>
-            <version>${hazelcast.kubernetes.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-gcp</artifactId>
-            <version>${hazelcast.gcp.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-azure</artifactId>
-            <version>${hazelcast.azure.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate53</artifactId>

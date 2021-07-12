@@ -32,10 +32,8 @@ import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.internal.yaml.YamlMapping;
-import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.yaml.YamlScalar;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import java.nio.ByteOrder;
 import java.util.Map;
@@ -46,8 +44,6 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
-import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 
 public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     public YamlClientDomConfigProcessor(boolean domLevel3, ClientConfig clientConfig) {
@@ -257,23 +253,19 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 
     @Override
     protected void fillProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 

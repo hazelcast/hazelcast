@@ -4091,7 +4091,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "resource-upload-enabled": {
           "type": "boolean",
