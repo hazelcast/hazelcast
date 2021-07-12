@@ -158,10 +158,10 @@ public final class JetProperties {
      * a stage in a pipeline.
      * The default value is `custom-lib`, relative to the current directory.
      *
-     * @since Jet 5.0
+     * @since 5.0
      */
     public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
-            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
+            = new HazelcastProperty("jet.custom.lib.dir", "custom-lib");
 
     private JetProperties() {
     }

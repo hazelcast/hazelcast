@@ -57,15 +57,12 @@ public class Hazelcast3Proxy {
     }};
 
     public HazelcastInstance newHazelcastInstance(String xmlConfig) {
-        ClassLoader currentClassloader = Thread.currentThread().getContextClassLoader();
         try {
             File hazelcastJar = locateVersion("3.12.12", new File("target"), false)[HAZELCAST_JAR_INDEX];
             URLClassLoader classLoader = new ChildFirstClassLoader(
                     new URL[]{new URL("file:" + hazelcastJar.toPath().toAbsolutePath())},
                     Hazelcast3Proxy.class.getClassLoader()
             );
-            Thread.currentThread().setContextClassLoader(classLoader);
-
             Object config = buildHz3Config(xmlConfig, classLoader);
             Object hz3Instance = newHazelcast3Instance(classLoader, config);
 
@@ -73,8 +70,6 @@ public class Hazelcast3Proxy {
 
         } catch (MalformedURLException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(currentClassloader);
         }
     }
 

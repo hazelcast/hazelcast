@@ -58,6 +58,8 @@
                 <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
                 <include>com.hazelcast.jet:hazelcast-jet-python</include>
                 <include>com.hazelcast.jet:hazelcast-jet-s3</include>
+                <include>com.hazelcast:hazelcast-3-connector-interface</include>
+                <include>com.hazelcast:hazelcast-3-connector-common</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
@@ -137,6 +139,11 @@
             <directory>src/bin-regular</directory>
             <outputDirectory>bin</outputDirectory>
             <filtered>true</filtered>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.build.directory}/custom-lib</directory>
+            <outputDirectory>custom-lib</outputDirectory>
         </fileSet>
     </fileSets>
 </assembly>
