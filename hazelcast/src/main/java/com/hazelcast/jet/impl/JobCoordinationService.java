@@ -1045,7 +1045,13 @@ public class JobCoordinationService {
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
         ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
+        JobExecutionService jetExecutionService = jetServiceBackend.getJobExecutionService();
+        try {
+            jetExecutionService.prepareProcessorClassLoaders(jobId, jobConfig);
+            return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
+        } finally {
+            jetExecutionService.clearProcessorClassLoaders();
+        }
     }
 
     private String dagToJson(DAG dag) {

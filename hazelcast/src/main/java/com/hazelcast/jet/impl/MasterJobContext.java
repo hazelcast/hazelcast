@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -281,11 +282,18 @@ public class MasterJobContext {
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
+            JobExecutionService jobExecutionService = mc.coordinationService().getJetServiceBackend().getJobExecutionService();
             try {
-                dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
-                        classLoader, mc.jobRecord().getDag());
+                jobExecutionService.prepareProcessorClassLoaders(mc.jobId(), mc.jobConfig());
+                dag = deserializeWithCustomClassLoader(
+                        mc.nodeEngine().getSerializationService(),
+                        classLoader,
+                        mc.jobRecord().getDag()
+                );
             } catch (Exception e) {
                 throw new JetException("DAG deserialization failed", e);
+            } finally {
+                jobExecutionService.clearProcessorClassLoaders();
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
@@ -750,7 +758,8 @@ public class MasterJobContext {
         if (vertices != null) {
             for (Vertex vertex : vertices) {
                 try {
-                    vertex.getMetaSupplier().close(failure);
+                    ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
+                    Util.doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.close(failure));
                 } catch (Throwable e) {
                     logger.severe(mc.jobIdString()
                             + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);

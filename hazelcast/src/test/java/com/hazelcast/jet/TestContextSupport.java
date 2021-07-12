@@ -100,7 +100,7 @@ public final class TestContextSupport {
                         c.logger(), c.vertexName(), 1, 1,
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), 1, c.memberCount(),
                         new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
-                        null);
+                        null, context.classLoader());
             }
             delegate.init(context);
         }
@@ -122,7 +122,7 @@ public final class TestContextSupport {
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),
                         new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
-                        null);
+                        null, context.classLoader());
             }
             return context;
         }
