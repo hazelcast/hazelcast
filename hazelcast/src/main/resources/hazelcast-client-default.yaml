@@ -21,6 +21,6 @@
 # hazelcast-client-default.xml is used as the default configuration.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at http://docs.hazelcast.com/
 
 hazelcast-client: {}

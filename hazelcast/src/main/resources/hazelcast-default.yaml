@@ -21,7 +21,7 @@
 # hazelcast-default.xml is used as the default configuration.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at http://docs.hazelcast.com/
 hazelcast:
   # The name of the cluster. All members of a single cluster must have the
   # same cluster name configured and a client connecting to this cluster
