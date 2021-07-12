@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -102,7 +103,7 @@ public final class FieldsUtil {
             return null;
         }
 
-        return Character.toLowerCase(fieldNameWithWrongCase.charAt(0)) + fieldNameWithWrongCase.substring(1);
+        return Introspector.decapitalize(fieldNameWithWrongCase);
     }
 
     @SuppressWarnings("RedundantIfStatement")
