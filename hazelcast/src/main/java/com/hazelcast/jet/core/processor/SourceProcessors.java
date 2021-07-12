@@ -23,7 +23,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;

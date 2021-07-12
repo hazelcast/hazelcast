@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
@@ -163,7 +164,7 @@ public final class StreamSocketP extends AbstractProcessor {
     public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.socket(host, port, ACTION_READ),
-                () -> new StreamSocketP(host, port, Charset.forName(charset))
+                SecuredFunctions.streamSocketProcessorFn(host, port, charset)
         );
     }
 }

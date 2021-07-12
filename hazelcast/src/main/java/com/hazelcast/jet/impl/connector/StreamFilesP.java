@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiFunctionEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;

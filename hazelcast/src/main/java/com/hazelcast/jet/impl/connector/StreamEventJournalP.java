@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;

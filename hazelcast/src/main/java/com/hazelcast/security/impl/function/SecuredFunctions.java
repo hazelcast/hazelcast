@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.function;
+package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;

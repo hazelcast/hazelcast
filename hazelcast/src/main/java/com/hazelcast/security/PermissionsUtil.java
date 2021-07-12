@@ -16,7 +16,7 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.function.SecuredFunction;
+import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.execution.init.Contexts;
 import com.hazelcast.security.permission.CachePermission;

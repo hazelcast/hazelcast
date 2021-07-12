@@ -23,7 +23,7 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Observable;

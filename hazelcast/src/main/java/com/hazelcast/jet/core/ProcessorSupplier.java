@@ -18,7 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.function.SecuredFunction;
+import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;

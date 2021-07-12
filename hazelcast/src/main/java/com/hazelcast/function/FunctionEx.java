@@ -17,6 +17,7 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
 import java.util.function.Function;

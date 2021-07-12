@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.cache.impl.CacheEntriesWithCursor;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;

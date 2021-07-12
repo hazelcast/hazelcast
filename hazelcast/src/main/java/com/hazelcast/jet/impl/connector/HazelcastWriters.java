@@ -27,7 +27,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;

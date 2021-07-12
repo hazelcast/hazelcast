@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.function;
+package com.hazelcast.security.impl.function;
+
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.security.Permission;
 
@@ -25,6 +27,7 @@ import java.security.Permission;
  *
  * @see SecuredFunctions
  */
+@PrivateApi
 public interface SecuredFunction {
 
     /**

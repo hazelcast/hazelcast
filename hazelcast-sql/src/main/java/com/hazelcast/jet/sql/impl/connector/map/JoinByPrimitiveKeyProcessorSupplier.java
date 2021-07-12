@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;

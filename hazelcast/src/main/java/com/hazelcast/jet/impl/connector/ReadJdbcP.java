@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SecuredFunctions;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
