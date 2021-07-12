@@ -9,7 +9,7 @@ different pipeline steps.
 
 This is a prerequisite for using Hazelcast 3 client to access Hazelcast
 3 members (see the Hazelcast 5.0 evaluation experience for Hazelcast
-users and PLAT-344).
+users and HZ-344).
 
 ## User facing API
 
@@ -57,8 +57,8 @@ metaSupplier) with it, all during deserialization.
 
 ### Option 1 Only server side resources
 
-Allow to specify only jars in particular folder already present on the
-member - main advantage is that it is simple.
+Allow specifying jars only in a particular folder already present on
+the member - the main advantage is that it is simple.
 
 The folder must be configurable, the most common case will use the
 server distribution, so a HazelcastProperty is enough. A property in the
@@ -73,7 +73,7 @@ implementation of the resource upload is left for future improvements.
 
 ## Processor Classloader
 
-The idea is to use what is commonly referred to as child-first classloader.
+The idea is to use what is commonly referred to as a child-first classloader.
 The main advantage of this approach is that it can use a different
 version of a class than what is present in the cluster (or in the Jet
 job classloader).
@@ -85,7 +85,7 @@ MetaSupplier, Supplier and processor instances.
 
 Then there are 2 options how to implement the processor
 
-- use reflection to load the classes from processor classloader
+- use reflection to load the classes from the processor classloader
 
 - leverage JVM's lazy class loading, where the loading of the class is
   triggered only when e.g. a processor supplier is actually executed,
@@ -94,9 +94,9 @@ Then there are 2 options how to implement the processor
 
 ## Security
 
-Currenly only server side resources from configured folder are possible.
-The configured resource (jar) name must be checked agains breakouts like
-"../../some.jar".
+Currently, only server-side resources from the configured folder are
+possible. The configured resource (jar) name must be checked against
+breakouts like "../../some.jar".
 
 Code changes
 
