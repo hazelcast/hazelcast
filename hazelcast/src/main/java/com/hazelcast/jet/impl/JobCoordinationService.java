@@ -255,7 +255,7 @@ public class JobCoordinationService {
 
                 Set<String> ownedObservables = ownedObservables(dag);
                 JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId, serializedDag,
-                        dagToJson(dag), jobConfig, ownedObservables);
+                        dagToJson(dag), jobConfig, ownedObservables, subject);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -330,7 +330,7 @@ public class JobCoordinationService {
 
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig);
+        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
@@ -958,7 +958,7 @@ public class JobCoordinationService {
             logger.severe("Master context for job " + idToString(jobId) + " not found to restart");
             return;
         }
-        tryStartJob(masterContext, null);
+        tryStartJob(masterContext, masterContext.jobRecord().getSubject());
     }
 
     private void checkOperationalState() {
@@ -1089,7 +1089,7 @@ public class JobCoordinationService {
             logFinest(logger, "MasterContext for suspended %s is created", masterContext.jobIdString());
         } else {
             logger.info("Starting job " + idToString(jobId) + ": " + reason);
-            tryStartJob(masterContext, null);
+            tryStartJob(masterContext, jobRecord.getSubject());
         }
 
         return masterContext.jobContext().jobCompletionFuture();

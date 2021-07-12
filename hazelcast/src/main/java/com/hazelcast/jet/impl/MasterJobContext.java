@@ -771,7 +771,7 @@ public class MasterJobContext {
             mc.unlock();
         }
         logger.fine("Resuming job " + mc.jobName());
-        tryStartJob(executionIdSupplier, null);
+        tryStartJob(executionIdSupplier, mc.jobRecord().getSubject());
     }
 
     private boolean hasParticipant(UUID uuid) {

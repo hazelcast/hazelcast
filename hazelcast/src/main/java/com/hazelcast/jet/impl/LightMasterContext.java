@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -83,7 +84,8 @@ public class LightMasterContext {
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public LightMasterContext(
-            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId, JobConfig config
+            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
+            JobConfig config, Subject subject
     ) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
@@ -118,7 +120,7 @@ public class LightMasterContext {
         dag.iterator().forEachRemaining(vertices::add);
         Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, null);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
         } catch (Throwable e) {
             executionPlanMap = null;
             finalizeJob(e);
