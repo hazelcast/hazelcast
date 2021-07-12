@@ -101,9 +101,9 @@ public final class ExecutionPlanBuilder {
             ClassLoader processorClassLoader = jobExecutionService.getClassLoader(jobConfig, jobId);
             try {
                 doWithClassLoader(processorClassLoader, () ->
-                        metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId, jobConfig, logger,
-                                vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob,
-                                partitionsByAddress, processorClassLoader)));
+                        metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId,
+                                jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                                isLightJob, partitionsByAddress, processorClassLoader)));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }
