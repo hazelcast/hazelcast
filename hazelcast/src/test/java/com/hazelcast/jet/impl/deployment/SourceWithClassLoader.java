@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import childfirstclassloader.ResourceReader;
 import childfirstclassloader.TestProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
@@ -27,21 +26,21 @@ public class SourceWithClassLoader {
 
     public static BatchSource<String> batchSource(String name) {
         BatchSource<String> source = Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                () -> new TestProcessor(ResourceReader::new)
+                () -> new TestProcessor(TestProcessor.ResourceReader::new)
         ));
         return source;
     }
 
     public static StreamSource<String> streamSource(String name) {
         StreamSource<String> source = Sources.streamFromProcessor(name, ProcessorMetaSupplier.of(
-                () -> new TestProcessor(ResourceReader::new)
+                () -> new TestProcessor(TestProcessor.ResourceReader::new)
         ));
         return source;
     }
 
     public static BatchSource<String> sourceMetaSupplier(String name) {
         BatchSource<String> source = Sources.batchFromProcessor(name, new ProcessorMetaSupplierUsingClassloader(
-                ResourceReader::new
+                TestProcessor.ResourceReader::new
         ));
         return source;
     }

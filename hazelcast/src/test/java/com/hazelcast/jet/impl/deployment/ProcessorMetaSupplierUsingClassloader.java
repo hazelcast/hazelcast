@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import childfirstclassloader.ResourceReaderFactory;
+import childfirstclassloader.TestProcessor;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -42,7 +42,7 @@ public class ProcessorMetaSupplierUsingClassloader implements ProcessorMetaSuppl
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        resourceReaderSupplier = ResourceReaderFactory.createResourceReader();
+        resourceReaderSupplier = TestProcessor.ResourceReaderFactory.createResourceReader();
         String resourceInit = "ProcessorMetaSupplier init " + resourceReaderSupplier.get().get();
         ResourceCollector.add(resourceInit);
     }

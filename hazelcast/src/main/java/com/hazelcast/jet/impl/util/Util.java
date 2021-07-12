@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
@@ -88,6 +87,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -508,7 +508,7 @@ public final class Util {
         try {
             return callable.call();
         } catch (Exception e) {
-            throw new HazelcastException("Callable failed", e);
+            throw rethrow(e);
         } finally {
             currentThread.setContextClassLoader(previousCl);
         }

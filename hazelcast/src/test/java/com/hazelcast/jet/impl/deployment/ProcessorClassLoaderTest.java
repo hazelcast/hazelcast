@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import childfirstclassloader.ResourceReader;
 import childfirstclassloader.TestProcessor;
-import childfirstclassloader.TestProcessorMetaSupplier;
-import childfirstclassloader.TestProcessorSupplier;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
@@ -75,9 +72,9 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         JarUtil.createJarFile(
                 "target/test-classes/",
                 newArrayList(
-                        classToPath(ResourceReader.class),
-                        classToPath(TestProcessorMetaSupplier.class),
-                        classToPath(TestProcessorSupplier.class),
+                        classToPath(TestProcessor.ResourceReader.class),
+                        classToPath(TestProcessor.TestProcessorMetaSupplier.class),
+                        classToPath(TestProcessor.TestProcessorSupplier.class),
                         classToPath(TestProcessor.class),
                         classToPath(SourceWithClassLoader.class)
                 ),
@@ -139,8 +136,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
                 // Need to delegate to system classloader, which has maven dependencies like Jackson
                 ClassLoader.getSystemClassLoader()
         );
-        HazelcastInstance member = HazelcastStarter.newHazelcastInstance(config, classloader);
-        return member;
+        return HazelcastStarter.newHazelcastInstance(config, classloader);
     }
 
     @Test
@@ -178,10 +174,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addCustomClasspath(source.name(), resourcesJarFile.getName());
         jobConfig.addCustomClasspath(source.name(), jarFile.getName());
-        jet.newJob(p, jobConfig);
-
-
-        Thread.sleep(5000);
+        jet.newJob(p, jobConfig).join();
 
         IList<Object> list = member.getList("test");
         assertThat(list).contains("resource in jar");
@@ -195,7 +188,7 @@ public class ProcessorClassLoaderTest extends JetTestSupport {
     @Test
     public void testClassLoaderSetForSupplierDAG() {
         DAG dag = new DAG();
-        dag.newVertex(SOURCE_NAME, TestProcessorMetaSupplier.create())
+        dag.newVertex(SOURCE_NAME, TestProcessor.TestProcessorMetaSupplier.create())
            .localParallelism(1);
 
         JobConfig jobConfig = new JobConfig();
