@@ -45,6 +45,7 @@ import com.hazelcast.sql.impl.state.QueryStateCallback;
 import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -64,6 +67,10 @@ import static org.junit.Assert.assertTrue;
  * Helper test classes.
  */
 public class SqlTestSupport extends HazelcastTestSupport {
+
+    @ClassRule
+    public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
+
     /**
      * Check object equality with additional hash code check.
      *

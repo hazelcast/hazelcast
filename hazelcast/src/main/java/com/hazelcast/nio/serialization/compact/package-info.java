@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl;
-
-import java.nio.ByteOrder;
-
-public class BigEndianSerializationServiceBuilder extends DefaultSerializationServiceBuilder {
-
-    @Override
-    protected void overrideByteOrder() {
-        byteOrder = ByteOrder.BIG_ENDIAN;
-    }
-}
+/**
+ * Package contains API for Compact Serializer
+ */
+package com.hazelcast.nio.serialization.compact;
