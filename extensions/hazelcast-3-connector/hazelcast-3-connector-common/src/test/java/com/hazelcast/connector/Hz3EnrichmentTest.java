@@ -20,6 +20,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.connector.map.AsyncMap;
 import com.hazelcast.connector.map.Hz3MapAdapter;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
@@ -32,6 +33,7 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.connector.Hz3Enrichment.hz3MapServiceFactory;
 import static com.hazelcast.connector.Hz3Enrichment.hz3ReplicatedMapServiceFactory;
@@ -54,10 +56,13 @@ public class Hz3EnrichmentTest extends BaseHz3Test {
         ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
                 hz3MapServiceFactory("test-map", HZ3_CLIENT_CONFIG);
 
+        BiFunctionEx<? super AsyncMap<Integer, String>, ? super Integer, CompletableFuture<String>> mapFn =
+                mapUsingIMapAsync(FunctionEx.identity(), (Integer i, String s) -> s);
+
         BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
                 .mapUsingServiceAsync(
                         hz3MapSF,
-                        mapUsingIMapAsync(FunctionEx.identity(), (Integer i, String s) -> s)
+                        mapFn
                 );
         mapStage.writeTo(Sinks.list(results));
 
@@ -79,10 +84,13 @@ public class Hz3EnrichmentTest extends BaseHz3Test {
         ServiceFactory<Hz3MapAdapter, Map<Integer, String>> hz3MapSF =
                 hz3ReplicatedMapServiceFactory("test-replicated-map", HZ3_CLIENT_CONFIG);
 
+        BiFunctionEx<? super Map<Integer, String>, ? super Integer, String> mapFn =
+                mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s);
+
         BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
                 .mapUsingService(
                         hz3MapSF,
-                        mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
+                        mapFn
                 );
         mapStage.writeTo(Sinks.list(results));
 
