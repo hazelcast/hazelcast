@@ -54,7 +54,6 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -192,7 +191,7 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-    void tryStartJob(Supplier<Long> executionIdSupplier, Subject subject) {
+    void tryStartJob(Supplier<Long> executionIdSupplier) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             executionStartTime = System.currentTimeMillis();
             try {
@@ -225,7 +224,7 @@ public class MasterJobContext {
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
                         mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(), dag, mc.jobId(),
-                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false, subject)));
+                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false, mc.jobRecord().getSubject())));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
@@ -771,7 +770,7 @@ public class MasterJobContext {
             mc.unlock();
         }
         logger.fine("Resuming job " + mc.jobName());
-        tryStartJob(executionIdSupplier, mc.jobRecord().getSubject());
+        tryStartJob(executionIdSupplier);
     }
 
     private boolean hasParticipant(UUID uuid) {

@@ -43,16 +43,16 @@ with actions below:
 
 - submit: submit a new job, without uploading resources
 - cancel: cancel a running job
-- read: all the readonly related to job like, list the jobs, get the
-job (by id or name), get job config, get status, submission time... 
+- read: all the readonly actions related to job like list the jobs, get
+the job (by id or name), get job config, get status, submission time...
 Every other action implies `read` action, for example if permission has
 `create` action, it means the permission has `read` action as well.
-- restart: suspend/resume a running job
+- restart: restart/suspend/resume a job
 - export-snapshot: export the snapshot
 - add-resources: upload the resources/classes along with jobs. This
 means running custom code on the server, basically user can do anything
 with this permission.
-- all: all the above
+- all: all of the above
 
 ### Connector Permission
 
