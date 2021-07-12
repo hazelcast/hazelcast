@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast client.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at http://docs.hazelcast.com/
+# at https://docs.hazelcast.com/
 
 hazelcast-client:
   config-replacers:

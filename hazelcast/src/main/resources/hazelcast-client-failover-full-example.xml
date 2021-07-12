@@ -25,7 +25,7 @@
 
   To learn how to configure Hazelcast clients for Blue/Green Deployment and
   Disaster Recovery, please see the Reference Manual at
-  http://docs.hazelcast.com/
+  https://docs.hazelcast.com/
 -->
 
 <!--suppress XmlDefaultAttributeValue -->
