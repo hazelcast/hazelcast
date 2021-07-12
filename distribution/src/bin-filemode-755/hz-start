@@ -25,6 +25,7 @@ $JDK_OPTS \
 "-Dhazelcast.logging.type=log4j2" \
 "-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
 "-Dhz.home=$HAZELCAST_HOME" \
+"-Dhazelcast.config=$HAZELCAST_HOME/config/hazelcast.xml" \
 "-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
 $PROMETHEUS \
 $JVM_OPTIONS \
