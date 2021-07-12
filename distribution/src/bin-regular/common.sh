@@ -55,7 +55,7 @@ else
   export JAVA_OPTS="${JAVA_OPTS_DEFAULT}"
 fi
 
-CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*:$CLASSPATH"
+CLASSPATH="$CLASSPATH:$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
 
 function readJvmOptionsFile {
     # Read jvm.options file
