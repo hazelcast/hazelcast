@@ -274,4 +274,11 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
+    // todo reconsider exposure of replication stats, probably better encapsulated in separate "LocalReplicationStats"?
+    // these stats reflect full/diff partition replication stats with local map partitions as the migration source
+    long getDifferentialPartitionReplicationCount();
+    long getFullPartitionReplicationCount();
+    long getDifferentialReplicationRecordCount();
+    long getFullReplicationRecordCount();
+
 }
