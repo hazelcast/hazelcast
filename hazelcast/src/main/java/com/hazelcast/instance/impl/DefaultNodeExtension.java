@@ -212,7 +212,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet extension is disabled with \"hazelcast.jet.disabled\" property.");
+            systemLogger.info("Jet is disabled with \"hazelcast.jet.enabled\" property.");
         }
     }
 
