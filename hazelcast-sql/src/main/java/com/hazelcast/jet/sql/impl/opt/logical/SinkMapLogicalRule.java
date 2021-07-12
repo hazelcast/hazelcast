@@ -27,7 +27,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
 /**
- * Planner rule that matches VALUES based {@link PartitionedMapTable} SINK.
+ * Planner rule that matches VALUES-based {@link PartitionedMapTable} SINK.
  * <p>For example,</p>
  * <blockquote><code>SINK INTO map VALUES (1, '1')</code></blockquote>
  * <p>
@@ -41,7 +41,7 @@ public final class SinkMapLogicalRule extends RelOptRule {
     private SinkMapLogicalRule() {
         super(
                 operandJ(
-                        SinkLogicalRel.class, LOGICAL, SinkMapLogicalRule::targetsPartitionedMapTable,
+                        SinkLogicalRel.class, LOGICAL, sink -> OptUtils.hasTableType(sink, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
                 RelFactories.LOGICAL_BUILDER,
@@ -61,10 +61,6 @@ public final class SinkMapLogicalRule extends RelOptRule {
                 logicalValues.values()
         );
         call.transformTo(rel);
-    }
-
-    private static boolean targetsPartitionedMapTable(SinkLogicalRel sink) {
-        return table(sink) instanceof PartitionedMapTable;
     }
 
     private static <T extends Table> T table(SinkLogicalRel sink) {

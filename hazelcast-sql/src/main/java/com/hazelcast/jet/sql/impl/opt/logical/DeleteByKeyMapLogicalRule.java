@@ -56,7 +56,7 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
                         LogicalTableModify.class, null, TableModify::isDelete,
                         operandJ(LogicalTableScan.class,
                                 null,
-                                delete -> OptUtils.hasTableType(delete, PartitionedMapTable.class),
+                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
                                 none()
                         )
                 ),
