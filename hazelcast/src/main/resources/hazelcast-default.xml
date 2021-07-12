@@ -352,11 +352,9 @@
                  and you can restart the whole cluster without losing the jobs and
                  their state.
 
-                 This feature requires Jet Enterprise and is implemented on top of the
-                 Hot Restart feature of Hazelcast IMDG. Therefore you should configure
-                 Hot Restart in the hazelcast IMDG configuration, especially the base
-                 directory where to store the recovery files. If you don't, Jet will
-                 force-enable Hot Restart and apply some reasonable defaults.
+                 This feature requires Hazelcast Enterprise and is implemented on top of the
+                 Hot Restart feature. Therefore you should configure Hot Restart, especially
+                 the base directory where to store the recovery files.
              -->
             <lossless-restart-enabled>false</lossless-restart-enabled>
             <!-- Sets the maximum number of records that can be accumulated by any single
