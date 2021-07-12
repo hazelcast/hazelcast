@@ -223,8 +223,9 @@ public class MasterJobContext {
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(), dag, mc.jobId(),
-                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false, mc.jobRecord().getSubject())));
+                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
+                                false, mc.jobRecord().getSubject())));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
