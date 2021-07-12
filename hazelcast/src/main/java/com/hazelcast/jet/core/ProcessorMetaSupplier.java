@@ -43,9 +43,11 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Collections.singletonList;
 
 /**
@@ -308,8 +310,12 @@ public interface ProcessorMetaSupplier extends Serializable {
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
                 String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                ownerAddress = context.hazelcastInstance().getPartitionService()
-                                      .getPartition(key).getOwner().getAddress();
+                int partitionId = context.hazelcastInstance().getPartitionService().getPartition(key).getPartitionId();
+                ownerAddress = context.partitionAssignment().entrySet().stream()
+                        .filter(en -> arrayIndexOf(partitionId, en.getValue()) >= 0)
+                        .findAny()
+                        .map(Entry::getKey)
+                        .orElseThrow(() -> new RuntimeException("Owner partition not assigned to any participating member"));
             }
 
             @Nonnull @Override
