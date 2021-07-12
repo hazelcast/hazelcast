@@ -517,5 +517,12 @@ public interface ProcessorMetaSupplier extends Serializable {
          * dealing with Hazelcast data structures should use.
          */
         Map<Address, int[]> partitionAssignment();
+
+        /**
+         * Processor classloader configured via {@link JobConfig#addCustomClasspath(String, String)}
+         *
+         * @return processor classloader, null if no custom classpath elements are configured
+         */
+        ClassLoader classLoader();
     }
 }

@@ -1626,7 +1626,6 @@ public final class ClusterProperty {
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
 
-
     private ClusterProperty() {
     }
 }
