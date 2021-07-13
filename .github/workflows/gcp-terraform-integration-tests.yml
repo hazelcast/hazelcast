@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - spi-integration-tests›
+      - spi-integration-tests
 #    paths:
 #      - 'src/**'
 #      - 'pom.xml'
