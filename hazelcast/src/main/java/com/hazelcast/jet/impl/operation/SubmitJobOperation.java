@@ -23,6 +23,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -32,24 +33,30 @@ public class SubmitJobOperation extends AsyncJobOperation {
     private Data jobDefinition;
     private Data serializedConfig;
     private boolean isLightJob;
+    private Subject subject;
 
     public SubmitJobOperation() {
     }
 
     public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob) {
+        this(jobId, jobDefinition, config, isLightJob, null);
+    }
+
+    public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob, Subject subject) {
         super(jobId);
         this.jobDefinition = jobDefinition;
         this.serializedConfig = config;
         this.isLightJob = isLightJob;
+        this.subject = subject;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
         JobConfig jobConfig = getNodeEngine().getSerializationService().toObject(serializedConfig);
         if (isLightJob) {
-            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition, jobConfig);
+            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition, jobConfig, subject);
         } else {
-            return getJobCoordinationService().submitJob(jobId(), jobDefinition, jobConfig);
+            return getJobCoordinationService().submitJob(jobId(), jobDefinition, jobConfig, subject);
         }
     }
 
@@ -64,6 +71,7 @@ public class SubmitJobOperation extends AsyncJobOperation {
         IOUtil.writeData(out, jobDefinition);
         IOUtil.writeData(out, serializedConfig);
         out.writeBoolean(isLightJob);
+        out.writeObject(subject);
     }
 
     @Override
@@ -72,5 +80,6 @@ public class SubmitJobOperation extends AsyncJobOperation {
         jobDefinition = IOUtil.readData(in);
         serializedConfig = IOUtil.readData(in);
         isLightJob = in.readBoolean();
+        subject = in.readObject();
     }
 }

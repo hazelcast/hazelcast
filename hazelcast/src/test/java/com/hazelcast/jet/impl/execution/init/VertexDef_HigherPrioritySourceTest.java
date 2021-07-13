@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
@@ -127,12 +128,23 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     }
 
     private void assertHigherPriorityVertices(Vertex... vertices) {
+        JobConfig jobConfig = new JobConfig();
         Map<MemberInfo, ExecutionPlan> executionPlans =
-                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0, false);
+                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, jobConfig, 0, false, null);
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
-        plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
-                (InternalSerializationService) nodeEngineImpl.getSerializationService());
+
+        // In the production code the plan#initialize is only called from places where we have already set up the
+        // processor classloaders
+        JetServiceBackend jetService = nodeEngineImpl.getService(JetServiceBackend.SERVICE_NAME);
+        try {
+            jetService.getJobExecutionService().prepareProcessorClassLoaders(0, jobConfig);
+            plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
+                    (InternalSerializationService) nodeEngineImpl.getSerializationService());
+        } finally {
+            jetService.getJobExecutionService().clearProcessorClassLoaders();
+        }
+
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
         String actualHigherPriorityVertices = plan.getVertices().stream()
                 .filter(v -> higherPriorityVertices.contains(v.vertexId()))

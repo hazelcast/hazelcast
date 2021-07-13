@@ -28,6 +28,8 @@ import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -122,11 +124,11 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public String getServiceName() {
-         return JetServiceBackend.SERVICE_NAME;
+        return JetServiceBackend.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new JobPermission(ActionConstants.ACTION_READ);
     }
 }

@@ -42,6 +42,8 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable,
 
     void writeBoolean(int position, boolean v) throws IOException;
 
+    void writeBooleanBit(int position, int bitIndex, boolean v) throws IOException;
+
     void writeByte(int position, int v) throws IOException;
 
     void writeZeroBytes(int count);

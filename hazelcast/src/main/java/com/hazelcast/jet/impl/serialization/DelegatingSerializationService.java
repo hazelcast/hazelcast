@@ -115,7 +115,7 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public SerializerAdapter serializerFor(Object object) {
+    public SerializerAdapter serializerFor(Object object, boolean includeSchema) {
         Class<?> clazz = object == null ? null : object.getClass();
 
         SerializerAdapter serializer = null;
@@ -124,7 +124,7 @@ public class DelegatingSerializationService extends AbstractSerializationService
         }
         if (serializer == null) {
             try {
-                serializer = delegate.serializerFor(object);
+                serializer = delegate.serializerFor(object, includeSchema);
             } catch (HazelcastSerializationException hse) {
                 throw serializationException(clazz, hse);
             }

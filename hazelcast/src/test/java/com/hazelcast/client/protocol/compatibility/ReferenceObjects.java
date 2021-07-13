@@ -56,6 +56,8 @@ import com.hazelcast.internal.management.dto.MCEventDTO;
 import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
@@ -652,6 +654,10 @@ public class ReferenceObjects {
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
+    public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
+    public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
+    public static List<Schema> aListOfSchemas = Collections.singletonList(aSchema);
 
     static {
         try {

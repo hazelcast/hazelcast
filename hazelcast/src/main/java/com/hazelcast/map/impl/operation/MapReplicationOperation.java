@@ -32,14 +32,14 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * Replicates all IMap-states of this partition to a repReservedCapacityCounterTestlica partition.
+ * Replicates all IMap-states of this partition to a replica partition.
  */
 public class MapReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
 
-    private MapReplicationStateHolder mapReplicationStateHolder;
-    private WriteBehindStateHolder writeBehindStateHolder;
-    private MapNearCacheStateHolder mapNearCacheStateHolder;
+    protected MapReplicationStateHolder mapReplicationStateHolder;
+    protected WriteBehindStateHolder writeBehindStateHolder;
+    protected MapNearCacheStateHolder mapNearCacheStateHolder;
 
     private transient NativeOutOfMemoryError oome;
 
@@ -137,7 +137,7 @@ public class MapReplicationOperation extends Operation
         mapNearCacheStateHolder.setMapReplicationOperation(this);
     }
 
-    RecordStore getRecordStore(String mapName) {
+    public RecordStore getRecordStore(String mapName) {
         final boolean skipLoadingOnRecordStoreCreate = true;
         MapService mapService = getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();

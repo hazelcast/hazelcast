@@ -153,6 +153,16 @@ public final class JetProperties {
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
         = new HazelcastProperty("jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS);
 
+    /**
+     * The directory containing jars, that can be used to specify custom classpath for
+     * a stage in a pipeline.
+     * The default value is `custom-lib`, relative to the current directory.
+     *
+     * @since 5.0
+     */
+    public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
+            = new HazelcastProperty("jet.custom.lib.dir", "custom-lib");
+
     private JetProperties() {
     }
 }
