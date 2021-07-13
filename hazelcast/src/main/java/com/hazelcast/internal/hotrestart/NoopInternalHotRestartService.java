@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.hotrestart;
 
+import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
 
 import java.util.Collections;
 import java.util.Set;
@@ -78,5 +80,17 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
 
     @Override
     public void waitPartitionReplicaSyncOnCluster(long timeout, TimeUnit unit) {
+    }
+
+    @Override
+    public void setRejoiningActiveCluster(boolean rejoiningActiveCluster) {
+    }
+
+    @Override
+    public void deferApplyPartitionState(PartitionRuntimeState partitionRuntimeState) {
+    }
+
+    @Override
+    public void deferPostJoinOps(OnJoinOp postJoinOp) {
     }
 }

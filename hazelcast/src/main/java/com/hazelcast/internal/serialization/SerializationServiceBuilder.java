@@ -68,5 +68,7 @@ public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setSchemaService(SchemaService schemaService);
 
+    SerializationServiceBuilder isCompatibility(boolean isCompatibility);
+
     <T extends SerializationService> T build();
 }

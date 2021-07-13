@@ -17,17 +17,23 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.impl.ProcessorClassLoaderTLHolder;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.pipeline.BatchSource;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 
 public class BatchSourceTransform<T> extends AbstractTransform implements BatchSource<T> {
+
     @Nonnull
-    public final ProcessorMetaSupplier metaSupplier;
+    public ProcessorMetaSupplier metaSupplier;
     private boolean isAssignedToStage;
 
     public BatchSourceTransform(
@@ -50,4 +56,15 @@ public class BatchSourceTransform<T> extends AbstractTransform implements BatchS
         determineLocalParallelism(metaSupplier.preferredLocalParallelism(), context, false);
         p.addVertex(this, name(), determinedLocalParallelism(), metaSupplier);
     }
+
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        out.writeObject(metaSupplier);
+        out.writeBoolean(isAssignedToStage);
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        metaSupplier = doWithClassLoader(ProcessorClassLoaderTLHolder.get(name()), () -> (ProcessorMetaSupplier) in.readObject());
+        isAssignedToStage = in.readBoolean();
+    }
+
 }

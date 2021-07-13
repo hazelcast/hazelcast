@@ -38,12 +38,10 @@ import java.util.Map;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -139,9 +137,9 @@ public class JobConfigTest extends JetTestSupport {
 
         // Then
         Map<String, String> serializerConfigs = config.getSerializerConfigs();
-        assertThat(serializerConfigs.entrySet(), hasSize(1));
-        assertThat(serializerConfigs.keySet(), contains(Object.class.getName()));
-        assertThat(serializerConfigs.values(), contains(ObjectSerializer.class.getName()));
+        assertThat(serializerConfigs.entrySet()).hasSize(1);
+        assertThat(serializerConfigs.keySet()).contains(Object.class.getName());
+        assertThat(serializerConfigs.values()).contains(ObjectSerializer.class.getName());
     }
 
     @Test
@@ -150,7 +148,7 @@ public class JobConfigTest extends JetTestSupport {
         JobConfig config = new JobConfig();
 
         // Then
-        assertThat(config.isSuspendOnFailure(), equalTo(FALSE));
+        assertThat(config.isSuspendOnFailure()).isEqualTo(FALSE);
     }
 
     @Test
@@ -162,7 +160,18 @@ public class JobConfigTest extends JetTestSupport {
         config.setSuspendOnFailure(true);
 
         // Then
-        assertThat(config.isSuspendOnFailure(), equalTo(TRUE));
+        assertThat(config.isSuspendOnFailure()).isEqualTo(TRUE);
+    }
+
+    @Test
+    public void addCustomClasspath() {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addCustomClasspath("test", "url1");
+        jobConfig.addCustomClasspath("test", "url2");
+
+        assertThat(jobConfig.getCustomClassPaths()).containsValue(
+                newArrayList("url1", "url2")
+        );
     }
 
     @Test
@@ -204,6 +213,17 @@ public class JobConfigTest extends JetTestSupport {
         assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithInitialSnapshot))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("not supported for light jobs");
+    }
+
+    @Test
+    public void addCustomClasspaths() {
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.addCustomClasspaths("test", newArrayList("url1", "url2"));
+        jobConfig.addCustomClasspath("test", "url3");
+
+        assertThat(jobConfig.getCustomClassPaths()).containsValue(
+                newArrayList("url1", "url2", "url3")
+        );
     }
 
     private static class ObjectSerializer implements StreamSerializer<Object> {

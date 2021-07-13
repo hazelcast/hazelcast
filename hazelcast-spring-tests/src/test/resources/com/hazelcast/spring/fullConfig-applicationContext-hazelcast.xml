@@ -889,6 +889,16 @@
                         </hz:actions>
                     </hz:replicatedmap-permission>
                     <hz:management-permission principal="mcadmin"/>
+                    <hz:job-permission>
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:job-permission>
+                    <hz:connector-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:connector-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>

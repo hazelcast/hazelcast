@@ -82,6 +82,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     protected Supplier<RuntimeException> notActiveExceptionSupplier;
     protected ClassNameFilter classNameFilter;
     protected SchemaService schemaService;
+    protected boolean isCompatibility;
 
     @Override
     public SerializationServiceBuilder setVersion(byte version) {
@@ -222,6 +223,12 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
+    public SerializationServiceBuilder isCompatibility(boolean isCompatibility) {
+        this.isCompatibility = isCompatibility;
+        return this;
+    }
+
+    @Override
     public InternalSerializationService build() {
         initVersions();
         if (config != null) {
@@ -298,6 +305,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
                     .withAllowOverrideDefaultSerializers(allowOverrideDefaultSerializers)
                     .withCompactSerializationConfig(compactSerializationConfig)
                     .withSchemaService(schemaService)
+                    .withCompatibility(isCompatibility)
                     .build();
                 serializationServiceV1.registerClassDefinitions(classDefinitions);
                 return serializationServiceV1;

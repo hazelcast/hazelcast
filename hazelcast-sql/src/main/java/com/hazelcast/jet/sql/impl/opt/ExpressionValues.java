@@ -31,6 +31,7 @@ import org.apache.calcite.rex.RexVisitor;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -40,7 +41,9 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class ExpressionValues implements Serializable {
 
-    public abstract List<Object[]> toValues(ExpressionEvalContext context);
+    public abstract int size();
+
+    public abstract Stream<Object[]> toValues(ExpressionEvalContext context);
 
     /**
      * Representation of the VALUES clause data in the form of a simple {@code
@@ -57,10 +60,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return expressions.size();
+        }
+
+        @Override
+        public Stream<Object[]> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new))
-                    .collect(toList());
+                    .map(es -> es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new));
         }
 
         @Override
@@ -97,10 +104,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return values.stream().mapToInt(ExpressionValues::size).sum();
+        }
+
+        @Override
+        public Stream<Object[]> toValues(ExpressionEvalContext context) {
             return values.stream()
-                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream())
-                    .collect(toList());
+                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context));
         }
 
         @Override
