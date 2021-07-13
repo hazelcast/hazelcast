@@ -50,6 +50,7 @@ import java.util.function.Function;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CANCEL;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_EXPORT_SNAPSHOT;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_RESTART;
@@ -720,7 +721,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
             permissions.forEach(context::checkPermission);
         }
 
@@ -786,7 +787,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE));
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 
