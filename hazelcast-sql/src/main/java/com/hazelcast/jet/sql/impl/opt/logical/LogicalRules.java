@@ -87,6 +87,7 @@ public final class LogicalRules {
                 UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
+                InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
                 DeleteByKeyMapLogicalRule.INSTANCE,

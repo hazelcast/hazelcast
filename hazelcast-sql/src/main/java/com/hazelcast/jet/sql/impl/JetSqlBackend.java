@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
@@ -279,7 +281,11 @@ public class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof SinkMapPhysicalRel) {
+        if (physicalRel instanceof InsertMapPhysicalRel) {
+            InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
+            return new IMapInsertPlan(planKey, insert.objectKey(), parameterMetadata, insert.mapName(), insert.entriesFn(),
+                    planExecutor, permissions);
+        } else if (physicalRel instanceof SinkMapPhysicalRel) {
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(planKey, sink.objectKey(), parameterMetadata, sink.mapName(), sink.entriesFn(),
                     planExecutor, permissions);
