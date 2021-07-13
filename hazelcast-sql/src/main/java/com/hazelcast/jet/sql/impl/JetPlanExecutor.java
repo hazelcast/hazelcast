@@ -32,8 +32,8 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
-import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
@@ -51,8 +51,6 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 
@@ -65,7 +63,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -242,27 +239,33 @@ public class JetPlanExecutor {
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        Entry<Object, Object> entry = plan.entryFn()
+        List<Entry<Object, Object>> entries = plan.entriesFn()
                 .apply(new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance)));
-        CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(plan.mapName()))
-                .putIfAbsentAsync(entry.getKey(), entry.getValue())
-                .toCompletableFuture();
-        try {
-            Object previous;
-            if (timeout > 0) {
-                previous = future.get(timeout, TimeUnit.MILLISECONDS);
-            } else {
-                previous = future.get();
-            }
-            if (previous != null) {
-                throw QueryException.error("Duplicate key");
-            }
+        if (entries.isEmpty()) {
             return SqlResultImpl.createUpdateCountResult(0);
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            throw QueryException.error("Timeout occurred while inserting entry");
-        } catch (InterruptedException | ExecutionException e) {
-            throw QueryException.error(e.getMessage(), e);
+        } else {
+            assert entries.size() == 1;
+            Entry<Object, Object> entry = entries.get(0);
+            CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(plan.mapName()))
+                    .putIfAbsentAsync(entry.getKey(), entry.getValue())
+                    .toCompletableFuture();
+            try {
+                Object previous;
+                if (timeout > 0) {
+                    previous = future.get(timeout, TimeUnit.MILLISECONDS);
+                } else {
+                    previous = future.get();
+                }
+                if (previous != null) {
+                    throw QueryException.error("Duplicate key");
+                }
+                return SqlResultImpl.createUpdateCountResult(0);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+                throw QueryException.error("Timeout occurred while inserting entry");
+            } catch (InterruptedException | ExecutionException e) {
+                throw QueryException.error(e.getMessage(), e);
+            }
         }
     }
 

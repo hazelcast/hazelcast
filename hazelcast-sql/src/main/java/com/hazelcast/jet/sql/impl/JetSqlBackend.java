@@ -281,7 +281,7 @@ public class JetSqlBackend implements SqlBackend {
 
         if (physicalRel instanceof InsertMapPhysicalRel) {
             InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
-            return new IMapInsertPlan(planKey, insert.objectKey(), parameterMetadata, insert.mapName(), insert.entryFn(),
+            return new IMapInsertPlan(planKey, insert.objectKey(), parameterMetadata, insert.mapName(), insert.entriesFn(),
                     planExecutor, permissions);
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;

@@ -27,7 +27,7 @@ import org.apache.calcite.rel.core.RelFactories;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
 /**
- * Planner rule that matches single row, VALUES based {@link PartitionedMapTable}
+ * Planner rule that matches single row, VALUES-based {@link PartitionedMapTable}
  * INSERT.
  * <p>For example,</p>
  * <blockquote><code>INSERT INTO map VALUES (1, '1')</code></blockquote>
@@ -42,7 +42,7 @@ public final class InsertMapLogicalRule extends RelOptRule {
     private InsertMapLogicalRule() {
         super(
                 operandJ(
-                        InsertLogicalRel.class, LOGICAL, InsertMapLogicalRule::targetsPartitionedMapTable,
+                        InsertLogicalRel.class, LOGICAL, insert -> OptUtils.hasTableType(insert, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
                 RelFactories.LOGICAL_BUILDER,
@@ -64,10 +64,6 @@ public final class InsertMapLogicalRule extends RelOptRule {
             );
             call.transformTo(rel);
         }
-    }
-
-    private static boolean targetsPartitionedMapTable(InsertLogicalRel insert) {
-        return table(insert) instanceof PartitionedMapTable;
     }
 
     private static <T extends Table> T table(InsertLogicalRel insert) {

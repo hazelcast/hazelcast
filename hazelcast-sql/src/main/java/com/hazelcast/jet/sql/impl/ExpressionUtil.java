@@ -31,6 +31,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public final class ExpressionUtil {
 
@@ -152,6 +154,21 @@ public final class ExpressionUtil {
             }
         }
         return evaluatedRows;
+    }
+
+    /**
+     * Evaluate projection&predicate for multiple rows.
+     */
+    @Nonnull
+    public static Stream<Object[]> evaluate(
+            @Nullable Expression<Boolean> predicate,
+            @Nullable List<Expression<?>> projection,
+            @Nonnull Stream<Object[]> rows,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return rows
+                .map(row -> evaluate(predicate, projection, row, context))
+                .filter(Objects::nonNull);
     }
 
     /**

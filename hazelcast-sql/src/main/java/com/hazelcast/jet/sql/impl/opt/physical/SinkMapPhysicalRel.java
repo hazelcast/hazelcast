@@ -34,11 +34,12 @@ import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.toMap;
 
 public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
@@ -75,15 +76,10 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
                     (UpsertTargetDescriptor) table.getValueJetMetadata()
             ).get(evalContext.getSerializationService());
 
-            Map<Object, Object> entries = new HashMap<>();
-            for (ExpressionValues vs : values) {
-                List<Object[]> rows = vs.toValues(evalContext);
-                for (Object[] row : rows) {
-                    Entry<Object, Object> entry = projector.project(row);
-                    entries.put(entry.getKey(), entry.getValue());
-                }
-            }
-            return entries;
+            return values.stream()
+                    .flatMap(vs -> vs.toValues(evalContext))
+                    .map(projector::project)
+                    .collect(toMap(Entry::getKey, Entry::getValue));
         };
     }
 

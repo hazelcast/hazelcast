@@ -673,7 +673,7 @@ abstract class JetPlan extends SqlPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final String mapName;
-        private final Function<ExpressionEvalContext, Entry<Object, Object>> entryFn;
+        private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
         private final JetPlanExecutor planExecutor;
         private final List<Permission> permissions;
 
@@ -682,7 +682,7 @@ abstract class JetPlan extends SqlPlan {
                 PlanObjectKey objectKey,
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
-                Function<ExpressionEvalContext, Entry<Object, Object>> entryFn,
+                Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
                 JetPlanExecutor planExecutor,
                 List<Permission> permissions
         ) {
@@ -691,7 +691,7 @@ abstract class JetPlan extends SqlPlan {
             this.objectKeys = Collections.singleton(objectKey);
             this.parameterMetadata = parameterMetadata;
             this.mapName = mapName;
-            this.entryFn = entryFn;
+            this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
         }
@@ -704,8 +704,8 @@ abstract class JetPlan extends SqlPlan {
             return mapName;
         }
 
-        Function<ExpressionEvalContext, Entry<Object, Object>> entryFn() {
-            return entryFn;
+        Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
+            return entriesFn;
         }
 
         @Override

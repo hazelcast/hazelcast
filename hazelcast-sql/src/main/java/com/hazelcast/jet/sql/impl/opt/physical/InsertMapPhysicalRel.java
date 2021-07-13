@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import static java.util.stream.Collectors.toList;
+
 public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
     private final PartitionedMapTable table;
@@ -63,7 +65,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
         return table.getObjectKey();
     }
 
-    public Function<ExpressionEvalContext, Entry<Object, Object>> entryFn() {
+    public Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
         ExpressionValues values = this.values;
         return evalContext -> {
             KvProjector projector = KvProjector.supplier(
@@ -73,9 +75,9 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
                     (UpsertTargetDescriptor) table.getValueJetMetadata()
             ).get(evalContext.getSerializationService());
 
-            List<Object[]> rows = values.toValues(evalContext);
-            assert rows.size() == 1;
-            return projector.project(rows.get(0));
+            return values.toValues(evalContext)
+                    .map(projector::project)
+                    .collect(toList());
         };
     }
 
