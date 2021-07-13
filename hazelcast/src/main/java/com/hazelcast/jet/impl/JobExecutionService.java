@@ -208,7 +208,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (processorClsForJob != null) {
             return processorClsForJob.get(name);
         } else {
-            throw new HazelcastException("Processor classloader for jobId=" + jobId
+            throw new HazelcastException("Processor classloader for jobId=" + Util.idToString(jobId)
                     + " requested, but it does not exists");
         }
     }
