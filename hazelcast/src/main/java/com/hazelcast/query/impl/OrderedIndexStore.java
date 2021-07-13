@@ -44,7 +44,7 @@ import static java.util.Collections.emptySet;
  */
 @SuppressWarnings("rawtypes")
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
-    private static final DataComparator DATA_COMPARATOR = new DataComparator();
+    public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
 
     private final ConcurrentSkipListMap<Comparable, NavigableMap<Data, QueryableEntry>> recordMap =
         new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
@@ -60,7 +60,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();
-            recordsWithNullValue = new TreeMap<>(DATA_COMPARATOR);
+            recordsWithNullValue = Collections.emptySortedMap();
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
@@ -538,7 +538,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         }
     }
 
-    public static class DataComparator implements Comparator<Data> {
+    private static class DataComparator implements Comparator<Data> {
 
         @Override
         public int compare(Data o1, Data o2) {
@@ -555,5 +555,4 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return thisBytes.length - thatBytes.length;
         }
     }
-
 }

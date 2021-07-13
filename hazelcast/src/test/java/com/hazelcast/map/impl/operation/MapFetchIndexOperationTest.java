@@ -376,7 +376,6 @@ public class MapFetchIndexOperationTest extends HazelcastTestSupport {
         pointers[0] = IndexIterationPointer.create(50, true, 60, true, true, null);
         pointers[1] = IndexIterationPointer.create(30, true, 50, false, true, null);
 
-
         MapOperationProvider operationProvider = getOperationProvider(map);
         MapOperation operation = operationProvider.createFetchIndexOperation(mapName, orderedIndexName, pointers, partitions, 5);
 
