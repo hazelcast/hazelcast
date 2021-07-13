@@ -53,6 +53,9 @@ public class CheckLightJobsOperation extends Operation implements IdentifiedData
     }
 
     protected JetServiceBackend getJetServiceBackend() {
+        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not JetServiceBackend";
         return getService();
     }
