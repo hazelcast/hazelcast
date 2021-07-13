@@ -42,6 +42,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -131,7 +132,7 @@ public class JetPlanExecutorTest {
                 emptySet(),
                 dag,
                 planExecutor,
-                emptyList()
+                Collections.emptyList()
         );
 
         given(hazelcastInstance.getJet()).willReturn(jet);

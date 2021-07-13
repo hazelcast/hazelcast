@@ -87,6 +87,7 @@ public final class LogicalRules {
                 DeleteLogicalRule.INSTANCE,
 
                 InsertMapLogicalRule.INSTANCE,
+                SinkMapLogicalRule.INSTANCE,
                 DeleteByKeyMapLogicalRule.INSTANCE,
 
                 // Miscellaneous

@@ -51,6 +51,7 @@ public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
                        .addClass(personClz);
 
         Config config = new Config();
+        config.getJetConfig().setEnabled(true);
         config.getUserCodeDeploymentConfig().setEnabled(true);
 
         HazelcastInstance instance = createHazelcastInstance(config);

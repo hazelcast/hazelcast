@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
@@ -240,14 +241,10 @@ public class JetPlanExecutor {
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
-        String mapName = plan.mapName();
-        Function<ExpressionEvalContext, Entry<Object, Object>> entryFn = plan.entryFn();
-
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        Entry<Object, Object> entry = entryFn.apply(
-                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
-        );
-        CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(mapName))
+        Entry<Object, Object> entry = plan.entryFn()
+                .apply(new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance)));
+        CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(plan.mapName()))
                 .putIfAbsentAsync(entry.getKey(), entry.getValue())
                 .toCompletableFuture();
         try {
@@ -260,25 +257,45 @@ public class JetPlanExecutor {
             if (previous != null) {
                 throw QueryException.error("Duplicate key");
             }
+            return SqlResultImpl.createUpdateCountResult(0);
         } catch (TimeoutException e) {
             future.cancel(true);
             throw QueryException.error("Timeout occurred while inserting entry");
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        Map<Object, Object> entries = plan.entriesFn()
+                .apply(new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance)));
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
+                .putAllAsync(entries)
+                .toCompletableFuture();
+        try {
+            if (timeout > 0) {
+                future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+            return SqlResultImpl.createUpdateCountResult(0);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while inserting entries");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
-        String mapName = plan.mapName();
-        Expression<?> keyCondition = plan.keyCondition();
-
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        Object key = keyCondition.eval(
-                EmptyRow.INSTANCE,
-                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
-        );
-        CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
+        Object key = plan.keyCondition()
+                .eval(
+                        EmptyRow.INSTANCE,
+                        new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
+                );
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         try {
@@ -287,13 +304,13 @@ public class JetPlanExecutor {
             } else {
                 future.get();
             }
+            return SqlResultImpl.createUpdateCountResult(0);
         } catch (TimeoutException e) {
             future.cancel(true);
             throw QueryException.error("Timeout occurred while deleting an entry");
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

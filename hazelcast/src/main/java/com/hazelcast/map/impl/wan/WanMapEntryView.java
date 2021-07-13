@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * WAN heap based implementation of {@link EntryView}.
- *
+ * <p>
  * It is lazy because you intialise it with serialized formats
  * of key and value and it will deserialise only if {@link #getKey()} or
  * {@link #getValue()} are invoked.
@@ -50,6 +50,8 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     private V value;
     private Data dataKey;
     private Data dataValue;
+    private Data trimmedDataKey;
+    private Data trimmedDataValue;
     private long cost;
     private long creationTime;
     private long expirationTime;
@@ -69,8 +71,8 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
                            @Nonnull SerializationService serializationService) {
         checkNotNull(dataKey);
         checkNotNull(serializationService);
-        this.dataKey = dataKey;
-        this.dataValue = dataValue;
+        this.dataKey = serializationService.toDataWithSchema(dataKey);
+        this.dataValue = serializationService.toDataWithSchema(dataValue);
         this.serializationService = serializationService;
     }
 
@@ -86,7 +88,10 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
      * Returns the serialised format of the entry key.
      */
     public Data getDataKey() {
-        return dataKey;
+        if (trimmedDataKey == null) {
+            trimmedDataKey = serializationService.trimSchema(dataKey);
+        }
+        return trimmedDataKey;
     }
 
     @Override
@@ -101,7 +106,10 @@ public class WanMapEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
      * Returns the serialised format of the entry value.
      */
     public Data getDataValue() {
-        return dataValue;
+        if (trimmedDataValue == null) {
+            trimmedDataValue = serializationService.trimSchema(dataValue);
+        }
+        return trimmedDataValue;
     }
 
     @Override

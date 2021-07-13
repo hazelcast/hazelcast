@@ -438,6 +438,7 @@ public class TestHazelcastInstanceFactory {
     public static Config initOrCreateConfig(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
+            config.getJetConfig().setEnabled(true);
         }
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");

@@ -103,7 +103,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public boolean statisticsEnabled;
-    @Parameterized.Parameter
+    @Parameterized.Parameter(1)
     public boolean perEntryStatsEnabled;
 
     @Parameterized.Parameters(name = "statisticsEnabled:{0}, perEntryStatsEnabled:{1}")
@@ -808,7 +808,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
-        assumeThat(statisticsEnabled, is(true));
+        assumeThat(perEntryStatsEnabled, is(true));
 
         HazelcastInstance instance = getInstance();
 

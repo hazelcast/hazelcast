@@ -228,7 +228,11 @@ public final class Records {
         // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
         // means the metadata is created from the Data representation of the object.
         // If we allow using the deserialized values, the metadata might not be safe to use.
-        return value instanceof Data && !((Data) value).isPortable() && !((Data) value).isJson();
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            return !(data.isPortable() || data.isJson() || data.isCompact());
+        }
+        return false;
     }
 
 

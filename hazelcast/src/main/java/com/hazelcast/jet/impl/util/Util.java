@@ -87,6 +87,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -495,6 +496,19 @@ public final class Util {
         currentThread.setContextClassLoader(cl);
         try {
             action.run();
+        } finally {
+            currentThread.setContextClassLoader(previousCl);
+        }
+    }
+
+    public static <T> T doWithClassLoader(ClassLoader cl, Callable<T> callable) {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousCl = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(cl);
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw rethrow(e);
         } finally {
             currentThread.setContextClassLoader(previousCl);
         }
