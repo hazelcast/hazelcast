@@ -251,6 +251,12 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_INDEX_REMOVE_COUNT = "removeCount";
     public static final String MAP_METRIC_INDEX_TOTAL_REMOVE_LATENCY = "totalRemoveLatency";
     public static final String MAP_METRIC_INDEX_MEMORY_COST = "memoryCost";
+    public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_COUNT = "fullPartitionReplicationCount";
+    public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_COUNT = "differentialPartitionReplicationCount";
+    public static final String MAP_METRIC_FULL_PARTITION_REPLICATION_RECORDS_COUNT
+            = "fullPartitionReplicationRecordsCount";
+    public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT
+            = "differentialPartitionReplicationRecordsCount";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================

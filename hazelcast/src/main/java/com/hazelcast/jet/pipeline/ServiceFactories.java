@@ -19,12 +19,18 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.map.IMap;
 import com.hazelcast.replicatedmap.ReplicatedMap;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import javax.annotation.Nonnull;
+
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Utility class with methods that create several useful {@link ServiceFactory
@@ -65,7 +71,9 @@ public final class ServiceFactories {
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapService(@Nonnull String mapName) {
-        return ServiceFactories.sharedService(ctx -> ctx.hazelcastInstance().getReplicatedMap(mapName));
+        ServiceFactory<?, ReplicatedMap<K, V>> replicatedMapFactory =
+                ServiceFactories.sharedService(SecuredFunctions.replicatedMapFn(mapName));
+        return replicatedMapFactory.withPermission(new ReplicatedMapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     /**
@@ -91,7 +99,9 @@ public final class ServiceFactories {
      */
     @Nonnull
     public static <K, V> ServiceFactory<?, IMap<K, V>> iMapService(@Nonnull String mapName) {
-        return ServiceFactories.sharedService(ctx -> ctx.hazelcastInstance().getMap(mapName));
+        ServiceFactory<?, IMap<K, V>> iMapServiceFactory =
+                ServiceFactories.sharedService(SecuredFunctions.iMapFn(mapName));
+        return iMapServiceFactory.withPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     /**
@@ -150,7 +160,7 @@ public final class ServiceFactories {
             @Nonnull FunctionEx<? super ProcessorSupplier.Context, S> createServiceFn,
             @Nonnull ConsumerEx<S> destroyServiceFn
     ) {
-        return ServiceFactory.withCreateContextFn(c -> createServiceFn.apply(c))
+        return ServiceFactory.withCreateContextFn(createServiceFn)
                              .withCreateServiceFn((ctx, c) -> c)
                              .withDestroyContextFn(destroyServiceFn);
     }
@@ -213,7 +223,7 @@ public final class ServiceFactories {
             @Nonnull ConsumerEx<? super S> destroyServiceFn
     ) {
         return ServiceFactory.<Void>withCreateContextFn(c -> null)
-                .<S>withCreateServiceFn((ctx, c) -> createServiceFn.apply(ctx))
+                .<S>withCreateServiceFn(SecuredFunctions.createServiceFn(createServiceFn))
                 .withDestroyServiceFn(destroyServiceFn);
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
@@ -33,12 +34,14 @@ import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParti
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -56,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.logging.Level;
 
@@ -123,6 +127,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
      * Invokes the {@link MigrationOperation} on the migration destination.
      */
     private void invokeMigrationOperation(ReplicaFragmentMigrationState migrationState, boolean firstFragment) {
+        assert ThreadUtil.isRunningOnPartitionThread()
+                : "Migration operations must be invoked from a partition thread";
         boolean lastFragment = !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo,
                 firstFragment ? completedMigrations : Collections.emptyList(),
@@ -133,11 +139,12 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
             Set<ServiceNamespace> namespaces = migrationState != null
                     ? migrationState.getNamespaceVersionMap().keySet() : emptySet();
             logger.finest("Invoking MigrationOperation for namespaces " + namespaces + " and " + migrationInfo
-                    + ", lastFragment: " + lastFragment);
+                    + ", firstFragment: " + firstFragment + ", lastFragment: " + lastFragment);
         }
 
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
+        ExecutorService asyncExecutor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
 
         Address target = migrationInfo.getDestinationAddress();
         nodeEngine.getOperationService()
@@ -145,7 +152,34 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .invoke()
-                .whenCompleteAsync(new MigrationCallback());
+                .whenCompleteAsync(new MigrationCallback(), asyncExecutor);
+    }
+
+    private void trySendNewFragmentV42() {
+        try {
+            verifyMaster();
+            verifyExistingDestination();
+
+            InternalPartitionServiceImpl partitionService = getService();
+            MigrationManager migrationManager = partitionService.getMigrationManager();
+            MigrationInfo currentActiveMigration = migrationManager.addActiveMigration(migrationInfo);
+            if (!migrationInfo.equals(currentActiveMigration)) {
+                throw new IllegalStateException("Current active migration " + currentActiveMigration
+                        + " is different than expected: " + migrationInfo);
+            }
+
+            ReplicaFragmentMigrationState migrationState = createNextReplicaFragmentMigrationState();
+
+            if (migrationState != null) {
+                invokeMigrationOperation(migrationState, false);
+            } else {
+                getLogger().finest("All migration fragments done for " + migrationInfo);
+                completeMigration(true);
+            }
+        } catch (Throwable e) {
+            logThrowable(e);
+            completeMigration(false);
+        }
     }
 
     private void trySendNewFragment() {
@@ -161,9 +195,19 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                         + " is different than expected: " + migrationInfo);
             }
 
+            // replication operation preparation may have to happen on partition thread or not
             ReplicaFragmentMigrationState migrationState = createNextReplicaFragmentMigrationState();
+
+            // migration invocation must always happen on partition thread
             if (migrationState != null) {
-                invokeMigrationOperation(migrationState, false);
+                // RU_COMPAT_4_2
+                if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
+                    invokeMigrationOperation(migrationState, false);
+                } else {
+                    // this is executed in async pool thread
+                    // migration ops must be serialized and invoked from partition threads
+                    getNodeEngine().getOperationService().execute(new InvokeMigrationOps(migrationState, getPartitionId()));
+                }
             } else {
                 getLogger().finest("All migration fragments done for " + migrationInfo);
                 completeMigration(true);
@@ -171,6 +215,32 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         } catch (Throwable e) {
             logThrowable(e);
             completeMigration(false);
+        }
+    }
+
+    private final class InvokeMigrationOps implements PartitionSpecificRunnable, UrgentSystemOperation {
+
+        private final ReplicaFragmentMigrationState migrationState;
+        private final int partitionId;
+
+        InvokeMigrationOps(ReplicaFragmentMigrationState migrationState, int partitionId) {
+            this.migrationState = migrationState;
+            this.partitionId = partitionId;
+        }
+
+        @Override
+        public int getPartitionId() {
+            return partitionId;
+        }
+
+        @Override
+        public void run() {
+            try {
+                invokeMigrationOperation(migrationState, false);
+            } catch (Throwable t) {
+                logThrowable(t);
+                completeMigration(false);
+            }
         }
     }
 
@@ -215,7 +285,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicationEvent event = getPartitionReplicationEvent();
         Collection<String> serviceNames = namespacesContext.getServiceNames(ns);
 
-        Collection<Operation> operations = createFragmentReplicationOperations(event, ns, serviceNames);
+        Collection<Operation> operations = createFragmentReplicationOperationsOffload(event, ns, serviceNames);
         return createReplicaFragmentMigrationState(singleton(ns), operations);
     }
 
@@ -252,7 +322,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     private PartitionReplicationEvent getPartitionReplicationEvent() {
-        return new PartitionReplicationEvent(migrationInfo.getPartitionId(), migrationInfo.getDestinationNewReplicaIndex());
+        return new PartitionReplicationEvent(migrationInfo.getDestinationAddress(),
+                migrationInfo.getPartitionId(), migrationInfo.getDestinationNewReplicaIndex());
     }
 
     private void completeMigration(boolean result) {
@@ -307,8 +378,16 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
                 logThrowable(throwable);
                 completeMigration(false);
             } else if (Boolean.TRUE.equals(result)) {
-                OperationService operationService = getNodeEngine().getOperationService();
-                operationService.execute(new SendNewMigrationFragmentRunnable());
+                // RU_COMPAT_4_2
+                if (getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)) {
+                    // ASYNC executor is of CONCRETE type (does not share threads with other executors)
+                    // and is never used for user-supplied code.
+                    getNodeEngine().getExecutionService().submit(ExecutionService.ASYNC_EXECUTOR,
+                            () -> trySendNewFragment());
+                } else {
+                    OperationService operationService = getNodeEngine().getOperationService();
+                    operationService.execute(new SendNewMigrationFragmentRunnableV42());
+                }
             } else {
                 ILogger logger = getLogger();
                 if (logger.isFineEnabled()) {
@@ -319,7 +398,8 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         }
     }
 
-    private final class SendNewMigrationFragmentRunnable implements PartitionSpecificRunnable, UrgentSystemOperation {
+    // RU_COMPAT_4_2
+    private final class SendNewMigrationFragmentRunnableV42 implements PartitionSpecificRunnable, UrgentSystemOperation {
 
         @Override
         public int getPartitionId() {
@@ -328,7 +408,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
 
         @Override
         public void run() {
-            trySendNewFragment();
+            trySendNewFragmentV42();
         }
 
     }

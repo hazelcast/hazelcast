@@ -116,7 +116,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
             List<Object> arguments
     ) {
         UpdateProcessorSupplier processor = new UpdateProcessorSupplier(
-                MAP_NAME, EntryUpdatingProcessor.supplier(table, updatesByFieldNames)
+                MAP_NAME, UpdatingEntryProcessor.supplier(table, updatesByFieldNames)
         );
 
         TestSupport

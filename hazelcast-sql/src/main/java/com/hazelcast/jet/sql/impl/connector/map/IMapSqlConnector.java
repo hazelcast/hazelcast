@@ -249,7 +249,7 @@ public class IMapSqlConnector implements SqlConnector {
                 "Update(" + toString(table) + ")",
                 new UpdateProcessorSupplier(
                         table.getMapName(),
-                        EntryUpdatingProcessor.supplier(table, updatesByFieldNames)
+                        UpdatingEntryProcessor.supplier(table, updatesByFieldNames)
                 )
         );
     }

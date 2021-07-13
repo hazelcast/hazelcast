@@ -23,6 +23,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -51,15 +52,17 @@ import com.hazelcast.jet.pipeline.file.FileSources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Permission;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -67,6 +70,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
@@ -74,6 +78,7 @@ import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.impl.connector.StreamEventJournalP.streamRemoteCacheSupplier;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -321,11 +326,7 @@ public final class SourceProcessors {
                     directory,
                     glob,
                     sharedFileSystem,
-                    path -> {
-                        String fileName = path.getFileName().toString();
-                        return Files.lines(path, Charset.forName(charsetName))
-                                    .map(l -> mapOutputFn.apply(fileName, l));
-                    }
+                    SecuredFunctions.readFileFn(directory, charsetName, mapOutputFn)
                 );
     }
 
@@ -382,16 +383,19 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsQueueP(
+            @Nullable String destination,
+            @Nonnull ProcessingGuarantee maxGuarantee,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
             @Nonnull FunctionEx<? super Message, ?> messageIdFn,
-            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            ProcessingGuarantee maxGuarantee
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
-        ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                newConnectionFn, consumerFn, messageIdFn, projectionFn, eventTimePolicy, maxGuarantee);
-        return ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier);
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                ConnectorPermission.jms(destination, ACTION_READ),
+                new StreamJmsP.Supplier<>(destination, maxGuarantee, eventTimePolicy,
+                        newConnectionFn, consumerFn, messageIdFn, projectionFn)
+        );
     }
 
     /**
@@ -406,19 +410,21 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsTopicP(
+            @Nullable String destination,
+            boolean isSharedConsumer,
+            @Nonnull ProcessingGuarantee maxGuarantee,
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
             @Nonnull SupplierEx<? extends Connection> newConnectionFn,
             @Nonnull FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
-            boolean isSharedConsumer,
             @Nonnull FunctionEx<? super Message, ?> messageIdFn,
-            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            ProcessingGuarantee maxGuarantee
+            @Nonnull FunctionEx<? super Message, ? extends T> projectionFn
     ) {
         ProcessorSupplier pSupplier = new StreamJmsP.Supplier<>(
-                newConnectionFn, consumerFn, messageIdFn, projectionFn, eventTimePolicy, maxGuarantee);
+                destination, maxGuarantee, eventTimePolicy, newConnectionFn, consumerFn, messageIdFn, projectionFn);
+        ConnectorPermission permission = ConnectorPermission.jms(destination, ACTION_READ);
         return isSharedConsumer
-                ? ProcessorMetaSupplier.of(StreamJmsP.PREFERRED_LOCAL_PARALLELISM, pSupplier)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier);
+                ? ProcessorMetaSupplier.preferLocalParallelismOne(permission, pSupplier)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(pSupplier, newUnsecureUuidString(), permission);
     }
 
     /**
@@ -475,7 +481,8 @@ public final class SourceProcessors {
             @Nonnull BiConsumerEx<? super C, ? super List<S>> restoreSnapshotFn,
             @Nonnull ConsumerEx<? super C> destroyFn,
             int preferredLocalParallelism,
-            boolean isBatch
+            boolean isBatch,
+            @Nullable Permission permission
     ) {
         checkSerializable(createFn, "createFn");
         checkSerializable(fillBufferFn, "fillBufferFn");
@@ -493,8 +500,8 @@ public final class SourceProcessors {
                         new SourceBufferImpl.Plain<>(isBatch),
                         null));
         return preferredLocalParallelism != 0
-                ? ProcessorMetaSupplier.of(preferredLocalParallelism, procSup)
-                : ProcessorMetaSupplier.forceTotalParallelismOne(procSup);
+                ? ProcessorMetaSupplier.of(preferredLocalParallelism, permission, procSup)
+                : ProcessorMetaSupplier.forceTotalParallelismOne(procSup, permission);
     }
 
     /**

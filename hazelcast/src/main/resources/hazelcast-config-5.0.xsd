@@ -2698,6 +2698,8 @@
             <xs:element name="reliable-topic-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="replicatedmap-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="management-permission" type="management-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="job-permission" type="job-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="connector-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:choice>
         <xs:attribute name="on-join-operation" type="permission-on-join-operation" default="RECEIVE"/>
     </xs:complexType>
@@ -2757,6 +2759,15 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="job-permission">
+        <xs:complexContent>
+            <xs:extension base="base-permission">
+                <xs:sequence>
+                    <xs:element name="actions" type="actions"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
     <xs:complexType name="actions">
         <xs:sequence>
             <xs:element name="action" maxOccurs="unbounded">
@@ -2782,6 +2793,18 @@
                         <xs:enumeration value="index"/>
                         <xs:enumeration value="intercept"/>
                         <xs:enumeration value="publish"/>
+                        <xs:enumeration value="aggregate"/>
+                        <xs:enumeration value="projection"/>
+                        <xs:enumeration value="deploy"/>
+                        <xs:enumeration value="submit"/>
+                        <xs:enumeration value="cancel"/>
+                        <xs:enumeration value="restart"/>
+                        <xs:enumeration value="export-snapshot"/>
+                        <xs:enumeration value="add-resources"/>
+                        <xs:enumeration value="write"/>
+                        <xs:enumeration value="instance"/>
+                        <xs:enumeration value="member"/>
+                        <xs:enumeration value="migration"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
@@ -5381,7 +5404,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" default="true">
+        <xs:attribute name="enabled" type="xs:boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     Specifies whether the Jet Service is enabled or not. Values can be true or false.

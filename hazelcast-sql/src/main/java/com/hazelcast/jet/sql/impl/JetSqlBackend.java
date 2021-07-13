@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
@@ -38,6 +39,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
@@ -277,15 +279,19 @@ public class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
-            UpdateByKeyMapPhysicalRel updateRel = (UpdateByKeyMapPhysicalRel) physicalRel;
-            return new IMapUpdatePlan(planKey, updateRel.objectKey(), parameterMetadata, updateRel.mapName(),
-                    updateRel.keyCondition(parameterMetadata), updateRel.updaterSupplier(parameterMetadata),
+        if (physicalRel instanceof SinkMapPhysicalRel) {
+            SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
+            return new IMapSinkPlan(planKey, sink.objectKey(), parameterMetadata, sink.mapName(), sink.entriesFn(),
                     planExecutor, permissions);
+        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+            UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
+            return new IMapUpdatePlan(planKey, update.objectKey(), parameterMetadata, update.mapName(),
+                    update.keyCondition(parameterMetadata), update.updaterSupplier(parameterMetadata), planExecutor,
+                    permissions);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
-            DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
-            return new IMapDeletePlan(planKey, deleteRel.objectKey(), parameterMetadata, deleteRel.mapName(),
-                    deleteRel.keyCondition(parameterMetadata), planExecutor, permissions);
+            DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
+            return new IMapDeletePlan(planKey, delete.objectKey(), parameterMetadata, delete.mapName(),
+                    delete.keyCondition(parameterMetadata), planExecutor, permissions);
         } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();

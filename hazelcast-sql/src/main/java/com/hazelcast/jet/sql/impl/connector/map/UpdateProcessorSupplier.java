@@ -44,7 +44,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     private static final int MAX_BATCH_SIZE = 1024;
 
     private String mapName;
-    private EntryUpdatingProcessor.Supplier updaterSupplier;
+    private UpdatingEntryProcessor.Supplier updaterSupplier;
 
     private transient ExpressionEvalContext evalContext;
 
@@ -54,7 +54,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     UpdateProcessorSupplier(
             String mapName,
-            EntryUpdatingProcessor.Supplier updaterSupplier
+            UpdatingEntryProcessor.Supplier updaterSupplier
     ) {
         this.mapName = mapName;
         this.updaterSupplier = updaterSupplier;

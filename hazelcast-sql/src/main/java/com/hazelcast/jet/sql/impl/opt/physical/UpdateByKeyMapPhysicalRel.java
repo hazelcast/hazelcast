@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.connector.map.EntryUpdatingProcessor;
+import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
@@ -81,12 +81,12 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
         return keyCondition.accept(visitor);
     }
 
-    public EntryUpdatingProcessor.Supplier updaterSupplier(QueryParameterMetadata parameterMetadata) {
+    public UpdatingEntryProcessor.Supplier updaterSupplier(QueryParameterMetadata parameterMetadata) {
         List<Expression<?>> projects = project(OptUtils.schema(table), sourceExpressions, parameterMetadata);
         Map<String, Expression<?>> updates = IntStream.range(0, projects.size())
                 .boxed()
                 .collect(toMap(updatedColumns::get, projects::get));
-        return EntryUpdatingProcessor.supplier(table, updates);
+        return UpdatingEntryProcessor.supplier(table, updates);
     }
 
     @Override

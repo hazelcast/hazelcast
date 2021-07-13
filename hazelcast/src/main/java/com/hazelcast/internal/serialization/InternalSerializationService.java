@@ -89,7 +89,25 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     BufferObjectDataOutput createObjectDataOutput();
 
+    /**
+     * @param data
+     * @return InternalGenericRecord if data type supports it(Portable or Compact), otherwise throws
+     * IllegalArgumentException
+     * @throws IOException
+     */
     InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException;
+
+    /**
+     * Returns {@code true} if the {@code object} is compact serializable.
+     * <p>
+     * It will return {@code true} if
+     * <ul>
+     *     <li>it is registered as compact serializable through configuration.</li>
+     *     <li>it cannot be serialized through other mechanisms and the object might
+     *     be serialized reflectively (zero-config use case).</li>
+     * </ul>
+     */
+    boolean isCompactSerializable(Object object);
 
     PortableContext getPortableContext();
 
