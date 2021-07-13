@@ -971,7 +971,6 @@
                             <serverId>release-repository</serverId>
                             <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                             <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <stagingProgressTimeoutMinutes>300</stagingProgressTimeoutMinutes>
                         </configuration>
                     </plugin>
                 </plugins>
