@@ -63,6 +63,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         this.dagJson = dagJson;
         this.config = config;
         this.ownedObservables = ownedObservables;
+        this.subject = subject;
     }
 
     public Version getClusterVersion() {
