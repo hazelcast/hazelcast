@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-      - 'hazelcast/pom.xml'
-      - '.github/terraform/azure/**'
+      - ssh-keys-test
+#    paths:
+#      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+#      - 'hazelcast/pom.xml'
+#      - '.github/terraform/azure/**'
 
 
 jobs:
@@ -70,6 +71,12 @@ jobs:
 
       - name: Terraform Format
         run: cd hazelcast/.github/terraform/azure  && terraform fmt
+
+      - name: Generate SSH keys
+        run: |
+          ssh-keygen -t rsa -b 4096 -C "your_email@domain.com" -f test_rsa -P ""
+          cat test_rsa
+          cat test_rsa.pub
 
       - name: Install private key
         uses: shimataro/ssh-key-action@v2
