@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Before;

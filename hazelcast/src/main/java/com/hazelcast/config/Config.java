@@ -27,6 +27,7 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
@@ -35,6 +36,7 @@ import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
+import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
@@ -177,6 +179,8 @@ public class Config {
 
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
+    private PersistenceConfig persistenceConfig = new PersistenceConfig();
+
     private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
 
     private CRDTReplicationConfig crdtReplicationConfig = new CRDTReplicationConfig();
@@ -221,7 +225,10 @@ public class Config {
     }
 
     private static Config applyEnvAndSystemVariableOverrides(Config cfg) {
-        return new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
+        cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(cfg.getHotRestartPersistenceConfig(), cfg.getPersistenceConfig());
+        return cfg;
     }
 
     private static Config loadFromFile(Properties properties) {
@@ -307,10 +314,14 @@ public class Config {
         checkTrue(stream != null, "Specified resource '" + resource + "' could not be found!");
 
         if (resource.endsWith(".xml")) {
-            return new XmlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
         if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
-            return new YamlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
@@ -346,10 +357,14 @@ public class Config {
         String path = configFile.getPath();
         InputStream stream = new FileInputStream(configFile);
         if (path.endsWith(".xml")) {
-            return new XmlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
         if (path.endsWith(".yaml") || path.endsWith(".yml")) {
-            return new YamlConfigBuilder(stream).setProperties(properties).build();
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
         }
 
         throw new IllegalArgumentException("Unknown configuration file extension");
@@ -726,6 +741,8 @@ public class Config {
      * @return this config instance
      */
     public Config addMapConfig(MapConfig mapConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
         mapConfigs.put(mapConfig.getName(), mapConfig);
         return this;
     }
@@ -842,6 +859,8 @@ public class Config {
      * @return this config instance
      */
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(cacheConfig.getHotRestartConfig(), cacheConfig.getDataPersistenceConfig());
         cacheConfigs.put(cacheConfig.getName(), cacheConfig);
         return this;
     }
@@ -2567,15 +2586,44 @@ public class Config {
     }
 
     /**
+     * Returns the Persistence configuration for this hazelcast instance
+     *
+     * @return persistence configuration
+     */
+    public PersistenceConfig getPersistenceConfig() {
+        return persistenceConfig;
+    }
+
+    /**
      * Sets the Hot Restart configuration.
      *
      * @param hrConfig Hot Restart configuration
      * @return this config instance
      * @throws NullPointerException if the {@code hrConfig} parameter is {@code null}
+     *
+     * @deprecated since 5.0 use {@link Config#setPersistenceConfig(PersistenceConfig)}
      */
+    @Deprecated
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
         checkNotNull(hrConfig, "Hot restart config cannot be null!");
         this.hotRestartPersistenceConfig = hrConfig;
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the Persistence configuration.
+     *
+     * @param persistenceConfig Persistence configuration
+     * @return this config instance
+     * @throws NullPointerException if the {@code persistenceConfig} parameter is {@code null}
+     */
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        checkNotNull(persistenceConfig, "Persistence config cannot be null!");
+        this.persistenceConfig = persistenceConfig;
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
         return this;
     }
 
@@ -2958,6 +3006,7 @@ public class Config {
                 + ", memberAttributeConfig=" + memberAttributeConfig
                 + ", nativeMemoryConfig=" + nativeMemoryConfig
                 + ", hotRestartPersistenceConfig=" + hotRestartPersistenceConfig
+                + ", persistenceConfig=" + persistenceConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", liteMember=" + liteMember

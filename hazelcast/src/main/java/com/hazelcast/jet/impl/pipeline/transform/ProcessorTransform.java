@@ -68,7 +68,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends R> mapFn
     ) {
         return new ProcessorTransform("mapUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), mapUsingServiceP(serviceFactory, mapFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        mapUsingServiceP(serviceFactory, mapFn)));
     }
 
     public static <S, T> ProcessorTransform filterUsingServiceTransform(
@@ -77,7 +78,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiPredicateEx<? super S, ? super T> filterFn
     ) {
         return new ProcessorTransform("filterUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), filterUsingServiceP(serviceFactory, filterFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        filterUsingServiceP(serviceFactory, filterFn)));
     }
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceTransform(
@@ -86,7 +88,8 @@ public class ProcessorTransform extends AbstractTransform {
             @Nonnull BiFunctionEx<? super S, ? super T, ? extends Traverser<R>> flatMapFn
     ) {
         return new ProcessorTransform("flatMapUsingService", upstream,
-                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), flatMapUsingServiceP(serviceFactory, flatMapFn)));
+                ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), serviceFactory.permission(),
+                        flatMapUsingServiceP(serviceFactory, flatMapFn)));
     }
 
     public static <S, T, R> ProcessorTransform flatMapUsingServiceAsyncTransform(
@@ -102,7 +105,8 @@ public class ProcessorTransform extends AbstractTransform {
         //      the number of in-flight items is limited (maxConcurrentOps)
         ProcessorSupplier supplier = flatMapUsingServiceAsyncP(
                 serviceFactory, maxConcurrentOps, preserveOrder, Object::hashCode, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new ProcessorTransform(operationName + "UsingServiceAsync", upstream, metaSupplier);
     }
 
@@ -117,7 +121,8 @@ public class ProcessorTransform extends AbstractTransform {
         String name = operationName + "UsingServiceAsyncBatched";
         ProcessorSupplier supplier = flatMapUsingServiceAsyncBatchedP(
                 serviceFactory, maxConcurrentOps, maxBatchSize, flatMapAsyncFn);
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory), supplier);
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(getPreferredLP(serviceFactory),
+                serviceFactory.permission(), supplier);
         return new ProcessorTransform(name, upstream, metaSupplier);
     }
 

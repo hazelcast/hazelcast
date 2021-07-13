@@ -32,7 +32,11 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_BACKUP_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_BACKUP_ENTRY_MEMORY_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_CREATION_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_DIFF_PARTITION_REPLICATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_DIRTY_ENTRY_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_FULL_PARTITION_REPLICATION_COUNT;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_FULL_PARTITION_REPLICATION_RECORDS_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_GET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HEAP_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_HITS;
@@ -103,6 +107,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
             newUpdater(LocalMapStatsImpl.class, "maxSetLatency");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> FULL_PARTITION_REPLICATION_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "fullPartitionReplicationCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> DIFF_PARTITION_REPLICATION_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "diffPartitionReplicationCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> FULL_PARTITION_REPLICATION_RECORDS_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "fullPartitionReplicationRecordsCount");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> DIFF_PARTITION_REPLICATION_RECORDS_COUNT =
+            newUpdater(LocalMapStatsImpl.class, "diffPartitionReplicationRecordsCount");
 
     private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats =
             new ConcurrentHashMap<>();
@@ -167,8 +179,28 @@ public class LocalMapStatsImpl implements LocalMapStats {
     @Probe(name = MAP_METRIC_INDEXED_QUERY_COUNT)
     private volatile long indexedQueryCount;
 
-    public LocalMapStatsImpl() {
+    @Probe(name = MAP_METRIC_FULL_PARTITION_REPLICATION_COUNT)
+    private volatile long fullPartitionReplicationCount;
+    @Probe(name = MAP_METRIC_DIFF_PARTITION_REPLICATION_COUNT)
+    private volatile long diffPartitionReplicationCount;
+    @Probe(name = MAP_METRIC_FULL_PARTITION_REPLICATION_RECORDS_COUNT)
+    private volatile long fullPartitionReplicationRecordsCount;
+    @Probe(name = MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT)
+    private volatile long diffPartitionReplicationRecordsCount;
+
+    private final boolean ignoreMemoryCosts;
+
+    public LocalMapStatsImpl(boolean ignoreMemoryCosts) {
+        this.ignoreMemoryCosts = ignoreMemoryCosts;
         creationTime = Clock.currentTimeMillis();
+        if (ignoreMemoryCosts) {
+            ownedEntryMemoryCost = -1;
+            backupEntryMemoryCost = -1;
+        }
+    }
+
+    public LocalMapStatsImpl() {
+        this(false);
     }
 
     @Override
@@ -204,7 +236,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
-        this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.ownedEntryMemoryCost = ownedEntryMemoryCost;
+        }
     }
 
     @Override
@@ -213,7 +247,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
-        this.backupEntryMemoryCost = backupEntryMemoryCost;
+        if (!ignoreMemoryCosts) {
+            this.backupEntryMemoryCost = backupEntryMemoryCost;
+        }
     }
 
     @Override
@@ -410,6 +446,26 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return indexStats;
     }
 
+    @Override
+    public long getDifferentialReplicationRecordCount() {
+        return diffPartitionReplicationRecordsCount;
+    }
+
+    @Override
+    public long getFullReplicationRecordCount() {
+        return fullPartitionReplicationRecordsCount;
+    }
+
+    @Override
+    public long getDifferentialPartitionReplicationCount() {
+        return diffPartitionReplicationCount;
+    }
+
+    @Override
+    public long getFullPartitionReplicationCount() {
+        return fullPartitionReplicationCount;
+    }
+
     /**
      * Sets the per-index stats of this map stats to the given per-index stats.
      *
@@ -460,6 +516,16 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void incrementReceivedEvents() {
         NUMBER_OF_EVENTS.incrementAndGet(this);
+    }
+
+    public void incrementFullPartitionReplicationRecordsCount(long delta) {
+        FULL_PARTITION_REPLICATION_COUNT.incrementAndGet(this);
+        FULL_PARTITION_REPLICATION_RECORDS_COUNT.addAndGet(this, delta);
+    }
+
+    public void incrementDiffPartitionReplicationRecordsCount(long delta) {
+        DIFF_PARTITION_REPLICATION_COUNT.incrementAndGet(this);
+        DIFF_PARTITION_REPLICATION_RECORDS_COUNT.addAndGet(this, delta);
     }
 
     public void updateIndexStats(Map<String, OnDemandIndexStats> freshIndexStats) {
@@ -519,6 +585,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", queryCount=" + queryCount
                 + ", indexedQueryCount=" + indexedQueryCount
                 + ", indexStats=" + indexStats
+                + ", fullPartitionReplicationCount=" + fullPartitionReplicationCount
+                + ", fullPartitionReplicationRecordsCount=" + fullPartitionReplicationRecordsCount
+                + ", diffPartitionReplicationCount=" + diffPartitionReplicationCount
+                + ", diffPartitionReplicationRecordsCount=" + diffPartitionReplicationRecordsCount
                 + '}';
     }
 }

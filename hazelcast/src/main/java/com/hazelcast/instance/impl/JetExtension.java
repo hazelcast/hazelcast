@@ -18,7 +18,6 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
@@ -28,7 +27,6 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.version.Version;
 
@@ -37,10 +35,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
-import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
-import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
-import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
-import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class JetExtension {
@@ -70,27 +64,7 @@ public class JetExtension {
     }
 
     public void beforeStart() {
-        Config config = node.config.getStaticConfig();
-        JetConfig jetConfig = config.getJetConfig();
-
-        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
-                // we query creationTime of resources maps
-                .setStatisticsEnabled(true);
-
-        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
-
-        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_RESULTS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
-                .setName(JOB_METRICS_MAP_NAME)
-                .setTimeToLiveSeconds(node.getProperties().getSeconds(JOB_RESULTS_TTL_SECONDS));
-
-        config.addMapConfig(internalMapConfig)
-                .addMapConfig(resultsMapConfig)
-                .addMapConfig(metricsMapConfig);
+        jetServiceBackend.configureJetInternalObjects(node.config.getStaticConfig(), node.getProperties());
 
         checkLosslessRestartAllowed();
     }

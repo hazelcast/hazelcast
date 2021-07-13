@@ -74,6 +74,15 @@ public class RealmConfig {
         return this;
     }
 
+    public SimpleAuthenticationConfig getSimpleAuthenticationConfig() {
+        return getIfType(authenticationConfig, SimpleAuthenticationConfig.class);
+    }
+
+    public RealmConfig setSimpleAuthenticationConfig(SimpleAuthenticationConfig authenticationConfig) {
+        this.authenticationConfig = requireNonNull(authenticationConfig, "Authentication config can't be null");
+        return this;
+    }
+
     public UsernamePasswordIdentityConfig getUsernamePasswordIdentityConfig() {
         return getIfType(identityConfig, UsernamePasswordIdentityConfig.class);
     }

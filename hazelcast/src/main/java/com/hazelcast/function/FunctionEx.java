@@ -17,6 +17,7 @@
 package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
+import com.hazelcast.security.impl.function.SecuredFunction;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -33,7 +34,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 4.0
  */
 @FunctionalInterface
-public interface FunctionEx<T, R> extends Function<T, R>, Serializable {
+public interface FunctionEx<T, R> extends Function<T, R>, Serializable, SecuredFunction {
 
     /**
      * Exception-declaring version of {@link Function#apply}.

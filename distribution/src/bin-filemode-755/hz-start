@@ -1,0 +1,65 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$0")
+#shellcheck source=bin-regular/common.sh
+
+if [[ "$1" = "--help" ]] || [[ "$1" = "-h" ]]; then
+    echo "Usage: hazelcast-start [-d]"
+    echo "  -d, --daemon   Starts Hazelcast in daemon mode"
+    exit 0
+elif [[ "$1" = "-d" ]] || [[ "$1" = "--daemon" ]]; then
+    DAEMON="true"
+fi
+
+. "$SCRIPT_DIR"/common.sh
+
+if [ "${PROMETHEUS_PORT}" ]; then
+    echo "Prometheus enabled on port ${PROMETHEUS_PORT}"
+    PROMETHEUS="-javaagent:${HAZELCAST_HOME}/lib/jmx_prometheus_javaagent-${prometheus.version}.jar=${PROMETHEUS_PORT}:${HAZELCAST_HOME}/config/jmx_agent_config.yaml"
+fi
+
+readJvmOptionsFile "jvm.options"
+
+JAVA_OPTS_ARRAY=(\
+$JDK_OPTS \
+"-Dhazelcast.logging.type=log4j2" \
+"-Dlog4j.configurationFile=file:$HAZELCAST_HOME/config/log4j2.properties" \
+"-Dhz.home=$HAZELCAST_HOME" \
+"-Dhazelcast.config=$HAZELCAST_HOME/config/hazelcast.xml" \
+"-Djet.custom.lib.dir=$HAZELCAST_HOME/custom-lib" \
+$PROMETHEUS \
+$JVM_OPTIONS \
+$JAVA_OPTS \
+)
+
+if [ -z "$LOGGING_LEVEL" ]; then
+    export LOGGING_LEVEL="INFO"
+fi
+
+if [ "$(arch)" == "s390x" ]; then
+  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}][%style{%t{1.}}{cyan}] [%style{%-10c}{blue}]: %m%n"
+else
+  export LOGGING_PATTERN="%d [%highlight{\${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%style{%t{1.}}{cyan}] [%style{%c{1.}}{blue}]: %m%n"
+fi
+
+if [ "$HAZELCAST_LICENSE_KEY" ]; then
+    LICENSING_OPTS_ARRAY=("-Dhazelcast.enterprise.license.key=${HAZELCAST_LICENSE_KEY}")
+fi
+
+echo "########################################"
+echo "# JAVA=$JAVA"
+echo "# JAVA_OPTS=${JAVA_OPTS_ARRAY[*]}"
+echo "# CLASSPATH=$CLASSPATH"
+echo "########################################"
+
+if [[ "$DAEMON" = "true" ]]; then
+    mkdir -p $HAZELCAST_HOME/logs
+    DATE=$(date "+%Y-%m-%d.%H.%M.%S")
+    HAZELCAST_LOG="$HAZELCAST_HOME/logs/hazelcast.$DATE.out"
+    echo "Starting Hazelcast in daemon mode. Standard out and error will be written to $HAZELCAST_LOG"
+    nohup $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.core.server.HazelcastMemberStarter > "$HAZELCAST_LOG" 2>&1 &
+else
+    echo "Starting Hazelcast"
+    set -x
+    exec $JAVA "${JAVA_OPTS_ARRAY[@]}" "${LICENSING_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.core.server.HazelcastMemberStarter
+fi

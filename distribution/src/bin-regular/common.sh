@@ -12,6 +12,22 @@ if [ -z "$JAVA" ]; then
     exit 1
 fi
 
+#### you can enable following variables by uncommenting them
+
+#### minimum heap size
+# MIN_HEAP_SIZE=1G
+
+#### maximum heap size
+# MAX_HEAP_SIZE=1G
+
+if [ "x$MIN_HEAP_SIZE" != "x" ]; then
+	JAVA_OPTS="$JAVA_OPTS -Xms${MIN_HEAP_SIZE}"
+fi
+
+if [ "x$MAX_HEAP_SIZE" != "x" ]; then
+	JAVA_OPTS="$JAVA_OPTS -Xmx${MAX_HEAP_SIZE}"
+fi
+
 # 1 -> Java 8 or earlier (1.8..)
 # 9, 10, 11 -> JDK9, JDK10, JDK11 etc.
 JAVA_VERSION=$(${JAVA} -version 2>&1 | sed -En 's/.* version "([0-9]+).*$/\1/p')
@@ -39,7 +55,7 @@ else
   export JAVA_OPTS="${JAVA_OPTS_DEFAULT}"
 fi
 
-CLASSPATH="$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$CLASSPATH"
+CLASSPATH="$CLASSPATH:$HAZELCAST_HOME/lib:$HAZELCAST_HOME/lib/*:$HAZELCAST_HOME/bin/user-lib:$HAZELCAST_HOME/bin/user-lib/*"
 
 function readJvmOptionsFile {
     # Read jvm.options file

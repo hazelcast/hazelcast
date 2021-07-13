@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Shuts down the member it's called on.
  */
-@Generated("064ae1fa3e3ddb1d0f8c4841f97d4205")
+@Generated("8018b18a5f83622f8326e9ac279d6723")
 public final class MCShutdownMemberCodec {
     //hex: 0x200800
     public static final int REQUEST_MESSAGE_TYPE = 2099200;
@@ -59,7 +59,6 @@ public final class MCShutdownMemberCodec {
         return clientMessage;
     }
 
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -68,6 +67,4 @@ public final class MCShutdownMemberCodec {
 
         return clientMessage;
     }
-
-
 }

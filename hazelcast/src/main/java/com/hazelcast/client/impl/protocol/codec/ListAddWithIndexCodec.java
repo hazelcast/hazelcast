@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Inserts the specified element at the specified position in this list (optional operation). Shifts the element
  * currently at that position (if any) and any subsequent elements to the right (adds one to their indices).
  */
-@Generated("7c863e52f7b575f08943065d73aad08d")
+@Generated("f2c390d8d4c102ebea1127e87ecf53ec")
 public final class ListAddWithIndexCodec {
     //hex: 0x051100
     public static final int REQUEST_MESSAGE_TYPE = 332032;
@@ -101,6 +101,4 @@ public final class ListAddWithIndexCodec {
 
         return clientMessage;
     }
-
-
 }

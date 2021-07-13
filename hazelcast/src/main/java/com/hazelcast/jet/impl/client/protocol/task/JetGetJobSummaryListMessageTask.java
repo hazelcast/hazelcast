@@ -25,6 +25,8 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -98,6 +100,6 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new JobPermission(ActionConstants.ACTION_READ);
     }
 }

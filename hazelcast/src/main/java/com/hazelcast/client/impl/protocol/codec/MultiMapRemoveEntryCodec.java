@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all the entries with the given key. The collection is NOT backed by the map, so changes to the map are
  * NOT reflected in the collection, and vice-versa.
  */
-@Generated("06501ccebad09c4c89d1a65daee725c1")
+@Generated("164df4fa37b3a01456ed15d5d2e19429")
 public final class MultiMapRemoveEntryCodec {
     //hex: 0x021500
     public static final int REQUEST_MESSAGE_TYPE = 136448;
@@ -119,5 +119,4 @@ public final class MultiMapRemoveEntryCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

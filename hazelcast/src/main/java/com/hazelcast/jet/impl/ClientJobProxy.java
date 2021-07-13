@@ -129,14 +129,13 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
         Data configData = serializationService().toData(config);
         ClientMessage request = JetSubmitJobCodec.encodeRequest(getId(), dag, configData, isLightJob());
-        UUID target = lightJobCoordinator != null ? lightJobCoordinator : masterId();
-        return invocation(request, target).invoke().thenApply(c -> null);
+        return invocation(request, coordinatorId()).invoke().thenApply(c -> null);
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), isLightJob());
-        ClientInvocation invocation = invocation(request, masterId());
+        ClientMessage request = JetJoinSubmittedJobCodec.encodeRequest(getId(), lightJobCoordinator);
+        ClientInvocation invocation = invocation(request, coordinatorId());
         // this invocation should never time out, as the job may be running for a long time
         invocation.setInvocationTimeoutMillis(Long.MAX_VALUE); // 0 is not supported
         return invocation.invoke().thenApply(c -> null);
@@ -144,8 +143,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), isLightJob());
-        return invocation(request, masterId()).invoke().thenApply(c -> null);
+        ClientMessage request = JetTerminateJobCodec.encodeRequest(getId(), mode.ordinal(), lightJobCoordinator);
+        return invocation(request, coordinatorId()).invoke().thenApply(c -> null);
     }
 
     @Override
@@ -183,8 +182,8 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     @Override
     protected long doGetJobSubmissionTime() {
         return callAndRetryIfTargetNotFound(() -> {
-            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), isLightJob());
-            ClientMessage response = invocation(request, masterId()).invoke().get();
+            ClientMessage request = JetGetJobSubmissionTimeCodec.encodeRequest(getId(), lightJobCoordinator);
+            ClientMessage response = invocation(request, coordinatorId()).invoke().get();
             return JetGetJobSubmissionTimeCodec.decodeResponse(response);
         });
     }

@@ -47,7 +47,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -79,6 +78,7 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -117,6 +117,7 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
@@ -181,8 +182,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -319,8 +320,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
-        assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
-        assertTrue(cacheConfig.getHotRestartConfig().isFsync());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isFsync());
         EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -351,8 +352,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
-        assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
-        assertTrue(testMapConfig.getHotRestartConfig().isFsync());
+        assertTrue(testMapConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(testMapConfig.getDataPersistenceConfig().isFsync());
         EventJournalConfig journalConfig = testMapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -631,6 +632,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals(TRUE, kerbIdentity.getUseCanonicalHostname());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simpleRealm");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
     }
 
     @Test
@@ -1301,19 +1314,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestart() {
-        File dir = new File("/mnt/hot-restart/");
-        File hotBackupDir = new File("/mnt/hot-backup/");
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+    public void testPersistence() {
+        File dir = new File("/mnt/persistence/");
+        File backupDir = new File("/mnt/persistence-backup/");
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
-        assertFalse(hotRestartPersistenceConfig.isEnabled());
-        assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
-        assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
-        assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
-        assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
-        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
-        assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
-        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertFalse(persistenceConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(backupDir.getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
+        assertEquals(1111, persistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, persistenceConfig.getDataLoadTimeoutSeconds());
+        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(persistenceConfig.isAutoRemoveStaleData());
+        EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertNotNull(encryptionAtRestConfig);
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());

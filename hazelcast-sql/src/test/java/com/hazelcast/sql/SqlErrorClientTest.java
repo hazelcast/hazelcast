@@ -127,8 +127,8 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = factory.newHazelcastClient(null);
 
         HazelcastSqlException error = assertSqlException(client, query());
-        assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
-        assertEquals("Client is not currently connected to the cluster.", error.getMessage());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
+        assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
 
     @Test
@@ -330,7 +330,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
 
-            Connection connection = clientService.getRandomConnection();
+            Connection connection = clientService.getQueryConnection();
             clientService.invokeOnConnection(connection, message);
 
             fail("Must fail");
