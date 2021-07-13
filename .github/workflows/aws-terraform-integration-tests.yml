@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - *
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/aws/**'
       - 'hazelcast/pom.xml'
@@ -35,8 +35,6 @@ jobs:
           distribution: ${{ matrix.distribution }}
 
       - run: java -version
-
-      - run: echo $(mvn --version)
 
       - run : mkdir ~/lib
 
