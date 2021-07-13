@@ -40,6 +40,8 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -148,6 +150,34 @@ public final class OptUtils {
                 null
         );
         return new HazelcastRelOptTable(relTable);
+    }
+
+    public static boolean requiresLocalSort(RelCollation sortCollation, RelCollation inputCollation) {
+        if (sortCollation.getFieldCollations().isEmpty()) {
+            // No need for sorting
+            return false;
+        }
+
+        List<RelFieldCollation> sortFields = sortCollation.getFieldCollations();
+        List<RelFieldCollation> inputFields = inputCollation.getFieldCollations();
+
+        if (sortFields.size() <= inputFields.size()) {
+            for (int i = 0; i < sortFields.size(); i++) {
+                RelFieldCollation sortField = sortFields.get(i);
+                RelFieldCollation inputField = inputFields.get(i);
+
+                // Different collation, local sorting is needed.
+                if (!sortField.equals(inputField)) {
+                    return true;
+                }
+            }
+
+            // Prefix is confirmed, no local sorting is needed.
+            return false;
+        } else {
+            // Input has less collated fields than sort. Definitely not a prefix => local sorting is needed.
+            return true;
+        }
     }
 
     /**
