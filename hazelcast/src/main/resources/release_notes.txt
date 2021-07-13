@@ -19,6 +19,10 @@ https://jet-start.sh/blog/[Jet release notes].
   ** CASE
   [#18940], [#18910], [#18946], [#18569], [#18479], [#18483], [#18422], [#18067]
   
+* **Persistence:** This allows individual members and whole clusters to recover
+faster by persisting map entries and JCache data on disk. Members can use persisted data to recover during restarts.
+See the Persistence section.
+
 * **Compact Serialization Format (Preview Feature):** We have introduced a new serialization format
 (`CompactSerializer`), which is in its beta stage currently. This format requires much
 less storage space, provides better latency and throughput, and supports more extensive type sets:
