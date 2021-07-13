@@ -28,6 +28,8 @@ jobs:
       matrix:
         java: [ '8' ]
         architecture: [ 'x64' ]
+        distribution: ${{ matrix.distribution }}
+
     steps:
       # SET UP JDK
       - name: Setup JDK
@@ -35,6 +37,7 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
 
       - run: java -version
 
