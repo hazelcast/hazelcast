@@ -29,7 +29,7 @@ public class JetConfig {
 
     private InstanceConfig instanceConfig = new InstanceConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
-    private boolean enabled = true;
+    private boolean enabled;
     private boolean resourceUploadEnabled;
 
     /**

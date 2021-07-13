@@ -73,6 +73,16 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleCustomPropertiesConfig() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_PROPERTIES_foo", "bar")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("bar", config.getProperty("foo"));
+    }
+
+    @Test
     public void shouldHandleAdvancedNetworkEndpointConfiguration() throws Exception {
         Config config = new Config();
         config.getAdvancedNetworkConfig().setClientEndpointConfig(new ServerSocketEndpointConfig()

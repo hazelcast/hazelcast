@@ -21,11 +21,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.Version;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Set;
 
@@ -47,12 +49,13 @@ public class JobRecord implements IdentifiedDataSerializable {
     private String dagJson;
     private JobConfig config;
     private Set<String> ownedObservables;
+    private Subject subject;
 
     public JobRecord() {
     }
 
     public JobRecord(Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
-                     Set<String> ownedObservables) {
+                     Set<String> ownedObservables, Subject subject) {
         this.clusterVersion = clusterVersion;
         this.jobId = jobId;
         this.creationTime = Clock.currentTimeMillis();
@@ -95,6 +98,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         return ownedObservables;
     }
 
+    public Subject getSubject() {
+        return subject;
+    }
+
     @Override
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
@@ -114,6 +121,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeUTF(dagJson);
         out.writeObject(config);
         out.writeObject(ownedObservables);
+        ImdgUtil.writeSubject(out, subject);
     }
 
     @Override
@@ -125,6 +133,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         dagJson = in.readUTF();
         config = in.readObject();
         ownedObservables = in.readObject();
+        subject = ImdgUtil.readSubject(in);
     }
 
     @Override

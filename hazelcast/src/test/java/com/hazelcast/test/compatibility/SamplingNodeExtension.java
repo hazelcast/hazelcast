@@ -70,6 +70,12 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        InternalSerializationService serializationService = nodeExtension.createCompatibilitySerializationService();
+        return new SamplingSerializationService(serializationService);
+    }
+
+    @Override
     public SecurityService getSecurityService() {
         return nodeExtension.getSecurityService();
     }

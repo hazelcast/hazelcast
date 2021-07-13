@@ -94,7 +94,8 @@ public class CreateDagVisitor {
                 },
                 ConsumerEx.noop(),
                 0,
-                true)
+                true,
+                null)
         );
     }
 

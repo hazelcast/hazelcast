@@ -45,13 +45,14 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.JetSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -61,7 +62,6 @@ import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
@@ -271,9 +271,9 @@ public class JetSqlBackend implements SqlBackend {
             boolean isInfiniteRows
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context);
+        List<Permission> permissions = extractPermissions(physicalRel);
 
         Address localAddress = nodeEngine.getThisAddress();
-        List<Permission> permissions = extractPermissions(physicalRel);
 
         if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
@@ -282,13 +282,13 @@ public class JetSqlBackend implements SqlBackend {
         } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),
-                    planExecutor, permissions);
+            return new DmlPlan(operation, planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows,
-                    rowMetadata, planExecutor, permissions);
+            return new SelectPlan(planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows, rowMetadata, planExecutor, permissions);
         }
     }
 
