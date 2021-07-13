@@ -1,0 +1,102 @@
+name: integration-tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - spi-integration-tests›
+#    paths:
+#      - 'src/**'
+#      - 'pom.xml'
+#      - '.github/terraform/**'
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    env:
+      GCP_KEY_FILE: ${{ secrets.GCP_KEY_FILE }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        distribution: [ 'adopt' ]
+    steps:
+      # SET UP JDK
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
+
+      - run: java -version
+
+      - run: mvn --version
+
+      - run : mkdir ~/lib
+
+      # BUILD HAZELCAST GCP SNAPSHOT
+      - uses: actions/checkout@v2.3.4
+        with:
+          path: hazelcast
+
+      - name: Build hazelcast jar
+        run: |
+          cd hazelcast
+          mvn clean install -DskipTests -Dcheckstyle.skip
+          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
+          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
+
+      #BUILD TERRAFORM
+      - name : Set-up Terraform
+        uses: hashicorp/setup-terraform@v1.3.2
+        with:
+          terraform_version: 0.13.0
+
+      - name: Create unique prefix for resources
+        run: |
+          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/gcp/terraform.tfvars
+
+      - name: Add project ID terraform.tfvars
+        run: |
+          project_id=$(echo $GCP_KEY_FILE | grep -Po '"project_id":\s"\K[-a-zA-Z0-9]+')
+          sed -i -e "s~SET_PROJECT_ID~\"${project_id}\"~g"  hazelcast/.github/terraform/gcp/terraform.tfvars
+
+      - name: Create GCP credentials file
+        run: |
+          touch hazelcast/.github/terraform/gcp/gcp_key_file.json
+          echo $GCP_KEY_FILE > hazelcast/.github/terraform/gcp/gcp_key_file.json
+
+      - name: Terraform Init
+        run: cd hazelcast/.github/terraform/gcp && terraform init
+
+      - name: Terraform Format
+        run: cd hazelcast/.github/terraform/gcp  && terraform fmt
+
+      - name: Install private key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_rsa
+          known_hosts: " "
+
+      - name: Install public key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PUBLIC_KEY }}
+          name: id_rsa.pub
+          known_hosts: " "
+
+      - name: Terraform Apply
+        run: |
+          cd hazelcast/.github/terraform/gcp  && terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ always() }}
+        run: |
+          cd hazelcast/.github/terraform/gcp  && terraform destroy -auto-approve
