@@ -44,6 +44,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.map.impl.MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION;
 
@@ -311,6 +312,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     @Override
     public Object getResponse() {
         return response;
+    }
+
+    // Index scan via operation supposed to be thread-safe, no need to control concurrency.
+    @Override
+    protected void assertNativeMapOnPartitionThread() {
+        assert mapContainer.getMapConfig().getInMemoryFormat() != NATIVE;
     }
 
     @Override
