@@ -35,7 +35,7 @@ public class ResumeJobOperation extends AsyncJobOperation {
 
     @Override
     public CompletableFuture<Void> doRun() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         return service.getJobCoordinationService().resumeJob(jobId());
     }
 
