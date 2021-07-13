@@ -52,6 +52,9 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Collection<Member> getTargets() {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
         return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
     }
 
