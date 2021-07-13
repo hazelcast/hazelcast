@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
@@ -35,6 +36,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
@@ -277,24 +279,28 @@ public class JetSqlBackend implements SqlBackend {
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
-        if (physicalRel instanceof SinkMapPhysicalRel) {
-            SinkMapPhysicalRel sinkRel = (SinkMapPhysicalRel) physicalRel;
-            return new IMapSinkPlan(planKey, sinkRel.objectKey(), parameterMetadata, sinkRel.mapName(),
-                    sinkRel.entriesFn(), planExecutor, permissions);
+        if (physicalRel instanceof InsertMapPhysicalRel) {
+            InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
+            return new IMapInsertPlan(planKey, insert.objectKey(), parameterMetadata, insert.mapName(), insert.entriesFn(),
+                    planExecutor, permissions);
+        } else if (physicalRel instanceof SinkMapPhysicalRel) {
+            SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
+            return new IMapSinkPlan(planKey, sink.objectKey(), parameterMetadata, sink.mapName(), sink.entriesFn(),
+                    planExecutor, permissions);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
-            DeleteByKeyMapPhysicalRel deleteRel = (DeleteByKeyMapPhysicalRel) physicalRel;
-            return new IMapDeletePlan(planKey, deleteRel.objectKey(), parameterMetadata, deleteRel.mapName(),
-                    deleteRel.keyCondition(parameterMetadata), planExecutor, permissions);
+            DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
+            return new IMapDeletePlan(planKey, delete.objectKey(), parameterMetadata, delete.mapName(),
+                    delete.keyCondition(parameterMetadata), planExecutor, permissions);
         } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata,
-                    visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
+            return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),
+                    planExecutor, permissions);
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata,
-                    visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows, rowMetadata, planExecutor, permissions);
+            return new SelectPlan(planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows,
+                    rowMetadata, planExecutor, permissions);
         }
     }
 
