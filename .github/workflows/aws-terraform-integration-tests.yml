@@ -3,11 +3,12 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '*'
-    paths:
-      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-      - 'hazelcast/pom.xml'
-      - '.github/terraform/aws/**'
+      - main
+      - spi-integration-tests
+#    paths:
+#      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
+#      - 'hazelcast/pom.xml'
+#      - '.github/terraform/aws/**'
 
 jobs:
   build:
