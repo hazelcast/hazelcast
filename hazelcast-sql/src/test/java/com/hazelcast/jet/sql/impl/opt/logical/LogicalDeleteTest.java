@@ -150,6 +150,13 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
                         planRow(1, DeleteByKeyMapLogicalRel.class)
                 )
         );
+        assertPlan(
+                optimizeLogical("DELETE FROM m WHERE " + literalValue + " = __key", table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, DeleteByKeyMapLogicalRel.class)
+                )
+        );
     }
 
     @Test
