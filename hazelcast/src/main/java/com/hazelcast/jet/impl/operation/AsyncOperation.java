@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
@@ -42,8 +43,13 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     @Override
     public void beforeRun() {
-        JetServiceBackend service = getService();
-        service.getLiveOperationRegistry().register(this);
+        try {
+            JetServiceBackend service = getService();
+            service.getLiveOperationRegistry().register(this);
+        } catch (HazelcastException e) {
+            throw new IllegalStateException("Jet is disabled."
+                    + " Enable it by setting the \"hazelcast.jet.enabled\" property to true.");
+        }
     }
 
     @Override
