@@ -379,6 +379,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
     @Nonnull
+    @SuppressWarnings("checkstyle:AnonInnerLength") // we can't move the anon class out, it couldn't be private
     static ProcessorMetaSupplier forceTotalParallelismOne(
             @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey, @Nullable Permission permission
     ) {
