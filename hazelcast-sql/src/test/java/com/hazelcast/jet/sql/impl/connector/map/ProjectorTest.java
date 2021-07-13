@@ -41,11 +41,11 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ValueProjectorTest {
+public class ProjectorTest {
 
     @Test
     public void test_project() {
-        ValueProjector projector = new ValueProjector(
+        Projector projector = new Projector(
                 new QueryPath[]{QueryPath.create("this.field")},
                 new QueryDataType[]{QueryDataType.BIGINT},
                 new MultiplyingTarget(),
@@ -62,14 +62,14 @@ public class ValueProjectorTest {
     public void test_supplierSerialization() {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-        ValueProjector.Supplier original = ValueProjector.supplier(
+        Projector.Supplier original = Projector.supplier(
                 new QueryPath[]{QueryPath.create("this.field")},
                 new QueryDataType[]{QueryDataType.INT},
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
                 singletonList(ColumnExpression.create(0, QueryDataType.INT))
         );
 
-        ValueProjector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
+        Projector.Supplier serialized = serializationService.toObject(serializationService.toData(original));
 
         assertThat(serialized).isEqualToComparingFieldByField(original);
     }

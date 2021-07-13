@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
@@ -286,6 +287,31 @@ public class JetPlanExecutor {
         } catch (TimeoutException e) {
             future.cancel(true);
             throw QueryException.error("Timeout occurred while inserting entries");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
+    }
+
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        Object key = plan.keyCondition()
+                .eval(
+                        EmptyRow.INSTANCE,
+                        new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
+                );
+        CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
+                .submitToKey(key, plan.updaterSupplier().get(arguments))
+                .toCompletableFuture();
+        try {
+            if (timeout > 0) {
+                future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+            return SqlResultImpl.createUpdateCountResult(0);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while updating an entry");
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
