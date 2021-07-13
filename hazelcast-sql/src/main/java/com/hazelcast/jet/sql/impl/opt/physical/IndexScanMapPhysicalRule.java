@@ -48,9 +48,16 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
         FullScanLogicalRel logicalScan = call.rel(0);
         PartitionedMapTable table = table(logicalScan);
 
-        // TODO: HD index scans will be added to this transforms list later.
-        for (RelNode indexScan : JetIndexResolver.createIndexScans(logicalScan, table.getIndexes())) {
-            call.transformTo(indexScan);
+        if (table.isHd()) {
+            RelNode indexScan = JetIndexResolver.createFullIndexScan(logicalScan, table.getIndexes());
+            if (indexScan != null) {
+                call.transformTo(indexScan);
+            }
+            // Jet engine also supports normal HD maps scan.
+        } else {
+            for (RelNode indexScan : JetIndexResolver.createIndexScans(logicalScan, table.getIndexes())) {
+                call.transformTo(indexScan);
+            }
         }
     }
 
