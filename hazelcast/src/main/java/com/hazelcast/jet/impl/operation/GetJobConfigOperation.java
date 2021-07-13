@@ -34,7 +34,7 @@ public class GetJobConfigOperation extends AbstractJobOperation implements Allow
 
     @Override
     public void run() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         response = service.getJobConfig(jobId());
     }
 

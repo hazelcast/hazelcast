@@ -86,7 +86,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
             throw new JetException("Mismatch between coordinator and participant version");
         }
 
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         Address caller = getCallerAddress();
         LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
                 caller);
@@ -147,7 +147,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         if (isLightJob) {
             return getNodeEngine().getSerializationService().toObject(planBlob);
         } else {
-            JetServiceBackend service = getService();
+            JetServiceBackend service = getJetServiceBackend();
             JobExecutionService jobExecutionService = service.getJobExecutionService();
 
             try {
