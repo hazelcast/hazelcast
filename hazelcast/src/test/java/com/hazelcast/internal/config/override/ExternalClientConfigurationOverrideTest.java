@@ -42,4 +42,14 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
         assertEquals("test", config.getInstanceName());
         assertFalse(config.getNetworkConfig().isAutoDetectionEnabled());
     }
+
+    @Test
+    public void shouldHandleCustomPropertiesConfig() throws Exception {
+        ClientConfig config = new ClientConfig();
+
+        withEnvironmentVariable("HZCLIENT_PROPERTIES_foo", "bar")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+
+        assertEquals("bar", config.getProperty("foo"));
+    }
 }

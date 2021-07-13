@@ -44,8 +44,10 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -80,6 +82,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
     private Map<String, Object> arguments = new HashMap<>();
+    private Map<String, List<String>> customClassPaths = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -619,6 +622,50 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Adds custom classpath element to a stage with the given name.
+     *
+     * <pre>{@code
+     * BatchSource<String> source = ...
+     * JobConfig config = new JobConfig();
+     * config.addCustomClasspath(source.name(), "hazelcast-client-3.12.12.jar");
+     * }</pre>
+     *
+     * @param name name of the stage, must be unique for the whole pipeline
+     *             (the stage name can be set via {@link com.hazelcast.jet.pipeline.Stage#setName(String)})
+     * @param path path to the jar relative to the `ext` directory
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addCustomClasspath(@Nonnull String name, @Nonnull String path) {
+        List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
+        classpathItems.add(path);
+        return this;
+    }
+
+    /**
+     * Adds custom classpath elements to a stage with the given name.
+     *
+     * <pre>{@code
+     * BatchSource<String> source = ...
+     * JobConfig config = new JobConfig();
+     * config.addCustomClasspaths(source.name(), jarList);
+     * }</pre>
+     *
+     * @param name name of the stage, must be unique for the whole pipeline
+     *             (the stage name can be set via {@link com.hazelcast.jet.pipeline.Stage#setName(String)})
+     * @param paths paths to the jar relative to the `ext` directory
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addCustomClasspaths(@Nonnull String name, @Nonnull List<String> paths) {
+        List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
+        classpathItems.addAll(paths);
+        return this;
+    }
+
+    /**
      * Adds the file identified by the supplied URL as a resource that will be
      * available to the job while it's executing in the Jet cluster. The resource's
      * filename (the last path segment in the URL) becomes its ID, so two resources
@@ -1053,6 +1100,14 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns configured custom classpath elements,
+     * See {@link #addCustomClasspath(String, String)} and {@link #addCustomClasspaths(String, List)}
+     */
+    public Map<String, List<String>> getCustomClassPaths() {
+        return customClassPaths;
+    }
+
+    /**
      * Registers the given serializer for the given class for the scope of the
      * job. It will be accessible to all the code attached to the underlying
      * pipeline or DAG, but not to any other code. There are several serializer
@@ -1327,6 +1382,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         SerializationUtil.writeMap(resourceConfigs, out);
         out.writeObject(serializerConfigs);
         out.writeObject(arguments);
+        out.writeObject(customClassPaths);
         out.writeObject(classLoaderFactory);
         out.writeString(initialSnapshotName);
         out.writeBoolean(enableMetrics);
@@ -1346,6 +1402,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         resourceConfigs = SerializationUtil.readMap(in);
         serializerConfigs = in.readObject();
         arguments = in.readObject();
+        customClassPaths = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readString();
         enableMetrics = in.readBoolean();
@@ -1372,6 +1429,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(name, jobConfig.name)
                 && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
+                && Objects.equals(customClassPaths, jobConfig.customClassPaths)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
                 && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
@@ -1384,8 +1442,8 @@ public class JobConfig implements IdentifiedDataSerializable {
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords,
-                timeoutMillis);
+                customClassPaths, serializerConfigs, arguments, classLoaderFactory, initialSnapshotName,
+                maxProcessorAccumulatedRecords, timeoutMillis);
     }
 
     @Override

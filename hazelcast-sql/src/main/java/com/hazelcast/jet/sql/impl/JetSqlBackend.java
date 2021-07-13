@@ -288,13 +288,13 @@ public class JetSqlBackend implements SqlBackend {
         } else if (physicalRel instanceof TableModify) {
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),
-                    planExecutor, permissions);
+            return new DmlPlan(operation, planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), planExecutor, permissions);
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows,
-                    rowMetadata, planExecutor, permissions);
+            return new SelectPlan(planKey, parameterMetadata,
+                    visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows, rowMetadata, planExecutor, permissions);
         }
     }
 

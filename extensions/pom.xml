@@ -45,6 +45,7 @@
         <module>grpc</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
+        <module>hazelcast-3-connector</module>
         <module>kafka</module>
         <module>kinesis</module>
         <module>protobuf</module>

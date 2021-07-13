@@ -107,6 +107,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
             this.backupCount = config.backupCount;
             this.inMemoryFormat = config.inMemoryFormat;
             this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
+            this.dataPersistenceConfig = new DataPersistenceConfig(config.dataPersistenceConfig);
             this.eventJournalConfig = new EventJournalConfig(config.eventJournalConfig);
             // eviction config is not allowed to be null
             if (config.evictionConfig != null) {
@@ -158,6 +159,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         this.mergePolicyConfig = new MergePolicyConfig(simpleConfig.getMergePolicyConfig());
         this.merkleTreeConfig = new MerkleTreeConfig(simpleConfig.getMerkleTreeConfig());
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
+        this.dataPersistenceConfig = new DataPersistenceConfig(simpleConfig.getDataPersistenceConfig());
         this.eventJournalConfig = new EventJournalConfig(simpleConfig.getEventJournalConfig());
         this.disablePerEntryInvalidationEvents = simpleConfig.isDisablePerEntryInvalidationEvents();
     }
@@ -480,7 +482,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * Sets the {@code MerkleTreeConfig} for this {@code CacheConfig}
      *
      * @param merkleTreeConfig merkle tree config
-     * @return this {@code CacheConfig} instance
      */
     public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
         this.merkleTreeConfig = merkleTreeConfig;
@@ -547,6 +548,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         // RU_COMPAT_4_2
         if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             out.writeObject(merkleTreeConfig);
+            out.writeObject(dataPersistenceConfig);
         }
     }
 
@@ -590,7 +592,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         isStoreByValue = in.readBoolean();
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
-        hotRestartConfig = in.readObject();
+        setHotRestartConfig(in.readObject());
         eventJournalConfig = in.readObject();
 
         splitBrainProtectionName = in.readString();
@@ -612,6 +614,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
         // RU_COMPAT_4_2
         if (in.getVersion().isGreaterOrEqual(Versions.V5_0)) {
             merkleTreeConfig = in.readObject();
+            setDataPersistenceConfig(in.readObject());
         }
     }
 
@@ -666,6 +669,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", backupCount=" + backupCount
                 + ", hotRestart=" + hotRestartConfig
+                + ", dataPersistenceConfig=" + dataPersistenceConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", merkleTreeConfig=" + merkleTreeConfig
                 + '}';

@@ -17,11 +17,14 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -49,6 +52,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -108,7 +112,7 @@ public class StreamFilesP<R> extends AbstractProcessor {
     private int parallelism;
     private int processorIndex;
 
-    StreamFilesP(
+    public StreamFilesP(
             @Nonnull String watchedDirectory,
             @Nonnull Charset charset,
             @Nonnull String glob,
@@ -361,8 +365,9 @@ public class StreamFilesP<R> extends AbstractProcessor {
     ) {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
-        return ProcessorMetaSupplier.of(2, () ->
-                new StreamFilesP<>(watchedDirectory, Charset.forName(charset), glob, sharedFileSystem, mapOutputFn));
+        return ProcessorMetaSupplier.of(2, ConnectorPermission.file(watchedDirectory, ACTION_READ),
+                ProcessorSupplier.of(SecuredFunctions.streamFileProcessorFn(watchedDirectory, charset, glob,
+                        sharedFileSystem, mapOutputFn)));
     }
 
     private static WatchEvent.Modifier[] getHighSensitivityModifiers() {

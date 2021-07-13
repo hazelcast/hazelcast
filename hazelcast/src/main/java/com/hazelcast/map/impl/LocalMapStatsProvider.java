@@ -253,6 +253,9 @@ public class LocalMapStatsProvider {
             int partitionId = recordStore.getPartitionId();
             Address replicaAddress = getReplicaAddress(partitionId, replicaNumber, totalBackupCount);
             if (!isReplicaAvailable(replicaAddress, totalBackupCount)) {
+                // todo consider if this should be logged as a warning
+                //  it is normal to have some replicas unassigned under various circumstances
+                //  depending on cluster state and membership changes
                 printWarning(partitionId, replicaNumber);
                 continue;
             }

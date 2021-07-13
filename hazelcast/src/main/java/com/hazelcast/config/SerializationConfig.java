@@ -19,7 +19,9 @@ package com.hazelcast.config;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
 /**
@@ -52,6 +55,7 @@ public class SerializationConfig {
     private final Set<ClassDefinition> classDefinitions;
     private JavaSerializationFilterConfig javaSerializationFilterConfig;
     private boolean allowOverrideDefaultSerializers;
+    private CompactSerializationConfig compactSerializationConfig;
 
     public SerializationConfig() {
         dataSerializableFactoryClasses = new HashMap<>();
@@ -60,6 +64,7 @@ public class SerializationConfig {
         portableFactories = new HashMap<>();
         serializerConfigs = new LinkedList<>();
         classDefinitions = new HashSet<>();
+        compactSerializationConfig = new CompactSerializationConfig();
     }
 
     public SerializationConfig(SerializationConfig serializationConfig) {
@@ -83,6 +88,7 @@ public class SerializationConfig {
         classDefinitions = new HashSet<>(serializationConfig.classDefinitions);
         javaSerializationFilterConfig = serializationConfig.javaSerializationFilterConfig == null
                 ? null : new JavaSerializationFilterConfig(serializationConfig.javaSerializationFilterConfig);
+        compactSerializationConfig = new CompactSerializationConfig(serializationConfig.compactSerializationConfig);
     }
 
     /**
@@ -457,7 +463,6 @@ public class SerializationConfig {
 
     /**
      * @return {@code true} if default serializers may be overridden by custom serializers
-     *
      * @since 4.2
      */
     public boolean isAllowOverrideDefaultSerializers() {
@@ -479,7 +484,7 @@ public class SerializationConfig {
      *   <li>Hazelcast decided to add a default serializer for the same type in a future release</li>
      * </ul>
      * </p>
-     *
+     * <p>
      * To be able to support Rolling Upgrade from an old version to the new version, one needs to make sure
      * of the backward compatibility of the serialization. As a solution, the user will set this property
      * on the new version so that new instances will be able to override new default serializers
@@ -487,7 +492,6 @@ public class SerializationConfig {
      *
      * @param allowOverrideDefaultSerializers value to set
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     *
      * @since 4.2
      */
     public SerializationConfig setAllowOverrideDefaultSerializers(final boolean allowOverrideDefaultSerializers) {
@@ -510,6 +514,27 @@ public class SerializationConfig {
     public SerializationConfig setJavaSerializationFilterConfig(JavaSerializationFilterConfig javaSerializationFilterConfig) {
         this.javaSerializationFilterConfig = javaSerializationFilterConfig;
         return this;
+    }
+
+    /**
+     * @param compactSerializationConfig config for the compact serialization format
+     * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
+     * @since 5.0
+     */
+    @Beta
+    public SerializationConfig setCompactSerializationConfig(@Nonnull CompactSerializationConfig compactSerializationConfig) {
+        checkNotNull(compactSerializationConfig, "compactSerializationConfig");
+        this.compactSerializationConfig = compactSerializationConfig;
+        return this;
+    }
+
+    /**
+     * @return compact serialization config
+     * @since 5.0
+     */
+    @Beta
+    public CompactSerializationConfig getCompactSerializationConfig() {
+        return compactSerializationConfig;
     }
 
     @Override
@@ -544,28 +569,31 @@ public class SerializationConfig {
         SerializationConfig that = (SerializationConfig) o;
 
         return portableVersion == that.portableVersion
-            && checkClassDefErrors == that.checkClassDefErrors
-            && useNativeByteOrder == that.useNativeByteOrder
-            && enableCompression == that.enableCompression
-            && enableSharedObject == that.enableSharedObject
-            && allowUnsafe == that.allowUnsafe
-            && allowOverrideDefaultSerializers == that.allowOverrideDefaultSerializers
-            && dataSerializableFactoryClasses.equals(that.dataSerializableFactoryClasses)
-            && dataSerializableFactories.equals(that.dataSerializableFactories)
-            && portableFactoryClasses.equals(that.portableFactoryClasses)
-            && portableFactories.equals(that.portableFactories)
-            && Objects.equals(globalSerializerConfig, that.globalSerializerConfig)
-            && serializerConfigs.equals(that.serializerConfigs)
-            && Objects.equals(byteOrder, that.byteOrder)
-            && classDefinitions.equals(that.classDefinitions)
-            && Objects.equals(javaSerializationFilterConfig, that.javaSerializationFilterConfig);
+                && checkClassDefErrors == that.checkClassDefErrors
+                && useNativeByteOrder == that.useNativeByteOrder
+                && enableCompression == that.enableCompression
+                && enableSharedObject == that.enableSharedObject
+                && allowUnsafe == that.allowUnsafe
+                && allowOverrideDefaultSerializers == that.allowOverrideDefaultSerializers
+                && dataSerializableFactoryClasses.equals(that.dataSerializableFactoryClasses)
+                && dataSerializableFactories.equals(that.dataSerializableFactories)
+                && portableFactoryClasses.equals(that.portableFactoryClasses)
+                && portableFactories.equals(that.portableFactories)
+                && Objects.equals(globalSerializerConfig, that.globalSerializerConfig)
+                && serializerConfigs.equals(that.serializerConfigs)
+                && Objects.equals(byteOrder, that.byteOrder)
+                && classDefinitions.equals(that.classDefinitions)
+                && Objects.equals(javaSerializationFilterConfig, that.javaSerializationFilterConfig)
+                && Objects.equals(compactSerializationConfig, that.compactSerializationConfig);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(portableVersion, dataSerializableFactoryClasses, dataSerializableFactories, portableFactoryClasses,
-            portableFactories, globalSerializerConfig, serializerConfigs, checkClassDefErrors, useNativeByteOrder, byteOrder,
-            enableCompression, enableSharedObject, allowUnsafe, allowOverrideDefaultSerializers,
-            classDefinitions, javaSerializationFilterConfig);
+                portableFactories, globalSerializerConfig, serializerConfigs, checkClassDefErrors, useNativeByteOrder, byteOrder,
+                enableCompression, enableSharedObject, allowUnsafe, allowOverrideDefaultSerializers,
+                classDefinitions, javaSerializationFilterConfig, compactSerializationConfig);
     }
+
+
 }

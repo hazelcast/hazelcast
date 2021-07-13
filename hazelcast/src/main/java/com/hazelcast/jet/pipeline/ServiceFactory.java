@@ -26,8 +26,10 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.Serializable;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -112,6 +114,9 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
 
     @Nonnull
     private Map<String, File> attachedFiles = emptyMap();
+
+    @Nullable
+    private Permission permission;
 
     private ServiceFactory(@Nonnull FunctionEx<? super ProcessorSupplier.Context, ? extends C> createContextFn) {
         this.createContextFn = createContextFn;
@@ -301,6 +306,17 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
     }
 
     /**
+     * Returns a copy of this {@link ServiceFactory} with setting the
+     * required permission. This is en Enterprise feature.
+     */
+    @Nonnull
+    public ServiceFactory<C, S> withPermission(@Nonnull Permission permission) {
+        ServiceFactory<C, S> copy = clone();
+        copy.permission = permission;
+        return copy;
+    }
+
+    /**
      * Returns the function that creates the shared context object. Each
      * Jet member creates one such object and passes it to all the parallel
      * service instances.
@@ -367,6 +383,15 @@ public final class ServiceFactory<C, S> implements Serializable, Cloneable {
     @Nonnull
     public Map<String, File> attachedFiles() {
         return Collections.unmodifiableMap(attachedFiles);
+    }
+
+    /**
+     * Returns the required permission to use this factory.
+     * This is an Enterprise feature.
+     */
+    @Nullable
+    public Permission permission() {
+        return permission;
     }
 
     @Override

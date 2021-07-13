@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -184,7 +183,7 @@ public class MasterContext {
         return coordinationService.getJetServiceBackend();
     }
 
-    public NodeEngine nodeEngine() {
+    public NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }
 
