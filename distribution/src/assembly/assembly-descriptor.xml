@@ -85,8 +85,10 @@
         </file>
 
         <!-- Simple XML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
         <file>
-            <source>${configs.from.jar}/hazelcast-default.xml</source>
+            <source>${configs.from.jar}/hazelcast-default-assembly.xml</source>
             <destName>hazelcast.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
@@ -97,8 +99,10 @@
         </file>
 
         <!-- Simple YAML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
         <file>
-            <source>${configs.from.jar}/hazelcast-default.yaml</source>
+            <source>${configs.from.jar}/hazelcast-default-assembly.yaml</source>
             <destName>hazelcast.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>

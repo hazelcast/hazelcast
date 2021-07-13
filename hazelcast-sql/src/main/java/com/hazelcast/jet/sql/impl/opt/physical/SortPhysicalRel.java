@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.type.RelDataType;
@@ -87,5 +88,32 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     public List<FieldCollation> getCollations() {
         return getCollation().getFieldCollations()
                 .stream().map(FieldCollation::new).collect(Collectors.toList());
+    }
+
+    public boolean requiresSort() {
+        List<RelFieldCollation> collations = collation.getFieldCollations();
+        // It is not real sort operator
+        if (collations.isEmpty()) {
+            return false;
+        }
+
+        List<RelFieldCollation> inputCollations = getInput().getTraitSet().getCollation().getFieldCollations();
+        // Input ordering has fewer requirements than sort ordering
+        // Sort is definitely required
+        if  (inputCollations.size() < collations.size()) {
+            return true;
+        }
+
+        // For each sort ordering requirement, compare it with the input relation ordering
+        for (int i = 0; i < collations.size(); i++) {
+            RelFieldCollation coll = collations.get(i);
+            RelFieldCollation inputColl = inputCollations.get(i);
+            if (!coll.equals(inputColl)) {
+                return true;
+            }
+        }
+
+        // Sort relation ordering list is prefix of the input ordering list, no need to sort
+        return false;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -57,5 +58,13 @@ public abstract class AbstractJobOperation extends Operation implements Identifi
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         jobId = in.readLong();
+    }
+
+    protected JetServiceBackend getJetServiceBackend() {
+        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
+        return getService();
     }
 }

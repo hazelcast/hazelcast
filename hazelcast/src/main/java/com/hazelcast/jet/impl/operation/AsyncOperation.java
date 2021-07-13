@@ -42,7 +42,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     @Override
     public void beforeRun() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         service.getLiveOperationRegistry().register(this);
     }
 
@@ -73,7 +73,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     private void doSendResponse(Object value) {
         try {
-            final JetServiceBackend service = getService();
+            final JetServiceBackend service = getJetServiceBackend();
             service.getLiveOperationRegistry().deregister(this);
         } finally {
             try {
@@ -96,6 +96,9 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
     }
 
     protected JetServiceBackend getJetServiceBackend() {
+        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
         return getService();
     }
