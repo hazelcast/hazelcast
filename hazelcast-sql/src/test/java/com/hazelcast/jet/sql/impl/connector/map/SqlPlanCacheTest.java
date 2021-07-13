@@ -141,6 +141,8 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         fillMapAndCreateIndex(instance(), "m2", IndexType.HASH, "__key.id");
         createMapping("map", "m2", "id", PersonId.class, "varchar");
+        assertThat(planCache(instance()).size()).isZero();
+
         sqlService.execute("SELECT * FROM map WHERE id = 0");
         assertThat(planCache(instance()).size()).isEqualTo(1);
         SqlPlan secondPlan = planCache(instance()).getPlans().values().iterator().next();
