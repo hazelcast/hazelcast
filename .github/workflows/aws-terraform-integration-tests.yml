@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - main
-      - spi-integration-tests
-#    paths:
-#      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-#      - 'hazelcast/pom.xml'
-#      - '.github/terraform/aws/**'
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
+      - 'hazelcast/pom.xml'
+      - '.github/terraform/aws/**'
 
 jobs:
   build:
