@@ -33,11 +33,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -45,6 +47,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
@@ -104,6 +110,11 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
                 keys,
                 new ValueUpdater(rowProjectorSupplier, valueProjectorSupplier, evalContext.getArguments())
         ).toCompletableFuture().thenApply(m -> Traversers.empty());
+    }
+
+    @Override
+    public Permission permission() {
+        return new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE);
     }
 
     @Override
