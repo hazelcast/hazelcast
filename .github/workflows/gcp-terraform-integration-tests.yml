@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - master
-      - spi-integration-tests
-#    paths:
-#      - 'src/**'
-#      - 'pom.xml'
-#      - '.github/terraform/**'
+    paths:
+      - 'src/**'
+      - 'pom.xml'
+      - '.github/terraform/**'
 
 jobs:
   build:
