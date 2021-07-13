@@ -47,8 +47,8 @@ import static java.util.stream.Collectors.toList;
 public final class UpdatingEntryProcessor
         implements EntryProcessor<Object, Object, Long>, SerializationServiceAware, DataSerializable {
 
-    private KvRowProjector.Supplier rowProjector;
-    private Projector.Supplier valueProjector;
+    private KvRowProjector.Supplier rowProjectorSupplier;
+    private Projector.Supplier valueProjectorSupplier;
     private List<Object> arguments;
 
     private transient ExpressionEvalContext evalContext;
@@ -59,19 +59,19 @@ public final class UpdatingEntryProcessor
     }
 
     private UpdatingEntryProcessor(
-            KvRowProjector.Supplier rowProjector,
-            Projector.Supplier valueProjector,
+            KvRowProjector.Supplier rowProjectorSupplier,
+            Projector.Supplier valueProjectorSupplier,
             List<Object> arguments
     ) {
-        this.rowProjector = rowProjector;
-        this.valueProjector = valueProjector;
+        this.rowProjectorSupplier = rowProjectorSupplier;
+        this.valueProjectorSupplier = valueProjectorSupplier;
         this.arguments = arguments;
     }
 
     @Override
     public Long process(Map.Entry<Object, Object> entry) {
-        Object[] row = rowProjector.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
-        Object value = valueProjector.get(evalContext).project(row);
+        Object[] row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+        Object value = valueProjectorSupplier.get(evalContext).project(row);
         if (value == null) {
             throw QueryException.error("Cannot assign null to value");
         } else {
@@ -88,15 +88,15 @@ public final class UpdatingEntryProcessor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(rowProjector);
-        out.writeObject(valueProjector);
+        out.writeObject(rowProjectorSupplier);
+        out.writeObject(valueProjectorSupplier);
         out.writeObject(arguments);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        rowProjector = in.readObject();
-        valueProjector = in.readObject();
+        rowProjectorSupplier = in.readObject();
+        valueProjectorSupplier = in.readObject();
         arguments = in.readObject();
     }
 
