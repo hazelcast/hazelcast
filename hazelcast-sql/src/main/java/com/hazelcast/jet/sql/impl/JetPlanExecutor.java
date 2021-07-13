@@ -17,12 +17,12 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
@@ -48,7 +49,6 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 
@@ -234,16 +234,36 @@ public class JetPlanExecutor {
         return SqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        Map<Object, Object> entries = plan.entriesFn()
+                .apply(new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance)));
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
+                .putAllAsync(entries)
+                .toCompletableFuture();
+        try {
+            if (timeout > 0) {
+                future.get(timeout, TimeUnit.MILLISECONDS);
+            } else {
+                future.get();
+            }
+            return SqlResultImpl.createUpdateCountResult(0);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while inserting entries");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
+    }
+
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        String mapName = plan.mapName();
-        Expression<?> keyCondition = plan.keyCondition();
-
-        Object key = keyCondition.eval(
-                EmptyRow.INSTANCE,
-                new SimpleExpressionEvalContext(args, ((HazelcastInstanceImpl) hazelcastInstance).getSerializationService())
-        );
-        CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
+        Object key = plan.keyCondition()
+                .eval(
+                        EmptyRow.INSTANCE,
+                        new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
+                );
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         try {
@@ -252,13 +272,13 @@ public class JetPlanExecutor {
             } else {
                 future.get();
             }
+            return SqlResultImpl.createUpdateCountResult(0);
         } catch (TimeoutException e) {
             future.cancel(true);
             throw QueryException.error("Timeout occurred while deleting an entry");
         } catch (InterruptedException | ExecutionException e) {
             throw QueryException.error(e.getMessage(), e);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
