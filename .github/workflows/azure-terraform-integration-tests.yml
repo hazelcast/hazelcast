@@ -73,10 +73,18 @@ jobs:
         run: cd hazelcast/.github/terraform/azure  && terraform fmt
 
       - name: Generate SSH keys
+        id: ssh
         run: |
-          ssh-keygen -t rsa -b 4096 -C "your_email@domain.com" -f test_rsa -P ""
-          cat test_rsa
-          cat test_rsa.pub
+          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f test_rsa -P "" 1>/dev/null
+          ssh_key=$(cat test_rsa)
+          ssh_public_key=$(cat test_rsa.pub)
+          echo "::set-output name=ssh_key::$ssh_key"
+          echo "::set-output name=ssh_public_key::$ssh_public_key"
+
+      - name: test output
+        run: |
+          echo ${{steps.ssh.outputs.ssh_key}}
+          echo ${{steps.ssh.outputs.ssh_public_key}}
 
       - name: Install private key
         uses: shimataro/ssh-key-action@v2
