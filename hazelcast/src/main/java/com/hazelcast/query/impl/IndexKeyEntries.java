@@ -16,16 +16,18 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.Iterator;
+import com.hazelcast.internal.serialization.Data;
+
+import java.util.NavigableMap;
 
 /**
  * A holder for one index key and associated entries.
  */
 public class IndexKeyEntries {
     private final Comparable<?> indexKey;
-    private final Iterator<QueryableEntry> entries;
+    private final NavigableMap<Data, QueryableEntry> entries;
 
-    public IndexKeyEntries(Comparable<?> indexKey, Iterator<QueryableEntry> entries) {
+    public IndexKeyEntries(Comparable<?> indexKey, NavigableMap<Data, QueryableEntry> entries) {
         this.indexKey = indexKey;
         this.entries = entries;
     }
@@ -34,7 +36,7 @@ public class IndexKeyEntries {
         return indexKey;
     }
 
-    public Iterator<QueryableEntry> getEntries() {
+    public NavigableMap<Data, QueryableEntry> getEntries() {
         return entries;
     }
 }

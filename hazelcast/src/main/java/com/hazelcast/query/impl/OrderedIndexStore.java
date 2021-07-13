@@ -44,7 +44,7 @@ import static java.util.Collections.emptySet;
  */
 @SuppressWarnings("rawtypes")
 public class OrderedIndexStore extends BaseSingleValueIndexStore {
-    public static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
+    private static final Comparator<Data> DATA_COMPARATOR = new DataComparator();
 
     private final ConcurrentSkipListMap<Comparable, NavigableMap<Data, QueryableEntry>> recordMap =
         new ConcurrentSkipListMap<>(Comparables.COMPARATOR);
@@ -52,7 +52,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     private final IndexFunctor<Comparable, QueryableEntry> addFunctor;
     private final IndexFunctor<Comparable, Data> removeFunctor;
 
-    private volatile SortedMap<Data, QueryableEntry> recordsWithNullValue;
+    private volatile NavigableMap<Data, QueryableEntry> recordsWithNullValue;
 
     public OrderedIndexStore(IndexCopyBehavior copyOn) {
         super(copyOn, true);
@@ -60,7 +60,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();
-            recordsWithNullValue = Collections.emptySortedMap();
+            recordsWithNullValue = Collections.emptyNavigableMap();
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
@@ -148,14 +148,14 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
         if (value == NULL) {
-            return Stream.of(new IndexKeyEntries(value, recordsWithNullValue.values().iterator())).iterator();
+            return Stream.of(new IndexKeyEntries(value, recordsWithNullValue)).iterator();
         } else {
-            Map<Data, QueryableEntry> entries = recordMap.get(value);
+            NavigableMap<Data, QueryableEntry> entries = recordMap.get(value);
 
             if (entries == null) {
                 return Collections.emptyIterator();
             } else {
-                return Stream.of(new IndexKeyEntries(value, entries.values().iterator())).iterator();
+                return Stream.of(new IndexKeyEntries(value, entries)).iterator();
             }
         }
     }
@@ -163,20 +163,20 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
     @Override
     public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
         Stream<IndexKeyEntries> nullStream = Stream.of(
-                new IndexKeyEntries(null, recordsWithNullValue.values().iterator()));
+                new IndexKeyEntries(null, recordsWithNullValue));
 
         if (descending) {
             Stream<IndexKeyEntries> nonNullStream = recordMap.descendingMap().entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()));
+                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap()));
 
             return Stream.concat(nonNullStream, nullStream).iterator();
         } else {
             Stream<IndexKeyEntries> nonNullStream = recordMap.entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()));
+                            new IndexKeyEntries(es.getKey(), es.getValue()));
 
             return Stream.concat(nullStream, nonNullStream).iterator();
         }
@@ -227,13 +227,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return navigableMap.entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()))
+                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap()))
                     .iterator();
         } else {
             return navigableMap.entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()))
+                            new IndexKeyEntries(es.getKey(), es.getValue()))
                     .iterator();
         }
 
@@ -255,13 +255,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 return emptyIterator();
             }
 
-            Map<Data, QueryableEntry> res = recordMap.get(from);
+            NavigableMap<Data, QueryableEntry> res = recordMap.get(from);
 
             if (res == null) {
                 return emptyIterator();
             }
 
-            return Stream.of(new IndexKeyEntries(from, res.values().iterator())).iterator();
+            return Stream.of(new IndexKeyEntries(from, res)).iterator();
         } else if (order > 0) {
             return emptyIterator();
         }
@@ -277,13 +277,13 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
             return navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap().values().iterator()))
+                            new IndexKeyEntries(es.getKey(), es.getValue().descendingMap()))
                     .iterator();
         } else {
             return navigableMap.subMap(from0, fromInclusive0, to0, toInclusive0).entrySet()
                     .stream()
                     .map((Entry<Comparable, NavigableMap<Data, QueryableEntry>> es) ->
-                            new IndexKeyEntries(es.getKey(), es.getValue().values().iterator()))
+                            new IndexKeyEntries(es.getKey(), es.getValue()))
                     .iterator();
         }
 
@@ -508,7 +508,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
 
         private IteratorFromBatch(@Nonnull Iterator<IndexKeyEntries> iterator) {
             this.iterator = iterator;
-            this.indexKeyIterator = iterator.hasNext() ? iterator.next().getEntries() : null;
+            this.indexKeyIterator = iterator.hasNext() ? iterator.next().getEntries().values().iterator() : null;
         }
 
         @Override
@@ -520,7 +520,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
                 return true;
             } else {
                 while (iterator.hasNext()) {
-                    indexKeyIterator = iterator.next().getEntries();
+                    indexKeyIterator = iterator.next().getEntries().values().iterator();
                     if (indexKeyIterator.hasNext()) {
                         return true;
                     }

@@ -29,7 +29,6 @@ import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
-import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -37,7 +36,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -134,31 +132,17 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             IndexIterationPointer pointer = pointers[i];
             Data lastEntryKeyData = pointer.getLastEntryKeyData();
 
-            Comparator<Data> comparator = OrderedIndexStore.DATA_COMPARATOR;
-            if (isDescendingEntryKey(pointer)) {
-                comparator = comparator.reversed();
-            }
-
             Iterator<IndexKeyEntries> entryIterator = getEntryIterator(index, pointer);
             while (entryIterator.hasNext()) {
                 IndexKeyEntries indexKeyEntries = entryIterator.next();
                 @SuppressWarnings({"rawtypes"})
-                Iterator<QueryableEntry> keyEntries = indexKeyEntries.getEntries();
+                Iterator<QueryableEntry> keyEntries;
 
                 // Skip until the entry last read
                 if (lastEntryKeyData != null) {
-                    while (keyEntries.hasNext()) {
-                        QueryableEntry<?, ?> entry = keyEntries.next();
-
-                        int comparison = comparator.compare(entry.getKeyData(), lastEntryKeyData);
-                        if (comparison >= 0) {
-                            if (comparison > 0 && isInPartitionSet(entry, partitionIdSet, partitionCount)) {
-                                entries.add(entry);
-                                lastEntryKeyData = entry.getKeyData();
-                            }
-                            break;
-                        }
-                    }
+                    keyEntries = indexKeyEntries.getEntries().tailMap(lastEntryKeyData, false).values().iterator();
+                } else {
+                    keyEntries = indexKeyEntries.getEntries().values().iterator();
                 }
 
                 // Read and add until size limit is reached or iterator ends
@@ -210,17 +194,6 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
 
         return new MapFetchIndexOperationResult(entries, new IndexIterationPointer[0]);
-    }
-
-    private static boolean isDescendingEntryKey(IndexIterationPointer pointer) {
-        if (pointer.getFrom() != null && pointer.getTo() != null
-                && ((Comparable) pointer.getFrom()).compareTo(pointer.getTo()) == 0) {
-            assert pointer.isFromInclusive() && pointer.isToInclusive()
-                    : "Point lookup limits must be all inclusive";
-            return false;
-        } else {
-            return pointer.isDescending();
-        }
     }
 
     private static Iterator<IndexKeyEntries> getEntryIterator(InternalIndex index, IndexIterationPointer pointer) {
