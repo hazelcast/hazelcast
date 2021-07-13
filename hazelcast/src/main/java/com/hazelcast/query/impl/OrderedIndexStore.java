@@ -60,7 +60,7 @@ public class OrderedIndexStore extends BaseSingleValueIndexStore {
         if (copyOn == IndexCopyBehavior.COPY_ON_WRITE) {
             addFunctor = new CopyOnWriteAddFunctor();
             removeFunctor = new CopyOnWriteRemoveFunctor();
-            recordsWithNullValue = Collections.emptySortedMap();
+            recordsWithNullValue = new TreeMap<>(DATA_COMPARATOR);
         } else {
             addFunctor = new AddFunctor();
             removeFunctor = new RemoveFunctor();
