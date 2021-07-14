@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
@@ -112,10 +113,11 @@ public class TcpIpJoiner extends AbstractJoiner {
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
             while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-                connection = node.getServer().getConnectionManager(MEMBER).getOrConnect(targetAddress);
+                ServerConnectionManager connectionManager = node.getServer().getConnectionManager(MEMBER);
+                connection = connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
-                    Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                    connectionManager.blockOnConnect(targetAddress, JOIN_RETRY_WAIT_TIME, 0);
                     continue;
                 }
                 if (logger.isFineEnabled()) {
@@ -123,7 +125,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
                 clusterJoinManager.sendJoinRequest(targetAddress);
                 //noinspection BusyWait
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                if (!clusterService.isJoined()) {
+                    clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
+                }
             }
         } catch (final Exception e) {
             logger.warning(e);
@@ -259,7 +263,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
 
             if (!clusterService.isJoined()) {
-                Thread.sleep(JOIN_RETRY_WAIT_TIME);
+                clusterService.blockOnJoin(JOIN_RETRY_WAIT_TIME);
             }
         }
     }
