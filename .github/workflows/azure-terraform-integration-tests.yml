@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - ssh-keys-test
+#      - ssh-keys-test
 #    paths:
 #      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
 #      - 'hazelcast/pom.xml'
