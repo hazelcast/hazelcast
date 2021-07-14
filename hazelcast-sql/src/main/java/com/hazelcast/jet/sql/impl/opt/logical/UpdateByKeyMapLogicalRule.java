@@ -22,51 +22,57 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rex.RexNode;
 
 /**
  * Planner rule that matches single key, constant expression,
- * {@link PartitionedMapTable} DELETE.
+ * {@link PartitionedMapTable} UPDATE.
  * <p>For example,</p>
- * <blockquote><code>DELETE FROM map WHERE __key = 1</code></blockquote>
+ * <blockquote><code>UPDATE map SET this = 2 WHERE __key = 1</code></blockquote>
  * <p>
- * Such DELETE is translated to optimized, direct key {@code IMap} operation
+ * Such UPDATE is translated to optimized, direct key {@code IMap} operation
  * which does not involve starting any job.
  */
-public final class DeleteByKeyMapLogicalRule extends RelOptRule {
+final class UpdateByKeyMapLogicalRule extends RelOptRule {
 
-    static final RelOptRule INSTANCE = new DeleteByKeyMapLogicalRule();
+    static final RelOptRule INSTANCE = new UpdateByKeyMapLogicalRule();
 
-    private DeleteByKeyMapLogicalRule() {
+    private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, TableModify::isDelete,
-                        operandJ(
-                                LogicalTableScan.class,
-                                null,
-                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
-                                none()
+                        LogicalTableModify.class, null, TableModify::isUpdate,
+                        operand(
+                                LogicalProject.class,
+                                operandJ(
+                                        LogicalTableScan.class,
+                                        null,
+                                        scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                                        none()
+                                )
                         )
                 ),
-                DeleteByKeyMapLogicalRule.class.getSimpleName()
+                UpdateByKeyMapLogicalRule.class.getSimpleName()
         );
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        LogicalTableModify delete = call.rel(0);
-        LogicalTableScan scan = call.rel(1);
+        LogicalTableModify update = call.rel(0);
+        LogicalTableScan scan = call.rel(2);
 
         HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-        RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, delete.getCluster().getRexBuilder());
+        RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
         if (keyCondition != null) {
-            DeleteByKeyMapLogicalRel rel = new DeleteByKeyMapLogicalRel(
-                    delete.getCluster(),
-                    OptUtils.toLogicalConvention(delete.getTraitSet()),
+            UpdateByKeyMapLogicalRel rel = new UpdateByKeyMapLogicalRel(
+                    update.getCluster(),
+                    OptUtils.toLogicalConvention(update.getTraitSet()),
                     table.getTarget(),
-                    keyCondition
+                    keyCondition,
+                    update.getUpdateColumnList(),
+                    update.getSourceExpressionList()
             );
             call.transformTo(rel);
         }

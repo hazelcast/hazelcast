@@ -35,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static com.hazelcast.jet.sql.impl.type.converter.ToConverters.getToConverter;
 
-class ValueProjector {
+class Projector {
 
     private final QueryDataType[] types;
 
@@ -46,7 +46,7 @@ class ValueProjector {
 
     private final UpsertInjector[] injectors;
 
-    ValueProjector(
+    Projector(
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTarget target,
@@ -121,8 +121,8 @@ class ValueProjector {
             this.projection = projection;
         }
 
-        ValueProjector get(ExpressionEvalContext evalContext) {
-            return new ValueProjector(
+        Projector get(ExpressionEvalContext evalContext) {
+            return new Projector(
                     paths,
                     types,
                     descriptor.create(evalContext.getSerializationService()),

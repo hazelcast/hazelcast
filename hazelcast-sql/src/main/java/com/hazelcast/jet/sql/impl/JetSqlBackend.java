@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
@@ -41,6 +42,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -287,6 +289,11 @@ public class JetSqlBackend implements SqlBackend {
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(planKey, sink.objectKey(), parameterMetadata, sink.mapName(), sink.entriesFn(),
                     planExecutor, permissions);
+        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+            UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
+            return new IMapUpdatePlan(planKey, update.objectKey(), parameterMetadata, update.mapName(),
+                    update.keyCondition(parameterMetadata), update.updaterSupplier(parameterMetadata), planExecutor,
+                    permissions);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(planKey, delete.objectKey(), parameterMetadata, delete.mapName(),

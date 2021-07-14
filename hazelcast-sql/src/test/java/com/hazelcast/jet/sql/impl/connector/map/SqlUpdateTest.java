@@ -108,6 +108,27 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
+    public void update_byKeyOrKey() {
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE __key = 1 OR __key = 3", 0);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 2, 3, 4));
+    }
+
+    @Test
+    public void update_by_keyAndKey() {
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+
+        checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE __key = 1 AND __key = 2", 0);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 1, 2, 2));
+    }
+
+    @Test
     public void update_dynamicParam() {
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));

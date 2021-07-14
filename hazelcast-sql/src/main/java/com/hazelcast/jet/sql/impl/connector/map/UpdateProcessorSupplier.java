@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.Processor;
@@ -26,15 +23,11 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceBatchedP;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
@@ -44,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -58,8 +50,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     private static final int MAX_BATCH_SIZE = 1024;
 
     private String mapName;
-    private KvRowProjector.Supplier rowProjectorSupplier;
-    private ValueProjector.Supplier valueProjectorSupplier;
+    private UpdatingEntryProcessor.Supplier updaterSupplier;
 
     private transient ExpressionEvalContext evalContext;
 
@@ -69,12 +60,10 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
 
     UpdateProcessorSupplier(
             String mapName,
-            KvRowProjector.Supplier rowProjectorSupplier,
-            ValueProjector.Supplier valueProjectorSupplier
+            UpdatingEntryProcessor.Supplier updaterSupplier
     ) {
         this.mapName = mapName;
-        this.rowProjectorSupplier = rowProjectorSupplier;
-        this.valueProjectorSupplier = valueProjectorSupplier;
+        this.updaterSupplier = updaterSupplier;
     }
 
     @Override
@@ -106,10 +95,9 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
             assert row.length == 1;
             keys.add(row[0]);
         }
-        return map.submitToKeys(
-                keys,
-                new ValueUpdater(rowProjectorSupplier, valueProjectorSupplier, evalContext.getArguments())
-        ).toCompletableFuture().thenApply(m -> Traversers.empty());
+        return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
+                .toCompletableFuture()
+                .thenApply(m -> Traversers.empty());
     }
 
     @Override
@@ -120,71 +108,12 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(mapName);
-        out.writeObject(rowProjectorSupplier);
-        out.writeObject(valueProjectorSupplier);
+        out.writeObject(updaterSupplier);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readString();
-        rowProjectorSupplier = in.readObject();
-        valueProjectorSupplier = in.readObject();
-    }
-
-    private static final class ValueUpdater
-            implements EntryProcessor<Object, Object, Object>, SerializationServiceAware, DataSerializable {
-
-        private KvRowProjector.Supplier rowProjector;
-        private ValueProjector.Supplier valueProjector;
-        private List<Object> arguments;
-
-        private transient ExpressionEvalContext evalContext;
-        private transient Extractors extractors;
-
-        @SuppressWarnings("unused")
-        private ValueUpdater() {
-        }
-
-        private ValueUpdater(
-                KvRowProjector.Supplier rowProjector,
-                ValueProjector.Supplier valueProjector,
-                List<Object> arguments
-        ) {
-            this.rowProjector = rowProjector;
-            this.valueProjector = valueProjector;
-            this.arguments = arguments;
-        }
-
-        @Override
-        public Object process(Map.Entry<Object, Object> entry) {
-            Object[] row = rowProjector.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
-            Object value = valueProjector.get(evalContext).project(row);
-            if (value == null) {
-                throw QueryException.error("Cannot assign null to value");
-            } else {
-                entry.setValue(value);
-                return 1;
-            }
-        }
-
-        @Override
-        public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new SimpleExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
-            this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(rowProjector);
-            out.writeObject(valueProjector);
-            out.writeObject(arguments);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            rowProjector = in.readObject();
-            valueProjector = in.readObject();
-            arguments = in.readObject();
-        }
+        updaterSupplier = in.readObject();
     }
 }

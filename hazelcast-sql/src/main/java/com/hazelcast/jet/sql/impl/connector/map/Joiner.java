@@ -23,9 +23,9 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.sql.impl.extract.QueryPath;
 
-final class IMapJoiner {
+final class Joiner {
 
-    private IMapJoiner() {
+    private Joiner() {
     }
 
     static VertexWithInputConfig join(

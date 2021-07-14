@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -76,6 +77,17 @@ public class JetTest extends JetTestSupport {
                 .writeTo(Sinks.noop());
 
         assertThrows(IllegalArgumentException.class, () -> client.getJet().newJob(p).join());
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getSummaryListThrowsException() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetClientInstanceImpl jet = (JetClientInstanceImpl) client.getJet();
+
+        assertThrows(IllegalArgumentException.class, jet::getJobSummaryList);
     }
 
     @Test
