@@ -42,7 +42,8 @@ public final class InsertMapLogicalRule extends RelOptRule {
     private InsertMapLogicalRule() {
         super(
                 operandJ(
-                        InsertLogicalRel.class, LOGICAL, insert -> OptUtils.hasTableType(insert, PartitionedMapTable.class),
+                        InsertLogicalRel.class, LOGICAL, insert -> !OptUtils.requiresJob(insert)
+                                && OptUtils.hasTableType(insert, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
                 RelFactories.LOGICAL_BUILDER,
