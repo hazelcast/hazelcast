@@ -48,13 +48,11 @@ import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PrimitiveIterator;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -93,7 +91,6 @@ public final class MapIndexScanP extends AbstractProcessor {
     private AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> reader;
 
     private final ArrayList<Split> splits = new ArrayList<>();
-    private final Queue<Object[]> itemsToSend = new ArrayDeque<>();
     private MapScanRow row;
     private Object[] pendingItem;
     private boolean isIndexSorted;
@@ -188,14 +185,6 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     private boolean runHashIndex() {
         for (; ; ) {
-            while (!itemsToSend.isEmpty()) {
-                Object[] item = itemsToSend.poll();
-                if (!tryEmit(item)) {
-                    itemsToSend.offer(item);
-                    return false;
-                }
-            }
-
             for (int i = 0; i < splits.size(); ++i) {
                 Split s = splits.get(i);
                 try {
@@ -214,10 +203,11 @@ public final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
-                    if (!tryEmit(s.currentRow)) {
-                        itemsToSend.offer(s.currentRow);
+                    if (tryEmit(s.currentRow)) {
+                        s.remove();
+                    } else {
+                        return false;
                     }
-                    splits.get(i).remove();
                 }
             }
         }
