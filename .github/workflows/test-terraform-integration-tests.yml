@@ -85,12 +85,12 @@ jobs:
       - name: Check outputs key private
         run: |
           echo "SSH private"
-          echo ${{ steps.ssh.outputs.SSH_KEY }}
+          echo "${{ steps.ssh.outputs.SSH_KEY }}"
 
       - name: Check outputs key public
         run: |
           echo "SSH public"
-          echo ${{ steps.ssh.outputs.SSH_KEY }}
+          echo "${{ steps.ssh.outputs.SSH_KEY }}"
 
 #      - name: Install private key
 #        uses: shimataro/ssh-key-action@v2
