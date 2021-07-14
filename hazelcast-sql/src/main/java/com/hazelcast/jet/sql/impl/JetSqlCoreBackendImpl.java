@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.JetMapMetadataResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
@@ -80,12 +79,9 @@ public class JetSqlCoreBackendImpl implements JetSqlCoreBackend, ManagedService 
 
     @Override
     public SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> arguments, long timeout, int pageSize) {
-        if (timeout > 0) {
-            throw new JetException("Query timeout not yet supported");
-        }
         // TODO: query page size defaults to 4096
 
-        return ((JetPlan) plan).execute(queryId, arguments);
+        return ((JetPlan) plan).execute(queryId, arguments, timeout);
     }
 
     public Map<Long, JetQueryResultProducer> getResultConsumerRegistry() {

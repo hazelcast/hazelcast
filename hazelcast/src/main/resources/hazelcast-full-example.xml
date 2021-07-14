@@ -24,7 +24,7 @@
 
   To learn how to configure Hazelcast, please see the schema at
   https://hazelcast.com/schema/config/hazelcast-config-5.0.xsd
-  or the Reference Manual at https://hazelcast.org/documentation/
+  or the Reference Manual at https://docs.hazelcast.com/
 -->
 
 <!--suppress XmlDefaultAttributeValue -->
@@ -1136,8 +1136,8 @@
              transfer larger chunks of the data structure in which a possible change
              happened. On the other hand, a shallower tree consumes less memory.
              The depth must be between 2 and 27 (exclusive). The default depth is 10.
-        * <hot-restart>:
-        Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
+        * <data-persistence>:
+        Used to enable Hazelcast's Persistence feature for the map. It is available only in Hazelcast
         Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
         sub-element.
         - <fsync>:
@@ -1311,9 +1311,9 @@
         <merkle-tree enabled="false">
             <depth>10</depth>
         </merkle-tree>
-        <hot-restart enabled="false">
+        <data-persistence enabled="false">
             <fsync>false</fsync>
-        </hot-restart>
+        </data-persistence>
         <event-journal enabled="false">
             <capacity>10000</capacity>
             <time-to-live-seconds>0</time-to-live-seconds>
@@ -1643,8 +1643,8 @@
         - com.hazelcast.spi.merge.PutIfAbsentMergePolicy (PUT_IF_ABSENT)
         - com.hazelcast.spi.merge.HigherHitsMergePolicy (HIGHER_HITS)
         - com.hazelcast.spi.merge.LatestAccessMergePolicy (LATEST_ACCESS)
-        * <hot-restart>:
-        Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
+        * <data-persistence>:
+        Used to enable Hazelcast's Persistence feature for the cache. It is available only in Hazelcast
         Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
         sub-element.
         - <fsync>:
@@ -1710,9 +1710,12 @@
             <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>
         </partition-lost-listeners>
         <merge-policy batch-size="100">LatestAccessMergePolicy</merge-policy>
-        <hot-restart enabled="false">
+        <merkle-tree enabled="false">
+            <depth>10</depth>
+        </merkle-tree>
+        <data-persistence enabled="false">
             <fsync>false</fsync>
-        </hot-restart>
+        </data-persistence>
         <event-journal enabled="false">
             <capacity>10000</capacity>
             <time-to-live-seconds>0</time-to-live-seconds>
@@ -2200,6 +2203,8 @@
                 Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
                 configuration and one type of identity configuration is allowed per the realm.
                 Authentication types:
+                * <simple>
+                    Simple authentication where users with their username, password and roles are directly listed in the configuration
                 * <jaas>
                     Defines JAAS authentication - i.e. list of <login-modules> and its optional <properties>
                 * <tls>
@@ -2227,7 +2232,20 @@
                 * <kerberos>
                     Uses Kerberos ticket (wrapped as GSS-API init token) as the identity.
             -->
-            <realm name="mr">
+            <realm name="simpleRealm">
+                <authentication>
+                    <simple>
+                        <user username="test" password="a1234">
+                            <role>monitor</role>
+                            <role>hazelcast</role>
+                        </user>
+                        <user username="dev" password="secret">
+                            <role>root</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+            <realm name="jaasRealm">
                 <authentication>
                     <jaas>
                         <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
@@ -2244,22 +2262,6 @@
                         </properties>
                     </credentials-factory>
                 </identity>
-            </realm>
-            <realm name="cr">
-                <authentication>
-                    <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                    </jaas>
-                </authentication>
             </realm>
             <realm name="ldapRealm">
                 <authentication>
@@ -2378,8 +2380,8 @@
                 </authentication>
             </realm>
         </realms>
-        <member-authentication realm="mr"/>
-        <client-authentication realm="cr"/>
+        <member-authentication realm="jaasRealm"/>
+        <client-authentication realm="simpleRealm"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
@@ -2573,37 +2575,39 @@
     -->
     <lite-member enabled="true"/>
     <!--
-        ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
+        ===== HAZELCAST PERSISTENCE CONFIGURATION =====
 
         This feature is available only in Hazelcast Enterprise HD. Configuration element's name is
-        <hot-restart-persistence>. It has the required attribute "enabled" to specify whether this feature will be enabled
+        <persistence>. It has the required attribute "enabled" to specify whether this feature will be enabled
         on your cluster. This part is the feature's configuration itself and you define the general specifications for
-        the feature. However, note that <map> and <cache> have a sub-element called <hot-restart> with which you should
-        enable its usage on those data structures. Keep in mind that the Hot Restart feature is currently supported for
+        the feature. However, note that <map> and <cache> have a sub-element called <data-persistence> with which you should
+        enable its usage on those data structures. Keep in mind that the Data Persistence feature is currently supported for
         Hazelcast's map and cache data structures.
         It has the following sub-elements:
         * <base-dir>:
-            Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart.
+            Specifies the directory where the Persistence data will be stored. Its default value is persistence.
             You can use the default value, or you can specify another folder.
             This directory will be created automatically if it does not exist.
         * <backup-dir>:
-            Specifies the directory where the Hot backup data will be stored. If this element is not defined, hot backup will
+            Specifies the directory where the backup data will be stored. If this element is not defined, backup will
             be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data
             on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
-            contain all hot restart data. This unique directory is created as a subdirectory of the configured `backup-dir`.
+            contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`.
         * <parallelism>:
-            Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
-            each writing in parallel to its own files. During the Hot Restart procedure, this many
+            Deprecated. Please leave it to default.
+            Level of parallelism in Persistence. There will be this many IO threads,
+            each writing in parallel to its own files. During the restart procedure, this many
             IO threads will be reading the files and this many Rebuilder threads will be rebuilding
-            the Hot Restart metadata.
+            the Persistence metadata.
         * <validation-timeout-seconds>:
-            Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition
+            Validation timeout for the restart process when validating the cluster members expected to join and the partition
             table on the whole cluster.
         * <data-load-timeout-seconds>:
-            Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data
+            Deprecated. Please leave it to default.
+            Data load timeout for the Restart process. All members in the cluster should finish restoring their local data
             before this timeout period.
         * <cluster-data-recovery-policy>:
-            Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are;
+            Specifies the data recovery policy that will be respected during restart cluster start. Valid values are;
             FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails.
             This is the default value.
             PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and
@@ -2613,7 +2617,7 @@
             table version and successfully restored their data. All other members will leave the cluster and force start themselves.
             If no member restores its data successfully, cluster start fails.
         - <encryption-at-rest>:
-            Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
+            Specifies the (optional) encryption settings for Persistence. It has the required attribute "enabled"
             to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
             AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys, and, in the <secure-store>
             sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.
@@ -2627,11 +2631,10 @@
                 the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for
                 changes in Vault.
     -->
-    <hot-restart-persistence enabled="true">
-        <base-dir>/mnt/hot-restart</base-dir>
-        <backup-dir>/mnt/hot-backup</backup-dir>
+    <persistence enabled="true">
+        <base-dir>/mnt/persistence</base-dir>
+        <backup-dir>/mnt/persistence-backup</backup-dir>
         <validation-timeout-seconds>120</validation-timeout-seconds>
-        <data-load-timeout-seconds>900</data-load-timeout-seconds>
         <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
         <encryption-at-rest enabled="true">
             <algorithm>AES/CBC/PKCS5Padding</algorithm>
@@ -2668,7 +2671,7 @@
                 -->
             </secure-store>
         </encryption-at-rest>
-    </hot-restart-persistence>
+    </persistence>
 
     <!--
         ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
@@ -3006,7 +3009,7 @@
                 </socket-interceptor>
             * <symmetric-encryption>:
                 Lets you encrypt the entire socket level communication among all Hazelcast members.
-                This feature is available only in Hazelcast Enterprise.  Its configuration contains the encryption
+                This feature is available only in Hazelcast Enterprise. Its configuration contains the encryption
                 properties and the same configuration must be placed to all members. By default, it is disabled.
                 The following is an example:
                 <symmetric-encryption enabled="true">
@@ -3722,16 +3725,28 @@
     -->
     <jet enabled="true" resource-upload-enabled="true">
         <instance>
-            <cooperative-thread-count>4</cooperative-thread-count>
+            <!-- number of threads in the cooperative thread pool -->
+            <cooperative-thread-count>8</cooperative-thread-count>
+            <!-- period between flow control packets in milliseconds -->
             <flow-control-period>100</flow-control-period>
+            <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
             <backup-count>1</backup-count>
+            <!-- the delay after which auto-scaled jobs will restart if a new member is added to the
+                 cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled -->
             <scale-up-delay-millis>10000</scale-up-delay-millis>
+            <!-- Sets whether lossless job restart is enabled for the node. With
+                 lossless restart you can restart the whole cluster without losing the
+                 jobs and their state. The feature is implemented on top of the Hot
+                 Restart feature of Hazelcast IMDG which persists the data to disk. -->
             <lossless-restart-enabled>false</lossless-restart-enabled>
             <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
         </instance>
         <edge-defaults>
+            <!-- capacity of the concurrent SPSC queue between each two processors -->
             <queue-size>1024</queue-size>
+            <!-- network packet size limit in bytes, only applies to distributed edges -->
             <packet-size-limit>16384</packet-size-limit>
+            <!-- receive window size multiplier, only applies to distributed edges -->
             <receive-window-multiplier>3</receive-window-multiplier>
         </edge-defaults>
     </jet>

@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -40,8 +40,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
@@ -116,12 +118,27 @@ public class PortableQueryTest extends HazelcastTestSupport {
         SqlService clientSql = client.getSql();
 
         ChildPortable expected = new ChildPortable(10);
-        SqlResult rows = clientSql.execute("SELECT sa FROM test WHERE c = ?", expected);
+        SqlResult rows = clientSql.execute("SELECT id FROM test WHERE child = ?", expected);
 
         Iterator<SqlRow> iterator = rows.iterator();
         SqlRow row = Iterators.getOnlyElement(iterator);
-        String[] rowObject = row.getObject("sa");
-        assertEquals(String.valueOf(10), rowObject[0]);
+        assertEquals((Integer) 10, row.getObject("id"));
+    }
+
+    @Test
+    public void testNestedPortableAsColumn() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Integer, ParentPortable> map = client.getMap("test");
+        fillMap(map, 100, ParentPortable::new);
+
+        SqlResult sqlRows = client.getSql().execute("SELECT id, child FROM test WHERE id = ? ", 1);
+
+        Iterator<SqlRow> iterator = sqlRows.iterator();
+        SqlRow row = Iterators.getOnlyElement(iterator);
+        assertEquals((Integer) 1, row.getObject(0));
+        assertEquals(new ChildPortable(1), row.getObject(1));
     }
 
     private <T> void fillMap(IMap<Integer, T> map, int count, Function<Integer, T> constructor) {
@@ -168,18 +185,37 @@ public class PortableQueryTest extends HazelcastTestSupport {
         public int compareTo(ChildPortable o) {
             return i - o.i;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ChildPortable that = (ChildPortable) o;
+            return i == that.i && Arrays.equals(ia, that.ia);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(i);
+            result = 31 * result + Arrays.hashCode(ia);
+            return result;
+        }
     }
 
     static class ParentPortable implements Portable, Comparable<ParentPortable> {
         private ChildPortable c;
-        private String[] sa;
+        private int id;
 
         ParentPortable() {
         }
 
         ParentPortable(int i) {
             this.c = new ChildPortable(i);
-            this.sa = new String[]{String.valueOf(i)};
+            this.id = i;
         }
 
         @Override
@@ -194,14 +230,14 @@ public class PortableQueryTest extends HazelcastTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writePortable("c", c);
-            writer.writeStringArray("sa", sa);
+            writer.writePortable("child", c);
+            writer.writeInt("id", id);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            c = reader.readPortable("c");
-            sa = reader.readStringArray("sa");
+            c = reader.readPortable("child");
+            id = reader.readInt("id");
         }
 
         @Override

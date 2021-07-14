@@ -29,6 +29,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.JsonMetadataStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -182,6 +183,16 @@ public class JsonMetadataCreationTest extends HazelcastTestSupport {
     public void testPutIfAbsentCreatesMetadataForJson() {
         for (int i = 0; i < ENTRY_COUNT; i++) {
             map.putIfAbsent(createJsonValue("key", i), createJsonValue("value", i));
+        }
+        assertMetadataCreated(map.getName());
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void testPutIfAbsentAsyncCreatesMetadataForJson() throws ExecutionException, InterruptedException {
+        for (int i = 0; i < ENTRY_COUNT; i++) {
+            ((MapProxyImpl) map)
+                    .putIfAbsentAsync(createJsonValue("key", i), createJsonValue("value", i)).toCompletableFuture().get();
         }
         assertMetadataCreated(map.getName());
     }

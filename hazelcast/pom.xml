@@ -40,6 +40,7 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
+        <wiremock.version>2.27.2</wiremock.version>
     </properties>
 
     <build>
@@ -205,6 +206,8 @@
                             <transformers>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
                             </transformers>
                             <filters>
                                 <filter>
@@ -345,7 +348,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>
@@ -365,6 +367,10 @@
                             <outputDirectory>src/main/java</outputDirectory>
                             <overwrite>true</overwrite>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-notice-and-license</id>
+                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -479,21 +485,6 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-reader</artifactId>
-            <version>${jline.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <!-- for windows -->
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>1.18</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jansi</artifactId>
             <version>${jline.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
@@ -727,6 +718,13 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

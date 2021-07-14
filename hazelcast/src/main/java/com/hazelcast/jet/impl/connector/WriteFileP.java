@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
@@ -32,6 +33,7 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.permission.ConnectorPermission;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -49,6 +51,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.function.LongSupplier;
 import java.util.regex.Matcher;
@@ -61,6 +65,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.DISABLE_ROLLING;
 import static com.hazelcast.jet.pipeline.FileSinkBuilder.TEMP_FILE_SUFFIX;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * A file-writing sink supporting rolling files. Rolling can occur:
@@ -98,7 +103,7 @@ public final class WriteFileP<T> implements Processor {
     /**
      * Rolling by date is based on system clock, not on event time.
      */
-    private WriteFileP(
+    public WriteFileP(
             @Nonnull String directoryName,
             @Nonnull FunctionEx<? super T, ? extends String> toStringFn,
             @Nonnull String charset,
@@ -110,7 +115,9 @@ public final class WriteFileP<T> implements Processor {
         this.directory = Paths.get(directoryName);
         this.toStringFn = toStringFn;
         this.charset = Charset.forName(charset);
-        this.dateFormatter = dateFormatter != null ? DateTimeFormatter.ofPattern(dateFormatter) : null;
+        this.dateFormatter = dateFormatter != null
+                ? DateTimeFormatter.ofPattern(dateFormatter).withZone(ZoneId.from(ZoneOffset.UTC))
+                : null;
         this.maxFileSize = maxFileSize;
         this.exactlyOnce = exactlyOnce;
         this.clock = clock;
@@ -321,8 +328,9 @@ public final class WriteFileP<T> implements Processor {
             boolean exactlyOnce,
             @Nonnull LongSupplier clock
     ) {
-        return ProcessorMetaSupplier.preferLocalParallelismOne(() -> new WriteFileP<>(directoryName, toStringFn,
-                charset, datePattern, maxFileSize, exactlyOnce, clock));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.file(directoryName, ACTION_WRITE),
+                SecuredFunctions.writeFileProcessorFn(directoryName, toStringFn, charset, datePattern,
+                        maxFileSize, exactlyOnce, clock));
     }
 
     private abstract class FileResource implements TransactionalResource<FileId> {

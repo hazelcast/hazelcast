@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -142,7 +142,7 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertsIntoDiscoveredMap() {
+    public void test_sinkIntoDiscoveredMap() {
         String name = randomName();
 
         instance().getMap(name).put(
@@ -183,20 +183,42 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + name + " VALUES (null, null)");
+        sqlService.execute("SINK INTO " + name + " VALUES (1, null)");
 
         Entry<Data, Data> entry = randomEntryFrom(name);
 
         InternalGenericRecord keyRecord = serializationService.readAsInternalGenericRecord(entry.getKey());
-        assertThat(keyRecord.getInt("id")).isEqualTo(0);
+        assertThat(keyRecord.getInt("id")).isEqualTo(1);
 
         InternalGenericRecord valueRecord = serializationService.readAsInternalGenericRecord(entry.getValue());
+        assertThat(valueRecord.getInt("id")).isEqualTo(0); // default portable value
         assertThat(valueRecord.getString("name")).isNull();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + name,
-                singletonList(new Row(0, null))
+                singletonList(new Row(1, null))
         );
+    }
+
+    @Test
+    public void when_nullIntoPrimitive_then_fails() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + PERSON_ID_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + PERSON_ID_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + PERSON_ID_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + PERSON_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + PERSON_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + PERSON_CLASS_VERSION + '\''
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES (null, 'Alice')"))
+                .hasMessageContaining("Cannot set NULL to a primitive field");
     }
 
     @Test
@@ -611,14 +633,14 @@ public class SqlPortableTest extends SqlTestSupport {
         MapServiceContext context = service.getMapServiceContext();
 
         return Arrays.stream(context.getPartitionContainers())
-                     .map(partitionContainer -> partitionContainer.getExistingRecordStore(mapName))
-                     .filter(Objects::nonNull)
-                     .flatMap(store -> {
-                         Iterator<Entry<Data, Record>> iterator = store.iterator();
-                         return stream(spliteratorUnknownSize(iterator, ORDERED), false);
-                     })
-                     .map(entry -> entry(entry.getKey(), (Data) entry.getValue().getValue()))
-                     .findFirst()
-                     .get();
+                .map(partitionContainer -> partitionContainer.getExistingRecordStore(mapName))
+                .filter(Objects::nonNull)
+                .flatMap(store -> {
+                    Iterator<Entry<Data, Record>> iterator = store.iterator();
+                    return stream(spliteratorUnknownSize(iterator, ORDERED), false);
+                })
+                .map(entry -> entry(entry.getKey(), (Data) entry.getValue().getValue()))
+                .findFirst()
+                .get();
     }
 }

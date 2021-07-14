@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes all of the elements from this collection (optional operation). The collection will be empty after this
  * method returns.
  */
-@Generated("bd4bb67efbfff1cc7e8bd98e57ae164d")
+@Generated("513db0d668d4d82869a71b05e00ab45a")
 public final class QueueClearCodec {
     //hex: 0x030F00
     public static final int REQUEST_MESSAGE_TYPE = 200448;
@@ -79,6 +79,4 @@ public final class QueueClearCodec {
 
         return clientMessage;
     }
-
-
 }

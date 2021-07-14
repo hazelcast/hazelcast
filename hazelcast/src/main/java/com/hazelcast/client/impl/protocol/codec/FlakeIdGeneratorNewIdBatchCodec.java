@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches a new batch of ids for the given flake id generator.
  */
-@Generated("5d392dbbb2839778a4ab10f13649cc6e")
+@Generated("3556c6df3175d66f0909e1e93fb958ed")
 public final class FlakeIdGeneratorNewIdBatchCodec {
     //hex: 0x1C0100
     public static final int REQUEST_MESSAGE_TYPE = 1835264;
@@ -106,6 +106,7 @@ public final class FlakeIdGeneratorNewIdBatchCodec {
          */
         public int batchSize;
     }
+
     public static ClientMessage encodeResponse(long base, long increment, int batchSize) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -127,5 +128,4 @@ public final class FlakeIdGeneratorNewIdBatchCodec {
         response.batchSize = decodeInt(initialFrame.content, RESPONSE_BATCH_SIZE_FIELD_OFFSET);
         return response;
     }
-
 }

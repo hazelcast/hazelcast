@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.python;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -58,7 +59,8 @@ public class PythonInitCleanupTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        Config config = smallInstanceWithResourceUploadConfig();
+        initialize(1, config);
         assumeThatNoWindowsOS();
     }
 

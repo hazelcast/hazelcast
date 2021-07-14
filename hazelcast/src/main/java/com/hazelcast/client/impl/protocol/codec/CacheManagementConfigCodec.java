@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Enables or disables the statistics or the management support for the
  * cache with the given name on a member with the given address.
  */
-@Generated("af263e09a14c25090a866606f9778550")
+@Generated("0e9aee7eb556208a53ff79114fe40977")
 public final class CacheManagementConfigCodec {
     //hex: 0x131100
     public static final int REQUEST_MESSAGE_TYPE = 1249536;
@@ -110,6 +110,4 @@ public final class CacheManagementConfigCodec {
 
         return clientMessage;
     }
-
-
 }

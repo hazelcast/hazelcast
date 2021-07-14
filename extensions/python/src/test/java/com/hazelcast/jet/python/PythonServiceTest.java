@@ -64,9 +64,8 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        initialize(2, config);
+        Config config = smallInstanceWithResourceUploadConfig();
+        initialize(1, config);
         assumeThatNoWindowsOS();
     }
 

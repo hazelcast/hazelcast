@@ -44,12 +44,15 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.ResourceType.CLASS;
@@ -73,11 +76,13 @@ public class JobConfig implements IdentifiedDataSerializable {
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
     private long maxProcessorAccumulatedRecords = -1;
+    private long timeoutMillis;
     // Note: new options in JobConfig must also be added to `SqlCreateJob`
 
     private Map<String, ResourceConfig> resourceConfigs = new LinkedHashMap<>();
     private Map<String, String> serializerConfigs = new HashMap<>();
     private Map<String, Object> arguments = new HashMap<>();
+    private Map<String, List<String>> customClassPaths = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
 
@@ -264,7 +269,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public JobConfig setSnapshotIntervalMillis(long snapshotInterval) {
-        Preconditions.checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
+        checkNotNegative(snapshotInterval, "snapshotInterval can't be negative");
         this.snapshotIntervalMillis = snapshotInterval;
         return this;
     }
@@ -614,6 +619,50 @@ public class JobConfig implements IdentifiedDataSerializable {
     @Nonnull
     public JobConfig addClasspathResource(@Nonnull String path, @Nonnull String id) {
         return addClasspathResource(new File(path), id);
+    }
+
+    /**
+     * Adds custom classpath element to a stage with the given name.
+     *
+     * <pre>{@code
+     * BatchSource<String> source = ...
+     * JobConfig config = new JobConfig();
+     * config.addCustomClasspath(source.name(), "hazelcast-client-3.12.12.jar");
+     * }</pre>
+     *
+     * @param name name of the stage, must be unique for the whole pipeline
+     *             (the stage name can be set via {@link com.hazelcast.jet.pipeline.Stage#setName(String)})
+     * @param path path to the jar relative to the `ext` directory
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addCustomClasspath(@Nonnull String name, @Nonnull String path) {
+        List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
+        classpathItems.add(path);
+        return this;
+    }
+
+    /**
+     * Adds custom classpath elements to a stage with the given name.
+     *
+     * <pre>{@code
+     * BatchSource<String> source = ...
+     * JobConfig config = new JobConfig();
+     * config.addCustomClasspaths(source.name(), jarList);
+     * }</pre>
+     *
+     * @param name name of the stage, must be unique for the whole pipeline
+     *             (the stage name can be set via {@link com.hazelcast.jet.pipeline.Stage#setName(String)})
+     * @param paths paths to the jar relative to the `ext` directory
+     *
+     * @return {@code this} instance for fluent API
+     */
+    @Nonnull
+    public JobConfig addCustomClasspaths(@Nonnull String name, @Nonnull List<String> paths) {
+        List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
+        classpathItems.addAll(paths);
+        return this;
     }
 
     /**
@@ -1051,6 +1100,14 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns configured custom classpath elements,
+     * See {@link #addCustomClasspath(String, String)} and {@link #addCustomClasspaths(String, List)}
+     */
+    public Map<String, List<String>> getCustomClassPaths() {
+        return customClassPaths;
+    }
+
+    /**
      * Registers the given serializer for the given class for the scope of the
      * job. It will be accessible to all the code attached to the underlying
      * pipeline or DAG, but not to any other code. There are several serializer
@@ -1281,6 +1338,29 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns maximum execution time for the job in milliseconds.
+     *
+     * @since 5.0
+     */
+    public long getTimeoutMillis() {
+        return timeoutMillis;
+    }
+
+    /**
+     * Sets the maximum execution time for the job in milliseconds. If the
+     * execution time (counted from the time job is submitted), exceeds this
+     * value, the job is forcefully cancelled. The default value is {@code 0},
+     * which denotes no time limit on the execution of the job.
+     *
+     * @since 5.0
+     */
+    public JobConfig setTimeoutMillis(long timeoutMillis) {
+        checkNotNegative(timeoutMillis, "timeoutMillis can't be negative");
+        this.timeoutMillis = timeoutMillis;
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -1302,11 +1382,13 @@ public class JobConfig implements IdentifiedDataSerializable {
         SerializationUtil.writeMap(resourceConfigs, out);
         out.writeObject(serializerConfigs);
         out.writeObject(arguments);
+        out.writeObject(customClassPaths);
         out.writeObject(classLoaderFactory);
         out.writeString(initialSnapshotName);
         out.writeBoolean(enableMetrics);
         out.writeBoolean(storeMetricsAfterJobCompletion);
         out.writeLong(maxProcessorAccumulatedRecords);
+        out.writeLong(timeoutMillis);
     }
 
     @Override
@@ -1320,11 +1402,13 @@ public class JobConfig implements IdentifiedDataSerializable {
         resourceConfigs = SerializationUtil.readMap(in);
         serializerConfigs = in.readObject();
         arguments = in.readObject();
+        customClassPaths = in.readObject();
         classLoaderFactory = in.readObject();
         initialSnapshotName = in.readString();
         enableMetrics = in.readBoolean();
         storeMetricsAfterJobCompletion = in.readBoolean();
         maxProcessorAccumulatedRecords = in.readLong();
+        timeoutMillis = in.readLong();
     }
 
     @Override
@@ -1345,18 +1429,21 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(name, jobConfig.name)
                 && processingGuarantee == jobConfig.processingGuarantee
                 && Objects.equals(resourceConfigs, jobConfig.resourceConfigs)
+                && Objects.equals(customClassPaths, jobConfig.customClassPaths)
                 && Objects.equals(serializerConfigs, jobConfig.serializerConfigs)
                 && Objects.equals(arguments, jobConfig.arguments)
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
                 && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName)
-                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords;
+                && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords
+                && timeoutMillis == jobConfig.timeoutMillis;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
-                serializerConfigs, arguments, classLoaderFactory, initialSnapshotName, maxProcessorAccumulatedRecords);
+                customClassPaths, serializerConfigs, arguments, classLoaderFactory, initialSnapshotName,
+                maxProcessorAccumulatedRecords, timeoutMillis);
     }
 
     @Override
@@ -1368,6 +1455,6 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
                 ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
                 ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
-                maxProcessorAccumulatedRecords + "}";
+                maxProcessorAccumulatedRecords + ", timeoutMillis=" + timeoutMillis + "}";
     }
 }

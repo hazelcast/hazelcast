@@ -22,6 +22,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,8 +43,6 @@ import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
 import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.util.Map;
@@ -52,6 +52,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 
 /**
  * Static utility class with factories of sink processors (the terminators
@@ -265,17 +266,19 @@ public final class SinkProcessors {
         checkSerializable(toStringFn, "toStringFn");
 
         String charsetName = charset.name();
-        return preferLocalParallelismOne(writeBufferedP(
-                index -> new BufferedWriter(new OutputStreamWriter(new Socket(host, port).getOutputStream(), charsetName)),
-                (bufferedWriter, item) -> {
-                    @SuppressWarnings("unchecked")
-                    T t = (T) item;
-                    bufferedWriter.write(toStringFn.apply(t));
-                    bufferedWriter.write('\n');
-                },
-                BufferedWriter::flush,
-                BufferedWriter::close
-        ));
+        return preferLocalParallelismOne(
+                ConnectorPermission.socket(host, port, ACTION_WRITE),
+                writeBufferedP(
+                        SecuredFunctions.createBufferedWriterFn(host, port, charsetName),
+                        (bufferedWriter, item) -> {
+                            @SuppressWarnings("unchecked")
+                            T t = (T) item;
+                            bufferedWriter.write(toStringFn.apply(t));
+                            bufferedWriter.write('\n');
+                        },
+                        BufferedWriter::flush,
+                        BufferedWriter::close
+                ));
     }
 
     /**
@@ -297,9 +300,8 @@ public final class SinkProcessors {
     }
 
     /**
-     * Shortcut for {@link #writeBufferedP(FunctionEx,
-     * BiConsumerEx, ConsumerEx, ConsumerEx)} with
-     * a no-op {@code destroyFn}.
+     * Shortcut for {@link #writeBufferedP(FunctionEx, BiConsumerEx,
+     * ConsumerEx, ConsumerEx)} with a no-op {@code destroyFn}.
      */
     @Nonnull
     public static <W, T> SupplierEx<Processor> writeBufferedP(
@@ -377,6 +379,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJdbcP(
+            @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
             @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -387,7 +390,7 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, dataSourceSupplier, bindFn, exactlyOnce, batchLimit);
     }
 
     /**

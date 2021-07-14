@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -19,48 +19,22 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
-import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public final class ExpressionUtil {
-
-    /**
-     * An {@link ExpressionEvalContext} that would fail if any dynamic
-     * parameter (a.k.a. argument) or column expression requests its values.
-     * <p>
-     * Useful when evaluating expressions in planning phase where these are not
-     * available.
-     */
-    public static final ExpressionEvalContext NOT_IMPLEMENTED_ARGUMENTS_CONTEXT = new ExpressionEvalContext() {
-
-        @Override
-        public Object getArgument(int index) {
-            throw new IndexOutOfBoundsException("" + index);
-        }
-
-        @Override
-        public List<Object> getArguments() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public InternalSerializationService getSerializationService() {
-            throw new UnsupportedOperationException();
-        }
-    };
 
     private ExpressionUtil() {
     }
@@ -86,19 +60,14 @@ public final class ExpressionUtil {
             for (FieldCollation fieldCollation : fieldCollationList) {
                 // For each collation:
                 // - Get collation index and use it to fetch values from the rows.
-                // - Get direction (ASCENDING, DESCENDING) and null direction
-                //   (NULLS FIRST, NULLS LAST). If no null direction is given, then
-                //   it will be inferred from the direction. Since NULL is sorted as
-                //   the +Inf, ASCENDING implies NULL LAST whereas DESCENDING implies
-                //   NULLS FIRST.
+                // - Get direction (ASCENDING, DESCENDING)
                 // - Comparison of field values:
-                //   - If both of them are NULL, then return 0.
+                //   - If both of them are NULL, then result is 0.
                 //   - Otherwise, if one of them is NULL, then return:
-                //     - null direction value if LHS is NULL.
-                //     - or negative null direction if RHS is NULL.
-                //   - If none of them is NULL, then:
-                //     - If direction is ASCENDING, then return the comparison result.
-                //     - If direction is DESCENDING, return the negation of comparison result.
+                //     - result is -1 if LHS is NULL.
+                //     - result is 1 if RHS is NULL.
+                // - Return the result if ASCENDING
+                //   Return the reverted result if DESCENDING
                 int index = fieldCollation.getIndex();
 
                 Comparable o1 = (Comparable) row1[index];
@@ -106,21 +75,23 @@ public final class ExpressionUtil {
 
                 Direction direction = fieldCollation.getDirection();
 
-                NullDirection nullDirection = fieldCollation.getNullDirection();
-                if (nullDirection == null) {
-                    nullDirection = direction.defaultNullDirection();
-                }
-
                 int result;
                 if (o1 == null && o2 == null) {
                     result = 0;
                 } else if (o1 == null) {
-                    result = nullDirection.nullComparison;
+                    result = -1;
                 } else if (o2 == null) {
-                    result = -nullDirection.nullComparison;
+                    result = 1;
                 } else {
                     result = o1.compareTo(o2);
-                    result = direction.isDescending() ? -result : result;
+                }
+
+                if (direction.isDescending()) {
+                    if (result < 0) {
+                        result = 1;
+                    } else if (result > 0) {
+                        result = -1;
+                    }
                 }
 
                 if (result != 0) {
@@ -183,6 +154,21 @@ public final class ExpressionUtil {
             }
         }
         return evaluatedRows;
+    }
+
+    /**
+     * Evaluate projection&predicate for multiple rows.
+     */
+    @Nonnull
+    public static Stream<Object[]> evaluate(
+            @Nullable Expression<Boolean> predicate,
+            @Nullable List<Expression<?>> projection,
+            @Nonnull Stream<Object[]> rows,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return rows
+                .map(row -> evaluate(predicate, projection, row, context))
+                .filter(Objects::nonNull);
     }
 
     /**

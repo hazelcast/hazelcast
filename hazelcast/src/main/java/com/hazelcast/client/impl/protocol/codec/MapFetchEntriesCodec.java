@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Fetches specified number of entries from the specified partition starting from specified table index.
  */
-@Generated("60351c6bfc6607427f5073db8df8ee1c")
+@Generated("c4f96c0c9d3b5b7a3a78d5b84695faf0")
 public final class MapFetchEntriesCodec {
     //hex: 0x013800
     public static final int REQUEST_MESSAGE_TYPE = 79872;
@@ -105,6 +105,7 @@ public final class MapFetchEntriesCodec {
          */
         public java.util.List<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries;
     }
+
     public static ClientMessage encodeResponse(java.util.Collection<java.util.Map.Entry<java.lang.Integer, java.lang.Integer>> iterationPointers, java.util.Collection<java.util.Map.Entry<com.hazelcast.internal.serialization.Data, com.hazelcast.internal.serialization.Data>> entries) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -125,5 +126,4 @@ public final class MapFetchEntriesCodec {
         response.entries = EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
         return response;
     }
-
 }

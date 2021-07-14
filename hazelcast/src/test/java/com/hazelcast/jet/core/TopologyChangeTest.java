@@ -39,6 +39,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.version.Version;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -508,10 +509,11 @@ public class TopologyChangeTest extends JetTestSupport {
             memberInfos.add(new MemberInfo(getNode(instances[i]).getLocalMember()));
         }
 
-        JobRecord jobRecord = new JobRecord(jobId, null, "", new JobConfig(), Collections.emptySet());
+        Version version = instances[0].getCluster().getLocalMember().getVersion().asVersion();
+        JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
-        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null, false);
+        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, null, memberInfos, null, false);
         Future<Object> future = Accessors.getOperationService(master)
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();

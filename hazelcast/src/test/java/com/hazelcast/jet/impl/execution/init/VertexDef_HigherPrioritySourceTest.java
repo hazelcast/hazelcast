@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -27,6 +26,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.MasterJobContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.logging.ILogger;
@@ -39,6 +39,7 @@ import org.junit.experimental.categories.Category;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,7 +58,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     private static final ProcessorMetaSupplier MOCK_PMS =
             addresses -> address -> count -> nCopies(count, new DummyProcessor());
     private static NodeEngineImpl nodeEngineImpl;
-    private static MembersView membersView;
+    private static List<MemberInfo> membersView;
 
     private DAG dag = new DAG();
     private Vertex v1 = dag.newVertex("v1", MOCK_PMS);
@@ -71,7 +72,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         initialize(1, null);
         nodeEngineImpl = getNodeEngineImpl(instance());
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngineImpl.getClusterService();
-        membersView = clusterService.getMembershipManager().getMembersView();
+        membersView = clusterService.getMembershipManager().getMembersView().getMembers();
     }
 
     @Test
@@ -127,12 +128,23 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
     }
 
     private void assertHigherPriorityVertices(Vertex... vertices) {
+        JobConfig jobConfig = new JobConfig();
         Map<MemberInfo, ExecutionPlan> executionPlans =
-                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, new JobConfig(), 0, false);
+                createExecutionPlans(nodeEngineImpl, membersView, dag, 0, 0, jobConfig, 0, false, null);
         ExecutionPlan plan = executionPlans.values().iterator().next();
         SnapshotContext ssContext = new SnapshotContext(mock(ILogger.class), "job", 0, EXACTLY_ONCE);
-        plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
-                (InternalSerializationService) nodeEngineImpl.getSerializationService());
+
+        // In the production code the plan#initialize is only called from places where we have already set up the
+        // processor classloaders
+        JetServiceBackend jetService = nodeEngineImpl.getService(JetServiceBackend.SERVICE_NAME);
+        try {
+            jetService.getJobExecutionService().prepareProcessorClassLoaders(0, jobConfig);
+            plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
+                    (InternalSerializationService) nodeEngineImpl.getSerializationService());
+        } finally {
+            jetService.getJobExecutionService().clearProcessorClassLoaders();
+        }
+
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
         String actualHigherPriorityVertices = plan.getVertices().stream()
                 .filter(v -> higherPriorityVertices.contains(v.vertexId()))

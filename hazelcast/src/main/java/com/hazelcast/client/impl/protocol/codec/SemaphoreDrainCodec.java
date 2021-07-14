@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Acquires all available permits at once and returns immediately.
  */
-@Generated("639f63d16431a73d41a3c16e43c8bd97")
+@Generated("0a2e16802251a8bcb149cf030607ce97")
 public final class SemaphoreDrainCodec {
     //hex: 0x0C0400
     public static final int REQUEST_MESSAGE_TYPE = 787456;
@@ -127,5 +127,4 @@ public final class SemaphoreDrainCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

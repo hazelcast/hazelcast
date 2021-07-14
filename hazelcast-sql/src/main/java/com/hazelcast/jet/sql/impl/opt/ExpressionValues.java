@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -31,6 +31,7 @@ import org.apache.calcite.rex.RexVisitor;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -40,7 +41,9 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class ExpressionValues implements Serializable {
 
-    public abstract List<Object[]> toValues(ExpressionEvalContext context);
+    public abstract int size();
+
+    public abstract Stream<Object[]> toValues(ExpressionEvalContext context);
 
     /**
      * Representation of the VALUES clause data in the form of a simple {@code
@@ -57,10 +60,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return expressions.size();
+        }
+
+        @Override
+        public Stream<Object[]> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new))
-                    .collect(toList());
+                    .map(es -> es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new));
         }
 
         @Override
@@ -97,10 +104,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<Object[]> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return values.stream().mapToInt(ExpressionValues::size).sum();
+        }
+
+        @Override
+        public Stream<Object[]> toValues(ExpressionEvalContext context) {
             return values.stream()
-                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream())
-                    .collect(toList());
+                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context));
         }
 
         @Override

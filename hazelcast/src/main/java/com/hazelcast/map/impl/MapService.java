@@ -25,6 +25,7 @@ import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.IPartitionLostEvent;
+import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
@@ -92,11 +93,11 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_I
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:MethodCount"})
 public class MapService implements ManagedService, FragmentedMigrationAwareService, TransactionalService, RemoteService,
-        EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
-        SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
-        PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
-        NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
-        DynamicMetricsProvider, TenantContextAwareService {
+                                   EventPublishingService<Object, ListenerAdapter>, PostJoinAwareService,
+                                   SplitBrainHandlerService, WanSupportingService, StatisticsAwareService<LocalMapStats>,
+                                   PartitionAwareService, ClientAwareService, SplitBrainProtectionAwareService,
+                                   NotifiableEventListener, ClusterStateListener, LockInterceptorService<Data>,
+                                   DynamicMetricsProvider, TenantContextAwareService, OffloadedReplicationPreparation {
 
     public static final String SERVICE_NAME = "hz:impl:mapService";
 
@@ -334,5 +335,10 @@ public class MapService implements ManagedService, FragmentedMigrationAwareServi
                     .withDiscriminator(MAP_DISCRIMINATOR_NAME, name);
             context.collect(nearCacheDescriptor, offloadedExecutorStats);
         });
+    }
+
+    @Override
+    public boolean shouldOffload() {
+        return migrationAwareService.shouldOffload();
     }
 }

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("c3c4e935e21343204a66d1bde457d072")
+@Generated("17b13ccc193251fd4a51df4d43ddce59")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -149,6 +149,7 @@ public final class SqlExecuteCodec {
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
+
     public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -172,5 +173,4 @@ public final class SqlExecuteCodec {
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }
-
 }

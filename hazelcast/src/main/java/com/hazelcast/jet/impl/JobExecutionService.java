@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -32,14 +33,17 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
+import com.hazelcast.jet.impl.deployment.ChildFirstClassLoader;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
+import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionContext.SenderReceiverKey;
@@ -57,6 +61,10 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -74,6 +82,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -81,6 +90,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -122,6 +132,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     // does not guarantee at most one computation per key.
     // key: jobId
     private final ConcurrentHashMap<Long, JetDelegatingClassLoader> classLoaders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, Map<String, ClassLoader>> processorCls = new ConcurrentHashMap<>();
 
     @Probe(name = MetricNames.JOB_EXECUTIONS_STARTED)
     private final Counter executionStarted = MwCounter.newMwCounter();
@@ -178,6 +189,55 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 : nodeEngine.getConfigClassLoader();
     }
 
+    /**
+     * Prepare processor classloaders for given job for current thread
+     *
+     * @param jobId id of the job
+     * @param jobConfig jobConfig for current job
+     */
+    public void prepareProcessorClassLoaders(long jobId, JobConfig jobConfig) {
+        ProcessorClassLoaderTLHolder.putAll(getProcessorClassLoaders(jobId, jobConfig));
+    }
+
+    public void clearProcessorClassLoaders() {
+        ProcessorClassLoaderTLHolder.remove();
+    }
+
+    public ClassLoader getProcessorClassLoader(long jobId, String name) {
+        Map<String, ClassLoader> processorClsForJob = this.processorCls.get(jobId);
+        if (processorClsForJob != null) {
+            return processorClsForJob.get(name);
+        } else {
+            throw new HazelcastException("Processor classloader for jobId=" + jobId
+                    + " requested, but it does not exists");
+        }
+    }
+
+    public Map<String, ClassLoader> getProcessorClassLoaders(long jobId, JobConfig jobConfig) {
+        return processorCls.computeIfAbsent(jobId, key -> createProcessorClassLoaders(jobId, jobConfig));
+    }
+
+    private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig) {
+        String customLibDir = nodeEngine.getConfig().getProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName());
+        Map<String, ClassLoader> classLoaderMap = new HashMap<>();
+        ClassLoader parent = getClassLoader(jobConfig, jobId);
+        for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {
+            List<URL> list = entry.getValue().stream()
+                    .map(jar -> {
+                        try {
+                            Path path = Paths.get(customLibDir, jar);
+                            return path.toUri().toURL();
+                        } catch (MalformedURLException e) {
+                            throw new JetException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+            URL[] urls = list.toArray(new URL[]{});
+            classLoaderMap.put(entry.getKey(), new ChildFirstClassLoader(urls, parent));
+        }
+        return unmodifiableMap(classLoaderMap);
+    }
+
     public ExecutionContext getExecutionContext(long executionId) {
         return executionContexts.get(executionId);
     }
@@ -206,7 +266,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.computeIfAbsent(executionId, newLightJobExecutionContextFunction);
     }
 
-    Collection<ExecutionContext> getExecutionContexts() {
+    public Collection<ExecutionContext> getExecutionContexts() {
         return executionContexts.values();
     }
 
@@ -272,13 +332,16 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
         }
 
-        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
         try {
+            prepareProcessorClassLoaders(jobId, plan.getJobConfig());
+            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
             doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
         } catch (Throwable e) {
             completeExecution(execCtx, new CancellationException());
             throw e;
+        } finally {
+            clearProcessorClassLoaders();
         }
 
         // initial log entry with all of jobId, jobName, executionId
@@ -324,9 +387,15 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
         }
 
-        Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
-        doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+        try {
+            prepareProcessorClassLoaders(jobId, plan.getJobConfig());
+            Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
+            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
+            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+        } finally {
+            clearProcessorClassLoaders();
+        }
+
 
         // initial log entry with all of jobId, jobName, executionId
         logger.info("Execution plan for jobId=" + idToString(jobId)
@@ -457,6 +526,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
+            processorCls.remove(executionContext.jobId());
             executionCompleted.inc();
             // the class loader might not have been initialized if the job failed before that
             if (removedClassLoader != null) {

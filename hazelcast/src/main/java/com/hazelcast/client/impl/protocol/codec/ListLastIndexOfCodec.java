@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not
  * contain the element.
  */
-@Generated("5f55aec3351bf43a6458c7efe18477d4")
+@Generated("a22d833dc8ed9b0e60b1d28282f63c2e")
 public final class ListLastIndexOfCodec {
     //hex: 0x051300
     public static final int REQUEST_MESSAGE_TYPE = 332544;
@@ -106,5 +106,4 @@ public final class ListLastIndexOfCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeInt(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

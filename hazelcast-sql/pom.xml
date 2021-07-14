@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright 2021 Hazelcast Inc.
   ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://hazelcast.com/hazelcast-community-license
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
@@ -35,6 +35,8 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+
+        <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
         <calcite.version>1.23.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
@@ -157,7 +159,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -196,7 +197,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>fat-shaded-jar</id>
@@ -276,20 +276,18 @@
                             </relocations>
                             <transformers>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer" />
+                                <transformer
+                                        implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                             </transformers>
-                            <filters>
+                            <filters combine.children="append">
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
-                                        <!-- Exclude signatures -->
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
                                         <exclude>Parser.jj</exclude>
                                     </excludes>
                                 </filter>
@@ -350,6 +348,13 @@
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-build-utils</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

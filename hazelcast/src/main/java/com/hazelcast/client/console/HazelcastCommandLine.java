@@ -420,7 +420,7 @@ public class HazelcastCommandLine implements Runnable {
             Cluster cluster = hazelcastClientImpl.getCluster();
 
             println("State: " + clusterMetadata.getCurrentState());
-            println("Version: " + clusterMetadata.getJetVersion());
+            println("Version: " + clusterMetadata.getMemberVersion());
             println("Size: " + cluster.getMembers().size());
 
             println("");
@@ -452,7 +452,6 @@ public class HazelcastCommandLine implements Runnable {
                     metadata.setCurrentState(ClusterState.getById(response.currentState));
                     metadata.setClusterTime(response.clusterTime);
                     metadata.setMemberVersion(response.memberVersion);
-                    metadata.setJetVersion(response.jetVersion);
                     return metadata;
                 }
         );

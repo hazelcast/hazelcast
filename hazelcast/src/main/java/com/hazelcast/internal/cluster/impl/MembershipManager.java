@@ -197,7 +197,6 @@ public class MembershipManager {
         return memberMapRef.get();
     }
 
-    // used in Jet, must be public
     public MembersView getMembersView() {
         return memberMapRef.get().toMembersView();
     }
@@ -702,6 +701,7 @@ public class MembershipManager {
                 .addParameter("address", address)
                 .addParameter("reason", reason)
                 .log();
+            clusterService.getClusterJoinManager().addLeftMember(suspectedMember);
         }
 
         if (shouldCloseConn) {
@@ -736,6 +736,7 @@ public class MembershipManager {
 
             logger.info("Removing " + member);
             clusterService.getClusterJoinManager().removeJoin(address);
+            clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 

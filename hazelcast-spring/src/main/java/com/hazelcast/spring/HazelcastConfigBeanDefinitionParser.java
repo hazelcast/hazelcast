@@ -16,19 +16,6 @@
 
 package com.hazelcast.spring;
 
-import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
-import static com.hazelcast.internal.config.DomConfigHelper.childElements;
-import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
-import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
-import static java.lang.Boolean.parseBoolean;
-import static java.lang.Integer.parseInt;
-import static org.springframework.util.Assert.isTrue;
-
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
@@ -88,6 +75,8 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
@@ -132,6 +121,7 @@ import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.LdapRoleMappingMode;
 import com.hazelcast.config.security.LdapSearchScope;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
@@ -144,13 +134,6 @@ import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -162,6 +145,26 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
+import static com.hazelcast.internal.config.DomConfigHelper.childElements;
+import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getDoubleValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.config.DomConfigHelper.getLongValue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.Integer.parseInt;
+import static org.springframework.util.Assert.isTrue;
 
 /**
  * BeanDefinitionParser for Hazelcast Config Configuration.
@@ -326,6 +329,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSplitBrainProtection(node);
                     } else if ("hot-restart-persistence".equals(nodeName)) {
                         handleHotRestartPersistence(node);
+                    } else if ("persistence".equals(nodeName)) {
+                        handlePersistence(node);
                     } else if ("flake-id-generator".equals(nodeName)) {
                         handleFlakeIdGenerator(node);
                     } else if ("crdt-replication".equals(nodeName)) {
@@ -355,6 +360,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
+        @Deprecated
         private void handleHotRestartPersistence(Node node) {
             BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartPersistenceConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
@@ -371,6 +377,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handlePersistence(Node node) {
+            BeanDefinitionBuilder persistenceConfigBuilder = createBeanBuilder(PersistenceConfig.class);
+            fillAttributeValues(node, persistenceConfigBuilder);
+
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("base-dir".equals(name)) {
+                    String value = getTextContent(child);
+                    persistenceConfigBuilder.addPropertyValue("baseDir", value);
+                } else if ("backup-dir".equals(name)) {
+                    persistenceConfigBuilder.addPropertyValue("backupDir", getTextContent(child));
+                } else if ("encryption-at-rest".equals(name)) {
+                    handleEncryptionAtRest(persistenceConfigBuilder, child);
+                }
+            }
+            configBuilder.addPropertyValue("persistenceConfig", persistenceConfigBuilder.getBeanDefinition());
         }
 
         private void handleEncryptionAtRest(BeanDefinitionBuilder hotRestartConfigBuilder, Node node) {
@@ -580,11 +604,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     ProbabilisticSplitBrainProtectionConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
             splitBrainProtectionConfigBuilder =
                     SplitBrainProtectionConfig.newProbabilisticSplitBrainProtectionConfigBuilder(name, splitBrainProtectionSize)
-                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
-                                              .withSuspicionThreshold(threshold)
-                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
-                                              .withMinStdDeviationMillis(minStdDeviation)
-                                              .withMaxSampleSize(maxSampleSize);
+                            .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                            .withSuspicionThreshold(threshold)
+                            .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                            .withMinStdDeviationMillis(minStdDeviation)
+                            .withMaxSampleSize(maxSampleSize);
             return splitBrainProtectionConfigBuilder;
         }
 
@@ -1003,7 +1027,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleTrustedInterfacesBean(Node node, BeanDefinitionBuilder configBuilder,
-                Class<?> configClass, String propertyName) {
+                                                 Class<?> configClass, String propertyName) {
             BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, configClass, propertyName,
                     configBuilder, "trusted-interfaces", "interface");
             ManagedList<String> interfaces = new ManagedList<>();
@@ -1231,6 +1255,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMerkleTreeConfig(mapConfigBuilder, childNode);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(mapConfigBuilder, childNode);
+                } else if ("data-persistence".equals(nodeName)) {
+                    handleDataPersistenceConfig(mapConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(mapConfigBuilder, childNode);
                 } else if ("eviction".equals(nodeName)) {
@@ -1249,10 +1275,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("merkleTreeConfig", merkleTreeBuilder.getBeanDefinition());
         }
 
+        @Deprecated
         private void handleHotRestartConfig(BeanDefinitionBuilder configBuilder, Node node) {
             BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
             configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleDataPersistenceConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder dataPersistenceConfigBuilder = createBeanBuilder(DataPersistenceConfig.class);
+            fillAttributeValues(node, dataPersistenceConfigBuilder);
+            configBuilder.addPropertyValue("dataPersistenceConfig", dataPersistenceConfigBuilder.getBeanDefinition());
         }
 
         private void handleEventJournalConfig(BeanDefinitionBuilder configBuilder, Node node) {
@@ -1371,8 +1404,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMergePolicyConfig(childNode, cacheConfigBuilder);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(cacheConfigBuilder, childNode);
+                } else if ("data-persistence".equals(nodeName)) {
+                    handleDataPersistenceConfig(cacheConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(cacheConfigBuilder, childNode);
+                } else if ("merkle-tree".equals(nodeName)) {
+                    handleMerkleTreeConfig(cacheConfigBuilder, childNode);
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
@@ -1663,13 +1700,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("realm".equals(nodeName)) {
-                    realms.put(getAttribute(child, "name"), handleRealm(child, securityConfigBuilder));
+                    realms.put(getAttribute(child, "name"), handleRealm(child));
                 }
             }
             securityConfigBuilder.addPropertyValue("realmConfigs", realms);
         }
 
-        private AbstractBeanDefinition handleRealm(Node node, BeanDefinitionBuilder securityConfigBuilder) {
+        private AbstractBeanDefinition handleRealm(Node node) {
             BeanDefinitionBuilder realmConfigBuilder = createBeanBuilder(RealmConfig.class);
             AbstractBeanDefinition beanDefinition = realmConfigBuilder.getBeanDefinition();
             for (Node child : childElements(node)) {
@@ -1695,6 +1732,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleLdapAuthenticationConfig(realmConfigBuilder, child);
                 } else if ("kerberos".equals(nodeName)) {
                     handleKerberosAuthenticationConfig(realmConfigBuilder, child);
+                } else if ("simple".equals(nodeName)) {
+                    handleSimpleAuthenticationConfig(realmConfigBuilder, child);
                 }
             }
         }
@@ -1723,6 +1762,34 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             return builder;
+        }
+
+        private BeanDefinitionBuilder handleSimpleAuthenticationConfig(BeanDefinitionBuilder realmConfigBuilder, Node node) {
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, SimpleAuthenticationConfig.class,
+                    "SimpleAuthenticationConfig", realmConfigBuilder, "user");
+            ManagedMap<String, BeanDefinition> users = new ManagedMap<>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("user".equals(nodeName)) {
+                    users.put(getAttribute(child, "username"), handleSimpleUser(child));
+                }
+            }
+            builder.addPropertyValue("userMap", users);
+            return builder;
+        }
+
+        private BeanDefinition handleSimpleUser(Node node) {
+            BeanDefinitionBuilder simpleUserBuilder = createBeanBuilder(SimpleAuthenticationConfig.UserDto.class);
+            simpleUserBuilder.addConstructorArgValue(getAttribute(node, "password"));
+            List<String> roles = new ArrayList<String>();
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("role".equals(nodeName)) {
+                    roles.add(getTextContent(child));
+                }
+            }
+            simpleUserBuilder.addConstructorArgValue(roles.toArray(new String[roles.size()]));
+            return simpleUserBuilder.getBeanDefinition();
         }
 
         private void handleIdentity(Node node, BeanDefinitionBuilder realmConfigBuilder) {
@@ -2100,8 +2167,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     sqlConfigBuilder.addPropertyValue("executorPoolSize", getIntegerValue("executor-pool-size", value));
                 } else if ("statement-timeout-millis".equals(nodeName)) {
                     sqlConfigBuilder.addPropertyValue(
-                        "statementTimeoutMillis",
-                        getLongValue("statement-timeout-millis", value)
+                            "statementTimeoutMillis",
+                            getLongValue("statement-timeout-millis", value)
                     );
                 }
             }

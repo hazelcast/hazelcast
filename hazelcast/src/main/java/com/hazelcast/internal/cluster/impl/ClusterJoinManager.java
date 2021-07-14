@@ -60,6 +60,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -70,6 +72,7 @@ import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIS
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
+import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
@@ -101,6 +104,17 @@ public class ClusterJoinManager {
 
     private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<>();
     private final Map<UUID, Long> recentlyJoinedMemberUuids = new HashMap<>();
+
+    /**
+     * Recently left member UUIDs: when a recently crashed member is joining with same UUID,
+     * typically it will have Hot Restart enabled (otherwise it will restart
+     * probably on the same address but definitely with a new random UUID).
+     * In order to support crashed members recovery with Hot Restart, partition
+     * table validation does not expect an identical partition table.
+     *
+     * Accessed by operation & cluster heartbeat threads
+     */
+    private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
     private final long staleJoinPreventionDuration;
@@ -636,6 +650,7 @@ public class ClusterJoinManager {
         nodeEngine.getOperationService().send(op, target);
     }
 
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     private boolean checkIfJoinRequestFromAnExistingMember(JoinMessage joinMessage, ServerConnection connection) {
         Address target = joinMessage.getAddress();
         MemberImpl member = clusterService.getMember(target);
@@ -652,6 +667,7 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
@@ -660,7 +676,7 @@ public class ClusterJoinManager {
                         clusterService.getMembershipManager().getMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
-                        clusterService.getClusterVersion(), partitionRuntimeState);
+                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
                 op.setCallerUuid(clusterService.getThisUuid());
                 invokeClusterOp(op, target);
             }
@@ -685,6 +701,21 @@ public class ClusterJoinManager {
             }
         }
         return true;
+    }
+
+    /** check if member is joining with persistence enabled */
+    private boolean isMemberRestartingWithPersistence(Map<String, String> attributes) {
+        return attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE) != null
+                && attributes.get(PERSISTENCE_ENABLED_ATTRIBUTE).equals("true");
+    }
+
+    private boolean isMemberRejoining(MemberMap previousMembersMap, Address address, UUID memberUuid) {
+        // may be already detected as crashed member
+        return (hasMemberLeft(memberUuid)
+                // or it is still in member list because connection timeout hasn't been reached yet
+                || previousMembersMap.contains(memberUuid)
+                // or it is a known missing member
+                || clusterService.getMembershipManager().isMissingMember(address, memberUuid));
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
@@ -713,11 +744,15 @@ public class ClusterJoinManager {
         }
     }
 
+    /**
+     * Starts join process on master member.
+     */
     private void startJoin() {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
             InternalPartitionService partitionService = node.getPartitionService();
+            boolean shouldTriggerRepartition = true;
             try {
                 joinInProgress = true;
 
@@ -741,12 +776,22 @@ public class ClusterJoinManager {
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
+                // this is the current partition assignment state, not taking into account the
+                // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
+                    if (isMemberRestartingWithPersistence(member.getAttributes())
+                        && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
+                        if (logger.isFineEnabled()) {
+                            logger.fine(member + " is rejoining the cluster");
+                        }
+                        // do not trigger repartition immediately, wait for joining member to load hot-restart data
+                        shouldTriggerRepartition = false;
+                    }
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                            clusterService.getClusterVersion(), partitionRuntimeState);
+                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition);
                     op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
@@ -761,7 +806,9 @@ public class ClusterJoinManager {
 
             } finally {
                 reset();
-                partitionService.resumeMigration();
+                if (shouldTriggerRepartition) {
+                    partitionService.resumeMigration();
+                }
             }
         } finally {
             clusterServiceLock.unlock();
@@ -956,5 +1003,17 @@ public class ClusterJoinManager {
 
     void removeJoin(Address address) {
         joiningMembers.remove(address);
+    }
+
+    void addLeftMember(Member member) {
+        leftMembersUuids.put(member.getUuid(), Clock.currentTimeMillis());
+    }
+
+    public boolean hasMemberLeft(UUID memberUuid) {
+        return leftMembersUuids.containsKey(memberUuid);
+    }
+
+    public void removeLeftMember(UUID memberUuid) {
+        leftMembersUuids.remove(memberUuid);
     }
 }

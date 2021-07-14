@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -127,8 +127,8 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         client = factory.newHazelcastClient(null);
 
         HazelcastSqlException error = assertSqlException(client, query());
-        assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
-        assertEquals("Client is not currently connected to the cluster.", error.getMessage());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
+        assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
 
     @Test
@@ -330,7 +330,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
 
-            Connection connection = clientService.getRandomConnection();
+            Connection connection = clientService.getQueryConnection();
             clientService.invokeOnConnection(connection, message);
 
             fail("Must fail");

@@ -32,6 +32,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.pipeline.JmsSourceBuilder;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,6 +41,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -54,6 +56,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
@@ -64,7 +67,6 @@ import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
  */
 public class StreamJmsP<T> extends AbstractProcessor {
 
-    public static final int PREFERRED_LOCAL_PARALLELISM = 1;
     private static final BroadcastKey<String> SEEN_IDS_KEY = broadcastKey("seen");
     private static final long RESTORED_IDS_TTL = MINUTES.toNanos(1);
 
@@ -250,6 +252,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
+        private final String destination;
         private final SupplierEx<? extends Connection> newConnectionFn;
         private final FunctionEx<? super Session, ? extends MessageConsumer> consumerFn;
         private final FunctionEx<? super Message, ?> messageIdFn;
@@ -260,18 +263,20 @@ public class StreamJmsP<T> extends AbstractProcessor {
         private transient Connection connection;
 
         public Supplier(
+                String destination,
+                ProcessingGuarantee sourceGuarantee,
+                EventTimePolicy<? super T> eventTimePolicy,
                 SupplierEx<? extends Connection> newConnectionFn,
                 FunctionEx<? super Session, ? extends MessageConsumer> consumerFn,
                 FunctionEx<? super Message, ?> messageIdFn,
-                FunctionEx<? super Message, ? extends T> projectionFn,
-                EventTimePolicy<? super T> eventTimePolicy,
-                ProcessingGuarantee sourceGuarantee
+                FunctionEx<? super Message, ? extends T> projectionFn
         ) {
             checkSerializable(newConnectionFn, "newConnectionFn");
             checkSerializable(consumerFn, "consumerFn");
             checkSerializable(messageIdFn, "messageIdFn");
             checkSerializable(projectionFn, "projectionFn");
 
+            this.destination = destination;
             this.newConnectionFn = newConnectionFn;
             this.consumerFn = consumerFn;
             this.messageIdFn = messageIdFn;
@@ -300,6 +305,11 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     .mapToObj(i -> new StreamJmsP<>(
                             connection, consumerFn, messageIdFn, projectionFn, eventTimePolicy, sourceGuarantee))
                     .collect(Collectors.toList());
+        }
+
+        @Override
+        public Permission permission() {
+            return ConnectorPermission.jms(destination, ACTION_READ);
         }
     }
 }

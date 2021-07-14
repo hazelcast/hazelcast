@@ -22,7 +22,7 @@ import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 
 /**
- * The StaticLB is a {@link com.hazelcast.client.LoadBalancer} that always returns the same member. This can
+ * The StaticLB is a {@link LoadBalancer} that always returns the same member. This can
  * be useful for testing if you want to hit a specific member.
  */
 public class StaticLB implements LoadBalancer {

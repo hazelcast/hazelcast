@@ -16,11 +16,13 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.internal.util.StringUtil;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
@@ -53,6 +55,11 @@ public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     @Override
     public PartitionGroupStrategy getPartitionGroupStrategy() {
+        return null;
+    }
+
+    @Override
+    public PartitionGroupStrategy getPartitionGroupStrategy(Collection<? extends Member> allMembers) {
         return null;
     }
 

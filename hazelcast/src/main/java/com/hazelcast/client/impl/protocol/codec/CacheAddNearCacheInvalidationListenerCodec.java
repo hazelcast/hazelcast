@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds listener to cache. This listener will be used to listen near cache invalidation events.
  */
-@Generated("5917e6da946b8ba2f0cb48352a9c9a6d")
+@Generated("57a9872cdd8448341c03ca2050c08d78")
 public final class CacheAddNearCacheInvalidationListenerCodec {
     //hex: 0x131D00
     public static final int REQUEST_MESSAGE_TYPE = 1252608;
@@ -130,6 +130,7 @@ public final class CacheAddNearCacheInvalidationListenerCodec {
         CodecUtil.encodeNullable(clientMessage, key, DataCodec::encode);
         return clientMessage;
     }
+
     public static ClientMessage encodeCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_CACHE_BATCH_INVALIDATION_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
