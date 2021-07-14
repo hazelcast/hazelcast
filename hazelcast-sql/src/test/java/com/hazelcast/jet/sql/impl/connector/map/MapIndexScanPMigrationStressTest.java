@@ -16,47 +16,54 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.SqlTestSupport.Row;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlService;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 
-import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsOrdered;
-import static org.junit.Assert.assertTrue;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
-    static final int ITEM_COUNT = 600_000;
-    static final int MEMBERS_COUNT = 3;
-    static final String MAP_NAME = "map";
 
+    private static final int ITEM_COUNT = 10_000;
+    private static final String MAP_NAME = "map";
+
+    private TestHazelcastFactory factory;
+    private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
-
-    @BeforeClass
-    public static void setUpClass() {
-        initializeExceptLast(MEMBERS_COUNT, smallInstanceConfig());
-    }
 
     @Before
     public void before() {
-        map = instance().getMap(MAP_NAME);
+        factory = new TestHazelcastFactory();
+        instances = new HazelcastInstance[3];
+        for (int i = 0; i < instances.length; i++) {
+            instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
+        }
+        map = instances[0].getMap(MAP_NAME);
+    }
+
+    @After
+    public void after() {
+        factory.terminateAll();
     }
 
     @Test
     @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
-    public void stressTestPointLookup() {
-        Random random = new Random();
-        List<SqlTestSupport.Row> expected = new ArrayList<>();
+    public void stressTest_hash() throws InterruptedException {
         for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
         }
@@ -64,61 +71,55 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(instances(), (MEMBERS_COUNT - 1) * 2, 500L);
+        MutatorThread mutator = new MutatorThread(10, 10L);
+        QueryThread requester = new QueryThread(
+                () -> {
+                    int i = new Random().nextInt(ITEM_COUNT);
+                    return Tuple2.tuple2("SELECT * FROM " + MAP_NAME + " WHERE this = " + i, singletonList(new Row(i, i)));
+                },
+                500,
+                10L
+        );
         mutator.start();
+        requester.start();
+        mutator.join();
+        requester.join();
 
-        for (int i = 0; i < MEMBERS_COUNT; ++i) {
-            expected.clear();
-            int itemToFind = random.nextInt(ITEM_COUNT);
-            expected.add(new SqlTestSupport.Row(itemToFind, itemToFind));
-            assertRowsOrdered("SELECT * FROM " + MAP_NAME + " WHERE this=" + itemToFind, expected);
-        }
-
-        try {
-            mutator.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
     @Test
     @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
-    public void stressTestSameOrderMultipleQueryThreads() {
-        List<Boolean> results = new ArrayList<>();
-        List<SqlTestSupport.Row> expected = new ArrayList<>();
+    public void stressTest_sorted() throws InterruptedException {
+        List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
-            expected.add(new SqlTestSupport.Row(ITEM_COUNT - i, ITEM_COUNT - i));
+            expected.add(new Row(ITEM_COUNT - i, ITEM_COUNT - i));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(instances(), MEMBERS_COUNT - 1, 500L);
-        QueryThread requester = new QueryThread(expected, results, MEMBERS_COUNT);
-
+        MutatorThread mutator = new MutatorThread(10, 10L);
+        QueryThread requester = new QueryThread(
+                () -> Tuple2.tuple2("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected),
+                500,
+                10L
+        );
         mutator.start();
         requester.start();
+        mutator.join();
+        requester.join();
 
-        try {
-            mutator.join();
-            requester.join();
-            for (boolean result : results) {
-                assertTrue(result);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
-    private static class MutatorThread extends Thread {
-        private final HazelcastInstance[] instances;
+    private class MutatorThread extends Thread {
+
         private final int iterations;
         private final long delay;
 
-        MutatorThread(HazelcastInstance[] instances, int iterations, long delay) {
-            super();
-            this.instances = instances;
+        private MutatorThread(int iterations, long delay) {
             this.iterations = iterations;
             this.delay = delay;
         }
@@ -126,63 +127,59 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         @Override
         public void run() {
             for (int i = 0; i < iterations; ++i) {
+                int index = 1 + i % (instances.length - 1);
+                factory.terminate(instances[index]);
+                instances[index] = factory.newHazelcastInstance(smallInstanceConfig());
                 try {
                     Thread.sleep(delay);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if (i != 0) {
-                    instances[MEMBERS_COUNT - 1].shutdown();
-                }
-                instances[MEMBERS_COUNT - 1] = factory().newHazelcastInstance(smallInstanceConfig());
-                System.out.println("Instance was re-initialized.");
             }
         }
     }
 
-    private static class QueryThread extends Thread {
-        private final List<SqlTestSupport.Row> expectedElements;
-        private final List<Boolean> testResults;
+    private class QueryThread extends Thread {
+
+        private final Supplier<Tuple2<String, List<Row>>> sqlAndExpectedRowsSupplier;
         private final int iterations;
         private final long delay;
 
-        QueryThread(List<SqlTestSupport.Row> expectedElements, List<Boolean> testResults, int iterations) {
-            super();
-            this.expectedElements = expectedElements;
-            this.testResults = testResults;
+        private boolean result = true;
+
+        private QueryThread(Supplier<Tuple2<String, List<Row>>> sqlAndExpectedRowsSupplier, int iterations, long delay) {
+            this.sqlAndExpectedRowsSupplier = sqlAndExpectedRowsSupplier;
             this.iterations = iterations;
-            this.delay = 3000L;
+            this.delay = delay;
         }
 
         @Override
+        @SuppressWarnings("ConstantConditions")
         public void run() {
-            for (int i = 0; i < iterations; ++i) {
-                try {
-                    Thread.sleep(delay);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                testResults.add(
-                        assertRowsAreOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expectedElements)
-                );
-            }
-        }
-    }
+            try {
+                for (int i = 0; i < iterations; ++i) {
+                    Tuple2<String, List<Row>> sqlAndExpectedRows = sqlAndExpectedRowsSupplier.get();
+                    List<Row> actualRows = new ArrayList<>();
+                    instances[0].getSql()
+                            .execute(sqlAndExpectedRows.f0())
+                            .iterator()
+                            .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
+                    result &= sqlAndExpectedRows.f1().equals(actualRows);
 
-    private static boolean assertRowsAreOrdered(String sql, List<SqlTestSupport.Row> expectedRows) {
-        SqlService sqlService = instance().getSql();
-        List<SqlTestSupport.Row> actualRows = new ArrayList<>();
-        sqlService.execute(sql).iterator().forEachRemaining(r ->
-                actualRows.add(new SqlTestSupport.Row(r.getObject(0), r.getObject(1)))
-        );
-        if (actualRows.size() != expectedRows.size()) {
-            return false;
-        }
-        for (int i = 0; i < actualRows.size(); i++) {
-            if (!actualRows.get(i).equals(expectedRows.get(i))) {
-                return false;
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+                result = false;
             }
         }
-        return true;
+
+        private boolean allQueriesSucceeded() {
+            return result;
+        }
     }
 }

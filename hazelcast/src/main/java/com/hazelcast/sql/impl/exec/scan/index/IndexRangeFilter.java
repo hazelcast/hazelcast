@@ -36,24 +36,16 @@ import java.util.Objects;
  */
 @SuppressWarnings("rawtypes")
 public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable {
-    /**
-     * Lower bound, null if no bound.
-     */
+    /** Lower bound, null if no bound. */
     private IndexFilterValue from;
 
-    /**
-     * Lower bound inclusiveness.
-     */
+    /** Lower bound inclusiveness. */
     private boolean fromInclusive;
 
-    /**
-     * Upper bound, null if no bound.
-     */
+    /** Upper bound, null if no bound. */
     private IndexFilterValue to;
 
-    /**
-     * Upper bound inclusiveness.
-     */
+    /** Upper bound inclusiveness. */
     private boolean toInclusive;
 
     public IndexRangeFilter() {
@@ -188,7 +180,7 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
         IndexRangeFilter that = (IndexRangeFilter) o;
 
         return Objects.equals(from, that.from) && fromInclusive == that.fromInclusive
-                && Objects.equals(to, that.to) && toInclusive == that.toInclusive;
+            && Objects.equals(to, that.to) && toInclusive == that.toInclusive;
     }
 
     @Override
@@ -205,6 +197,6 @@ public class IndexRangeFilter implements IndexFilter, IdentifiedDataSerializable
     @Override
     public String toString() {
         return "IndexRangeFilter {from=" + from + ", fromInclusive=" + fromInclusive
-                + ", to=" + to + ", toInclusive=" + toInclusive + '}';
+            + ", to=" + to + ", toInclusive=" + toInclusive + '}';
     }
 }
