@@ -77,10 +77,14 @@ jobs:
         run: |
           ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
           ssh_key=$(cat id_rsa)
+          ssh_key="${ssh_key//'%'/'%25'}"
+          ssh_key="${ssh_key//$'\n'/'%0A'}"
+          ssh_key="${ssh_key//$'\r'/'%0D'}"
+
           ssh_key_public=$(cat id_rsa.pub)
-          echo $ssh_key
-          echo $ssh_key_public
-          echo "SSH_KEY=$ssh_key" >> $GITHUB_ENV
+          ssh_key_public="${ssh_key_public//'%'/'%25'}"
+          ssh_key_public="${ssh_key_public//$'\n'/'%0A'}"
+          ssh_key_public="${ssh_key_public//$'\r'/'%0D'}"
           echo '::set-output name=SSH_KEY::$ssh_key'
           echo '::set-output name=SSH_KEY_PUBLIC::$ssh_key_public'
 
