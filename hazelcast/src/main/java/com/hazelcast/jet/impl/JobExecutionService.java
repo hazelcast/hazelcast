@@ -208,7 +208,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         if (processorClsForJob != null) {
             return processorClsForJob.get(name);
         } else {
-            throw new HazelcastException("Processor classloader for jobId=" + jobId
+            throw new HazelcastException("Processor classloader for jobId=" + Util.idToString(jobId)
                     + " requested, but it does not exists");
         }
     }
@@ -333,15 +333,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
 
         try {
-            prepareProcessorClassLoaders(jobId, plan.getJobConfig());
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
             ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
             doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
         } catch (Throwable e) {
             completeExecution(execCtx, new CancellationException());
             throw e;
-        } finally {
-            clearProcessorClassLoaders();
         }
 
         // initial log entry with all of jobId, jobName, executionId
