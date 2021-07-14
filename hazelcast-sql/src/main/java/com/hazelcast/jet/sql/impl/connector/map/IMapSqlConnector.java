@@ -41,18 +41,15 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
-import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -71,7 +68,6 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
-import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -257,7 +253,7 @@ public class IMapSqlConnector implements SqlConnector {
                 projections
         );
 
-        return IMapJoiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
+        return Joiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
     }
 
     @Nonnull
@@ -319,45 +315,12 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
-        table.keyFields().filter(field -> updatesByFieldNames.containsKey(field.getName())).findFirst().ifPresent(field -> {
-            throw QueryException.error("Cannot update '" + field.getName() + '\'');
-        });
-        if (updatesByFieldNames.containsKey(VALUE) && table.valueFields().count() > 1) {
-            throw QueryException.error("Cannot update '" + VALUE + '\'');
-        }
-
-        KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
-                table.paths(),
-                table.types(),
-                table.getKeyDescriptor(),
-                table.getValueDescriptor(),
-                null,
-                identityProjection(table)
-        );
-
-        List<Expression<?>> updates = IntStream.range(0, table.getFieldCount())
-                .filter(i -> !((MapTableField) table.getField(i)).getPath().isKey())
-                .mapToObj(i -> {
-                    TableField field = table.getField(i);
-                    if (updatesByFieldNames.containsKey(field.getName())) {
-                        return updatesByFieldNames.get(field.getName());
-                    } else if (field.getName().equals(VALUE)) {
-                        // this works because assigning `this = null` is ignored if this is expanded to fields
-                        return ConstantExpression.create(null, field.getType());
-                    } else {
-                        return ColumnExpression.create(i, field.getType());
-                    }
-                }).collect(toList());
-        ValueProjector.Supplier valueProjectorSupplier = ValueProjector.supplier(
-                table.valuePaths(),
-                table.valueTypes(),
-                (UpsertTargetDescriptor) table.getValueJetMetadata(),
-                updates
-        );
-
         return dag.newUniqueVertex(
                 "Update(" + toString(table) + ")",
-                new UpdateProcessorSupplier(table.getMapName(), rowProjectorSupplier, valueProjectorSupplier)
+                new UpdateProcessorSupplier(
+                        table.getMapName(),
+                        UpdatingEntryProcessor.supplier(table, updatesByFieldNames)
+                )
         );
     }
 

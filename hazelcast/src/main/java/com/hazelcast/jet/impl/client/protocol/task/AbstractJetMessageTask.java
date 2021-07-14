@@ -25,10 +25,12 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.UUID;
 import java.util.function.Function;
@@ -61,7 +63,16 @@ abstract class AbstractJetMessageTask<P, R> extends AbstractInvocationMessageTas
     }
 
     @Override
-    public Permission getRequiredPermission() {
+    public final Permission getRequiredPermission() {
+        String[] actions = actions();
+        if (actions != null) {
+            return new JobPermission(actions);
+        }
+        return null;
+    }
+
+    @Nullable
+    public String[] actions() {
         return null;
     }
 

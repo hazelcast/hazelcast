@@ -41,6 +41,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -959,6 +960,16 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public PersistenceConfig getPersistenceConfig() {
+        return staticConfig.getPersistenceConfig();
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig prConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

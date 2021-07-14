@@ -39,6 +39,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlPrimitiveTest extends SqlTestSupport {
@@ -302,6 +303,22 @@ public class SqlPrimitiveTest extends SqlTestSupport {
 
         assertMapEventually(
                 name,
+                "INSERT INTO " + name + " (this, __key) VALUES ('1', 1)",
+                createMap(1, "1")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "1"))
+        );
+    }
+
+    @Test
+    public void when_insertMultipleEntries() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        assertMapEventually(
+                name,
                 "INSERT INTO " + name + " (this, __key) VALUES ('1', 1), ('2', 2)",
                 createMap(1, "1", 2, "2")
         );
@@ -315,12 +332,31 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_insertNoEntries() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+
+        sqlService.execute("INSERT INTO " + name + " SELECT * FROM (VALUES (1, '1')) AS t(a, b) WHERE a = 0");
+        assertThat(instance().getMap(name).entrySet()).isEmpty();
+    }
+
+    @Test
     public void when_insertAndKeyAlreadyExists_then_fail() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
         sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2')"))
+                .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
+    public void when_insertMultipleEntriesAndKeyAlreadyExists_then_fail() {
+        String name = randomName();
+        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2'), (2, '2')"))
                 .hasMessageContaining("Duplicate key");
     }
 
@@ -339,7 +375,8 @@ public class SqlPrimitiveTest extends SqlTestSupport {
         instance().getMap(name).put(0, 0);
         sqlService.execute(javaSerializableMapDdl(name, String.class, String.class));
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> { }))
+        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> {
+        }))
                 .hasMessageContaining("Failed to extract map entry key because of type mismatch " +
                         "[expectedClass=java.lang.String, actualClass=java.lang.Integer]");
     }

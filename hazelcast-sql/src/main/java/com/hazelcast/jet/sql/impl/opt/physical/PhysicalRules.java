@@ -28,7 +28,7 @@ public final class PhysicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Filter rules.
+                // Filter rules
                 FilterPhysicalRule.INSTANCE,
 
                 // Project rules
@@ -55,7 +55,12 @@ public final class PhysicalRules {
                 SinkPhysicalRule.INSTANCE,
                 UpdatePhysicalRule.INSTANCE,
                 DeletePhysicalRule.INSTANCE,
+
+                InsertMapPhysicalRule.INSTANCE,
+                SinkMapPhysicalRule.INSTANCE,
+                UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
+
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)
         );
     }

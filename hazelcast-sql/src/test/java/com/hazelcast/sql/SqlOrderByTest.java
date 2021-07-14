@@ -183,6 +183,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     protected Config memberConfig() {
         Config config = new Config().setSerializationConfig(serializationConfig());
+        config.getJetConfig().setEnabled(true);
 
         config
                 .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))

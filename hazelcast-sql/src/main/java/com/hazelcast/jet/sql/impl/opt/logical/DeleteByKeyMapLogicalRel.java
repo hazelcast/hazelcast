@@ -37,7 +37,7 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
     private final PartitionedMapTable table;
     private final RexNode keyCondition;
 
-    protected DeleteByKeyMapLogicalRel(
+    DeleteByKeyMapLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             PartitionedMapTable table,
