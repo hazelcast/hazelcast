@@ -78,10 +78,9 @@ jobs:
           ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
           ssh_key=$(cat id_rsa)
           ssh_key_public=$(cat id_rsa.pub)
-          test_env="Random value"
           echo $ssh_key
           echo $ssh_key_public
-          echo '::set-output name=TEST_OUTPUT::$test_env'
+          echo "SSH_KEY=$ssh_key" >> $GITHUB_ENV
           echo '::set-output name=SSH_KEY::$ssh_key'
           echo '::set-output name=SSH_KEY_PUBLIC::$ssh_key_public'
 
@@ -89,6 +88,7 @@ jobs:
         run: |
           echo "Test output"
           echo "${{ steps.ssh.outputs.TEST_OUTPUT }}"
+          echo ${{ env.SSH_KEY }}
 
       - name: Check outputs key private
         run: |
