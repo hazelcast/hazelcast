@@ -89,12 +89,13 @@ jobs:
       - name: Check outputs key private
         run: |
           echo "SSH private"
-          echo ${{ env.SSH_KEY }}
+          echo "${{ env.SSH_KEY }}"
 
       - name: Check outputs key public
+        if: ${{ always() }}
         run: |
           echo "SSH public"
-          echo ${{ env.SSH_KEY_PUBLIC }}
+          echo "${{ env.SSH_KEY_PUBLIC }}"
 
 #      - name: Install private key
 #        uses: shimataro/ssh-key-action@v2
