@@ -19,14 +19,16 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 
 import javax.annotation.Nonnull;
+
+import java.security.Permission;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
@@ -43,6 +45,7 @@ public final class SinkBuilder<C, T> {
 
     private final FunctionEx<? super Context, ? extends C> createFn;
     private final String name;
+    private Permission permission;
     private BiConsumerEx<? super C, ? super T> receiveFn;
     private ConsumerEx<? super C> flushFn = ConsumerEx.noop();
     private ConsumerEx<? super C> destroyFn = ConsumerEx.noop();
@@ -168,6 +171,21 @@ public final class SinkBuilder<C, T> {
     }
 
     /**
+     * Sets the the permission required to use this sink when the
+     * security is enabled. The default value is {@code null} which
+     * means there is no restriction to use this sink. Security is an
+     * enterprise feature.
+     *
+     * @param permission the required permission to use this sink when
+     *     security is enabled.
+     */
+    public SinkBuilder<C, T> permission(@Nonnull Permission permission) {
+        checkSerializable(permission, "permission");
+        this.permission = permission;
+        return this;
+    }
+
+    /**
      * Sets the local parallelism of the sink. On each member of the cluster
      * Jet will create this many parallel processors for the sink. To identify
      * each processor instance, your {@code createFn} can consult {@link
@@ -192,7 +210,8 @@ public final class SinkBuilder<C, T> {
     @Nonnull
     public Sink<T> build() {
         Preconditions.checkNotNull(receiveFn, "receiveFn must be set");
-        SupplierEx<Processor> supplier = writeBufferedP(createFn, receiveFn, flushFn, destroyFn);
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism, supplier));
+        return Sinks.fromProcessor(name,
+                ProcessorMetaSupplier.of(preferredLocalParallelism, permission,
+                        ProcessorSupplier.of(writeBufferedP(createFn, receiveFn, flushFn, destroyFn))));
     }
 }

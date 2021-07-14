@@ -26,8 +26,6 @@ import org.apache.calcite.sql.type.SqlOperandCountRanges;
 public final class HazelcastDescOperator extends HazelcastPostfixOperator {
 
     public static final HazelcastDescOperator DESC = new HazelcastDescOperator(SqlStdOperatorTable.DESC);
-    public static final HazelcastDescOperator NULLS_FIRST = new HazelcastDescOperator(SqlStdOperatorTable.NULLS_FIRST);
-    public static final HazelcastDescOperator NULLS_LAST = new HazelcastDescOperator(SqlStdOperatorTable.NULLS_LAST);
 
     private HazelcastDescOperator(SqlPostfixOperator base) {
         super(base.getName(),

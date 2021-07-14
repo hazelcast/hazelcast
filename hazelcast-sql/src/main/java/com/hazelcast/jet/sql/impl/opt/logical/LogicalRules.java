@@ -38,7 +38,7 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Filter rules.
+                // Filter rules
                 FilterLogicalRule.INSTANCE,
                 FilterMergeRule.INSTANCE,
                 FilterProjectTransposeRule.INSTANCE,
@@ -62,10 +62,10 @@ public final class LogicalRules {
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
 
-                // Sort
+                // Sort rules
                 SortLogicalRule.INSTANCE,
 
-                // Join
+                // Join rules
                 JoinLogicalRule.INSTANCE,
                 JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
                 ReduceExpressionsRule.JOIN_INSTANCE,
@@ -83,8 +83,13 @@ public final class LogicalRules {
                 // DML rules
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRule.INSTANCE,
+                UpdateLogicalRules.INSTANCE,
+                UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
+
+                InsertMapLogicalRule.INSTANCE,
+                SinkMapLogicalRule.INSTANCE,
+                UpdateByKeyMapLogicalRule.INSTANCE,
                 DeleteByKeyMapLogicalRule.INSTANCE,
 
                 // Miscellaneous

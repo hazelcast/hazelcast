@@ -17,6 +17,7 @@
 package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.hadoop.HadoopSources;
@@ -30,6 +31,7 @@ import com.hazelcast.jet.pipeline.file.RawBytesFileFormat;
 import com.hazelcast.jet.pipeline.file.TextFileFormat;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceConfiguration;
 import com.hazelcast.jet.pipeline.file.impl.FileSourceFactory;
+import com.hazelcast.security.permission.ConnectorPermission;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.generic.GenericData;
@@ -55,6 +57,7 @@ import org.apache.parquet.avro.AvroParquetInputFormat;
 import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +70,7 @@ import static com.hazelcast.jet.hadoop.impl.CsvInputFormat.CSV_INPUT_FORMAT_BEAN
 import static com.hazelcast.jet.hadoop.impl.CsvInputFormat.CSV_INPUT_FORMAT_FIELD_LIST_PREFIX;
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_INPUT_FORMAT_BEAN_CLASS;
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_MULTILINE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -109,32 +113,50 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
                     "Did you provide correct modules on classpath?");
         }
 
-        return readHadoopP(configuration -> {
-            try {
-                configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
-                configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
-                configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, fsc.isSharedFileSystem());
-                configuration.setBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, fsc.isIgnoreFileNotFound());
-                for (Entry<String, String> option : fsc.getOptions().entrySet()) {
-                    configuration.set(option.getKey(), option.getValue());
+        return readHadoopP(
+                ConnectorPermission.file(fsc.getPath(), ACTION_READ),
+                configureFn(fsc, configurer, fileFormat),
+                configurer.projectionFn()
+        );
+    }
+
+    private static <T> ConsumerEx<Configuration> configureFn(
+            FileSourceConfiguration<T> fsc, JobConfigurer configurer, FileFormat<T> fileFormat) {
+        return new ConsumerEx<Configuration>() {
+
+            @Override
+            public void acceptEx(Configuration configuration) throws Exception {
+                try {
+                    configuration.setBoolean(FileInputFormat.INPUT_DIR_NONRECURSIVE_IGNORE_SUBDIRS, true);
+                    configuration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, false);
+                    configuration.setBoolean(HadoopSources.SHARED_LOCAL_FS, fsc.isSharedFileSystem());
+                    configuration.setBoolean(HadoopSources.IGNORE_FILE_NOT_FOUND, fsc.isIgnoreFileNotFound());
+                    for (Entry<String, String> option : fsc.getOptions().entrySet()) {
+                        configuration.set(option.getKey(), option.getValue());
+                    }
+
+                    // Some methods we use to configure actually take a Job
+                    Job job = Job.getInstance(configuration);
+                    Path inputPath = getInputPath(fsc, configuration);
+                    FileInputFormat.addInputPath(job, inputPath);
+
+                    configurer.configure(job, fileFormat);
+
+                    // The job creates a copy of the configuration, so we need to copy the new setting to the
+                    // original configuration instance
+                    for (Entry<String, String> entry : job.getConfiguration()) {
+                        configuration.set(entry.getKey(), entry.getValue());
+                    }
+                } catch (IOException e) {
+                    throw new JetException("Could not create a source", e);
                 }
-
-                // Some methods we use to configure actually take a Job
-                Job job = Job.getInstance(configuration);
-                Path inputPath = getInputPath(fsc, configuration);
-                FileInputFormat.addInputPath(job, inputPath);
-
-                configurer.configure(job, fileFormat);
-
-                // The job creates a copy of the configuration, so we need to copy the new setting to the original
-                // configuration instance
-                for (Entry<String, String> entry : job.getConfiguration()) {
-                    configuration.set(entry.getKey(), entry.getValue());
-                }
-            } catch (IOException e) {
-                throw new JetException("Could not create a source", e);
             }
-        }, configurer.projectionFn());
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(fsc.getPath(), ACTION_READ);
+            }
+        };
     }
 
     @Nonnull

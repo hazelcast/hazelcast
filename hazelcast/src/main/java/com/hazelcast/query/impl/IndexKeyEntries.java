@@ -16,16 +16,16 @@
 
 package com.hazelcast.query.impl;
 
-import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * A holder for one index key and associated entries.
  */
 public class IndexKeyEntries {
     private final Comparable<?> indexKey;
-    private final Collection<QueryableEntry> entries;
+    private final Iterator<QueryableEntry> entries;
 
-    public IndexKeyEntries(Comparable<?> indexKey, Collection<QueryableEntry> entries) {
+    public IndexKeyEntries(Comparable<?> indexKey, Iterator<QueryableEntry> entries) {
         this.indexKey = indexKey;
         this.entries = entries;
     }
@@ -34,7 +34,7 @@ public class IndexKeyEntries {
         return indexKey;
     }
 
-    public Collection<QueryableEntry> getEntries() {
+    public Iterator<QueryableEntry> getEntries() {
         return entries;
     }
 }

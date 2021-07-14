@@ -42,12 +42,12 @@ import static java.util.Collections.unmodifiableList;
 public class MembersUpdateOp extends AbstractClusterOperation {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
+    PartitionRuntimeState partitionRuntimeState;
     /** The updated member info collection. */
     private List<MemberInfo> memberInfos;
     /** The UUID of the receiving member. */
     private UUID targetUuid;
     private boolean returnResponse;
-    private PartitionRuntimeState partitionRuntimeState;
     private int memberListVersion;
 
     public MembersUpdateOp() {

@@ -30,16 +30,7 @@ public final class UpdateMapWithEntryProcessorP<T, K, V, R> extends AsyncHazelca
     private final FunctionEx<? super T, ? extends K> toKeyFn;
     private final FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn;
 
-    UpdateMapWithEntryProcessorP(
-        @Nonnull HazelcastInstance instance,
-        @Nonnull String name,
-        @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
-        @Nonnull FunctionEx<? super T, ? extends EntryProcessor<K, V, R>> toEntryProcessorFn
-    ) {
-        this(instance, MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, toKeyFn, toEntryProcessorFn);
-    }
-
-    UpdateMapWithEntryProcessorP(
+    public UpdateMapWithEntryProcessorP(
         @Nonnull HazelcastInstance instance,
         int maxParallelAsyncOps,
         @Nonnull String name,

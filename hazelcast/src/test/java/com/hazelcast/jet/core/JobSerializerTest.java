@@ -71,20 +71,20 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
     public static void beforeClass() {
         Config config = smallInstanceConfig();
         config.addCacheConfig(new CacheSimpleConfig().setName(SOURCE_CACHE_NAME))
-              .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
+                .addCacheConfig(new CacheSimpleConfig().setName(SINK_CACHE_NAME));
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig()
-                    .addSerializerConfig(new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class));
+                .addSerializerConfig(new SerializerConfig().setTypeClass(Value.class).setClass(ValueSerializer.class));
 
         initializeWithClient(1, config, clientConfig);
     }
 
     @Test
     public void when_serializerIsNotRegistered_then_mapThrowsException() {
-        Map<Integer, Value> map = instance().getMap(SOURCE_MAP_NAME);
+        Map<Integer, Object> map = instance().getMap(SOURCE_MAP_NAME);
 
-        assertThatThrownBy(() -> map.put(1, new Value(1))).isInstanceOf(HazelcastSerializationException.class);
+        assertThatThrownBy(() -> map.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
@@ -117,9 +117,9 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_serializerIsNotRegistered_then_cacheThrowsException() {
-        Cache<Integer, Value> cache = instance().getCacheManager().getCache(SOURCE_CACHE_NAME);
+        Cache<Integer, Object> cache = instance().getCacheManager().getCache(SOURCE_CACHE_NAME);
 
-        assertThatThrownBy(() -> cache.put(1, new Value(1))).isInstanceOf(HazelcastSerializationException.class);
+        assertThatThrownBy(() -> cache.put(1, new Object())).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test
@@ -153,9 +153,9 @@ public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_serializerIsNotRegistered_then_listThrowsException() {
-        List<Value> list = instance().getList(SOURCE_MAP_NAME);
+        List list = instance().getList(SOURCE_MAP_NAME);
 
-        assertThatThrownBy(() -> list.add(new Value(1))).isInstanceOf(HazelcastSerializationException.class);
+        assertThatThrownBy(() -> list.add(new Object())).isInstanceOf(HazelcastSerializationException.class);
     }
 
     @Test

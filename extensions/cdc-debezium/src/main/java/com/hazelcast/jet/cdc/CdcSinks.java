@@ -17,8 +17,10 @@
 package com.hazelcast.jet.cdc;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.cdc.impl.WriteCdcP;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractHazelcastConnectorSupplier;
@@ -30,9 +32,12 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.security.Permission;
+
 import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.DISTRIBUTED_PARTITIONED;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
+import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -228,9 +233,28 @@ public final class CdcSinks {
     ) {
         FunctionEx<? super ChangeRecord, ? extends V> toValueFn =
                 record -> DELETE.equals(record.operation()) ? null : valueFn.apply(record);
-        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
-                instance -> new WriteCdcP<>(instance, map, keyFn, toValueFn));
-        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(supplier);
+        String clientXml = asXmlString(clientConfig);
+        ProcessorSupplier supplier = AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                procFn(name, map, clientXml, keyFn, toValueFn));
+        ProcessorMetaSupplier metaSupplier = ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name), supplier);
         return new SinkImpl<>(name, metaSupplier, DISTRIBUTED_PARTITIONED, keyFn);
+    }
+
+    private static <K, V> FunctionEx<HazelcastInstance, Processor> procFn(
+            String name, String map, String clientXml,
+            FunctionEx<? super ChangeRecord, ? extends K> keyFn,
+            FunctionEx<? super ChangeRecord, ? extends V> valueFn
+    ) {
+        return new FunctionEx<HazelcastInstance, Processor>() {
+            @Override
+            public Processor applyEx(HazelcastInstance instance) {
+                return new WriteCdcP<>(instance, map, keyFn, valueFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return mapUpdatePermission(clientXml, name);
+            }
+        };
     }
 }

@@ -92,7 +92,8 @@ public class CreateDagVisitor {
                 },
                 ConsumerEx.noop(),
                 0,
-                true)
+                true,
+                null)
         );
     }
 
@@ -299,7 +300,7 @@ public class CreateDagVisitor {
                 offset = sortRel.offset(parameterMetadata);
             }
 
-            if (sortRel.collation.getFieldCollations().isEmpty()) {
+            if (!sortRel.requiresSort()) {
                 input = sortRel.getInput();
             }
         } else {

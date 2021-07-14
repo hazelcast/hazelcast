@@ -17,7 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
@@ -40,11 +42,16 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import javax.annotation.Nonnull;
@@ -205,18 +212,21 @@ public final class OptUtils {
         throw new RuntimeException("expected rel not found: " + node);
     }
 
+    public static PlanNodeSchema schema(RelDataType rowType) {
+        return new PlanNodeSchema(extractFieldTypes(rowType));
+    }
+
     public static PlanNodeSchema schema(RelOptTable relTable) {
         Table table = relTable.unwrap(HazelcastTable.class).getTarget();
+        return schema(table);
+    }
 
+    public static PlanNodeSchema schema(Table table) {
         List<QueryDataType> fieldTypes = new ArrayList<>();
         for (TableField field : table.getFields()) {
             fieldTypes.add(field.getType());
         }
         return new PlanNodeSchema(fieldTypes);
-    }
-
-    public static PlanNodeSchema schema(RelDataType rowType) {
-        return new PlanNodeSchema(extractFieldTypes(rowType));
     }
 
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
@@ -247,8 +257,75 @@ public final class OptUtils {
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
     }
 
-    public static boolean hasTableType(TableScan scan, Class<? extends Table> tableClass) {
-        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+    public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {
+        if (rel.getTable() == null) {
+            return false;
+        }
+
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
+    }
+
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
+    public static RexNode extractKeyConstantExpression(HazelcastTable table, RexBuilder rexBuilder) {
+        RexNode filter = table.getFilter();
+        if (filter == null) {
+            return null;
+        }
+
+        int keyIndex = findKeyIndex(table.getTarget());
+        switch (filter.getKind()) {
+            // WHERE __key = true, calcite simplifies to just `WHERE __key`
+            case INPUT_REF: {
+                return ((RexInputRef) filter).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(true)
+                        : null;
+            }
+            // WHERE __key = false, calcite simplifies to `WHERE NOT __key`
+            case NOT: {
+                RexNode operand = ((RexCall) filter).getOperands().get(0);
+                return operand.getKind() == SqlKind.INPUT_REF && ((RexInputRef) operand).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(false)
+                        : null;
+            }
+            // __key = ...
+            case EQUALS: {
+                Tuple2<Integer, RexNode> constantExpressionByIndex = extractConstantExpression((RexCall) filter);
+                //noinspection ConstantConditions
+                return constantExpressionByIndex != null && constantExpressionByIndex.getKey() == keyIndex
+                        ? constantExpressionByIndex.getValue()
+                        : null;
+            }
+            default:
+                return null;
+        }
+    }
+
+    private static int findKeyIndex(Table table) {
+        List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
+        // just single field keys supported at the moment
+        assert primaryKey.size() == 1;
+
+        int keyIndex = table.getFieldIndex(primaryKey.get(0));
+        assert keyIndex > -1;
+
+        return keyIndex;
+    }
+
+    private static Tuple2<Integer, RexNode> extractConstantExpression(RexCall condition) {
+        Tuple2<Integer, RexNode> constantExpression = extractConstantExpression(condition, 0);
+        return constantExpression != null ? constantExpression : extractConstantExpression(condition, 1);
+    }
+
+    private static Tuple2<Integer, RexNode> extractConstantExpression(RexCall condition, int i) {
+        RexNode firstOperand = condition.getOperands().get(i);
+        if (firstOperand.getKind() == SqlKind.INPUT_REF) {
+            int index = ((RexInputRef) firstOperand).getIndex();
+            RexNode secondOperand = condition.getOperands().get(1 - i);
+            if (RexUtil.isConstant(secondOperand)) {
+                return Tuple2.tuple2(index, secondOperand);
+            }
+        }
+        return null;
     }
 }
