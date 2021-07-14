@@ -77,36 +77,24 @@ jobs:
         run: |
           ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
           ssh_key=$(cat id_rsa)
-          ssh_key="${ssh_key//'%'/'%25'}"
-          ssh_key="${ssh_key//$'\n'/'%0A'}"
-          ssh_key="${ssh_key//$'\r'/'%0D'}"
-
           echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
           echo "$ssh_key" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
 
           ssh_key_public=$(cat id_rsa.pub)
-          ssh_key_public="${ssh_key_public//'%'/'%25'}"
-          ssh_key_public="${ssh_key_public//$'\n'/'%0A'}"
-          ssh_key_public="${ssh_key_public//$'\r'/'%0D'}"
-          echo '::set-output name=SSH_KEY::$ssh_key'
-          echo '::set-output name=SSH_KEY_PUBLIC::$ssh_key_public'
-
-      - name: Check outputs key private
-        run: |
-          echo "Test output"
-          echo "${{ steps.ssh.outputs.TEST_OUTPUT }}"
-          echo ${{ env.SSH_KEY }}
+          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
+          echo "ssh_key_public" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
 
       - name: Check outputs key private
         run: |
           echo "SSH private"
-          echo "${{ steps.ssh.outputs.SSH_KEY }}"
+          echo ${{ env.SSH_KEY }}
 
       - name: Check outputs key public
         run: |
           echo "SSH public"
-          echo "${{ steps.ssh.outputs.SSH_KEY }}"
+          echo ${{ env.SSH_KEY_PUBLIC }}
 
 #      - name: Install private key
 #        uses: shimataro/ssh-key-action@v2
