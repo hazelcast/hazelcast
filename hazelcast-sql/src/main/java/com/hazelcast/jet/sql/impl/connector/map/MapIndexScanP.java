@@ -138,6 +138,16 @@ public final class MapIndexScanP extends AbstractProcessor {
         return isIndexSorted ? runSortedIndex() : runHashIndex();
     }
 
+    @Override
+    public boolean isCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private boolean runSortedIndex() {
         for (; ; ) {
             if (pendingItem != null && !tryEmit(pendingItem)) {
