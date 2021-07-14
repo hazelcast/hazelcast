@@ -212,7 +212,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet extension is disabled with \"hazelcast.jet.disabled\" property.");
+            systemLogger.info("Jet is disabled. Enable it by setting the \"hz.jet.enabled\""
+                    + " property to true.");
         }
     }
 
@@ -297,6 +298,24 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public InternalSerializationService createSerializationService() {
+        return createSerializationService(false);
+    }
+
+    @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        return createSerializationService(true);
+    }
+
+    /**
+     * Creates a serialization service. The {@code isCompatibility} parameter defines
+     * whether the serialization format used by the service will conform to the
+     * 3.x or the 4.x format.
+     *
+     * @param isCompatibility {@code true} if the serialized format should conform to the
+     *                 3.x serialization format, {@code false} otherwise
+     * @return the serialization service
+     */
+    private InternalSerializationService createSerializationService(boolean isCompatibility) {
         InternalSerializationService ss;
         try {
             Config config = node.getConfig();
@@ -317,12 +336,14 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
+                    .setSchemaService(node.memberSchemaService)
                     .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
                         @Override
                         public RuntimeException get() {
                             return new HazelcastInstanceNotActiveException();
                         }
                     })
+                    .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

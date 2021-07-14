@@ -56,6 +56,9 @@ public final class PhysicalRules {
                 DeletePhysicalRule.INSTANCE,
 
                 SelectByKeyMapPhysicalRule.INSTANCE,
+                InsertMapPhysicalRule.INSTANCE,
+                SinkMapPhysicalRule.INSTANCE,
+                UpdateByKeyMapPhysicalRule.INSTANCE,
                 DeleteByKeyMapPhysicalRule.INSTANCE,
 
                 new AbstractConverter.ExpandConversionRule(RelFactories.LOGICAL_BUILDER)

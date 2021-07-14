@@ -17,10 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.impl.ProcessorClassLoaderTLHolder;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
@@ -29,6 +29,7 @@ import java.util.function.UnaryOperator;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.lang.Math.min;
 
 /**
@@ -205,19 +206,15 @@ public class Vertex implements IdentifiedDataSerializable {
     @Override
     public void writeData(@Nonnull ObjectDataOutput out) throws IOException {
         out.writeInt(localParallelism);
-        out.writeUTF(name);
+        out.writeString(name);
         CustomClassLoadedObject.write(out, metaSupplier);
     }
 
     @Override
     public void readData(@Nonnull ObjectDataInput in) throws IOException {
         localParallelism = in.readInt();
-        name = in.readUTF();
-        try {
-            metaSupplier = CustomClassLoadedObject.read(in);
-        } catch (HazelcastSerializationException e) {
-            throw new HazelcastSerializationException("Error deserializing vertex '" + name + "': " + e, e);
-        }
+        name = in.readString();
+        metaSupplier = doWithClassLoader(ProcessorClassLoaderTLHolder.get(name), () -> CustomClassLoadedObject.read(in));
     }
 
     @Override

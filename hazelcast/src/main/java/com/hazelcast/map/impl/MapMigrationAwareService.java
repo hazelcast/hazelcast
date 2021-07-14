@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.FragmentedMigrationAwareService;
 import com.hazelcast.internal.partition.MigrationEndpoint;
+import com.hazelcast.internal.partition.OffloadedReplicationPreparation;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -55,7 +56,7 @@ import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.sen
  *
  * @see MapService
  */
-class MapMigrationAwareService implements FragmentedMigrationAwareService {
+class MapMigrationAwareService implements FragmentedMigrationAwareService, OffloadedReplicationPreparation {
 
     protected final PartitionContainer[] containers;
     protected final MapServiceContext mapServiceContext;
@@ -140,7 +141,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         return operation;
     }
 
-    private boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
+    boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
         for (ServiceNamespace namespace : namespaces) {
             assert isKnownServiceNamespace(namespace) : namespace + " is not a MapService namespace!";
         }
@@ -241,9 +242,9 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
     }
 
     /**
-     * @param backupCount number of backups of a maps' partition
-     * @return predicate to find all map partitions which are expected to have
-     * lesser backups than given backupCount.
+     * @param   backupCount number of backups of a maps' partition
+     * @return  predicate to find all map partitions which are expected to have
+     *          fewer backups than given backupCount.
      */
     private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
@@ -349,7 +350,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         GLOBAL, NON_GLOBAL
     }
 
-    private static boolean isLocalPromotion(PartitionMigrationEvent event) {
+    public static boolean isLocalPromotion(PartitionMigrationEvent event) {
         return event.getMigrationEndpoint() == DESTINATION && event.getCurrentReplicaIndex() > 0
                 && event.getNewReplicaIndex() == 0;
     }

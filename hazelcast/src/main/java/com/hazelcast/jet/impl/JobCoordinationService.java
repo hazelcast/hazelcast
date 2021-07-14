@@ -41,6 +41,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.TopologyChangedException;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -57,6 +58,7 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -66,6 +68,8 @@ import com.hazelcast.version.Version;
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -202,7 +206,12 @@ public class JobCoordinationService {
         executionService.schedule(COORDINATOR_EXECUTOR_NAME, this::scanJobs, 0, MILLISECONDS);
     }
 
-    public CompletableFuture<Void> submitJob(long jobId, Data serializedJobDefinition, JobConfig jobConfig) {
+    public CompletableFuture<Void> submitJob(
+            long jobId,
+            Data serializedJobDefinition,
+            JobConfig jobConfig,
+            Subject subject
+    ) {
         CompletableFuture<Void> res = new CompletableFuture<>();
         submitToCoordinatorThread(() -> {
             MasterContext masterContext;
@@ -241,9 +250,12 @@ public class JobCoordinationService {
                     dag = (DAG) jobDefinition;
                     serializedDag = serializedJobDefinition;
                 }
+
+                checkPermissions(subject, dag);
+
                 Set<String> ownedObservables = ownedObservables(dag);
                 JobRecord jobRecord = new JobRecord(nodeEngine.getClusterService().getClusterVersion(), jobId, serializedDag,
-                        dagToJson(dag), jobConfig, ownedObservables);
+                        dagToJson(dag), jobConfig, ownedObservables, subject);
                 JobExecutionRecord jobExecutionRecord = new JobExecutionRecord(jobId, quorumSize);
                 masterContext = createMasterContext(jobRecord, jobExecutionRecord);
 
@@ -288,7 +300,12 @@ public class JobCoordinationService {
         return res;
     }
 
-    public CompletableFuture<Void> submitLightJob(long jobId, Data serializedJobDefinition, JobConfig jobConfig) {
+    public CompletableFuture<Void> submitLightJob(
+            long jobId,
+            Data serializedJobDefinition,
+            JobConfig jobConfig,
+            Subject subject
+    ) {
         Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         DAG dag;
         if (jobDefinition instanceof DAG) {
@@ -309,9 +326,11 @@ public class JobCoordinationService {
             throw new JetException("duplicate jobId " + idToString(jobId));
         }
 
+        checkPermissions(subject, dag);
+
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig);
+        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
 
@@ -323,6 +342,19 @@ public class JobCoordinationService {
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                     unscheduleJobTimeout(jobId);
                 });
+    }
+
+    private void checkPermissions(Subject subject, DAG dag) {
+        SecurityContext securityContext = nodeEngine.getNode().securityContext;
+        if (securityContext == null || subject == null) {
+            return;
+        }
+        for (Vertex vertex : dag) {
+            Permission requiredPermission = vertex.getMetaSupplier().getRequiredPermission();
+            if (requiredPermission != null) {
+                securityContext.checkPermission(subject, requiredPermission);
+            }
+        }
     }
 
     private static Set<String> ownedObservables(DAG dag) {
@@ -1013,7 +1045,13 @@ public class JobCoordinationService {
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
         ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
+        JobExecutionService jetExecutionService = jetServiceBackend.getJobExecutionService();
+        try {
+            jetExecutionService.prepareProcessorClassLoaders(jobId, jobConfig);
+            return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
+        } finally {
+            jetExecutionService.clearProcessorClassLoaders();
+        }
     }
 
     private String dagToJson(DAG dag) {

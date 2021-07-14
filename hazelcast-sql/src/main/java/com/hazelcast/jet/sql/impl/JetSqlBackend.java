@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -26,7 +25,10 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
@@ -35,10 +37,13 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JetRootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -274,29 +279,86 @@ public class JetSqlBackend implements SqlBackend {
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context);
 
-        Address localAddress = nodeEngine.getThisAddress();
-        List<Permission> permissions = extractPermissions(physicalRel);
-
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
-            SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel; // TODO: rename other rels
+            SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new IMapSelectPlan(planKey, select.objectKey(), parameterMetadata, select.mapName(),
-                    select.keyCondition(parameterMetadata), select.rowProjectorSupplier(parameterMetadata), rowMetadata,
-                    planExecutor, permissions);
+            return new IMapSelectPlan(
+                    planKey,
+                    select.objectKey(),
+                    parameterMetadata, select.mapName(),
+                    select.keyCondition(parameterMetadata),
+                    select.rowProjectorSupplier(parameterMetadata),
+                    rowMetadata,
+                    planExecutor
+            );
+        } else if (physicalRel instanceof InsertMapPhysicalRel) {
+            InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
+            return new IMapInsertPlan(
+                    planKey,
+                    insert.objectKey(),
+                    parameterMetadata,
+                    insert.mapName(),
+                    insert.entriesFn(),
+                    planExecutor
+            );
+        } else if (physicalRel instanceof SinkMapPhysicalRel) {
+            SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
+            return new IMapSinkPlan(
+                    planKey,
+                    sink.objectKey(),
+                    parameterMetadata,
+                    sink.mapName(),
+                    sink.entriesFn(),
+                    planExecutor
+            );
+        } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+            UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
+            return new IMapUpdatePlan(
+                    planKey,
+                    update.objectKey(),
+                    parameterMetadata,
+                    update.mapName(),
+                    update.keyCondition(parameterMetadata),
+                    update.updaterSupplier(parameterMetadata),
+                    planExecutor
+            );
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
-            return new IMapDeletePlan(planKey, delete.objectKey(), parameterMetadata, delete.mapName(),
-                    delete.keyCondition(parameterMetadata), planExecutor, permissions);
+            return new IMapDeletePlan(
+                    planKey,
+                    delete.objectKey(),
+                    parameterMetadata,
+                    delete.mapName(),
+                    delete.keyCondition(parameterMetadata),
+                    planExecutor
+            );
         } else if (physicalRel instanceof TableModify) {
-            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            return new DmlPlan(operation, planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(),
-                    planExecutor, permissions);
+            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
+            List<Permission> permissions = extractPermissions(physicalRel);
+            return new DmlPlan(
+                    operation,
+                    planKey,
+                    parameterMetadata,
+                    visitor.getObjectKeys(),
+                    visitor.getDag(),
+                    planExecutor,
+                    permissions
+            );
         } else {
-            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, localAddress), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            return new SelectPlan(planKey, parameterMetadata, visitor.getObjectKeys(), visitor.getDag(), isInfiniteRows,
-                    rowMetadata, planExecutor, permissions);
+            List<Permission> permissions = extractPermissions(physicalRel);
+            return new SelectPlan(
+                    planKey,
+                    parameterMetadata,
+                    visitor.getObjectKeys(),
+                    visitor.getDag(),
+                    isInfiniteRows,
+                    rowMetadata,
+                    planExecutor,
+                    permissions
+            );
         }
     }
 

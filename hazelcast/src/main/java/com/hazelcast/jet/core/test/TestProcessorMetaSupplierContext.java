@@ -66,6 +66,7 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
             throw new RuntimeException(e);
         }
     }});
+    private ClassLoader classLoader;
 
     @Nonnull @Override
     public HazelcastInstance hazelcastInstance() {
@@ -247,6 +248,17 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     @Nonnull
     public TestProcessorMetaSupplierContext setPartitionAssignment(Map<Address, int[]> partitionAssignment) {
         this.partitionAssignment = partitionAssignment;
+        return this;
+    }
+
+    @Override
+    public ClassLoader classLoader() {
+        return classLoader;
+    }
+
+    @Nonnull
+    public TestProcessorMetaSupplierContext setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
         return this;
     }
 }

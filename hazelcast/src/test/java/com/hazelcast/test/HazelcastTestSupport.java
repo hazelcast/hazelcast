@@ -194,7 +194,7 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(2);
+        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(2);
 
         config.getSqlConfig().setExecutorPoolSize(2);
 
@@ -202,7 +202,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Config regularInstanceConfig() {
-        return new Config();
+        Config config = new Config();
+        config.getJetConfig().setEnabled(true);
+        return config;
     }
 
     // disables auto-detection/tcp-ip network discovery on the given config and returns the same

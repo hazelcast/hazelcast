@@ -33,13 +33,16 @@ import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -52,12 +55,12 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -240,61 +243,72 @@ public class JetPlanExecutor {
 
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        String mapName = plan.mapName();
-        Expression<?> keyCondition = plan.keyCondition();
-        KvRowProjector.Supplier rowProjectorSupplier = plan.rowProjectorSupplier();
-
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         SimpleExpressionEvalContext evalContext = new SimpleExpressionEvalContext(args, serializationService);
-
-        Object key = keyCondition.eval(EmptyRow.INSTANCE, evalContext);
-        CompletableFuture<Object[]> future = hazelcastInstance.getMap(mapName)
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Object[]> future = hazelcastInstance.getMap(plan.mapName())
                 .getAsync(key)
                 .toCompletableFuture()
-                .thenApply(value -> rowProjectorSupplier
+                .thenApply(value -> plan.rowProjectorSupplier()
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
-        try {
-            Object[] row;
-            if (timeout > 0) {
-                row = future.get(timeout, TimeUnit.MILLISECONDS);
-            } else {
-                row = future.get();
+        Object[] row = await(future, timeout);
+        return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), plan.rowMetadata(), false);
+    }
+
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
+        if (!entries.isEmpty()) {
+            assert entries.size() == 1;
+            Entry<Object, Object> entry = entries.get(0);
+            CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(plan.mapName()))
+                    .putIfAbsentAsync(entry.getKey(), entry.getValue())
+                    .toCompletableFuture();
+            Object previous = await(future, timeout);
+            if (previous != null) {
+                throw QueryException.error("Duplicate key");
             }
-            return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), plan.rowMetadata(), false); // TODO: pull in other imap ops
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            throw QueryException.error("Timeout occurred while fetching entry");
-        } catch (InterruptedException | ExecutionException e) {
-            throw QueryException.error(e.getMessage(), e);
         }
+        return SqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
+                .putAllAsync(entries)
+                .toCompletableFuture();
+        await(future, timeout);
+        return SqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
+                .submitToKey(key, plan.updaterSupplier().get(arguments))
+                .toCompletableFuture();
+        await(future, timeout);
+        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
-        String mapName = plan.mapName();
-        Expression<?> keyCondition = plan.keyCondition();
-
-        Object key = keyCondition.eval(
-                EmptyRow.INSTANCE,
-                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance))
-        );
-        CompletableFuture<Void> future = hazelcastInstance.getMap(mapName)
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
-        try {
-            if (timeout > 0) {
-                future.get(timeout, TimeUnit.MILLISECONDS);
-            } else {
-                future.get();
-            }
-            return SqlResultImpl.createUpdateCountResult(0);
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            throw QueryException.error("Timeout occurred while deleting an entry");
-        } catch (InterruptedException | ExecutionException e) {
-            throw QueryException.error(e.getMessage(), e);
-        }
+        await(future, timeout);
+        return SqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
@@ -331,5 +345,16 @@ public class JetPlanExecutor {
             t = t.getCause();
         }
         return SqlErrorCode.GENERIC;
+    }
+
+    private <T> T await(CompletableFuture<T> future, long timeout) {
+        try {
+            return timeout > 0 ? future.get(timeout, TimeUnit.MILLISECONDS) : future.get();
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while executing statement");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
     }
 }

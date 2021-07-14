@@ -27,10 +27,14 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -47,6 +51,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -55,9 +60,10 @@ public final class ExecutionPlanBuilder {
     private ExecutionPlanBuilder() {
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static Map<MemberInfo, ExecutionPlan> createExecutionPlans(
-            NodeEngine nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
-            JobConfig jobConfig, long lastSnapshotId, boolean isLightJob
+            NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
+            JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
         final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
@@ -70,8 +76,8 @@ public final class ExecutionPlanBuilder {
         final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
         int memberIndex = 0;
         for (MemberInfo member : partitionsByMember.keySet()) {
-            plans.put(member,
-                    new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++, clusterSize, isLightJob));
+            plans.put(member, new ExecutionPlan(partitionsByAddress, jobConfig, lastSnapshotId, memberIndex++,
+                    clusterSize, isLightJob, subject));
         }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
 
@@ -92,16 +98,24 @@ public final class ExecutionPlanBuilder {
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
             String prefix = prefix(jobConfig.getName(), jobId, vertex.getName(), "#PMS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
+
+            JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            JobExecutionService jobExecutionService = jetBackend.getJobExecutionService();
+            ClassLoader processorClassLoader = jobExecutionService.getClassLoader(jobConfig, jobId);
             try {
-                metaSupplier.init(new MetaSupplierCtx(nodeEngine.getHazelcastInstance(), jobId, executionId, jobConfig, logger,
-                        vertex.getName(), localParallelism, totalParallelism, clusterSize, isLightJob, partitionsByAddress));
+                doWithClassLoader(processorClassLoader, () ->
+                        metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,
+                                jobConfig, logger, vertex.getName(), localParallelism, totalParallelism, clusterSize,
+                                isLightJob, partitionsByAddress, subject, processorClassLoader)));
             } catch (Exception e) {
                 throw sneakyThrow(e);
             }
 
-            Function<? super Address, ? extends ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
+            Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =
+                    doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.get(addresses));
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
-                final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
+                final ProcessorSupplier processorSupplier =
+                        doWithClassLoader(processorClassLoader, () -> procSupplierFn.apply(e.getKey().getAddress()));
                 if (!isLightJob) {
                     // We avoid the check for light jobs - the user will get the error anyway, but maybe with less information.
                     // And we can recommend the user to use normal job to have more checks.

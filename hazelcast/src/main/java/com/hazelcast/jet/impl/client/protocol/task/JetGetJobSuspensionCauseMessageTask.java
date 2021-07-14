@@ -22,7 +22,10 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nullable;
 
 public class JetGetJobSuspensionCauseMessageTask extends AbstractJetMessageTask<Long, Data> {
 
@@ -50,5 +53,11 @@ public class JetGetJobSuspensionCauseMessageTask extends AbstractJetMessageTask<
     @Override
     public Object[] getParameters() {
         return new Object[0];
+    }
+
+    @Nullable
+    @Override
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_READ};
     }
 }

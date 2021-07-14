@@ -28,6 +28,8 @@ import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.config.security.SimpleAuthenticationConfig;
+import com.hazelcast.config.security.TokenEncoding;
+import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -69,6 +71,8 @@ import static com.hazelcast.config.RestEndpointGroup.HEALTH_CHECK;
 import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -219,6 +223,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "          </login-module>\n"
                 + "        </jaas>"
                 + "      </authentication>"
+                + "      <identity>"
+                + "        <token encoding=\"base64\">****</token>"
+                + "      </identity>"
                 + "    </realm>"
                 + "    <realm name='kerberos'>"
                 + "      <authentication>"
@@ -317,6 +324,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(LoginModuleUsage.REQUIRED, clientLoginModuleCfg2.getUsage());
         assertEquals(1, clientLoginModuleCfg2.getProperties().size());
         assertEquals("client-value2", clientLoginModuleCfg2.getProperties().getProperty("client-property2"));
+
+        TokenIdentityConfig tokenIdentityConfig = clientRealm.getTokenIdentityConfig();
+        assertEquals(TokenEncoding.BASE64, tokenIdentityConfig.getEncoding());
+        assertArrayEquals(ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA.getBytes(US_ASCII), tokenIdentityConfig.getToken());
 
         RealmConfig kerberosRealm = securityConfig.getRealmConfig("kerberos");
         assertNotNull(kerberosRealm);
