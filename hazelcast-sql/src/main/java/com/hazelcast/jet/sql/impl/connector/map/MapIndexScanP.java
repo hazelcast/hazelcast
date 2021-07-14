@@ -214,7 +214,9 @@ public final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
-                    itemsToSend.offer(s.currentRow);
+                    if (!tryEmit(s.currentRow)) {
+                        itemsToSend.offer(s.currentRow);
+                    }
                     splits.get(i).remove();
                 }
             }
