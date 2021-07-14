@@ -85,7 +85,7 @@ jobs:
 
           ssh_key_public=$(cat id_rsa.pub)
           echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
-          echo "ssh_key_public" >> $GITHUB_ENV
+          echo "$ssh_key_public" >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
           echo "~~~~~~~~~"
           echo "$ssh_key_public"
