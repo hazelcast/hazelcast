@@ -43,7 +43,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -59,7 +58,6 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
@@ -342,12 +340,6 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public List<String> getPrimaryKey(Table table0) {
         return PRIMARY_KEY_LIST;
-    }
-
-    private static List<Expression<?>> identityProjection(PartitionedMapTable table) {
-        return IntStream.range(0, table.getFieldCount())
-                .mapToObj(i -> ColumnExpression.create(i, table.getField(i).getType()))
-                .collect(toList());
     }
 
     private static String toString(PartitionedMapTable table) {
