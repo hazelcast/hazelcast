@@ -21,6 +21,8 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
+                        <!-- We must generate a -javadoc JAR file to publish on Maven Central -->
+                        <id>empty-javadoc-jar</id>
                         <goals>
                             <goal>jar</goal>
                         </goals>
