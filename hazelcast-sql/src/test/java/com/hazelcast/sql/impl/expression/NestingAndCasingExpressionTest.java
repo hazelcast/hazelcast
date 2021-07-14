@@ -476,6 +476,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         check(sql("TO_EPOCH_MILLIS(?) || TO_EPOCH_MILLIS(?)"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
     }
 
+    @Test
+    public void test_CONCAT_WS() {
+        check(sql("CONCAT_WS(?, ?, ?) || CONCAT_WS(?, ?, ?)"), SEPARATOR_VAL, "1", "2", SEPARATOR_VAL, "3", "4");
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
         checkValue0(lowerCaseInternal(sql), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
