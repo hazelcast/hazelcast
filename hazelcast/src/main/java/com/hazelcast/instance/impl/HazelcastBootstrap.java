@@ -259,7 +259,7 @@ public final class HazelcastBootstrap {
     private static HazelcastInstance createStandaloneInstance() {
         configureLogging();
         LOGGER.info("Bootstrapped instance requested but application wasn't called from hazelcast submit script. "
-                + "Creating a standalone Hazelcast instance instead.");
+                + "Creating a standalone Hazelcast instance instead. Jet is enabled in this standalone instance.");
         Config config = Config.load();
         config.getJetConfig().setEnabled(true);
 
