@@ -53,7 +53,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
     }
 
     @Test
-    // @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTestPointLookup() {
         Random random = new Random();
         List<SqlTestSupport.Row> expected = new ArrayList<>();

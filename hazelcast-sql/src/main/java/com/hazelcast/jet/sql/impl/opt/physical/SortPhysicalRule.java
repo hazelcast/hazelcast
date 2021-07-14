@@ -20,15 +20,14 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
-import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.requiresLocalSort;
 import static java.util.Collections.singletonList;
 
 final class SortPhysicalRule extends RelOptRule {
@@ -64,9 +63,9 @@ final class SortPhysicalRule extends RelOptRule {
                 sortTransforms.add(convert(logicalSort));
             } else {
                 if (logicalSort.offset != null || logicalSort.fetch != null) {
+                    // TODO: [sasha] [Hakan] introduce FetchOffsetRel
+                    // This Sort rel will be eliminated further.
                     SortPhysicalRel top = (SortPhysicalRel) convert(logicalSort);
-                    // TODO: [sasha], [Hakan] additional Sort relation is used for FETCH OFFSET with index scan.
-                    // TODO: It's required for correct work of index scan, but should be optimized in next revisions.
                     top = new SortPhysicalRel(
                             top.getCluster(),
                             top.getTraitSet(),
@@ -84,34 +83,6 @@ final class SortPhysicalRule extends RelOptRule {
         }
         List<RelNode> transforms = nonSortTransforms.isEmpty() ? sortTransforms : nonSortTransforms;
         return !transforms.isEmpty() ? transforms : singletonList(convert(logicalSort));
-    }
-
-    private static boolean requiresLocalSort(RelCollation sortCollation, RelCollation inputCollation) {
-        if (sortCollation.getFieldCollations().isEmpty()) {
-            // No need for sorting
-            return false;
-        }
-
-        List<RelFieldCollation> sortFields = sortCollation.getFieldCollations();
-        List<RelFieldCollation> inputFields = inputCollation.getFieldCollations();
-
-        if (sortFields.size() <= inputFields.size()) {
-            for (int i = 0; i < sortFields.size(); i++) {
-                RelFieldCollation sortField = sortFields.get(i);
-                RelFieldCollation inputField = inputFields.get(i);
-
-                // Different collation, local sorting is needed.
-                if (!sortField.equals(inputField)) {
-                    return true;
-                }
-            }
-
-            // Prefix is confirmed, no local sorting is needed.
-            return false;
-        } else {
-            // Input has less collated fields than sort. Definitely not a prefix => local sorting is needed.
-            return true;
-        }
     }
 
     private static RelNode convert(RelNode rel) {
