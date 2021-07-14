@@ -210,6 +210,9 @@ public class IMapSqlConnector implements SqlConnector {
                 "Index(" + toString(table) + ")",
                 readMapIndexSupplier(indexScanMetadata)
         );
+        // LP must be 1 - one local index contains all local partitions, if there are 2 local processors,
+        // the index will be scanned twice and each time half of the partitions will be thrown out.
+        scanner.localParallelism(1);
 
         if (tableIndex.getType() == IndexType.SORTED) {
             Vertex sorter = dag.newUniqueVertex(
