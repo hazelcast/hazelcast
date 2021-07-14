@@ -1,4 +1,4 @@
-name: integration-tests
+name: azure-tests
 on:
   workflow_dispatch:
   push:

@@ -1,14 +1,13 @@
-name: Integration-tests
+name: aws-tests
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-      - ssh-keys-test
-#    paths:
-#      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
-#      - 'hazelcast/pom.xml'
-#      - '.github/terraform/aws/**'
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/aws/**'
+      - 'hazelcast/pom.xml'
+      - '.github/terraform/aws/**'
 
 jobs:
   build:
