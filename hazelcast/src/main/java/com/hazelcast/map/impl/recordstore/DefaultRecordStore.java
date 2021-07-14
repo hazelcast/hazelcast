@@ -204,6 +204,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public void removeReplicatedRecord(Data dataKey) {
+        Record record = storage.get(dataKey);
+        if (record != null) {
+            mutationObserver.onRemoveRecord(dataKey, record);
+            removeKeyFromExpirySystem(dataKey);
+            storage.removeRecord(dataKey, record);
+        }
+    }
+
+    @Override
     public Record putBackup(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
                             boolean putTransient, CallerProvenance provenance) {
         return putBackupInternal(dataKey, newRecord.getValue(),

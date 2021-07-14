@@ -35,15 +35,15 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("baa70b27cab1f81d75c56ee93f69b001")
+@Generated("8b6adf52b1207ee78f7cd183e8a5af2c")
 public final class JetJoinSubmittedJobCodec {
     //hex: 0xFE0500
     public static final int REQUEST_MESSAGE_TYPE = 16647424;
     //hex: 0xFE0501
     public static final int RESPONSE_MESSAGE_TYPE = 16647425;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_IS_LIGHT_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
     private JetJoinSubmittedJobCodec() {
@@ -58,16 +58,16 @@ public final class JetJoinSubmittedJobCodec {
 
         /**
          */
-        public boolean isLightJob;
+        public @Nullable java.util.UUID lightJobCoordinator;
 
         /**
-         * True if the isLightJob is received from the client, false otherwise.
-         * If this is false, isLightJob has the default value for its type.
+         * True if the lightJobCoordinator is received from the client, false otherwise.
+         * If this is false, lightJobCoordinator has the default value for its type.
          */
-        public boolean isIsLightJobExists;
+        public boolean isLightJobCoordinatorExists;
     }
 
-    public static ClientMessage encodeRequest(long jobId, boolean isLightJob) {
+    public static ClientMessage encodeRequest(long jobId, @Nullable java.util.UUID lightJobCoordinator) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.JoinSubmittedJob");
@@ -75,7 +75,7 @@ public final class JetJoinSubmittedJobCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
-        encodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET, isLightJob);
+        encodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET, lightJobCoordinator);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
@@ -85,11 +85,11 @@ public final class JetJoinSubmittedJobCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        if (initialFrame.content.length >= REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
-            request.isLightJob = decodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET);
-            request.isIsLightJobExists = true;
+        if (initialFrame.content.length >= REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            request.lightJobCoordinator = decodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET);
+            request.isLightJobCoordinatorExists = true;
         } else {
-            request.isIsLightJobExists = false;
+            request.isLightJobCoordinatorExists = false;
         }
         return request;
     }

@@ -57,7 +57,7 @@ public class QueryExecuteOperationFragmentTest extends SqlTestSupport {
             Arrays.asList(UUID.randomUUID(), UUID.randomUUID())
         );
 
-        QueryExecuteOperationFragment restored = serializeAndCheck(original, SqlDataSerializerHook.OPERATION_EXECUTE_FRAGMENT);
+        QueryExecuteOperationFragment restored = serializeAndCheck(original, SqlDataSerializerHook.QUERY_OPERATION_EXECUTE_FRAGMENT);
 
         assertEquals(original.getNode(), restored.getNode());
         assertEquals(original.getMapping(), restored.getMapping());

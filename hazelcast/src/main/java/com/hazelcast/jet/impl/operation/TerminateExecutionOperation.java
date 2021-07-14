@@ -52,7 +52,7 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
 
     @Override
     public void run() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
         executionService.terminateExecution(jobId(), executionId, callerAddress, mode);

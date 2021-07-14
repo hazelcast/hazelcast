@@ -25,6 +25,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
@@ -153,8 +154,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int EVICTION_CONFIG = 60;
     public static final int PERMISSION_CONFIG = 61;
     public static final int BITMAP_INDEX_OPTIONS = 62;
+    public static final int DATA_PERSISTENCE_CONFIG = 63;
 
-    private static final int LEN = BITMAP_INDEX_OPTIONS + 1;
+    private static final int LEN = DATA_PERSISTENCE_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -227,6 +229,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[EVICTION_CONFIG] = arg -> new EvictionConfig();
         constructors[PERMISSION_CONFIG] = arg -> new PermissionConfig();
         constructors[BITMAP_INDEX_OPTIONS] = arg -> new BitmapIndexOptions();
+        constructors[DATA_PERSISTENCE_CONFIG] = arg -> new DataPersistenceConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }

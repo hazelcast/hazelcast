@@ -40,6 +40,6 @@ public class QueryCheckResponseOperation extends QueryAbstractCheckOperation {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CHECK_RESPONSE;
+        return SqlDataSerializerHook.QUERY_OPERATION_CHECK_RESPONSE;
     }
 }

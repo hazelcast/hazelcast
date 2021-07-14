@@ -34,12 +34,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.security.PermissionsUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.Permission;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -76,6 +78,15 @@ import static java.util.Collections.singletonList;
  */
 @FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
+
+    /**
+     * Returns the required permission to execute the vertex which has
+     * this ProcessorMetaSupplier. This is an Enterprise feature.
+     */
+    @Nullable
+    default Permission getRequiredPermission() {
+        return null;
+    }
 
     /**
      * Returns the metadata on this supplier, a string-to-string map. There is
@@ -151,11 +162,28 @@ public interface ProcessorMetaSupplier extends Serializable {
      * returns the same instance for each given {@code Address}.
      *
      * @param preferredLocalParallelism the value to return from {@link #preferredLocalParallelism()}
+     * @param permission the required permission to run the processor
      * @param procSupplier the processor supplier
      */
     @Nonnull
-    static ProcessorMetaSupplier of(int preferredLocalParallelism, @Nonnull ProcessorSupplier procSupplier) {
-        return new MetaSupplierFromProcessorSupplier(preferredLocalParallelism, procSupplier);
+    static ProcessorMetaSupplier of(
+            int preferredLocalParallelism,
+            @Nullable Permission permission,
+            @Nonnull ProcessorSupplier procSupplier
+    ) {
+        return new MetaSupplierFromProcessorSupplier(preferredLocalParallelism, permission, procSupplier);
+    }
+
+    /**
+     * Variant of {@link #of(int, Permission, ProcessorSupplier)} where
+     * the processor does not require any permission to run.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier of(
+            int preferredLocalParallelism,
+            @Nonnull ProcessorSupplier procSupplier
+    ) {
+        return of(preferredLocalParallelism, null, procSupplier);
     }
 
     /**
@@ -164,8 +192,17 @@ public interface ProcessorMetaSupplier extends Serializable {
      * the meta-supplier will be {@link Vertex#LOCAL_PARALLELISM_USE_DEFAULT}.
      */
     @Nonnull
+    static ProcessorMetaSupplier of(@Nullable Permission permission, @Nonnull ProcessorSupplier procSupplier) {
+        return of(Vertex.LOCAL_PARALLELISM_USE_DEFAULT, permission, procSupplier);
+    }
+
+    /**
+     * Variant of {@link #of(Permission, ProcessorSupplier)} where
+     * the processor does not require any permission to run.
+     */
+    @Nonnull
     static ProcessorMetaSupplier of(@Nonnull ProcessorSupplier procSupplier) {
-        return of(Vertex.LOCAL_PARALLELISM_USE_DEFAULT, procSupplier);
+        return of(null, procSupplier);
     }
 
     /**
@@ -181,7 +218,7 @@ public interface ProcessorMetaSupplier extends Serializable {
     static ProcessorMetaSupplier of(
             int preferredLocalParallelism, @Nonnull SupplierEx<? extends Processor> procSupplier
     ) {
-        return of(preferredLocalParallelism, ProcessorSupplier.of(procSupplier));
+        return of(preferredLocalParallelism, null, ProcessorSupplier.of(procSupplier));
     }
 
     /**
@@ -248,7 +285,19 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier preferLocalParallelismOne(@Nonnull ProcessorSupplier supplier) {
-        return of(1, supplier);
+        return of(1, null, supplier);
+    }
+
+    /**
+     * Variant of {@link #preferLocalParallelismOne(ProcessorSupplier)} where the
+     * processor requires given permission to run.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOne(
+            @Nullable Permission permission,
+            @Nonnull ProcessorSupplier supplier
+    ) {
+        return of(1, permission, supplier);
     }
 
     /**
@@ -260,16 +309,50 @@ public interface ProcessorMetaSupplier extends Serializable {
     static ProcessorMetaSupplier preferLocalParallelismOne(
             @Nonnull SupplierEx<? extends Processor> procSupplier
     ) {
-        return of(1, ProcessorSupplier.of(procSupplier));
+        return of(1, null, ProcessorSupplier.of(procSupplier));
     }
 
     /**
-     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String)} where the node
-     * for the supplier will be chosen randomly.
+     * Variant of {@link #preferLocalParallelismOne(SupplierEx)} where the
+     * processor requires given permission to run.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOne(
+            @Nullable Permission permission,
+            @Nonnull SupplierEx<? extends Processor> procSupplier
+    ) {
+        return of(1, permission, ProcessorSupplier.of(procSupplier));
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * where the node for the supplier will be chosen randomly.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nullable Permission permission) {
+        return forceTotalParallelismOne(supplier, newUnsecureUuidString(), permission);
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * where the node for the supplier will be chosen randomly and
+     * without any required permission.
      */
     @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(@Nonnull ProcessorSupplier supplier) {
-        return forceTotalParallelismOne(supplier, newUnsecureUuidString());
+        return forceTotalParallelismOne(supplier, newUnsecureUuidString(), null);
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String, Permission)}
+     * without any required permission.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier forceTotalParallelismOne(
+            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
+    ) {
+        return forceTotalParallelismOne(supplier, partitionKey, null);
     }
 
     /**
@@ -288,28 +371,28 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @param supplier the supplier that will be wrapped
      * @param partitionKey the supplier will only be created on the node that owns the supplied
      *                     partition key
+     * @param permission the required permission to run the processor
      * @return the wrapped {@code ProcessorMetaSupplier}
      *
      * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
      */
     @Nonnull
     static ProcessorMetaSupplier forceTotalParallelismOne(
-            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey
+            @Nonnull ProcessorSupplier supplier, @Nonnull String partitionKey, @Nullable Permission permission
     ) {
         return new ProcessorMetaSupplier() {
-
             private transient Address ownerAddress;
 
             @Override
             public void init(@Nonnull Context context) {
+                PermissionsUtil.checkPermission(supplier, context);
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
                                     + "supports only total parallelism of 1. Local parallelism must be 1.");
                 }
-                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
-                ownerAddress = context.hazelcastInstance().getPartitionService()
-                                      .getPartition(key).getOwner().getAddress();
+                ownerAddress = context.hazelcastInstance().getPartitionService().getPartition(
+                        StringPartitioningStrategy.getPartitionKey(partitionKey)).getOwner().getAddress();
             }
 
             @Nonnull @Override
@@ -320,6 +403,11 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Override
             public int preferredLocalParallelism() {
                 return 1;
+            }
+
+            @Override
+            public Permission getRequiredPermission() {
+                return permission;
             }
         };
     }
@@ -371,6 +459,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             @Override
             public void init(@Nonnull Context context) throws Exception {
+                PermissionsUtil.checkPermission(supplier, context);
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
                             "Local parallelism of " + context.localParallelism() + " was requested for a vertex that "
@@ -517,5 +606,12 @@ public interface ProcessorMetaSupplier extends Serializable {
          * dealing with Hazelcast data structures should use.
          */
         Map<Address, int[]> partitionAssignment();
+
+        /**
+         * Processor classloader configured via {@link JobConfig#addCustomClasspath(String, String)}
+         *
+         * @return processor classloader, null if no custom classpath elements are configured
+         */
+        ClassLoader classLoader();
     }
 }

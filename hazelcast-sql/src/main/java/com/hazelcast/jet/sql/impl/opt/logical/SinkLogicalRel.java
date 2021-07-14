@@ -17,11 +17,14 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
 import java.util.List;
 
@@ -38,6 +41,11 @@ public class SinkLogicalRel extends TableModify implements LogicalRel {
             boolean flattened
     ) {
         super(cluster, traitSet, table, catalogReader, input, INSERT, null, null, flattened);
+    }
+
+    @Override
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        return planner.getCostFactory().makeHugeCost();
     }
 
     @Override

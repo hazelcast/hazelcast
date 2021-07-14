@@ -64,6 +64,21 @@ public class JetTest extends JetTestSupport {
     }
 
     @Test
+    public void when_jetDisabled_and_usingClient_then_getJetInstanceThrowsException() {
+        // When
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1))
+                .writeTo(Sinks.noop());
+
+        assertThrows(IllegalArgumentException.class, () -> client.getJet().newJob(p).join());
+    }
+
+    @Test
     public void when_resourceUploadDisabled_and_submitJobWithResource_then_jobFails() {
         // When
         HazelcastInstance hz = createHazelcastInstance();

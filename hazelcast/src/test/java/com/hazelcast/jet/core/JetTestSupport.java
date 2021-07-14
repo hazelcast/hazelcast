@@ -30,6 +30,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.logging.ILogger;
@@ -38,6 +39,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
+
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -58,6 +61,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -68,6 +72,9 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      */
     @ClassRule
     public static Timeout globalTimeout = Timeout.seconds(15 * 60);
+
+    @ClassRule
+    public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(JetTestSupport.class);
 
@@ -369,5 +376,23 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
         return ((BatchSourceTransform<T>) source).metaSupplier;
+    }
+
+    /**
+     * Asserts that the {@code job} has an {@link ExecutionContext} on the
+     * given {@code instance}.
+     */
+    public static void assertJobExecuting(Job job, HazelcastInstance instance) {
+        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
+        assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
+    }
+
+    /**
+     * Asserts that the {@code job} does not have an {@link ExecutionContext}
+     * on the given {@code instance}.
+     */
+    public static void assertJobNotExecuting(Job job, HazelcastInstance instance) {
+        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
+        assertNull("Job should not be executing on member " + instance + ", but is", execCtx);
     }
 }

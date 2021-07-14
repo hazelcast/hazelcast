@@ -61,6 +61,21 @@ public class SqlUnsupportedFeaturesTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_multiFullJoin() {
+        TestBatchSqlConnector.create(sqlService, "b", 0);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                    "SELECT 1 FROM b AS b1 JOIN b AS b2 ON b1.v = b2.v FULL OUTER JOIN b AS b3 ON b2.v = b3.v"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("FULL join not supported");
+
+        assertThatThrownBy(() -> sqlService.execute(
+                    "SELECT 1 FROM b AS b1 JOIN b AS b2 ON b1.v = b2.v FULL JOIN b AS b3 ON b2.v = b3.v"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("FULL join not supported");
+    }
+
+    @Test
     public void test_semiJoin() {
         TestBatchSqlConnector.create(sqlService, "b", 0);
 

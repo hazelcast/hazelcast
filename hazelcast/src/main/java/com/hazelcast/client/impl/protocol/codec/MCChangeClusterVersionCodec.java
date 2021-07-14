@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Changes the cluster version.
  */
-@Generated("06d32f6cb76d90d3aa079473ad51cd5e")
+@Generated("b68eca698bea5daab40797694107bdf9")
 public final class MCChangeClusterVersionCodec {
     //hex: 0x201000
     public static final int REQUEST_MESSAGE_TYPE = 2101248;
@@ -94,6 +94,4 @@ public final class MCChangeClusterVersionCodec {
 
         return clientMessage;
     }
-
-
 }

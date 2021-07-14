@@ -16,9 +16,13 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.TypedStreamDeserializer;
 
 import java.io.IOException;
 
@@ -34,5 +38,12 @@ public interface SerializerAdapter {
 
     Serializer getImpl();
 
-    Object read(ObjectDataInput in, Class aClass) throws IOException;
+    default void conditionallyReturnInputBufferToPool(Object object, BufferObjectDataInput inputBuffer, BufferPool pool) {
+        pool.returnInputBuffer(inputBuffer);
+    }
+
+    default Object read(ObjectDataInput in, Class aClass) throws IOException {
+        throw new HazelcastSerializationException(this + " is not implementing the " + TypedStreamDeserializer.class
+                + " interface. Please implement this interface to deserialize for class " + aClass);
+    }
 }

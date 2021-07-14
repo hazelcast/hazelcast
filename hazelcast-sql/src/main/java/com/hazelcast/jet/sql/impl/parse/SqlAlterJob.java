@@ -82,6 +82,6 @@ public class SqlAlterJob extends SqlAlter {
     public enum AlterJobOperation {
         SUSPEND,
         RESUME,
-        RESTART
+        RESTART;
     }
 }

@@ -146,8 +146,6 @@ public interface Job {
      * status from the job coordinator. For light jobs it returns only {@link
      * JobStatus#RUNNING RUNNING}, {@link JobStatus#COMPLETED COMPLETED} or
      * {@link JobStatus#FAILED FAILED}.
-     *
-     * @throws UnsupportedOperationException if called for a light job
      */
     @Nonnull
     JobStatus getStatus();

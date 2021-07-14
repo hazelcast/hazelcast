@@ -30,6 +30,7 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.sql.impl.schema.Mapping;
 
 import java.util.Collection;
 import java.util.List;

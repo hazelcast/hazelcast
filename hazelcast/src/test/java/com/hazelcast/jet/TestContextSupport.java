@@ -27,8 +27,8 @@ import com.hazelcast.jet.core.test.TestProcessorSupplierContext;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.processor.ProcessorWrapper;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -95,11 +95,12 @@ public final class TestContextSupport {
         public void init(@Nonnull Context context) throws Exception {
             if (context instanceof TestProcessorSupplierContext) {
                 TestProcessorSupplierContext c = (TestProcessorSupplierContext) context;
-                NodeEngine nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
-                context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngineImpl nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
+                context = new ProcCtx(nodeEngine, c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), 1, 1,
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), 1, c.memberCount(),
-                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
+                        null, context.classLoader());
             }
             delegate.init(context);
         }
@@ -116,11 +117,12 @@ public final class TestContextSupport {
             context = super.initContext(context);
             if (context instanceof TestProcessorContext) {
                 TestProcessorContext c = (TestProcessorContext) context;
-                NodeEngine nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
-                context = new ProcCtx(c.hazelcastInstance(), c.jobId(), c.executionId(), c.jobConfig(),
+                NodeEngineImpl nodeEngine = Util.getNodeEngine(c.hazelcastInstance());
+                context = new ProcCtx(nodeEngine, c.jobId(), c.executionId(), c.jobConfig(),
                         c.logger(), c.vertexName(), c.localProcessorIndex(), c.globalProcessorIndex(),
                         c.isLightJob(), c.partitionAssignment(), c.localParallelism(), c.memberIndex(), c.memberCount(),
-                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService());
+                        new ConcurrentHashMap<>(), (InternalSerializationService) nodeEngine.getSerializationService(),
+                        null, context.classLoader());
             }
             return context;
         }

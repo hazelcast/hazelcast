@@ -245,4 +245,13 @@ public final class OptUtils {
         return Util.toList(rowType.getFieldList(),
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
     }
+
+    public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {
+        if (rel.getTable() == null) {
+            return false;
+        }
+
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
+        return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
+    }
 }
