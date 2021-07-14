@@ -19,10 +19,12 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -60,7 +62,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     private transient MapFetchIndexOperationResult response;
 
-    public MapFetchIndexOperation() { }
+    public MapFetchIndexOperation() {
+    }
 
     public MapFetchIndexOperation(
             String mapName,
@@ -314,7 +317,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         super.readInternal(in);
         indexName = in.readString();
         partitionIdSet = in.readObject();
-        pointers = in.readObject();
+        int len = in.readInt();
+        pointers = new IndexIterationPointer[len];
+        for (int i = 0; i < len; ++i) {
+            pointers[i] = in.readObject();
+        }
         sizeLimit = in.readInt();
     }
 
@@ -323,7 +330,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         super.writeInternal(out);
         out.writeString(indexName);
         out.writeObject(partitionIdSet);
-        out.writeObject(pointers);
+        out.writeInt(pointers.length);
+        for (IndexIterationPointer pointer : pointers) {
+            out.writeObject(pointer);
+        }
         out.writeInt(sizeLimit);
     }
 
@@ -332,9 +342,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return MAP_FETCH_INDEX_OPERATION;
     }
 
-    public static final class MapFetchIndexOperationResult {
-        private final List<QueryableEntry<?, ?>> entries;
-        private final IndexIterationPointer[] pointers;
+    public static final class MapFetchIndexOperationResult implements DataSerializable {
+        private List<QueryableEntry<?, ?>> entries;
+        private IndexIterationPointer[] pointers;
+
+        public MapFetchIndexOperationResult() {
+        }
 
         public MapFetchIndexOperationResult(
                 List<QueryableEntry<?, ?>> entries,
@@ -354,6 +367,25 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
          */
         public IndexIterationPointer[] getPointers() {
             return pointers;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            SerializationUtil.writeList(entries, out);
+            out.writeInt(pointers.length);
+            for (IndexIterationPointer pointer : pointers) {
+                out.writeObject(pointer);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            entries = SerializationUtil.readList(in);
+            int len = in.readInt();
+            pointers = new IndexIterationPointer[len];
+            for (int i = 0; i < len; ++i) {
+                pointers[i] = in.readObject();
+            }
         }
     }
 

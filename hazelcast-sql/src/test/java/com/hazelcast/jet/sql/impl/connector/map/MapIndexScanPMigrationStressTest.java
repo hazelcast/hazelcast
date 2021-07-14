@@ -20,10 +20,11 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.SqlTestSupport.Row;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -32,16 +33,19 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport {
+public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 10_000;
     private static final String MAP_NAME = "map";
 
+    private final AtomicBoolean requesterFinished = new AtomicBoolean(false);
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
@@ -71,7 +75,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(10, 10L);
+        MutatorThread mutator = new MutatorThread(50L);
         QueryThread requester = new QueryThread(
                 () -> {
                     int i = new Random().nextInt(ITEM_COUNT);
@@ -82,8 +86,9 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         );
         mutator.start();
         requester.start();
-        mutator.join();
         requester.join();
+        requesterFinished.set(true);
+        mutator.join();
 
         assertThat(requester.allQueriesSucceeded()).isTrue();
     }
@@ -100,7 +105,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(10, 10L);
+        MutatorThread mutator = new MutatorThread(10L);
         QueryThread requester = new QueryThread(
                 () -> Tuple2.tuple2("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected),
                 500,
@@ -108,26 +113,24 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         );
         mutator.start();
         requester.start();
-        mutator.join();
         requester.join();
+        requesterFinished.set(true);
+        mutator.join();
 
         assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
     private class MutatorThread extends Thread {
-
-        private final int iterations;
         private final long delay;
 
-        private MutatorThread(int iterations, long delay) {
-            this.iterations = iterations;
+        private MutatorThread(long delay) {
             this.delay = delay;
         }
 
         @Override
         public void run() {
-            for (int i = 0; i < iterations; ++i) {
-                int index = 1 + i % (instances.length - 1);
+            while (!requesterFinished.get()) {
+                int index = 1 + ThreadLocalRandom.current().nextInt(instances.length - 1);
                 factory.terminate(instances[index]);
                 instances[index] = factory.newHazelcastInstance(smallInstanceConfig());
                 try {
@@ -156,6 +159,7 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
         @Override
         @SuppressWarnings("ConstantConditions")
         public void run() {
+            int actualIterations = 0;
             try {
                 for (int i = 0; i < iterations; ++i) {
                     Tuple2<String, List<Row>> sqlAndExpectedRows = sqlAndExpectedRowsSupplier.get();
@@ -164,7 +168,8 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
                             .execute(sqlAndExpectedRows.f0())
                             .iterator()
                             .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
-                    result &= sqlAndExpectedRows.f1().equals(actualRows);
+                    boolean tempResult = sqlAndExpectedRows.f1().equals(actualRows);
+                    result &= tempResult;
 
                     try {
                         Thread.sleep(delay);
@@ -172,9 +177,13 @@ public class MapIndexScanPMigrationStressTest extends SimpleTestInClusterSupport
                         e.printStackTrace();
                     }
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
+            } catch (HazelcastSqlException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
                 result = false;
+            } finally {
+                assertThat(actualIterations).isEqualTo(iterations);
             }
         }
 
