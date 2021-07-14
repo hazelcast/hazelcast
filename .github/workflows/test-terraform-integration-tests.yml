@@ -81,6 +81,10 @@ jobs:
           ssh_key="${ssh_key//$'\n'/'%0A'}"
           ssh_key="${ssh_key//$'\r'/'%0D'}"
 
+          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
+          echo "$ssh_key" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
           ssh_key_public=$(cat id_rsa.pub)
           ssh_key_public="${ssh_key_public//'%'/'%25'}"
           ssh_key_public="${ssh_key_public//$'\n'/'%0A'}"
