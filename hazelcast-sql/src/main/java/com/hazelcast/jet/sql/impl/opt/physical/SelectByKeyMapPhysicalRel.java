@@ -76,7 +76,7 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     }
 
     public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
-        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata); // TODO: other imap rels
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         return keyCondition.accept(visitor);
     }
 
@@ -115,7 +115,7 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getQualifiedName()) // TODO: use it for other imap rels
+                .item("table", table.getQualifiedName())
                 .item("keyCondition", keyCondition)
                 .item("projections", Ord.zip(rowType.getFieldList()).stream()
                         .map(field -> {

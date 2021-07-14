@@ -221,7 +221,7 @@ public final class OptUtils {
         return schema(table);
     }
 
-    private static PlanNodeSchema schema(Table table) {
+    public static PlanNodeSchema schema(Table table) {
         List<QueryDataType> fieldTypes = new ArrayList<>();
         for (TableField field : table.getFields()) {
             fieldTypes.add(field.getType());

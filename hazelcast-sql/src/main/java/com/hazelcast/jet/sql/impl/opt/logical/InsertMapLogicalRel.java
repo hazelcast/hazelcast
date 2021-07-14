@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -45,6 +47,8 @@ public class InsertMapLogicalRel extends AbstractRelNode implements LogicalRel {
     ) {
         super(cluster, traitSet);
 
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
+
         this.table = table;
         this.values = values;
     }
@@ -64,7 +68,7 @@ public class InsertMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        // zero as not starting any job is required
+        // zero as not starting any job
         return planner.getCostFactory().makeZeroCost();
     }
 

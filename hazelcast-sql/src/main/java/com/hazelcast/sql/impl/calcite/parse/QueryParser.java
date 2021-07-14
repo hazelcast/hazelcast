@@ -70,12 +70,11 @@ public class QueryParser {
 
     public QueryParseResult parse(String sql) {
         try {
-            //try {
-            //    return parse(sql, sqlBackend);
-            //} catch (Exception e) {
-                // TODO:
+            try {
+                return parse(sql, sqlBackend);
+            } catch (Exception e) {
                 return parse(sql, jetSqlBackend);
-            //}
+            }
         } catch (Exception e) {
             String message;
             // Check particular type of exception which causes typical long multiline error messages.

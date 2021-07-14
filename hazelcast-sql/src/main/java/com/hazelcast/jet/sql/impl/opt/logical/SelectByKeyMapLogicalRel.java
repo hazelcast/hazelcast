@@ -72,14 +72,14 @@ public class SelectByKeyMapLogicalRel extends AbstractRelNode implements Logical
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        // zero as not starting any job is required
-        return planner.getCostFactory().makeZeroCost(); // TODO: zero other imap rels
+        // zero as not starting any job
+        return planner.getCostFactory().makeZeroCost();
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getQualifiedName()) // TODO: use it for other imap rels
+                .item("table", table.getQualifiedName())
                 .item("keyCondition", keyCondition)
                 .item("projections", Ord.zip(rowType.getFieldList()).stream()
                         .map(field -> {

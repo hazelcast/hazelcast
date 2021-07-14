@@ -68,7 +68,7 @@ public class DeleteByKeyMapLogicalRel extends AbstractRelNode implements Logical
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        // zero as not starting any job is required
+        // zero as not starting any job
         return planner.getCostFactory().makeZeroCost();
     }
 
