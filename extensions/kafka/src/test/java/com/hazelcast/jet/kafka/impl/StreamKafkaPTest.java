@@ -79,6 +79,7 @@ import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.IntStream.range;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -379,12 +380,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
          .writeTo(Sinks.list(sinkList));
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
-        // Wait for the job to be running, otherwise we might miss the event due to auto.offset.reset=latest
-        assertJobStatusEventually(job, JobStatus.RUNNING);
-
-        // Produce just a single event
-        kafkaTestSupport.produce(topic1Name, 0, "0").get();
         assertTrueEventually(() -> {
+            kafkaTestSupport.produce(topic1Name, 0, "0").get();
             assertFalse(sinkList.isEmpty());
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
@@ -398,7 +395,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Entry<Integer, String> event = produceEventToNewPartition(INITIAL_PARTITION_COUNT);
 
         job.resume();
-        assertTrueEventually(() -> assertEquals(event, sinkList.get(sinkList.size() - 1)));
+        assertTrueEventually(() -> assertThat(sinkList).contains(event));
     }
 
     @Test
