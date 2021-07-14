@@ -462,4 +462,23 @@ public final class StringUtil {
     public static String formatXml(@Nullable String input, int indent) throws IllegalArgumentException {
         return XmlUtil.format(input, indent);
     }
+
+    /**
+     * Checks if all characters in a string are upper case
+     *
+     * @param input the string to check.
+     * @return true if the string is non-null and non-empty and all characters
+     * are upper case, false otherwise
+     */
+    public static boolean isAllUpperCase(String input) {
+        if (input == null || input.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < input.length(); i++) {
+            if (Character.isLetter(input.charAt(i)) && !Character.isUpperCase(input.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

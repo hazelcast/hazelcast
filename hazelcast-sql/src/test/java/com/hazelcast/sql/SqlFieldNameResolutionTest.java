@@ -108,6 +108,18 @@ public class SqlFieldNameResolutionTest extends SqlTestSupport {
         assertEquals(10L, result.get("cOLuMN5"));
     }
 
+    @Test
+    public void when_privateFieldWithComplexCaseQueried_caseIsPreserved() {
+        final IMap<Long, PrivateFieldsMixedCasePojo> testMap = instance().getMap("test");
+        testMap.put(1L, new PrivateFieldsMixedCasePojo(1L));
+        testMap.addIndex(IndexType.SORTED, "fLongFIELDWithComPlexCAse");
+
+        final Map<String, Object> result = executeQuery("SELECT fLongFIELDWithComPlexCAse "
+                + "FROM test WHERE fLongFIELDWithComPlexCAse > 0");
+
+        assertEquals(1L, result.get("fLongFIELDWithComPlexCAse"));
+    }
+
 
     private Map<String, Object> executeQuery(String sql) {
         final Map<String, Object> result = new HashMap<>();
@@ -183,6 +195,25 @@ public class SqlFieldNameResolutionTest extends SqlTestSupport {
             this.FIELD1 = FIELD1;
             this.field2 = field2;
             this.fiELD3 = fiELD3;
+        }
+    }
+
+    public static class PrivateFieldsMixedCasePojo implements Serializable {
+        private Long fLongFIELDWithComPlexCAse;
+
+        public PrivateFieldsMixedCasePojo() {
+        }
+
+        public PrivateFieldsMixedCasePojo(final Long fLongFIELDWithComPlexCAse) {
+            this.fLongFIELDWithComPlexCAse = fLongFIELDWithComPlexCAse;
+        }
+
+        public Long getFLongFIELDWithComPlexCAse() {
+            return fLongFIELDWithComPlexCAse;
+        }
+
+        public void setFLongFIELDWithComPlexCAse(final Long fLongFIELDWithComPlexCAse) {
+            this.fLongFIELDWithComPlexCAse = fLongFIELDWithComPlexCAse;
         }
     }
 }

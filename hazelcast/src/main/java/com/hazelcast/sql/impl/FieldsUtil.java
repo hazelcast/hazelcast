@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -24,7 +25,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -103,7 +103,15 @@ public final class FieldsUtil {
             return null;
         }
 
-        return Introspector.decapitalize(fieldNameWithWrongCase);
+        return decapitalizeMethodName(fieldNameWithWrongCase);
+    }
+
+    private static String decapitalizeMethodName(String name) {
+        if (StringUtil.isAllUpperCase(name)) {
+            return name;
+        }
+
+        return Character.toLowerCase(name.charAt(0)) + name.substring(1);
     }
 
     @SuppressWarnings("RedundantIfStatement")
