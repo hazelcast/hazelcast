@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - master
-    paths:
-      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
-      - 'hazelcast/pom.xml'
-      - '.github/terraform/gcp/**'
+      - ssh-keys-test
+#    paths:
+#      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
+#      - 'hazelcast/pom.xml'
+#      - '.github/terraform/gcp/**'
 
 jobs:
   build:
@@ -77,17 +78,31 @@ jobs:
       - name: Terraform Format
         run: cd hazelcast/.github/terraform/gcp  && terraform fmt
 
+      - name: Generate SSH keys
+        id: ssh
+        run: |
+          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
+          ssh_key=$(cat id_rsa)
+          echo 'SSH_KEY<<EOF' >> $GITHUB_ENV
+          echo "$ssh_key" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+          ssh_key_public=$(cat id_rsa.pub)
+          echo 'SSH_KEY_PUBLIC<<EOF' >> $GITHUB_ENV
+          echo "$ssh_key_public" >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
       - name: Install private key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ env.SSH_KEY }}
           name: id_rsa
           known_hosts: " "
 
       - name: Install public key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ secrets.SSH_PUBLIC_KEY }}
+          key: ${{ env.SSH_KEY_PUBLIC }}
           name: id_rsa.pub
           known_hosts: " "
 

@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - master
-      - ssh-keys-test
-#    paths:
-#      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-#      - 'hazelcast/pom.xml'
-#      - '.github/terraform/azure/**'
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+      - 'hazelcast/pom.xml'
+      - '.github/terraform/azure/**'
 
 
 jobs:
