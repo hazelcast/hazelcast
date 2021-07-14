@@ -18,8 +18,11 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.MemberAttributeConfigReadOnly;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,7 +31,7 @@ import java.util.HashMap;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberAttributeConfigTest {
+public class MemberAttributeConfigTest extends HazelcastTestSupport {
 
     /**
      * Test method for {@link MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
@@ -36,5 +39,14 @@ public class MemberAttributeConfigTest {
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {
         new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<>());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(MemberAttributeConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

@@ -85,7 +85,6 @@ public class EqualPredicateTest {
         EqualsVerifier.forClass(EqualPredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
             .withRedefinedSuperclass()
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

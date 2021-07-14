@@ -281,8 +281,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeUTF(className);
-        out.writeUTF(factoryClassName);
+        out.writeString(className);
+        out.writeString(factoryClassName);
         out.writeObject(properties);
         out.writeObject(storeImplementation);
         out.writeObject(factoryImplementation);
@@ -291,8 +291,8 @@ public class QueueStoreConfig implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        className = in.readUTF();
-        factoryClassName = in.readUTF();
+        className = in.readString();
+        factoryClassName = in.readString();
         properties = in.readObject();
         storeImplementation = in.readObject();
         factoryImplementation = in.readObject();

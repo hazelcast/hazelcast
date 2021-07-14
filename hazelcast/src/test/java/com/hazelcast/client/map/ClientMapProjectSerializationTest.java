@@ -97,7 +97,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(value);
+            out.writeString(value);
         }
 
         @Override
@@ -105,7 +105,7 @@ public class ClientMapProjectSerializationTest extends HazelcastTestSupport {
             if (readCalled.incrementAndGet() > 2) {
                 throw new AssertionError("Read called more than twice!!!");
             }
-            value = in.readUTF();
+            value = in.readString();
         }
 
         @Override

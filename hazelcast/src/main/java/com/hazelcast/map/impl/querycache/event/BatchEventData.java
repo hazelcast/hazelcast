@@ -106,7 +106,7 @@ public class BatchEventData implements Sequenced, EventData {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         Collection<QueryCacheEventData> events = this.events;
-        out.writeUTF(source);
+        out.writeString(source);
         out.writeInt(events.size());
         for (QueryCacheEventData eventData : events) {
             eventData.writeData(out);
@@ -115,7 +115,7 @@ public class BatchEventData implements Sequenced, EventData {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        source = in.readUTF();
+        source = in.readString();
         int size = in.readInt();
         if (size > 0) {
             this.events = new ArrayList<>(size);

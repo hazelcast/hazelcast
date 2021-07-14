@@ -128,7 +128,7 @@ public class PredicateBuilderImpl
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attribute);
+        out.writeString(attribute);
         out.writeInt(lsPredicates.size());
         for (Predicate predicate : lsPredicates) {
             out.writeObject(predicate);
@@ -137,7 +137,7 @@ public class PredicateBuilderImpl
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attribute = in.readUTF();
+        attribute = in.readString();
         int size = in.readInt();
         lsPredicates = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

@@ -32,6 +32,7 @@ public class WaitStrategy {
     private int attempt;
     private int currentBackoffMillis;
     private final long clusterConnectTimeoutMillis;
+    private final String clusterConnectTimeoutText;
     private long clusterConnectAttemptBegin;
 
     WaitStrategy(int initialBackoffMillis, int maxBackoffMillis,
@@ -40,6 +41,13 @@ public class WaitStrategy {
         this.maxBackoffMillis = maxBackoffMillis;
         this.multiplier = multiplier;
         this.clusterConnectTimeoutMillis = clusterConnectTimeoutMillis;
+        if (clusterConnectTimeoutMillis == Long.MAX_VALUE) {
+            // For a better logging output for the default values, we will
+            // replace "Long.MAX_VALUE ms" with this in our output.
+            clusterConnectTimeoutText = "INFINITE";
+        } else {
+            clusterConnectTimeoutText = clusterConnectTimeoutMillis + " ms";
+        }
         this.jitter = jitter;
         this.logger = logger;
     }
@@ -54,9 +62,10 @@ public class WaitStrategy {
         attempt++;
         long currentTimeMillis = Clock.currentTimeMillis();
         long timePassed = currentTimeMillis - clusterConnectAttemptBegin;
+
         if (timePassed > clusterConnectTimeoutMillis) {
-            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%d ms) is "
-                    + "reached. Attempt %d.", clusterConnectTimeoutMillis, attempt));
+            logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%s) is "
+                    + "reached. Attempt %d.", clusterConnectTimeoutText, attempt));
             return false;
         }
 
@@ -68,8 +77,8 @@ public class WaitStrategy {
         actualSleepTime = Math.min(actualSleepTime, clusterConnectTimeoutMillis - timePassed);
 
         logger.warning(String.format("Unable to get live cluster connection, retry in %d ms, attempt: %d"
-                + ", cluster connect timeout: %d ms"
-                + ", max backoff: %d ms", actualSleepTime, attempt, clusterConnectTimeoutMillis, maxBackoffMillis));
+                + ", cluster connect timeout: %s"
+                + ", max backoff: %d ms", actualSleepTime, attempt, clusterConnectTimeoutText, maxBackoffMillis));
 
         try {
             Thread.sleep(actualSleepTime);

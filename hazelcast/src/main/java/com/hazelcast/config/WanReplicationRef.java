@@ -182,22 +182,22 @@ public class WanReplicationRef implements IdentifiedDataSerializable, Serializab
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(mergePolicyClassName);
+        out.writeString(name);
+        out.writeString(mergePolicyClassName);
         out.writeInt(filters.size());
         for (String filter : filters) {
-            out.writeUTF(filter);
+            out.writeString(filter);
         }
         out.writeBoolean(republishingEnabled);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        mergePolicyClassName = in.readUTF();
+        name = in.readString();
+        mergePolicyClassName = in.readString();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            filters.add(in.readUTF());
+            filters.add(in.readString());
         }
         republishingEnabled = in.readBoolean();
     }

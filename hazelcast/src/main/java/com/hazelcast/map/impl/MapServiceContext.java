@@ -76,6 +76,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Data toData(Object object);
 
+    Data toDataWithSchema(Object object);
+
     MapContainer getMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();
@@ -135,7 +137,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     RecordStore getExistingRecordStore(int partitionId, String mapName);
 
     /**
-     * Returns cached cached collection of owned partitions,
+     * Returns cached collection of owned partitions,
      * When it is null, reloads and caches it again.
      */
     PartitionIdSet getOrInitCachedMemberPartitions();

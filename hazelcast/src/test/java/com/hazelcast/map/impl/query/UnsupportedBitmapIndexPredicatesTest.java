@@ -47,6 +47,7 @@ public class UnsupportedBitmapIndexPredicatesTest extends HazelcastTestSupport {
     @Before
     public void before() {
         Config config = smallInstanceConfig();
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         config.getMapConfig("map").addIndexConfig(new IndexConfig(IndexType.BITMAP, "this"));
         map = createHazelcastInstance(config).getMap("map");
         for (int i = 0; i < 10; ++i) {

@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.Objects;
+
 /**
  * Configuration for the Discovery Strategy Auto Detection.
  * <p>
@@ -48,5 +50,22 @@ public class AutoDetectionConfig {
     @Override
     public String toString() {
         return "AutoDetectionConfig{enabled=" + enabled + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AutoDetectionConfig that = (AutoDetectionConfig) o;
+        return enabled == that.enabled;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled);
     }
 }

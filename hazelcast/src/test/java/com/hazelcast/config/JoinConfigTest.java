@@ -17,15 +17,18 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JoinConfigTest {
+public class JoinConfigTest extends HazelcastTestSupport {
 
     @Test
     public void joinConfigTest() {
@@ -111,5 +114,12 @@ public class JoinConfigTest {
         config.verify();
     }
 
-
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(JoinConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
+    }
 }

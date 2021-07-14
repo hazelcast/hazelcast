@@ -82,7 +82,7 @@ public class QueryBatchExchangeOperation extends QueryAbstractExchangeOperation 
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_BATCH;
+        return SqlDataSerializerHook.QUERY_OPERATION_BATCH;
     }
 
     @Override

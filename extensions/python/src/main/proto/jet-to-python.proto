@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hazelcast.jet.python.impl.grpc";
+option java_outer_classname = "JetToPythonTopLevel";
+
+package jet_to_python;
+
+service JetToPython {
+    rpc streamingCall (stream InputMessage) returns (stream OutputMessage) {}
+}
+
+message InputMessage {
+    repeated string inputValue = 1;
+}
+
+message OutputMessage {
+    repeated string outputValue = 1;
+}

@@ -19,10 +19,10 @@ package com.hazelcast.sql.impl.plan;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.plan.cache.CacheablePlan;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheKey;
-import com.hazelcast.sql.impl.plan.cache.PlanCheckContext;
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.node.PlanNode;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
@@ -36,12 +36,7 @@ import java.util.UUID;
 /**
  * Query plan implementation.
  */
-public class Plan implements CacheablePlan {
-    /** Time when the plan was used for the last time. */
-    private volatile long planLastUsed;
-
-    /** Key used for plan cache. */
-    private final PlanCacheKey planKey;
+public class Plan extends SqlPlan {
 
     /** Partition mapping. */
     private final Map<UUID, PartitionIdSet> partMap;
@@ -68,7 +63,7 @@ public class Plan implements CacheablePlan {
     private final QueryParameterMetadata parameterMetadata;
 
     /** IDs of objects used in the plan. */
-    private final Set<PlanObjectKey> objectIds;
+    private final Set<PlanObjectKey> objectKeys;
 
     /** Permissions that are required to execute this plan. */
     private final List<Permission> permissions;
@@ -83,10 +78,12 @@ public class Plan implements CacheablePlan {
         Map<Integer, Integer> inboundEdgeMemberCountMap,
         SqlRowMetadata rowMetadata,
         QueryParameterMetadata parameterMetadata,
-        PlanCacheKey planKey,
-        Set<PlanObjectKey> objectIds,
+        PlanKey planKey,
+        Set<PlanObjectKey> objectKeys,
         List<Permission> permissions
     ) {
+        super(planKey);
+
         this.partMap = partMap;
         this.fragments = fragments;
         this.fragmentMappings = fragmentMappings;
@@ -95,29 +92,18 @@ public class Plan implements CacheablePlan {
         this.inboundEdgeMemberCountMap = inboundEdgeMemberCountMap;
         this.rowMetadata = rowMetadata;
         this.parameterMetadata = parameterMetadata;
-        this.planKey = planKey;
-        this.objectIds = objectIds;
+        this.objectKeys = objectKeys;
         this.permissions = permissions;
     }
 
     @Override
-    public PlanCacheKey getPlanKey() {
-        return planKey;
-    }
-
-    @Override
-    public long getPlanLastUsed() {
-        return planLastUsed;
-    }
-
-    @Override
-    public void onPlanUsed() {
-        planLastUsed = System.currentTimeMillis();
+    public boolean isCacheable() {
+        return true;
     }
 
     @Override
     public boolean isPlanValid(PlanCheckContext context) {
-        return context.isValid(objectIds, partMap);
+        return context.isValid(objectKeys, partMap);
     }
 
     @Override
@@ -180,8 +166,8 @@ public class Plan implements CacheablePlan {
         return parameterMetadata;
     }
 
-    public Set<PlanObjectKey> getObjectIds() {
-        return objectIds;
+    public Set<PlanObjectKey> getObjectKeys() {
+        return objectKeys;
     }
 
     public List<Permission> getPermissions() {

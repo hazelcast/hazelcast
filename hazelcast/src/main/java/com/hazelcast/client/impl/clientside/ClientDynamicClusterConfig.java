@@ -65,6 +65,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -85,6 +86,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -170,7 +172,8 @@ public class ClientDynamicClusterConfig extends Config {
                         : cacheConfig.getExpiryPolicyFactoryConfig().getTimedExpiryPolicyFactoryConfig(),
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
-                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(), cacheConfig.getHotRestartConfig());
+                cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
         invoke(request);
         return this;
     }
@@ -833,6 +836,16 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public PersistenceConfig getPersistenceConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -984,7 +997,7 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     @Nonnull
-    public Config setMetricsConfig(MetricsConfig metricsConfig) {
+    public Config setMetricsConfig(@Nonnull MetricsConfig metricsConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
@@ -1018,13 +1031,27 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Nonnull
     @Override
     public AuditlogConfig getAuditlogConfig() {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Nonnull
     @Override
-    public Config setAuditlogConfig(AuditlogConfig auditlogConfig) {
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

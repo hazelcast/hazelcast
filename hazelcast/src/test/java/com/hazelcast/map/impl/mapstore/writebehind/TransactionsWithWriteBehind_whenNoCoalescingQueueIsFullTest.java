@@ -206,7 +206,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     }
 
     private Config getConfig(String mapName, long maxWbqCapacity) {
-        Config config = getConfig();
+        Config config = smallInstanceConfig();
         config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
@@ -216,7 +216,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 .setEnabled(true)
                 .setImplementation(new MapStoreAdapter())
                 .setWriteCoalescing(false)
-                .setWriteDelaySeconds(3);
+                .setWriteDelaySeconds(6);
         return config;
     }
 

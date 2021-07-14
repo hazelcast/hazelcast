@@ -24,6 +24,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.ReflectionUtils;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -81,8 +83,8 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
     public void testFailFast_whenNoMemberServerSocketDefined() {
         Config config = new Config();
         config.getAdvancedNetworkConfig()
-              .setEnabled(true)
-              .getEndpointConfigs().remove(MEMBER);
+                .setEnabled(true)
+                .getEndpointConfigs().remove(MEMBER);
 
         expected.expect(InvalidConfigurationException.class);
         createHazelcastInstance(config);
@@ -93,11 +95,11 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         AdvancedNetworkConfig config = new AdvancedNetworkConfig();
         config.setMemberEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.MEMBER)
-                                                .setPort(19999)
+                        .setPort(19999)
         );
         config.setMemberEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.MEMBER)
-                                                .setPort(11000)
+                        .setPort(11000)
         );
 
         assertEquals(11000, ((ServerSocketEndpointConfig) config.getEndpointConfigs().get(MEMBER)).getPort());
@@ -108,11 +110,11 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         AdvancedNetworkConfig config = new AdvancedNetworkConfig();
         config.setClientEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.CLIENT)
-                                                .setPort(19999)
+                        .setPort(19999)
         );
         config.setClientEndpointConfig(
                 new ServerSocketEndpointConfig().setProtocolType(ProtocolType.CLIENT)
-                                                .setPort(11000)
+                        .setPort(11000)
         );
 
         assertEquals(11000, ((ServerSocketEndpointConfig) config.getEndpointConfigs().get(CLIENT)).getPort());
@@ -125,7 +127,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         config.setRestEndpointConfig(new RestServerEndpointConfig().setPort(11000));
 
         assertEquals(11000, ((ServerSocketEndpointConfig) config.getEndpointConfigs()
-                                                                .get(EndpointQualifier.REST)).getPort());
+                .get(EndpointQualifier.REST)).getPort());
     }
 
     @Test
@@ -135,7 +137,7 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         config.setMemcacheEndpointConfig(new ServerSocketEndpointConfig().setPort(11000));
 
         assertEquals(11000, ((ServerSocketEndpointConfig) config.getEndpointConfigs()
-                                                                .get(EndpointQualifier.MEMCACHE)).getPort());
+                .get(EndpointQualifier.MEMCACHE)).getPort());
     }
 
     @Test
@@ -158,5 +160,14 @@ public class AdvancedNetworkConfigTest extends HazelcastTestSupport {
         ReflectionUtils.setFieldValueReflectively(endpointQualifier, "type", protocolType);
         ReflectionUtils.setFieldValueReflectively(endpointQualifier, "identifier", name);
         return endpointQualifier;
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(AdvancedNetworkConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

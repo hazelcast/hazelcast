@@ -17,8 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlConfigTest {
+public class SqlConfigTest extends HazelcastTestSupport {
     @Test
     public void testEmpty() {
         SqlConfig config = new SqlConfig();
@@ -39,8 +42,8 @@ public class SqlConfigTest {
     @Test
     public void testNonEmpty() {
         SqlConfig config = new SqlConfig()
-            .setExecutorPoolSize(10)
-            .setStatementTimeoutMillis(30L);
+                .setExecutorPoolSize(10)
+                .setStatementTimeoutMillis(30L);
 
         assertEquals(10, config.getExecutorPoolSize());
         assertEquals(30L, config.getStatementTimeoutMillis());
@@ -69,5 +72,14 @@ public class SqlConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void testQueryTimeoutNegative() {
         new SqlConfig().setStatementTimeoutMillis(-1L);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(SqlConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

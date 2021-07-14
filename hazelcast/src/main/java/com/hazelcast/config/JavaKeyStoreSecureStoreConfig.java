@@ -66,6 +66,12 @@ public class JavaKeyStoreSecureStoreConfig
 
     /**
      * Creates a new Java KeyStore Secure Store configuration.
+     */
+    public JavaKeyStoreSecureStoreConfig() {
+    }
+
+    /**
+     * Creates a new Java KeyStore Secure Store configuration.
      * @param path the KeyStore file path
      */
     public JavaKeyStoreSecureStoreConfig(File path) {

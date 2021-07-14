@@ -375,7 +375,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
 
         @Override
         public void beforeRemoteCall(Object key, Data keyData, Object value, Data valueData) {
-            nearCacheKey = serializeKeys ? keyData : key;
+            nearCacheKey = serializeKeys ? keyData : mapServiceContext.toObject(key);
         }
 
         @Override

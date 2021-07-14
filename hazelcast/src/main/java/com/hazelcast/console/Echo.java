@@ -52,12 +52,12 @@ public class Echo implements Callable<String>, DataSerializable, HazelcastInstan
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(input);
+        out.writeString(input);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        input = in.readUTF();
+        input = in.readString();
     }
 
     @Override

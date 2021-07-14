@@ -118,6 +118,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         this.setClientVersion(clientVersion);
         this.clientName = clientName;
         this.labels = labels;
+        clientEngine.onEndpointAuthenticated(this);
     }
 
     @Override
@@ -235,6 +236,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 lc.logout();
             }
         } finally {
+            clientEngine.onEndpointDestroyed(this);
             authenticated = false;
         }
     }
@@ -314,5 +316,10 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             };
             MetricsCompressor.extractMetrics(metricsBlob, consumer);
         }
+    }
+
+    @Override
+    public long getCreationTime() {
+        return creationTime;
     }
 }

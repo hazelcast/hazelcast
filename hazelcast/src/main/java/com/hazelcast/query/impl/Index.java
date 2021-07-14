@@ -18,7 +18,6 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
 
@@ -67,27 +66,35 @@ public interface Index {
     TypeConverter getConverter();
 
     /**
-     * Saves the given entry into this index.
+     * Saves an entry into this index.
      *
-     * @param entry           the entry to save.
-     * @param oldValue        the previous old value associated with the entry or
-     *                        {@code null} if the entry is new.
+     * @param newEntry        the new entry from which new attribute values
+     *                        should be read.
+     * @param oldEntry        the previous old entry from which old attribute
+     *                        values should be read; or {@code null} if there is
+     *                        no old entry.
+     * @param entryToStore    the entry that should be stored in this index; it
+     *                        might differ from the passed {@code newEntry}: for
+     *                        instance, {@code entryToStore} might be optimized
+     *                        specifically for storage, while {@code newEntry}
+     *                        and {@code oldEntry} are always optimized for
+     *                        attribute values extraction.
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource);
+    void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                  OperationSource operationSource);
 
     /**
-     * Removes the entry having the given key and the value from this index.
+     * Removes the given entry from this index.
      *
-     * @param key             the key of the entry to remove.
-     * @param value           the value of the entry to remove.
+     * @param entry           the entry to remove.
      * @param operationSource the operation source.
      * @throws QueryException if there were errors while extracting the
      *                        attribute value from the entry.
      */
-    void removeEntry(Data key, Object value, OperationSource operationSource);
+    void removeEntry(CachedQueryEntry entry, OperationSource operationSource);
 
     /**
      * @return {@code true} if this index supports querying only with {@link
@@ -147,6 +154,50 @@ public interface Index {
      */
     Iterator<QueryableEntry> getSqlRecordIterator(Comparable from, boolean fromInclusive, Comparable to,
                                                   boolean toInclusive, boolean descending);
+
+    /**
+     * @param value value
+     * @return iterator over index entries that are equal to the given value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value);
+
+    /**
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over all index entries
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending);
+
+    /**
+     * @param comparison comparison type
+     * @param value value
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries that are matching the given comparions type and value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending);
+
+    /**
+     *
+     * @param from lower bound
+     * @param fromInclusive lower bound inclusive flag
+     * @param to upper bound
+     * @param toInclusive upper bound inclusive flag
+     * @param descending whether the entries should come in the descending order.
+     *                   {@code true} means a descending order,
+     *                   {@code false} means an ascending order.
+     * @return iterator over index entries matching the given range in batches
+     *         grouped by the index value
+     */
+    Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    );
 
     /**
      * Produces a result set containing entries whose attribute values are equal

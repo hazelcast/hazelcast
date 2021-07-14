@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map.sample;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -30,6 +31,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
+import javax.annotation.Nonnull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -74,6 +76,11 @@ public final class MapSampleMetadataResolver {
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }
+            } else if (target instanceof PortableGenericRecord) {
+                // We get PortableGenericRecord here when in-memory format is OBJECT and
+                // the cluster does not have PortableFactory configuration for this Portable.
+                // PortableGetter can extract fields PortableGenericRecord.
+                return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key, jetMapMetadataResolver);
             } else {
                 return resolveClass(target.getClass(), key, jetMapMetadataResolver);
             }
@@ -85,18 +92,18 @@ public final class MapSampleMetadataResolver {
     /**
      * Resolve metadata from a portable object.
      *
-     * @param clazz Portable class definition.
+     * @param classDef Portable class definition.
      * @param isKey Whether this is a key.
      * @return Metadata.
      */
     private static MapSampleMetadata resolvePortable(
-        ClassDefinition clazz,
+        @Nonnull ClassDefinition classDef,
         boolean isKey,
         JetMapMetadataResolver jetMapMetadataResolver
     ) {
         LinkedHashMap<String, TableField> fields = new LinkedHashMap<>();
 
-        Map<String, QueryDataType> simpleFields = FieldsUtil.resolvePortable(clazz);
+        Map<String, QueryDataType> simpleFields = FieldsUtil.resolvePortable(classDef);
 
         for (Entry<String, QueryDataType> fieldEntry : simpleFields.entrySet()) {
             String name = fieldEntry.getKey();
@@ -114,7 +121,7 @@ public final class MapSampleMetadataResolver {
 
         return new MapSampleMetadata(
             GenericQueryTargetDescriptor.DEFAULT,
-            jetMapMetadataResolver.resolvePortable(clazz, isKey),
+            jetMapMetadataResolver.resolvePortable(classDef, isKey),
             new LinkedHashMap<>(fields)
         );
     }

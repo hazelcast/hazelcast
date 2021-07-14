@@ -114,7 +114,6 @@ public class TopicConfigTest {
                 .withPrefabValues(TopicConfigReadOnly.class,
                         new TopicConfigReadOnly(new TopicConfig("Topic1")),
                         new TopicConfigReadOnly(new TopicConfig("Topic2")))
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
 

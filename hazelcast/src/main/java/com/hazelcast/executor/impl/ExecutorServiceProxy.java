@@ -29,7 +29,6 @@ import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.executor.impl.operations.ShutdownOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.logging.ILogger;
@@ -59,7 +58,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
@@ -72,12 +70,6 @@ import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
         implements IExecutorService {
-
-    public static final int SYNC_FREQUENCY = 100;
-    public static final int SYNC_DELAY_MS = 10;
-
-    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
-            .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     private final ExceptionHandler shutdownExceptionHandler = new ExceptionHandler() {
         @Override
@@ -100,11 +92,6 @@ public class ExecutorServiceProxy
     private final Random random = new Random(-System.currentTimeMillis());
     private final int partitionCount;
     private final ILogger logger;
-
-    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS above
-    private volatile int consecutiveSubmits;
-
-    private volatile long lastSubmitTime;
 
     public ExecutorServiceProxy(String name, NodeEngine nodeEngine, DistributedExecutorService service) {
         super(nodeEngine, service);
@@ -239,15 +226,6 @@ public class ExecutorServiceProxy
         Operation op = new CallableTaskOperation(name, uuid, callableData)
                 .setPartitionId(partitionId);
         InvocationFuture future = invokeOnPartition(op);
-        boolean sync = checkSync();
-        if (sync) {
-            try {
-                future.get();
-            } catch (Exception exception) {
-                logger.warning(exception);
-            }
-            return InternalCompletableFuture.newCompletedFuture(result);
-        }
         return new CancellableDelegatingFuture<>(future, result, nodeEngine, uuid, partitionId);
     }
 
@@ -262,13 +240,12 @@ public class ExecutorServiceProxy
     public <T> Future<T> submit(@Nonnull Callable<T> task) {
         checkNotNull(task, "task must not be null");
         final int partitionId = getTaskPartitionId(task);
-        return submitToPartitionOwner(task, partitionId, false);
+        return submitToPartitionOwner(task, partitionId);
     }
 
     private @Nonnull
     <T> Future<T> submitToPartitionOwner(@Nonnull Callable<T> task,
-                                         int partitionId,
-                                         boolean preventSync) {
+                                         int partitionId) {
         checkNotNull(task, "task must not be null");
         checkNotShutdown();
 
@@ -276,31 +253,10 @@ public class ExecutorServiceProxy
         Data taskData = nodeEngine.toData(task);
         UUID uuid = newUnsecureUUID();
 
-        boolean sync = !preventSync && checkSync();
         Operation op = new CallableTaskOperation(name, uuid, taskData)
                 .setPartitionId(partitionId);
         InternalCompletableFuture future = invokeOnPartition(op);
-        if (sync) {
-            return completedSynchronously(future, nodeEngine.getSerializationService());
-        }
         return new CancellableDelegatingFuture<>(future, nodeEngine, uuid, partitionId);
-    }
-
-    /**
-     * This is a hack to prevent overloading the system with unprocessed tasks. Once backpressure is added, this can
-     * be removed.
-     */
-    private boolean checkSync() {
-        boolean sync = false;
-        long last = lastSubmitTime;
-        long now = Clock.currentTimeMillis();
-        if (last + SYNC_DELAY_MS < now) {
-            CONSECUTIVE_SUBMITS.set(this, 0);
-        } else if (CONSECUTIVE_SUBMITS.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
-            sync = true;
-        }
-        lastSubmitTime = now;
-        return sync;
     }
 
     private <T> int getTaskPartitionId(Callable<T> task) {
@@ -318,7 +274,7 @@ public class ExecutorServiceProxy
                                           @Nonnull Object key) {
         checkNotNull(key, "key must not be null");
         NodeEngine nodeEngine = getNodeEngine();
-        return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key), false);
+        return submitToPartitionOwner(task, nodeEngine.getPartitionService().getPartitionId(key));
     }
 
     @Override
@@ -338,13 +294,9 @@ public class ExecutorServiceProxy
         UUID uuid = newUnsecureUUID();
         Address target = member.getAddress();
 
-        boolean sync = checkSync();
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, uuid, taskData);
         InternalCompletableFuture future = nodeEngine.getOperationService()
                 .invokeOnTarget(DistributedExecutorService.SERVICE_NAME, op, target);
-        if (sync) {
-            return completedSynchronously(future, nodeEngine.getSerializationService());
-        }
         return new CancellableDelegatingFuture<>(future, nodeEngine, uuid, target);
     }
 
@@ -541,7 +493,7 @@ public class ExecutorServiceProxy
             for (Callable<T> task : tasks) {
                 long startNanos = Timer.nanos();
                 int partitionId = getTaskPartitionId(task);
-                futures.add(submitToPartitionOwner(task, partitionId, true));
+                futures.add(submitToPartitionOwner(task, partitionId));
                 timeoutNanos -= Timer.nanosElapsed(startNanos);
             }
             if (timeoutNanos <= 0L) {

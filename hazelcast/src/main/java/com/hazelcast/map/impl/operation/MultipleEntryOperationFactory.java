@@ -51,7 +51,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(keys.size());
         for (Data key : keys) {
             IOUtil.writeData(out, key);
@@ -61,7 +61,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.name = in.readUTF();
+        this.name = in.readString();
         int size = in.readInt();
         this.keys = createHashSet(size);
         for (int i = 0; i < size; i++) {

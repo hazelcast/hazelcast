@@ -36,7 +36,6 @@ public class MetricsConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MetricsConfig.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
     }

@@ -17,8 +17,8 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.util.ConstructorFunction;
+import com.hazelcast.spi.impl.NodeEngine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +51,7 @@ public final class SplitBrainMergePolicyProvider {
         addPolicy(PutIfAbsentMergePolicy.class, new PutIfAbsentMergePolicy());
     }
 
-    private final NodeEngine nodeEngine;
+    private final ClassLoader configClassLoader;
 
     private final ConcurrentMap<String, SplitBrainMergePolicy> mergePolicyMap
             = new ConcurrentHashMap<String, SplitBrainMergePolicy>();
@@ -61,7 +61,7 @@ public final class SplitBrainMergePolicyProvider {
         @Override
         public SplitBrainMergePolicy createNew(String className) {
             try {
-                return newInstance(nodeEngine.getConfigClassLoader(), className);
+                return newInstance(configClassLoader, className);
             } catch (Exception e) {
                 throw new InvalidConfigurationException("Invalid SplitBrainMergePolicy: " + className, e);
             }
@@ -73,8 +73,8 @@ public final class SplitBrainMergePolicyProvider {
      *
      * @param nodeEngine the {@link NodeEngine} to retrieve the classloader from
      */
-    public SplitBrainMergePolicyProvider(NodeEngine nodeEngine) {
-        this.nodeEngine = nodeEngine;
+    public SplitBrainMergePolicyProvider(ClassLoader configClassLoader) {
+        this.configClassLoader = configClassLoader;
         this.mergePolicyMap.putAll(OUT_OF_THE_BOX_MERGE_POLICIES);
     }
 

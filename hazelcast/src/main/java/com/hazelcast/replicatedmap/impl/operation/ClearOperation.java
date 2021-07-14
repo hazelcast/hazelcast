@@ -129,7 +129,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeBoolean(replicateClear);
         out.writeLong(version);
     }
@@ -137,7 +137,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mapName = in.readUTF();
+        mapName = in.readString();
         replicateClear = in.readBoolean();
         version = in.readLong();
     }

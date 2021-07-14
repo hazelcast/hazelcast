@@ -35,7 +35,6 @@ public class InterfacesConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(InterfacesConfig.class)
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .verify();
     }

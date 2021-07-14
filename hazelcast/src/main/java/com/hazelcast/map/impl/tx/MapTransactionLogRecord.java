@@ -101,7 +101,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(partitionId);
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
@@ -116,7 +116,7 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         partitionId = in.readInt();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {

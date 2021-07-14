@@ -402,19 +402,19 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("power", power);
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("engine", engine);
             writer.writePortableArray("wheels", wheels);
-            writer.writeUTFArray("model", model);
+            writer.writeStringArray("model", model);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
             power = reader.readInt("power");
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             engine = reader.readPortable("engine");
             wheels = reader.readPortableArray("wheels");
-            model = reader.readUTFArray("model");
+            model = reader.readStringArray("model");
         }
 
         @Override
@@ -604,7 +604,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("chip", chip);
             writer.writePortableArray("chips", chips);
             writer.writePortableArray("emptyChips", emptyChips);
@@ -614,7 +614,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             chip = reader.readPortable("chip");
             chips = reader.readPortableArray("chips");
             emptyChips = reader.readPortableArray("emptyChips");

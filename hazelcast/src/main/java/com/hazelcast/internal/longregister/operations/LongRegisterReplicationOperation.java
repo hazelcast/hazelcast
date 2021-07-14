@@ -72,7 +72,7 @@ public class LongRegisterReplicationOperation extends Operation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, Long> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeLong(entry.getValue());
         }
     }
@@ -82,7 +82,7 @@ public class LongRegisterReplicationOperation extends Operation
         int mapSize = in.readInt();
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             Long longContainer = in.readLong();
             migrationData.put(name, longContainer);
         }

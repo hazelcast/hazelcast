@@ -65,13 +65,13 @@ public final class LongSumAggregator<I> extends AbstractAggregator<I, Number, Lo
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeLong(sum);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.sum = in.readLong();
     }
 

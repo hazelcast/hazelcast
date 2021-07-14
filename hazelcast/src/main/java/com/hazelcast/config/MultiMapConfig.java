@@ -338,8 +338,8 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(valueCollectionType);
+        out.writeString(name);
+        out.writeString(valueCollectionType);
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             out.writeBoolean(false);
         } else {
@@ -353,14 +353,14 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        valueCollectionType = in.readUTF();
+        name = in.readString();
+        valueCollectionType = in.readString();
         boolean hasListenerConfig = in.readBoolean();
         if (hasListenerConfig) {
             int configSize = in.readInt();
@@ -374,7 +374,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, NamedConfig {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 

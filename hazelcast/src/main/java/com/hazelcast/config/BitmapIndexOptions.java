@@ -94,7 +94,7 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
                 throw new IllegalArgumentException("empty unique key transformation");
             }
 
-            String upperCasedText = name.toUpperCase();
+            String upperCasedText = StringUtil.upperCaseInternal(name);
             if (upperCasedText.equals(OBJECT.name)) {
                 return OBJECT;
             }
@@ -208,13 +208,13 @@ public class BitmapIndexOptions implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(uniqueKey);
+        out.writeString(uniqueKey);
         out.writeInt(uniqueKeyTransformation.getId());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        uniqueKey = in.readUTF();
+        uniqueKey = in.readString();
         uniqueKeyTransformation = UniqueKeyTransformation.fromId(in.readInt());
     }
 

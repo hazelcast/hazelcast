@@ -87,7 +87,7 @@ public class CacheEventDataImpl
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(eventType.getType());
         IOUtil.writeData(out, dataKey);
         IOUtil.writeData(out, dataNewValue);
@@ -98,7 +98,7 @@ public class CacheEventDataImpl
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         eventType = CacheEventType.getByType(in.readInt());
         dataKey = IOUtil.readData(in);
         dataNewValue = IOUtil.readData(in);

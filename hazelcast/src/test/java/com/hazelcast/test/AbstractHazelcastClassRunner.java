@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.starter.ReflectionUtils;
@@ -47,12 +48,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
-import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -122,8 +124,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
+        //override default async executor of hazelcast so that it can report correct test names in test runs
+        //if ForkJoinPool parallelism is less than or equal to 1, `thread-per-task` will be used.
+        //In that case there is no need to override defaultAsyncExecutor
+        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
+            ConcurrencyUtil.setDefaultAsyncExecutor(new TestLoggingUtils.CustomTestNameAwareForkJoinPool());
+        }
     }
-
 
     /**
      * Creates a BlockJUnit4ClassRunner to run {@code clazz}

@@ -81,14 +81,14 @@ public final class MinByAggregator<I> extends AbstractAggregator<I, Comparable, 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeObject(minValue);
         out.writeObject(minEntry);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.minValue = in.readObject();
         this.minEntry = in.readObject();
     }

@@ -24,10 +24,10 @@ import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -78,6 +78,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -86,23 +87,23 @@ import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
 import com.hazelcast.internal.server.tcp.PacketDecoder;
 import com.hazelcast.internal.server.tcp.PacketEncoder;
-import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
-import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.partition.PartitioningStrategy;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngineImpl.JetPacketConsumer;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -114,7 +115,6 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -130,28 +130,43 @@ import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrac
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
-public class DefaultNodeExtension implements NodeExtension {
+public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
+    private static final String PLATFORM_LOGO
+            = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
+            + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
+            + "\t+ + + + +  o----o   o   o     o   o----o |    o         o   o   o----o    |   \n"
+            + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
+            + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
+
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
+    protected final ILogger logoLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
+    protected JetExtension jetExtension;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
     public DefaultNodeExtension(Node node) {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
+        this.logoLogger = node.getLogger("com.hazelcast.system.logo");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
         createAndSetPhoneHome();
+
+        if (node.getConfig().getJetConfig().isEnabled()) {
+            jetExtension = new JetExtension(node, createService(JetServiceBackend.class));
+        }
     }
 
     private void checkPersistenceAllowed() {
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
-        if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
+        PersistenceConfig persistenceConfig = node.getConfig().getPersistenceConfig();
+        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
             }
@@ -189,14 +204,23 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeStart() {
+        if (jetExtension != null) {
+            // Add configurations for the internal jet distributed objects,
+            // compatible with V4.2
+            // It can block RU4_2 only if there are existing configurations
+            // with the same name as the jet's internal objects.
+            // For this case, recommend disabling Jet.
+            jetExtension.beforeStart();
+        } else {
+            systemLogger.info("Jet is disabled. Enable it by setting the \"hz.jet.enabled\""
+                    + " property to true.");
+        }
     }
 
     @Override
     public void printNodeInfo() {
         BuildInfo buildInfo = node.getBuildInfo();
-
         printBannersBeforeNodeInfo();
-
         String build = constructBuildString(buildInfo);
         printNodeInfoInternal(buildInfo, build);
     }
@@ -230,6 +254,8 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     protected void printBannersBeforeNodeInfo() {
+        logoLogger.info('\n' + PLATFORM_LOGO);
+        systemLogger.info(COPYRIGHT_LINE);
     }
 
     protected String constructBuildString(BuildInfo buildInfo) {
@@ -244,19 +270,19 @@ public class DefaultNodeExtension implements NodeExtension {
     private void printNodeInfoInternal(BuildInfo buildInfo, String build) {
         systemLogger.info(getEditionString() + " " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
+        systemLogger.info("Cluster name: " + node.getConfig().getClusterName());
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
     protected String getEditionString() {
-        return "Hazelcast";
-    }
-
-    @Override
-    public void beforeJoin() {
+        return "Hazelcast Platform";
     }
 
     @Override
     public void afterStart() {
+        if (jetExtension != null) {
+            jetExtension.afterStart();
+        }
     }
 
     @Override
@@ -272,6 +298,24 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public InternalSerializationService createSerializationService() {
+        return createSerializationService(false);
+    }
+
+    @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        return createSerializationService(true);
+    }
+
+    /**
+     * Creates a serialization service. The {@code isCompatibility} parameter defines
+     * whether the serialization format used by the service will conform to the
+     * 3.x or the 4.x format.
+     *
+     * @param isCompatibility {@code true} if the serialized format should conform to the
+     *                 3.x serialization format, {@code false} otherwise
+     * @return the serialization service
+     */
+    private InternalSerializationService createSerializationService(boolean isCompatibility) {
         InternalSerializationService ss;
         try {
             Config config = node.getConfig();
@@ -292,22 +336,19 @@ public class DefaultNodeExtension implements NodeExtension {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
+                    .setSchemaService(node.memberSchemaService)
                     .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
                         @Override
                         public RuntimeException get() {
                             return new HazelcastInstanceNotActiveException();
                         }
                     })
+                    .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
         return ss;
-    }
-
-    @Override
-    public SecurityService getSecurityService() {
-        return null;
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
@@ -327,6 +368,8 @@ public class DefaultNodeExtension implements NodeExtension {
             return (T) new CacheService();
         } else if (MapService.class.isAssignableFrom(clazz)) {
             return createMapService();
+        } else if (JetServiceBackend.class.isAssignableFrom(clazz)) {
+            return (T) new JetServiceBackend(node);
         }
 
         throw new IllegalArgumentException("Unknown service class: " + clazz);
@@ -340,7 +383,10 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public Map<String, Object> createExtensionServices() {
-        return Collections.emptyMap();
+        if (jetExtension == null) {
+            return Collections.emptyMap();
+        }
+        return jetExtension.createExtensionServices();
     }
 
     @Override
@@ -371,24 +417,19 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onThreadStart(Thread thread) {
-    }
-
-    @Override
-    public void onThreadStop(Thread thread) {
-    }
-
-    @Override
     public MemoryStats getMemoryStats() {
         return memoryStats;
     }
 
     @Override
-    public void beforeShutdown() {
+    public void beforeShutdown(boolean terminate) {
+        if (jetExtension != null) {
+            jetExtension.beforeShutdown(terminate);
+        }
     }
 
     @Override
-    public void shutdown() {
+    public void afterShutdown() {
         logger.info("Destroying node NodeExtension.");
         if (phoneHome != null) {
             phoneHome.shutdown();
@@ -417,6 +458,9 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public void beforeClusterStateChange(ClusterState currState, ClusterState requestedState, boolean isTransient) {
+        if (jetExtension != null) {
+            jetExtension.beforeClusterStateChange(requestedState);
+        }
     }
 
     @Override
@@ -426,10 +470,9 @@ public class DefaultNodeExtension implements NodeExtension {
         for (ClusterStateListener listener : listeners) {
             listener.onClusterStateChange(newState);
         }
-    }
-
-    @Override
-    public void afterClusterStateChange(ClusterState oldState, ClusterState newState, boolean isTransient) {
+        if (jetExtension != null) {
+            jetExtension.onClusterStateChange(newState);
+        }
     }
 
     @Override
@@ -449,13 +492,12 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onInitialClusterState(ClusterState initialState) {
-    }
-
-    @Override
     public void onClusterVersionChange(Version newVersion) {
         if (!node.getVersion().asVersion().isEqualTo(newVersion)) {
             systemLogger.info("Cluster version set to " + newVersion);
+        }
+        if (jetExtension != null) {
+            jetExtension.onClusterVersionChange(newVersion);
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
@@ -497,21 +539,6 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public InternalHotRestartService getInternalHotRestartService() {
         return new NoopInternalHotRestartService();
-    }
-
-    @Override
-    public UUID createMemberUuid() {
-        return UuidUtil.newUnsecureUUID();
-    }
-
-    @Override
-    public ByteArrayProcessor createMulticastInputProcessor(ServerContext serverContext) {
-        return null;
-    }
-
-    @Override
-    public ByteArrayProcessor createMulticastOutputProcessor(ServerContext serverContext) {
-        return null;
     }
 
     // obtain cluster version, if already initialized (not null)
@@ -581,16 +608,6 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void scheduleClusterVersionAutoUpgrade() {
-        // NOP
-    }
-
-    @Override
-    public boolean isClientFailoverSupported() {
-        return false;
-    }
-
-    @Override
     public CPPersistenceService getCPPersistenceService() {
         return NopCPPersistenceService.INSTANCE;
     }
@@ -606,5 +623,21 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public AuditlogService getAuditlogService() {
         return NoOpAuditlogService.INSTANCE;
+    }
+
+    @Override
+    public JetService getJet() {
+        if (jetExtension == null) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
+        return jetExtension.getJet();
+    }
+
+    @Override
+    public void accept(Packet packet) {
+        if (jetExtension == null) {
+            throw new IllegalArgumentException("Jet is disabled");
+        }
+        jetExtension.handlePacket(packet);
     }
 }

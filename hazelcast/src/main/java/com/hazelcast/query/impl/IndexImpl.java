@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.getters.Extractors;
 
 /**
@@ -50,7 +50,7 @@ public class IndexImpl extends AbstractIndex {
             case HASH:
                 return new UnorderedIndexStore(copyBehavior);
             case BITMAP:
-                return new BitmapIndexStore(config, ss, extractors);
+                return new BitmapIndexStore(config);
             default:
                 throw new IllegalArgumentException("unexpected index type: " + config.getType());
         }
@@ -91,12 +91,19 @@ public class IndexImpl extends AbstractIndex {
     }
 
     @Override
-    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
-        return partitionTracker.getPartitionStamp(expectedPartitionIds);
+    public PartitionStamp getPartitionStamp() {
+        return partitionTracker.getPartitionStamp();
     }
 
     @Override
     public boolean validatePartitionStamp(long stamp) {
         return partitionTracker.validatePartitionStamp(stamp);
+    }
+
+    @Override
+    public String toString() {
+        return "IndexImpl{"
+                + "partitionTracker=" + partitionTracker
+                + "} " + super.toString();
     }
 }

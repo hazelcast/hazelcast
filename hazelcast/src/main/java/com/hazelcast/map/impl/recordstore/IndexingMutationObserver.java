@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
@@ -145,9 +146,11 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
         Indexes.beginPartitionUpdate(indexesSnapshot);
 
+        CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(ss, mapContainer.getExtractors());
         recordStore.forEach((BiConsumer<Data, Record>) (dataKey, record) -> {
             Object value = getValueOrCachedValue(record, ss);
-            indexes.removeEntry(dataKey, value, Index.OperationSource.SYSTEM);
+            entry.init(dataKey, value);
+            indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
         }, false);
 
         Indexes.markPartitionAsUnindexed(partitionId, indexesSnapshot);

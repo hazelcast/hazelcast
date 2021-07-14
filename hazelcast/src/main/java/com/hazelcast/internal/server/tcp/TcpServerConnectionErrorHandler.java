@@ -32,9 +32,9 @@ class TcpServerConnectionErrorHandler {
     private int faults;
     private long lastFaultTime;
 
-    TcpServerConnectionErrorHandler(TcpServerConnectionManager connectionManager, Address endPoint) {
+    TcpServerConnectionErrorHandler(ServerContext serverContext, Address endPoint) {
         this.endPoint = endPoint;
-        this.serverContext = connectionManager.getServer().getContext();
+        this.serverContext = serverContext;
         this.minInterval = serverContext.getConnectionMonitorInterval();
         this.maxFaults = serverContext.getConnectionMonitorMaxFaults();
         this.logger = serverContext.getLoggingService().getLogger(getClass());
@@ -55,11 +55,12 @@ class TcpServerConnectionErrorHandler {
         }
     }
 
-    synchronized void reset() {
+    synchronized TcpServerConnectionErrorHandler reset() {
         String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
         logger.finest(resetMessage);
         faults = 0;
         lastFaultTime = 0L;
+        return this;
     }
 
     private String getCauseDescription(Throwable cause) {

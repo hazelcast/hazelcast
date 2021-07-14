@@ -21,17 +21,15 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:cluster-name>dev1</hz:cluster-name>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5701">
                 <hz:join>
-                    <hz:multicast enabled="true"/>
-                    <hz:tcp-ip enabled="false">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>

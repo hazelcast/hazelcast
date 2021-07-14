@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this map contains no key-value mappings.
  */
-@Generated("b14d8f9b772bd78c322ac0724aa41131")
+@Generated("9f0b3f3d4d70a8bfd013512f94ef612a")
 public final class MapIsEmptyCodec {
     //hex: 0x012B00
     public static final int REQUEST_MESSAGE_TYPE = 76544;
@@ -89,5 +89,4 @@ public final class MapIsEmptyCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

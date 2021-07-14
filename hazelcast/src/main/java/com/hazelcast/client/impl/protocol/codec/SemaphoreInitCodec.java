@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Initializes the ISemaphore instance with the given permit number, if not
  * initialized before.
  */
-@Generated("351fd3a381b54b621e06af03a3b57eba")
+@Generated("81d370ba7329e43c13e677ddac83a93e")
 public final class SemaphoreInitCodec {
     //hex: 0x0C0100
     public static final int REQUEST_MESSAGE_TYPE = 786688;
@@ -112,5 +112,4 @@ public final class SemaphoreInitCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }

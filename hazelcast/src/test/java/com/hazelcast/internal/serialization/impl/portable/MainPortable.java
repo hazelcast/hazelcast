@@ -85,7 +85,7 @@ public class MainPortable implements Portable {
         writer.writeLong("l", l);
         writer.writeFloat("f", f);
         writer.writeDouble("d", d);
-        writer.writeUTF("str", str);
+        writer.writeString("str", str);
         if (p != null) {
             writer.writePortable("p", p);
         } else {
@@ -109,7 +109,7 @@ public class MainPortable implements Portable {
         l = reader.readLong("l");
         f = reader.readFloat("f");
         d = reader.readDouble("d");
-        str = reader.readUTF("str");
+        str = reader.readString("str");
         p = reader.readPortable("p");
         bigDecimal = reader.readDecimal("bigDecimal");
         localTime = reader.readTime("localTime");

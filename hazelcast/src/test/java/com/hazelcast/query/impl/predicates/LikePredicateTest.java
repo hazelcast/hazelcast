@@ -16,6 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
+import com.hazelcast.internal.monitor.impl.MemberPartitionStateImpl;
+import com.hazelcast.internal.monitor.impl.PerIndexStats;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.IndexUtils;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,9 +36,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -76,11 +91,96 @@ public class LikePredicateTest {
     }
 
     @Test
+    public void likePredicateIsNotIndexed_whenBitmapIndexIsUsed() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.BITMAP));
+
+        assertFalse(new LikePredicate("this", "string%").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenHashIndexIsUsed() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.HASH));
+
+        assertFalse(new LikePredicate("this", "string%").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenUnderscoreWildcardIsUsed() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "string_").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenPercentWildcardIsUsedAtTheBeginning() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "%string").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenPercentWildcardIsUsedMultipleTimes() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "sub%string%").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenPercentWildcardIsEscaped() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "sub\\%").isIndexed(queryContext));
+        assertFalse(new LikePredicate("this", "sub\\\\\\%").isIndexed(queryContext));
+        assertFalse(new LikePredicate("this", "sub\\%string\\%").isIndexed(queryContext));
+        assertFalse(new LikePredicate("this", "sub\\str\\%").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsNotIndexed_whenPercentWildcardIsNotTheLastSymbol() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertFalse(new LikePredicate("this", "sub%str").isIndexed(queryContext));
+        assertFalse(new LikePredicate("this", "sub%   ").isIndexed(queryContext));
+    }
+
+    @Test
+    public void likePredicateIsIndexed_whenPercentWildcardIsUsed_andIndexIsSorted() {
+        QueryContext queryContext = mock(QueryContext.class);
+        when(queryContext.matchIndex("this", QueryContext.IndexMatchHint.PREFER_ORDERED)).thenReturn(createIndex(IndexType.SORTED));
+
+        assertTrue(new LikePredicate("this", "sub%").isIndexed(queryContext));
+        assertTrue(new LikePredicate("this", "sub\\\\%").isIndexed(queryContext));
+        assertTrue(new LikePredicate("this", "sub\\%string%").isIndexed(queryContext));
+        assertTrue(new LikePredicate("this", "sub\\_string%").isIndexed(queryContext));
+    }
+
+    @Nonnull
+    private Index createIndex(IndexType indexType) {
+        InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
+        Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
+        IndexConfig config = IndexUtils.createTestIndexConfig(indexType, "this");
+        return new IndexImpl(
+                config,
+                mockSerializationService,
+                mockExtractors,
+                IndexCopyBehavior.COPY_ON_READ,
+                PerIndexStats.EMPTY,
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+        );
+    }
+
+    @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(LikePredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
             .withRedefinedSuperclass()
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

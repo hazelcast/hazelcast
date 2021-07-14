@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MetadataPolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
@@ -63,12 +64,13 @@ import static org.junit.Assert.assertEquals;
 public class MapIndexJsonTest extends HazelcastTestSupport {
 
     public static final int OBJECT_COUNT = 1000;
-    private static final String STRING_PREFIX = "s";
+    private static final String STRING_PREFIX = "s🙂榛";
+    private static final String NON_INDEXED_MAP_NAME = "non-indexed-map";
 
     TestHazelcastInstanceFactory factory;
     HazelcastInstance instance;
 
-    @Parameterized.Parameter(0)
+    @Parameterized.Parameter
     public InMemoryFormat inMemoryFormat;
 
     @Parameterized.Parameter(1)
@@ -94,21 +96,22 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
-        config.getMapConfig("default")
+        MapConfig mapConfig = new MapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
-                .setMetadataPolicy(metadataPolicy);
-
-        addIndexConfig(config);
-        return config;
-    }
-
-    protected Config addIndexConfig(Config config) {
-        config.getMapConfig("default")
+                .setMetadataPolicy(metadataPolicy)
                 .addIndexConfig(sortedIndexConfig("longValue"))
                 .addIndexConfig(sortedIndexConfig("doubleValue"))
                 .addIndexConfig(sortedIndexConfig("nestedObject.nestedLongValue"))
                 .addIndexConfig(sortedIndexConfig("stringValue"))
                 .addIndexConfig(sortedIndexConfig("stringValueArray"));
+
+        MapConfig nonIndexedMapConfig = new MapConfig(NON_INDEXED_MAP_NAME)
+                .setInMemoryFormat(inMemoryFormat)
+                .setMetadataPolicy(metadataPolicy);
+
+        config.addMapConfig(mapConfig)
+                .addMapConfig(nonIndexedMapConfig);
+
         return config;
     }
 
@@ -174,7 +177,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     public void testAny() {
         IMap<Integer, HazelcastJsonValue> map = getPreloadedMap();
         String attributeName = "stringValueArray[any]";
-        Comparable comparable = "nested0 " + STRING_PREFIX + "999";
+        Comparable<String> comparable = "nested0 " + STRING_PREFIX + "999";
 
         int mapSize = map.size();
         assertEquals(999, map.keySet(lessThan(attributeName, comparable)).size());
@@ -187,7 +190,23 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
         assertEquals(valueFromPredicate, map.get(keyFromPredicate));
     }
 
-    protected void assertIndex(IMap map, int targetCount, Comparable comparable, String attributeName) {
+    @Test
+    public void testDynamicIndexCreation() {
+        IMap<Integer, HazelcastJsonValue> map = getPreloadedMap(NON_INDEXED_MAP_NAME);
+        assertIndex(map, 100, 100.5, "doubleValue", false);
+        map.addIndex(sortedIndexConfig("stringValue"));
+        // Query on non-indexed field
+        assertIndex(map, 200, 200, "longValue", false);
+        // Query on indexed field
+        assertIndex(map, 999, STRING_PREFIX + "999", "stringValue");
+    }
+
+    private void assertIndex(IMap<Integer, HazelcastJsonValue> map, int targetCount, Comparable comparable, String attributeName) {
+        assertIndex(map, targetCount, comparable, attributeName, true);
+    }
+
+    private void assertIndex(IMap<Integer, HazelcastJsonValue> map, int targetCount, Comparable comparable,
+                             String attributeName, boolean assertFromInternalIndexes) {
         int mapSize = map.size();
         assertEquals(targetCount, map.keySet(lessThan(attributeName, comparable)).size());
         assertEquals(mapSize - 1, map.keySet(notEqual(attributeName, comparable)).size());
@@ -198,18 +217,24 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
 
         assertEquals(valueFromPredicate, map.get(keyFromPredicate));
 
-        QueryableEntry queryableEntry = getRecordsFromInternalIndex(factory.getAllHazelcastInstances(), map.getName(), attributeName, comparable).iterator().next();
-
-        assertEquals(keyFromPredicate, queryableEntry.getKey());
-        assertEquals(valueFromPredicate, queryableEntry.getValue());
+        if (assertFromInternalIndexes) {
+            QueryableEntry queryableEntry = getRecordsFromInternalIndex(factory.getAllHazelcastInstances(),
+                    map.getName(), attributeName, comparable).iterator().next();
+            assertEquals(keyFromPredicate, queryableEntry.getKey());
+            assertEquals(valueFromPredicate, queryableEntry.getValue());
+        }
     }
 
-    protected IMap<Integer, HazelcastJsonValue> getPreloadedMap() {
-        IMap<Integer, HazelcastJsonValue> map = instance.getMap(randomMapName());
+    private IMap<Integer, HazelcastJsonValue> getPreloadedMap(String mapName) {
+        IMap<Integer, HazelcastJsonValue> map = instance.getMap(mapName);
         for (int i = 0; i < OBJECT_COUNT; i++) {
-            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, (long) i, (double) i + 0.5, (long) i));
+            map.put(i, createHazelcastJsonValue(STRING_PREFIX + i, i, (double) i + 0.5, i));
         }
         return map;
+    }
+
+    private IMap<Integer, HazelcastJsonValue> getPreloadedMap() {
+        return getPreloadedMap(randomMapName());
     }
 
     private HazelcastJsonValue createHazelcastJsonValue(String stringValue, long longValue, double doubleValue, long nestedLongValue) {
@@ -228,8 +253,8 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     }
 
     protected Set<QueryableEntry> getRecordsFromInternalIndex(Collection<HazelcastInstance> instances, String mapName, String attribute, Comparable value) {
-        Set<QueryableEntry> records = new HashSet<QueryableEntry>();
-        for (HazelcastInstance instance: instances) {
+        Set<QueryableEntry> records = new HashSet<>();
+        for (HazelcastInstance instance : instances) {
             List<Index> indexes = getIndexOfAttributeForMap(instance, mapName, attribute);
             for (Index index : indexes) {
                 records.addAll(index.getRecords(value));
@@ -244,7 +269,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
-        List<Index> result = new ArrayList<Index>();
+        List<Index> result = new ArrayList<>();
         for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));

@@ -95,8 +95,8 @@ public class JoinRequest extends JoinMessage {
         int size = in.readInt();
         attributes = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         size = in.readInt();
@@ -116,8 +116,8 @@ public class JoinRequest extends JoinMessage {
         out.writeInt(tryCount);
         out.writeInt(attributes.size());
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
         out.writeInt(excludedMemberUuids.size());
         for (UUID uuid : excludedMemberUuids) {

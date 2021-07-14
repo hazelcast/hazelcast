@@ -39,6 +39,8 @@ public interface PortableContext {
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 
+    ClassDefinition registerClassDefinition(ClassDefinition cd, boolean throwOnIncompatibleClassDefinitions);
+
     ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
 
     FieldDefinition getFieldDefinition(ClassDefinition cd, String name);

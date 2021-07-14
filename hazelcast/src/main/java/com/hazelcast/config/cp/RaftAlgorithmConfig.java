@@ -16,6 +16,8 @@
 
 package com.hazelcast.config.cp;
 
+import java.util.Objects;
+
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
@@ -233,5 +235,30 @@ public class RaftAlgorithmConfig {
                 + ", commitIndexAdvanceCountToSnapshot=" + commitIndexAdvanceCountToSnapshot
                 + ", uncommittedEntryCountToRejectNewAppends=" + uncommittedEntryCountToRejectNewAppends
                 + ", appendRequestBackoffTimeoutInMillis=" + appendRequestBackoffTimeoutInMillis + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RaftAlgorithmConfig that = (RaftAlgorithmConfig) o;
+        return leaderElectionTimeoutInMillis == that.leaderElectionTimeoutInMillis
+                && leaderHeartbeatPeriodInMillis == that.leaderHeartbeatPeriodInMillis
+                && maxMissedLeaderHeartbeatCount == that.maxMissedLeaderHeartbeatCount
+                && appendRequestMaxEntryCount == that.appendRequestMaxEntryCount
+                && commitIndexAdvanceCountToSnapshot == that.commitIndexAdvanceCountToSnapshot
+                && uncommittedEntryCountToRejectNewAppends == that.uncommittedEntryCountToRejectNewAppends
+                && appendRequestBackoffTimeoutInMillis == that.appendRequestBackoffTimeoutInMillis;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(leaderElectionTimeoutInMillis, leaderHeartbeatPeriodInMillis, maxMissedLeaderHeartbeatCount,
+                appendRequestMaxEntryCount, commitIndexAdvanceCountToSnapshot, uncommittedEntryCountToRejectNewAppends,
+                appendRequestBackoffTimeoutInMillis);
     }
 }

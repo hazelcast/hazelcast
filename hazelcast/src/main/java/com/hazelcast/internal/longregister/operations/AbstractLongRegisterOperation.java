@@ -62,12 +62,12 @@ public abstract class AbstractLongRegisterOperation extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
     }
 
     @Override

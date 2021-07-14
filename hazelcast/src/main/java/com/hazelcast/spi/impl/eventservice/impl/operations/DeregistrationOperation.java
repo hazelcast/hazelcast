@@ -56,13 +56,13 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
 
     @Override
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
-        out.writeUTF(topic);
+        out.writeString(topic);
         UUIDSerializationUtil.writeUUID(out, id);
     }
 
     @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
-        topic = in.readUTF();
+        topic = in.readString();
         id = UUIDSerializationUtil.readUUID(in);
     }
 

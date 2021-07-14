@@ -53,7 +53,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeInt(indexConfigs.size());
 
         for (IndexConfig indexConfig : indexConfigs) {
@@ -63,7 +63,7 @@ public class MapIndexInfo implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         int size = in.readInt();
 
         for (int i = 0; i < size; i++) {

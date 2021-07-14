@@ -112,7 +112,7 @@ public class ComplexTestDataStructure {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortableArray("limbs_portable", limbs_portable);
             writer.writePortable("firstLimb", firstLimb);
             writer.writePortable("secondLimb", secondLimb);
@@ -120,7 +120,7 @@ public class ComplexTestDataStructure {
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             limbs_portable = reader.readPortableArray("limbs_portable");
             firstLimb = reader.readPortable("firstLimb");
             secondLimb = reader.readPortable("secondLimb");
@@ -199,16 +199,16 @@ public class ComplexTestDataStructure {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortableArray("fingers_portable", fingers_portable);
-            writer.writeUTFArray("tattoos_portable", tattoos_portable);
+            writer.writeStringArray("tattoos_portable", tattoos_portable);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             fingers_portable = reader.readPortableArray("fingers_portable");
-            tattoos_portable = reader.readUTFArray("tattoos_portable");
+            tattoos_portable = reader.readStringArray("tattoos_portable");
         }
 
         @Override
@@ -288,12 +288,12 @@ public class ComplexTestDataStructure {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
         }
     }
 

@@ -20,7 +20,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.logging.LogEvent;
 import com.hazelcast.logging.LoggerFactorySupport;
-import com.hazelcast.logging.impl.InternalLogger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.spi.LoggerContext;
 
@@ -106,7 +105,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         return legacyLog4j2Factory.get();
     }
 
-    private static class DelegatingTestLogger implements ILogger, InternalLogger {
+    private static class DelegatingTestLogger implements ILogger {
 
         private static final long WARNING_THRESHOLD_NANOS = MILLISECONDS.toNanos(500);
 
@@ -114,11 +113,6 @@ public class TestLoggerFactory extends LoggerFactorySupport {
 
         private DelegatingTestLogger(ILogger delegate) {
             this.delegate = delegate;
-        }
-
-        @Override
-        public void setLevel(Level level) {
-            ((InternalLogger) delegate).setLevel(level);
         }
 
         @Override

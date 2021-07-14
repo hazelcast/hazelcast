@@ -107,8 +107,6 @@ public abstract class BaseInvocation {
     }
 
     /**
-     * gets called from the Clean resources task
-     *
      * @param timeoutMillis timeout value to wait for backups after  the response received
      * @return true if invocation is completed
      */

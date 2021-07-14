@@ -147,7 +147,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     }
                 }
             } else {
-                className = in.readUTF();
+                className = in.readString();
                 if (null == aClass) {
                     ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 }
@@ -236,9 +236,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             out.writeInt(ds.getClassId());
         } else {
             if (obj instanceof TypedDataSerializable) {
-                out.writeUTF(((TypedDataSerializable) obj).getClassType().getName());
+                out.writeString(((TypedDataSerializable) obj).getClassType().getName());
             } else {
-                out.writeUTF(obj.getClass().getName());
+                out.writeString(obj.getClass().getName());
             }
         }
         obj.writeData(out);

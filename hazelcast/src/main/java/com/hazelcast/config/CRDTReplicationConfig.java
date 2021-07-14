@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.Objects;
+
 /**
  * Configures the replication mechanism for all
  * {@link com.hazelcast.internal.crdt.CRDT} implementations.
@@ -92,5 +94,23 @@ public class CRDTReplicationConfig {
         }
         this.maxConcurrentReplicationTargets = maxConcurrentReplicationTargets;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CRDTReplicationConfig that = (CRDTReplicationConfig) o;
+        return replicationPeriodMillis == that.replicationPeriodMillis
+                && maxConcurrentReplicationTargets == that.maxConcurrentReplicationTargets;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(replicationPeriodMillis, maxConcurrentReplicationTargets);
     }
 }

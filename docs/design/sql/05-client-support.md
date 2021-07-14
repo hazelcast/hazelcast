@@ -34,7 +34,7 @@ is different from other Hazelcast subsystems. Normally, if the operation cannot 
 over to the normal member transparently. This is not the case for the SQL purely due to time constraints: we do no have enough
 time to implement it in 4.1. This limitation will be removed in future versions.
 
-Therefore, the client should never route query execute requests to the lite members in the 4.1 release. 
+Therefore, the client should never route query execute requests to the lite members in the 4.1 and 4.2 releases. 
 
 ### 1.4 Resource Cleanup
 
@@ -48,22 +48,24 @@ the client disconnects.
 
 The protocol contains three commands: `execute`, `fetch`, and `close`.
 
-### 2.1 Common Entities
-
-The protocol contains the following common entities that are used across different commands:
-- **Query ID** - an opaque query identifier that is used to locate the server-side cursor on the member
-- **Data page** - a finite collection of rows fetched from the initiator, together with the "end of data" marker. If the 
-"end of data" condition is observed, the cursor is closed on the server automatically and no separate `close` is needed.
-- **SqlRow** - an object containing row data. At the moment we encode each separate value as `Data`. In the future we are likely
-to replace it with specialized types for every SQL data type.
+The protocol also has the following common objects that are used across different commands:
+- **SqlQueryId** - an opaque query identifier that is used to locate the server-side cursor on the member
+- **SqlPage** - a finite collection of rows fetched from the initiator, together with the "end of data" marker. If the 
+  "end of data" condition is observed, the cursor is closed on the server automatically and no separate `close` operation is 
+  needed.
 - **SqlError** - an object describing the SQL error that occurred on the server. We use a separate object because we pass an 
-error code in addition to the error message.
+  error code in addition to the error message.
 
 ### 2.1 Execute Command
 
-The `execute` command starts execution of a query on the member. The response contains query ID, the data page, and metadata.
+The `execute` command starts execution of a query on the member. 
 
-The command must never be sent to a lite member in 4.1.
+The client generates the query ID locally, which allows cancelling the query without waiting for the response to the `execute` 
+commands. Other request parameters are converted to the relevant fields of the server-side `SqlStatement` object.
+
+The response contains either a pair of `rowMetadata` and `rowPage` for queries that produce a result set, or an `updateCount`.
+If an error occurred on the server, these fields will be initialized with the default values, and the `error` field will contain
+the description of the error.
 
 ```
 request {
@@ -71,13 +73,15 @@ request {
     parameters : List<Data>
     timeoutMillis : long
     cursorBufferSize : int
+    schemaName : String
+    expectedResultType: byte
+    queryId : SqlQueryId
 }
 
 response {
-    queryId : SqlQueryId
     rowMetadata : SqlRowMetadata
-    rowPage : List<SqlRow>
-    rowPageLast : boolean
+    rowPage : SqlPage
+    updateCount: long
     error : SqlError
 }
 ```
@@ -87,38 +91,35 @@ response {
 The `fetch` command extracts the next page of rows from the server-side cursor via query ID. 
 
 Data fetching is organized in a simple request-response fashion: one page is returned for every `fetch` request. This 
-implementation is not optimal for large result sets due to increased latency. A better implementation will stream data from the 
-member to the client without waiting for an explicit `fetch` request for every page. We decided not to do this in 4.1 due to 
-time constraints. However, the design of the client protocol allows for such interaction, so we may implement the streaming 
-protocol in the future. 
-
-The command must be sent to the query initiator for two reasons:
-1. This guarantees the optimal performance, because the data is extract with a minimal number of network requests 
-1. Currently, there is no way to re-route `fetch` requests from the one member to another. This limitation might be relaxed in 
-the future.
+implementation might be not optimal for large result sets due to increased latency. An alternative implementation could stream
+data from the member to the client without waiting for an explicit `fetch` request for every page. We decided not to do this in
+4.1 due to time constraints. However, the design of the client protocol allows for such interaction, so we may implement the 
+streaming protocol in the future. 
 
 ```
 request {
     queryId : SqlQueryId
+    cursorBufferSize : int
 }
 
 response {
-    rowPage : List<SqlRow>
-    rowPageLast : boolean
+    rowPage : SqlPage
     error : SqlError
 }
 ```
 
+The `fetch` command must be sent to the query initiator only. There are two reasons for this:
+1. This guarantees the optimal performance, because the data is extracted with a minimal number of network requests
+1. Currently, there is no way to re-route `fetch` requests from the one member to another. This limitation might be relaxed in
+   the future.
+
 ### 2.3 Close Command
 
-The `close` command stops query execution on the member, and releases the associated resources. 
-
-If the previous `execute` or `fetch` response returned "end of data" flag (`rowPageLast == true`), then it is not necessary 
-to send this command to the member.
-
-If the server-side cursor with the given ID is not found, the command is no-op.
-
-The command must be sent to the query initiator for reasons similar to the `fetch` command.
+The `close` command stops query execution on the member, and releases the associated resources. The request could be sent
+without waiting for the initial response from the `execute` command. If the server-side cursor with the given ID is not found, 
+the special cancellation marker is associated with the query ID. If the `execute` request is received afterward, it is 
+ignored, and the marker is cleared. If the `execute` request is not received during a certain time, the marker is cleared
+to avoid memory leaks.
 
 ```
 request {
@@ -127,31 +128,15 @@ request {
 
 response {}
 ```
+
+The server-side resources are cleared automatically when the end of data is reached. Therefore, it is not necessary to send
+the `close` command to the member, if the previous `execute` or `fetch` command returned the last page, or an update count.
   
 ## 3 Limitations
 
 This section describes limitations of the current implementation
 
-### 3.1 No Backward Compatibility
-
-The protocol is not backward compatible at the moment, because the SQL feature is declared as beta. Messages could be changed 
-in an incompatible way in minor and patch versions. 
-
-In order to ensure that the user receives proper error messages in case of incompatibility, we will increment the ID of the 
-message every time it is changed in an incompatible way. The user will receive an error message about the version mismatch.
-
-When the SQL is no longer in beta, the SQL protocol will become backward/forward compatible, similarly to other Hazelcast 
-components.  
-
-### 3.2 Stickiness
-
-There is no server-side logic to re-route client requests between members. Therefore, the protocol is sticky: `fetch` and 
-`close` commands must be sent to the same member as the prior `execute` command.
-
-We are likely to add missing routing logic in future versions. However, stickiness guarantees the optimal performance. Therefore,
-we will still employ the sticky approach on the best-effort basis even after the limitation is resolved. 
-
-### 3.3 No Support for Lite Members
+### 3.1 No Support for Lite Members
 
 Lite members cannot initiate the SQL queries, and we do not have routing of client requests between members. Therefore, the 
 client cannot send `execute` requests to the lite members. 

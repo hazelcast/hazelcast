@@ -40,24 +40,26 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullablePartitionIdSet;
 
 /**
- * Represents a result of the query execution in the form of an iterable
+ * Represents a result of a query execution in the form of an iterable
  * collection of {@link QueryResultRow rows}.
  * <p>
- * There are two modes of the result construction, the selection of the mode is
+ * There are two modes of result construction, the choice is
  * controlled by the {@code orderAndLimitExpected} parameter:
+ *
  * <ol>
- * <li>When {@code orderAndLimitExpected} is {@code true}, this indicates that
- * the call to the {@link #orderAndLimit} method is expected on behalf of the
- * {@link PagingPredicate paging predicate} involved in the query. In this case,
- * the intermediate result is represented as a collection of {@link
- * QueryableEntry queryable entries} to allow the comparison of the items using
- * the comparator of the paging predicate. After the call to {@link
- * #completeConstruction}, all the queryable entries are converted to {@link
- * QueryResultRow rows} and the result is ready to be provided to the client.
- * <li>When {@code orderAndLimitExpected} is {@code false}, this indicates that
- * no calls to the {@link #orderAndLimit} method are expected. In this case, the
- * intermediate result is represented directly as a collection of {@link
- * QueryResultRow rows} and no further conversion is performed.
+ *     <li>When {@code orderAndLimitExpected} is {@code true}, this indicates that
+ *     the call to the {@link #orderAndLimit} method is expected on behalf of the
+ *     {@link PagingPredicate paging predicate} involved in the query. In this case,
+ *     the intermediate result is represented as a collection of {@link
+ *     QueryableEntry queryable entries} to allow the comparison of the items using
+ *     the comparator of the paging predicate. After the call to {@link
+ *     #completeConstruction}, all the queryable entries are converted to {@link
+ *     QueryResultRow rows} and the result is ready to be provided to the client.
+ *
+ *     <li>When {@code orderAndLimitExpected} is {@code false}, this indicates that
+ *     no calls to the {@link #orderAndLimit} method are expected. In this case, the
+ *     intermediate result is represented directly as a collection of {@link
+ *     QueryResultRow rows} and no further conversion is performed.
  * </ol>
  */
 public class QueryResult implements Result<QueryResult>, Iterable<QueryResultRow> {

@@ -64,7 +64,6 @@ hazelcast:
             consistency-check-strategy: MERKLE_TREES
 
         istanbul:
-          class-name: com.hazelcast.wan.custom.WanPublisher
           queue-full-behavior: THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE
           initial-publisher-state: STOPPED
           queue-capacity: 12345
@@ -307,16 +306,17 @@ hazelcast:
       # Proper eviction configuration example for NATIVE in-memory format :
       #    `<eviction max-size-policy="USED_NATIVE_MEMORY_SIZE" eviction-policy="LFU" size="60"/>`
       near-cache:
-        max-size: 10000
         time-to-live-seconds: 0
         max-idle-seconds: 0
-        eviction-policy: LFU
+        eviction:
+          size: 10000
+          eviction-policy: LFU
         invalidate-on-change: true
         cache-local-entries: false
 
       wan-replication-ref:
         my-wan-cluster:
-          merge-policy-class-name: hz.PASS_THROUGH
+          merge-policy-class-name: PassThroughMergePolicy
           filters:
             - com.example.WanTestFilter1
             - com.example.WanTestFilter2
@@ -493,9 +493,9 @@ hazelcast:
       cache-writer-factory:
         class-name: com.example.cache.MyCacheWriterFactory
       expiry-policy-factory:
-        class-name: com.example.cache.MyExpirePolicyFactory
+#        class-name: com.example.cache.MyExpirePolicyFactory
         timed-expiry-policy-factory:
-          expiry-policy-type: ETERNAL
+          expiry-policy-type: TOUCHED
           duration-amount: 123
           time-unit: MICROSECONDS
 
@@ -520,7 +520,7 @@ hazelcast:
         size: 50
       wan-replication-ref:
         name: my-wan-cluster
-        merge-policy-class-name: hz.PASS_THROUGH
+        merge-policy-class-name: PassThroughMergePolicy
         filters:
           - com.example.WanTestFilter1
           - com.example.WanTestFilter2
@@ -536,6 +536,9 @@ hazelcast:
         enabled: true
         capacity: 100
         time-to-live-seconds: 100
+      merkle-tree:
+        enabled: true
+        depth: 5
 
   flake-id-generator:
     default:
@@ -597,7 +600,7 @@ hazelcast:
     size:
       unit: MEGABYTES
       value: 256
-    min-block-size: 123
+    min-block-size: 128
     page-size: 123
     metadata-space-percentage: 12.5
     persistent-memory:
@@ -612,7 +615,20 @@ hazelcast:
   security:
     enabled: false
     realms:
-      - name: mr
+      - name: simpleRealm
+        authentication:
+          simple:
+            users:
+              - username: test
+                password: 'a1234'
+                roles:
+                  - monitor
+                  - hazelcast
+              - username: dev
+                password: 'secret'
+                roles:
+                  - root
+      - name: jaasRealm
         authentication:
           jaas:
             - class-name: com.hazelcast.examples.MyRequiredLoginModule
@@ -624,17 +640,6 @@ hazelcast:
             class-name: com.hazelcast.examples.MyCredentialsFactory
             properties:
               property: value
-      - name: cr
-        authentication:
-          jaas:
-            - class-name: com.hazelcast.examples.MyOptionalLoginModule
-              usage: OPTIONAL
-              properties:
-                property: value
-            - class-name: com.hazelcast.examples.MyRequiredLoginModule
-              usage: REQUIRED
-              properties:
-                property: value
       - name: ldapRealm
         authentication:
           ldap:
@@ -729,9 +734,9 @@ hazelcast:
                 principal: hz/127.0.0.1@HAZELCAST.COM
                 keyTab: /opt/hz-localhost.keytab
     member-authentication:
-      realm: mr
+      realm: jaasRealm
     client-authentication:
-      realm: cr
+      realm: simpleRealm
     client-permission-policy:
       class-name: com.hazelcast.examples.MyPermissionPolicy
       properties:
@@ -750,12 +755,10 @@ hazelcast:
             - all
       set:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cardinality-estimator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       scheduled-executor:
@@ -765,19 +768,16 @@ hazelcast:
             - all
       atomic-long:
         - name: "*"
-          principal: "*"
           actions:
             - all
       atomic-reference:
         - name: "*"
-          principal: "*"
           actions:
             - all
       transaction:
         principal: deployer
       pn-counter:
         - name: "*"
-          principal: "*"
           actions:
             - all
       semaphore:
@@ -792,7 +792,6 @@ hazelcast:
             - all
       durable-executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       map:
@@ -807,27 +806,22 @@ hazelcast:
             - read
       flake-id-generator:
         - name: "*"
-          principal: "*"
           actions:
             - all
       topic:
         - name: "*"
-          principal: "*"
           actions:
             - all
       multimap:
         - name: "*"
-          principal: "*"
           actions:
             - all
       cache:
         - name: "*"
-          principal: "*"
           actions:
             - all
       lock:
         - name: "*"
-          principal: "*"
           actions:
             - all
       queue:
@@ -836,12 +830,10 @@ hazelcast:
             - all
       list:
         - name: "*"
-          principal: "*"
           actions:
             - all
       executor-service:
         - name: "*"
-          principal: "*"
           actions:
             - all
       ring-buffer:
@@ -851,12 +843,20 @@ hazelcast:
             - all
       replicatedmap:
         - name: "*"
-          principal: "*"
           actions:
             - all
       reliable-topic:
         - name: "*"
-          principal: "*"
+          actions:
+            - all
+      management:
+        - principal: "mcadmin"
+      job:
+        - principal: "*"
+          actions:
+            - all
+      connector:
+        - name: "*"
           actions:
             - all
     client-block-unmapped-actions: true

@@ -119,18 +119,18 @@ public class CollectionTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         UUIDSerializationUtil.writeUUID(out, transactionId);
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(partitionId);
         CollectionTxnUtil.write(out, operationList);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         transactionId = UUIDSerializationUtil.readUUID(in);
-        name = in.readUTF();
+        name = in.readString();
         partitionId = in.readInt();
         operationList = CollectionTxnUtil.read(in);
     }

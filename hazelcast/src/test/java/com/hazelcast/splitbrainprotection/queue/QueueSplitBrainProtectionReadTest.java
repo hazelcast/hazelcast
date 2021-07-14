@@ -17,6 +17,8 @@
 package com.hazelcast.splitbrainprotection.queue;
 
 import com.hazelcast.collection.IQueue;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -36,7 +38,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
@@ -44,9 +45,11 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueSplitBrainProtectionReadTest extends AbstractSplitBrainProtectionTest {
 
+    private static final ILogger LOGGER = Logger.getLogger(QueueSplitBrainProtectionReadTest.class);
+
     @Parameters(name = "splitBrainProtectionType:{0}")
     public static Iterable<Object[]> parameters() {
-        return asList(new Object[][]{{SplitBrainProtectionOn.READ}, {SplitBrainProtectionOn.READ_WRITE}});
+        return asList(new Object[][] {{SplitBrainProtectionOn.READ}, {SplitBrainProtectionOn.READ_WRITE}});
     }
 
     @Parameter
@@ -67,6 +70,8 @@ public class QueueSplitBrainProtectionReadTest extends AbstractSplitBrainProtect
 
     @Test
     public void element_splitBrainProtection() {
+        LOGGER.info(String.valueOf(queue(0).size()));
+        LOGGER.info(String.valueOf(queue(0).getPartitionKey()));
         queue(0).element();
     }
 

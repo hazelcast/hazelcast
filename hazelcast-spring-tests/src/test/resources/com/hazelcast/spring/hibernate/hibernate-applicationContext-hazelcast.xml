@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -38,17 +38,9 @@
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
             <hz:network port="${cluster.port}" port-auto-increment="false">
                 <hz:join>
-                    <hz:multicast enabled="false"
-                                  multicast-group="224.2.2.3"
-                                  multicast-port="54327"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:members>${cluster.members}</hz:members>
-                    </hz:tcp-ip>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
-                <hz:interfaces enabled="false">
-                    <hz:interface>10.10.1.*</hz:interface>
-                </hz:interfaces>
-
             </hz:network>
             <hz:executor-service name="testExec"
                                  pool-size="2"

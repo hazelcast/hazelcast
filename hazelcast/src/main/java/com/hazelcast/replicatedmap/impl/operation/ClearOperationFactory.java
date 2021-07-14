@@ -41,12 +41,12 @@ public class ClearOperationFactory implements OperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
     }
 
     @Override

@@ -53,13 +53,15 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.management.dto.MCEventDTO;
+import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.partition.MigrationState;
-import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -652,6 +654,10 @@ public class ReferenceObjects {
     public static CPMember aCpMember;
     public static List<CPMember> aListOfCpMembers;
     public static MigrationState aMigrationState = new MigrationStateImpl(aLong, anInt, anInt, aLong);
+    public static FieldDescriptor aFieldDescriptor = CustomTypeFactory.createFieldDescriptor(aString, anInt);
+    public static List<FieldDescriptor> aListOfFieldDescriptors = Collections.singletonList(aFieldDescriptor);
+    public static Schema aSchema = CustomTypeFactory.createSchema(aString, aListOfFieldDescriptors);
+    public static List<Schema> aListOfSchemas = Collections.singletonList(aSchema);
 
     static {
         try {
@@ -733,6 +739,15 @@ public class ReferenceObjects {
         aHotRestartConfig.setFsync(aBoolean);
     }
 
+    public static MerkleTreeConfig aMerkleTreeConfig;
+
+    static {
+        aMerkleTreeConfig = new MerkleTreeConfig();
+        aMerkleTreeConfig.setEnabled(aBoolean);
+        aMerkleTreeConfig.setDepth(anInt);
+    }
+
+
     public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
     public static BitmapIndexOptions aBitmapIndexOptions;
@@ -742,16 +757,9 @@ public class ReferenceObjects {
         aBitmapIndexOptions.setUniqueKey(aString);
         aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
     }
+
     public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
-
-    public static MerkleTreeConfig aMerkleTreeConfig;
-
-    static {
-        aMerkleTreeConfig = new MerkleTreeConfig();
-        aMerkleTreeConfig.setEnabled(aBoolean);
-        aMerkleTreeConfig.setDepth(anInt);
-    }
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
 
@@ -801,7 +809,7 @@ public class ReferenceObjects {
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
-            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders);
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
             ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));

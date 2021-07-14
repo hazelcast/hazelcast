@@ -62,14 +62,8 @@ public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E>
     @Override
     E poll(long timeout, @Nonnull TimeUnit unit) throws InterruptedException;
 
-    /**
-     * {@inheritDoc}
-     */
     E peek();
 
-    /**
-     * {@inheritDoc}
-     */
     E peek(long timeout, TimeUnit unit) throws InterruptedException;
 
     /**

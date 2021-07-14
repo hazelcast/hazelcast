@@ -72,14 +72,14 @@ public final class LongAverageAggregator<I> extends AbstractAggregator<I, Number
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeLong(sum);
         out.writeLong(count);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.sum = in.readLong();
         this.count = in.readLong();
     }

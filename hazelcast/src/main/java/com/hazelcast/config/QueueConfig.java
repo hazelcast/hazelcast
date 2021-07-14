@@ -399,7 +399,7 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         writeNullableList(listenerConfigs, out);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
@@ -407,14 +407,14 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         out.writeInt(emptyQueueTtl);
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
-        out.writeUTF(priorityComparatorClassName);
+        out.writeString(priorityComparatorClassName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         listenerConfigs = readNullableList(in);
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
@@ -422,9 +422,9 @@ public class QueueConfig implements IdentifiedDataSerializable, NamedConfig, Ver
         emptyQueueTtl = in.readInt();
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
-        priorityComparatorClassName = in.readUTF();
+        priorityComparatorClassName = in.readString();
     }
 
     @Override

@@ -34,9 +34,11 @@ import java.util.List;
 import java.util.Map.Entry;
 
 /**
- * Iterator for iterating map entries in a single partition.
+ * Iterator for iterating the result of the projection on entries
+ * in the {@code partitionId} which satisfy the {@code predicate}.
  * The values are fetched in batches. The {@link Iterator#remove()} method
  * is not supported and will throw a {@link UnsupportedOperationException}.
+ * <p>
  * <b>NOTE</b>
  * The iteration may be done when the map is being mutated or when there are
  * membership changes. The iterator does not reflect the state when it has

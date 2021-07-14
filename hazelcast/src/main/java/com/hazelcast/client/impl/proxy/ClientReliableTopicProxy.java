@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.ClientProxy;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
@@ -48,7 +49,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -85,15 +85,15 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
         this.ringbuffer = client.getRingbuffer(TOPIC_RB_PREFIX + objectId);
         this.serializationService = client.getSerializationService();
         this.config = client.getClientConfig().getReliableTopicConfig(objectId);
-        this.executor = getExecutor(config, client);
+        this.executor = getExecutor(config);
         this.overloadPolicy = config.getTopicOverloadPolicy();
         logger = client.getLoggingService().getLogger(getClass());
     }
 
-    private Executor getExecutor(ClientReliableTopicConfig config, HazelcastClientInstanceImpl client) {
+    private Executor getExecutor(ClientReliableTopicConfig config) {
         Executor executor = config.getExecutor();
         if (executor == null) {
-            executor = DEFAULT_ASYNC_EXECUTOR;
+            executor = ConcurrencyUtil.getDefaultAsyncExecutor();
         }
         return executor;
     }

@@ -16,24 +16,29 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.internal.eviction.EvictionListener;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.querycache.subscriber.record.DataQueryCacheRecordFactory;
 import com.hazelcast.map.impl.querycache.subscriber.record.ObjectQueryCacheRecordFactory;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecordFactory;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
-import com.hazelcast.internal.util.Clock;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * Default implementation of {@link QueryCacheRecordStore}.
@@ -50,6 +55,7 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     private final QueryCacheRecordFactory recordFactory;
     private final InternalSerializationService serializationService;
     private final Extractors extractors;
+    private final int maxCapacity;
 
     DefaultQueryCacheRecordStore(InternalSerializationService serializationService,
                                  Indexes indexes,
@@ -61,6 +67,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
         this.indexes = indexes;
         this.evictionOperator = new EvictionOperator(cache, config, listener, serializationService.getClassLoader());
         this.extractors = extractors;
+        EvictionConfig evictionConfig = config.getEvictionConfig();
+        MaxSizePolicy maximumSizePolicy = evictionConfig.getMaxSizePolicy();
+        this.maxCapacity = maximumSizePolicy == MaxSizePolicy.ENTRY_COUNT
+                ? evictionConfig.getSize()
+                : Integer.MAX_VALUE;
     }
 
     private QueryCacheRecord accessRecord(QueryCacheRecord record) {
@@ -99,12 +110,60 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
         return oldRecord;
     }
 
+    @Override
+    public void addBatch(Iterator<Map.Entry<Data, Data>> entryIterator,
+                         BiConsumer<Map.Entry<Data, Data>, QueryCacheRecord> postProcessor) {
+        CachedQueryEntry newEntry = new CachedQueryEntry(serializationService, extractors);
+        CachedQueryEntry oldEntry = new CachedQueryEntry(serializationService, extractors);
+        while (entryIterator.hasNext()) {
+            if (cache.size() == maxCapacity) {
+                break;
+            }
+            Map.Entry<Data, Data> entry = entryIterator.next();
+            QueryCacheRecord oldRecord = addWithoutEvictionCheck(entry.getKey(), entry.getValue(), newEntry, oldEntry);
+            postProcessor.accept(entry, oldRecord);
+        }
+    }
+
+    /**
+     * Similar to {@link #addWithoutEvictionCheck(Data, Data)} with explicit
+     * {@link CachedQueryEntry} arguments, to be reused when saving to index.
+     * Suitable for usage with {@link #addBatch(Iterator, BiConsumer)}.
+     */
+    public QueryCacheRecord addWithoutEvictionCheck(Data keyData, Data valueData,
+                                                    CachedQueryEntry newEntry, CachedQueryEntry oldEntry) {
+        QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
+        QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
+        saveIndex(keyData, newRecord, oldRecord, newEntry, oldEntry);
+
+        return oldRecord;
+    }
+
+    /**
+     * Same as {@link #saveIndex(Data, QueryCacheRecord, QueryCacheRecord)}
+     * with explicit {@link CachedQueryEntry} arguments for reuse, to avoid
+     * excessive litter when adding several entries in batch.
+     */
+    private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord,
+                           CachedQueryEntry newEntry, CachedQueryEntry oldEntry) {
+        if (indexes.haveAtLeastOneIndex()) {
+            Object currentValue = currentRecord.getValue();
+            QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
+            Object oldValue = oldRecord == null ? null : oldRecord.getValue();
+            newEntry.init(keyData, currentValue);
+            oldEntry.init(keyData, oldValue);
+            indexes.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
+        }
+    }
+
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {
         if (indexes.haveAtLeastOneIndex()) {
             Object currentValue = currentRecord.getValue();
             QueryEntry queryEntry = new QueryEntry(serializationService, keyData, currentValue, extractors);
             Object oldValue = oldRecord == null ? null : oldRecord.getValue();
-            indexes.putEntry(queryEntry, oldValue, Index.OperationSource.USER);
+            CachedQueryEntry newEntry = new CachedQueryEntry(serializationService, keyData, currentValue, extractors);
+            CachedQueryEntry oldEntry = new CachedQueryEntry(serializationService, keyData, oldValue, extractors);
+            indexes.putEntry(newEntry, oldEntry, queryEntry, Index.OperationSource.USER);
         }
     }
 

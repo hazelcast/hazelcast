@@ -98,7 +98,7 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
         int maxAcceptedRows = (int) (remainingMemory / rowWidth);
         int acceptedRows = 0;
 
-        // Try to accept as much rows as possible.
+        // Try to accept as many rows as possible.
         int currentPosition = position;
 
         for (; currentPosition < batch.getRowCount(); currentPosition++) {
@@ -151,9 +151,9 @@ public class Outbox extends AbstractMailbox implements OutboundHandler {
     public void onFlowControl(long ordinal, long remainingMemory) {
         // The flow control implementation may inform the receiver about the remaining memory at arbitrary times.
         // It may happen that two flow control messages are reordered, e.g. [2, 100b], then [1, 500b].
-        // We need to ensure that we save only the most relevant information about the remaining memory.
+        // We need to ensure that we save only the most recent information about the remaining memory.
         // E.g., 100b as in the example above. Therefore, we ignore messages with ordinals less than
-        // the lask known.
+        // the last known one.
         if (lastFlowControlOrdinal < ordinal) {
             this.remainingMemory = remainingMemory;
 

@@ -55,7 +55,7 @@ class TopicEvent implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeLong(publishTime);
         out.writeObject(publisherAddress);
         IOUtil.writeData(out, data);
@@ -63,7 +63,7 @@ class TopicEvent implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         publishTime = in.readLong();
         publisherAddress = in.readObject();
         data = IOUtil.readData(in);

@@ -15,7 +15,8 @@
  */
 
 /**
- * <p>This package contains ClientConsoleApp<br/>
+ * Command Line Interface for Hazelcast
+ *
+ * @since 5.0
  */
-
 package com.hazelcast.client.console;

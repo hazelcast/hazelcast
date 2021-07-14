@@ -17,12 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -30,8 +30,6 @@ import com.hazelcast.nio.serialization.TypedDataSerializable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.core.Is;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -145,8 +143,7 @@ public class AbstractSerializationServiceTest {
 
     @Test
     public void testToObject_ServiceInactive() throws Exception {
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectCause(Is.is(IsInstanceOf.<Throwable>instanceOf(HazelcastInstanceNotActiveException.class)));
+        expectedException.expect(HazelcastInstanceNotActiveException.class);
 
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
@@ -163,9 +160,7 @@ public class AbstractSerializationServiceTest {
 
     @Test
     public void testReadObject_ServiceInactive() throws Exception {
-        expectedException.expect(HazelcastSerializationException.class);
-        expectedException.expectCause(Is.is(IsInstanceOf.<Throwable>instanceOf(HazelcastInstanceNotActiveException.class)));
-
+        expectedException.expect(HazelcastInstanceNotActiveException.class);
         abstractSerializationService.register(StringBuffer.class, new StringBufferSerializer(false));
         Data data = abstractSerializationService.toData(new StringBuffer());
         abstractSerializationService.dispose();
@@ -219,7 +214,7 @@ public class AbstractSerializationServiceTest {
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testSerializerFor_ServiceInactive() throws Exception {
         abstractSerializationService.dispose();
-        abstractSerializationService.serializerFor(new CustomSerializationTest.Foo());
+        abstractSerializationService.serializerFor(new CustomSerializationTest.Foo(), false);
     }
 
     @Test
@@ -332,13 +327,13 @@ public class AbstractSerializationServiceTest {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(intField);
-            out.writeUTF(stringField);
+            out.writeString(stringField);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             intField = in.readInt();
-            stringField = in.readUTF();
+            stringField = in.readString();
         }
 
         @Override
@@ -438,7 +433,7 @@ public class AbstractSerializationServiceTest {
             if (fail) {
                 throw new RuntimeException();
             } else {
-                out.writeUTF(stringBuffer.toString());
+                out.writeString(stringBuffer.toString());
             }
         }
 
@@ -447,7 +442,7 @@ public class AbstractSerializationServiceTest {
             if (fail) {
                 throw new RuntimeException();
             } else {
-                return new StringBuffer(in.readUTF());
+                return new StringBuffer(in.readString());
             }
         }
     }

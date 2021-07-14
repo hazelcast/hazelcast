@@ -167,8 +167,8 @@ public class AccumulatorInfo implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
-        out.writeUTF(cacheId);
+        out.writeString(mapName);
+        out.writeString(cacheId);
         out.writeInt(batchSize);
         out.writeInt(bufferSize);
         out.writeLong(delaySeconds);
@@ -181,8 +181,8 @@ public class AccumulatorInfo implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
-        cacheId = in.readUTF();
+        mapName = in.readString();
+        cacheId = in.readString();
         batchSize = in.readInt();
         bufferSize = in.readInt();
         delaySeconds = in.readLong();

@@ -22,6 +22,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 
 /**
  * Endpoint configuration that defines communication/networking properties common to both incoming/outgoing connections
@@ -88,8 +89,11 @@ public class EndpointConfig implements NamedConfig {
      * Gets the {@link SymmetricEncryptionConfig}. The value can be {@code null} which means that no symmetric encryption should
      * be used.
      *
+     * @deprecated since 4.2
+     *
      * @return the SymmetricEncryptionConfig
      */
+    @Deprecated
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -97,10 +101,13 @@ public class EndpointConfig implements NamedConfig {
     /**
      * Sets the {@link SymmetricEncryptionConfig}. The value can be {@code null} if no symmetric encryption should be used.
      *
+     * @deprecated since 4.2
+     *
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
      */
+    @Deprecated
     public EndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;
@@ -269,5 +276,34 @@ public class EndpointConfig implements NamedConfig {
     public EndpointConfig setProtocolType(ProtocolType protocolType) {
         this.protocolType = protocolType;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EndpointConfig that = (EndpointConfig) o;
+        return socketBufferDirect == that.socketBufferDirect && socketTcpNoDelay == that.socketTcpNoDelay
+                && socketKeepAlive == that.socketKeepAlive && socketConnectTimeoutSeconds == that.socketConnectTimeoutSeconds
+                && socketSendBufferSizeKb == that.socketSendBufferSizeKb && socketRcvBufferSizeKb == that.socketRcvBufferSizeKb
+                && socketLingerSeconds == that.socketLingerSeconds && Objects.equals(name, that.name)
+                && protocolType == that.protocolType && Objects.equals(interfaces, that.interfaces)
+                && Objects.equals(socketInterceptorConfig, that.socketInterceptorConfig)
+                && Objects.equals(sslConfig, that.sslConfig)
+                && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
+                && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
+                && Objects.equals(outboundPorts, that.outboundPorts);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
+                outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
+                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds);
     }
 }

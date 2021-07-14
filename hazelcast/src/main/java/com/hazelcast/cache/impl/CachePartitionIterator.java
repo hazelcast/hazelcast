@@ -28,7 +28,7 @@ package com.hazelcast.cache.impl;
  * The iterator will not, however, skip an entry if it has not been changed
  * and will not return an entry twice.
  */
-public class CachePartitionIterator<K, V> extends CachePartitionsIterator<K, V> {
+public class CachePartitionIterator<K, V> extends CacheIterator<K, V> {
 
     public CachePartitionIterator(CacheProxy<K, V> cache, int fetchSize, int partitionId, boolean prefetchValues) {
         super(cache, fetchSize, partitionId, prefetchValues);

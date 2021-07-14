@@ -53,6 +53,7 @@ public enum ConfigSections {
     SPLIT_BRAIN_PROTECTION("split-brain-protection", true),
     LITE_MEMBER("lite-member", false),
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
+    PERSISTENCE("persistence", false),
     USER_CODE_DEPLOYMENT("user-code-deployment", false),
     CARDINALITY_ESTIMATOR("cardinality-estimator", true),
     RELIABLE_ID_GENERATOR("reliable-id-generator", true),
@@ -64,7 +65,8 @@ public enum ConfigSections {
     METRICS("metrics", false),
     AUDITLOG("auditlog", false),
     INSTANCE_TRACKING("instance-tracking", false),
-    SQL("sql", false);
+    SQL("sql", false),
+    JET("jet", false);
 
     final boolean multipleOccurrence;
     private final String name;

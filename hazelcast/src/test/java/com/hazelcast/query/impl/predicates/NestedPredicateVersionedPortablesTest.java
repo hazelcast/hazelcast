@@ -183,13 +183,13 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("limb", limb);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             limb = reader.readPortable("limb");
         }
     }
@@ -251,12 +251,12 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
         }
     }
 }

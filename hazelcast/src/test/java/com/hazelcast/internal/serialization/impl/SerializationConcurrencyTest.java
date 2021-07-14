@@ -140,13 +140,13 @@ public class SerializationConcurrencyTest {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(street);
+            out.writeString(street);
             out.writeInt(no);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            street = in.readUTF();
+            street = in.readString();
             no = in.readInt();
         }
 
@@ -208,7 +208,7 @@ public class SerializationConcurrencyTest {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(name);
+            out.writeString(name);
             out.writeObject(address);
             out.writeInt(age);
             out.writeLong(height);
@@ -217,7 +217,7 @@ public class SerializationConcurrencyTest {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            name = in.readUTF();
+            name = in.readString();
             address = in.readObject();
             age = in.readInt();
             height = in.readLong();
@@ -308,12 +308,12 @@ public class SerializationConcurrencyTest {
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("no", no);
-            writer.writeUTF("street", street);
+            writer.writeString("street", street);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            street = reader.readUTF("street");
+            street = reader.readString("street");
             no = reader.readInt("no");
         }
 
@@ -436,13 +436,13 @@ public class SerializationConcurrencyTest {
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeLong("height", height);
             writer.writeInt("age", age);
-            writer.writeUTF("name", name);
+            writer.writeString("name", name);
             writer.writePortable("address", address);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("name");
+            name = reader.readString("name");
             address = reader.readPortable("address");
             height = reader.readLong("height");
             age = reader.readInt("age");

@@ -22,8 +22,13 @@ import com.hazelcast.nio.serialization.Portable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Date;
-
+import java.util.TimeZone;
 import static com.hazelcast.query.impl.AbstractIndex.NULL;
 
 public final class TypeConverters {
@@ -47,6 +52,10 @@ public final class TypeConverters {
     public static final TypeConverter NULL_CONVERTER = new IdentityConverter();
     public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
     public static final TypeConverter PORTABLE_CONVERTER = new PortableConverter();
+    public static final TypeConverter LOCAL_TIME_CONVERTER = new SqlLocalTimeConverter();
+    public static final TypeConverter LOCAL_DATE_CONVERTER = new SqlLocalDateConverter();
+    public static final TypeConverter LOCAL_DATE_TIME_CONVERTER = new SqlLocalDateTimeConverter();
+    public static final TypeConverter OFFSET_DATE_TIME_CONVERTER = new SqlOffsetDateTimeConverter();
 
     private TypeConverters() {
     }
@@ -602,6 +611,113 @@ public final class TypeConverters {
                 return value;
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "]");
+        }
+
+    }
+
+    /**
+     * @see com.hazelcast.sql.SqlColumnType TIME
+     */
+    static class SqlLocalTimeConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof LocalTime) {
+                return value;
+            }
+            if (value instanceof String) {
+                return LocalTime.parse((String) value);
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return convertNumberToLocalTime(number);
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalTime");
+        }
+
+        private LocalTime convertNumberToLocalTime(Number number) {
+            LocalDateTime ldTime = LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(number.longValue()), TimeZone.getDefault().toZoneId());
+            return ldTime.toLocalTime();
+        }
+    }
+
+    /**
+     * @see com.hazelcast.sql.SqlColumnType DATE
+     */
+    static class SqlLocalDateConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof LocalDate) {
+                return value;
+            }
+            if (value instanceof String) {
+                return LocalDate.parse((String) value);
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return convertNumberToLocalTime(number);
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalTime");
+        }
+
+        private LocalDate convertNumberToLocalTime(Number number) {
+            LocalDateTime ldTime = LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(number.longValue()), TimeZone.getDefault().toZoneId());
+            return ldTime.toLocalDate();
+        }
+    }
+
+    /**
+     * @see com.hazelcast.sql.SqlColumnType TIMESTAMP
+     */
+    static class SqlLocalDateTimeConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof LocalDateTime) {
+                return value;
+            }
+            if (value instanceof String) {
+                return LocalDateTime.parse((String) value);
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return convertNumberToLocalDateTime(number);
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.LocalDateTime");
+        }
+
+        private LocalDateTime convertNumberToLocalDateTime(Number number) {
+            return LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(number.longValue()), TimeZone.getDefault().toZoneId());
+        }
+    }
+
+    /**
+     * @see com.hazelcast.sql.SqlColumnType TIMESTAMP_WITH_TIME_ZONE
+     */
+    static class SqlOffsetDateTimeConverter extends BaseTypeConverter {
+
+        @Override
+        Comparable convertInternal(Comparable value) {
+            if (value instanceof OffsetDateTime) {
+                return value;
+            }
+            if (value instanceof String) {
+                return OffsetDateTime.parse((String) value);
+            }
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return convertNumberToOffsetDateTime(number);
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.time.OffsetDateTime");
+        }
+
+        private OffsetDateTime convertNumberToOffsetDateTime(Number number) {
+            return OffsetDateTime.ofInstant(
+                    Instant.ofEpochMilli(number.longValue()), TimeZone.getDefault().toZoneId());
         }
 
     }

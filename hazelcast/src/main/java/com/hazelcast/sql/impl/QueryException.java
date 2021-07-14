@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.impl.operationservice.WrappableException;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -25,7 +26,7 @@ import java.util.UUID;
 /**
  * Exception occurred during SQL query execution.
  */
-public final class QueryException extends HazelcastException {
+public final class QueryException extends HazelcastException implements WrappableException<QueryException> {
 
     private final int code;
     private UUID originatingMemberId;
@@ -68,15 +69,18 @@ public final class QueryException extends HazelcastException {
     }
 
     public static QueryException memberConnection(UUID memberId) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + memberId).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Member cannot be reached: " + memberId).markInvalidate();
     }
 
     public static QueryException memberConnection(Address address) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Member cannot be reached: " + address).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Member cannot be reached: " + address).markInvalidate();
     }
 
     public static QueryException memberConnection(Collection<UUID> memberIds) {
-        return error(SqlErrorCode.CONNECTION_PROBLEM, "Members cannot be reached: " + memberIds).markInvalidate();
+        return error(SqlErrorCode.CONNECTION_PROBLEM, "Cluster topology changed while a query was executed: "
+                + "Members cannot be reached: " + memberIds).markInvalidate();
     }
 
     public static QueryException clientMemberConnection(UUID clientId) {
@@ -131,5 +135,10 @@ public final class QueryException extends HazelcastException {
      */
     public boolean isInvalidatePlan() {
         return invalidatePlan;
+    }
+
+    @Override
+    public QueryException wrap() {
+        return new QueryException(code, getMessage(), this, originatingMemberId, invalidatePlan);
     }
 }

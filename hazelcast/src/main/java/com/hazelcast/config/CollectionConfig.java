@@ -272,25 +272,25 @@ public abstract class CollectionConfig<T extends CollectionConfig>
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         writeNullableList(listenerConfigs, out);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         listenerConfigs = readNullableList(in);
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 

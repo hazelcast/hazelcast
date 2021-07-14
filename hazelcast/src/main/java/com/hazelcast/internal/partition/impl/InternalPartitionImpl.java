@@ -31,7 +31,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
                     + " Writing to `replicas` is done under InternalPartitionServiceImpl.lock,"
                     + " so there's no need to guard `replicas` field or to use a CAS.")
     private volatile PartitionReplica[] replicas = new PartitionReplica[MAX_REPLICA_COUNT];
-    private final int partitionId;
     private final PartitionReplicaInterceptor interceptor;
     private volatile int version;
     private volatile PartitionReplica localReplica;
@@ -39,7 +38,6 @@ public class InternalPartitionImpl extends AbstractInternalPartition implements 
 
     InternalPartitionImpl(int partitionId, PartitionReplica localReplica, PartitionReplicaInterceptor interceptor) {
         super(partitionId);
-        this.partitionId = partitionId;
         this.localReplica = localReplica;
         this.interceptor = interceptor;
     }

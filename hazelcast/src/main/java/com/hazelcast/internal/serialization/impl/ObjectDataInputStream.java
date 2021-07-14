@@ -291,7 +291,7 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
         if (len > 0) {
             String[] values = new String[len];
             for (int i = 0; i < len; i++) {
-                values[i] = readUTF();
+                values[i] = readString();
             }
             return values;
         }

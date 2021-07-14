@@ -66,16 +66,16 @@ abstract class AbstractEventData implements EventData {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(source);
-        out.writeUTF(mapName);
+        out.writeString(source);
+        out.writeString(mapName);
         out.writeObject(caller);
         out.writeInt(eventType);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        source = in.readUTF();
-        mapName = in.readUTF();
+        source = in.readString();
+        mapName = in.readString();
         caller = in.readObject();
         eventType = in.readInt();
     }

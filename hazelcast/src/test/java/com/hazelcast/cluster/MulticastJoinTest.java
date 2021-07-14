@@ -23,13 +23,16 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
+
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -197,5 +200,39 @@ public class MulticastJoinTest extends AbstractJoinTest {
         assertClusterSize(2, h3);
         assertEquals(2, numNodesWithTwoMembers);
         assertEquals(2, numNodesThatKnowAboutH3);
+    }
+
+    /**
+     * When the autodiscovery is enabled and the MulticastService initialization fails, then the instance is started without
+     * multicast used.
+     */
+    @Test
+    public void testErrorInMulticastSocket_whenAutodiscovery() throws Exception {
+        Config config = new Config();
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(70000);
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        Config config2 = new Config();
+        config2.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        Member member1 = (Member) hz1.getLocalEndpoint();
+        Address addr = member1.getAddress();
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember(addr.getHost());
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+        assertClusterSize(2, hz1, hz2);
+    }
+
+    /**
+     * When the multicast discovery is enabled and the MulticastService initialization fails, then the instance fails to start.
+     */
+    @Test
+    public void testErrorInMulticastSocket_whenExplicitMulticast() throws Exception {
+        Config config = new Config();
+
+        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(70000).setEnabled(true);
+        config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+
+        Assert.assertThrows(HazelcastException.class, () -> Hazelcast.newHazelcastInstance(config));
     }
 }

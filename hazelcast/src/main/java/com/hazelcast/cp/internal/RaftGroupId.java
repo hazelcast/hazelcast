@@ -63,14 +63,14 @@ public final class RaftGroupId implements CPGroupId, IdentifiedDataSerializable,
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeLong(seed);
         out.writeLong(groupId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         seed = in.readLong();
         groupId = in.readLong();
     }

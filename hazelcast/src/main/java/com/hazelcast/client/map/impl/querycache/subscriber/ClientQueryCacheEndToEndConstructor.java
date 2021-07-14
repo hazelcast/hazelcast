@@ -20,15 +20,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
-import com.hazelcast.internal.serialization.Data;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -88,22 +89,59 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
     }
 
     private static void prepopulate(InternalQueryCache queryCache, Collection<Map.Entry<Data, Data>> result) {
-        for (Map.Entry<Data, Data> entry : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
-
-            queryCache.prepopulate(entry.getKey(), entry.getValue());
-        }
+        queryCache.prepopulate(result.iterator());
     }
 
     private static void prepopulate(InternalQueryCache queryCache, List<Data> result) {
-        for (Data key : result) {
-            if (queryCache.reachedMaxCapacity()) {
-                break;
-            }
+        Iterator<Map.Entry<Data, Data>> iterator = new CachedEntryIterator(result.iterator());
+        queryCache.prepopulate(iterator);
+    }
 
-            queryCache.prepopulate(key, null);
+    // Adapts an Iterator<List<Data>> of keys as an Iterator<Map.Entry<Data, Data>> of KVs with null value
+    private static final class CachedEntryIterator implements Iterator<Map.Entry<Data, Data>> {
+        private final Iterator<Data> keyIterator;
+        private final MutableEntry mutableEntry;
+
+        CachedEntryIterator(Iterator<Data> keyIterator) {
+            this.keyIterator = keyIterator;
+            this.mutableEntry = new MutableEntry();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return keyIterator.hasNext();
+        }
+
+        @Override
+        public Map.Entry<Data, Data> next() {
+            return mutableEntry.setKey(keyIterator.next());
+        }
+    }
+
+    private static final class MutableEntry implements Map.Entry<Data, Data> {
+        private Data key;
+
+        MutableEntry() {
+        }
+
+        @Override
+        public Data getKey() {
+            return key;
+        }
+
+        @Override
+        public Data getValue() {
+            return null;
+        }
+
+        @Override
+        public Data setValue(Data value) {
+            throw new UnsupportedOperationException();
+        }
+
+        public MutableEntry setKey(Data key) {
+            this.key = key;
+            return this;
         }
     }
 }

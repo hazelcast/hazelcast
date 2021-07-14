@@ -76,21 +76,21 @@ public class ExpireWaitKeysOp extends RaftOp implements IdentifiedDataSerializab
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         out.writeInt(keys.size());
         for (BiTuple<String, UUID> key : keys) {
-            out.writeUTF(key.element1);
+            out.writeString(key.element1);
             writeUUID(out, key.element2);
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         int size = in.readInt();
         keys = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             UUID invocationUid = readUUID(in);
             keys.add(BiTuple.of(name, invocationUid));
         }

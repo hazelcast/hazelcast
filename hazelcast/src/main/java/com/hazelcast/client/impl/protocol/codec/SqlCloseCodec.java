@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Closes server-side query cursor.
  */
-@Generated("dd7d3ea6ddd8f478ab02d51194b889eb")
+@Generated("4d7052c161e9131dac74f8e1addd0c2d")
 public final class SqlCloseCodec {
     //hex: 0x210300
     public static final int REQUEST_MESSAGE_TYPE = 2163456;
@@ -78,6 +78,4 @@ public final class SqlCloseCodec {
 
         return clientMessage;
     }
-
-
 }

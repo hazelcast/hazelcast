@@ -349,7 +349,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         final Collection<CollectionItem> collection = getCollection();
         out.writeInt(collection.size());
         for (CollectionItem item : collection) {
@@ -363,7 +363,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         final int collectionSize = in.readInt();
         final Collection<CollectionItem> collection = getCollection();
         for (int i = 0; i < collectionSize; i++) {

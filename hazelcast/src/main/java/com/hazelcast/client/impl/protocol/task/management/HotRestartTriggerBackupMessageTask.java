@@ -23,6 +23,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 
 import java.security.Permission;
@@ -34,6 +35,8 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
 public class HotRestartTriggerBackupMessageTask
         extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerBackup");
 
     private final Node node;
 
@@ -78,7 +81,7 @@ public class HotRestartTriggerBackupMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

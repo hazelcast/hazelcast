@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.executor.UnblockableThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.WrappableException;
@@ -46,7 +47,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.internal.util.ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static java.util.Objects.requireNonNull;
@@ -1380,7 +1380,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
 
         WaitNode(Object waiter, @Nullable Executor executor) {
             this.waiter = waiter;
-            this.executor = executor == null ? DEFAULT_ASYNC_EXECUTOR : executor;
+            this.executor = executor == null ? ConcurrencyUtil.getDefaultAsyncExecutor() : executor;
         }
 
         @Override

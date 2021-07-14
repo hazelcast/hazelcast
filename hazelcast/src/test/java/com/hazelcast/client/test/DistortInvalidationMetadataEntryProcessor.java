@@ -179,14 +179,14 @@ public class DistortInvalidationMetadataEntryProcessor
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         out.writeInt(mapSize);
         out.writeInt(duration);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         mapSize = in.readInt();
         duration = in.readInt();
     }

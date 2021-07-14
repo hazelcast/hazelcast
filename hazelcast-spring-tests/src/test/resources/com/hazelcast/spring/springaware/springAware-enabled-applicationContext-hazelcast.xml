@@ -21,19 +21,16 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:spring-aware/>
             <hz:cluster-name>${cluster.name}</hz:cluster-name>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5750">
                 <hz:join>
                     <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
-                        <hz:interface>127.0.0.1:5702</hz:interface>
-                    </hz:tcp-ip>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>
@@ -49,7 +46,16 @@
                     redo-operation="true"
                     smart-routing="true">
 
-            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:member>127.0.0.1:5750</hz:member>
+            <hz:member>127.0.0.1:5751</hz:member>
+            <hz:member>127.0.0.1:5752</hz:member>
+            <hz:member>127.0.0.1:5753</hz:member>
+            <hz:member>127.0.0.1:5754</hz:member>
+            <hz:member>127.0.0.1:5755</hz:member>
+            <hz:member>127.0.0.1:5756</hz:member>
+            <hz:member>127.0.0.1:5757</hz:member>
+            <hz:member>127.0.0.1:5758</hz:member>
+            <hz:member>127.0.0.1:5759</hz:member>
 
             <hz:socket-options buffer-size="32"
                                keep-alive="false"

@@ -81,14 +81,14 @@ public final class MaxByAggregator<I> extends AbstractAggregator<I, Comparable, 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeObject(maxValue);
         out.writeObject(maxEntry);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.maxValue = in.readObject();
         this.maxEntry = in.readObject();
     }

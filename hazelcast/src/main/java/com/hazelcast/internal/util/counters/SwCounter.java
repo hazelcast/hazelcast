@@ -122,6 +122,13 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
+        public long getAndSet(long newValue) {
+            final long oldLocalValue = value;
+            MEM.putOrderedLong(this, OFFSET, newValue);
+            return oldLocalValue;
+        }
+
+        @Override
         public String toString() {
             return "Counter{value=" + value + '}';
         }
@@ -162,6 +169,13 @@ public abstract class SwCounter implements Counter {
         @Override
         public void set(long newValue) {
             COUNTER.lazySet(this, newValue);
+        }
+
+        @Override
+        public long getAndSet(long newValue) {
+            final long oldValue = value;
+            COUNTER.lazySet(this, newValue);
+            return oldValue;
         }
 
         @Override

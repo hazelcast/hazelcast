@@ -87,13 +87,13 @@ public class PartitioningStrategyConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(partitioningStrategyClass);
+        out.writeString(partitioningStrategyClass);
         out.writeObject(partitioningStrategy);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        partitioningStrategyClass = in.readUTF();
+        partitioningStrategyClass = in.readString();
         partitioningStrategy = in.readObject();
     }
 

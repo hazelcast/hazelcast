@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCompatibilityTest_2_0_1 {
-    private List<ClientMessage> clientMessages = new ArrayList<>();
+    private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
@@ -5790,7 +5790,7 @@ public class ClientCompatibilityTest_2_0_1 {
     @Test
     public void test_DynamicConfigAddCacheConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 733;
-        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, aString, aString, aBoolean, aBoolean, aBoolean, aBoolean, aString, aString, aString, aString, anInt, anInt, aString, aString, aString, anInt, aBoolean, aListOfListenerConfigHolders, aString, aTimedExpiryPolicyFactoryConfig, aListOfCacheSimpleEntryListenerConfigs, anEvictionConfigHolder, aWanReplicationRef, anEventJournalConfig, aHotRestartConfig);
+        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, aString, aString, aBoolean, aBoolean, aBoolean, aBoolean, aString, aString, aString, aString, anInt, anInt, aString, aString, aString, anInt, aBoolean, aListOfListenerConfigHolders, aString, aTimedExpiryPolicyFactoryConfig, aListOfCacheSimpleEntryListenerConfigs, anEvictionConfigHolder, aWanReplicationRef, anEventJournalConfig, aHotRestartConfig, aMerkleTreeConfig);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

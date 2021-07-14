@@ -58,12 +58,12 @@ public class StartsWithStringFilter implements IFunction<String, Boolean>, Ident
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(startString);
+        out.writeString(startString);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        startString = in.readUTF();
+        startString = in.readString();
     }
 }

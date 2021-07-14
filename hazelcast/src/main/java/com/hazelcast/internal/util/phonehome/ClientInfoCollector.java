@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.util.phonehome;
 
+import com.hazelcast.client.impl.ClientEndpointStatisticsSnapshot;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ConnectionType;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -27,21 +30,91 @@ import java.util.function.BiConsumer;
  */
 class ClientInfoCollector implements MetricsCollector {
 
+    private static final int CLIENT_TYPE_COUNT = 6;
+    private static final Map<String, ClientInfoCollectorHelper> CLIENT_TYPE_TO_HELPER;
+
+    static {
+        CLIENT_TYPE_TO_HELPER = new HashMap<>(CLIENT_TYPE_COUNT);
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.CPP_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_CPP_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_CPP_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_CPP_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.CPP_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.CSHARP_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_CSHARP_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_CSHARP_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_CSHARP_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_CSHARP_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.CSHARP_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.JAVA_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_JAVA_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_JAVA_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_JAVA_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_JAVA_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.JAVA_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.NODEJS_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_NODEJS_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_NODEJS_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_NODEJS_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_NODEJS_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.NODEJS_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.PYTHON_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_PYTHON_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_PYTHON_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_PYTHON_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_PYTHON_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.PYTHON_CLIENT_VERSIONS
+                )
+        );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.GO_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_GO_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_GO_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_GO_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_GO_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.GO_CLIENT_VERSIONS
+                )
+        );
+    }
+
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
-        Map<String, Integer> clients = node.clientEngine.getConnectedClientStats();
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_CPP_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.CPP_CLIENT, 0)));
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_CSHARP_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.CSHARP_CLIENT, 0)));
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_JAVA_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.JAVA_CLIENT, 0)));
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_NODEJS_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.NODEJS_CLIENT, 0)));
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_PYTHON_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.PYTHON_CLIENT, 0)));
-        metricsConsumer.accept(PhoneHomeMetrics.CLIENTS_WITH_GO_CONNECTION,
-                Integer.toString(clients.getOrDefault(ConnectionType.GO_CLIENT, 0)));
+        ClientEngine clientEngine = node.getClientEngine();
+        Map<String, Long> activeClients = clientEngine.getActiveClientsInCluster();
+        Map<String, ClientEndpointStatisticsSnapshot> snapshots = clientEngine.getEndpointStatisticsSnapshots();
+
+        CLIENT_TYPE_TO_HELPER.forEach((clientType, helper) -> {
+            long clientCount = activeClients.getOrDefault(clientType, 0L);
+            ClientEndpointStatisticsSnapshot snapshot = snapshots.get(clientType);
+            helper.collectMetrics(clientCount, snapshot, metricsConsumer);
+        });
+
         metricsConsumer.accept(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT,
                 MetricsCollector.convertToLetter(node.clientEngine.getClientEndpointCount()));
     }

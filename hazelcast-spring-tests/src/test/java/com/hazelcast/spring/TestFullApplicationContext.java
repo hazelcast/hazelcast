@@ -47,7 +47,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -79,6 +78,7 @@ import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PersistentMemoryDirectoryConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -117,6 +117,7 @@ import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.IAtomicLong;
@@ -127,6 +128,10 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
@@ -177,8 +182,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -197,10 +202,15 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unused")
 public class TestFullApplicationContext extends HazelcastTestSupport {
 
+    public static final String INTERNAL_JET_OBJECTS_PREFIX = "__jet.";
+
     private Config config;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
+
+    @Resource(name = "jetService")
+    private JetService jet;
 
     @Resource(name = "map1")
     private IMap<Object, Object> map1;
@@ -310,8 +320,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         CacheSimpleConfig cacheConfig = config.getCacheConfig("testCache");
         assertEquals("testCache", cacheConfig.getName());
         assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
-        assertTrue(cacheConfig.getHotRestartConfig().isEnabled());
-        assertTrue(cacheConfig.getHotRestartConfig().isFsync());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(cacheConfig.getDataPersistenceConfig().isFsync());
         EventJournalConfig journalConfig = cacheConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -319,15 +329,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         WanReplicationRef wanRef = cacheConfig.getWanReplicationRef();
         assertEquals("testWan", wanRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanRef.getMergePolicyClassName());
         assertEquals(1, wanRef.getFilters().size());
         assertEquals("com.example.SampleFilter", wanRef.getFilters().get(0));
+        assertTrue(cacheConfig.getMerkleTreeConfig().isEnabled());
+        assertEquals(20, cacheConfig.getMerkleTreeConfig().getDepth());
     }
 
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(26, config.getMapConfigs().size());
+        long mapConfigSize = config.getMapConfigs()
+                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
+        assertEquals(26, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -338,8 +352,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertTrue(testMapConfig.getMerkleTreeConfig().isEnabled());
         assertEquals(20, testMapConfig.getMerkleTreeConfig().getDepth());
-        assertTrue(testMapConfig.getHotRestartConfig().isEnabled());
-        assertTrue(testMapConfig.getHotRestartConfig().isFsync());
+        assertTrue(testMapConfig.getDataPersistenceConfig().isEnabled());
+        assertTrue(testMapConfig.getDataPersistenceConfig().isFsync());
         EventJournalConfig journalConfig = testMapConfig.getEventJournalConfig();
         assertTrue(journalConfig.isEnabled());
         assertEquals(123, journalConfig.getCapacity());
@@ -404,7 +418,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
         assertTrue(wanReplicationRef.isRepublishingEnabled());
 
         assertEquals(1000, testMapConfig2.getEvictionConfig().getSize());
@@ -471,7 +485,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         // test testMapConfig2's WanReplicationConfig
         WanReplicationRef wanReplicationRef = testMapConfig2.getWanReplicationRef();
         assertEquals("testWan", wanReplicationRef.getName());
-        assertEquals("PUT_IF_ABSENT", wanReplicationRef.getMergePolicyClassName());
+        assertEquals("PutIfAbsentMergePolicy", wanReplicationRef.getMergePolicyClassName());
     }
 
     @Test
@@ -618,6 +632,18 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(kerbIdentity);
         assertEquals("HAZELCAST.COM", kerbIdentity.getRealm());
         assertEquals(TRUE, kerbIdentity.getUseCanonicalHostname());
+
+        RealmConfig simpleRealm = securityConfig.getRealmConfig("simpleRealm");
+        assertNotNull(simpleRealm);
+        SimpleAuthenticationConfig simpleAuthnCfg = simpleRealm.getSimpleAuthenticationConfig();
+        assertNotNull(simpleAuthnCfg);
+        assertEquals(2, simpleAuthnCfg.getUsernames().size());
+        assertTrue(simpleAuthnCfg.getUsernames().contains("test"));
+        assertEquals("a1234", simpleAuthnCfg.getPassword("test"));
+        Set<String> expectedRoles = new HashSet<>();
+        expectedRoles.add("monitor");
+        expectedRoles.add("hazelcast");
+        assertEquals(expectedRoles, simpleAuthnCfg.getRoles("test"));
     }
 
     @Test
@@ -762,7 +788,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         NetworkConfig networkConfig = config.getNetworkConfig();
         assertNotNull(networkConfig);
         assertEquals(5700, networkConfig.getPort());
-        assertFalse(networkConfig.isPortAutoIncrement());
+        assertTrue(networkConfig.isPortAutoIncrement());
 
         Collection<String> allowedPorts = networkConfig.getOutboundPortDefinitions();
         assertEquals(2, allowedPorts.size());
@@ -782,7 +808,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("10.10.1.*", networkConfig.getInterfaces().getInterfaces().iterator().next());
         TcpIpConfig tcp = networkConfig.getJoin().getTcpIpConfig();
         assertNotNull(tcp);
-        assertTrue(tcp.isEnabled());
+        assertFalse(tcp.isEnabled());
         SymmetricEncryptionConfig symmetricEncryptionConfig = networkConfig.getSymmetricEncryptionConfig();
         assertFalse(symmetricEncryptionConfig.isEnabled());
         assertEquals("PBEWithMD5AndDES", symmetricEncryptionConfig.getAlgorithm());
@@ -929,6 +955,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(semaphore);
         assertNotNull(lock);
         assertNotNull(pnCounter);
+        assertNotNull(jet);
+        assertEquals(config.getJetConfig(), jet.getConfig());
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
@@ -942,6 +970,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("testAtomicReference", atomicReference.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
+
     }
 
     @Test
@@ -1048,7 +1077,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testPartitionGroupConfig() {
         PartitionGroupConfig pgc = config.getPartitionGroupConfig();
-        assertTrue(pgc.isEnabled());
+        assertFalse(pgc.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, pgc.getGroupType());
         assertEquals(2, pgc.getMemberGroupConfigs().size());
         for (MemberGroupConfig mgc : pgc.getMemberGroupConfigs()) {
@@ -1141,7 +1170,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(10.2, nativeMemoryConfig.getMetadataSpacePercentage(), 0.1);
         assertEquals(10, nativeMemoryConfig.getMinBlockSize());
         List<PersistentMemoryDirectoryConfig> directoryConfigs = nativeMemoryConfig.getPersistentMemoryConfig()
-                                                                                   .getDirectoryConfigs();
+                .getDirectoryConfigs();
 
         assertEquals(2, directoryConfigs.size());
         assertEquals("/mnt/pmem0", directoryConfigs.get(0).getDirectory());
@@ -1285,19 +1314,19 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHotRestart() {
-        File dir = new File("/mnt/hot-restart/");
-        File hotBackupDir = new File("/mnt/hot-backup/");
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+    public void testPersistence() {
+        File dir = new File("/mnt/persistence/");
+        File backupDir = new File("/mnt/persistence-backup/");
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
 
-        assertFalse(hotRestartPersistenceConfig.isEnabled());
-        assertEquals(dir.getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
-        assertEquals(hotBackupDir.getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
-        assertEquals(1111, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
-        assertEquals(2222, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());
-        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, hotRestartPersistenceConfig.getClusterDataRecoveryPolicy());
-        assertFalse(hotRestartPersistenceConfig.isAutoRemoveStaleData());
-        EncryptionAtRestConfig encryptionAtRestConfig = hotRestartPersistenceConfig.getEncryptionAtRestConfig();
+        assertFalse(persistenceConfig.isEnabled());
+        assertEquals(dir.getAbsolutePath(), persistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(backupDir.getAbsolutePath(), persistenceConfig.getBackupDir().getAbsolutePath());
+        assertEquals(1111, persistenceConfig.getValidationTimeoutSeconds());
+        assertEquals(2222, persistenceConfig.getDataLoadTimeoutSeconds());
+        assertEquals(PARTIAL_RECOVERY_MOST_COMPLETE, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertFalse(persistenceConfig.isAutoRemoveStaleData());
+        EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
         assertNotNull(encryptionAtRestConfig);
         assertTrue(encryptionAtRestConfig.isEnabled());
         assertEquals("AES/CBC/PKCS5Padding", encryptionAtRestConfig.getAlgorithm());
@@ -1479,7 +1508,28 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(10, sqlConfig.getExecutorPoolSize());
+        assertEquals(5, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+    }
+
+    @Test
+    public void testJetConfig() {
+        JetConfig jetConfig = config.getJetConfig();
+        assertTrue(jetConfig.isEnabled());
+        assertTrue(jetConfig.isResourceUploadEnabled());
+
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        assertEquals(4, instanceConfig.getCooperativeThreadCount());
+        assertEquals(2, instanceConfig.getBackupCount());
+        assertEquals(200, instanceConfig.getFlowControlPeriodMs());
+        assertEquals(20000, instanceConfig.getScaleUpDelayMillis());
+        assertFalse(instanceConfig.isLosslessRestartEnabled());
+
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        assertEquals(2048, edgeConfig.getQueueSize());
+        assertEquals(15000, edgeConfig.getPacketSizeLimit());
+        assertEquals(4, edgeConfig.getReceiveWindowMultiplier());
+
+
     }
 }

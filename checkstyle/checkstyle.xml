@@ -17,7 +17,7 @@
 
 <!DOCTYPE module PUBLIC
         "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
-        "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
   Checkstyle configuration that checks the sun coding conventions from:
@@ -102,7 +102,7 @@
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
     <module name="Header">
-        <property name="headerFile" value="${main.basedir}/checkstyle/ClassHeader.txt"/>
+        <property name="headerFile" value="${checkstyle.header.file}"/>
         <property name="fileExtensions" value="java"/>
     </module>
 
@@ -154,7 +154,9 @@
             <property name="excludes" value="java.awt,javax.swing"/>
         </module>
         <!-- defaults to sun.* packages -->
-        <module name="IllegalImport"/>
+        <module name="IllegalImport">
+            <property name="illegalPkgs" value="sun,org.jetbrains.annotations"/>
+        </module>
         <module name="RedundantImport"/>
         <module name="UnusedImports">
             <property name="processJavadoc" value="true"/>
@@ -268,6 +270,9 @@
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreAnnotation" value="true"/>
             <property name="ignoreNumbers" value="-1, 0, 1, 2, 3"/>
+            <property name="constantWaiverParentToken"
+                      value="ASSIGN, ARRAY_INIT, EXPR, UNARY_PLUS, UNARY_MINUS, TYPECAST, ELIST, LITERAL_NEW,
+                      METHOD_CALL, STAR, DIV, PLUS, MINUS, SL, QUESTION"/>
         </module>
         <module name="EqualsHashCode"/>
         <module name="IllegalInstantiation"/>

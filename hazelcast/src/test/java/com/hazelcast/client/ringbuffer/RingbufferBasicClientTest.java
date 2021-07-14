@@ -23,26 +23,32 @@ import com.hazelcast.ringbuffer.impl.RingbufferAbstractTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.function.Function;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RingbufferBasicClientTest extends RingbufferAbstractTest {
-    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    @After
-    public void teardown() {
-        factory.terminateAll();
+    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        Function<Config, HazelcastInstance[]> instanceCreator = config -> {
+            HazelcastInstance member = factory.newHazelcastInstance(config);
+            HazelcastInstance client = factory.newHazelcastClient();
+            return new HazelcastInstance[]{client, member};
+        };
+
+        prepare(instanceCreator);
     }
 
-
-    @Override
-    protected HazelcastInstance[] newInstances(Config config) {
-        HazelcastInstance member = factory.newHazelcastInstance(config);
-        HazelcastInstance client = factory.newHazelcastClient();
-
-        return new HazelcastInstance[]{client, member};
+    @AfterClass
+    public static void afterClass() throws Exception {
+        factory.terminateAll();
     }
 }

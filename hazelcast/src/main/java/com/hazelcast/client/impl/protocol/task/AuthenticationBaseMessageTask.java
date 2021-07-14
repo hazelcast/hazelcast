@@ -188,10 +188,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     private ClientMessage prepareAuthenticatedClientMessage() {
         ServerConnection connection = endpoint.getConnection();
-
+        setConnectionType();
         endpoint.authenticated(clientUuid, credentials, clientVersion, clientMessage.getCorrelationId(),
                 clientName, labels);
-        setConnectionType();
         validateNodeStart();
         final UUID clusterId = clientEngine.getClusterService().getClusterId();
         // additional check: cluster id may be null when member has not started yet;

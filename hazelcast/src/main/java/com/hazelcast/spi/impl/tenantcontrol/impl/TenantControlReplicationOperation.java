@@ -85,14 +85,14 @@ public class TenantControlReplicationOperation extends Operation implements Iden
 
         tenantControlMap = MapUtil.createConcurrentHashMap(serviceCount);
         for (int i = 0; i < serviceCount; i++) {
-            String serviceName = in.readUTF();
+            String serviceName = in.readString();
             int objectCount = in.readInt();
 
             ConcurrentMap<String, TenantControl> objectMap = MapUtil.createConcurrentHashMap(objectCount);
             tenantControlMap.put(serviceName, objectMap);
 
             for (int j = 0; j < objectCount; j++) {
-                objectMap.put(in.readUTF(), in.readObject());
+                objectMap.put(in.readString(), in.readObject());
             }
         }
     }
@@ -107,19 +107,19 @@ public class TenantControlReplicationOperation extends Operation implements Iden
                 String serviceName = serviceEntry.getKey();
                 ConcurrentMap<String, TenantControl> tenantControlPerObject = serviceEntry.getValue();
 
-                out.writeUTF(serviceName);
+                out.writeString(serviceName);
                 out.writeInt(tenantControlPerObject.size());
                 for (Entry<String, TenantControl> objectEntry : tenantControlPerObject.entrySet()) {
-                    out.writeUTF(objectEntry.getKey());
+                    out.writeString(objectEntry.getKey());
                     out.writeObject(objectEntry.getValue());
                 }
             }
         } else {
             // we are sending just one tenant control
             out.writeInt(1);
-            out.writeUTF(distributedObjectServiceName);
+            out.writeString(distributedObjectServiceName);
             out.writeInt(1);
-            out.writeUTF(distributedObjectName);
+            out.writeString(distributedObjectName);
             out.writeObject(tenantControl);
         }
     }

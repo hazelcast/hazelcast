@@ -22,19 +22,27 @@ import com.hazelcast.internal.serialization.Data;
  * Holds expired key and related metadata.
  */
 public final class ExpiredKey {
-    private final Data key;
-    private final long creationTime;
 
-    public ExpiredKey(Data key, long creationTime) {
+    private final Data key;
+    /**
+     * Metadata is used to be sure that we delete correct entry on
+     * backup replica. It can be creation-time or value-hash-code.
+     *
+     * @see com.hazelcast.map.impl.operation.EvictBatchBackupOperation#hasSameValueHashCode
+     * @see com.hazelcast.cache.impl.operation.CacheExpireBatchBackupOperation#evictIfSame
+     */
+    private final long metadata;
+
+    public ExpiredKey(Data key, long metadata) {
         this.key = key;
-        this.creationTime = creationTime;
+        this.metadata = metadata;
     }
 
     public Data getKey() {
         return key;
     }
 
-    public long getCreationTime() {
-        return creationTime;
+    public long getMetadata() {
+        return metadata;
     }
 }

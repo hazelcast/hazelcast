@@ -270,7 +270,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeBoolean(globalOrderingEnabled);
         out.writeBoolean(statisticsEnabled);
         out.writeBoolean(multiThreadingEnabled);
@@ -279,7 +279,7 @@ public class TopicConfig implements IdentifiedDataSerializable, NamedConfig {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         globalOrderingEnabled = in.readBoolean();
         statisticsEnabled = in.readBoolean();
         multiThreadingEnabled = in.readBoolean();

@@ -137,6 +137,7 @@ public class SplitBrainProtectionOperationTest {
             "com.hazelcast.topic.impl.",
             "com.hazelcast.transaction.impl.xa.operations.",
             "com.hazelcast.map.impl.querycache.",
+            "com.hazelcast.jet",
             "MapAssignAndGetUuidsOperation",
             "EntryOffloadableSetUnlockOperation"
     );
@@ -151,7 +152,8 @@ public class SplitBrainProtectionOperationTest {
         Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
         while (hooks.hasNext()) {
             DataSerializerHook hook = hooks.next();
-            LOGGER.info("Testing " + hook.getClass().getSimpleName() + "...");
+            String simpleClassName = hook.getClass().getName();
+            LOGGER.info("Testing " + simpleClassName + "...");
             DataSerializableFactory factory = hook.createFactory();
             int typeId = 0;
             while (true) {
@@ -165,13 +167,16 @@ public class SplitBrainProtectionOperationTest {
                 String name = lowerCaseInternal(clazz.getSimpleName());
                 LOGGER.info(clazz.getSimpleName());
 
+                if (matches(NO_SPLIT_BRAIN_PROTECTION_PACKAGES, className)) {
+                    continue;
+                }
+
                 boolean shouldBeMutatingOperation = false;
                 boolean shouldBeReadonlyOperation = false;
                 if (!(ids instanceof Operation)
                         || ids instanceof UrgentSystemOperation
                         || matches(INTERNAL_CLASS_NAMES, name)
-                        || matches(INTERNAL_PACKAGES, className)
-                        || matches(NO_SPLIT_BRAIN_PROTECTION_PACKAGES, className)) {
+                        || matches(INTERNAL_PACKAGES, className)) {
                     // no, urgent, internal or no split brain protection operations
                     shouldBeMutatingOperation = false;
                     shouldBeReadonlyOperation = false;

@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -36,27 +37,25 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
-        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(null);
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_whenNull_thenDoNothing() {
+        NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(null);
     }
 
     @Test
-    public void testNearCacheConfigEqual_BeforeAndAfterDefaultSizeIsInitialized() {
-        NearCacheConfig config1 = new NearCacheConfig();
-        NearCacheConfig config2 = new NearCacheConfig();
-        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(config1);
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_doesNotChangeOriginal_createsChangedCopy() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
 
-        assertEquals(config1, config2);
+        assertEquals(copy.getEvictionConfig().getSize(), MapConfig.DEFAULT_MAX_SIZE);
+        assertEquals(nearCacheConfig.getEvictionConfig().getSize(), EvictionConfig.DEFAULT_MAX_ENTRY_COUNT);
     }
 
     @Test
-    public void testEvictionConfigCopy_whenDefaultSizeIsInitialized() {
-        NearCacheConfig config1 = new NearCacheConfig();
-        NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps(config1);
+    public void testCopyInitDefaultMaxSizeForOnHeapMaps_doesNotCopy_whenSizeIsConfigured() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setEvictionConfig(new EvictionConfig().setSize(10));
+        NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
 
-        EvictionConfig evictionConfig = config1.getEvictionConfig();
-        EvictionConfig evictionConfig2 = new EvictionConfig(evictionConfig);
-
-        assertEquals(evictionConfig.getSize(), evictionConfig2.getSize());
+        assertTrue(nearCacheConfig == copy);
     }
 }

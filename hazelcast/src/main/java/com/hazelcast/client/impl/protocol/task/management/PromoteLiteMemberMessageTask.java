@@ -23,12 +23,15 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.PromoteLiteMemberOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
 
 public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.promoteLiteMember");
 
     public PromoteLiteMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -62,7 +65,7 @@ public class PromoteLiteMemberMessageTask extends AbstractInvocationMessageTask<
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

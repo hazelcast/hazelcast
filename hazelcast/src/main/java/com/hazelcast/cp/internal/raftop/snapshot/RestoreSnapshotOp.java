@@ -61,13 +61,13 @@ public class RestoreSnapshotOp extends RaftOp implements IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         out.writeObject(snapshot);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         snapshot = in.readObject();
     }
 

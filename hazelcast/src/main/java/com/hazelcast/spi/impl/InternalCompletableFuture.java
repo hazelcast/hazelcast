@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.serialization.Data;
 
@@ -31,7 +32,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.ConcurrencyUtil.DEFAULT_ASYNC_EXECUTOR;
 import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
 
 /**
@@ -50,10 +50,11 @@ import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
  * <p>This class provides static factory methods for more specific implementations
  * supporting custom default async executor or deserialization of completion value.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class InternalCompletableFuture<V> extends CompletableFuture<V> {
 
     public Executor defaultExecutor() {
-        return DEFAULT_ASYNC_EXECUTOR;
+        return ConcurrencyUtil.getDefaultAsyncExecutor();
     }
 
     /**
@@ -78,12 +79,27 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
     }
 
     @Override
+    public <U> CompletableFuture<U> thenApplyAsync(Function<? super V, ? extends U> fn) {
+        return super.thenApplyAsync(fn, defaultExecutor());
+    }
+
+    @Override
     public CompletableFuture<Void> thenAccept(Consumer<? super V> action) {
         return super.thenAcceptAsync(action, defaultExecutor());
     }
 
     @Override
+    public CompletableFuture<Void> thenAcceptAsync(Consumer<? super V> action) {
+        return super.thenAcceptAsync(action, defaultExecutor());
+    }
+
+    @Override
     public CompletableFuture<Void> thenRun(Runnable action) {
+        return super.thenRunAsync(action, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> thenRunAsync(Runnable action) {
         return super.thenRunAsync(action, defaultExecutor());
     }
 
@@ -94,8 +110,20 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
     }
 
     @Override
+    public <U, V1> CompletableFuture<V1> thenCombineAsync(CompletionStage<? extends U> other,
+                                                          BiFunction<? super V, ? super U, ? extends V1> fn) {
+        return super.thenCombineAsync(other, fn,  defaultExecutor());
+    }
+
+    @Override
     public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other,
                                                       BiConsumer<? super V, ? super U> action) {
+        return super.thenAcceptBothAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
+                                                           BiConsumer<? super V, ? super U> action) {
         return super.thenAcceptBothAsync(other, action, defaultExecutor());
     }
 
@@ -105,7 +133,17 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
     }
 
     @Override
+    public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable action) {
+        return super.runAfterBothAsync(other, action, defaultExecutor());
+    }
+
+    @Override
     public <U> CompletableFuture<U> applyToEither(CompletionStage<? extends V> other, Function<? super V, U> fn) {
+        return super.applyToEitherAsync(other, fn, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends V> other, Function<? super V, U> fn) {
         return super.applyToEitherAsync(other, fn, defaultExecutor());
     }
 
@@ -115,7 +153,17 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
     }
 
     @Override
+    public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends V> other, Consumer<? super V> action) {
+        return super.acceptEitherAsync(other, action, defaultExecutor());
+    }
+
+    @Override
     public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable action) {
+        return super.runAfterEitherAsync(other, action, defaultExecutor());
+    }
+
+    @Override
+    public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable action) {
         return super.runAfterEitherAsync(other, action, defaultExecutor());
     }
 
@@ -125,12 +173,27 @@ public class InternalCompletableFuture<V> extends CompletableFuture<V> {
     }
 
     @Override
+    public <U> CompletableFuture<U> thenComposeAsync(Function<? super V, ? extends CompletionStage<U>> fn) {
+        return super.thenComposeAsync(fn, defaultExecutor());
+    }
+
+    @Override
     public CompletableFuture<V> whenComplete(BiConsumer<? super V, ? super Throwable> action) {
         return super.whenCompleteAsync(action, defaultExecutor());
     }
 
     @Override
+    public CompletableFuture<V> whenCompleteAsync(BiConsumer<? super V, ? super Throwable> action) {
+        return super.whenCompleteAsync(action, defaultExecutor());
+    }
+
+    @Override
     public <U> CompletableFuture<U> handle(BiFunction<? super V, Throwable, ? extends U> fn) {
+        return super.handleAsync(fn, defaultExecutor());
+    }
+
+    @Override
+    public <U> CompletableFuture<U> handleAsync(BiFunction<? super V, Throwable, ? extends U> fn) {
         return super.handleAsync(fn, defaultExecutor());
     }
 

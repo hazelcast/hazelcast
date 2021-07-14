@@ -19,9 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -214,12 +213,13 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                             OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
         @Override
-        public void removeEntry(Data key, Object value, OperationSource operationSource) {
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
             throw newUnsupportedException();
         }
 
@@ -260,6 +260,36 @@ public class AttributeIndexRegistry {
             Comparable to,
             boolean toInclusive,
             boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparison comparison,
+                Comparable value,
+                boolean descending
+        ) {
+            throw new UnsupportedOperationException("Should not be called");
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparable from,
+                boolean fromInclusive,
+                Comparable to,
+                boolean toInclusive,
+                boolean descending
         ) {
             throw new UnsupportedOperationException("Should not be called");
         }
@@ -378,7 +408,7 @@ public class AttributeIndexRegistry {
         }
 
         @Override
-        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+        public PartitionStamp getPartitionStamp() {
             throw newUnsupportedException();
         }
 

@@ -70,7 +70,7 @@ public class ReplicationOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CardinalityEstimatorContainer> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
     }
@@ -80,7 +80,7 @@ public class ReplicationOperation
         int mapSize = in.readInt();
         migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             CardinalityEstimatorContainer newCont = in.readObject();
             migrationData.put(name, newCont);
         }

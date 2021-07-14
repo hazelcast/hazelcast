@@ -17,7 +17,10 @@
 package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.internal.serialization.BinaryInterface;
+import com.hazelcast.query.impl.QueryContext;
+import com.hazelcast.query.impl.QueryableEntry;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -31,6 +34,16 @@ public class ILikePredicate extends LikePredicate {
 
     public ILikePredicate(String attribute, String second) {
         super(attribute, second);
+    }
+
+    @Override
+    public Set<QueryableEntry> filter(QueryContext queryContext) {
+        return null;
+    }
+
+    @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        return false;
     }
 
     @Override

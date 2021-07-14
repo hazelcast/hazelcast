@@ -78,7 +78,9 @@ public interface Record<V> {
      *
      * @return current cached value or null or cached record mutex.
      */
-    Object getCachedValueUnsafe();
+    default Object getCachedValueUnsafe() {
+        return Record.NOT_CACHED;
+    }
 
     /**
      * Atomically sets the cached value to the given new value
@@ -90,39 +92,60 @@ public interface Record<V> {
      * return indicates that the actual cached value
      * was not equal to the expected cached value.
      */
-    boolean casCachedValue(Object expectedValue, Object newValue);
+    default boolean casCachedValue(Object expectedValue, Object newValue) {
+        assert getCachedValueUnsafe() != Record.NOT_CACHED;
+        return true;
+    }
 
-    long getLastAccessTime();
+    default long getLastAccessTime() {
+        return UNSET;
+    }
 
-    void setLastAccessTime(long lastAccessTime);
+    default void setLastAccessTime(long lastAccessTime) {
+    }
 
-    long getLastUpdateTime();
+    default long getLastUpdateTime() {
+        return UNSET;
+    }
 
-    void setLastUpdateTime(long lastUpdatedTime);
+    default void setLastUpdateTime(long lastUpdateTime) {
+    }
 
-    long getCreationTime();
+    default long getCreationTime() {
+        return UNSET;
+    }
 
-    void setCreationTime(long creationTime);
+    default void setCreationTime(long creationTime) {
+    }
 
-    int getHits();
+    default int getHits() {
+        return UNSET;
+    }
 
-    void setHits(int hits);
-
-    long getLastStoredTime();
-
-    void setLastStoredTime(long lastStoredTime);
+    default void setHits(int hits) {
+    }
 
     /**
      * Only used for Hot Restart, HDRecord
      *
      * @return current sequence number
      */
-    long getSequence();
+    default long getSequence() {
+        return UNSET;
+    }
 
     /**
      * Only used for Hot Restart, HDRecord
      */
-    void setSequence(long sequence);
+    default void setSequence(long sequence) {
+    }
+
+    default long getLastStoredTime() {
+        return UNSET;
+    }
+
+    default void setLastStoredTime(long lastStoredTime) {
+    }
 
     default long recomputeWithBaseTime(int value) {
         if (value == UNSET) {
@@ -142,22 +165,21 @@ public interface Record<V> {
         return diff;
     }
 
+    /**
+     * An implementation must be thread safe if the
+     * record might be accessed from multiple threads.
+     */
     default void onAccess(long now) {
+        incrementHits();
+        setLastAccessTime(now);
+    }
+
+    default void incrementHits() {
         int hits = getHits();
         if (hits < Integer.MAX_VALUE) {
             // protect against potential overflow
             setHits(hits + 1);
         }
-
-        onAccessSafe(now);
-    }
-
-    /**
-     * An implementation must be thread safe if the
-     * record might be accessed from multiple threads.
-     */
-    default void onAccessSafe(long now) {
-        setLastAccessTime(now);
     }
 
     default void onUpdate(long now) {
@@ -177,19 +199,31 @@ public interface Record<V> {
     RecordReaderWriter getMatchingRecordReaderWriter();
 
     /* Below `raw` methods are used during serialization of a record. */
-    int getRawCreationTime();
+    default int getRawCreationTime() {
+        return UNSET;
+    }
 
-    void setRawCreationTime(int readInt);
+    default void setRawCreationTime(int creationTime) {
+    }
 
-    int getRawLastAccessTime();
+    default int getRawLastAccessTime() {
+        return UNSET;
+    }
 
-    void setRawLastAccessTime(int readInt);
+    default void setRawLastAccessTime(int lastAccessTime) {
+    }
 
-    int getRawLastUpdateTime();
+    default int getRawLastUpdateTime() {
+        return UNSET;
+    }
 
-    void setRawLastUpdateTime(int readInt);
+    default void setRawLastUpdateTime(int lastUpdateTime) {
+    }
 
-    int getRawLastStoredTime();
+    default int getRawLastStoredTime() {
+        return UNSET;
+    }
 
-    void setRawLastStoredTime(int time);
+    default void setRawLastStoredTime(int lastStoredTime) {
+    }
 }

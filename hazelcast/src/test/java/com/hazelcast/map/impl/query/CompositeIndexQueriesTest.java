@@ -75,6 +75,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
     public void before() {
         Config config = getConfig();
         config.getMapConfig("map").setInMemoryFormat(inMemoryFormat);
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         map = createHazelcastInstance(config).getMap("map");
 
         IndexConfig indexConfig1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "name", "age");

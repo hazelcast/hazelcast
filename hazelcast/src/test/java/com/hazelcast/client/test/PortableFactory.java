@@ -52,11 +52,11 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
         }
 
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTF("n", name);
+            writer.writeString("n", name);
         }
 
         public void readPortable(PortableReader reader) throws IOException {
-            name = reader.readUTF("n");
+            name = reader.readString("n");
         }
     }
 

@@ -322,7 +322,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * Adds an entry listener for this multimap.
      * <p>
      * The listener will be notified for all multimap
-     * add/remove/update/evict events.
+     * add/remove/update events.
      *
      * @param listener     entry listener for this multimap
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value,
@@ -345,7 +345,7 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
     /**
      * Adds the specified entry listener for the specified key.
      * <p>
-     * The listener will be notified for all add/remove/update/evict events for
+     * The listener will be notified for all add/remove/update events for
      * the specified key only.
      * <p>
      * <b>Warning:</b> This method uses {@code hashCode} and {@code equals} of

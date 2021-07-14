@@ -26,6 +26,8 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
@@ -55,6 +57,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
@@ -128,6 +131,7 @@ public final class ConfigValidator {
                                       HazelcastProperties properties, ILogger logger) {
 
         checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
+        checkNotBitmapIndexWhenNativeMemory(mapConfig.getInMemoryFormat(), mapConfig.getIndexConfigs());
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
@@ -136,7 +140,8 @@ public final class ConfigValidator {
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
         checkMapMaxSizePolicyPerInMemoryFormat(mapConfig);
-        checkMapMergePolicy(mapConfig, mergePolicyProvider);
+        checkMapMergePolicy(mapConfig,
+                mapConfig.getMergePolicyConfig().getPolicy(), mergePolicyProvider);
     }
 
     static void checkMapMaxSizePolicyPerInMemoryFormat(MapConfig mapConfig) {
@@ -233,6 +238,32 @@ public final class ConfigValidator {
         if (hotRestartMinFreeNativeMemoryPercentage != Integer.parseInt(prop.getDefaultValue())) {
             logger.warning(format("%s was deprecated in version 4.2. By starting from "
                     + "that version setting it has no effect.", prop.getName()));
+        }
+    }
+
+    public static void warnForUsageOfDeprecatedSymmetricEncryption(Config config, ILogger logger) {
+        String warn = "Symmetric encryption is deprecated and will be removed in a future version. Consider using TLS instead.";
+        boolean usesAdvancedNetworkConfig = config.getAdvancedNetworkConfig().isEnabled();
+
+        if (config.getNetworkConfig() != null
+                && config.getNetworkConfig().getSymmetricEncryptionConfig() != null
+                && config.getNetworkConfig().getSymmetricEncryptionConfig().isEnabled()
+                && !usesAdvancedNetworkConfig) {
+                logger.warning(warn);
+        }
+
+        if (config.getAdvancedNetworkConfig() != null
+                && config.getAdvancedNetworkConfig().getEndpointConfigs() != null
+                && usesAdvancedNetworkConfig) {
+            for (EndpointConfig endpointConfig : config.getAdvancedNetworkConfig().getEndpointConfigs().values()) {
+                if (endpointConfig.getSymmetricEncryptionConfig() != null
+                        && endpointConfig.getSymmetricEncryptionConfig().isEnabled()) {
+                    logger.warning(warn);
+
+                    // Write error message once if more than one endpoint use symmetric encryption
+                    break;
+                }
+            }
         }
     }
 
@@ -621,6 +652,23 @@ public final class ConfigValidator {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new InvalidConfigurationException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
+        }
+    }
+
+    /**
+     * Throws {@link InvalidConfigurationException} if the given {@link InMemoryFormat}
+     * is {@link InMemoryFormat#NATIVE} and index configurations include {@link IndexType#BITMAP}.
+     *
+     * @param inMemoryFormat supplied inMemoryFormat
+     * @param indexConfigs   {@link List} of {@link IndexConfig}
+     */
+    private static void checkNotBitmapIndexWhenNativeMemory(InMemoryFormat inMemoryFormat, List<IndexConfig> indexConfigs) {
+        if (inMemoryFormat == NATIVE) {
+            for (IndexConfig indexConfig : indexConfigs) {
+                if (indexConfig.getType() == IndexType.BITMAP) {
+                    throw new InvalidConfigurationException("BITMAP indexes are not supported by NATIVE storage");
+                }
+            }
         }
     }
 

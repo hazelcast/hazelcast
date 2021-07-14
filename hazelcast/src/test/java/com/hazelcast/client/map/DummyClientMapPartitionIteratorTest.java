@@ -18,33 +18,38 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.AbstractMapPartitionIteratorTest;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+import java.util.Iterator;
+import java.util.Map;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIteratorTest {
 
-    @Before
+    @Override
     public void setup() {
         factory = new TestHazelcastFactory();
+        HazelcastInstance server = factory.newHazelcastInstance(getConfig());
+        instance = factory.newHazelcastClient(getClientConfig(server));
+    }
 
-        Config config = getConfig();
-        server = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        client = factory.newHazelcastClient(getClientConfig(server));
+    @Override
+    protected <K, V> Iterator<Map.Entry<K, V>> getIterator(IMap<K, V> map, int partitionId) {
+        return ((ClientMapProxy<K, V>) map).iterator(10, partitionId, prefetchValues);
     }
 
     private ClientConfig getClientConfig(HazelcastInstance instance) {
@@ -55,7 +60,6 @@ public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIte
                 .setSmartRouting(false)
                 .addAddress(addressString);
 
-        return getClientConfig()
-                .setNetworkConfig(networkConfig);
+        return new ClientConfig().setNetworkConfig(networkConfig);
     }
 }

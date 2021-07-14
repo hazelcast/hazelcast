@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -47,8 +48,7 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void prepopulate(Object key, Object value) {
-
+    public void prepopulate(Iterator entries) {
     }
 
     @Override

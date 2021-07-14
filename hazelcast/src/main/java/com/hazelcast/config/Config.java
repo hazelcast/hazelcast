@@ -27,12 +27,16 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.CardinalityEstimatorConfigReadOnly;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
+import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
+import com.hazelcast.internal.config.MemberYamlConfigRootTagRecognizer;
 import com.hazelcast.internal.config.MultiMapConfigReadOnly;
 import com.hazelcast.internal.config.PNCounterConfigReadOnly;
+import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.config.QueueConfigReadOnly;
 import com.hazelcast.internal.config.ReliableTopicConfigReadOnly;
 import com.hazelcast.internal.config.ReplicatedMapConfigReadOnly;
@@ -44,7 +48,9 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.config.XmlConfigLocator;
 import com.hazelcast.internal.config.YamlConfigLocator;
 import com.hazelcast.internal.config.override.ExternalConfigurationOverride;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -54,7 +60,12 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.net.URL;
 import java.util.EventListener;
 import java.util.LinkedList;
@@ -65,12 +76,13 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.SYSPROP_MEMBER_CONFIG;
 import static com.hazelcast.internal.config.DeclarativeConfigUtil.validateSuffixInSystemProperty;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 /**
@@ -167,6 +179,8 @@ public class Config {
 
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
+    private PersistenceConfig persistenceConfig = new PersistenceConfig();
+
     private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
 
     private CRDTReplicationConfig crdtReplicationConfig = new CRDTReplicationConfig();
@@ -184,6 +198,8 @@ public class Config {
     private MetricsConfig metricsConfig = new MetricsConfig();
 
     private InstanceTrackingConfig instanceTrackingConfig = new InstanceTrackingConfig();
+
+    private JetConfig jetConfig = new JetConfig();
 
     public Config() {
     }
@@ -205,10 +221,17 @@ public class Config {
      * @return Config created from a file when exists, otherwise default.
      */
     public static Config load() {
-        return new ExternalConfigurationOverride().overwriteMemberConfig(loadFromFile());
+        return applyEnvAndSystemVariableOverrides(loadFromFile(System.getProperties()));
     }
 
-    private static Config loadFromFile() {
+    private static Config applyEnvAndSystemVariableOverrides(Config cfg) {
+        cfg = new ExternalConfigurationOverride().overwriteMemberConfig(cfg);
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(cfg.getHotRestartPersistenceConfig(), cfg.getPersistenceConfig());
+        return cfg;
+    }
+
+    private static Config loadFromFile(Properties properties) {
         validateSuffixInSystemProperty(SYSPROP_MEMBER_CONFIG);
 
         XmlConfigLocator xmlConfigLocator = new XmlConfigLocator();
@@ -216,21 +239,214 @@ public class Config {
 
         if (xmlConfigLocator.locateFromSystemProperty()) {
             // 1. Try loading XML config from the configuration provided in system property
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateFromSystemProperty()) {
             // 2. Try loading YAML config from the configuration provided in system property
-            return new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else if (xmlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 3. Try loading XML config from the working directory or from the classpath
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         } else if (yamlConfigLocator.locateInWorkDirOrOnClasspath()) {
             // 4. Try loading YAML config from the working directory or from the classpath
-            return new YamlConfigBuilder(yamlConfigLocator).build();
+            return new YamlConfigBuilder(yamlConfigLocator).setProperties(properties).build();
         } else {
             // 5. Loading the default XML configuration file
             xmlConfigLocator.locateDefault();
-            return new XmlConfigBuilder(xmlConfigLocator).build();
+            return new XmlConfigBuilder(xmlConfigLocator).setProperties(properties).build();
         }
+    }
+
+    /**
+     * Same as {@link #load() load()}, i.e., loads Config using the default lookup mechanism
+     *
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config loadDefault() {
+        return load();
+    }
+
+    /**
+     * Loads Config using the default {@link #load() lookup mechanism} to locate the configuration file
+     * and applies variable resolution from the provided properties.
+     *
+     * @param properties properties to resolve variables in the XML or YAML
+     * @return Config created from a file when exists, otherwise default.
+     */
+    public static Config loadDefault(Properties properties) {
+        return applyEnvAndSystemVariableOverrides(loadFromFile(properties));
+    }
+
+    /**
+     * Creates a Config which is loaded from a classpath resource. The System.properties are used for
+     * variable resolution in the configuration file
+     *
+     * @param classLoader the ClassLoader used to load the resource
+     * @param resource the resource, an XML or YAML configuration file from
+     *                 the classpath, without the "classpath:" prefix
+     * @throws IllegalArgumentException if classLoader or resource is {@code null},
+     *                                  or if the resource is not found
+     * @throws InvalidConfigurationException if the resource content is invalid
+     * @return Config created from the resource
+     */
+    public static Config loadFromClasspath(ClassLoader classLoader, String resource) {
+        return loadFromClasspath(classLoader, resource, System.getProperties());
+    }
+
+    /**
+     * Creates a Config which is loaded from a classpath resource. Uses the
+     * given {@code properties} to resolve the variables in the resource.
+     *
+     * @param classLoader the ClassLoader used to load the resource
+     * @param resource    the resource, an XML or YAML configuration file from
+     *                    the classpath, without the "classpath:" prefix
+     * @param properties  the properties used to resolve variables in the resource
+     * @throws IllegalArgumentException      if classLoader or resource is {@code null},
+     *                                       or if the resource is not found
+     * @throws InvalidConfigurationException if the resource content is invalid
+     * @return Config created from the resource
+     */
+    public static Config loadFromClasspath(ClassLoader classLoader, String resource, Properties properties) {
+        checkTrue(classLoader != null, "classLoader can't be null");
+        checkTrue(resource != null, "resource can't be null");
+        checkTrue(properties != null, "properties can't be null");
+
+        InputStream stream = classLoader.getResourceAsStream(resource);
+        checkTrue(stream != null, "Specified resource '" + resource + "' could not be found!");
+
+        if (resource.endsWith(".xml")) {
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+        if (resource.endsWith(".yaml") || resource.endsWith(".yml")) {
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+
+        throw new IllegalArgumentException("Unknown configuration file extension");
+    }
+
+    /**
+     * Creates a Config based on a the provided configuration file (XML or YAML)
+     * and uses the System.properties to resolve variables in the file.
+     *
+     * @param configFile the path of the configuration file
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the file content is invalid
+     * @return Config created from the configFile
+     */
+    public static Config loadFromFile(File configFile) throws FileNotFoundException {
+        return loadFromFile(configFile, System.getProperties());
+    }
+
+    /**
+     * Creates a Config based on a the provided configuration file (XML or YAML)
+     * and uses the System.properties to resolve variables in the file.
+     *
+     * @param configFile the path of the configuration file
+     * @param properties properties to use for variable resolution in the file
+     * @throws FileNotFoundException         if the file doesn't exist
+     * @throws InvalidConfigurationException if the file content is invalid
+     * @return Config created from the configFile
+     */
+    public static Config loadFromFile(File configFile, Properties properties) throws FileNotFoundException {
+        checkTrue(configFile != null, "configFile can't be null");
+        checkTrue(properties != null, "properties can't be null");
+
+        String path = configFile.getPath();
+        InputStream stream = new FileInputStream(configFile);
+        if (path.endsWith(".xml")) {
+            return applyEnvAndSystemVariableOverrides(
+                    new XmlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+        if (path.endsWith(".yaml") || path.endsWith(".yml")) {
+            return applyEnvAndSystemVariableOverrides(
+                    new YamlConfigBuilder(stream).setProperties(properties).build()
+            );
+        }
+
+        throw new IllegalArgumentException("Unknown configuration file extension");
+    }
+
+    /**
+     * Creates a Config from the provided string (XML or YAML content) and uses the
+     * System.properties for variable resolution.
+     *
+     * @param source the XML or YAML content
+     * @throws IllegalArgumentException if the source is null or empty
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
+     * @return Config created from the string
+     */
+    public static Config loadFromString(String source) {
+        return loadFromString(source, System.getProperties());
+    }
+
+    /**
+     * Creates a Config from the provided string (XML or YAML content).
+     *
+     * @param source the XML or YAML content
+     * @param properties properties to use for variable resolution
+     * @throws IllegalArgumentException if the source is null or empty
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
+     * @return Config created from the string
+     */
+    public static Config loadFromString(String source, Properties properties) {
+        if (isNullOrEmptyAfterTrim(source)) {
+            throw new IllegalArgumentException("provided string configuration is null or empty! "
+                    + "Please use a well-structured content.");
+        }
+        byte[] bytes = source.getBytes();
+        return loadFromStream(new ByteArrayInputStream(bytes), properties);
+    }
+
+    /**
+     * Creates a Config from the provided stream (XML or YAML content) and uses the
+     * System.properties for variable resolution.
+     *
+     * @param source the XML or YAML stream
+     * @throws com.hazelcast.core.HazelcastException if the source content is invalid
+     * @return Config created from the stream
+     */
+    public static Config loadFromStream(InputStream source) {
+        return loadFromStream(source, System.getProperties());
+    }
+
+    /**
+     * Creates a Config from the provided stream (XML or YAML content).
+     *
+     * @param source the XML or YAML stream
+     * @param properties properties to use for variable resolution
+     * @return Config created from the stream
+     */
+    public static Config loadFromStream(InputStream source, Properties properties) {
+        isNotNull(source, "(InputStream) source");
+
+        try {
+            ConfigStream cfgStream = new ConfigStream(source);
+
+            if (new MemberXmlConfigRootTagRecognizer().isRecognized(cfgStream)) {
+                cfgStream.reset();
+                InputStream stream = new SequenceInputStream(cfgStream, source);
+                return applyEnvAndSystemVariableOverrides(
+                        new XmlConfigBuilder(stream).setProperties(properties).build()
+                );
+            }
+
+            cfgStream.reset();
+            if (new MemberYamlConfigRootTagRecognizer().isRecognized(cfgStream)) {
+                cfgStream.reset();
+                InputStream stream = new SequenceInputStream(cfgStream, source);
+                return applyEnvAndSystemVariableOverrides(
+                        new YamlConfigBuilder(stream).setProperties(properties).build()
+                );
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        throw new IllegalArgumentException("interpretation error: the resource is neither valid XML nor valid YAML");
     }
 
     /**
@@ -461,7 +677,6 @@ public class Config {
         name = getBaseName(name);
         MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
         if (config != null) {
-            initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
             return new MapConfigReadOnly(config);
         }
         return new MapConfigReadOnly(getMapConfig("default"));
@@ -526,6 +741,8 @@ public class Config {
      * @return this config instance
      */
     public Config addMapConfig(MapConfig mapConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
         mapConfigs.put(mapConfig.getName(), mapConfig);
         return this;
     }
@@ -642,6 +859,8 @@ public class Config {
      * @return this config instance
      */
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
+        DataPersistenceAndHotRestartMerger
+                .merge(cacheConfig.getHotRestartConfig(), cacheConfig.getDataPersistenceConfig());
         cacheConfigs.put(cacheConfig.getName(), cacheConfig);
         return this;
     }
@@ -2367,15 +2586,44 @@ public class Config {
     }
 
     /**
+     * Returns the Persistence configuration for this hazelcast instance
+     *
+     * @return persistence configuration
+     */
+    public PersistenceConfig getPersistenceConfig() {
+        return persistenceConfig;
+    }
+
+    /**
      * Sets the Hot Restart configuration.
      *
      * @param hrConfig Hot Restart configuration
      * @return this config instance
      * @throws NullPointerException if the {@code hrConfig} parameter is {@code null}
+     *
+     * @deprecated since 5.0 use {@link Config#setPersistenceConfig(PersistenceConfig)}
      */
+    @Deprecated
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
         checkNotNull(hrConfig, "Hot restart config cannot be null!");
         this.hotRestartPersistenceConfig = hrConfig;
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the Persistence configuration.
+     *
+     * @param persistenceConfig Persistence configuration
+     * @return this config instance
+     * @throws NullPointerException if the {@code persistenceConfig} parameter is {@code null}
+     */
+    public Config setPersistenceConfig(PersistenceConfig persistenceConfig) {
+        checkNotNull(persistenceConfig, "Persistence config cannot be null!");
+        this.persistenceConfig = persistenceConfig;
+        PersistenceAndHotRestartPersistenceMerger
+                .merge(hotRestartPersistenceConfig, persistenceConfig);
         return this;
     }
 
@@ -2680,12 +2928,29 @@ public class Config {
     }
 
     /**
-     * Returns the configuration for tracking use of this Hazelcast instance.
+     * Sets the configuration for tracking use of this Hazelcast instance.
      */
     @Nonnull
     public Config setInstanceTrackingConfig(@Nonnull InstanceTrackingConfig instanceTrackingConfig) {
         Preconditions.checkNotNull(instanceTrackingConfig, "instanceTrackingConfig");
         this.instanceTrackingConfig = instanceTrackingConfig;
+        return this;
+    }
+
+    /**
+     * Returns the Jet config
+     */
+    @Nonnull
+    public JetConfig getJetConfig() {
+        return jetConfig;
+    }
+
+    /**
+     * Sets the Jet config
+     */
+    @Nonnull
+    public Config setJetConfig(JetConfig jetConfig) {
+        this.jetConfig = jetConfig;
         return this;
     }
 
@@ -2741,6 +3006,7 @@ public class Config {
                 + ", memberAttributeConfig=" + memberAttributeConfig
                 + ", nativeMemoryConfig=" + nativeMemoryConfig
                 + ", hotRestartPersistenceConfig=" + hotRestartPersistenceConfig
+                + ", persistenceConfig=" + persistenceConfig
                 + ", userCodeDeploymentConfig=" + userCodeDeploymentConfig
                 + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + ", liteMember=" + liteMember
@@ -2748,6 +3014,7 @@ public class Config {
                 + ", sqlConfig=" + sqlConfig
                 + ", metricsConfig=" + metricsConfig
                 + ", auditlogConfig=" + auditlogConfig
+                + ", jetConfig=" + jetConfig
                 + '}';
     }
 }

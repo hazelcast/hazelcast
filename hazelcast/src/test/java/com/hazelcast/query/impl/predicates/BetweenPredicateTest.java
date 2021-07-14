@@ -76,7 +76,6 @@ public class BetweenPredicateTest {
         EqualsVerifier.forClass(BetweenPredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
             .withRedefinedSuperclass()
-            .allFieldsShouldBeUsed()
             .verify();
     }
 }

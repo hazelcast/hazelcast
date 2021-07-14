@@ -41,7 +41,7 @@ public class TestMigrationAwareService extends TestAbstractMigrationAwareService
                 .addProperty(BACKUP_COUNT_PROP, String.valueOf(backupCount));
     }
 
-    private final ConcurrentMap<Integer, Integer> data = new ConcurrentHashMap<Integer, Integer>();
+    private final ConcurrentMap<Integer, Integer> data = new ConcurrentHashMap<>();
 
     int inc(int partitionId) {
         Integer count = data.get(partitionId);

@@ -65,15 +65,15 @@ public class GetDelayOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(taskName);
-        out.writeUTF(unit.name());
+        out.writeString(taskName);
+        out.writeString(unit.name());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.taskName = in.readUTF();
-        this.unit = TimeUnit.valueOf(in.readUTF());
+        this.taskName = in.readString();
+        this.unit = TimeUnit.valueOf(in.readString());
     }
 }

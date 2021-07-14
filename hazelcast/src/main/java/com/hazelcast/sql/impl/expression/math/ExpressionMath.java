@@ -16,14 +16,17 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.math.MathContext;
 import java.math.RoundingMode;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INTERVAL_YEAR_MONTH;
 import static com.hazelcast.sql.impl.type.QueryDataType.MAX_DECIMAL_PRECISION;
+import static com.hazelcast.sql.impl.type.QueryDataType.TIME;
 
 /**
  * Utility methods for math functions.
@@ -103,4 +106,15 @@ public final class ExpressionMath {
         return left / right;
     }
 
+    /**
+     * Check if the plus or minus operation could be simplified to no-op when a temporal type is involved.
+     * Specifically, when a YEAR-MONTH interval is added to a TIME datatype, the operation is always no-op.
+     *
+     * @param operand1 first operand
+     * @param operand2 second operand
+     * @return {@code true} if operation is no-op
+     */
+    public static boolean canSimplifyTemporalPlusMinus(Expression<?> operand1, Expression<?> operand2) {
+        return operand1.getType() == TIME && operand2.getType() == INTERVAL_YEAR_MONTH;
+    }
 }

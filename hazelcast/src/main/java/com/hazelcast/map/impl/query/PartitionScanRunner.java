@@ -99,7 +99,7 @@ public class PartitionScanRunner {
 
                 queryEntry.init(ss, key, value, extractors);
                 queryEntry.setRecord(record);
-                queryEntry.setMetadata(recordStore.getMetadataStore().get(key));
+                queryEntry.setMetadata(recordStore.getOrCreateMetadataStore().get(key));
 
                 if (predicate.apply(queryEntry)
                         && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {

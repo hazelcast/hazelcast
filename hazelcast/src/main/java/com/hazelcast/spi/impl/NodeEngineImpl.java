@@ -19,6 +19,8 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
@@ -42,6 +44,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -80,9 +83,11 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MEMORY_PREFIX;
 import static com.hazelcast.internal.metrics.impl.MetricsConfigHelper.memberMetricsLevel;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
@@ -105,6 +110,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final SerializationService serializationService;
+    private final SerializationService compatibilitySerializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
@@ -130,6 +136,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         try {
             this.serializationService = node.getSerializationService();
+            this.compatibilitySerializationService = node.getCompatibilitySerializationService();
             this.concurrencyDetection = newConcurrencyDetection();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
@@ -151,21 +158,25 @@ public class NodeEngineImpl implements NodeEngine {
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
             this.packetDispatcher = new PacketDispatcher(
-                logger,
-                operationService.getOperationExecutor(),
-                operationService.getInboundResponseHandlerSupplier().get(),
-                operationService.getInvocationMonitor(),
-                eventService,
-                getJetPacketConsumer(node.getNodeExtension()),
-                sqlService
+                    logger,
+                    operationService.getOperationExecutor(),
+                    operationService.getInboundResponseHandlerSupplier().get(),
+                    operationService.getInvocationMonitor(),
+                    eventService,
+                    getJetPacketConsumer(node.getNodeExtension()),
+                    sqlService
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
-            this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
+            this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(configClassLoader);
+
+            checkMapMergePolicies(node);
+
             this.tenantControlService = new TenantControlServiceImpl(this);
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -175,6 +186,22 @@ public class NodeEngineImpl implements NodeEngine {
                 ignore(ignored);
             }
             throw rethrow(e);
+        }
+    }
+
+    private void checkMapMergePolicies(Node node) {
+        Map<String, MapConfig> mapConfigs = node.config.getMapConfigs();
+        for (MapConfig mapConfig : mapConfigs.values()) {
+            WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
+            if (wanReplicationRef != null) {
+                String wanMergePolicyClassName = mapConfig.getWanReplicationRef().getMergePolicyClassName();
+                checkMapMergePolicy(mapConfig,
+                        wanMergePolicyClassName, splitBrainMergePolicyProvider);
+            }
+
+            String splitBrainMergePolicyClassName = mapConfig.getMergePolicyConfig().getPolicy();
+            checkMapMergePolicy(mapConfig,
+                    splitBrainMergePolicyClassName, splitBrainMergePolicyProvider);
         }
     }
 
@@ -285,6 +312,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    @Override
+    public SerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
     }
 
     @Override

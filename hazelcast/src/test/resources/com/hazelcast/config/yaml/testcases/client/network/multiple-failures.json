@@ -1,0 +1,210 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "network": {
+        "cluster-members": "127.0.0.1,127.0.1.*",
+        "smart-routing": "Off",
+        "redo-operation": "Off",
+        "connection-timeout": -1,
+        "icmp-ping": {
+          "enabled": "yes",
+          "interval-milliseconds": 100,
+          "timeout-milliseconds": 0.5,
+          "max-attempts": false,
+          "ttl": -1,
+          "echo-fail-fast-on-startup": "Off",
+          "unknown": true
+        },
+        "hazelcast-cloud": {
+          "enabled": "On",
+          "discovery-token": null,
+          "unknown": true
+        },
+        "socket-options": {
+          "tcp-no-delay": "Yes",
+          "keep-alive": "Off",
+          "reuse-address": null,
+          "linger-seconds": -2,
+          "buffer-size": -3,
+          "unknown": true
+        },
+        "unknown": true
+      }
+    }
+  },
+  "error": {
+    "schemaLocation": "#/definitions/ClientNetwork",
+    "pointerToViolation": "#/hazelcast-client/network",
+    "causingExceptions": [
+      {
+        "schemaLocation": "#/definitions/ClientNetwork",
+        "pointerToViolation": "#/hazelcast-client/network",
+        "causingExceptions": [],
+        "keyword": "additionalProperties",
+        "message": "extraneous key [unknown] is not permitted"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/hazelcast-cloud",
+        "pointerToViolation": "#/hazelcast-client/network/hazelcast-cloud",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/hazelcast-cloud",
+            "pointerToViolation": "#/hazelcast-client/network/hazelcast-cloud",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/hazelcast-cloud/properties/discovery-token",
+            "pointerToViolation": "#/hazelcast-client/network/hazelcast-cloud/discovery-token",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: String, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/hazelcast-cloud/properties/enabled",
+            "pointerToViolation": "#/hazelcast-client/network/hazelcast-cloud/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "3 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/smart-routing",
+        "pointerToViolation": "#/hazelcast-client/network/smart-routing",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/connection-timeout",
+        "pointerToViolation": "#/hazelcast-client/network/connection-timeout",
+        "causingExceptions": [],
+        "keyword": "minimum",
+        "message": "-1 is not greater or equal to 0"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/cluster-members",
+        "pointerToViolation": "#/hazelcast-client/network/cluster-members",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: JSONArray, found: String"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientSocketOptions",
+        "pointerToViolation": "#/hazelcast-client/network/socket-options",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions/properties/keep-alive",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options/keep-alive",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions/properties/reuse-address",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options/reuse-address",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: Null"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions/properties/linger-seconds",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options/linger-seconds",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-2 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions/properties/buffer-size",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options/buffer-size",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-3 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientSocketOptions/properties/tcp-no-delay",
+            "pointerToViolation": "#/hazelcast-client/network/socket-options/tcp-no-delay",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "6 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping",
+        "pointerToViolation": "#/hazelcast-client/network/icmp-ping",
+        "causingExceptions": [
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping",
+            "causingExceptions": [],
+            "keyword": "additionalProperties",
+            "message": "extraneous key [unknown] is not permitted"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/interval-milliseconds",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/interval-milliseconds",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "100 is not greater or equal to 1000"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/timeout-milliseconds",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/timeout-milliseconds",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: BigDecimal"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/max-attempts",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/max-attempts",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Integer, found: Boolean"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/echo-fail-fast-on-startup",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/echo-fail-fast-on-startup",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/ttl",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/ttl",
+            "causingExceptions": [],
+            "keyword": "minimum",
+            "message": "-1 is not greater or equal to 0"
+          },
+          {
+            "schemaLocation": "#/definitions/ClientNetwork/properties/icmp-ping/properties/enabled",
+            "pointerToViolation": "#/hazelcast-client/network/icmp-ping/enabled",
+            "causingExceptions": [],
+            "keyword": "type",
+            "message": "expected type: Boolean, found: String"
+          }
+        ],
+        "message": "7 schema violations found"
+      },
+      {
+        "schemaLocation": "#/definitions/ClientNetwork/properties/redo-operation",
+        "pointerToViolation": "#/hazelcast-client/network/redo-operation",
+        "causingExceptions": [],
+        "keyword": "type",
+        "message": "expected type: Boolean, found: String"
+      }
+    ],
+    "message": "21 schema violations found"
+  }
+}

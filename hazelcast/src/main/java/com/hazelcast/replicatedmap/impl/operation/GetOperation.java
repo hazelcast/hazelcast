@@ -60,13 +60,13 @@ public class GetOperation extends AbstractNamedSerializableOperation implements 
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, key);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         key = IOUtil.readData(in);
     }
 

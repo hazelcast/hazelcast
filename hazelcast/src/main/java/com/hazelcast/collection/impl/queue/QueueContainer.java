@@ -1171,7 +1171,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             out.writeObject(item);
@@ -1184,7 +1184,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
         int size = in.readInt();
@@ -1232,12 +1232,22 @@ public class QueueContainer implements IdentifiedDataSerializable {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
-    public void initialize() {
-        // Nullify backup, this is to rescue from the
-        // scenario in which this partition successively
-        // changes ownership between primary and backup.
-        if (!getItemQueue().isEmpty() && MapUtil.isNullOrEmpty(backupMap)) {
-            backupMap = null;
-        }
+    @Override
+    public String toString() {
+        return "QueueContainer{"
+                + "name='" + name
+                + ", isPriorityQueue=" + isPriorityQueue
+                + ", idGenerator=" + idGenerator
+                + ", itemQueue=" + (CollectionUtil.isEmpty(itemQueue) ? 0 : itemQueue.size())
+                + ", backupMap=" + (MapUtil.isNullOrEmpty(backupMap) ? 0 : backupMap.size())
+                + ", txMap=" + (MapUtil.isNullOrEmpty(txMap) ? 0 : txMap.size())
+                + ", dataMap=" + (MapUtil.isNullOrEmpty(dataMap) ? 0 : dataMap.size())
+                + ", minAge=" + minAge
+                + ", maxAge=" + maxAge
+                + ", totalAge=" + totalAge
+                + ", totalAgedCount=" + totalAgedCount
+                + ", isEvictionScheduled=" + isEvictionScheduled
+                + ", lastIdLoaded=" + lastIdLoaded
+                + '}';
     }
 }

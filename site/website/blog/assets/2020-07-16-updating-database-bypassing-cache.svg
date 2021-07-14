@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="367.1875px" preserveAspectRatio="none" style="width:618px;height:367px;" version="1.1" viewBox="0 0 618 367" width="618.75px" zoomAndPan="magnify"><defs><filter height="300%" id="fmrk76lh6wa0b" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="3.125"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="6.25" dy="6.25" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><!--MD5=[99b31deea5d7419a569cd5090bf83263]
+cluster System--><polygon fill="#FFFFFF" filter="url(#fmrk76lh6wa0b)" points="34.375,60.9375,137.5,60.9375,148.4375,95.7764,293.75,95.7764,293.75,348.4375,34.375,348.4375,34.375,60.9375" style="stroke: #000000; stroke-width: 2.34375;"/><line style="stroke: #000000; stroke-width: 2.34375;" x1="34.375" x2="148.4375" y1="95.7764" y2="95.7764"/><text fill="#000000" font-family="sans-serif" font-size="21.875" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="93.75" x="40.625" y="84.3674">System</text><!--MD5=[815249f79c2c08157ac02b3106e03757]
+cluster Database--><path d="M331.25,53.125 C331.25,37.5 412.5,37.5 412.5,37.5 C412.5,37.5 493.75,37.5 493.75,53.125 L493.75,318.75 C493.75,334.375 412.5,334.375 412.5,334.375 C412.5,334.375 331.25,334.375 331.25,318.75 L331.25,53.125 " fill="#FFFFFF" filter="url(#fmrk76lh6wa0b)" style="stroke: #000000; stroke-width: 2.34375;"/><path d="M331.25,53.125 C331.25,68.75 412.5,68.75 412.5,68.75 C412.5,68.75 493.75,68.75 493.75,53.125 " fill="none" style="stroke: #000000; stroke-width: 2.34375;"/><text fill="#000000" font-family="sans-serif" font-size="21.875" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="120.3125" x="352.3438" y="92.1799">Database</text><!--MD5=[6e8f311b0aa23032184ffba0ef926f91]
+entity App--><rect fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" height="56.7139" style="stroke: #A80036; stroke-width: 2.34375;" width="78.125" x="59.375" y="115.625"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="51.5625" y="123.4375"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="51.5625" y="156.7139"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="46.875" x="75" y="151.5549">App</text><!--MD5=[7f2f8f021ba496bad1f94a1981c7f515]
+entity Cache--><rect fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" height="56.7139" style="stroke: #A80036; stroke-width: 2.34375;" width="100" x="168.75" y="267.1875"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="160.9375" y="275"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="160.9375" y="308.2764"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="68.75" x="184.375" y="303.1174">Cache</text><!--MD5=[645d8587175d8f7ad110cd370775931d]
+entity API--><ellipse cx="254.6875" cy="143.75" fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" rx="12.5" ry="12.5" style="stroke: #A80036; stroke-width: 3.125;"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="35.9375" x="236.7188" y="190.6174">API</text><!--MD5=[c9cdec996607f0db33d5cd5e2148af87]
+entity RDBMS--><rect fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" height="56.7139" style="stroke: #A80036; stroke-width: 2.34375;" width="112.5" x="356.25" y="115.625"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="348.4375" y="123.4375"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="348.4375" y="156.7139"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="81.25" x="371.875" y="151.5549">RDBMS</text><!--MD5=[2bba5e7b7fe4bc2fbd9825db3f1d4f93]
+entity SQL--><ellipse cx="404.6875" cy="295.3125" fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" rx="12.5" ry="12.5" style="stroke: #A80036; stroke-width: 3.125;"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="43.75" x="382.8125" y="342.1799">SQL</text><!--MD5=[f8b428a44eb5f58f952aa73b4e450597]
+entity XYZ--><rect fill="#FEFECE" filter="url(#fmrk76lh6wa0b)" height="56.7139" style="stroke: #A80036; stroke-width: 2.34375;" width="76.5625" x="525.7813" y="267.1875"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="517.9688" y="275"/><rect fill="#FEFECE" height="7.8125" style="stroke: #A80036; stroke-width: 2.34375;" width="15.625" x="517.9688" y="308.2764"/><text fill="#000000" font-family="sans-serif" font-size="21.875" lengthAdjust="spacingAndGlyphs" textLength="45.3125" x="541.4063" y="303.1174">XYZ</text><!--MD5=[37ead791c0f1a31107be26b3ae366336]
+link API to Cache--><path d="M251.6234,157.9688 C245.8188,181.9453 233.1016,234.4742 225.2953,266.713 " fill="none" id="API-Cache" style="stroke: #A80036; stroke-width: 1.5625;"/><!--MD5=[56e9922a35360b7b85303e9b275ede14]
+link App to API--><path d="M137.8659,143.75 C167.4969,143.75 207.0625,143.75 231.7016,143.75 " fill="none" id="App-&gt;API" style="stroke: #A80036; stroke-width: 1.5625;"/><polygon fill="#A80036" points="240.0578,143.75,225.9953,137.5,232.2453,143.75,225.9953,150,240.0578,143.75" style="stroke: #A80036; stroke-width: 1.5625;"/><text fill="#000000" font-family="sans-serif" font-size="20.3125" lengthAdjust="spacingAndGlyphs" textLength="45.3125" x="166.4063" y="132.917">read</text><!--MD5=[bed241eed914041fb93d059e03a4c02f]
+link RDBMS to SQL--><path d="M411.0672,172.5375 C409.375,204.6781 406.6328,256.7895 405.3672,280.8369 " fill="none" id="RDBMS-SQL" style="stroke: #A80036; stroke-width: 1.5625;"/><!--MD5=[18aa8c504a1466b84cb811ef70e9b27d]
+link Cache to SQL--><path d="M269.0672,295.3125 C306.1047,295.3125 354.6734,295.3125 382.5063,295.3125 " fill="none" id="Cache-&gt;SQL" style="stroke: #A80036; stroke-width: 1.5625;"/><polygon fill="#A80036" points="390.4422,295.3125,376.3797,289.0625,382.6297,295.3125,376.3797,301.5625,390.4422,295.3125" style="stroke: #A80036; stroke-width: 1.5625;"/><text fill="#000000" font-family="sans-serif" font-size="20.3125" lengthAdjust="spacingAndGlyphs" textLength="45.3125" x="307.0313" y="284.4795">read</text><!--MD5=[53c6ba069d051afb7d7d052321c88cfb]
+reverse link SQL to XYZ--><path d="M426.8047,295.3125 C452.35,295.3125 494.8281,295.3125 525.7734,295.3125 " fill="none" id="SQL&lt;-XYZ" style="stroke: #A80036; stroke-width: 1.5625;"/><polygon fill="#A80036" points="418.8313,295.3125,432.8938,301.5625,426.6438,295.3125,432.8938,289.0625,418.8313,295.3125" style="stroke: #A80036; stroke-width: 1.5625;"/><text fill="#000000" font-family="sans-serif" font-size="20.3125" lengthAdjust="spacingAndGlyphs" textLength="50" x="447.2656" y="284.4795">write</text><!--MD5=[ad8a30273fd377915262b5858cdf43a2]
+@startuml
+skinparam dpi 150
+package System {
+ [App]
+ [Cache] -up-() API
+ [App] -right-> API: read
+}
+database Database {
+ [RDBMS] -down- () SQL
+}
+[Cache] -right-> SQL: read
+[XYZ] -left-> SQL: write
+@enduml
+
+PlantUML version 1.2020.10(Sun May 17 09:35:57 UTC 2020)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Java Version: 14.0.1+7
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

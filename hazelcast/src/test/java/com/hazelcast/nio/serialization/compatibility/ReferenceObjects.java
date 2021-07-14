@@ -30,6 +30,11 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
+import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -148,12 +153,21 @@ class ReferenceObjects {
 
     static Date aDate;
 
+    static LocalDate aLocalDate;
+    static LocalTime aLocalTime;
+    static LocalDateTime aLocalDateTime;
+    static OffsetDateTime aOffsetDateTime;
+
     static {
         Calendar calendar = Calendar.getInstance();
         calendar.set(1990, Calendar.FEBRUARY, 1, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.ZONE_OFFSET, 0);
         aDate = calendar.getTime();
+        aLocalDate = LocalDate.of(2021, 6, 28);
+        aLocalTime = LocalTime.of(11, 22, 41, 123456789);
+        aLocalDateTime = LocalDateTime.of(aLocalDate, aLocalTime);
+        aOffsetDateTime = OffsetDateTime.of(aLocalDateTime, ZoneOffset.ofHours(18));
     }
 
     static BigInteger aBigInteger = new BigInteger("1314432323232411");
@@ -173,7 +187,8 @@ class ReferenceObjects {
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, anEmptyOptional, aFullOptional, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
+            aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
+            anEmptyOptional, aFullOptional, anEnum, aSimpleMapEntry, aSimpleImmutableMapEntry,
             serializable, externalizable));
 
     static ArrayList arrayList = new ArrayList(asList(aNullObject, nonNullList));
@@ -226,8 +241,8 @@ class ReferenceObjects {
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,
-            aDate, aBigInteger, aBigDecimal, aClass, aFullOptional, anEnum,
-            serializable, externalizable,
+            aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
+            aFullOptional, anEnum, serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
             hashSet, treeSet, linkedHashSet, copyOnWriteArraySet, concurrentSkipListSet, arrayDeque, linkedBlockingQueue,
             arrayBlockingQueue, priorityQueue, priorityBlockingQueue, delayQueue, synchronousQueue, linkedTransferQueue,

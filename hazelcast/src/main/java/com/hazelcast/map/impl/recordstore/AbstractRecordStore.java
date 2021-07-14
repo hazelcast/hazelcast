@@ -38,6 +38,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordReaderWriter;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
@@ -60,7 +61,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final MapDataStore<Data, Object> mapDataStore;
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
-    protected final MetadataStore metadataStore = new MetadataStore();
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
@@ -88,11 +88,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         addMutationObservers();
     }
 
-    @Override
-    public MetadataStore getMetadataStore() {
-        return metadataStore;
-    }
-
     // Overridden in EE.
     protected void addMutationObservers() {
         // Add observer for event journal
@@ -105,7 +100,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         // Add observer for json metadata
         if (mapContainer.getMapConfig().getMetadataPolicy() == MetadataPolicy.CREATE_ON_UPDATE) {
             mutationObserver.add(new JsonMetadataMutationObserver(serializationService,
-                    JsonMetadataInitializer.INSTANCE, metadataStore));
+                    JsonMetadataInitializer.INSTANCE, getOrCreateMetadataStore()));
         }
 
         // Add observer for indexing
@@ -148,6 +143,13 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
+        if (record.getMatchingRecordReaderWriter()
+                == RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER) {
+            // To distinguish last-access-time from creation-time we
+            // set last-access-time for only LRU records. A LRU record
+            // has no creation-time field but last-access-time field.
+            record.setLastAccessTime(now);
+        }
 
         updateStatsOnPut(false, now);
         return record;

@@ -44,6 +44,11 @@ public final class MwCounter implements Counter {
     }
 
     @Override
+    public long getAndSet(long newValue) {
+        return COUNTER.getAndSet(this, newValue);
+    }
+
+    @Override
     public long get() {
         return value;
     }

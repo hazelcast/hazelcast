@@ -46,6 +46,7 @@ import static com.hazelcast.client.HazelcastClientUtil.getInstanceName;
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
     public static final String TEST_JVM_PREFIX = "test-jvm-";
+    private static final String jvmName = ManagementFactory.getRuntimeMXBean().getName();
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final ConcurrentMap<String, HazelcastClientInstanceImpl> clients = new ConcurrentHashMap<>(10);
     private final TestClientRegistry clientRegistry = new TestClientRegistry(getRegistry());
@@ -73,7 +74,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     public HazelcastInstance newHazelcastClient(ClientConfig config, String sourceIp) {
         if (!mockNetwork) {
             HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
-            registerJvmNameAndPidMetric((HazelcastClientInstanceImpl) client);
+            registerJvmNameAndPidMetric(((HazelcastClientProxy) client).client);
             return client;
         }
 
@@ -104,8 +105,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
     }
 
     private void registerJvmNameAndPidMetric(HazelcastClientInstanceImpl client) {
-        String jvmName = ManagementFactory.getRuntimeMXBean().getName();
-        int pid = Integer.valueOf(jvmName.substring(0, jvmName.indexOf("@")));
+        int pid = Integer.parseInt(jvmName.substring(0, jvmName.indexOf("@")));
         MetricsRegistryImpl metricsRegistry = client.getMetricsRegistry();
         metricsRegistry.registerDynamicMetricsProvider(
                 (descriptor, context) -> context

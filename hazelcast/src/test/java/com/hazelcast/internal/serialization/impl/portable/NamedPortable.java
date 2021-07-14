@@ -43,14 +43,14 @@ public class NamedPortable implements Portable {
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("name", name);
+        writer.writeString("name", name);
         writer.writeInt("myint", myint);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         myint = reader.readInt("myint");
-        name = reader.readUTF("name");
+        name = reader.readString("name");
     }
 
     @Override

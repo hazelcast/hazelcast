@@ -1,0 +1,107 @@
+{
+  "version-4.3-docs": {
+    "Get Started": [
+      "version-4.3-get-started/intro",
+      "version-4.3-get-started/first-job",
+      "version-4.3-get-started/installation",
+      "version-4.3-get-started/submit-job",
+      "version-4.3-get-started/scale-job"
+    ],
+    "Tutorials": [
+      "version-4.3-tutorials/kafka",
+      {
+        "type": "subcategory",
+        "label": "Change Data Capture",
+        "ids": [
+          "version-4.3-tutorials/cdc",
+          "version-4.3-tutorials/cdc-postgres",
+          "version-4.3-tutorials/cdc-join"
+        ]
+      },
+      "version-4.3-tutorials/map-join",
+      "version-4.3-tutorials/windowing",
+      "version-4.3-tutorials/python",
+      "version-4.3-tutorials/spring-boot",
+      "version-4.3-tutorials/pulsar"
+    ],
+    "Concepts": [
+      "version-4.3-concepts/dag",
+      "version-4.3-concepts/event-time",
+      "version-4.3-concepts/processing-guarantees"
+    ],
+    "Programming Guide": [
+      "version-4.3-api/pipeline",
+      "version-4.3-api/stateless-transforms",
+      "version-4.3-api/stateful-transforms",
+      "version-4.3-api/more-transforms",
+      "version-4.3-api/sources-sinks",
+      "version-4.3-api/submitting-jobs",
+      "version-4.3-api/data-structures",
+      "version-4.3-api/serialization",
+      "version-4.3-api/error-handling",
+      "version-4.3-api/testing",
+      "version-4.3-api/spring"
+    ],
+    "How-To Guides": [
+      "version-4.3-how-tos/stream-imap",
+      "version-4.3-how-tos/observables",
+      "version-4.3-how-tos/custom-batch-source",
+      "version-4.3-how-tos/custom-stream-source",
+      "version-4.3-how-tos/custom-sink",
+      "version-4.3-how-tos/custom-aggregate-operation",
+      "version-4.3-how-tos/operator",
+      "version-4.3-how-tos/xa",
+      "version-4.3-how-tos/grpc"
+    ],
+    "Operations Guide": [
+      "version-4.3-operations/installation",
+      "version-4.3-operations/configuration",
+      "version-4.3-operations/discovery",
+      "version-4.3-operations/cluster-sizing",
+      "version-4.3-operations/gc-concerns",
+      "version-4.3-operations/job-management",
+      "version-4.3-operations/docker",
+      "version-4.3-operations/kubernetes",
+      "version-4.3-operations/monitoring",
+      "version-4.3-operations/version-compatibility",
+      "version-4.3-operations/cdc"
+    ],
+    "Architecture": [
+      "version-4.3-architecture/distributed-computing",
+      "version-4.3-architecture/execution-engine",
+      "version-4.3-architecture/cluster-topology",
+      "version-4.3-architecture/event-time-processing",
+      "version-4.3-architecture/sliding-window",
+      "version-4.3-architecture/fault-tolerance",
+      "version-4.3-architecture/in-memory-storage"
+    ],
+    "Enterprise Edition": [
+      "version-4.3-enterprise/index",
+      "version-4.3-enterprise/installation",
+      "version-4.3-enterprise/management-center",
+      "version-4.3-enterprise/operator-openshift",
+      "version-4.3-enterprise/security",
+      "version-4.3-enterprise/job-update",
+      "version-4.3-enterprise/lossless-restart",
+      "version-4.3-enterprise/off-heap",
+      "version-4.3-enterprise/blue-green"
+    ],
+    "Design Documents": [
+      "version-4.3-design-docs/index",
+      "version-4.3-design-docs/014-batchstage-sort",
+      "version-4.3-design-docs/013-system-time-watermarks",
+      "version-4.3-design-docs/012-improved-job-resilience",
+      "version-4.3-design-docs/011-json-convenience",
+      "version-4.3-design-docs/010-operator-framework",
+      "version-4.3-design-docs/009-pulsar-connector",
+      "version-4.3-design-docs/008-stage-rebalance",
+      "version-4.3-design-docs/007-grpc-support",
+      "version-4.3-design-docs/006-declarative-serialization",
+      "version-4.3-design-docs/005-cdc-sources",
+      "version-4.3-design-docs/004-spring-boot-starter",
+      "version-4.3-design-docs/003-elasticsearch-connector",
+      "version-4.3-design-docs/002-job-level-serialization",
+      "version-4.3-design-docs/001-code-deployment-improvements"
+    ]
+  }
+}

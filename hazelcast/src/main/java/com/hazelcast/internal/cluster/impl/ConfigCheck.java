@@ -157,39 +157,39 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(clusterName);
-        out.writeUTF(joinerType);
+        out.writeString(clusterName);
+        out.writeString(joinerType);
         out.writeBoolean(partitionGroupEnabled);
         if (partitionGroupEnabled) {
-            out.writeUTF(memberGroupType.toString());
+            out.writeString(memberGroupType.toString());
         }
 
         out.writeInt(properties.size());
         for (Map.Entry<String, String> entry : properties.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
 
         out.writeInt(maps.size());
         for (Map.Entry<String, Object> entry : maps.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
 
         out.writeInt(queues.size());
         for (Map.Entry<String, Object> entry : queues.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeObject(entry.getValue());
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        clusterName = in.readUTF();
-        joinerType = in.readUTF();
+        clusterName = in.readString();
+        joinerType = in.readString();
         partitionGroupEnabled = in.readBoolean();
         if (partitionGroupEnabled) {
-            String s = in.readUTF();
+            String s = in.readString();
             try {
                 memberGroupType = PartitionGroupConfig.MemberGroupType.valueOf(s);
             } catch (IllegalArgumentException ignored) {
@@ -199,21 +199,21 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         int propSize = in.readInt();
         properties = createHashMap(propSize);
         for (int k = 0; k < propSize; k++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             properties.put(key, value);
         }
 
         int mapSize = in.readInt();
         for (int k = 0; k < mapSize; k++) {
-            String key = in.readUTF();
+            String key = in.readString();
             Object value = in.readObject();
             maps.put(key, value);
         }
 
         int queueSize = in.readInt();
         for (int k = 0; k < queueSize; k++) {
-            String key = in.readUTF();
+            String key = in.readString();
             Object value = in.readObject();
             queues.put(key, value);
         }

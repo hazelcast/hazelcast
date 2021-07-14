@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 
 class SqlParser {
@@ -121,7 +122,7 @@ class SqlParser {
             betweens:
             while (found) {
                 for (int i = 0; i < tokens.size(); i++) {
-                    if ("between".equalsIgnoreCase(tokens.get(i))) {
+                    if (equalsIgnoreCase("between", tokens.get(i))) {
                         tokens.set(i, "betweenAnd");
                         tokens.remove(i + 2);
                         dirty = true;

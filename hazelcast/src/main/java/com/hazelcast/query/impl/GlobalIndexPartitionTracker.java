@@ -18,6 +18,9 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,16 +32,21 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class GlobalIndexPartitionTracker {
 
-    public static final long STAMP_INVALID = -1;
     private static final long STAMP_INITIAL = 0;
 
-    /** Lock to serialize updates to the state. */
+    /**
+     * Lock to serialize updates to the state.
+     */
     private final ReentrantLock lock = new ReentrantLock();
 
-    /** Number of partitions in the cluster. */
+    /**
+     * Number of partitions in the cluster.
+     */
     private final int partitionCount;
 
-    /** Current state. */
+    /**
+     * Current state.
+     */
     private final AtomicReference<State> state;
 
     public GlobalIndexPartitionTracker(int partitionCount) {
@@ -48,36 +56,21 @@ public class GlobalIndexPartitionTracker {
     }
 
     /**
-     * Gets the stamp associated with the given expected partition IDs.
-     * <p>
-     * The obtained stamp could be checked for validity using {@link #validatePartitionStamp(long)}.
-     *
-     * @param expectedPartitionIds expected partition IDs
-     * @return stamp or {@code -1} if indexed partitions do not match expected partitions, or there is
-     *     an active partition update from {@link #beginPartitionUpdate()}
+     * See {@link InternalIndex#getPartitionStamp()}.
      */
-    public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
+    @Nullable
+    public PartitionStamp getPartitionStamp() {
         State state0 = state.get();
 
-        if (state0.pending > 0 || !state0.indexedPartitions.equals(expectedPartitionIds)) {
-            return STAMP_INVALID;
+        if (state0.pending > 0) {
+            return null;
         }
 
-        return state0.stamp;
+        return new PartitionStamp(state0.stamp, state0.indexedPartitions);
     }
 
     /**
-     * Validates the stamp obtained from the previous call to {@link #getPartitionStamp(PartitionIdSet)}.
-     * <p>
-     * The stamp is valid iff:
-     * <ul>
-     *     <li>The index still has the same set of indexed partitions, as was expected by the previous call
-     *     to the {@link #getPartitionStamp(PartitionIdSet)} that returned this stamp
-     *     <li>There are no active partition updates
-     * </ul>
-     *
-     * @param stamp stamp
-     * @return {@code true} if the stamp is valid, {@code false} otherwise
+     * See {@link InternalIndex#validatePartitionStamp(long)}.
      */
     public boolean validatePartitionStamp(long stamp) {
         return state.get().stamp == stamp;
@@ -98,9 +91,9 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.stamp + 1,
-                oldState.indexedPartitions,
-                oldState.pending + 1
+                    oldState.stamp + 1,
+                    oldState.indexedPartitions,
+                    oldState.pending + 1
             );
 
             state.set(newState);
@@ -134,9 +127,9 @@ public class GlobalIndexPartitionTracker {
             }
 
             State newState = new State(
-                oldState.stamp + 1,
-                newIndexedPartitions,
-                oldState.pending - 1
+                    oldState.stamp + 1,
+                    newIndexedPartitions,
+                    oldState.pending - 1
             );
 
             state.set(newState);
@@ -152,9 +145,9 @@ public class GlobalIndexPartitionTracker {
             State oldState = state.get();
 
             State newState = new State(
-                oldState.stamp + 1,
-                new PartitionIdSet(partitionCount),
-                0
+                    oldState.stamp + 1,
+                    new PartitionIdSet(partitionCount),
+                    0
             );
 
             state.set(newState);
@@ -163,23 +156,76 @@ public class GlobalIndexPartitionTracker {
         }
     }
 
+    @Override
+    public String toString() {
+        return "GlobalIndexPartitionTracker{"
+                + "partitionCount=" + partitionCount
+                + ", state=" + state + '}';
+    }
+
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public static final class PartitionStamp {
+        public final long stamp;
+        @Nonnull
+        public final PartitionIdSet partitions;
+
+        public PartitionStamp(long stamp, @Nonnull PartitionIdSet partitions) {
+            this.stamp = stamp;
+            this.partitions = partitions;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PartitionStamp that = (PartitionStamp) o;
+            return stamp == that.stamp && partitions.equals(that.partitions);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(stamp, partitions);
+        }
+    }
+
     /**
      * State of the indexed partitions.
      */
     private static final class State {
-        /** Monotonically increasing stamp, that is incremented on every partition info update. */
+        /**
+         * Monotonically increasing stamp, that is incremented on every partition info update.
+         */
         private final long stamp;
 
-        /** Partitions that are currently indexed. */
+        /**
+         * Partitions that are currently indexed.
+         */
         private final PartitionIdSet indexedPartitions;
 
-        /** The number of partitions that are being updated at the moment (indexing or deindexing).  */
+        /**
+         * The number of partitions that are being updated at the moment (indexing or deindexing).
+         */
         private final int pending;
 
         private State(long stamp, PartitionIdSet indexedPartitions, int pending) {
             this.stamp = stamp;
             this.indexedPartitions = indexedPartitions;
             this.pending = pending;
+        }
+
+        @Override
+        public String toString() {
+            return "State{"
+                    + "stamp=" + stamp
+                    + ", indexedPartitions={size=" + indexedPartitions.size()
+                    + ", partitions=" + indexedPartitions
+                    + "}"
+                    + ", pending=" + pending
+                    + '}';
         }
     }
 }

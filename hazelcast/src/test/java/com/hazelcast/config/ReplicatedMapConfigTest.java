@@ -38,7 +38,6 @@ public class ReplicatedMapConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ReplicatedMapConfig.class)
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(MergePolicyConfig.class,
                         new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),

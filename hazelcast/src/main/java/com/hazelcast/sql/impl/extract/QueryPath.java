@@ -124,13 +124,13 @@ public final class QueryPath implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(key);
-        out.writeUTF(path);
+        out.writeString(path);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = in.readBoolean();
-        path = in.readUTF();
+        path = in.readString();
     }
 
     @Override

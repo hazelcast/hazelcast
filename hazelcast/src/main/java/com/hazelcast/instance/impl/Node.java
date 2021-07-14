@@ -69,6 +69,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.Server;
 import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
@@ -119,6 +120,7 @@ import static com.hazelcast.instance.impl.NodeShutdownHelper.shutdownNodeByFirin
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
 import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
+import static com.hazelcast.internal.config.ConfigValidator.warnForUsageOfDeprecatedSymmetricEncryption;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
@@ -141,19 +143,16 @@ public class Node {
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
 
     public final HazelcastInstanceImpl hazelcastInstance;
-
     public final DynamicConfigurationAwareConfig config;
-
     public final NodeEngineImpl nodeEngine;
     public final ClientEngine clientEngine;
-
     public final InternalPartitionServiceImpl partitionService;
     public final ClusterServiceImpl clusterService;
     public final MulticastService multicastService;
     public final DiscoveryService discoveryService;
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
-
+    public final MemberSchemaService memberSchemaService;
     public final Server server;
 
     /**
@@ -162,27 +161,18 @@ public class Node {
      * For accessing a full address-map, see {@link AddressPicker#getPublicAddressMap()}
      */
     public final Address address;
-
     public final SecurityContext securityContext;
-
     private final ILogger logger;
-
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-
     private final NodeShutdownHookThread shutdownHookThread;
-
     private final InternalSerializationService serializationService;
-
+    private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
-
     private final NodeExtension nodeExtension;
-
     private final HazelcastProperties properties;
     private final BuildInfo buildInfo;
     private final HealthMonitor healthMonitor;
-
     private final Joiner joiner;
-
     private ManagementCenterService managementCenterService;
 
     private volatile NodeState state = NodeState.STARTING;
@@ -248,8 +238,11 @@ public class Node {
             nodeExtension.beforeStart();
             nodeExtension.logInstanceTrackingMetadata();
 
+            memberSchemaService = new MemberSchemaService();
             serializationService = nodeExtension.createSerializationService();
+            compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
+            warnForUsageOfDeprecatedSymmetricEncryption(config, logger);
             nodeEngine = new NodeEngineImpl(this);
             config.setConfigurationService(nodeEngine.getConfigurationService());
             config.onSecurityServiceUpdated(getSecurityService());
@@ -413,6 +406,10 @@ public class Node {
         return serializationService;
     }
 
+    public InternalSerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
+    }
+
     public ClusterServiceImpl getClusterService() {
         return clusterService;
     }
@@ -491,10 +488,15 @@ public class Node {
         if (logger.isFinestEnabled()) {
             logger.finest("We are being asked to shutdown when state = " + state);
         }
-
+        if (nodeExtension != null) {
+            nodeExtension.beforeShutdown(terminate);
+        }
         if (!setShuttingDown()) {
             waitIfAlreadyShuttingDown();
             return;
+        }
+        if (nodeExtension != null) {
+            nodeExtension.shutdown();
         }
 
         if (!terminate) {
@@ -570,10 +572,6 @@ public class Node {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
-        if (nodeExtension != null) {
-            nodeExtension.beforeShutdown();
-        }
-
         if (textCommandService != null) {
             textCommandService.stop();
         }
@@ -600,7 +598,7 @@ public class Node {
         }
 
         if (nodeExtension != null) {
-            nodeExtension.shutdown();
+            nodeExtension.afterShutdown();
         }
         if (healthMonitor != null) {
             healthMonitor.stop();
@@ -824,7 +822,7 @@ public class Node {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
         join.verify();
 
-        if (shouldUseMulticastJoiner(join)) {
+        if (shouldUseMulticastJoiner(join) && multicastService != null) {
             logger.info("Using Multicast discovery");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {

@@ -21,13 +21,12 @@
 #
 # To learn how to configure Hazelcast clients for Blue/Green Deployment and
 # Disaster Recovery, please see the Reference Manual at
-# https://hazelcast.org/documentation/
+# https://docs.hazelcast.com/
 
 hazelcast-client-failover:
   # 
   # The Hazelcast client can configurations that the client is using to connect to a Hazelcast cluster in the case
-  # of a disconnect is listed under the <clients> element. You can list client configurations as many as you want.
-  # Each client configuration can be listed via <client> element nested into the <clients> element.
+  # of a disconnect is listed under the "clients" array. You can list client configurations as many as you want.
   #
   clients:
     - your-first-hazelcast-client-configuration.yaml

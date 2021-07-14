@@ -100,18 +100,16 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         if (count == 1) {
             return Collections.singleton(factory.newHazelcastInstance(config));
         } else {
-            Collection<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(count);
+            Collection<HazelcastInstance> instances = new ArrayList<>(count);
             final Collection<HazelcastInstance> syncInstances = Collections.synchronizedCollection(instances);
 
             final CountDownLatch latch = new CountDownLatch(count);
             for (int i = 0; i < count; i++) {
-                new Thread() {
-                    public void run() {
-                        HazelcastInstance instance = factory.newHazelcastInstance(config);
-                        syncInstances.add(instance);
-                        latch.countDown();
-                    }
-                }.start();
+                new Thread(() -> {
+                    HazelcastInstance instance = factory.newHazelcastInstance(config);
+                    syncInstances.add(instance);
+                    latch.countDown();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
             return instances;
@@ -124,19 +122,17 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         } else {
             final CountDownLatch latch = new CountDownLatch(addresses.size());
             for (final Address address : addresses) {
-                new Thread() {
-                    public void run() {
-                        factory.newHazelcastInstance(address, config);
-                        latch.countDown();
-                    }
-                }.start();
+                new Thread(() -> {
+                    factory.newHazelcastInstance(address, config);
+                    latch.countDown();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
         }
     }
 
     Collection<Address> terminateNodes(int count) throws InterruptedException {
-        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(factory.getAllHazelcastInstances());
+        List<HazelcastInstance> instances = new ArrayList<>(factory.getAllHazelcastInstances());
         assertThat(instances.size(), greaterThanOrEqualTo(count));
 
         Collections.shuffle(instances);
@@ -149,23 +145,21 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         } else {
             final CountDownLatch latch = new CountDownLatch(count);
             final Throwable[] error = new Throwable[1];
-            Collection<Address> addresses = new HashSet<Address>();
+            Collection<Address> addresses = new HashSet<>();
 
             for (int i = 0; i < count; i++) {
                 final HazelcastInstance hz = instances.get(i);
                 addresses.add(getNode(hz).getThisAddress());
 
-                new Thread() {
-                    public void run() {
-                        try {
-                            TestUtil.terminateInstance(hz);
-                        } catch (Throwable e) {
-                            error[0] = e;
-                        } finally {
-                            latch.countDown();
-                        }
+                new Thread(() -> {
+                    try {
+                        TestUtil.terminateInstance(hz);
+                    } catch (Throwable e) {
+                        error[0] = e;
+                    } finally {
+                        latch.countDown();
                     }
-                }.start();
+                }).start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
             if (error[0] != null) {

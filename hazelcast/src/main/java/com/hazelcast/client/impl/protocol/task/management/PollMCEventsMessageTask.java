@@ -22,15 +22,16 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.MCEventDTO;
-import com.hazelcast.internal.management.events.Event;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("pollMCEvents");
 
     public PollMCEventsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,12 +43,7 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
         if (mcs == null) {
             return Collections.<MCEventDTO>emptyList();
         }
-        List<Event> polledEvents = mcs.pollMCEvents();
-        List<MCEventDTO> result = new ArrayList<>(polledEvents.size());
-        for (Event event : polledEvents) {
-            result.add(MCEventDTO.fromEvent(event));
-        }
-        return result;
+        return mcs.pollMCEvents(endpoint.getUuid());
     }
 
     @Override
@@ -67,7 +63,7 @@ public class PollMCEventsMessageTask extends AbstractCallableMessageTask<Void> {
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

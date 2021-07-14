@@ -126,11 +126,11 @@ public class IndexSplitBrainTest extends SplitBrainTestSupport {
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(this.id);
+            out.writeString(this.id);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
-            this.id = in.readUTF();
+            this.id = in.readString();
         }
     }
 }

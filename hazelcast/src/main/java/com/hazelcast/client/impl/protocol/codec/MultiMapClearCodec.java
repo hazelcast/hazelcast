@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Clears the multimap. Removes all key-value pairs.
  */
-@Generated("c1ca0bf2bfecb999c708ef4130d5ee39")
+@Generated("c57e0afa103368108a5ff0cb6f6169ac")
 public final class MultiMapClearCodec {
     //hex: 0x020B00
     public static final int REQUEST_MESSAGE_TYPE = 133888;
@@ -78,6 +78,4 @@ public final class MultiMapClearCodec {
 
         return clientMessage;
     }
-
-
 }

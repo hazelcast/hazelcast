@@ -115,12 +115,12 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         for (Entry<String, Map<String, Object>> entry : eventContainers.entrySet()) {
             String wanReplicationScheme = entry.getKey();
             Map<String, Object> eventContainersByPublisherId = entry.getValue();
-            out.writeUTF(wanReplicationScheme);
+            out.writeString(wanReplicationScheme);
             out.writeInt(eventContainersByPublisherId.size());
             for (Entry<String, Object> publisherEventContainer : eventContainersByPublisherId.entrySet()) {
                 String publisherId = publisherEventContainer.getKey();
                 Object eventContainer = publisherEventContainer.getValue();
-                out.writeUTF(publisherId);
+                out.writeString(publisherId);
                 out.writeObject(eventContainer);
             }
         }
@@ -136,11 +136,11 @@ public class WanEventContainerReplicationOperation extends Operation implements 
         int wanReplicationSchemeCount = in.readInt();
         eventContainers = createHashMap(wanReplicationSchemeCount);
         for (int i = 0; i < wanReplicationSchemeCount; i++) {
-            String wanReplicationScheme = in.readUTF();
+            String wanReplicationScheme = in.readString();
             int publisherCount = in.readInt();
             Map<String, Object> eventContainersByPublisherId = createHashMap(publisherCount);
             for (int j = 0; j < publisherCount; j++) {
-                String publisherId = in.readUTF();
+                String publisherId = in.readString();
                 Object eventContainer = in.readObject();
                 eventContainersByPublisherId.put(publisherId, eventContainer);
             }

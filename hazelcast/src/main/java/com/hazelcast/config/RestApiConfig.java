@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -129,5 +130,22 @@ public class RestApiConfig {
     @Override
     public String toString() {
         return "RestApiConfig{enabled=" + enabled + ", enabledGroups=" + enabledGroups + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        RestApiConfig that = (RestApiConfig) o;
+        return enabled == that.enabled && Objects.equals(enabledGroups, that.enabledGroups);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled, enabledGroups);
     }
 }

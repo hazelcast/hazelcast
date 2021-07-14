@@ -17,7 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -76,7 +76,7 @@ public class HazelcastFailoverClientBeanDefinitionParser extends  AbstractHazelc
         SpringXmlBuilder(ParserContext parserContext, BeanDefinitionBuilder builder) {
             this.parserContext = parserContext;
             this.builder = builder;
-            this.failoverConfigBuilder = rootBeanDefinition(ClientFailoverConfig.class);
+            this.failoverConfigBuilder = rootBeanDefinition(ConfigFactory.class, "newClientFailoverConfig");
         }
 
         AbstractBeanDefinition handleMultipleClusterAwareClient(Element element) {

@@ -17,8 +17,10 @@
 package com.hazelcast.internal.serialization.impl.defaultserializers;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.compatibility.serialization.impl.CompatibilitySerializationConstants;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,6 +37,10 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.Optional;
 import java.util.zip.GZIPInputStream;
@@ -42,13 +48,13 @@ import java.util.zip.GZIPOutputStream;
 
 import static com.hazelcast.internal.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVASCRIPT_JSON_SERIALIZATION_TYPE;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
-import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OPTIONAL;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALDATE;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALTIME;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_LOCALDATETIME;
+import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_OFFSETDATETIME;
 import static java.lang.Math.max;
 
 
@@ -151,7 +157,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public Externalizable read(final ObjectDataInput in) throws IOException {
-            String className = in.readUTF();
+            String className = in.readString();
             try {
                 if (gzipEnabled) {
                     return readGzipped(((InputStream) in), className, in.getClassLoader());
@@ -186,7 +192,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
-            out.writeUTF(obj.getClass().getName());
+            out.writeString(obj.getClass().getName());
 
             if (gzipEnabled) {
                 writeGzipped(((OutputStream) out), obj);
@@ -214,10 +220,18 @@ public final class JavaDefaultSerializers {
     }
 
     public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public BigIntegerSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_BIG_INTEGER;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_BIG_INTEGER;
         }
 
         @Override
@@ -233,9 +247,20 @@ public final class JavaDefaultSerializers {
 
     public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
 
+        final BigIntegerSerializer bigIntegerSerializer;
+        /** Determines if ser-de should conform the 3.x format */
+        final boolean isCompatibility;
+
+        public BigDecimalSerializer(boolean isCompatibility) {
+            this.bigIntegerSerializer = new BigIntegerSerializer(isCompatibility);
+            this.isCompatibility = isCompatibility;
+        }
+
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_BIG_DECIMAL;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_BIG_DECIMAL;
         }
 
         @Override
@@ -250,10 +275,18 @@ public final class JavaDefaultSerializers {
     }
 
     public static final class DateSerializer extends SingletonSerializer<Date> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public DateSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_DATE;
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_DATE
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_DATE;
         }
 
         @Override
@@ -267,17 +300,97 @@ public final class JavaDefaultSerializers {
         }
     }
 
-    public static final class ClassSerializer extends SingletonSerializer<Class> {
+    public static final class LocalDateSerializer extends SingletonSerializer<LocalDate> {
 
         @Override
         public int getTypeId() {
-            return JAVA_DEFAULT_TYPE_CLASS;
+            return JAVA_DEFAULT_TYPE_LOCALDATE;
+        }
+
+        @Override
+        public LocalDate read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalDate(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalDate value) throws IOException {
+            IOUtil.writeLocalDate(out, value);
+        }
+    }
+
+    public static final class LocalTimeSerializer extends SingletonSerializer<LocalTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_LOCALTIME;
+        }
+
+        @Override
+        public LocalTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalTime value) throws IOException {
+            IOUtil.writeLocalTime(out, value);
+        }
+    }
+
+    public static final class LocalDateTimeSerializer extends SingletonSerializer<LocalDateTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_LOCALDATETIME;
+        }
+
+        @Override
+        public LocalDateTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readLocalDateTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final LocalDateTime value) throws IOException {
+            IOUtil.writeLocalDateTime(out, value);
+        }
+    }
+
+    public static final class OffsetDateTimeSerializer extends SingletonSerializer<OffsetDateTime> {
+
+        @Override
+        public int getTypeId() {
+            return JAVA_DEFAULT_TYPE_OFFSETDATETIME;
+        }
+
+        @Override
+        public OffsetDateTime read(final ObjectDataInput in) throws IOException {
+            return IOUtil.readOffsetDateTime(in);
+        }
+
+        @Override
+        public void write(final ObjectDataOutput out, final OffsetDateTime value) throws IOException {
+            IOUtil.writeOffsetDateTime(out, value);
+        }
+    }
+
+    public static final class ClassSerializer extends SingletonSerializer<Class> {
+        /** Determines if ser-de should conform the 3.x format */
+        private final boolean isCompatibility;
+
+        public ClassSerializer(boolean isCompatibility) {
+            this.isCompatibility = isCompatibility;
+        }
+
+        @Override
+        public int getTypeId() {
+            return isCompatibility
+                    ? CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_CLASS
+                    : SerializationConstants.JAVA_DEFAULT_TYPE_CLASS;
         }
 
         @Override
         public Class read(final ObjectDataInput in) throws IOException {
             try {
-                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readUTF());
+                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readString());
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
             }
@@ -285,7 +398,7 @@ public final class JavaDefaultSerializers {
 
         @Override
         public void write(final ObjectDataOutput out, final Class obj) throws IOException {
-            out.writeUTF(obj.getName());
+            out.writeString(obj.getName());
         }
     }
 
@@ -317,16 +430,45 @@ public final class JavaDefaultSerializers {
         }
     }
 
+    public static final class EnumSerializer extends SingletonSerializer<Enum> {
+
+        @Override
+        public int getTypeId() {
+            return CompatibilitySerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
+        }
+
+        @Override
+        public void write(ObjectDataOutput out, Enum obj) throws IOException {
+            String name = obj.getDeclaringClass().getName();
+            out.writeUTF(name);
+            out.writeUTF(obj.name());
+        }
+
+        @Override
+        public Enum read(ObjectDataInput in) throws IOException {
+            String clazzName = in.readUTF();
+            Class clazz;
+            try {
+                clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
+            }
+
+            String name = in.readUTF();
+            return Enum.valueOf(clazz, name);
+        }
+    }
+
     public static final class HazelcastJsonValueSerializer extends SingletonSerializer<HazelcastJsonValue> {
 
         @Override
         public void write(ObjectDataOutput out, HazelcastJsonValue object) throws IOException {
-            out.writeUTF(object.toString());
+            out.writeString(object.toString());
         }
 
         @Override
         public HazelcastJsonValue read(ObjectDataInput in) throws IOException {
-            return new HazelcastJsonValue(in.readUTF());
+            return new HazelcastJsonValue(in.readString());
         }
 
         @Override

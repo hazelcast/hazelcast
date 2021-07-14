@@ -16,15 +16,21 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
 /**
  * A node that describes either a JsonValue
  */
-public abstract class JsonSchemaNode {
+public abstract class JsonSchemaNode implements IdentifiedDataSerializable {
 
     private JsonSchemaStructNode parent;
 
+    public JsonSchemaNode() {
+        // no-op
+    }
     /**
      * Creates a schema node with given parent
+     *
      * @param parent may be null for top element
      */
     public JsonSchemaNode(JsonSchemaStructNode parent) {
@@ -52,6 +58,7 @@ public abstract class JsonSchemaNode {
 
     /**
      * Returns whether this node represents a scalar value.
+     *
      * @return false if this is an array or object, true otherwise
      */
     public boolean isTerminal() {

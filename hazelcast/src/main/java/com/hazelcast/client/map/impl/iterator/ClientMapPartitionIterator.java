@@ -45,6 +45,9 @@ import static com.hazelcast.internal.iteration.IterationPointer.encodePointers;
  * after iteration has started.
  * The iterator will not, however, skip an entry if it has not been changed
  * and will not return an entry twice.
+ *
+ * @param <K> the key type of map.
+ * @param <V> the value type of map.
  */
 public class ClientMapPartitionIterator<K, V> extends AbstractMapPartitionIterator<K, V> {
 

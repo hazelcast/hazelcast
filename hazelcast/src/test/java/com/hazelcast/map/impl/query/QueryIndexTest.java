@@ -71,6 +71,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
     private HazelcastInstance createTestHazelcastInstance() {
         Config config = getConfig();
         config.setProperty(ClusterProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
+        config.setProperty(QueryEngineImpl.DISABLE_MIGRATION_FALLBACK.getName(), "true");
         return createHazelcastInstance(config);
     }
 

@@ -24,6 +24,9 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTEGER;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_MAP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_REAL;
@@ -35,6 +38,9 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.PRECEDENCE_VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DATE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_DECIMAL;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_INTERVAL_DAY_SECOND;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_INTERVAL_YEAR_MONTH;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_MAP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_NULL;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.TYPE_LEN_TIME;
@@ -61,18 +67,19 @@ public enum QueryDataTypeFamily {
         PRECEDENCE_TIMESTAMP_WITH_TIME_ZONE,
         SqlColumnType.TIMESTAMP_WITH_TIME_ZONE
     ),
-    OBJECT(TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT);
+    OBJECT(TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT),
+    INTERVAL_YEAR_MONTH(TYPE_LEN_INTERVAL_YEAR_MONTH, PRECEDENCE_INTERVAL_YEAR_MONTH, null),
+    INTERVAL_DAY_SECOND(TYPE_LEN_INTERVAL_DAY_SECOND, PRECEDENCE_INTERVAL_DAY_SECOND, null),
+    MAP(TYPE_LEN_MAP, PRECEDENCE_MAP, null);
 
     private final int estimatedSize;
     private final int precedence;
     private final SqlColumnType publicType;
 
-    QueryDataTypeFamily(int estimatedSize, int precedence, SqlColumnType publictype) {
-        assert estimatedSize > 0;
-
+    QueryDataTypeFamily(int estimatedSize, int precedence, SqlColumnType publicType) {
         this.estimatedSize = estimatedSize;
         this.precedence = precedence;
-        this.publicType = publictype;
+        this.publicType = publicType;
     }
 
     public boolean isNumeric() {
@@ -138,5 +145,10 @@ public enum QueryDataTypeFamily {
 
     public SqlColumnType getPublicType() {
         return publicType;
+    }
+
+    @Override
+    public String toString() {
+        return name().replace('_', ' ');
     }
 }

@@ -19,7 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.spi.ClientContext;
 
-public class ClientCachePartitionIterator<K, V> extends ClientCachePartitionsIterator<K, V> {
+public class ClientCachePartitionIterator<K, V> extends ClientCacheIterator<K, V> {
 
     public ClientCachePartitionIterator(ICacheInternal<K, V> cacheProxy, ClientContext context, int fetchSize,
                                         int partitionId, boolean prefetchValues) {

@@ -231,21 +231,21 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, NamedC
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeBoolean(statisticsEnabled);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         statisticsEnabled = in.readBoolean();
     }
 

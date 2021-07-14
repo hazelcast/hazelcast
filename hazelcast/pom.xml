@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.2-SNAPSHOT</version>
+        <version>5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -40,6 +40,7 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
+        <wiremock.version>2.27.2</wiremock.version>
     </properties>
 
     <build>
@@ -105,46 +106,8 @@
                         <goals>
                             <goal>jar</goal>
                         </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>${maven.bundle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>bundle-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
                         <configuration>
-                            <instructions>
-                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
-                                <Export-Package>
-                                    com.hazelcast.*
-                                </Export-Package>
-                                <Import-Package>
-                                    !org.junit,
-                                    !com.hazelcast.*,
-                                    !com.fasterxml.jackson.*,
-                                    !org.snakeyaml.*,
-                                    sun.misc;resolution:=optional,
-                                    javax.cache;resolution:=optional,
-                                    javax.cache.*;resolution:=optional,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.spi;resolution:=optional,
-                                    org.apache.logging.log4j;resolution:=optional,
-                                    org.apache.logging.log4j.spi;resolution:=optional,
-                                    org.slf4j;resolution:=optional,
-                                    org.codehaus.groovy.jsr223;resolution:=optional,
-                                    org.jruby.embed.jsr223;resolution:=optional,
-                                    *
-                                </Import-Package>
-                                <Bundle-Name>Hazelcast(Core)</Bundle-Name>
-                            </instructions>
+                            <forceCreation>true</forceCreation>
                         </configuration>
                     </execution>
                 </executions>
@@ -153,18 +116,15 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
                             <mainClass>${hazelcast.serverMainClass}</mainClass>
-                            <!--<addClasspath>true</addClasspath>-->
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
-                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
                         <manifestEntries>
                             <Automatic-Module-Name>com.hazelcast.core</Automatic-Module-Name>
                         </manifestEntries>
@@ -175,6 +135,7 @@
                         <exclude>**/*.bat</exclude>
                         <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
                     </excludes>
+                    <forceCreation>true</forceCreation>
                 </configuration>
                 <executions>
                     <execution>
@@ -190,6 +151,149 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.build.finalName}</finalName>
+                            <createSourcesJar>true</createSourcesJar>
+                            <shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeTestJar>true</shadeTestJar>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.fasterxml.jackson</pattern>
+                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
+                                    <excludes>
+                                        <!--
+                                        The annotation package is excluded so the relocated classes are
+                                        able to process non-relocated annotations, which are used by the users.
+                                        -->
+                                        <exclude>com.fasterxml.jackson.annotation.*</exclude>
+                                    </excludes>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.snakeyaml</pattern>
+                                    <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.github.classgraph</pattern>
+                                    <shadedPattern>${relocation.root}.io.github.classgraph</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>nonapi.io.github.classgraph</pattern>
+                                    <shadedPattern>${relocation.root}.nonapi.io.github.classgraph</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.everit.json.schema</pattern>
+                                    <shadedPattern>${relocation.root}.org.everit.json.schema</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.json</pattern>
+                                    <shadedPattern>${relocation.root}.org.json</shadedPattern>
+                                </relocation>
+                            </relocations>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>com.fasterxml.jackson.core:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>io.github.classgraph:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>com.github.erosb:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>**/module-info.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <!-- Let's use the package phase to run the bundle plugin after the shade plugin.
+                            We need to add the resulting MANIFEST.MF to the JAR manually then.
+                            (see the "repack" execution in the ant-plugin configuration) -->
+                        <phase>package</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                        <configuration>
+                            <instructions>
+                                <Bundle-Activator>com.hazelcast.osgi.impl.Activator</Bundle-Activator>
+                                <Export-Package>
+                                    com.hazelcast.*
+                                </Export-Package>
+                                <Import-Package>
+                                    !org.junit,
+                                    !com.hazelcast.*,
+                                    !com.fasterxml.jackson.*,
+                                    !org.snakeyaml.*,
+                                    !io.github.classgraph.*,
+                                    !org.everit.json.*,
+                                    !org.json.*,
+                                    sun.misc;resolution:=optional,
+                                    javax.cache;resolution:=optional,
+                                    javax.cache.*;resolution:=optional,
+                                    org.apache.log4j;resolution:=optional,
+                                    org.apache.log4j.spi;resolution:=optional,
+                                    org.apache.logging.log4j;resolution:=optional,
+                                    org.apache.logging.log4j.spi;resolution:=optional,
+                                    org.slf4j;resolution:=optional,
+                                    org.codehaus.groovy.jsr223;resolution:=optional,
+                                    org.jruby.embed.jsr223;resolution:=optional,
+                                    com.damnhandy.uri.template;resolution:=optional,
+                                    org.apache.commons.validator.routines;resolution:=optional,
+                                    com.google.re2j;resolution:=optional,
+                                    *
+                                </Import-Package>
+                                <Bundle-Name>Hazelcast(Core)</Bundle-Name>
+                            </instructions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -222,66 +326,28 @@
                             </target>
                         </configuration>
                     </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.plugin.version}</version>
-                <executions>
                     <execution>
+                        <id>repack</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>shade</goal>
+                            <goal>run</goal>
                         </goals>
                         <configuration>
-                            <finalName>${project.build.finalName}</finalName>
-                            <createSourcesJar>true</createSourcesJar>
-                            <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>true</shadeTestJar>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>org.snakeyaml:snakeyaml-engine</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.fasterxml.jackson</pattern>
-                                    <shadedPattern>${relocation.root}.com.fasterxml.jackson</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.snakeyaml</pattern>
-                                    <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                            </transformers>
-                            <filters>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.snakeyaml:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
+                            <target>
+                                <unzip src="${project.build.directory}/${project.build.finalName}.jar"
+                                    dest="${project.build.directory}/tmp-repack" />
+                                <copy file="${project.build.directory}/classes/META-INF/MANIFEST.MF"
+                                      tofile="${project.build.directory}/tmp-repack/META-INF/MANIFEST.MF"/>
+                                <zip basedir="${project.build.directory}/tmp-repack"
+                                    destfile="${project.build.directory}/${project.build.finalName}.jar" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>
@@ -301,6 +367,10 @@
                             <outputDirectory>src/main/java</outputDirectory>
                             <overwrite>true</overwrite>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-notice-and-license</id>
+                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -343,7 +413,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.api.version}</version>
+            <version>${slf4j.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -355,22 +425,83 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.jr</groupId>
+            <artifactId>jackson-jr-objects</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jr</groupId>
+            <artifactId>jackson-jr-annotation-support</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.snakeyaml</groupId>
             <artifactId>snakeyaml-engine</artifactId>
             <version>${snakeyaml.engine.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <version>${hamcrest.version}</version>
-            <scope>test</scope>
+            <groupId>io.github.classgraph</groupId>
+            <artifactId>classgraph</artifactId>
+            <version>${classgraph.version}</version>
+            <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.erosb</groupId>
+            <artifactId>everit-json-schema</artifactId>
+            <version>1.12.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.re2j</groupId>
+                    <artifactId>re2j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.damnhandy</groupId>
+                    <artifactId>handy-uri-templates</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-validator</groupId>
+                    <artifactId>commons-validator</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- HazelcastCommandLine dependencies - optional, packaged in server distribution -->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal</artifactId>
+            <version>${jline.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-reader</artifactId>
+            <version>${jline.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
             <artifactId>system-lambda</artifactId>
             <version>1.1.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>${jms.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>javax.cache</groupId>
@@ -507,13 +638,93 @@
         <dependency>
             <groupId>org.roaringbitmap</groupId>
             <artifactId>RoaringBitmap</artifactId>
-            <version>0.8.11</version>
+            <version>0.9.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>
             <version>2.26.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>apache-artemis</artifactId>
+            <version>${activemq-artemis.version}</version>
+            <type>pom</type>
+            <scope>test</scope>
+
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.activemq</groupId>
+                    <artifactId>artemis-jms-client-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>artemis-junit</artifactId>
+            <version>${activemq-artemis.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.rabbitmq.jms</groupId>
+            <artifactId>rabbitmq-jms</artifactId>
+            <version>1.14.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.196</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.2.9</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>${wiremock.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

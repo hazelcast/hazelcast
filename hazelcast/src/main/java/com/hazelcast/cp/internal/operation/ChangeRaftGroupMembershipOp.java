@@ -81,7 +81,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.writeInternal(out);
         out.writeLong(membersCommitIndex);
         out.writeObject(member);
-        out.writeUTF(membershipChangeMode.toString());
+        out.writeString(membershipChangeMode.toString());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class ChangeRaftGroupMembershipOp extends RaftReplicateOp implements Inde
         super.readInternal(in);
         membersCommitIndex = in.readLong();
         member = in.readObject();
-        membershipChangeMode = MembershipChangeMode.valueOf(in.readUTF());
+        membershipChangeMode = MembershipChangeMode.valueOf(in.readString());
     }
 
     @Override

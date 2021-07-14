@@ -19,6 +19,8 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 
 final class PortableGetter extends Getter {
     private final InternalSerializationService serializationService;
@@ -30,8 +32,13 @@ final class PortableGetter extends Getter {
 
     @Override
     Object getValue(Object target, String fieldPath) throws Exception {
-        Data data = (Data) target;
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(serializationService.readAsInternalGenericRecord(data));
+        InternalGenericRecord record;
+        if (target instanceof PortableGenericRecord) {
+            record = (InternalGenericRecord) target;
+        } else {
+            record = serializationService.readAsInternalGenericRecord((Data) target);
+        }
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
         return reader.read(fieldPath);
     }
 

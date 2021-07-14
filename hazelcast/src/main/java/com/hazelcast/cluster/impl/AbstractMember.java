@@ -168,8 +168,8 @@ public abstract class AbstractMember implements Member {
         version = in.readObject();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
-            String value = in.readUTF();
+            String key = in.readString();
+            String value = in.readString();
             attributes.put(key, value);
         }
         addressMap = readNullableMap(in);
@@ -184,8 +184,8 @@ public abstract class AbstractMember implements Member {
         Map<String, String> attributes = new HashMap<>(this.attributes);
         out.writeInt(attributes.size());
         for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
         writeNullableMap(addressMap, out);
     }
@@ -229,5 +229,10 @@ public abstract class AbstractMember implements Member {
 
         Member that = (Member) obj;
         return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
+    }
+
+    // for testing only
+    public void setVersion(MemberVersion version) {
+        this.version = version;
     }
 }

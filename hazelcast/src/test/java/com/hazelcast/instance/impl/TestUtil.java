@@ -182,7 +182,7 @@ public final class TestUtil {
      * @see #isPortAvailable(int)
      */
     public static List<Integer> getAvailablePorts(int basePort, int portCount) {
-        List<Integer> availablePorts = new ArrayList<Integer>();
+        List<Integer> availablePorts = new ArrayList<>();
         int port = basePort;
         for (int i = 0; i < portCount; i++) {
             while (!isPortAvailable(port)) {

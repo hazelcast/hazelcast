@@ -114,10 +114,10 @@ public class MorphingPortableReaderTest {
 
     @Test
     public void testReadUTF() throws Exception {
-        String aString = reader.readUTF("string");
+        String aString = reader.readString("string");
 
         assertEquals("test", aString);
-        assertNull(reader.readUTF("NO SUCH FIELD"));
+        assertNull(reader.readString("NO SUCH FIELD"));
     }
 
     @Test
@@ -203,7 +203,7 @@ public class MorphingPortableReaderTest {
 
     @Test(expected = IncompatibleClassChangeError.class)
     public void testReadUTF_IncompatibleClass() throws Exception {
-        reader.readUTF("byte");
+        reader.readString("byte");
     }
 
     @Test(expected = IncompatibleClassChangeError.class)
@@ -273,7 +273,7 @@ public class MorphingPortableReaderTest {
 
     @Test
     public void testReadUTFArray() throws Exception {
-        assertNull(reader.readUTFArray("NO SUCH FIELD"));
+        assertNull(reader.readStringArray("NO SUCH FIELD"));
     }
 
     @Test

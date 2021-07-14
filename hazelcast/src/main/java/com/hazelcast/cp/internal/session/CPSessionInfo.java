@@ -168,9 +168,9 @@ public class CPSessionInfo implements CPSession, IdentifiedDataSerializable {
         boolean containsEndpointName = (endpointName != null);
         out.writeBoolean(containsEndpointName);
         if (containsEndpointName) {
-            out.writeUTF(endpointName);
+            out.writeString(endpointName);
         }
-        out.writeUTF(endpointType.name());
+        out.writeString(endpointType.name());
     }
 
     @Override
@@ -182,8 +182,8 @@ public class CPSessionInfo implements CPSession, IdentifiedDataSerializable {
         endpoint = in.readObject();
         boolean containsEndpointName = in.readBoolean();
         if (containsEndpointName) {
-            endpointName = in.readUTF();
+            endpointName = in.readString();
         }
-        endpointType = CPSessionOwnerType.valueOf(in.readUTF());
+        endpointType = CPSessionOwnerType.valueOf(in.readString());
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,6 +52,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -166,7 +168,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
      */
     @Test
     public void testNotStartedPredefinedMaps() {
-        Collection<Table> tables = resolver().getTables();
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
 
         assertEquals(4, tables.size());
 
@@ -189,7 +191,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         map.remove(1);
         assertEquals(0, map.size());
 
-        Collection<Table> tables = resolver().getTables();
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
 
         assertEquals(4, tables.size());
 
@@ -215,7 +217,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         dynamic.put(new SerializableKey(1, 1), new SerializableValue(1, 1));
 
         // Analyze metadata.
-        Collection<Table> tables = resolver().getTables();
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
         assertEquals(5, tables.size());
 
         // Check serializable maps. They all should have the same schema.
@@ -254,7 +256,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         // Destroy a dynamic map and ensure that it is no longer shown.
         dynamic.destroy();
 
-        tables = resolver().getTables();
+        tables = filterOutJetInternals(resolver().getTables());
         assertEquals(4, tables.size());
         assertNull(getTable(tables, MAP_FROM_WILDCARD));
     }
@@ -346,6 +348,13 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         }
 
         return null;
+    }
+
+    private static Collection<Table> filterOutJetInternals(Collection<Table> tables) {
+        return tables
+                .stream()
+                .filter(t -> !t.getSqlName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))
+                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unused")

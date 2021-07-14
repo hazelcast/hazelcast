@@ -78,14 +78,14 @@ public abstract class AbstractSchedulerOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(schedulerName);
+        out.writeString(schedulerName);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.schedulerName = in.readUTF();
+        this.schedulerName = in.readString();
     }
 
     @Override

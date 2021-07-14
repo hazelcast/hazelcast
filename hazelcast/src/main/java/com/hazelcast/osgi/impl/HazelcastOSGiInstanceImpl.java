@@ -35,6 +35,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -288,6 +289,12 @@ class HazelcastOSGiInstanceImpl
     @Override
     public SqlService getSql() {
         return delegatedInstance.getSql();
+    }
+
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return delegatedInstance.getJet();
     }
 
     @Override

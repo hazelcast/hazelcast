@@ -16,18 +16,15 @@
 
 package com.hazelcast.client.topic;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.After;
@@ -43,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(SlowTest.class)
 public class ClientReliableTopicBlockTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -67,8 +64,7 @@ public class ClientReliableTopicBlockTest extends HazelcastTestSupport {
 
     @After
     public void teardown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test

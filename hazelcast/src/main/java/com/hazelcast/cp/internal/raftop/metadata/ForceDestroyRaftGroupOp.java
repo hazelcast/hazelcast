@@ -73,12 +73,12 @@ public class ForceDestroyRaftGroupOp extends MetadataRaftGroupOp implements Inde
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(groupName);
+        out.writeString(groupName);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        groupName = in.readUTF();
+        groupName = in.readString();
     }
 
     @Override

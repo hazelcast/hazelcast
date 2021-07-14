@@ -33,6 +33,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -73,28 +74,6 @@ import java.util.function.Function;
  * {@code entrySet}, return an <b>immutable</b> collection clone of the values.
  * The collection is <b>NOT</b> backed by the map, so changes to the map are
  * <b>NOT</b> reflected in the collection.</li>
- * <li>Since Hazelcast is compiled with Java 1.6, we can't override default
- * methods introduced in later Java versions, nor can we add documentation
- * to them. Methods, including but not limited to {@code computeIfPresent},
- * may behave incorrectly if the value passed to the update function is
- * modified in-place and returned as a result of the invocation.
- * You should create a new value instance and return it as a result.
- * <p>
- * For example, following code fragment will behave incorrectly and will
- * enter an infinite loop:
- * <pre>
- * map.computeIfPresent("key", (key, value) -&gt; {
- *     value.setSomeAttribute("newAttributeValue");
- *     return value;
- * });
- * </pre>
- * It should be replaced with:
- * <pre>
- * map.computeIfPresent("key", (key, value) -&gt; {
- *     return new ObjectWithSomeAttribute("newAttributeValue");
- * });
- * </pre>
- * </li>
  * <li>Be careful while using default interface method implementations from
  * {@link ConcurrentMap} and {@link Map}. Under the hood they are typically
  * implemented as a sequence of more primitive map operations, therefore the
@@ -246,7 +225,7 @@ import java.util.function.Function;
  * @param <V> value type
  * @see java.util.concurrent.ConcurrentMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable<Map.Entry<K, V>> {
 
     /**
      * {@inheritDoc}
@@ -2579,7 +2558,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Applies the user defined {@code EntryProcessor} to the entry mapped by the {@code key}.
-     * Returns the object which is the result of the {@link EntryProcessor#process(Entry)} method.
+     * Returns the object which is the result of the {@link EntryProcessor#process(Map.Entry)} method.
      * <p>
      * The {@code EntryProcessor} may implement the {@link Offloadable} and {@link ReadOnly} interfaces.
      * <p>
@@ -2645,7 +2624,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * capacity.
      *
      * @param <R> the entry processor return type
-     * @return result of {@link EntryProcessor#process(Entry)}
+     * @return result of {@link EntryProcessor#process(Map.Entry)}
      * @throws NullPointerException if the specified key is {@code null}
      * @see Offloadable
      * @see ReadOnly
@@ -2704,7 +2683,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param keys The keys to execute the entry processor on. Can be empty, in
      *             that case it's a local no-op
      * @param <R>  the entry processor return type
-     * @return results of {@link EntryProcessor#process(Entry)}
+     * @return results of {@link EntryProcessor#process(Map.Entry)}
      * @throws NullPointerException if there's null element in {@code keys}
      */
     <R> Map<K, R> executeOnKeys(@Nonnull Set<K> keys,
@@ -3184,5 +3163,35 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
     default void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
         ConcurrentMap.super.replaceAll(function);
     }
+
+    /**
+     * Returns an iterator over the entries of the map. It sequentially
+     * iterates partitions. It starts to iterate on partition 0 and it
+     * finishes the iteration with the last partition (n = 271 by default).
+     * The keys are fetched in batches for the constant heap utilization.
+     *
+     * @return an iterator for the map entries
+     * @since 4.2
+     */
+    @Nonnull
+    @Override
+    Iterator<Entry<K, V>> iterator();
+
+
+    /**
+     * Returns an iterator over the entries of the map. It sequentially
+     * iterates partitions. It starts to iterate on partition 0 and it
+     * finishes the iteration with the last partition (n = 271 by default).
+     * The keys are fetched in batches for the constant heap utilization.
+     *
+     * @param fetchSize size for fetching keys in bulk. This size can
+     *                  be thought of as page size for iteration. But
+     *                  notice that at every fetch only keys are retrieved,
+     *                  not values. Values are retrieved on each iterate.
+     * @return an iterator for the map entries
+     * @since 4.2
+     */
+    @Nonnull
+    Iterator<Entry<K, V>> iterator(int fetchSize);
 
 }

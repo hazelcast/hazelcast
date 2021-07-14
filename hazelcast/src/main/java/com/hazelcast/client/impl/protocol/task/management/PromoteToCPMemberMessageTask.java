@@ -23,11 +23,14 @@ import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 import java.util.concurrent.CompletableFuture;
 
 public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Void, Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.promoteToCPMember");
 
     public PromoteToCPMemberMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -57,7 +60,7 @@ public class PromoteToCPMemberMessageTask extends AbstractAsyncMessageTask<Void,
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

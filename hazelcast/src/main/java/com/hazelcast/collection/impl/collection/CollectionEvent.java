@@ -71,7 +71,7 @@ public class CollectionEvent implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(eventType.getType());
         caller.writeData(out);
         IOUtil.writeData(out, data);
@@ -79,7 +79,7 @@ public class CollectionEvent implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         eventType = ItemEventType.getByType(in.readInt());
         caller = new Address();
         caller.readData(in);

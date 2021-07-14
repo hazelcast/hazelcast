@@ -42,7 +42,7 @@ public class EvictionConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(EvictionConfig.class)
-                .allFieldsShouldBeUsedExcept("defaultSize")
+                .withIgnoredFields("sizeConfigured")
                 .suppress(Warning.NONFINAL_FIELDS)
                 .withPrefabValues(EvictionConfig.class,
                         new EvictionConfig().setSize(1000).setMaxSizePolicy(ENTRY_COUNT).setEvictionPolicy(LFU),

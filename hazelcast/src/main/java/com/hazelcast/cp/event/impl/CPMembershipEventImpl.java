@@ -71,13 +71,13 @@ public class CPMembershipEventImpl implements CPMembershipEvent, IdentifiedDataS
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(member);
-        out.writeUTF(type.name());
+        out.writeString(type.name());
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         member = in.readObject();
-        type = EventType.valueOf(in.readUTF());
+        type = EventType.valueOf(in.readString());
     }
 
     @Override

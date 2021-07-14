@@ -19,6 +19,7 @@ package com.hazelcast.cluster;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static com.hazelcast.test.TestEnvironment.isSolaris;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -30,6 +31,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 
+import com.hazelcast.spi.properties.ClusterProperty;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,7 +44,6 @@ import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -65,7 +66,7 @@ public class MulticastDeserializationTest {
 
     @Rule
     public OverridePropertyRule multicastGroupOverride = OverridePropertyRule
-            .clear(MulticastService.SYSTEM_PROPERTY_MULTICAST_GROUP);
+            .clear(ClusterProperty.MULTICAST_GROUP.getName());
 
     @Before
     public void before() {
@@ -121,6 +122,9 @@ public class MulticastDeserializationTest {
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
                 .setMulticastTimeToLive(MULTICAST_TTL);
+        if (isSolaris()) {
+            config.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
+        }
         return config;
     }
 
@@ -136,6 +140,9 @@ public class MulticastDeserializationTest {
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
+            if (!isSolaris()) {
+                multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
+            }
             multicastSocket.setTimeToLive(MULTICAST_TTL);
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);

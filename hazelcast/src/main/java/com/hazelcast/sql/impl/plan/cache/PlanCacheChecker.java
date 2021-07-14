@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl.plan.cache;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
@@ -30,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Periodically checks plans for validity.
+ * Checks plans for validity.
  */
 public class PlanCacheChecker {
 
@@ -42,6 +44,7 @@ public class PlanCacheChecker {
         this.nodeEngine = nodeEngine;
         this.planCache = planCache;
         this.tableResolvers = tableResolvers;
+        this.tableResolvers.forEach(tableResolver -> tableResolver.registerListener(this::check));
     }
 
     public void check() {
@@ -52,14 +55,14 @@ public class PlanCacheChecker {
         // Collect object IDs
         SqlCatalog catalog = new SqlCatalog(tableResolvers);
 
-        Set<PlanObjectKey> objectIds = new HashSet<>();
+        Set<PlanObjectKey> objectKeys = new HashSet<>();
 
         for (Map<String, Table> tableMap : catalog.getSchemas().values()) {
             for (Table table : tableMap.values()) {
-                PlanObjectKey objectId = table.getObjectKey();
+                PlanObjectKey objectKey = table.getObjectKey();
 
-                if (objectId != null) {
-                    objectIds.add(objectId);
+                if (objectKey != null) {
+                    objectKeys.add(objectKey);
                 }
             }
         }
@@ -68,6 +71,6 @@ public class PlanCacheChecker {
         Map<UUID, PartitionIdSet> partitions = QueryUtils.createPartitionMap(nodeEngine, null, false);
 
         // Do check
-        planCache.check(new PlanCheckContext(objectIds, partitions));
+        planCache.check(new PlanCheckContext(objectKeys, partitions));
     }
 }

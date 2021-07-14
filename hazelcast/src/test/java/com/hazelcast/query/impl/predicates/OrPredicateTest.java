@@ -75,7 +75,6 @@ public class OrPredicateTest {
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(OrPredicate.class)
             .suppress(Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)
-            .allFieldsShouldBeUsed()
             .verify();
     }
 

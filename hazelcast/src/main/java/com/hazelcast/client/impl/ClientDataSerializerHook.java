@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CLIENT_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CLIENT_DS_FACTORY_ID;
@@ -40,17 +39,14 @@ public class ClientDataSerializerHook implements DataSerializerHook {
 
     @Override
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            @Override
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case GET_CONNECTED_CLIENTS:
-                        return new GetConnectedClientsOperation();
-                    case OP_FACTORY_WRAPPER:
-                        return new OperationFactoryWrapper();
-                    default:
-                        return null;
-                }
+        return typeId -> {
+            switch (typeId) {
+                case GET_CONNECTED_CLIENTS:
+                    return new GetConnectedClientsOperation();
+                case OP_FACTORY_WRAPPER:
+                    return new OperationFactoryWrapper();
+                default:
+                    return null;
             }
         };
     }

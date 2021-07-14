@@ -19,6 +19,7 @@ package com.hazelcast.config;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Contains configuration for attribute of member.
@@ -58,5 +59,22 @@ public class MemberAttributeConfig {
     public MemberAttributeConfig removeAttribute(String key) {
         attributes.remove(key);
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MemberAttributeConfig that = (MemberAttributeConfig) o;
+        return Objects.equals(attributes, that.attributes);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(attributes);
     }
 }

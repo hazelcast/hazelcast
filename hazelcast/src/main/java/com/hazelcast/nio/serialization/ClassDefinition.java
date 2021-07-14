@@ -19,8 +19,8 @@ package com.hazelcast.nio.serialization;
 import java.util.Set;
 
 /**
- * Defines a class schema for {@link Portable} classes. It allows to query field names, types, class IDs etc.
- * It can be created manually using {@link ClassDefinitionBuilder} or on-demand during serialization.
+ * Defines a class schema for {@link Portable} classes. It allows querying of field names, types, class IDs etc.
+ * It can be created manually using {@link ClassDefinitionBuilder} or on demand during deserialization.
  *
  * @see com.hazelcast.nio.serialization.Portable
  * @see ClassDefinitionBuilder

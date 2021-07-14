@@ -162,12 +162,12 @@ public class CustomSerializationTest {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             serializationCount.incrementAndGet();
-            out.writeUTF(foo);
+            out.writeString(foo);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            foo = in.readUTF();
+            foo = in.readString();
         }
 
         @Override

@@ -19,9 +19,8 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -120,13 +119,14 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public void putEntry(QueryableEntry entry, Object oldValue, OperationSource operationSource) {
-            delegate.putEntry(entry, oldValue, operationSource);
+        public void putEntry(CachedQueryEntry newEntry, CachedQueryEntry oldEntry, QueryableEntry entryToStore,
+                             OperationSource operationSource) {
+            delegate.putEntry(newEntry, oldEntry, entryToStore, operationSource);
         }
 
         @Override
-        public void removeEntry(Data key, Object value, OperationSource operationSource) {
-            delegate.removeEntry(key, value, operationSource);
+        public void removeEntry(CachedQueryEntry entry, OperationSource operationSource) {
+            delegate.removeEntry(entry, operationSource);
         }
 
         @Override
@@ -176,6 +176,41 @@ public class GlobalQueryContextWithStats extends QueryContext {
             boolean descending
         ) {
             Iterator<QueryableEntry> result = delegate.getSqlRecordIterator(from, fromInclusive, to, toInclusive, descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(value);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(comparison, value, descending);
+            hasQueries = true;
+            return result;
+        }
+
+        @Override
+        public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+                Comparable from,
+                boolean fromInclusive,
+                Comparable to,
+                boolean toInclusive,
+                boolean descending
+        ) {
+            Iterator<IndexKeyEntries> result = delegate.getSqlRecordIteratorBatch(
+                    from, fromInclusive, to, toInclusive, descending);
             hasQueries = true;
             return result;
         }
@@ -254,8 +289,8 @@ public class GlobalQueryContextWithStats extends QueryContext {
         }
 
         @Override
-        public long getPartitionStamp(PartitionIdSet expectedPartitionIds) {
-            return delegate.getPartitionStamp(expectedPartitionIds);
+        public PartitionStamp getPartitionStamp() {
+            return delegate.getPartitionStamp();
         }
 
         @Override

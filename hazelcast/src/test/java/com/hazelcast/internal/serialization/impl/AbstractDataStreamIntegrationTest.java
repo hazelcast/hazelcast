@@ -269,12 +269,12 @@ public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutp
     public void testUTF() throws IOException {
         String s1 = "Vim is a text editor that is upwards compatible to Vi. It can be used to edit all kinds of plain text.";
         String s2 = "簡単なものから複雑なものまで、具体的な例を使って説明しています。本のように最初から順を追って読んでください。";
-        out.writeUTF(s1);
-        out.writeUTF(s2);
+        out.writeString(s1);
+        out.writeString(s2);
 
         ObjectDataInput in = getDataInputFromOutput();
-        assertEquals(s1, in.readUTF());
-        assertEquals(s2, in.readUTF());
+        assertEquals(s1, in.readString());
+        assertEquals(s2, in.readString());
     }
 
     @Test
@@ -285,7 +285,7 @@ public abstract class AbstractDataStreamIntegrationTest<O extends ObjectDataOutp
         out.writeUTFArray(arr);
 
         ObjectDataInput in = getDataInputFromOutput();
-        assertArrayEquals(arr, in.readUTFArray());
+        assertArrayEquals(arr, in.readStringArray());
     }
 
     protected abstract byte[] getWrittenBytes();

@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast client.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at https://docs.hazelcast.com/
 
 hazelcast-client:
 
@@ -109,7 +109,7 @@ hazelcast-client:
   # This feature reduces number of hops and increase performance for smart clients.
   # It is enabled by default for smart clients. This config has no effect for unisocket clients.
   #
-  backup-ack-to-client: true
+  backup-ack-to-client-enabled: true
 
   #
   # ===== HAZELCAST NETWORK CONFIGURATION =====
@@ -231,7 +231,7 @@ hazelcast-client:
   #         Maximum number of hops the packets should go through. Its default value is 255. You can set to 0 to use
   #         your system’s default TTL.
   #     * "echo-fail-fast-on-startup":
-  #         Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
+  #         The client will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
   #         Failure is usually due to OS level restrictions.
   #
   network:
@@ -744,7 +744,7 @@ hazelcast-client:
   #
   # Configuration node's name is "connection-strategy".
   # It has the following sub-nodes:
-  #   - "async-start": If set to true, creating Hazelcast client doesn't not wait for connecting to the cluster.
+  #   - "async-start": If set to true, creating Hazelcast client does not wait for connecting to the cluster.
   #   - "reconnect-mode": Defines the reconnection mode. The valid values are:
   #     - "ON":
   #         Enables reconnection in a blocking manner where all the waiting invocations are blocked until a

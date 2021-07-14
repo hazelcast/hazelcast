@@ -27,7 +27,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.GlobalIndexPartitionTracker;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -51,7 +50,6 @@ import java.util.UUID;
 import static com.hazelcast.test.Accessors.getAllIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -426,28 +424,39 @@ public class IndexStatsChangingNumberOfMembersTest extends HazelcastTestSupport 
         waitAllForSafeState(instances);
 
         // Make sure that all indexes contain expected partitions.
-        Map<UUID, PartitionIdSet> memberToPartitions = new HashMap<>();
-
-        Set<Partition> partitions = instances[0].getPartitionService().getPartitions();
-
-        for (Partition partition : partitions) {
-            UUID member = partition.getOwner().getUuid();
-
-            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
-                .add(partition.getPartitionId());
-        }
+        final Map<UUID, PartitionIdSet> memberToPartitions = toMemberToPartitionsMap(instances[0]);
 
         assertTrueEventually(() -> {
             for (HazelcastInstance instance : instances) {
                 InternalIndex index = ((MapProxyImpl<?, ?>) instance.getMap(mapName)).getService().getMapServiceContext()
-                    .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
+                        .getMapContainer(mapName).getIndexes().getIndex(INDEX_NAME);
 
                 assertNotNull(index);
 
                 PartitionIdSet expectedPartitions = memberToPartitions.get(instance.getCluster().getLocalMember().getUuid());
 
-                assertNotEquals(GlobalIndexPartitionTracker.STAMP_INVALID, index.getPartitionStamp(expectedPartitions));
+                // Double check: if we still see same partition distribution
+                assertEquals(memberToPartitions, toMemberToPartitionsMap(instances[0]));
+
+                assertEquals("MemberPartitions={size=" + expectedPartitions.size() + ", partitions=" + expectedPartitions
+                                + "}, " + index,
+                        expectedPartitions,
+                        index.getPartitionStamp().partitions);
             }
         });
+    }
+
+    private Map<UUID, PartitionIdSet> toMemberToPartitionsMap(HazelcastInstance instance1) {
+        Map<UUID, PartitionIdSet> memberToPartitions = new HashMap<>();
+
+        Set<Partition> partitions = instance1.getPartitionService().getPartitions();
+
+        for (Partition partition : partitions) {
+            UUID member = partition.getOwner().getUuid();
+
+            memberToPartitions.computeIfAbsent(member, (key) -> new PartitionIdSet(partitions.size()))
+                    .add(partition.getPartitionId());
+        }
+        return memberToPartitions;
     }
 }

@@ -83,13 +83,13 @@ public class ReadAndResetAccumulatorOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(cacheId);
+        out.writeString(cacheId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        cacheId = in.readUTF();
+        cacheId = in.readString();
     }
 
     private QueryCacheContext getQueryCacheContext() {

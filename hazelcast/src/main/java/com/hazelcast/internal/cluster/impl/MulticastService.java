@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
@@ -29,6 +30,8 @@ import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 
 import java.io.EOFException;
@@ -37,6 +40,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Set;
@@ -48,11 +53,6 @@ import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
-
-    /**
-     * IP address of a multicast group. If not set, configuration is read from the {@link MulticastConfig} configuration.
-     */
-    public static final String SYSTEM_PROPERTY_MULTICAST_GROUP = "hazelcast.multicast.group";
 
     private static final int SEND_OUTPUT_SIZE = 1024;
     private static final int DATAGRAM_BUFFER_SIZE = 64 * 1024;
@@ -104,52 +104,70 @@ public final class MulticastService implements Runnable {
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
         JoinConfig join = getActiveMemberNetworkConfig(config).getJoin();
-        MulticastConfig multicastConfig = join.getMulticastConfig();
         if (!node.shouldUseMulticastJoiner(join)) {
             return null;
         }
-
+        MulticastConfig multicastConfig = join.getMulticastConfig();
         MulticastService mcService = null;
         try {
             MulticastSocket multicastSocket = new MulticastSocket(null);
-            multicastSocket.setReuseAddress(true);
-            // bind to receive interface
-            multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
-            multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
-            try {
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
-                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
-                if (!bindAddress.getInetAddress().isLoopbackAddress()) {
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else if (multicastConfig.isLoopbackModeEnabled()) {
-                    multicastSocket.setLoopbackMode(true);
-                    multicastSocket.setInterface(bindAddress.getInetAddress());
-                } else {
-                    // If LoopBack is not enabled but its the selected interface from the given
-                    // bind address, then we rely on Default Network Interface.
-                    logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is disabled in "
-                            + "the configuration. This could cause multicast auto-discovery issues and render it unable to work. "
-                            + "Check your network connectivity, try to enable the loopback mode and/or "
-                            + "force -Djava.net.preferIPv4Stack=true on your JVM.");
-                }
-            } catch (Exception e) {
-                logger.warning(e);
-            }
-            multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
-            multicastSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            String multicastGroup = System.getProperty(SYSTEM_PROPERTY_MULTICAST_GROUP);
-            if (multicastGroup == null) {
-                multicastGroup = multicastConfig.getMulticastGroup();
-            }
-            multicastConfig.setMulticastGroup(multicastGroup);
-            multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
-            multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
+            configureMulticastSocket(multicastSocket, bindAddress, node.getProperties(), multicastConfig, logger);
             mcService = new MulticastService(node, multicastSocket);
             mcService.addMulticastListener(new NodeMulticastListener(node));
         } catch (Exception e) {
             logger.severe(e);
+            // fail-fast if multicast is explicitly enabled (i.e. autodiscovery is not used)
+            if (multicastConfig.isEnabled()) {
+                throw new HazelcastException("Starting the MulticastService failed", e);
+            }
         }
         return mcService;
+    }
+
+    protected static void configureMulticastSocket(MulticastSocket multicastSocket, Address bindAddress,
+            HazelcastProperties hzProperties, MulticastConfig multicastConfig, ILogger logger)
+            throws SocketException, IOException, UnknownHostException {
+        multicastSocket.setReuseAddress(true);
+        // bind to receive interface
+        multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
+        multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
+        try {
+            boolean loopbackBind = bindAddress.getInetAddress().isLoopbackAddress();
+            // setting loopbackmode is just a hint - and the argument means "disable"!
+            // to check the real value value we call getLoopbackMode() (and again - return value means "disabled")
+            multicastSocket.setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+            // If LoopBack mode is not enabled (i.e. getLoopbackMode return true) and bind address is a loopback one,
+            // then print a warning
+            if (loopbackBind && multicastSocket.getLoopbackMode()) {
+                logger.warning("Hazelcast is bound to " + bindAddress.getHost() + " and loop-back mode is "
+                        + "disabled. This could cause multicast auto-discovery issues "
+                        + "and render it unable to work. Check your network connectivity, try to enable the "
+                        + "loopback mode and/or force -Djava.net.preferIPv4Stack=true on your JVM.");
+            }
+
+            // warning: before modifying lines below, take a look at these links:
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+            boolean callSetInterface = loopbackBind || !multicastConfig.isLoopbackModeEnabled();
+            String propSetInterface = hzProperties.getString(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE);
+            if (propSetInterface != null) {
+                callSetInterface = Boolean.parseBoolean(propSetInterface);
+            }
+            if (callSetInterface) {
+                multicastSocket.setInterface(bindAddress.getInetAddress());
+            }
+        } catch (Exception e) {
+            logger.warning(e);
+        }
+        multicastSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
+        multicastSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
+        String multicastGroup = hzProperties.getString(ClusterProperty.MULTICAST_GROUP);
+        if (multicastGroup == null) {
+            multicastGroup = multicastConfig.getMulticastGroup();
+        }
+        multicastConfig.setMulticastGroup(multicastGroup);
+        multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
+        multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
     }
 
     public void addMulticastListener(MulticastListener multicastListener) {

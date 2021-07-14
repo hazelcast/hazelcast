@@ -24,7 +24,10 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     private int ttl;
     private int maxIdle;
-    private int expirationTime;
+    // RU_COMPAT_4_1
+    // No need to set default value of
+    // expirationTime to UNSET after version 4.2
+    private volatile int expirationTime = UNSET;
 
     public ExpiryMetadataImpl() {
     }

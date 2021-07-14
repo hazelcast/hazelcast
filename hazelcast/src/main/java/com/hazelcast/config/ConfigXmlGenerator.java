@@ -29,6 +29,7 @@ import com.hazelcast.config.security.KerberosAuthenticationConfig;
 import com.hazelcast.config.security.KerberosIdentityConfig;
 import com.hazelcast.config.security.LdapAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
@@ -36,6 +37,9 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -68,7 +72,10 @@ import static java.util.Arrays.asList;
 @SuppressWarnings({"checkstyle:methodcount"})
 public class ConfigXmlGenerator {
 
-    protected static final String MASK_FOR_SENSITIVE_DATA = "****";
+    /**
+     * Mask to hide the sensitive values in configuration.
+     */
+    public static final String MASK_FOR_SENSITIVE_DATA = "****";
 
     private static final int INDENT = 5;
 
@@ -156,7 +163,7 @@ public class ConfigXmlGenerator {
         reliableTopicXmlGenerator(gen, config);
         liteMemberXmlGenerator(gen, config);
         nativeMemoryXmlGenerator(gen, config);
-        hotRestartXmlGenerator(gen, config);
+        persistenceXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
@@ -165,6 +172,7 @@ public class ConfigXmlGenerator {
         metricsConfig(gen, config);
         instanceTrackingConfig(gen, config);
         sqlConfig(gen, config);
+        jetConfig(gen, config);
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
 
@@ -296,6 +304,7 @@ public class ConfigXmlGenerator {
             tlsAuthenticationGenerator(gen, c.getTlsAuthenticationConfig());
             ldapAuthenticationGenerator(gen, c.getLdapAuthenticationConfig());
             kerberosAuthenticationGenerator(gen, c.getKerberosAuthenticationConfig());
+            simpleAuthenticationGenerator(gen, c.getSimpleAuthenticationConfig());
             gen.close();
         }
         if (c.isIdentityConfigured()) {
@@ -368,6 +377,23 @@ public class ConfigXmlGenerator {
                 .nodeIfContents("principal", c.getPrincipal());
         ldapAuthenticationGenerator(kerberosGen, c.getLdapAuthenticationConfig());
         kerberosGen.close();
+    }
+
+    private static void simpleAuthenticationGenerator(XmlGenerator gen, SimpleAuthenticationConfig c) {
+        if (c == null) {
+            return;
+        }
+        XmlGenerator simpleGen = gen.open("simple");
+        addClusterLoginElements(simpleGen, c).nodeIfContents("role-separator", c.getRoleSeparator());
+        for (String username : c.getUsernames()) {
+            simpleGen.open("user", "username", username, "password", c.getPassword(username));
+            for (String role : c.getRoles(username)) {
+                simpleGen.node("role", role);
+            }
+            // close <user> node
+            simpleGen.close();
+        }
+        simpleGen.close();
     }
 
     private static void kerberosIdentityGenerator(XmlGenerator gen, KerberosIdentityConfig c) {
@@ -988,6 +1014,12 @@ public class ConfigXmlGenerator {
                 .close();
     }
 
+    private static void appendDataPersistenceConfig(XmlGenerator gen, DataPersistenceConfig p) {
+        gen.open("data-persistence", "enabled", p != null && p.isEnabled())
+                .node("fsync", p != null && p.isFsync())
+                .close();
+    }
+
     private static void appendEventJournalConfig(XmlGenerator gen, EventJournalConfig c) {
         gen.open("event-journal", "enabled", c.isEnabled())
                 .node("capacity", c.getCapacity())
@@ -1039,6 +1071,7 @@ public class ConfigXmlGenerator {
             gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
             appendEventJournalConfig(gen, c.getEventJournalConfig());
             appendHotRestartConfig(gen, c.getHotRestartConfig());
+            appendMerkleTreeConfig(gen, c.getMerkleTreeConfig());
 
             gen.node("disable-per-entry-invalidation-events", c.isDisablePerEntryInvalidationEvents())
                     .close();
@@ -1443,24 +1476,24 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private void hotRestartXmlGenerator(XmlGenerator gen, Config config) {
-        HotRestartPersistenceConfig hrCfg = config.getHotRestartPersistenceConfig();
-        if (hrCfg == null) {
-            gen.node("hot-restart-persistence", "enabled", "false");
+    private void persistenceXmlGenerator(XmlGenerator gen, Config config) {
+        PersistenceConfig prCfg = config.getPersistenceConfig();
+        if (prCfg == null) {
+            gen.node("persistence", "enabled", "false");
             return;
         }
-        gen.open("hot-restart-persistence", "enabled", hrCfg.isEnabled())
-                .node("base-dir", hrCfg.getBaseDir().getAbsolutePath());
-        if (hrCfg.getBackupDir() != null) {
-            gen.node("backup-dir", hrCfg.getBackupDir().getAbsolutePath());
+        gen.open("persistence", "enabled", prCfg.isEnabled())
+                .node("base-dir", prCfg.getBaseDir().getAbsolutePath());
+        if (prCfg.getBackupDir() != null) {
+            gen.node("backup-dir", prCfg.getBackupDir().getAbsolutePath());
         }
-        gen.node("parallelism", hrCfg.getParallelism())
-                .node("validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds())
-                .node("data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds())
-                .node("cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", hrCfg.isAutoRemoveStaleData());
+        gen.node("parallelism", prCfg.getParallelism())
+                .node("validation-timeout-seconds", prCfg.getValidationTimeoutSeconds())
+                .node("data-load-timeout-seconds", prCfg.getDataLoadTimeoutSeconds())
+                .node("cluster-data-recovery-policy", prCfg.getClusterDataRecoveryPolicy())
+                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData());
 
-        encryptionAtRestXmlGenerator(gen, hrCfg.getEncryptionAtRestConfig());
+        encryptionAtRestXmlGenerator(gen, prCfg.getEncryptionAtRestConfig());
         gen.close();
     }
 
@@ -1625,6 +1658,27 @@ public class ConfigXmlGenerator {
                 .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
                 .close();
+    }
+
+    private static void jetConfig(XmlGenerator gen, Config config) {
+        JetConfig jetConfig = config.getJetConfig();
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+        gen.open("jet", "enabled", jetConfig.isEnabled(), "resource-upload-enabled", jetConfig.isResourceUploadEnabled())
+                .open("instance")
+                    .node("cooperative-thread-count", instanceConfig.getCooperativeThreadCount())
+                    .node("flow-control-period", instanceConfig.getFlowControlPeriodMs())
+                    .node("backup-count", instanceConfig.getBackupCount())
+                    .node("scale-up-delay-millis", instanceConfig.getScaleUpDelayMillis())
+                    .node("lossless-restart-enabled", instanceConfig.isLosslessRestartEnabled())
+                    .node("max-processor-accumulated-records", instanceConfig.getMaxProcessorAccumulatedRecords())
+                .close()
+                .open("edge-defaults")
+                    .node("queue-size", edgeConfig.getQueueSize())
+                    .node("packet-size-limit", edgeConfig.getPacketSizeLimit())
+                    .node("receive-window-multiplier", edgeConfig.getReceiveWindowMultiplier())
+                .close()
+            .close();
     }
 
     private static void userCodeDeploymentConfig(XmlGenerator gen, Config config) {

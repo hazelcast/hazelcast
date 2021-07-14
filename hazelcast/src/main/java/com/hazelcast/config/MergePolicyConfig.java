@@ -126,13 +126,13 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(policy);
+        out.writeString(policy);
         out.writeInt(batchSize);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        policy = in.readUTF();
+        policy = in.readString();
         batchSize = in.readInt();
     }
 

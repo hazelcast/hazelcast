@@ -24,7 +24,7 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
     <context:annotation-config/>
 
@@ -42,7 +42,7 @@
             <hz:network port="${cluster.port}">
                 <hz:join>
                     <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true"/>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
             </hz:network>
         </hz:config>

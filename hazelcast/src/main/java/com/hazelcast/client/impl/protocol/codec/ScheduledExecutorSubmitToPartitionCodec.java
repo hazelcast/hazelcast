@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to partition for execution, partition is chosen based on multiple criteria of the given task.
  */
-@Generated("06726dd6fe40cbdb292c361b3f87f50a")
+@Generated("b171eb20b0507575813e243a1352e8dd")
 public final class ScheduledExecutorSubmitToPartitionCodec {
     //hex: 0x1A0200
     public static final int REQUEST_MESSAGE_TYPE = 1704448;
@@ -142,6 +142,4 @@ public final class ScheduledExecutorSubmitToPartitionCodec {
 
         return clientMessage;
     }
-
-
 }

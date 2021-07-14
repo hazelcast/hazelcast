@@ -16,10 +16,13 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.RandomPicker;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class NetworkConfigTest {
+public class NetworkConfigTest extends HazelcastTestSupport {
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
@@ -100,5 +103,14 @@ public class NetworkConfigTest {
     @Test
     public void testMemcacheProtocolConfig_isNotNullByDefault() {
         assertNotNull(networkConfig.getMemcacheProtocolConfig());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(NetworkConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

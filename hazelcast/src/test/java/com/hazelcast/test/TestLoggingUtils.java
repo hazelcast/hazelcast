@@ -18,6 +18,10 @@ package com.hazelcast.test;
 
 import org.apache.logging.log4j.ThreadContext;
 
+import javax.annotation.Nonnull;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 
 public final class TestLoggingUtils {
@@ -73,4 +77,41 @@ public final class TestLoggingUtils {
         }
         return false;
     }
+
+    public static class CustomTestNameAwareForkJoinPool implements Executor {
+
+        private final Executor defaultExecutor = ForkJoinPool.commonPool();
+
+        @Override
+        public void execute(@Nonnull Runnable task) {
+            defaultExecutor.execute(new TestNameAwareRunnable(task));
+        }
+
+        public static class TestNameAwareRunnable implements Runnable {
+
+            private final String testName;
+            private final Runnable runnable;
+
+            public TestNameAwareRunnable(Runnable runnable) {
+                testName = IS_LOG4J2_AVAILABLE ? ThreadContext.get("test-name") : null;
+                this.runnable = runnable;
+            }
+
+            @Override
+            public void run() {
+                setThreadLocalTestMethodName(testName);
+                try {
+                    runnable.run();
+                } finally {
+                    removeThreadLocalTestMethodName();
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "CustomTestNameAwareForkJoinPool";
+        }
+    }
+
 }

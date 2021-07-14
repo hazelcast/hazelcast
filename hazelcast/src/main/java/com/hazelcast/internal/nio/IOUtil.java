@@ -108,24 +108,6 @@ public final class IOUtil {
         }
     }
 
-    public static void writeByteArray(ObjectDataOutput out, byte[] value) throws IOException {
-        int size = (value == null) ? 0 : value.length;
-        out.writeInt(size);
-        if (size > 0) {
-            out.write(value);
-        }
-    }
-
-    public static byte[] readByteArray(ObjectDataInput in) throws IOException {
-        int size = in.readInt();
-        if (size == 0) {
-            return null;
-        } else {
-            byte[] b = new byte[size];
-            in.readFully(b);
-            return b;
-        }
-    }
 
     public static void writeObject(ObjectDataOutput out, Object object) throws IOException {
         boolean isBinary = object instanceof Data;
@@ -193,38 +175,25 @@ public final class IOUtil {
         int year = value.getYear();
         int monthValue = value.getMonthValue();
         int dayOfMonth = value.getDayOfMonth();
-        out.writeShort(year);
+        out.writeInt(year);
         out.writeByte(monthValue);
         out.writeByte(dayOfMonth);
     }
 
     public static LocalDate readLocalDate(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
+        int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
         return LocalDate.of(year, month, dayOfMonth);
     }
 
     public static void writeLocalDateTime(ObjectDataOutput out, LocalDateTime value) throws IOException {
-        int year = value.getYear();
-        int monthValue = value.getMonthValue();
-        int dayOfMonth = value.getDayOfMonth();
-        out.writeShort(year);
-        out.writeByte(monthValue);
-        out.writeByte(dayOfMonth);
-
-        int hour = value.getHour();
-        int minute = value.getMinute();
-        int second = value.getSecond();
-        int nano = value.getNano();
-        out.writeByte(hour);
-        out.writeByte(minute);
-        out.writeByte(second);
-        out.writeInt(nano);
+        writeLocalDate(out, value.toLocalDate());
+        writeLocalTime(out, value.toLocalTime());
     }
 
     public static LocalDateTime readLocalDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
+        int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
 
@@ -237,21 +206,8 @@ public final class IOUtil {
     }
 
     public static void writeOffsetDateTime(ObjectDataOutput out, OffsetDateTime value) throws IOException {
-        int year = value.getYear();
-        int monthValue = value.getMonthValue();
-        int dayOfMonth = value.getDayOfMonth();
-        out.writeShort(year);
-        out.writeByte(monthValue);
-        out.writeByte(dayOfMonth);
-
-        int hour = value.getHour();
-        int minute = value.getMinute();
-        int second = value.getSecond();
-        int nano = value.getNano();
-        out.writeByte(hour);
-        out.writeByte(minute);
-        out.writeByte(second);
-        out.writeInt(nano);
+        writeLocalDate(out, value.toLocalDate());
+        writeLocalTime(out, value.toLocalTime());
 
         ZoneOffset offset = value.getOffset();
         int totalSeconds = offset.getTotalSeconds();
@@ -259,7 +215,7 @@ public final class IOUtil {
     }
 
     public static OffsetDateTime readOffsetDateTime(ObjectDataInput in) throws IOException {
-        int year = in.readShort();
+        int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();
 

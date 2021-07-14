@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PlanCache implements CachedPlanInvalidationCallback {
 
     private final int maxSize;
-    private final ConcurrentHashMap<PlanCacheKey, CacheablePlan> plans = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<PlanKey, SqlPlan> plans = new ConcurrentHashMap<>();
 
     public PlanCache(int maxSize) {
         assert maxSize > 0;
@@ -33,8 +37,8 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         this.maxSize = maxSize;
     }
 
-    public CacheablePlan get(PlanCacheKey key) {
-        CacheablePlan plan = plans.get(key);
+    public SqlPlan get(PlanKey key) {
+        SqlPlan plan = plans.get(key);
 
         if (plan != null) {
             plan.onPlanUsed();
@@ -45,15 +49,15 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         }
     }
 
-    public void put(PlanCacheKey key, CacheablePlan plan) {
-        plans.put(key, plan);
-
+    public void put(PlanKey key, SqlPlan plan) {
         plan.onPlanUsed();
+
+        plans.put(key, plan);
 
         shrinkIfNeeded();
     }
 
-    public void invalidate(CacheablePlan plan) {
+    public void invalidate(SqlPlan plan) {
         remove(plan);
     }
 
@@ -77,14 +81,14 @@ public class PlanCache implements CachedPlanInvalidationCallback {
         }
 
         // Sort plans according to their last used timestamps
-        TreeMap<Long, CacheablePlan> sorted = new TreeMap<>();
+        TreeMap<Long, SqlPlan> sorted = new TreeMap<>();
 
-        for (CacheablePlan plan : plans.values()) {
+        for (SqlPlan plan : plans.values()) {
             sorted.put(plan.getPlanLastUsed(), plan);
         }
 
         // Remove oldest plans
-        for (CacheablePlan plan : sorted.values()) {
+        for (SqlPlan plan : sorted.values()) {
             boolean removed = remove(plan);
 
             if (removed) {
@@ -100,14 +104,14 @@ public class PlanCache implements CachedPlanInvalidationCallback {
      *
      * @param plan Plan.
      */
-    private boolean remove(CacheablePlan plan) {
+    private boolean remove(SqlPlan plan) {
         return plans.remove(plan.getPlanKey(), plan);
     }
 
     /**
      * For testing only.
      */
-    public ConcurrentHashMap<PlanCacheKey, CacheablePlan> getPlans() {
+    public ConcurrentHashMap<PlanKey, SqlPlan> getPlans() {
         return plans;
     }
 }

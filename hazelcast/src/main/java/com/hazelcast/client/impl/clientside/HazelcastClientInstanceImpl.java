@@ -99,8 +99,10 @@ import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.util.ConcurrencyDetection;
 import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
@@ -189,6 +191,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final MetricsRegistryImpl metricsRegistry;
     private final ClientStatisticsService clientStatisticsService;
     private final Diagnostics diagnostics;
+    private final ClientSchemaService schemaService;
     private final InternalSerializationService serializationService;
     private final ClientICacheManager hazelcastCacheManager;
     private final ClientQueryCacheContext queryCacheContext;
@@ -239,6 +242,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientExtension.logInstanceTrackingMetadata();
         lifecycleService = new LifecycleServiceImpl(this);
         metricsRegistry = initMetricsRegistry();
+        schemaService = new ClientSchemaService(this, getLoggingService().getLogger(ClientSchemaService.class));
         serializationService = clientExtension.createSerializationService((byte) -1);
         proxyManager = new ProxyManager(this);
         executionService = initExecutionService();
@@ -824,6 +828,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return sqlService;
     }
 
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return clientExtension.getJet();
+    }
+
     public void onClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
@@ -844,8 +854,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
-        //clear the member list version
-        clusterService.clearMemberListVersion();
+        clusterService.clearMemberList();
     }
 
     public void waitForInitialMembershipEvents() {
@@ -854,8 +863,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void sendStateToCluster() throws ExecutionException, InterruptedException {
         userCodeDeploymentService.deploy(this);
-        proxyManager.createDistributedObjectsOnCluster();
+        schemaService.sendAllSchemas();
         queryCacheContext.recreateAllCaches();
+        proxyManager.createDistributedObjectsOnCluster();
     }
 
     // visible for testing
@@ -894,4 +904,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
     }
 
+    public SchemaService getSchemaService() {
+        return schemaService;
+    }
 }

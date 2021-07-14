@@ -85,7 +85,7 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
     }
 
     /**
-     * Fetches at least {@code size} keys from the given {@code pointers} and
+     * Fetches at most {@code size} keys starting at the given {@code pointers} and
      * invokes the {@code entryConsumer} for each key-value pair.
      *
      * @param pointers      the pointers defining the state where to begin iteration

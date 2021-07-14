@@ -70,7 +70,7 @@ public class CancelTaskOperation
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(taskName);
+        out.writeString(taskName);
         out.writeBoolean(mayInterruptIfRunning);
     }
 
@@ -78,7 +78,7 @@ public class CancelTaskOperation
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.taskName = in.readUTF();
+        this.taskName = in.readString();
         this.mayInterruptIfRunning = in.readBoolean();
     }
 }

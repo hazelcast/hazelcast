@@ -1,0 +1,14 @@
+hazelcast:
+  cluster-name: jet
+  network:
+    join:
+      multicast:
+        enabled: true
+        multicast-group: 224.2.2.3
+        multicast-port: 54328
+    port:
+      auto-increment: true
+      port-count: 100
+      port: 5701
+  properties:
+    test-property: test-value

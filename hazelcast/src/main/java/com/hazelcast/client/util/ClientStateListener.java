@@ -130,7 +130,7 @@ public class ClientStateListener
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the {@code timeout} argument
-     * @return true if the client is disconnected to the cluster. On returning false,
+     * @return true if the client is disconnected from the cluster. On returning false,
      * you can check if timeout occured or the client is shutdown using {@code isShutdown} {@code getCurrentState}
      * @throws InterruptedException
      */

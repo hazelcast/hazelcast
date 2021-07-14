@@ -36,6 +36,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.IMap;
 import com.hazelcast.multimap.MultiMap;
@@ -297,6 +298,12 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public SqlService getSql() {
         return getOriginal().getSql();
+    }
+
+    @Nonnull
+    @Override
+    public JetService getJet() {
+        return getOriginal().getJet();
     }
 
     @Override

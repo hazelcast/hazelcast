@@ -91,6 +91,17 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    public void writeBooleanBit(int position, int bitIndex, boolean v) {
+        byte b = buffer[position];
+        if (v) {
+            b = (byte) (b | (1 << bitIndex));
+        } else {
+            b = (byte) (b & ~(1 << bitIndex));
+        }
+        buffer[position] = b;
+    }
+
+    @Override
     public final void writeByte(final int v) throws IOException {
         write(v);
     }
@@ -368,7 +379,7 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
         writeInt(len);
         if (len > 0) {
             for (String s : strings) {
-                writeUTF(s);
+                writeString(s);
             }
         }
     }

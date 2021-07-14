@@ -63,13 +63,13 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeLong(count);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.count = in.readLong();
     }
 

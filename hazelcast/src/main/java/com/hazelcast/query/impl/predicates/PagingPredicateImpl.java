@@ -337,7 +337,7 @@ public class PagingPredicateImpl<K, V>
         out.writeObject(comparator);
         out.writeInt(page);
         out.writeInt(pageSize);
-        out.writeUTF(iterationType.name());
+        out.writeString(iterationType.name());
         out.writeInt(anchorList.size());
         for (Map.Entry<Integer, Map.Entry<K, V>> anchor : anchorList) {
             out.writeInt(anchor.getKey());
@@ -353,7 +353,7 @@ public class PagingPredicateImpl<K, V>
         comparator = in.readObject();
         page = in.readInt();
         pageSize = in.readInt();
-        iterationType = IterationType.valueOf(in.readUTF());
+        iterationType = IterationType.valueOf(in.readString());
         int size = in.readInt();
         anchorList = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {

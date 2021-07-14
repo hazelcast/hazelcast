@@ -17,19 +17,25 @@
 package com.hazelcast.sql.impl.expression.math;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
+import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 
 import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.canSimplifyTemporalPlusMinus;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIME;
 
 /**
  * Implements evaluation of SQL minus operator.
@@ -44,7 +50,11 @@ public final class MinusFunction<T> extends BiExpressionWithType<T> implements I
         super(operand1, operand2, resultType);
     }
 
-    public static MinusFunction<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
+    public static Expression<?> create(Expression<?> operand1, Expression<?> operand2, QueryDataType resultType) {
+        if (canSimplifyTemporalPlusMinus(operand1, operand2)) {
+            return operand1;
+        }
+
         return new MinusFunction<>(operand1, operand2, resultType);
     }
 
@@ -72,8 +82,9 @@ public final class MinusFunction<T> extends BiExpressionWithType<T> implements I
         }
 
         QueryDataTypeFamily family = resultType.getTypeFamily();
+
         if (family.isTemporal()) {
-            throw new UnsupportedOperationException("temporal types are unsupported currently");
+            return (T) evalTemporal(left, right, family);
         }
 
         return (T) evalNumeric((Number) left, (Number) right, family);
@@ -105,4 +116,24 @@ public final class MinusFunction<T> extends BiExpressionWithType<T> implements I
         }
     }
 
+    private static Object evalTemporal(Object left, Object right, QueryDataTypeFamily family) {
+        switch (family) {
+            case TIME:
+            case TIMESTAMP:
+            case TIMESTAMP_WITH_TIME_ZONE:
+                Temporal temporal = (Temporal) left;
+
+                if (right instanceof SqlDaySecondInterval) {
+                    return temporal.minus(((SqlDaySecondInterval) right).getMillis(), ChronoUnit.MILLIS);
+                } else {
+                    assert family != TIME;
+                    assert right instanceof SqlYearMonthInterval;
+
+                    return temporal.minus(((SqlYearMonthInterval) right).getMonths(), ChronoUnit.MONTHS);
+                }
+
+            default:
+                throw new IllegalArgumentException("Unexpected result family: " + family);
+        }
+    }
 }

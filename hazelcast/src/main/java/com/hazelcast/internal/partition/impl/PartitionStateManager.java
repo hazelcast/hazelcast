@@ -41,6 +41,8 @@ import com.hazelcast.spi.partitiongroup.MemberGroup;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT;
@@ -48,7 +50,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_MEMBER_GROUP_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_PARTITION_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_STAMP;
-import static com.hazelcast.internal.partition.PartitionStamp.calculateStamp;
+import static com.hazelcast.internal.partition.PartitionStampUtil.calculateStamp;
 
 /**
  * Maintains the partition table state.
@@ -73,6 +75,10 @@ public class PartitionStateManager {
 
     private final PartitionStateGenerator partitionStateGenerator;
     private final MemberGroupFactory memberGroupFactory;
+
+    // snapshot of partition assignments taken on member UUID removal and
+    // before partition rebalancing
+    private final ConcurrentMap<UUID, PartitionTableView> snapshotOnRemove;
 
     // updates will be done under lock, but reads will be multithreaded.
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
@@ -103,6 +109,20 @@ public class PartitionStateManager {
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
+        snapshotOnRemove = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * @return {@code true} if there are partitions having {@link
+     * InternalPartitionImpl#isMigrating()} flag set, {@code false} otherwise.
+     */
+    boolean hasMigratingPartitions() {
+        for (int i = 0; i < partitionCount; ++i) {
+            if (partitions[i].isMigrating()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Probe(name = PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_LOCAL_PARTITION_COUNT)
@@ -426,5 +446,16 @@ public class PartitionStateManager {
 
     PartitionTableView getPartitionTable() {
         return new PartitionTableView(getPartitionsCopy(true));
+    }
+
+    void storeSnapshot(UUID crashedMemberUuid) {
+        if (logger.isFineEnabled()) {
+            logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
+        }
+        snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
+    }
+
+    PartitionTableView getSnapshot(UUID crashedMemberUuid) {
+        return snapshotOnRemove.get(crashedMemberUuid);
     }
 }

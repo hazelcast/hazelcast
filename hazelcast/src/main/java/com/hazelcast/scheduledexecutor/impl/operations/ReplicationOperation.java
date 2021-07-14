@@ -64,10 +64,10 @@ public class ReplicationOperation
             throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             out.writeInt(entry.getValue().size());
             for (Map.Entry<String, ScheduledTaskDescriptor> subEntry : entry.getValue().entrySet()) {
-                out.writeUTF(subEntry.getKey());
+                out.writeString(subEntry.getKey());
                 out.writeObject(subEntry.getValue());
             }
         }
@@ -79,12 +79,12 @@ public class ReplicationOperation
         int size = in.readInt();
         map = createHashMap(size);
         for (int i = 0; i < size; i++) {
-            String key = in.readUTF();
+            String key = in.readString();
             int subSize = in.readInt();
             Map<String, ScheduledTaskDescriptor> subMap = createHashMap(subSize);
             map.put(key, subMap);
             for (int k = 0; k < subSize; k++) {
-                subMap.put(in.readUTF(), (ScheduledTaskDescriptor) in.readObject());
+                subMap.put(in.readString(), (ScheduledTaskDescriptor) in.readObject());
             }
         }
     }

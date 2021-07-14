@@ -110,7 +110,7 @@ public interface TenantControl extends DataSerializable {
      * Cleans up all of the thread context to avoid potential class loader leaks
      * This method should clear all potential context items,
      * not just the ones set up in {@link #setTenant()}
-     * This acts as a catch-all for any potential class class loader and thread-local leaks.
+     * This acts as a catch-all for any potential class loader and thread-local leaks.
      */
     void clearThreadContext();
 

@@ -19,7 +19,9 @@ package com.hazelcast.partition;
 import com.hazelcast.cluster.Address;
 
 /**
- * The event that is fired when a partition lost its owner and all backups.
+ * The event is fired when a primary replica of the partition is lost.
+ * If a backup node crashes when owner of the partition is still alive,
+ * a partition lost event won't be fired.
  *
  * @see Partition
  * @see PartitionService
@@ -28,7 +30,8 @@ import com.hazelcast.cluster.Address;
 public interface PartitionLostEvent extends PartitionEvent {
 
     /**
-     * Returns the number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
+     * @return 0 if primary replica is lost,
+     * otherwise returns count of lost backup replicas
      */
     int getLostBackupCount();
 

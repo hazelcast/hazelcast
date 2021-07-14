@@ -57,13 +57,13 @@ public class CacheDestroyEventContext implements DestroyEventContext, Identified
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(cacheName);
+        out.writeString(cacheName);
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        cacheName = in.readUTF();
+        cacheName = in.readString();
     }
 
     @Override

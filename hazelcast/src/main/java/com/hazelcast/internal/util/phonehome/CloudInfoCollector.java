@@ -68,6 +68,7 @@ class CloudInfoCollector implements MetricsCollector {
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         if (environmentInfo != null) {
             environmentInfo.forEach(metricsConsumer);
+            return;
         }
         Map<PhoneHomeMetrics, String> info = MapUtil.createHashMap(2);
         if (MetricsCollector.fetchWebService(awsEndpoint)) {

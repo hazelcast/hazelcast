@@ -47,6 +47,8 @@ import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
+import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -65,7 +67,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
@@ -77,6 +78,7 @@ public class DefaultClientExtension implements ClientExtension {
     protected static final ILogger LOGGER = Logger.getLogger(ClientExtension.class);
 
     protected volatile HazelcastClientInstanceImpl client;
+    protected JetClientInstanceImpl jetClient;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
@@ -87,6 +89,7 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public void afterStart(HazelcastClientInstanceImpl client) {
+        this.jetClient = new JetClientInstanceImpl(client);
     }
 
     @Override
@@ -139,6 +142,7 @@ public class DefaultClientExtension implements ClientExtension {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setNotActiveExceptionSupplier(HazelcastClientNotActiveException::new)
+                    .setSchemaService(client.getSchemaService())
                     .build();
         } catch (Exception e) {
             throw rethrow(e);
@@ -208,7 +212,6 @@ public class DefaultClientExtension implements ClientExtension {
             NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(id);
             if (nearCacheConfig != null) {
                 checkNearCacheConfig(id, nearCacheConfig, clientConfig.getNativeMemoryConfig(), true);
-                initDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
                 return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id, context);
             } else {
                 return new ClientMapProxy(MapService.SERVICE_NAME, id, context);
@@ -224,5 +227,10 @@ public class DefaultClientExtension implements ClientExtension {
         HazelcastProperties properties = client.getProperties();
 
         return new DefaultNearCacheManager(ss, taskScheduler, classLoader, properties);
+    }
+
+    @Override
+    public JetService getJet() {
+        return jetClient;
     }
 }

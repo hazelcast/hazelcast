@@ -195,12 +195,12 @@ public class AggregatorsPortableTest extends HazelcastTestSupport {
 
         @Override
         public void writePortable(PortableWriter writer) throws IOException {
-            writer.writeUTFArray("wheels", wheels);
+            writer.writeStringArray("wheels", wheels);
         }
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            wheels = reader.readUTFArray("wheels");
+            wheels = reader.readStringArray("wheels");
         }
     }
 

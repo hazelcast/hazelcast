@@ -71,7 +71,7 @@ public final class DistinctValuesAggregator<I, R>
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeInt(values.size());
         for (Object value : values) {
             out.writeObject(value);
@@ -80,7 +80,7 @@ public final class DistinctValuesAggregator<I, R>
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         int count = in.readInt();
         this.values = new CanonicalizingHashSet<R>(MapUtil.calculateInitialCapacity(count));
         for (int i = 0; i < count; i++) {

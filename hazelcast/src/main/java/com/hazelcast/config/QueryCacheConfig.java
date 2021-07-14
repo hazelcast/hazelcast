@@ -458,8 +458,8 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         out.writeBoolean(includeValue);
         out.writeBoolean(populate);
         out.writeBoolean(coalesce);
-        out.writeUTF(inMemoryFormat.name());
-        out.writeUTF(name);
+        out.writeString(inMemoryFormat.name());
+        out.writeString(name);
         out.writeObject(predicateConfig);
         out.writeObject(evictionConfig);
         writeNullableList(entryListenerConfigs, out);
@@ -474,8 +474,8 @@ public class QueryCacheConfig implements IdentifiedDataSerializable {
         includeValue = in.readBoolean();
         populate = in.readBoolean();
         coalesce = in.readBoolean();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
-        name = in.readUTF();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
+        name = in.readString();
         predicateConfig = in.readObject();
         evictionConfig = in.readObject();
         entryListenerConfigs = readNullableList(in);

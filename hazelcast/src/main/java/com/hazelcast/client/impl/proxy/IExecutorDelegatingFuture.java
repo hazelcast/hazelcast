@@ -26,7 +26,6 @@ import com.hazelcast.client.impl.spi.ClientContext;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -111,9 +110,7 @@ public final class IExecutorDelegatingFuture<V> extends ClientDelegatingFuture<V
     }
 
     private void waitForRequestToBeSend() throws InterruptedException {
-        InternalCompletableFuture future = getFuture();
-        ClientInvocationFuture clientCallFuture = (ClientInvocationFuture) future;
-        clientCallFuture.getInvocation().getSendConnectionOrWait();
+        ClientInvocationFuture future = getFuture();
+        future.getInvocation().waitInvoked();
     }
-
 }

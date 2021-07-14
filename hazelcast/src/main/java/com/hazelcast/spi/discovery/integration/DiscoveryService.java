@@ -69,7 +69,7 @@ public interface DiscoveryService {
 
     /**
      * Returns a map with discovered metadata provided by the runtime environment. Those information
-     * may include, but are not limited, to location information like datacenter, rack, host or additional
+     * may include, but are not limited, to location information like datacenter or additional
      * tags to be used for custom purpose.
      * <p>
      * Information discovered from this method are copied into the {@link Member}s

@@ -43,6 +43,8 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.wan.impl.CallerProvenance;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -280,7 +282,10 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Puts a data key and a record value to record-store.
-     * Used in replication operations.
+     * Used in replication operations: does not attempt
+     * loading from map store and is not intercepted by
+     * {@code MapInterceptor}.
+     *
      *
      * @param dataKey                the key to be put
      * @param record                 the value for record store.
@@ -291,6 +296,33 @@ public interface RecordStore<R extends Record> {
      */
     R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
                           boolean indexesMustBePopulated, long now);
+
+    /**
+     * Similarly to {@link #putReplicatedRecord(Data, Record, ExpiryMetadata, boolean, long)},
+     * this method is used in replication operations.
+     * If an existing record is located for the same key
+     * (as defined in {@link Storage#getIfSameKey(Object)}),
+     * then that record is updated instead of creating a
+     * new one.
+     *
+     * @param dataKey                   the key to put or update
+     * @param record                    the value for record store
+     * @param expiryMetadata            metadata relevant for expiry system
+     * @param indexesMustBePopulated    indicates if indexes must be updated
+     * @param now                       current time millis
+     * @return                          record after put or update
+     */
+    default R putOrUpdateReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
+                          boolean indexesMustBePopulated, long now) {
+        return putReplicatedRecord(dataKey, record, expiryMetadata, indexesMustBePopulated, now);
+    }
+
+    /**
+     * Remove record for given key. Does not load from MapLoader,
+     * does not intercept.
+     * @param dataKey   key to remove
+     */
+    void removeReplicatedRecord(Data dataKey);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -368,6 +400,7 @@ public interface RecordStore<R extends Record> {
 
     boolean containsValue(Object testValue);
 
+    @Nullable
     Object evict(Data key, boolean backup);
 
     /**
@@ -419,24 +452,13 @@ public interface RecordStore<R extends Record> {
     boolean isExpired(Data dataKey, long now, boolean backup);
 
     /**
-     * Checks whether a key has expired, when
-     * expired, key is removed from record-store,
-     * otherwise this method updates its access stats.
-     *
-     * @param key the key
-     * @return {@code true} if key has expired or
-     * does not exist, otherwise return {@code false}
-     */
-    boolean expireOrAccess(Data key);
-
-    /**
      * Does post eviction operations like sending events
      *
      * @param dataValue    record to process
      * @param expiryReason
      */
-    void doPostEvictionOperations(Data dataKey, Object dataValue,
-                                  ExpiryReason expiryReason);
+    void doPostEvictionOperations(@Nonnull Data dataKey, @Nonnull Object dataValue,
+                                  @Nonnull ExpiryReason expiryReason);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -507,7 +529,13 @@ public interface RecordStore<R extends Record> {
      */
     void init();
 
-    MetadataStore getMetadataStore();
+    /**
+     * Gets metadata store associated with the record store.
+     * On the first call it initializes the store so
+     * that the Json metadata store is created only when it is needed.
+     * @return the Json metadata store
+     */
+    JsonMetadataStore getOrCreateMetadataStore();
 
     Storage getStorage();
 

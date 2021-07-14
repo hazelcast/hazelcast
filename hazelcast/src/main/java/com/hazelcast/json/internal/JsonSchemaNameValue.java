@@ -16,16 +16,28 @@
 
 package com.hazelcast.json.internal;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+
+import static com.hazelcast.json.internal.JsonDataSerializerHook.JSON_SCHEMA_NAME_VALUE;
+
 /**
  * A node that describes either a name-value pair in a Json object or
  * an item in a Json array. For arrays items, {@link #getNameStart()}
  * always return -1 whereas for name-value pairs, it represents the
  * location of name of the attribute for object attributes.
  */
-public class JsonSchemaNameValue {
+public class JsonSchemaNameValue implements IdentifiedDataSerializable {
 
-    private final int nameStart;
-    private final JsonSchemaNode value;
+    private int nameStart;
+    private JsonSchemaNode value;
+
+    public JsonSchemaNameValue() {
+        // No-op.
+    }
 
     public JsonSchemaNameValue(int nameStart, JsonSchemaNode value) {
         this.nameStart = nameStart;
@@ -38,15 +50,14 @@ public class JsonSchemaNameValue {
      * to the underlying data format. It could be byte offset for Data
      * or char offset for String
      *
-     * @return  the location of the name relative to the beginning of the object
-     *          -1 for array items
+     * @return the location of the name relative to the beginning of the object
+     * -1 for array items
      */
     public int getNameStart() {
         return nameStart;
     }
 
     /**
-     *
      * @return true if this represents an array item
      */
     public boolean isArrayItem() {
@@ -54,7 +65,6 @@ public class JsonSchemaNameValue {
     }
 
     /**
-     *
      * @return true if this represents an object attribute
      */
     public boolean isObjectItem() {
@@ -63,6 +73,7 @@ public class JsonSchemaNameValue {
 
     /**
      * Returns the description of the value stored in here
+     *
      * @return
      */
     public JsonSchemaNode getValue() {
@@ -96,8 +107,37 @@ public class JsonSchemaNameValue {
     @Override
     public String toString() {
         return "JsonSchemaNameValue{"
-                + "nameStart=" + nameStart
-                + ", value=" + value
-                + '}';
+            + "nameStart=" + nameStart
+            + ", value=" + value
+            + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(nameStart);
+        out.writeBoolean(value instanceof JsonSchemaTerminalNode);
+        value.writeData(out);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        nameStart = in.readInt();
+        boolean isTerminal = in.readBoolean();
+        if (isTerminal) {
+            value = new JsonSchemaTerminalNode();
+        } else {
+            value = new JsonSchemaStructNode();
+        }
+        value.readData(in);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JsonDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JSON_SCHEMA_NAME_VALUE;
     }
 }

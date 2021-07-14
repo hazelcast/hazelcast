@@ -39,7 +39,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-4.2.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-5.0.xsd">
 
     <cluster-name>my-cluster</cluster-name>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
@@ -330,11 +330,11 @@
             <max-idle-seconds>0</max-idle-seconds>
             <invalidate-on-change>true</invalidate-on-change>
             <cache-local-entries>false</cache-local-entries>
-            <eviction eviction-policy="LRU" size="10000"/>
+            <eviction eviction-policy="LFU" size="10000"/>
         </near-cache>
 
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -517,8 +517,8 @@
         <write-through>true</write-through>
         <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
         <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
-        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory">
-            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="TOUCHED" duration-amount="123" time-unit="MICROSECONDS"/>
         </expiry-policy-factory>
 
         <cache-entry-listeners>
@@ -537,7 +537,7 @@
         <eviction comparator-class-name="DummyClass" eviction-policy="LRU"
                   max-size-policy="ENTRY_COUNT" size="50"/>
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy-class-name>hz.PASS_THROUGH</merge-policy-class-name>
+            <merge-policy-class-name>PassThroughMergePolicy</merge-policy-class-name>
             <filters>
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
@@ -548,6 +548,9 @@
         <partition-lost-listeners>
             <partition-lost-listener>DummyListener</partition-lost-listener>
         </partition-lost-listeners>
+        <merkle-tree enabled="true">
+            <depth>5</depth>
+        </merkle-tree>
         <hot-restart>
             <fsync>true</fsync>
         </hot-restart>
@@ -614,7 +617,7 @@
 
     <native-memory allocator-type="STANDARD" enabled="true">
         <size unit="MEGABYTES" value="256"/>
-        <min-block-size>123</min-block-size>
+        <min-block-size>128</min-block-size>
         <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
         <persistent-memory enabled="true" mode="MOUNTED">
@@ -627,7 +630,20 @@
 
     <security enabled="false">
         <realms>
-            <realm name="mr">
+            <realm name="simpleRealm">
+                <authentication>
+                    <simple>
+                        <user username="test" password="a1234">
+                            <role>monitor</role>
+                            <role>hazelcast</role>
+                        </user>
+                        <user username="dev" password="secret">
+                            <role>root</role>
+                        </user>
+                    </simple>
+                </authentication>
+            </realm>
+            <realm name="jaasRealm">
                 <authentication>
                     <jaas>
                         <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
@@ -644,22 +660,6 @@
                         </properties>
                     </credentials-factory>
                 </identity>
-            </realm>
-            <realm name="cr">
-                <authentication>
-                    <jaas>
-                        <login-module class-name="com.hazelcast.examples.MyOptionalLoginModule" usage="OPTIONAL">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                        <login-module class-name="com.hazelcast.examples.MyRequiredLoginModule" usage="REQUIRED">
-                            <properties>
-                                <property name="property">value</property>
-                            </properties>
-                        </login-module>
-                    </jaas>
-                </authentication>
             </realm>
             <realm name="ldapRealm">
                 <authentication>
@@ -778,8 +778,8 @@
                 </authentication>
             </realm>
         </realms>
-        <member-authentication realm="mr"/>
-        <client-authentication realm="cr"/>
+        <member-authentication realm="jaasRealm"/>
+        <client-authentication realm="simpleRealm"/>
         <client-permission-policy class-name="com.hazelcast.examples.MyPermissionPolicy">
             <properties>
                 <property name="property">value</property>
@@ -854,7 +854,7 @@
                     <action>all</action>
                 </actions>
             </countdown-latch-permission>
-            <semaphore-permission name="*">
+            <semaphore-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -874,7 +874,7 @@
                     <action>all</action>
                 </actions>
             </cardinality-estimator-permission>
-            <scheduled-executor-permission name="*">
+            <scheduled-executor-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -884,7 +884,7 @@
                     <action>all</action>
                 </actions>
             </cache-permission>
-            <user-code-deployment-permission name="*">
+            <user-code-deployment-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -894,7 +894,7 @@
                     <action>all</action>
                 </actions>
             </pn-counter-permission>
-            <ring-buffer-permission name="*">
+            <ring-buffer-permission name="*" principal="*">
                 <actions>
                     <action>all</action>
                 </actions>
@@ -909,6 +909,17 @@
                     <action>all</action>
                 </actions>
             </replicatedmap-permission>
+            <management-permission principal="mcadmin"/>
+            <job-permission principal="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </job-permission>
+            <connector-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </connector-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>

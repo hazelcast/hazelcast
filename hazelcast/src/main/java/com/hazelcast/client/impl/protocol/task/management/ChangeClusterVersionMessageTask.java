@@ -24,6 +24,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeClusterVersionOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
@@ -31,6 +32,8 @@ import com.hazelcast.version.Version;
 import java.security.Permission;
 
 public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTask<RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cluster.changeVersion");
 
     public ChangeClusterVersionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -65,7 +68,7 @@ public class ChangeClusterVersionMessageTask extends AbstractInvocationMessageTa
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

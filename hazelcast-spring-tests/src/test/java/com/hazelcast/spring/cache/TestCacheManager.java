@@ -17,7 +17,6 @@
 package com.hazelcast.spring.cache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
@@ -37,7 +36,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -118,14 +116,7 @@ public class TestCacheManager extends HazelcastTestSupport {
             }
         });
 
-        Config config = new Config();
-        config.getNetworkConfig().setPublicAddress("127.0.0.1")
-                .setPort(5101).setPortAutoIncrement(true);
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getTcpIpConfig().setEnabled(true).setMembers(
-                Arrays.asList(
-                        "127.0.0.1"));
-        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance(extractConfig());
         testInstance.getMap(testMap);
         // be sure that test-map is distributed
         HazelcastTestSupport.assertOpenEventually(distributionSignal);
@@ -168,5 +159,18 @@ public class TestCacheManager extends HazelcastTestSupport {
             }
             return null;
         }
+    }
+
+    private Config extractConfig() {
+        Config config = instance.getConfig();
+        Config extractedConfig = new Config();
+        extractedConfig
+                .setProperties(config.getProperties())
+                .setClusterName(config.getClusterName())
+                .setNetworkConfig(config.getNetworkConfig())
+                .setJetConfig(config.getJetConfig())
+                .setSqlConfig(config.getSqlConfig());
+
+        return extractedConfig;
     }
 }

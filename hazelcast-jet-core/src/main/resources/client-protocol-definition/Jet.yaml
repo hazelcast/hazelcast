@@ -1,0 +1,283 @@
+id: 254
+name: Jet
+methods:
+  - id: 1
+    name: submitJob
+    since: 2.0
+    doc: ''
+    request:
+      retryable: false
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: dag
+          type: Data
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: jobConfig
+          type: Data
+          nullable: true
+          since: 2.0
+          doc: ''
+        - name: isLightJob
+          type: boolean
+          nullable: false
+          since: 2.3
+          doc: ''
+    response: {}
+  - id: 2
+    name: terminateJob
+    since: 2.0
+    doc: ''
+    request:
+      retryable: false
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: terminateMode
+          type: int
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
+          since: 2.3
+          doc: ''
+    response: {}
+  - id: 3
+    name: getJobStatus
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: int
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 4
+    name: getJobIds
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: onlyName
+          type: String
+          nullable: true
+          since: 2.3
+          doc: ''
+        - name: onlyJobId
+          type: long
+          nullable: false
+          since: 2.3
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: Data
+          nullable: false
+          since: 2.3
+          doc: ''
+  - id: 5
+    name: joinSubmittedJob
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
+          since: 2.3
+          doc: ''
+    response: {}
+  - id: 7
+    name: getJobSubmissionTime
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: lightJobCoordinator
+          type: UUID
+          nullable: true
+          since: 2.3
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 8
+    name: getJobConfig
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: Data
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 9
+    name: resumeJob
+    since: 2.0
+    doc: ''
+    request:
+      retryable: false
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+    response: {}
+  - id: 10
+    name: exportSnapshot
+    since: 2.0
+    doc: ''
+    request:
+      retryable: false
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: name
+          type: String
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: cancelJob
+          type: boolean
+          nullable: false
+          since: 2.0
+          doc: ''
+    response: {}
+  - id: 11
+    name: getJobSummaryList
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params: []
+    response:
+      params:
+        - name: response
+          type: Data
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 12
+    name: existsDistributedObject
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: serviceName
+          type: String
+          nullable: false
+          since: 2.0
+          doc: ''
+        - name: objectName
+          type: String
+          nullable: false
+          since: 2.0
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: boolean
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 13
+    name: getJobMetrics
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: Data
+          nullable: false
+          since: 2.0
+          doc: ''
+  - id: 14
+    name: getJobSuspensionCause
+    since: 2.0
+    doc: ''
+    request:
+      retryable: true
+      partitionIdentifier: -1
+      params:
+        - name: jobId
+          type: long
+          nullable: false
+          since: 2.0
+          doc: ''
+    response:
+      params:
+        - name: response
+          type: Data
+          nullable: false
+          since: 2.0
+          doc: ''

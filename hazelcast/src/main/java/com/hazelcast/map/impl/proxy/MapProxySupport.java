@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.proxy;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
@@ -121,6 +123,7 @@ import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSe
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.MapUtil.toIntSize;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
@@ -498,6 +501,25 @@ abstract class MapProxySupport<K, V>
             long startTimeNanos = Timer.nanos();
             InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
 
+            if (statisticsEnabled) {
+                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
+            }
+            return future;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data value,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(key);
+        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        operation.setThreadId(getThreadId());
+        try {
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             if (statisticsEnabled) {
                 future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
             }
@@ -1001,7 +1023,13 @@ abstract class MapProxySupport<K, V>
                     resultFuture.completeExceptionally(t);
                 }
                 if (counter.decrementAndGet() == 0) {
-                    finalizePutAll(map);
+                    try {
+                        // don't ignore errors here, see https://github.com/hazelcast/hazelcast-jet/issues/3046
+                        finalizePutAll(map);
+                    } catch (Throwable e) {
+                        resultFuture.completeExceptionally(e);
+                        return;
+                    }
                     if (!resultFuture.isDone()) {
                         resultFuture.complete(null);
                     }
@@ -1299,6 +1327,8 @@ abstract class MapProxySupport<K, V>
     @Override
     public void addIndex(IndexConfig indexConfig) {
         checkNotNull(indexConfig, "Index config cannot be null.");
+        checkFalse(isNativeMemoryAndBitmapIndexingEnabled(indexConfig.getType()),
+                "BITMAP indexes are not supported by NATIVE storage");
 
         IndexConfig indexConfig0 = IndexUtils.validateAndNormalize(name, indexConfig);
 
@@ -1310,6 +1340,11 @@ abstract class MapProxySupport<K, V>
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    protected boolean isNativeMemoryAndBitmapIndexingEnabled(IndexType indexType) {
+        InMemoryFormat mapStoreConfig = mapConfig.getInMemoryFormat();
+        return mapStoreConfig == InMemoryFormat.NATIVE && indexType == IndexType.BITMAP;
     }
 
     @Override

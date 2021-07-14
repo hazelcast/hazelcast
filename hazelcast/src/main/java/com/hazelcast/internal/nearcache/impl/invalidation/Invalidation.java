@@ -92,7 +92,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(dataStructureName);
+        out.writeString(dataStructureName);
         UUIDSerializationUtil.writeUUID(out, sourceUuid);
         out.writeLong(sequence);
 
@@ -106,7 +106,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        dataStructureName = in.readUTF();
+        dataStructureName = in.readString();
         sourceUuid = UUIDSerializationUtil.readUUID(in);
         sequence = in.readLong();
         boolean nullUuid = in.readBoolean();

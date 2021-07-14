@@ -22,11 +22,14 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 
 public class HotRestartTriggerPartialStartMessageTask
         extends AbstractCallableMessageTask<Void> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("hotrestart.triggerPartialStart");
 
     private final Node node;
 
@@ -62,7 +65,7 @@ public class HotRestartTriggerPartialStartMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

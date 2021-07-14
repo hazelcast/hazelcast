@@ -22,7 +22,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
@@ -126,7 +125,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                                                        ExpiryReason expiryReason,
                                                        boolean backup) {
         Object value = evict(key, backup);
-        if (!backup) {
+        if (value != null && !backup) {
             doPostEvictionOperations(key, value, expiryReason);
         }
     }
@@ -140,26 +139,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     @Override
-    public boolean isExpired(Data dataKey, long now, boolean backup) {
-        return expirySystem.hasExpired(dataKey, now, backup)
-                != NOT_EXPIRED;
-    }
-
-    @Override
-    public boolean expireOrAccess(Data key) {
-        long now = Clock.currentTimeMillis();
-        boolean expired = evictIfExpired(key, now, false);
-        if (!expired) {
-            Record record = storage.get(key);
-            accessRecord(key, record, now);
-        }
-        return expired;
+    public boolean isExpired(Data key, long now, boolean backup) {
+         return hasExpired(key, now, backup) != NOT_EXPIRED;
     }
 
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
-
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
             mapEventPublisher.publishEvent(thisAddress, name,
@@ -169,7 +155,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to backup if
             // it is expired according to idleness.
-            expirySystem.accumulateOrSendExpiredKey(dataKey);
+            expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
         }
     }
 
@@ -177,7 +163,6 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public InvalidationQueue<ExpiredKey> getExpiredKeysQueue() {
         return expirySystem.getExpiredKeys();
     }
-
 
     @Override
     public void accessRecord(Data dataKey, Record record, long now) {

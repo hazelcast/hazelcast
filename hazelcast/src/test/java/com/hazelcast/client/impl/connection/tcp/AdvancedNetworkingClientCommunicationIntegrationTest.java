@@ -58,6 +58,7 @@ public class AdvancedNetworkingClientCommunicationIntegrationTest extends Abstra
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().addAddress("127.0.0.1:" + port);
         clientConfig.getNetworkConfig().setConnectionTimeout(3000);
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(3000);
         return HazelcastClient.newHazelcastClient(clientConfig);
     }
 

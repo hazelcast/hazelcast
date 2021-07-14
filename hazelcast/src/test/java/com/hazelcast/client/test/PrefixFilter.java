@@ -45,11 +45,11 @@ public class PrefixFilter implements IdentifiedDataSerializable, IFunction<Strin
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(prefix);
+        out.writeString(prefix);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        prefix = in.readUTF();
+        prefix = in.readString();
     }
 }

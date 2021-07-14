@@ -25,6 +25,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 
 import java.security.Permission;
 import java.util.AbstractMap.SimpleEntry;
@@ -35,6 +36,8 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List<SimpleEntry<UUID, UUID>>> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("cp.getCPMembers");
 
     public GetCPMembersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -73,7 +76,7 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

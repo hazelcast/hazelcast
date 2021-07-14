@@ -51,7 +51,7 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
                 .addProperty(BACKUP_COUNT_PROP, String.valueOf(backupCount));
     }
 
-    private final ConcurrentMap<Key, Integer> data = new ConcurrentHashMap<Key, Integer>();
+    private final ConcurrentMap<Key, Integer> data = new ConcurrentHashMap<>();
 
     int inc(String name, int partitionId) {
         Key key = new Key(name, partitionId);

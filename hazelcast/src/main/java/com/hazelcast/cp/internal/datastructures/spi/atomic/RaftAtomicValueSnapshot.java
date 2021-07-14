@@ -55,13 +55,13 @@ public abstract class RaftAtomicValueSnapshot<T> implements IdentifiedDataSerial
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(values.size());
         for (Map.Entry<String, T> entry : values.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             writeValue(out, entry.getValue());
         }
 
         out.writeInt(destroyed.size());
         for (String name : destroyed) {
-            out.writeUTF(name);
+            out.writeString(name);
         }
     }
 
@@ -72,7 +72,7 @@ public abstract class RaftAtomicValueSnapshot<T> implements IdentifiedDataSerial
         int len = in.readInt();
         values = new HashMap<>(len);
         for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             T value = readValue(in);
             values.put(name, value);
         }
@@ -80,7 +80,7 @@ public abstract class RaftAtomicValueSnapshot<T> implements IdentifiedDataSerial
         len = in.readInt();
         destroyed = new HashSet<>(len);
         for (int i = 0; i < len; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             destroyed.add(name);
         }
     }

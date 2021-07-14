@@ -48,7 +48,7 @@ public class GenericRecordBuilderTest {
     public void testWritingSameFieldMultipleTimes() {
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(namedPortableClassDefinition);
@@ -61,7 +61,7 @@ public class GenericRecordBuilderTest {
     public void testOverwritingSameFieldMultipleTimes() {
         ClassDefinition namedPortableClassDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
 
         GenericRecord record = GenericRecordBuilder.portable(namedPortableClassDefinition)
@@ -76,7 +76,7 @@ public class GenericRecordBuilderTest {
     public void testWritingToNonExistingField() {
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
         assertThrows(HazelcastSerializationException.class, () -> builder.setString("nonExistingField", "foo3"));
@@ -86,7 +86,7 @@ public class GenericRecordBuilderTest {
     public void testWritingToFieldWithWrongType() {
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
         assertThrows(HazelcastSerializationException.class, () -> builder.setInt("name", 1));
@@ -96,7 +96,7 @@ public class GenericRecordBuilderTest {
     public void testUnwrittenFieldsThrowException() {
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(TestSerializationConstants.PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                        .addUTFField("name").addIntField("myint").build();
+                        .addStringField("name").addIntField("myint").build();
 
         GenericRecordBuilder builder = GenericRecordBuilder.portable(classDefinition);
         builder.setInt("myint", 1);
@@ -107,7 +107,7 @@ public class GenericRecordBuilderTest {
     public void testWriteReadGenericRecordToObjectDataInput() throws IOException {
         ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(1, 1);
         classDefinitionBuilder.addIntField("age");
-        classDefinitionBuilder.addUTFField("name");
+        classDefinitionBuilder.addStringField("name");
         ClassDefinition classDefinition = classDefinitionBuilder.build();
 
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();

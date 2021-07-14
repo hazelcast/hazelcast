@@ -45,11 +45,11 @@ public class AppendString implements IFunction<String, String>, IdentifiedDataSe
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(suffix);
+        out.writeString(suffix);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        suffix = in.readUTF();
+        suffix = in.readString();
     }
 }

@@ -230,7 +230,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
@@ -238,7 +238,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();

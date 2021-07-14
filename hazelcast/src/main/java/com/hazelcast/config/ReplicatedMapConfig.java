@@ -259,23 +259,23 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, NamedCon
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(inMemoryFormat.name());
+        out.writeString(name);
+        out.writeString(inMemoryFormat.name());
         out.writeBoolean(asyncFillup);
         out.writeBoolean(statisticsEnabled);
         writeNullableList(listenerConfigs, out);
-        out.writeUTF(splitBrainProtectionName);
+        out.writeString(splitBrainProtectionName);
         out.writeObject(mergePolicyConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
+        name = in.readString();
+        inMemoryFormat = InMemoryFormat.valueOf(in.readString());
         asyncFillup = in.readBoolean();
         statisticsEnabled = in.readBoolean();
         listenerConfigs = readNullableList(in);
-        splitBrainProtectionName = in.readUTF();
+        splitBrainProtectionName = in.readString();
         mergePolicyConfig = in.readObject();
     }
 

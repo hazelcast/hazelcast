@@ -17,113 +17,63 @@
 package com.hazelcast.map.impl.record;
 
 import com.hazelcast.config.CacheDeserializedValues;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.eviction.Evictor;
-import com.hazelcast.partition.PartitioningStrategy;
-import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runners.Parameterized;
 
-import javax.annotation.Nonnull;
-
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport {
 
+    @Parameterized.Parameter(0)
+    public boolean perEntryStatsEnabled;
+    @Parameterized.Parameter(1)
+    public EvictionPolicy evictionPolicy;
+    @Parameterized.Parameter(2)
+    public CacheDeserializedValues cacheDeserializedValues;
+    @Parameterized.Parameter(3)
+    public Class expectedRecordClass;
+
+    RecordFactory factory;
     SerializationService serializationService;
-    PartitioningStrategy partitioningStrategy;
-    RecordFactory<T> factory;
-
-    Person object1;
-    Person object2;
-
-    Data data1;
-    Data data2;
-
-    Record<T> record;
 
     @Before
-    public final void init() {
+    public void setUp() throws Exception {
         serializationService = createSerializationService();
-        partitioningStrategy = new DefaultPartitioningStrategy();
-
-        object1 = new Person("Alice");
-        object2 = new Person("Bob");
-
-        data1 = serializationService.toData(object1);
-        data2 = serializationService.toData(object2);
+        factory = newRecordFactory();
     }
+
+    protected abstract RecordFactory newRecordFactory();
 
     @Test
-    public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsALWAYS() {
-        newRecordFactory(false, CacheDeserializedValues.ALWAYS);
-        record = newRecord(factory, object1);
-
-        assertInstanceOf(getCachedRecordClass(), record);
+    public void test_expected_record_per_config_is_created() {
+        Record record = factory.newRecord("value");
+        assertEquals(expectedRecordClass.getCanonicalName(), record.getClass().getCanonicalName());
     }
-
-    @Test
-    public void testNewRecord_withStatisticsDisabledAndCacheDeserializedValuesIsNEVER() {
-        newRecordFactory(false, CacheDeserializedValues.NEVER);
-        record = newRecord(factory, object1);
-
-        assertInstanceOf(getRecordClass(), record);
-    }
-
-    @Test
-    public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsALWAYS() {
-        newRecordFactory(true, CacheDeserializedValues.ALWAYS);
-        record = newRecord(factory, object1);
-
-        assertInstanceOf(getCachedRecordWithStatsClass(), record);
-    }
-
-    @Test
-    public void testNewRecord_withStatisticsEnabledAndCacheDeserializedValuesIsNEVER() {
-        newRecordFactory(true, CacheDeserializedValues.NEVER);
-        record = newRecord(factory, object1);
-
-        assertInstanceOf(getRecordWithStatsClass(), record);
-    }
-
-
-    abstract void newRecordFactory(boolean isStatisticsEnabled,
-                                   CacheDeserializedValues cacheDeserializedValues);
-
-    abstract Class<?> getRecordClass();
-
-    abstract Class<?> getRecordWithStatsClass();
-
-    abstract Class<?> getCachedRecordClass();
-
-    abstract Class<?> getCachedRecordWithStatsClass();
 
     InternalSerializationService createSerializationService() {
         return new DefaultSerializationServiceBuilder().build();
     }
 
-    Record<T> newRecord(RecordFactory<T> factory, Object value) {
-        return factory.newRecord(value);
-    }
-
-    @Nonnull
     protected MapContainer createMapContainer(boolean perEntryStatsEnabled,
-                                            CacheDeserializedValues cacheDeserializedValues) {
-        MapConfig mapConfig = new MapConfig()
-                .setPerEntryStatsEnabled(perEntryStatsEnabled)
-                .setCacheDeserializedValues(cacheDeserializedValues);
+                                              EvictionPolicy evictionPolicy,
+                                              CacheDeserializedValues cacheDeserializedValues) {
+        MapConfig mapConfig = newMapConfig(perEntryStatsEnabled, evictionPolicy, cacheDeserializedValues);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
         ClusterService clusterService = mock(ClusterService.class);
@@ -135,8 +85,20 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
         MapContainer mapContainer = mock(MapContainer.class);
         when(mapContainer.getMapConfig()).thenReturn(mapConfig);
-        when(mapContainer.getEvictor()).thenReturn(Evictor.NULL_EVICTOR);
+        when(mapContainer.getEvictor()).thenReturn(evictionPolicy == EvictionPolicy.NONE
+                ? Evictor.NULL_EVICTOR : mock(Evictor.class));
         when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
         return mapContainer;
+    }
+
+    protected MapConfig newMapConfig(boolean perEntryStatsEnabled,
+                                     EvictionPolicy evictionPolicy,
+                                     CacheDeserializedValues cacheDeserializedValues) {
+        MapConfig mapConfig = new MapConfig()
+                .setPerEntryStatsEnabled(perEntryStatsEnabled)
+                .setCacheDeserializedValues(cacheDeserializedValues);
+        mapConfig.getEvictionConfig()
+                .setEvictionPolicy(evictionPolicy);
+        return mapConfig;
     }
 }

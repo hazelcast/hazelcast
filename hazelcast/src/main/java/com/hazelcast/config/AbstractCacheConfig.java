@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -32,6 +33,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -89,6 +91,8 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     protected boolean isManagementEnabled;
 
     protected HotRestartConfig hotRestartConfig = new HotRestartConfig();
+
+    protected DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
 
     protected EventJournalConfig eventJournalConfig = new EventJournalConfig();
 
@@ -261,13 +265,41 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     /**
+     * Gets the {@code PersistConfig} for this {@code CacheConfiguration}
+     *
+     * @return dataPersistenceConfig config
+     */
+    public @Nonnull
+    DataPersistenceConfig getDataPersistenceConfig() {
+        return dataPersistenceConfig;
+    }
+
+    /**
      * Sets the {@code HotRestartConfig} for this {@code CacheConfiguration}
      *
      * @param hotRestartConfig hot restart config
      * @return this {@code CacheConfiguration} instance
+     *
+     * @deprecated since 5.0 use {@link AbstractCacheConfig#setDataPersistenceConfig(DataPersistenceConfig)}
      */
+    @Deprecated
     public CacheConfiguration<K, V> setHotRestartConfig(@Nonnull HotRestartConfig hotRestartConfig) {
         this.hotRestartConfig = checkNotNull(hotRestartConfig, "HotRestartConfig can't be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
+        return this;
+    }
+
+    /**
+     * Sets the {@code DataPersistenceConfig} for this {@code CacheConfiguration}
+     *
+     * @param dataPersistenceConfig dataPersistenceConfig config
+     * @return this {@code CacheConfiguration} instance
+     */
+    public CacheConfiguration<K, V> setDataPersistenceConfig(@Nonnull DataPersistenceConfig dataPersistenceConfig) {
+        this.dataPersistenceConfig = checkNotNull(dataPersistenceConfig, "DataPersistenceConfig can't be null");
+
+        DataPersistenceAndHotRestartMerger.merge(hotRestartConfig, dataPersistenceConfig);
         return this;
     }
 
@@ -483,6 +515,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         result = 31 * result + (isStoreByValue ? 1 : 0);
         result = 31 * result + (isManagementEnabled ? 1 : 0);
         result = 31 * result + hotRestartConfig.hashCode();
+        result = 31 * result + dataPersistenceConfig.hashCode();
         result = 31 * result + eventJournalConfig.hashCode();
         return result;
     }
@@ -515,22 +548,19 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         }
         Factory<CacheLoader<K, V>> thisCacheLoaderFactory = this.getCacheLoaderFactory();
         Factory<CacheLoader<K, V>> thatCacheLoaderFactory = that.getCacheLoaderFactory();
-        if (thisCacheLoaderFactory != null ? !thisCacheLoaderFactory.equals(thatCacheLoaderFactory)
-                : thatCacheLoaderFactory != null) {
+        if (!Objects.equals(thisCacheLoaderFactory, thatCacheLoaderFactory)) {
             return false;
         }
 
         Factory<CacheWriter<? super K, ? super V>> thisCacheWriterFactory = this.getCacheWriterFactory();
         Factory<CacheWriter<? super K, ? super V>> thatCacheWriterFactory = that.getCacheWriterFactory();
-        if (thisCacheWriterFactory != null ? !thisCacheWriterFactory.equals(thatCacheWriterFactory)
-                : thatCacheWriterFactory != null) {
+        if (!Objects.equals(thisCacheWriterFactory, thatCacheWriterFactory)) {
             return false;
         }
 
         Factory<ExpiryPolicy> thisExpiryPolicyFactory = this.getExpiryPolicyFactory();
         Factory<ExpiryPolicy> thatExpiryPolicyFactory = that.getExpiryPolicyFactory();
-        if (thisExpiryPolicyFactory != null
-                ? !thisExpiryPolicyFactory.equals(thatExpiryPolicyFactory) : thatExpiryPolicyFactory != null) {
+        if (!Objects.equals(thisExpiryPolicyFactory, thatExpiryPolicyFactory)) {
             return false;
         }
 
@@ -545,6 +575,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         if (!hotRestartConfig.equals(that.hotRestartConfig)) {
             return false;
         }
+
+        if (!dataPersistenceConfig.equals(that.dataPersistenceConfig)) {
+            return false;
+        }
+
         return keyValueTypesEqual(that);
     }
 

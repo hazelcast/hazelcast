@@ -20,8 +20,8 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlRowImpl;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -207,7 +207,7 @@ public final class SqlPage {
             this.count = count;
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Iterator<Object> iterator() {
             return new NullTypeIterator(count);
@@ -259,7 +259,7 @@ public final class SqlPage {
             this.convertToData = convertToData;
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Iterator<Object> iterator() {
             return new RowsetColumnIterator(rows, serializationService, columnIndex, convertToData);

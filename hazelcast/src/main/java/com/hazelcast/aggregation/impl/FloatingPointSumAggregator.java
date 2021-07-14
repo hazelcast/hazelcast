@@ -65,13 +65,13 @@ public final class FloatingPointSumAggregator<I> extends AbstractAggregator<I, N
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeDouble(sum);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.sum = in.readDouble();
     }
 

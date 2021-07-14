@@ -303,14 +303,14 @@ public class ClientBitmapIndexTest extends HazelcastTestSupport {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeLong(id);
-            out.writeUTF(stringId);
+            out.writeString(stringId);
             out.writeObject(age);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             id = in.readLong();
-            stringId = in.readUTF();
+            stringId = in.readString();
             age = in.readObject();
         }
 

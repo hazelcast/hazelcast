@@ -59,7 +59,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
         out.writeInt(map.size());
         for (Map.Entry<String, Map<Data, MultiMapValue>> entry : map.entrySet()) {
             String name = entry.getKey();
-            out.writeUTF(name);
+            out.writeString(name);
 
             Map<Data, MultiMapValue> collections = entry.getValue();
             out.writeInt(collections.size());
@@ -73,7 +73,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
                 if (coll instanceof List) {
                     collectionType = MultiMapConfig.ValueCollectionType.LIST.name();
                 }
-                out.writeUTF(collectionType);
+                out.writeString(collectionType);
                 for (MultiMapRecord record : coll) {
                     record.writeData(out);
                 }
@@ -86,13 +86,13 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
         int mapSize = in.readInt();
         map = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            String name = in.readUTF();
+            String name = in.readString();
             int collectionSize = in.readInt();
             Map<Data, MultiMapValue> collections = createHashMap(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
                 Data key = IOUtil.readData(in);
                 int collSize = in.readInt();
-                String collectionType = in.readUTF();
+                String collectionType = in.readString();
                 Collection<MultiMapRecord> coll;
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
                     coll = createHashSet(collSize);

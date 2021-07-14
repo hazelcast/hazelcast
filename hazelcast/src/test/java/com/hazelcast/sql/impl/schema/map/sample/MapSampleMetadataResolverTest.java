@@ -82,7 +82,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
     private static final String PORTABLE_LONG = "_long";
     private static final String PORTABLE_FLOAT = "_float";
     private static final String PORTABLE_DOUBLE = "_double";
+    private static final String PORTABLE_DECIMAL = "_decimal";
     private static final String PORTABLE_STRING = "_string";
+    private static final String PORTABLE_TIME = "_time";
+    private static final String PORTABLE_DATE = "_date";
+    private static final String PORTABLE_TIMESTAMP = "_timestamp";
+    private static final String PORTABLE_TIMESTAMP_WITH_TIMEZONE = "_timestampTz";
     private static final String PORTABLE_OBJECT = "_object";
 
     @Mock
@@ -151,7 +156,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("_long", QueryDataType.BIGINT, true),
             field("_float", QueryDataType.REAL, true),
             field("_double", QueryDataType.DOUBLE, true),
+            field("_decimal", QueryDataType.DECIMAL, true),
             field("_string", QueryDataType.VARCHAR, true),
+            field("_time", QueryDataType.TIME, true),
+            field("_date", QueryDataType.DATE, true),
+            field("_timestamp", QueryDataType.TIMESTAMP, true),
+            field("_timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, true),
             field("_object", QueryDataType.OBJECT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -169,7 +179,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field("_long", QueryDataType.BIGINT, false),
             field("_float", QueryDataType.REAL, false),
             field("_double", QueryDataType.DOUBLE, false),
+            field("_decimal", QueryDataType.DECIMAL, false),
             field("_string", QueryDataType.VARCHAR, false),
+            field("_time", QueryDataType.TIME, false),
+            field("_date", QueryDataType.DATE, false),
+            field("_timestamp", QueryDataType.TIMESTAMP, false),
+            field("_timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, false),
             field("_object", QueryDataType.OBJECT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
@@ -192,7 +207,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field(PORTABLE_LONG, QueryDataType.BIGINT, true),
             field(PORTABLE_FLOAT, QueryDataType.REAL, true),
             field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, true),
+            field(PORTABLE_DECIMAL, QueryDataType.DECIMAL, true),
             field(PORTABLE_STRING, QueryDataType.VARCHAR, true),
+            field(PORTABLE_TIME, QueryDataType.TIME, true),
+            field(PORTABLE_DATE, QueryDataType.DATE, true),
+            field(PORTABLE_TIMESTAMP, QueryDataType.TIMESTAMP, true),
+            field(PORTABLE_TIMESTAMP_WITH_TIMEZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, true),
             field(PORTABLE_OBJECT, QueryDataType.OBJECT, true),
             hiddenField(KEY, QueryDataType.OBJECT, true)
         );
@@ -210,7 +230,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             field(PORTABLE_LONG, QueryDataType.BIGINT, false),
             field(PORTABLE_FLOAT, QueryDataType.REAL, false),
             field(PORTABLE_DOUBLE, QueryDataType.DOUBLE, false),
+            field(PORTABLE_DECIMAL, QueryDataType.DECIMAL, false),
             field(PORTABLE_STRING, QueryDataType.VARCHAR, false),
+            field(PORTABLE_TIME, QueryDataType.TIME, false),
+            field(PORTABLE_DATE, QueryDataType.DATE, false),
+            field(PORTABLE_TIMESTAMP, QueryDataType.TIMESTAMP, false),
+            field(PORTABLE_TIMESTAMP_WITH_TIMEZONE, QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, false),
             field(PORTABLE_OBJECT, QueryDataType.OBJECT, false),
             hiddenField(VALUE, QueryDataType.OBJECT, false)
         );
@@ -807,7 +832,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
         public long fLong;
         public float fFloat;
         public double fDouble;
+        public BigDecimal fDecimal;
         public String fString;
+        public LocalTime fTime;
+        public LocalDate fDate;
+        public LocalDateTime fTimestamp;
+        public OffsetDateTime fTimestampTz;
         public PortableChild fObject = new PortableChild();
 
         @Override
@@ -830,7 +860,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             writer.writeLong(PORTABLE_LONG, fLong);
             writer.writeFloat(PORTABLE_FLOAT, fFloat);
             writer.writeDouble(PORTABLE_DOUBLE, fDouble);
-            writer.writeUTF(PORTABLE_STRING, fString);
+            writer.writeDecimal(PORTABLE_DECIMAL, fDecimal);
+            writer.writeString(PORTABLE_STRING, fString);
+            writer.writeTime(PORTABLE_TIME, fTime);
+            writer.writeDate(PORTABLE_DATE, fDate);
+            writer.writeTimestamp(PORTABLE_TIMESTAMP, fTimestamp);
+            writer.writeTimestampWithTimezone(PORTABLE_TIMESTAMP_WITH_TIMEZONE, fTimestampTz);
             writer.writePortable(PORTABLE_OBJECT, fObject);
         }
 
@@ -844,7 +879,12 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             fLong = reader.readLong(PORTABLE_LONG);
             fFloat = reader.readFloat(PORTABLE_FLOAT);
             fDouble = reader.readDouble(PORTABLE_DOUBLE);
-            fString = reader.readUTF(PORTABLE_STRING);
+            fDecimal = reader.readDecimal(PORTABLE_DECIMAL);
+            fString = reader.readString(PORTABLE_STRING);
+            fTime = reader.readTime(PORTABLE_TIME);
+            fDate = reader.readDate(PORTABLE_DATE);
+            fTimestamp = reader.readTimestamp(PORTABLE_TIMESTAMP);
+            fTimestampTz = reader.readTimestampWithTimezone(PORTABLE_TIMESTAMP_WITH_TIMEZONE);
             fObject = reader.readPortable(PORTABLE_OBJECT);
         }
     }

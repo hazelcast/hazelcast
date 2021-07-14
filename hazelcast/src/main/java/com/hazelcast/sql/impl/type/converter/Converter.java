@@ -17,8 +17,8 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.io.Serializable;
@@ -61,6 +61,9 @@ public abstract class Converter implements Serializable {
     protected static final int ID_ZONED_DATE_TIME = 18;
     protected static final int ID_OBJECT = 19;
     protected static final int ID_NULL = 20;
+    protected static final int ID_INTERVAL_YEAR_MONTH = 21;
+    protected static final int ID_INTERVAL_DAY_SECOND = 22;
+    protected static final int ID_MAP = 23;
 
     private final int id;
     private final QueryDataTypeFamily typeFamily;

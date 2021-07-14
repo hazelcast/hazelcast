@@ -74,14 +74,14 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributePath);
+        out.writeString(attributePath);
         out.writeObject(sum);
         out.writeLong(count);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.attributePath = in.readUTF();
+        this.attributePath = in.readString();
         this.sum = in.readObject();
         this.count = in.readLong();
     }

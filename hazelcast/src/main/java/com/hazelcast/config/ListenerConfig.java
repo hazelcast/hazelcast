@@ -150,13 +150,13 @@ public class ListenerConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
+        out.writeString(className);
         out.writeObject(implementation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
+        className = in.readString();
         implementation = in.readObject();
     }
 

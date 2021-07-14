@@ -75,20 +75,20 @@ public class QueryCancelOperation extends QueryAbstractIdAwareOperation {
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.OPERATION_CANCEL;
+        return SqlDataSerializerHook.QUERY_OPERATION_CANCEL;
     }
 
     @Override
     protected void writeInternal1(ObjectDataOutput out) throws IOException {
         out.writeInt(errorCode);
-        out.writeUTF(errorMessage);
+        out.writeString(errorMessage);
         UUIDSerializationUtil.writeUUID(out, originatingMemberId);
     }
 
     @Override
     protected void readInternal1(ObjectDataInput in) throws IOException {
         errorCode = in.readInt();
-        errorMessage = in.readUTF();
+        errorMessage = in.readString();
         originatingMemberId = UUIDSerializationUtil.readUUID(in);
     }
 }

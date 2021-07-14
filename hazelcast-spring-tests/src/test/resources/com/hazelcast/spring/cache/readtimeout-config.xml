@@ -23,7 +23,7 @@
         http://www.springframework.org/schema/cache
         http://www.springframework.org/schema/cache/spring-cache.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-4.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
 
     <cache:annotation-driven cache-manager="cacheManager"/>
 
@@ -31,16 +31,13 @@
         <hz:config>
             <hz:cluster-name>dev</hz:cluster-name>
             <hz:properties>
-                <hz:property name="hazelcast.wait.seconds.before.join">0</hz:property>
                 <hz:property name="hazelcast.graceful.shutdown.max.wait">120</hz:property>
                 <hz:property name="hazelcast.partition.backup.sync.interval">1</hz:property>
             </hz:properties>
-            <hz:network port="5701" port-auto-increment="false">
+            <hz:network port="5701">
                 <hz:join>
                     <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true">
-                        <hz:interface>127.0.0.1:5701</hz:interface>
-                    </hz:tcp-ip>
+                    <hz:auto-detection enabled="false"/>
                 </hz:join>
                 <hz:interfaces enabled="true">
                     <hz:interface>127.0.0.1</hz:interface>

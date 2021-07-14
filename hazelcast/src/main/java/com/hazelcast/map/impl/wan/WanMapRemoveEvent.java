@@ -100,13 +100,13 @@ public class WanMapRemoveEvent implements InternalWanEvent<Object>, IdentifiedDa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeString(mapName);
         IOUtil.writeData(out, dataKey);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        mapName = in.readString();
         dataKey = IOUtil.readData(in);
     }
 

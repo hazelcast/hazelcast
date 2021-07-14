@@ -1,0 +1,1 @@
+{"string":"string","boolean":true,"byte":127,"short":32767,"int":2147483647,"long":9223372036854775807,"float":1234567890.1,"double":123451234567890.1,"decimal":"9223372036854775.123","time":"12:23:34","date":"2020-04-15","timestamp":"2020-04-15T12:23:34.001","timestampTz":"2020-04-15T12:23:34.200Z","null":null,"object":{}}

@@ -57,14 +57,14 @@ public class InitializeDistributedObjectOperation extends Operation implements I
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(serviceName);
+        out.writeString(serviceName);
         out.writeObject(name);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        serviceName = in.readUTF();
+        serviceName = in.readString();
         name = in.readObject();
     }
 

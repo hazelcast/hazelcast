@@ -47,17 +47,32 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     private final InternalSerializationService service;
     private final boolean bigEndian;
+    private final boolean isCompatibility;
 
-    ByteArrayObjectDataInput(byte[] data, InternalSerializationService service, ByteOrder byteOrder) {
-        this(data, 0, service, byteOrder);
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder) {
+        this(data, 0, service, byteOrder, false);
     }
 
-    ByteArrayObjectDataInput(byte[] data, int offset, InternalSerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataInput(byte[] data,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
+        this(data, 0, service, byteOrder, isCompatibility);
+    }
+
+    ByteArrayObjectDataInput(byte[] data,
+                             int offset,
+                             InternalSerializationService service,
+                             ByteOrder byteOrder,
+                             boolean isCompatibility) {
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.pos = offset;
         this.service = service;
         this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        this.isCompatibility = isCompatibility;
     }
 
     @Override
@@ -519,7 +534,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         if (len > 0) {
             String[] values = new String[len];
             for (int i = 0; i < len; i++) {
-                values[i] = readUTF();
+                values[i] = readString();
             }
             return values;
         }
@@ -576,14 +591,7 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     @Nullable
     @Override
     public String readString() throws IOException {
-        int numberOfBytes = readInt();
-        if (numberOfBytes == NULL_ARRAY_LENGTH) {
-            return null;
-        }
-
-        String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
-        pos += numberOfBytes;
-        return result;
+        return isCompatibility ? readUTFInternalCompatibility() : readUTFInternal();
     }
 
     @Override
@@ -701,6 +709,37 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
 
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+    }
+
+    private String readUTFInternal() throws EOFException {
+        int numberOfBytes = readInt();
+        if (numberOfBytes == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+
+        String result = new String(data, pos, numberOfBytes, StandardCharsets.UTF_8);
+        pos += numberOfBytes;
+        return result;
+    }
+
+    public final String readUTFInternalCompatibility() throws IOException {
+        int charCount = readInt();
+        if (charCount == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (charBuffer == null || charCount > charBuffer.length) {
+            charBuffer = new char[charCount];
+        }
+        byte b;
+        for (int i = 0; i < charCount; i++) {
+            b = readByte();
+            if (b < 0) {
+                charBuffer[i] = Bits.readUtf8CharCompatibility(this, b);
+            } else {
+                charBuffer[i] = (char) b;
+            }
+        }
+        return new String(charBuffer, 0, charCount);
     }
 
     @Override

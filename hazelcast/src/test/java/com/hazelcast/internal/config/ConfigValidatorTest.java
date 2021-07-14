@@ -27,6 +27,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -64,7 +65,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = Mockito.mock(NodeEngine.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(config.getClassLoader());
 
-        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(nodeEngine);
+        splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(config.getClassLoader());
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
         properties = nodeEngine.getProperties();
@@ -81,6 +82,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         checkMapConfig(getMapConfig(BINARY), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void checkMapConfig_fails_with_merge_policy_which_requires_per_entry_stats_enabled() {
+        checkMapConfig(getMapConfig(BINARY).setPerEntryStatsEnabled(false),
+                nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
+    }
+
     @Test
     public void checkMapConfig_OBJECT() {
         checkMapConfig(getMapConfig(OBJECT), nativeMemoryConfig, splitBrainMergePolicyProvider, properties, logger);
@@ -95,8 +102,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
-        return new MapConfig()
-                .setInMemoryFormat(inMemoryFormat);
+        MapConfig mapConfig = new MapConfig()
+                .setInMemoryFormat(inMemoryFormat)
+                .setPerEntryStatsEnabled(true);
+        mapConfig.getMergePolicyConfig()
+                .setPolicy(HigherHitsMergePolicy.class.getName());
+        return mapConfig;
     }
 
     @Test

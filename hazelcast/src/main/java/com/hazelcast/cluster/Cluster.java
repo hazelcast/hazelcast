@@ -39,13 +39,14 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      * <p>
-     * The addMembershipListener method returns a register ID. This ID is needed to remove the MembershipListener using the
+     * The addMembershipListener method returns a registration ID. This ID is needed to remove the MembershipListener using the
      * {@link #removeMembershipListener(UUID)} method.
      * <p>
      * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
      * the {@link InitialMembershipEvent}.
      * <p>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * The listener doesn't notify when a lite member is promoted to a data member.
      *
      * @param listener membership listener
      * @return the registration ID
@@ -92,11 +93,11 @@ public interface Cluster {
     Member getLocalMember();
 
     /**
-     * Promotes local lite member to data member.
-     * When this method returns both {@link #getLocalMember()} and {@link #getMembers()}
-     * reflects the promotion.
+     * Promotes the local lite member to a data member.
+     * When this method returns, both {@link #getLocalMember()} and {@link #getMembers()}
+     * reflect the promotion.
      *
-     * @throws IllegalStateException when member is not a lite member or mastership claim in progress
+     * @throws IllegalStateException when member is not a lite member or mastership claim is in progress
      *                               or local member cannot be identified as a member of the cluster
      *                               or cluster state doesn't allow migrations/repartitioning
      * @since 3.9

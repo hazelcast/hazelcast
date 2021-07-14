@@ -154,7 +154,12 @@ public final class PortableContextImpl implements PortableContext {
 
     @Override
     public ClassDefinition registerClassDefinition(final ClassDefinition cd) {
-        return getClassDefContext(cd.getFactoryId()).register(cd);
+        return getClassDefContext(cd.getFactoryId()).register(cd, true);
+    }
+
+    @Override
+    public ClassDefinition registerClassDefinition(ClassDefinition cd, boolean throwOnIncompatibleClassDefinitions) {
+        return getClassDefContext(cd.getFactoryId()).register(cd, throwOnIncompatibleClassDefinitions);
     }
 
     @Override
@@ -232,8 +237,8 @@ public final class PortableContextImpl implements PortableContext {
     private final class ClassDefinitionContext {
 
         final int factoryId;
-        final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<Long, ClassDefinition>();
-        final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<Integer, Integer>();
+        final ConcurrentMap<Long, ClassDefinition> versionedDefinitions = new ConcurrentHashMap<>();
+        final ConcurrentMap<Integer, Integer> currentClassVersions = new ConcurrentHashMap<>();
 
         private ClassDefinitionContext(int factoryId) {
             this.factoryId = factoryId;
@@ -256,30 +261,21 @@ public final class PortableContextImpl implements PortableContext {
             return versionedDefinitions.get(versionedClassId);
         }
 
-        ClassDefinition register(ClassDefinition cd) {
+        ClassDefinition register(ClassDefinition cd, boolean throwOnIncompatibleClassDefinitions) {
             if (cd == null) {
                 return null;
-            }
-            if (cd.getFactoryId() != factoryId) {
-                throw new HazelcastSerializationException("Invalid factory-id! " + factoryId + " -> " + cd);
             }
             if (cd instanceof ClassDefinitionImpl) {
                 final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
                 cdImpl.setVersionIfNotSet(getVersion());
             }
             final long versionedClassId = combineToLong(cd.getClassId(), cd.getVersion());
-            final ClassDefinition currentCd = versionedDefinitions.putIfAbsent(versionedClassId, cd);
-            if (currentCd == null) {
-                return cd;
+            final ClassDefinition existingCd = versionedDefinitions.putIfAbsent(versionedClassId, cd);
+            if (existingCd != null && throwOnIncompatibleClassDefinitions && !existingCd.equals(cd)) {
+                throw new HazelcastSerializationException(
+                        "Incompatible class definitions are found. New class definition: " + cd
+                                + ", existing class definition " + existingCd);
             }
-            if (currentCd instanceof ClassDefinitionImpl) {
-                if (!currentCd.equals(cd)) {
-                    throw new HazelcastSerializationException(
-                            "Incompatible class-definitions with same class-id: " + cd + " VS " + currentCd);
-                }
-                return currentCd;
-            }
-            versionedDefinitions.put(versionedClassId, cd);
             return cd;
         }
 

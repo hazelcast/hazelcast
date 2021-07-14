@@ -25,6 +25,10 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -77,6 +81,14 @@ public final class ReflectionHelper {
             return AttributeType.SQL_DATE;
         } else if (klass == Date.class) {
             return AttributeType.DATE;
+        } else if (klass == LocalTime.class) {
+            return AttributeType.SQL_LOCAL_TIME;
+        } else if (klass == LocalDate.class) {
+            return AttributeType.SQL_LOCAL_DATE;
+        } else if (klass == LocalDateTime.class) {
+            return AttributeType.SQL_LOCAL_DATE_TIME;
+        } else if (klass == OffsetDateTime.class) {
+            return AttributeType.SQL_OFFSET_DATE_TIME;
         } else if (klass.isEnum()) {
             return AttributeType.ENUM;
         } else if (klass == UUID.class) {

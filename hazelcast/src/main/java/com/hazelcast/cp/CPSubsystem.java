@@ -395,7 +395,7 @@ public interface CPSubsystem {
     /**
      * Returns a proxy for an {@link IAtomicReference} instance created on
      * CP Subsystem. Hazelcast's {@link IAtomicReference} is a distributed
-     * version of <tt>java.util.concurrent.atomic.AtomicLong</tt>. If no group
+     * version of <tt>java.util.concurrent.atomic.AtomicReference</tt>. If no group
      * name is given within the "name" parameter, then
      * the {@link IAtomicReference} instance will be created on the DEFAULT CP
      * group. If a group name is given, like

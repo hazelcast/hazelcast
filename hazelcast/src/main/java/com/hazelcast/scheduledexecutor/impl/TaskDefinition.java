@@ -125,12 +125,12 @@ public class TaskDefinition<V>
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(type.name());
-        out.writeUTF(name);
+        out.writeString(type.name());
+        out.writeString(name);
         out.writeObject(command);
         out.writeLong(initialDelay);
         out.writeLong(period);
-        out.writeUTF(unit.name());
+        out.writeString(unit.name());
         if (out.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             out.writeBoolean(autoDisposable);
         }
@@ -139,12 +139,12 @@ public class TaskDefinition<V>
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
-        type = Type.valueOf(in.readUTF());
-        name = in.readUTF();
+        type = Type.valueOf(in.readString());
+        name = in.readString();
         command = in.readObject();
         initialDelay = in.readLong();
         period = in.readLong();
-        unit = TimeUnit.valueOf(in.readUTF());
+        unit = TimeUnit.valueOf(in.readString());
         if (in.getVersion().isGreaterOrEqual(Versions.V4_1)) {
             autoDisposable = in.readBoolean();
         }

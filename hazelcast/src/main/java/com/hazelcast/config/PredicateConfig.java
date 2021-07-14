@@ -202,15 +202,15 @@ public class PredicateConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(className);
-        out.writeUTF(sql);
+        out.writeString(className);
+        out.writeString(sql);
         out.writeObject(implementation);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        className = in.readUTF();
-        sql = in.readUTF();
+        className = in.readString();
+        sql = in.readString();
         implementation = in.readObject();
     }
 }

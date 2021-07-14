@@ -51,42 +51,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public long getLastAccessTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setLastAccessTime(long lastAccessTime) {
-    }
-
-    @Override
-    public long getLastUpdateTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setLastUpdateTime(long lastUpdateTime) {
-    }
-
-    @Override
-    public long getCreationTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setCreationTime(long creationTime) {
-    }
-
-    @Override
-    public int getHits() {
-        return UNSET;
-    }
-
-    @Override
-    public void setHits(int hits) {
-    }
-
-    @Override
     public V getValue() {
         return value;
     }
@@ -107,24 +71,6 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public final long getSequence() {
-        return UNSET;
-    }
-
-    @Override
-    public final void setSequence(long sequence) {
-    }
-
-    @Override
-    public long getLastStoredTime() {
-        return UNSET;
-    }
-
-    @Override
-    public void setLastStoredTime(long lastStoredTime) {
-    }
-
-    @Override
     public long getCost() {
         if (value instanceof Data) {
             return OBJECT_HEADER_SIZE
@@ -142,53 +88,8 @@ class SimpleRecord<V> implements Record<V> {
     }
 
     @Override
-    public void onAccessSafe(long now) {
-        // NOP
-    }
-
-    @Override
     public void onStore() {
         // NOP
-    }
-
-    @Override
-    public int getRawCreationTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawCreationTime(int creationTime) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getRawLastAccessTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawLastAccessTime(int lastAccessTime) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getRawLastUpdateTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawLastUpdateTime(int lastUpdateTime) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public int getRawLastStoredTime() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void setRawLastStoredTime(int time) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

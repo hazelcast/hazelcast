@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>4.2-SNAPSHOT</version>
+        <version>5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -29,29 +29,132 @@
     <artifactId>hazelcast-distribution</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <configs.from.jar>${project.build.directory}/config</configs.from.jar>
+        <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
+    </properties>
+
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <acceptPomPackaging>true</acceptPomPackaging>
+                    <includedLicenses combine.children="append">
+                        <includedLicense>CDDL</includedLicense>
+                        <includedLicense>CDDL 1.1</includedLicense>
+                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                        <includedLicense>Lesser General Public License (LGPL)</includedLicense>
+                        <includedLicense>The GNU General Public License, v2 with FOSS exception</includedLicense>
+                        <includedLicense>The Go license</includedLicense>
+                    </includedLicenses>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast</artifactId>
+                                    <outputDirectory>${configs.from.jar}</outputDirectory>
+                                    <includes>**/*.xml,**/*.yaml</includes>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-hz3</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast</artifactId>
+                                    <version>${hazelcast-3.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-client</artifactId>
+                                    <version>${hazelcast-3.version}</version>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-3-connector-impl</artifactId>
+                                    <version>${project.version}</version>
+                                </artifactItem>
+                            </artifactItems>
+                            <outputDirectory>${project.build.directory}/custom-lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>${maven.assembly.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>distro-assembly</id>
+                        <id>distro-assembly-hazelcast</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <finalName>hazelcast-${project.version}</finalName>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/assembly/assembly-descriptor.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <tarLongFileMode>posix</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>distro-assembly-hazelcast-slim</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>hazelcast-${project.version}</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>src/assembly/assembly-descriptor-slim.xml</descriptor>
+                            </descriptors>
+                            <tarLongFileMode>posix</tarLongFileMode>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-versions</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
                     </execution>
                 </executions>
                 <configuration>
-                    <outputDirectory>../target</outputDirectory>
-                    <finalName>hazelcast-${project.version}</finalName>
-                    <archiveBaseDirectory>..</archiveBaseDirectory>
-                    <descriptors>
-                        <descriptor>../src/main/assembly/assembly.xml</descriptor>
-                    </descriptors>
-                    <appendAssemblyId>false</appendAssemblyId>
+                    <rules>
+                        <dependencyConvergence/>
+                    </rules>
                 </configuration>
             </plugin>
         </plugins>
@@ -59,7 +162,212 @@
     <dependencies>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-all</artifactId>
+            <artifactId>hazelcast</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-spring</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-sql</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- HazelcastCommandLine dependencies-->
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>${picocli.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-reader</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+        <!-- for windows -->
+        <dependency>
+            <groupId>org.jline</groupId>
+            <artifactId>jline-terminal-jansi</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+        <!-- Logging -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
+            <version>${log4j2.version}</version>
+        </dependency>
+
+        <!-- Prometheus to expose JMX metrics as HTTP endpoint -->
+        <dependency>
+            <groupId>io.prometheus.jmx</groupId>
+            <artifactId>jmx_prometheus_javaagent</artifactId>
+            <version>${prometheus.version}</version>
+        </dependency>
+
+        <!-- JCache API - needed server-side as we use and extend some classes -->
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${jsr107.api.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-hibernate53</artifactId>
+            <version>2.1.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-wm</artifactId>
+            <version>4.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.hazelcast</groupId>
+                    <artifactId>hazelcast</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- Jet extensions -->
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-avro</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-debezium</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-mysql</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-cdc-postgres</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-csv</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-elasticsearch-7</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-elasticsearch-6</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+            <exclusions>
+                <!--
+                Exclude the elastic client for version 6 reported by enforcer plugin
+                It actually doesn't exclude the client, because we use fat jar.
+                The elastic clients can't be used together. Version 6 is in opt.
+                -->
+                <exclusion>
+                    <groupId>org.elasticsearch.client</groupId>
+                    <artifactId>elasticsearch-rest-high-level-client</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-grpc</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-azure</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-gcs</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-files-s3</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-hadoop-all</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-kafka</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-kinesis</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-protobuf</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-python</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-s3</artifactId>
+            <version>${project.version}</version>
+            <classifier>${fat.dependency.classifier}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-3-connector-interface</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-3-connector-common</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

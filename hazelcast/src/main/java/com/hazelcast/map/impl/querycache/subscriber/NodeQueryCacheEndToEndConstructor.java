@@ -17,10 +17,8 @@
 package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.cluster.Member;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.map.impl.query.QueryResult;
-import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
@@ -105,11 +103,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
                     break;
                 }
 
-                for (QueryResultRow row : queryResult) {
-                    Data keyData = row.getKey();
-                    Data valueData = row.getValue();
-                    queryCache.prepopulate(keyData, valueData);
-                }
+                queryCache.prepopulate(queryResult.iterator());
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
             }

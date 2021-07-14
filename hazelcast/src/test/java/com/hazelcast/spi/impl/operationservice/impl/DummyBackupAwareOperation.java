@@ -81,7 +81,7 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
         out.writeInt(syncBackupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(returnsResponse);
-        out.writeUTF(backupKey);
+        out.writeString(backupKey);
     }
 
     @Override
@@ -90,6 +90,6 @@ public class DummyBackupAwareOperation extends Operation implements BackupAwareO
         syncBackupCount = in.readInt();
         asyncBackupCount = in.readInt();
         returnsResponse = in.readBoolean();
-        backupKey = in.readUTF();
+        backupKey = in.readString();
     }
 }

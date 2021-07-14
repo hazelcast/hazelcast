@@ -84,7 +84,7 @@ public class MultiMapResponse implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(collectionType.name());
+        out.writeString(collectionType.name());
         out.writeLong(nextRecordId);
         if (collection == null) {
             out.writeInt(-1);
@@ -98,7 +98,7 @@ public class MultiMapResponse implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        String collectionTypeName = in.readUTF();
+        String collectionTypeName = in.readString();
         collectionType = MultiMapConfig.ValueCollectionType.valueOf(collectionTypeName);
         nextRecordId = in.readLong();
         int size = in.readInt();

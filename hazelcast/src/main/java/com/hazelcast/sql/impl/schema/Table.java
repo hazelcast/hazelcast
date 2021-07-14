@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.sql.impl.plan.cache.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 
 import java.util.Collections;
 import java.util.List;
@@ -68,6 +68,15 @@ public abstract class Table {
     @SuppressWarnings("unchecked")
     public <T extends TableField> T getField(int index) {
         return (T) fields.get(index);
+    }
+
+    public int getFieldIndex(String fieldName) {
+        for (int i = 0; i < getFieldCount(); i++) {
+            if (getField(i).getName().equals(fieldName)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public TableStatistics getStatistics() {

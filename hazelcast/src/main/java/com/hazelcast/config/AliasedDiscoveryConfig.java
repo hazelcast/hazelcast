@@ -156,8 +156,8 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
         out.writeBoolean(usePublicIp);
         out.writeInt(properties.size());
         for (Entry<String, String> entry : properties.entrySet()) {
-            out.writeUTF(entry.getKey());
-            out.writeUTF(entry.getValue());
+            out.writeString(entry.getKey());
+            out.writeString(entry.getValue());
         }
     }
 
@@ -167,7 +167,7 @@ public abstract class AliasedDiscoveryConfig<T extends AliasedDiscoveryConfig<T>
         usePublicIp = in.readBoolean();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            properties.put(in.readUTF(), in.readUTF());
+            properties.put(in.readString(), in.readString());
         }
     }
 

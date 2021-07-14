@@ -88,14 +88,14 @@ public class UsernamePasswordCredentials implements PasswordCredentials, Identif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(password);
+        out.writeString(name);
+        out.writeString(password);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        password = in.readUTF();
+        name = in.readString();
+        password = in.readString();
     }
 
     @Override

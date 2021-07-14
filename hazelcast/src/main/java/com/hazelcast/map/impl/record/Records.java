@@ -71,7 +71,7 @@ public final class Records {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
         // RU_COMPAT_4_1
         Version version = out.getVersion();
-        if (version.isLessThan(Versions.V4_2)) {
+        if (version.isUnknownOrLessThan(Versions.V4_2)) {
             readerWriter = RU_COMPAT_MAP.get(readerWriter);
         }
 
@@ -132,8 +132,9 @@ public final class Records {
      * otherwise return the actual value.
      * Value caching makes sense when:
      * <ul>
-     * <li>Portable serialization is not used</li>
      * <li>OBJECT InMemoryFormat is not used</li>
+     * <li>Portable serialization is not used</li>
+     * <li>HazelcastJsonValue objects are not used</li>
      * </ul>
      * <p>
      * If Record does not contain cached value and is found
@@ -223,7 +224,15 @@ public final class Records {
     }
 
     static boolean shouldCache(Object value) {
-        return value instanceof Data && !((Data) value).isPortable();
+        // For portables, we cannot extract information from the deserialized form.
+        // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
+        // means the metadata is created from the Data representation of the object.
+        // If we allow using the deserialized values, the metadata might not be safe to use.
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            return !(data.isPortable() || data.isJson() || data.isCompact());
+        }
+        return false;
     }
 
 

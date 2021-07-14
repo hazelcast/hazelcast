@@ -179,6 +179,32 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
     }
 
     @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparable value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(boolean descending) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(Comparison comparison, Comparable value, boolean descending) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<IndexKeyEntries> getSqlRecordIteratorBatch(
+            Comparable from,
+            boolean fromInclusive,
+            Comparable to,
+            boolean toInclusive,
+            boolean descending
+    ) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
@@ -361,7 +387,7 @@ public class UnorderedIndexStore extends BaseSingleValueIndexStore {
                 Map<Data, QueryableEntry> records = recordMap.get(value);
                 if (records != null) {
                     oldValue = records.remove(indexKey);
-                    if (records.size() == 0) {
+                    if (records.isEmpty()) {
                         recordMap.remove(value);
                     }
                 } else {

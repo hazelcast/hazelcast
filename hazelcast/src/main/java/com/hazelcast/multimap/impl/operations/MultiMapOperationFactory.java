@@ -77,7 +77,7 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
         IOUtil.writeData(out, key);
@@ -86,7 +86,7 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();
         key = IOUtil.readData(in);

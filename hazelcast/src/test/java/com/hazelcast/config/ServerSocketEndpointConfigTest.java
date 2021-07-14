@@ -18,19 +18,21 @@ package com.hazelcast.config;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ServerSocketEndpointConfigTest {
+public class ServerSocketEndpointConfigTest extends HazelcastTestSupport {
 
     private ServerSocketEndpointConfig endpointConfig;
     private String endpointName = randomName();
@@ -51,9 +53,9 @@ public class ServerSocketEndpointConfigTest {
 //                      .setMemberAddressProviderConfig(new MemberAddressProviderConfig()
 //                              .setEnabled(true)
 //                              .setClassName("com.hazelcast.MemberAddressProviderImpl"))
-                      .setProtocolType(ProtocolType.MEMBER)
-                      .setPort(19000)
-                      .setPublicAddress("192.168.2.1");
+                .setProtocolType(ProtocolType.MEMBER)
+                .setPort(19000)
+                .setPublicAddress("192.168.2.1");
 
         assertEquals(endpointConfig.getProtocolType(), ProtocolType.MEMBER);
         assertEquals("anotherName", endpointConfig.getName());
@@ -63,4 +65,12 @@ public class ServerSocketEndpointConfigTest {
 //        assertEquals("com.hazelcast.MemberAddressProviderImpl", endpointConfig.getMemberAddressProviderConfig().getClassName());
     }
 
+    @Test
+    public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
+        EqualsVerifier.forClass(ServerSocketEndpointConfig.class)
+                .usingGetClass()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
+    }
 }

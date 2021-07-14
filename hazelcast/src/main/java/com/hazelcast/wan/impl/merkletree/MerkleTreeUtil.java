@@ -17,7 +17,9 @@
 package com.hazelcast.wan.impl.merkletree;
 
 import com.hazelcast.internal.util.QuickMath;
+import com.hazelcast.internal.util.collection.IntHashSet;
 
+import javax.annotation.Nonnull;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -376,4 +378,17 @@ public final class MerkleTreeUtil {
         return new RemoteMerkleTreeView(leaves, depth);
     }
 
+    /**
+     * @param merkleTreeOrderValuePairs an array of {@code [nodeOrder, hashValue]} pairs
+     * @return set of given Merkle tree node orders
+     */
+    @Nonnull
+    public static IntHashSet setOfNodeOrders(int[] merkleTreeOrderValuePairs) {
+        assert merkleTreeOrderValuePairs.length % 2 == 0;
+        IntHashSet merkleTreeOrderValues = new IntHashSet(merkleTreeOrderValuePairs.length / 2, -1);
+        for (int i = 0; i < merkleTreeOrderValuePairs.length; i = i + 2) {
+            merkleTreeOrderValues.add(merkleTreeOrderValuePairs[i]);
+        }
+        return merkleTreeOrderValues;
+    }
 }

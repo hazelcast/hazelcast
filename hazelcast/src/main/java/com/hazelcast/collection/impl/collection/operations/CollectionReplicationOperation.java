@@ -58,7 +58,7 @@ public abstract class CollectionReplicationOperation extends Operation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
         for (Map.Entry<String, CollectionContainer> entry : migrationData.entrySet()) {
-            out.writeUTF(entry.getKey());
+            out.writeString(entry.getKey());
             CollectionContainer container = entry.getValue();
             out.writeObject(container);
         }

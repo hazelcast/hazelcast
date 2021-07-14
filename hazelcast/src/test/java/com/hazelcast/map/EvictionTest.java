@@ -40,6 +40,7 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.PredicateBuilderImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -110,7 +111,8 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Rule
-    public final OverridePropertyRule overrideTaskSecondsRule = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
+    public final OverridePropertyRule overrideTaskSecondsRule
+            = set(PROP_TASK_PERIOD_SECONDS, String.valueOf(1));
 
     boolean updateRecordAccessTime() {
         return true;
@@ -258,14 +260,14 @@ public class EvictionTest extends HazelcastTestSupport {
         Collection<Employee> valuesNullCity = map.values(predicateCityNull);
         Collection<Employee> valuesNotNullCity = map.values(Predicates.equal("city", "cityname"));
         assertEquals(entryCount, valuesNullCity.size() + valuesNotNullCity.size());
-        // check that evaluating the predicate updated the last access time of the returned records
+        // check that evaluating the predicate didn't update the last access time of the returned records
         for (int i = 0; i < entryCount; ++i) {
             EntryView view = map.getEntryView(i);
             assertNotNull(view);
             long lastAccessTime = view.getLastAccessTime();
             long prevLastAccessTime = lastAccessTimes.get(i);
             assertTrue("lastAccessTime=" + lastAccessTime + ", prevLastAccessTime=" + prevLastAccessTime,
-                    lastAccessTime > prevLastAccessTime);
+                    lastAccessTime == prevLastAccessTime);
         }
     }
 
@@ -667,7 +669,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 5 * 60 * 1000)
     public void testMapRecordEviction() {
         String mapName = randomMapName();
         final int size = 100;
@@ -694,8 +696,8 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i, i);
         }
         // wait until eviction is complete
-        assertSizeEventually(0, map, 20);
-        assertTrueEventually(() -> assertEquals(size, entryEvictedEventCount.get()), 20);
+        assertSizeEventually(0, map);
+        assertTrueEventually(() -> assertEquals(size, entryEvictedEventCount.get()));
     }
 
     @Test
@@ -1060,11 +1062,15 @@ public class EvictionTest extends HazelcastTestSupport {
             map.get(i);
         }
 
-        assertOpenEventually(evictedEntryLatch, 20);
+        assertOpenEventually(evictedEntryLatch);
         // sleep some seconds to be sure that
         // we did not receive more than expected number of events
-        sleepAtLeastSeconds(10);
-        assertEquals(numberOfEntriesToBeAdded, count.get());
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(numberOfEntriesToBeAdded, count.get());
+            }
+        }, 5);
     }
 
     private IMap<Integer, Integer> createMapWithReadBackupDataEnabled(int maxIdleSeconds) {

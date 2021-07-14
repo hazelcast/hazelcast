@@ -18,7 +18,7 @@
 
 <!DOCTYPE suppressions PUBLIC
         "-//Puppy Crawl//DTD Suppressions 1.1//EN"
-        "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
+        "https://checkstyle.org/dtds/suppressions_1_1.dtd">
 
 <suppressions>
 
@@ -121,6 +121,7 @@
               files="com[\\/]hazelcast[\\/]config[\\/]MapConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]SerializationConfig"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]MemberDomConfigProcessor"/>
+    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]config[\\/]override[\\/]ExternalConfigurationOverride"/>
 
     <!-- YAML -->
     <suppress checks="BooleanExpressionComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]yaml[\\/]YamlUtil"/>
@@ -287,6 +288,32 @@
     <suppress checks="IllegalType"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]TreeMapStreamSerializer"/>
 
+    <!-- Serialization Compact Format -->
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]AbstractGenericRecordBuilder"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedGenericRecord"/>
+    <suppress checks="MethodCount|ExecutableStatementCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactInternalGenericRecord"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordCloner"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordBuilder"/>
+    <suppress checks="MethodLength|CyclomaticComplexity"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]ReflectiveCompactSerializer"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactWriter"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactReader"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SchemaWriter"/>
+    <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]RabinFingerprint"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactWriter"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactReader"/>
+
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>
 
@@ -366,6 +393,8 @@
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
               files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]internal[\\/]longregister[\\/]client[\\/]codec[\\/]"/>
+    <suppress checks="UnusedImport|LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
+              files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]client[\\/]protocol[\\/]compatibility[\\/]"/>
     <suppress checks="" files="src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compatibility[\\/]"/>
 
@@ -378,4 +407,15 @@
     <!-- module-info.java -->
     <suppress checks="" files="[\\/]module-info"/>
 
+    <suppress checks="FileLength" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations"/>
+    <suppress checks="CyclomaticComplexity" files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig"/>
+
+    <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
+    <suppress checks="InnerAssignment|JavadocType|TrailingComment|MethodCount|OperatorWrap|ClassDataAbstractionCoupling|ClassFanOutComplexity|CyclomaticComplexity|NPathComplexity" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
+    <suppress checks="VisibilityModifier" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]"/>
+    <suppress checks="MethodLength" files="[\\/]src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]"/>
+
+    <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
+
+    <suppress checks="" files="target[\\/]generated-sources"/>
 </suppressions>

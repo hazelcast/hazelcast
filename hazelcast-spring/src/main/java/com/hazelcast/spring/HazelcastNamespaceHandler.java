@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.spring.hibernate.RegionFactoryBeanDefinitionParser;
+import com.hazelcast.spring.jet.JetBeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
 import java.util.HashSet;
@@ -66,6 +67,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 new HazelcastFailoverClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         registerBeanDefinitionParser("cache-manager", new CacheManagerBeanDefinitionParser());
+        registerBeanDefinitionParser("jet", new JetBeanDefinitionParser());
         String[] types =
                 {MAP, MULTI_MAP, REPLICATED_MAP, QUEUE, TOPIC, SET, LIST, EXECUTOR_SERVICE,
                  DURABLE_EXECUTOR_SERVICE, SCHEDULED_EXECUTOR_SERVICE, RINGBUFFER, CARDINALITY_ESTIMATOR,

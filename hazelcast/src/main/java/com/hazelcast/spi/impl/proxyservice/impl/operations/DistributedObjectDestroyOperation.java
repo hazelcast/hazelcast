@@ -53,15 +53,15 @@ public class DistributedObjectDestroyOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(serviceName);
-        out.writeUTF(name);
+        out.writeString(serviceName);
+        out.writeString(name);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        serviceName = in.readUTF();
-        name = in.readUTF();
+        serviceName = in.readString();
+        name = in.readString();
     }
 
     @Override

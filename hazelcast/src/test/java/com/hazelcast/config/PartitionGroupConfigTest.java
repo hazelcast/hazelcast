@@ -35,7 +35,6 @@ public class PartitionGroupConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(PartitionGroupConfig.class)
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .verify();
     }

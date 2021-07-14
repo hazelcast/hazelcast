@@ -117,7 +117,7 @@ public class PortablePredicatesTest {
                 FieldType fieldType = reader.getFieldType(fieldName);
                 switch (fieldType) {
                     case UTF:
-                        data.put(fieldName, reader.readUTF(fieldName));
+                        data.put(fieldName, reader.readString(fieldName));
                         break;
                     case LONG:
                         data.put(fieldName, reader.readLong(fieldName));
@@ -136,7 +136,7 @@ public class PortablePredicatesTest {
             for (String key : data.keySet()) {
                 Object object = data.get(key);
                 if (object instanceof String) {
-                    writer.writeUTF(key, (String) object);
+                    writer.writeString(key, (String) object);
                 } else if (object instanceof Long) {
                     writer.writeLong(key, (Long) object);
                 } else if (object instanceof Date) {

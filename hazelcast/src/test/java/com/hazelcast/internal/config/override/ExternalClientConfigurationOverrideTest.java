@@ -56,5 +56,14 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
 
         assertFalse(config.getConnectionStrategyConfig().isAsyncStart());
         assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
+
+    @Test
+    public void shouldHandleCustomPropertiesConfig() throws Exception {
+        ClientConfig config = new ClientConfig();
+
+        withEnvironmentVariable("HZCLIENT_PROPERTIES_foo", "bar")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+
+        assertEquals("bar", config.getProperty("foo"));
     }
 }

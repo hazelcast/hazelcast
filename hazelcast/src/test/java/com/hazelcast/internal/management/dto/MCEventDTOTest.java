@@ -32,7 +32,6 @@ public class MCEventDTOTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(MCEventDTO.class)
-                      .allFieldsShouldBeUsed()
                       .suppress(Warning.NULL_FIELDS)
                       .verify();
     }

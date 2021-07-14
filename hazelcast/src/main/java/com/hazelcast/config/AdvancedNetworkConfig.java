@@ -22,6 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
@@ -459,6 +460,26 @@ public class AdvancedNetworkConfig {
                     + ", memcacheProtocolConfig=" + getMemcacheProtocolConfig()
                     + '}';
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            MemberNetworkingView that = (MemberNetworkingView) o;
+            return Objects.equals(config, that.config);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), config);
+        }
     }
 
     private static int countEndpointConfigs(Map<EndpointQualifier, EndpointConfig> endpointConfigs,
@@ -472,5 +493,23 @@ public class AdvancedNetworkConfig {
         return count;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AdvancedNetworkConfig that = (AdvancedNetworkConfig) o;
+        return enabled == that.enabled && Objects.equals(endpointConfigs, that.endpointConfigs)
+                && Objects.equals(join, that.join)
+                && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
+                && Objects.equals(memberAddressProviderConfig, that.memberAddressProviderConfig);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled, endpointConfigs, join, icmpFailureDetectorConfig, memberAddressProviderConfig);
+    }
 }

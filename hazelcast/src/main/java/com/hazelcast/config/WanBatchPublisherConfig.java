@@ -813,7 +813,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeUTF(clusterName);
+        out.writeString(clusterName);
         out.writeBoolean(snapshotEnabled);
         out.writeByte(initialPublisherState.getId());
         out.writeInt(queueCapacity);
@@ -828,7 +828,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         out.writeBoolean(useEndpointPrivateAddress);
         out.writeLong(idleMinParkNs);
         out.writeLong(idleMaxParkNs);
-        out.writeUTF(targetEndpoints);
+        out.writeString(targetEndpoints);
         out.writeObject(awsConfig);
         out.writeObject(gcpConfig);
         out.writeObject(azureConfig);
@@ -836,13 +836,13 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         out.writeObject(eurekaConfig);
         out.writeObject(discoveryConfig);
         out.writeObject(syncConfig);
-        out.writeUTF(endpoint);
+        out.writeString(endpoint);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        clusterName = in.readUTF();
+        clusterName = in.readString();
         snapshotEnabled = in.readBoolean();
         initialPublisherState = WanPublisherState.getByType(in.readByte());
         queueCapacity = in.readInt();
@@ -857,7 +857,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         useEndpointPrivateAddress = in.readBoolean();
         idleMinParkNs = in.readLong();
         idleMaxParkNs = in.readLong();
-        targetEndpoints = in.readUTF();
+        targetEndpoints = in.readString();
         awsConfig = in.readObject();
         gcpConfig = in.readObject();
         azureConfig = in.readObject();
@@ -865,7 +865,7 @@ public class WanBatchPublisherConfig extends AbstractWanPublisherConfig {
         eurekaConfig = in.readObject();
         discoveryConfig = in.readObject();
         syncConfig = in.readObject();
-        endpoint = in.readUTF();
+        endpoint = in.readString();
     }
 
 

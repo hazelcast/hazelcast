@@ -129,8 +129,20 @@ public final class SerializationConstants {
 
     public static final int JAVA_DEFAULT_TYPE_OPTIONAL = -50;
 
+    public static final int JAVA_DEFAULT_TYPE_LOCALDATE = -51;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCALTIME = -52;
+
+    public static final int JAVA_DEFAULT_TYPE_LOCALDATETIME = -53;
+
+    public static final int JAVA_DEFAULT_TYPE_OFFSETDATETIME = -54;
+
+    public static final int TYPE_COMPACT = -55;
+
+    public static final int TYPE_COMPACT_WITH_SCHEMA = -56;
+
     // NUMBER OF CONSTANT SERIALIZERS...
-    public static final int CONSTANT_SERIALIZERS_LENGTH = 51;
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 57;
 
     // ------------------------------------------------------------
     // JAVA SERIALIZATION

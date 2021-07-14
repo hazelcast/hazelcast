@@ -41,6 +41,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -72,6 +73,7 @@ import com.hazelcast.internal.config.TopicConfigReadOnly;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSearch;
 import com.hazelcast.internal.dynamicconfig.search.ConfigSupplier;
 import com.hazelcast.internal.dynamicconfig.search.Searcher;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -962,6 +964,16 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public PersistenceConfig getPersistenceConfig() {
+        return staticConfig.getPersistenceConfig();
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig prConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
     public CRDTReplicationConfig getCRDTReplicationConfig() {
         return staticConfig.getCRDTReplicationConfig();
     }
@@ -1091,13 +1103,15 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Nonnull
     @Override
     public AuditlogConfig getAuditlogConfig() {
         return staticConfig.getAuditlogConfig();
     }
 
+    @Nonnull
     @Override
-    public Config setAuditlogConfig(AuditlogConfig auditlogConfig) {
+    public Config setAuditlogConfig(@Nonnull AuditlogConfig auditlogConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -1122,6 +1136,18 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Nonnull
     @Override
     public Config setSqlConfig(@Nonnull SqlConfig sqlConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Nonnull
+    @Override
+    public JetConfig getJetConfig() {
+        return staticConfig.getJetConfig();
+    }
+
+    @Nonnull
+    @Override
+    public Config setJetConfig(JetConfig jetConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

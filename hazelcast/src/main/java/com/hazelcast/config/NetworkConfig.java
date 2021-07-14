@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.StringUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 
 /**
  * Contains configuration for Network.
@@ -87,7 +88,7 @@ public class NetworkConfig {
 
     /**
      * Sets the port the Hazelcast member will try to bind on.
-     *
+     * <p>
      * A valid port value is between 0 and 65535.
      * A port number of 0 will let the system pick up an ephemeral port.
      *
@@ -119,8 +120,8 @@ public class NetworkConfig {
      * The maximum number of ports allowed to use.
      *
      * @param portCount the maximum number of ports allowed to use
-     * @see #setPortAutoIncrement(boolean) for more information
      * @return this configuration
+     * @see #setPortAutoIncrement(boolean) for more information
      */
     public NetworkConfig setPortCount(int portCount) {
         if (portCount < 1) {
@@ -296,7 +297,9 @@ public class NetworkConfig {
      * be used.
      *
      * @return the SymmetricEncryptionConfig
+     * @deprecated since 4.2
      */
+    @Deprecated
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
@@ -307,7 +310,9 @@ public class NetworkConfig {
      * @param symmetricEncryptionConfig the SymmetricEncryptionConfig to set
      * @return the updated NetworkConfig
      * @see #getSymmetricEncryptionConfig()
+     * @deprecated since 4.2
      */
+    @Deprecated
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;
@@ -317,9 +322,9 @@ public class NetworkConfig {
      * Returns the current {@link SSLConfig}. It is possible that null is returned if no SSLConfig has been set.
      *
      * @return the SSLConfig
-     * @see #setSSLConfig(SSLConfig)
      * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
-     *         {@link HazelcastRuntimePermission}
+     *                           {@link HazelcastRuntimePermission}
+     * @see #setSSLConfig(SSLConfig)
      */
     public SSLConfig getSSLConfig() {
         SecurityManager sm = System.getSecurityManager();
@@ -334,9 +339,9 @@ public class NetworkConfig {
      *
      * @param sslConfig the SSLConfig
      * @return the updated NetworkConfig
-     * @see #getSSLConfig()
      * @throws SecurityException If a security manager exists and the calling method doesn't have corresponding
-     *         {@link HazelcastRuntimePermission}
+     *                           {@link HazelcastRuntimePermission}
+     * @see #getSSLConfig()
      */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         SecurityManager sm = System.getSecurityManager();
@@ -413,5 +418,38 @@ public class NetworkConfig {
                 + ", restApiConfig=" + restApiConfig
                 + ", memcacheProtocolConfig=" + memcacheProtocolConfig
                 + '}';
+    }
+
+    @Override
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        NetworkConfig that = (NetworkConfig) o;
+        return port == that.port && portCount == that.portCount && portAutoIncrement == that.portAutoIncrement
+                && reuseAddress == that.reuseAddress && Objects.equals(publicAddress, that.publicAddress)
+                && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
+                && Objects.equals(outboundPorts, that.outboundPorts)
+                && Objects.equals(interfaces, that.interfaces) && Objects.equals(join, that.join)
+                && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
+                && Objects.equals(socketInterceptorConfig, that.socketInterceptorConfig)
+                && Objects.equals(sslConfig, that.sslConfig)
+                && Objects.equals(memberAddressProviderConfig, that.memberAddressProviderConfig)
+                && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
+                && Objects.equals(restApiConfig, that.restApiConfig)
+                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects
+                .hash(port, portCount, portAutoIncrement, reuseAddress, publicAddress, outboundPortDefinitions, outboundPorts,
+                        interfaces, join, symmetricEncryptionConfig, socketInterceptorConfig, sslConfig,
+                        memberAddressProviderConfig,
+                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig);
     }
 }

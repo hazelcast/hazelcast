@@ -89,13 +89,13 @@ public class PutAllOperation extends AbstractNamedSerializableOperation implemen
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+        out.writeString(name);
         out.writeObject(entries);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+        name = in.readString();
         entries = in.readObject();
     }
 

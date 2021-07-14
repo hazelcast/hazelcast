@@ -95,7 +95,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         response.writeData(out);
-        out.writeUTF(name);
+        out.writeString(name);
         IOUtil.writeData(out, dataKey);
         IOUtil.writeData(out, dataValue);
         out.writeLong(ttl);
@@ -107,7 +107,7 @@ public class ReplicateUpdateOperation extends AbstractNamedSerializableOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         response = new VersionResponsePair();
         response.readData(in);
-        name = in.readUTF();
+        name = in.readString();
         dataKey = IOUtil.readData(in);
         dataValue = IOUtil.readData(in);
         ttl = in.readLong();

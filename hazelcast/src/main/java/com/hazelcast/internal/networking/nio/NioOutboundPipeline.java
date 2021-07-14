@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -87,7 +88,7 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         BLOCKED,
         /*
@@ -98,7 +99,7 @@ public final class NioOutboundPipeline
          * - unscheduled: everything got written
          * - scheduled: new writes got detected
          * - reschedule: pipeline needs to be reprocessed
-         * - blocked (one of the handler wants to stop with the pipeline; one of the usages is TLS handshake
+         * - blocked (one of the handler wants to stop with the pipeline); one of the usages is TLS handshake
          */
         RESCHEDULE
     }
@@ -229,9 +230,9 @@ public final class NioOutboundPipeline
         }
     }
 
-    // executes the pipeline. Either on the calling thread or on th owning NIO thread.
+    // executes the pipeline. Either on the calling thread or on the owning NIO thread.
     private void executePipeline() {
-         if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+        if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
             // we are allowed to do a write through, so lets process the request on the calling thread
             try {
                 process();
@@ -239,11 +240,13 @@ public final class NioOutboundPipeline
                 onError(t);
             }
         } else {
-            if (selectionKeyWakeupEnabled) {
+            SelectionKey selectionKey = this.selectionKey;
+            if (selectionKeyWakeupEnabled && selectionKey != null) {
                 registerOp(OP_WRITE);
                 selectionKey.selector().wakeup();
             } else {
-                owner.addTaskAndWakeup(this);
+                // the owner can be also null during the Pipeline migration, so let's use the helper method
+                ownerAddTaskAndWakeup(this);
             }
         }
     }

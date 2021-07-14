@@ -24,6 +24,7 @@ import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ReadMetricsOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.security.permission.ManagementPermission;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCReadMetricsCodec.RequestParameters> {
+
+    private static final Permission REQUIRED_PERMISSION = new ManagementPermission("metrics.read");
 
     public ReadMetricsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -80,7 +83,7 @@ public class ReadMetricsMessageTask extends AbstractInvocationMessageTask<MCRead
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return REQUIRED_PERMISSION;
     }
 
     @Override

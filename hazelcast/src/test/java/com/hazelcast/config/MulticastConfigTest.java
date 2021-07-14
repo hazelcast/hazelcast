@@ -35,7 +35,6 @@ public class MulticastConfigTest {
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(MulticastConfig.class)
-                .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
                 .verify();
     }

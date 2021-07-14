@@ -83,8 +83,8 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         out.writeInt(len);
         if (len > 0) {
             for (ProxyInfo proxy : proxies) {
-                out.writeUTF(proxy.getServiceName());
-                out.writeUTF(proxy.getObjectName());
+                out.writeString(proxy.getServiceName());
+                out.writeString(proxy.getObjectName());
                 UUIDSerializationUtil.writeUUID(out, proxy.getSource());
             }
         }
@@ -97,7 +97,7 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
         if (len > 0) {
             proxies = new ArrayList<>(len);
             for (int i = 0; i < len; i++) {
-                ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readUTF(), UUIDSerializationUtil.readUUID(in));
+                ProxyInfo proxy = new ProxyInfo(in.readString(), in.readString(), UUIDSerializationUtil.readUUID(in));
                 proxies.add(proxy);
             }
         }

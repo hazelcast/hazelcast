@@ -22,12 +22,14 @@ import com.hazelcast.collection.impl.queue.model.VersionedObjectComparator;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +47,10 @@ import static org.junit.Assert.assertEquals;
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueMigrationTest extends HazelcastTestSupport {
+
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule
+            = new ChangeLoggingRule("log4j2-debug-queue.xml");
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance ownerMember;
@@ -92,6 +98,10 @@ public class QueueMigrationTest extends HazelcastTestSupport {
         } else {
             ownerMember.shutdown();
         }
+
+        queue = getRandomInstance().getQueue(queueName);
+        assertEquals(expectedItems.size(), queue.size());
+
         getRandomInstance().shutdown();
         queue = getRandomInstance().getQueue(queueName);
 

@@ -59,7 +59,7 @@ import static org.junit.Assert.fail;
 /**
  * Tests for custom WAN publisher.
  */
-public class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
+public abstract class AbstractWanCustomPublisherMapTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance instance1;

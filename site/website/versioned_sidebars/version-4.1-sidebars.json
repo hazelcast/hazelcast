@@ -1,0 +1,86 @@
+{
+  "version-4.1-docs": {
+    "Get Started": [
+      "version-4.1-get-started/intro",
+      "version-4.1-get-started/first-job",
+      "version-4.1-get-started/installation",
+      "version-4.1-get-started/submit-job",
+      "version-4.1-get-started/scale-job"
+    ],
+    "Tutorials": [
+      "version-4.1-tutorials/kafka",
+      "version-4.1-tutorials/cdc",
+      "version-4.1-tutorials/map-join",
+      "version-4.1-tutorials/windowing",
+      "version-4.1-tutorials/python",
+      "version-4.1-tutorials/spring-boot"
+    ],
+    "Concepts": [
+      "version-4.1-concepts/dag",
+      "version-4.1-concepts/event-time",
+      "version-4.1-concepts/processing-guarantees"
+    ],
+    "Programming Guide": [
+      "version-4.1-api/pipeline",
+      "version-4.1-api/stateless-transforms",
+      "version-4.1-api/stateful-transforms",
+      "version-4.1-api/sources-sinks",
+      "version-4.1-api/submitting-jobs",
+      "version-4.1-api/data-structures",
+      "version-4.1-api/serialization",
+      "version-4.1-api/testing",
+      "version-4.1-api/spring"
+    ],
+    "How-To Guides": [
+      "version-4.1-how-tos/stream-imap",
+      "version-4.1-how-tos/observables",
+      "version-4.1-how-tos/custom-batch-source",
+      "version-4.1-how-tos/custom-stream-source",
+      "version-4.1-how-tos/custom-sink",
+      "version-4.1-how-tos/operator",
+      "version-4.1-how-tos/xa",
+      "version-4.1-how-tos/grpc"
+    ],
+    "Operations Guide": [
+      "version-4.1-operations/installation",
+      "version-4.1-operations/configuration",
+      "version-4.1-operations/discovery",
+      "version-4.1-operations/cluster-sizing",
+      "version-4.1-operations/job-management",
+      "version-4.1-operations/docker",
+      "version-4.1-operations/kubernetes",
+      "version-4.1-operations/monitoring",
+      "version-4.1-operations/version-compatibility"
+    ],
+    "Architecture": [
+      "version-4.1-architecture/distributed-computing",
+      "version-4.1-architecture/execution-engine",
+      "version-4.1-architecture/cluster-topology",
+      "version-4.1-architecture/event-time-processing",
+      "version-4.1-architecture/sliding-window",
+      "version-4.1-architecture/fault-tolerance",
+      "version-4.1-architecture/in-memory-storage"
+    ],
+    "Design Documents": [
+      "version-4.1-design-docs/index",
+      "version-4.1-design-docs/010-operator-framework",
+      "version-4.1-design-docs/007-grpc-support",
+      "version-4.1-design-docs/006-declarative-serialization",
+      "version-4.1-design-docs/004-spring-boot-starter",
+      "version-4.1-design-docs/002-job-level-serialization",
+      "version-4.1-design-docs/001-code-deployment-improvements"
+    ]
+  },
+  "version-4.1-enterprise": {
+    "Enterprise Edition": [
+      "version-4.1-enterprise/index",
+      "version-4.1-enterprise/installation",
+      "version-4.1-enterprise/management-center",
+      "version-4.1-enterprise/security",
+      "version-4.1-enterprise/job-update",
+      "version-4.1-enterprise/lossless-restart",
+      "version-4.1-enterprise/off-heap",
+      "version-4.1-enterprise/blue-green"
+    ]
+  }
+}
