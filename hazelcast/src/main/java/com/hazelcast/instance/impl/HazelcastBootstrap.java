@@ -261,6 +261,7 @@ public final class HazelcastBootstrap {
         LOGGER.info("Bootstrapped instance requested but application wasn't called from hazelcast submit script. "
                 + "Creating a standalone Hazelcast instance instead.");
         Config config = Config.load();
+        config.getJetConfig().setEnabled(true);
 
         // turn off all discovery to make sure node doesn't join any existing cluster
         config.setProperty("hazelcast.wait.seconds.before.join", "0");

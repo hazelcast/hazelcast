@@ -42,9 +42,6 @@ import java.util.List;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastBootstrapTest {
 
-    @ClassRule
-    public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
-
     @AfterClass
     public static void teardown() throws NoSuchFieldException, IllegalAccessException {
         Hazelcast.bootstrappedInstance().shutdown();
