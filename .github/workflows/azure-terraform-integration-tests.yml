@@ -4,11 +4,10 @@ on:
   push:
     branches:
       - master
-      - ssh-keys-test
-#    paths:
-#      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
-#      - 'hazelcast/pom.xml'
-#      - '.github/terraform/azure/**'
+    paths:
+      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+      - 'hazelcast/pom.xml'
+      - '.github/terraform/azure/**'
 
 
 jobs:
@@ -77,21 +76,21 @@ jobs:
         run: |
           ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
           ssh_key=$(cat id_rsa)
-          ssh_public_key=$(cat id_rsa.pub)
-          echo "::set-output name=ssh_key::$ssh_key"
-          echo "::set-output name=ssh_public_key::$ssh_public_key"
+          ssh_key_public=$(cat id_rsa.pub)
+          echo "::set-output name=SSH_KEY::$ssh_key"
+          echo "::set-output name=SSH_KEY_PUBLIC::$ssh_public_key"
 
       - name: Install private key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ steps.ssh.outputs.ssh_key }}
+          key: ${{ steps.ssh.outputs.SSH_KEY }}
           name: id_rsa
           known_hosts: " "
 
       - name: Install public key
         uses: shimataro/ssh-key-action@v2
         with:
-          key: ${{ steps.ssh.outputs.ssh_public_key }}
+          key: ${{ steps.ssh.outputs.SSH_KEY_PUBLIC }}
           name: id_rsa.pub
           known_hosts: " "
 

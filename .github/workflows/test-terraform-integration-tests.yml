@@ -1,0 +1,115 @@
+name: integration-tests
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - ssh-keys-test
+#    paths:
+#      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
+#      - 'hazelcast/pom.xml'
+#      - '.github/terraform/azure/**'
+
+
+jobs:
+  build:
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      SSH_PUBLIC_KEY: ${{ secrets.SSH_PUBLIC_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '8' ]
+        architecture: [ 'x64' ]
+        distribution: [ 'adopt' ]
+    steps:
+      # SET UP JDK
+      - name: Setup JDK
+        uses: actions/setup-java@v2.1.0
+        with:
+          java-version: ${{ matrix.java }}
+          architecture: ${{ matrix.architecture }}
+          distribution: ${{ matrix.distribution }}
+
+      - run: java -version
+
+      - run: mvn --version
+
+      - run : mkdir ~/lib
+
+      # BUILD HAZELCAST AZURE SNAPSHOT
+      - uses: actions/checkout@v2.3.4
+        with:
+          path: hazelcast
+
+#      - name: Build hazelcast jar
+#        run: |
+#          cd hazelcast
+#          mvn clean install -DskipTests -Dcheckstyle.skip
+#          echo "Hazelcast jar is: " hazelcast/target/hazelcast-*-SNAPSHOT.jar
+#          cp hazelcast/target/hazelcast-*-SNAPSHOT.jar ~/lib/hazelcast.jar
+
+      #BUILD TERRAFORM
+#      - name : Set-up Terraform
+#        uses: hashicorp/setup-terraform@v1.3.2
+#        with:
+#          terraform_version: 0.13.0
+#
+#      - name: Create unique prefix for resources
+#        run: |
+#          sed -i -e "s/SET_PREFIX/\"${GITHUB_WORKFLOW}-${GITHUB_RUN_ID}\"/g" hazelcast/.github/terraform/azure/terraform.tfvars
+#
+#      - name: Terraform Init
+#        run: cd hazelcast/.github/terraform/azure && terraform init
+#
+#      - name: Terraform Format
+#        run: cd hazelcast/.github/terraform/azure  && terraform fmt
+
+      - name: Generate SSH keys
+        id: ssh
+        run: |
+          ssh-keygen -t rsa -b 4096 -C "devOpsHazelcast@hazelcast.com" -f id_rsa -P "" 1>/dev/null
+          ssh_key=$(cat id_rsa)
+          ssh_key_public=$(cat id_rsa.pub)
+          echo "::set-output name=SSH_KEY::$ssh_key"
+          echo "::set-output name=SSH_KEY_PUBLIC::$ssh_key_public"
+
+      - name: Check outputs key private
+        run: |
+          echo "SSH private"
+          echo ${{ steps.ssh.outputs.SSH_KEY }}
+
+      - name: Check outputs key public
+        run: |
+          echo "SSH public"
+          echo ${{ steps.ssh.outputs.SSH_KEY }}
+
+#      - name: Install private key
+#        uses: shimataro/ssh-key-action@v2
+#        with:
+#          key: ${{ steps.ssh.outputs.SSH_KEY }}
+#          name: id_rsa
+#          known_hosts: " "
+#
+#      - name: Install public key
+#        uses: shimataro/ssh-key-action@v2
+#        with:
+#          key: ${{ steps.ssh.outputs.SSH_KEY_PUBLIC }}
+#          name: id_rsa.pub
+#          known_hosts: " "
+#
+#      - name: Terraform Apply
+#        run: |
+#          cd hazelcast/.github/terraform/azure && terraform apply -auto-approve
+#
+#      - name: Terraform Destroy
+#        if: ${{ always() }}
+#        run: |
+#          cd hazelcast/.github/terraform/azure && terraform destroy -auto-approve
