@@ -64,10 +64,16 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema =
                 new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
-        return optimize(sql, schema).getLogical();
+        return optimize(sql, false, schema).getLogical();
     }
 
-    protected static Result optimize(String sql, HazelcastSchema schema) {
+    protected RelNode optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
+        HazelcastSchema schema =
+                new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
+        return optimize(sql, requiresJob, schema).getLogical();
+    }
+
+    protected static Result optimize(String sql, boolean requiresJob, HazelcastSchema schema) {
         HazelcastInstance instance = instance();
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
@@ -83,6 +89,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 new HazelcastSqlBackend(nodeEngine),
                 new JetSqlBackend(nodeEngine, planExecutor)
         );
+        context.setRequiresJob(requiresJob);
 
         return optimize(sql, context);
     }

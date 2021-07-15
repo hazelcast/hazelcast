@@ -40,6 +40,24 @@ public class LogicalSelectTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("SELECT * FROM m WHERE __key = 1", true, table),
+                plan(
+                        planRow(0, FullScanLogicalRel.class)
+                )
+        );
+        assertPlan(
+                optimizeLogical("SELECT this || '-s' FROM m WHERE __key = 1", true, table),
+                plan(
+                        planRow(0, ProjectLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_selectWithoutWhere() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(

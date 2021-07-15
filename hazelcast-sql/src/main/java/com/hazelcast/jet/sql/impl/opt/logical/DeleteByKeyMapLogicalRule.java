@@ -42,7 +42,7 @@ public final class DeleteByKeyMapLogicalRule extends RelOptRule {
     private DeleteByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, TableModify::isDelete,
+                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isDelete(),
                         operandJ(
                                 LogicalTableScan.class,
                                 null,

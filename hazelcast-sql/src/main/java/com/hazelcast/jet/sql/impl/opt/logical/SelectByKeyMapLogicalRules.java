@@ -47,7 +47,7 @@ final class SelectByKeyMapLogicalRules {
             operandJ(
                     LogicalTableScan.class,
                     null,
-                    scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                    scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                     none()
             ),
             SelectByKeyMapLogicalRules.class.getSimpleName()
@@ -79,7 +79,7 @@ final class SelectByKeyMapLogicalRules {
                     operandJ(
                             LogicalTableScan.class,
                             null,
-                            scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                            scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                             none()
                     )
             ),

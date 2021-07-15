@@ -43,7 +43,7 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
     private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, TableModify::isUpdate,
+                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
                         operand(
                                 LogicalProject.class,
                                 operandJ(
