@@ -811,9 +811,8 @@ public class KubernetesClientTest {
     }
 
     @Test
-    @Ignore
     public void rbacYamlFileExists() {
         // rbac.yaml file is mentioned in logs, so the file must exist in the repo
-        assertTrue(new File("rbac.yaml").exists());
+        assertTrue(new File("../kubernetes-rbac.yaml").exists());
     }
 }
