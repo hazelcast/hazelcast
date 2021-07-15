@@ -25,7 +25,7 @@ import org.apache.calcite.rel.convert.ConverterRule;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.PHYSICAL;
 
-public final class SelectByKeyMapPhysicalRule extends ConverterRule {
+final class SelectByKeyMapPhysicalRule extends ConverterRule {
 
     static final RelOptRule INSTANCE = new SelectByKeyMapPhysicalRule();
 

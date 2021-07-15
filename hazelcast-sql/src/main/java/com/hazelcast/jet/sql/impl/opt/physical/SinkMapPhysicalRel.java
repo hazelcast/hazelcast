@@ -56,6 +56,8 @@ public class SinkMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
     ) {
         super(cluster, traitSet);
 
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
+
         this.table = table;
         this.values = values;
     }

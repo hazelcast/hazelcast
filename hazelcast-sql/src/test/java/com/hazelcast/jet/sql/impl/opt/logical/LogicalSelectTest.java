@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -46,8 +45,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -58,8 +56,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE this = '1'", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -70,8 +67,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = 1 AND this = '1'", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -82,8 +78,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = 1 AND __key = 2", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, ValuesLogicalRel.class)
+                        planRow(0, ValuesLogicalRel.class)
                 )
         );
     }
@@ -94,8 +89,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = 1 OR __key = 2", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -106,8 +100,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE 1 = 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -140,15 +133,13 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = " + literalValue, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE " + literalValue + " = __key", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -159,8 +150,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = 1 + 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -192,8 +182,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = ?", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -204,8 +193,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = ? + 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, FullScanLogicalRel.class)
+                        planRow(0, FullScanLogicalRel.class)
                 )
         );
     }
@@ -216,8 +204,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT * FROM m WHERE __key = CAST(? + 1 AS INT)", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -228,8 +215,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT this FROM m WHERE __key = 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -240,8 +226,7 @@ public class LogicalSelectTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SELECT this || '-s' FROM m WHERE __key = 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SelectByKeyMapLogicalRel.class)
+                        planRow(0, SelectByKeyMapLogicalRel.class)
                 )
         );
     }

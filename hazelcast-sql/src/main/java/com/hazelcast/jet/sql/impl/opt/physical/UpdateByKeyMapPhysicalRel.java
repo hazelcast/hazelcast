@@ -61,6 +61,8 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     ) {
         super(cluster, traitSet);
 
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
+
         this.table = table;
         this.keyCondition = keyCondition;
         this.updatedColumns = updatedColumns;
