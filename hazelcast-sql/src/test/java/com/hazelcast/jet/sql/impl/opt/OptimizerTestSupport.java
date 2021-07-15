@@ -72,10 +72,20 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema =
                 new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
-        return optimize(sql, schema, null, false).getLogical();
+        return optimize(sql, false, schema, null, false).getLogical();
     }
 
-    protected RelNode optimizePhysical(String sql, List<QueryDataType> types, HazelcastTable... tables) {
+    protected RelNode optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
+        HazelcastSchema schema =
+                new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
+        return optimize(sql, requiresJob, schema, null, false).getLogical();
+    }
+
+    protected RelNode optimizePhysical(
+            String sql,
+            boolean requiresJob,
+            List<QueryDataType> types,
+            HazelcastTable... tables) {
         HazelcastSchema schema =
                 new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
 
@@ -92,11 +102,12 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
             parameterMetadata = new QueryParameterMetadata(parameterConverters);
         }
-        return optimize(sql, schema, parameterMetadata, true).getPhysical();
+        return optimize(sql, requiresJob, schema, parameterMetadata, true).getPhysical();
     }
 
     protected static Result optimize(
             String sql,
+            boolean requiresJob,
             HazelcastSchema schema,
             QueryParameterMetadata queryParameterMetadata,
             boolean shouldOptimizePhysical) {
@@ -115,7 +126,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 new HazelcastSqlBackend(nodeEngine),
                 new JetSqlBackend(nodeEngine, planExecutor)
         );
-
+        context.setRequiresJob(requiresJob);
         return optimize(sql, context, queryParameterMetadata, shouldOptimizePhysical);
     }
 

@@ -46,6 +46,7 @@ public class QueryParser {
     private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
     private final SqlConformance conformance;
+    private final SqlConformance jetConformance;
     private final List<Object> arguments;
 
     private final SqlBackend sqlBackend;
@@ -55,6 +56,7 @@ public class QueryParser {
             HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
             SqlConformance conformance,
+            SqlConformance jetConformance,
             List<Object> arguments,
             @Nonnull SqlBackend sqlBackend,
             @Nonnull SqlBackend jetSqlBackend
@@ -62,6 +64,7 @@ public class QueryParser {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
         this.conformance = conformance;
+        this.jetConformance = jetConformance;
         this.arguments = arguments;
 
         this.sqlBackend = sqlBackend;
@@ -71,9 +74,9 @@ public class QueryParser {
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parse(sql, sqlBackend);
+                return parse(sql, jetSqlBackend, jetConformance);
             } catch (Exception e) {
-                return parse(sql, jetSqlBackend);
+                return parse(sql, jetSqlBackend, jetConformance);
             }
         } catch (Exception e) {
             String message;
@@ -87,7 +90,7 @@ public class QueryParser {
         }
     }
 
-    private QueryParseResult parse(String sql, SqlBackend sqlBackend) throws SqlParseException {
+    private QueryParseResult parse(String sql, SqlBackend sqlBackend, SqlConformance conformance) throws SqlParseException {
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
         SqlNodeList statements = parser.parseStmtList();

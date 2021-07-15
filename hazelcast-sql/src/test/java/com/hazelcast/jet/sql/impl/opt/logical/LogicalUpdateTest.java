@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
@@ -41,14 +40,25 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1", true, table),
+                plan(
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_updateWithoutWhere() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2'", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -59,9 +69,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE this = '1'", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -72,9 +81,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 AND this = '1'", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -85,9 +93,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 AND __key = 2", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, ValuesLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
                 )
         );
     }
@@ -98,9 +105,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 OR __key = 2", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -111,9 +117,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE 1 = 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -146,15 +151,13 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = " + literalValue, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateByKeyMapLogicalRel.class)
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE " + literalValue + " = __key", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateByKeyMapLogicalRel.class)
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -165,8 +168,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1 + 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateByKeyMapLogicalRel.class)
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -198,8 +200,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = ?", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateByKeyMapLogicalRel.class)
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
     }
@@ -210,9 +211,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = ? + 1", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
@@ -223,8 +223,7 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = CAST(? + 1 AS INT)", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateByKeyMapLogicalRel.class)
+                        planRow(0, UpdateByKeyMapLogicalRel.class)
                 )
         );
     }

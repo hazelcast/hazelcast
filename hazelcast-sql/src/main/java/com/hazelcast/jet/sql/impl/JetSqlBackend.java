@@ -186,7 +186,8 @@ public class JetSqlBackend implements SqlBackend {
                     convertResult.getRel(),
                     convertResult.getFieldNames(),
                     context,
-                    parseResult.isInfiniteRows()
+                    parseResult.isInfiniteRows(),
+                    false
             );
         }
     }
@@ -229,7 +230,8 @@ public class JetSqlBackend implements SqlBackend {
                 dmlConvertedResult.getRel(),
                 dmlConvertedResult.getFieldNames(),
                 context,
-                dmlParseResult.isInfiniteRows()
+                dmlParseResult.isInfiniteRows(),
+                true
         );
         assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
@@ -274,27 +276,32 @@ public class JetSqlBackend implements SqlBackend {
             RelNode rel,
             List<String> fieldNames,
             OptimizerContext context,
-            boolean isInfiniteRows
+            boolean isInfiniteRows,
+            boolean isCreateJob
     ) {
-        PhysicalRel physicalRel = optimize(parameterMetadata, rel, context);
+        PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
         Address localAddress = nodeEngine.getThisAddress();
         List<Permission> permissions = extractPermissions(physicalRel);
 
         if (physicalRel instanceof InsertMapPhysicalRel) {
+            assert !isCreateJob;
             InsertMapPhysicalRel insert = (InsertMapPhysicalRel) physicalRel;
             return new IMapInsertPlan(planKey, insert.objectKey(), parameterMetadata, insert.mapName(), insert.entriesFn(),
                     planExecutor, permissions);
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
+            assert !isCreateJob;
             SinkMapPhysicalRel sink = (SinkMapPhysicalRel) physicalRel;
             return new IMapSinkPlan(planKey, sink.objectKey(), parameterMetadata, sink.mapName(), sink.entriesFn(),
                     planExecutor, permissions);
         } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
+            assert !isCreateJob;
             UpdateByKeyMapPhysicalRel update = (UpdateByKeyMapPhysicalRel) physicalRel;
             return new IMapUpdatePlan(planKey, update.objectKey(), parameterMetadata, update.mapName(),
                     update.keyCondition(parameterMetadata), update.updaterSupplier(parameterMetadata), planExecutor,
                     permissions);
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
+            assert !isCreateJob;
             DeleteByKeyMapPhysicalRel delete = (DeleteByKeyMapPhysicalRel) physicalRel;
             return new IMapDeletePlan(planKey, delete.objectKey(), parameterMetadata, delete.mapName(),
                     delete.keyCondition(parameterMetadata), planExecutor, permissions);
@@ -342,8 +349,14 @@ public class JetSqlBackend implements SqlBackend {
         return permissions;
     }
 
-    private PhysicalRel optimize(QueryParameterMetadata parameterMetadata, RelNode rel, OptimizerContext context) {
+    private PhysicalRel optimize(
+            QueryParameterMetadata parameterMetadata,
+            RelNode rel,
+            OptimizerContext context,
+            boolean isCreateJob
+    ) {
         context.setParameterMetadata(parameterMetadata);
+        context.setRequiresJob(isCreateJob);
 
         logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         LogicalRel logicalRel = optimizeLogical(context, rel);
