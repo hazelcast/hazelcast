@@ -87,6 +87,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
               .getMapStoreConfig()
               .setEnabled(true)
               .setImplementation(new AlwaysFailingMapStore());
+        config.getJetConfig().setEnabled(true);
 
         HazelcastInstance instance = createHazelcastInstance(config);
         nodeEngine = Util.getNodeEngine(instance);

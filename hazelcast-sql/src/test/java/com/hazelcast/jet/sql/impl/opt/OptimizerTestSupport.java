@@ -21,6 +21,7 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.sql.impl.JetPlanExecutor;
 import com.hazelcast.jet.sql.impl.JetSqlBackend;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.jet.sql.impl.schema.MappingStorage;
@@ -29,8 +30,6 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
@@ -65,10 +64,16 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema =
                 new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
-        return optimize(sql, schema).getLogical();
+        return optimize(sql, false, schema).getLogical();
     }
 
-    protected static Result optimize(String sql, HazelcastSchema schema) {
+    protected RelNode optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
+        HazelcastSchema schema =
+                new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
+        return optimize(sql, requiresJob, schema).getLogical();
+    }
+
+    protected static Result optimize(String sql, boolean requiresJob, HazelcastSchema schema) {
         HazelcastInstance instance = instance();
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
@@ -84,6 +89,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 new HazelcastSqlBackend(nodeEngine),
                 new JetSqlBackend(nodeEngine, planExecutor)
         );
+        context.setRequiresJob(requiresJob);
 
         return optimize(sql, context);
     }
@@ -99,8 +105,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     private static LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
-        RelNode logicalRel = context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
-        return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+        return (LogicalRel) context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
     }
 
     protected static HazelcastTable partitionedTable(String name, List<TableField> fields, long rowCount) {

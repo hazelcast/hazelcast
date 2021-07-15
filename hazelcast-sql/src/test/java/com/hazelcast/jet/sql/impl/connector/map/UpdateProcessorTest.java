@@ -19,9 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -29,27 +27,36 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.math.PlusFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
+import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UpdateProcessorTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
-    private IMap<Integer, Object> map;
+    private Map<Integer, Object> map;
 
     @BeforeClass
     public static void beforeClass() {
@@ -64,9 +71,10 @@ public class UpdateProcessorTest extends SqlTestSupport {
     @Test
     public void test_update() {
         Object updated = executeUpdate(
-                INT,
                 1,
-                PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT),
+                1,
+                partitionedTable(INT),
+                singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT)),
                 emptyList()
         );
         assertThat(updated).isEqualTo(2);
@@ -75,46 +83,63 @@ public class UpdateProcessorTest extends SqlTestSupport {
     @Test
     public void test_updateWithDynamicParameter() {
         Object updated = executeUpdate(
-                BIGINT,
                 2L,
-                PlusFunction.create(ColumnExpression.create(1, BIGINT), ParameterExpression.create(0, BIGINT), BIGINT),
+                1,
+                partitionedTable(BIGINT),
+                singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, BIGINT), ParameterExpression.create(0, BIGINT), BIGINT)),
                 singletonList(2L)
         );
         assertThat(updated).isEqualTo(4L);
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @Test
+    public void when_keyDoesNotExist_then_doesNotCreateEntry() {
+        Object updated = executeUpdate(
+                1,
+                0,
+                partitionedTable(INT),
+                singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT)),
+                emptyList()
+        );
+        assertThat(updated).isEqualTo(1);
+        assertThat(map).containsExactly(entry(1, 1));
+    }
+
+    private static PartitionedMapTable partitionedTable(QueryDataType valueType) {
+        return new PartitionedMapTable(
+                SCHEMA_NAME_PARTITIONED,
+                MAP_NAME,
+                MAP_NAME,
+                asList(
+                        new MapTableField(KEY, INT, false, QueryPath.KEY_PATH),
+                        new MapTableField(VALUE, valueType, false, QueryPath.VALUE_PATH)
+                ),
+                new ConstantTableStatistics(1),
+                GenericQueryTargetDescriptor.DEFAULT,
+                GenericQueryTargetDescriptor.DEFAULT,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                emptyList(),
+                false
+        );
+    }
+
     private Object executeUpdate(
-            QueryDataType type,
-            Object value,
-            Expression<?> update,
+            Object initialValue,
+            int inputValue,
+            PartitionedMapTable table,
+            Map<String, Expression<?>> updatesByFieldNames,
             List<Object> arguments
     ) {
-        KvRowProjector.Supplier rowProjectorSupplier = KvRowProjector.supplier(
-                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
-                new QueryDataType[]{INT, type},
-                GenericQueryTargetDescriptor.DEFAULT,
-                GenericQueryTargetDescriptor.DEFAULT,
-                null,
-                asList(ColumnExpression.create(0, INT), ColumnExpression.create(1, type))
-        );
-
-        ValueProjector.Supplier valueProjectorSupplier = ValueProjector.supplier(
-                new QueryPath[]{QueryPath.VALUE_PATH},
-                new QueryDataType[]{type},
-                PrimitiveUpsertTargetDescriptor.INSTANCE,
-                singletonList(update)
-        );
-
         UpdateProcessorSupplier processor = new UpdateProcessorSupplier(
-                MAP_NAME, rowProjectorSupplier, valueProjectorSupplier
+                MAP_NAME, UpdatingEntryProcessor.supplier(table, updatesByFieldNames)
         );
 
         TestSupport
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, arguments))
-                .executeBeforeEachRun(() -> map.put(1, value))
-                .input(singletonList(new Object[]{1}))
+                .executeBeforeEachRun(() -> map.put(1, initialValue))
+                .input(singletonList(new Object[]{inputValue}))
                 .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()

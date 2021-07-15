@@ -19,13 +19,13 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -218,20 +218,22 @@ public class MasterJobContext {
                 } else {
                     logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
                 }
-                MembersView membersView = getMembersView();
+                MembersView membersView = Util.getMembersView(mc.nodeEngine());
                 logger.info("Start executing " + mc.jobIdString()
                         + ", execution graph in DOT format:\n" + dotRepresentation
                         + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
                 logger.fine("Building execution plan for " + mc.jobIdString());
                 Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView, dag, mc.jobId(),
-                                mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(), false)));
+                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
+                                false, mc.jobRecord().getSubject())));
 
                 logger.fine("Built execution plans for " + mc.jobIdString());
                 Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
                 Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), participants,
-                                mc.nodeEngine().getSerializationService().toData(plan), false);
+                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
                 mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
             } catch (Throwable e) {
                 finalizeJob(e);
@@ -280,11 +282,18 @@ public class MasterJobContext {
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
+            JobExecutionService jobExecutionService = mc.coordinationService().getJetServiceBackend().getJobExecutionService();
             try {
-                dag = deserializeWithCustomClassLoader(mc.nodeEngine().getSerializationService(),
-                        classLoader, mc.jobRecord().getDag());
+                jobExecutionService.prepareProcessorClassLoaders(mc.jobId(), mc.jobConfig());
+                dag = deserializeWithCustomClassLoader(
+                        mc.nodeEngine().getSerializationService(),
+                        classLoader,
+                        mc.jobRecord().getDag()
+                );
             } catch (Exception e) {
                 throw new JetException("DAG deserialization failed", e);
+            } finally {
+                jobExecutionService.clearProcessorClassLoaders();
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
@@ -425,11 +434,6 @@ public class MasterJobContext {
         }
         mc.setJobStatus(NOT_RUNNING);
         mc.coordinationService().scheduleRestart(mc.jobId());
-    }
-
-    private MembersView getMembersView() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) mc.nodeEngine().getClusterService();
-        return clusterService.getMembershipManager().getMembersView();
     }
 
     // Called as callback when all InitOperation invocations are done
@@ -754,7 +758,8 @@ public class MasterJobContext {
         if (vertices != null) {
             for (Vertex vertex : vertices) {
                 try {
-                    vertex.getMetaSupplier().close(failure);
+                    ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
+                    Util.doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.close(failure));
                 } catch (Throwable e) {
                     logger.severe(mc.jobIdString()
                             + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);

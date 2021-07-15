@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -54,6 +55,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  */
 public final class SourceBuilder<C> {
     private final String name;
+    private Permission permission;
     private final FunctionEx<? super Context, ? extends C> createFn;
     private FunctionEx<? super C, Object> createSnapshotFn = ctx -> null;
     private BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFn = (ctx, states) -> { };
@@ -390,6 +392,22 @@ public final class SourceBuilder<C> {
         }
 
         /**
+         * Sets the the permission required to use this sink when the
+         * security is enabled. The default value is {@code null} which
+         * means there is no restriction to use this sink. Security is an
+         * enterprise feature.
+         *
+         * @param permission the required permission to use this sink when
+         *     security is enabled.
+         */
+        public Base<T> permission(@Nonnull Permission permission) {
+            checkSerializable(permission, "permission");
+            SourceBuilder.this.permission = permission;
+            return this;
+        }
+
+
+        /**
          * Sets the function Jet calls when it's creating a snapshot of the
          * current job state. This happens in all Jet jobs that have a {@linkplain
          * JobConfig#setProcessingGuarantee(ProcessingGuarantee) processing
@@ -504,6 +522,11 @@ public final class SourceBuilder<C> {
             return (Batch<T>) super.distributed(preferredLocalParallelism);
         }
 
+        @Override
+        public Batch<T> permission(@Nonnull Permission permission) {
+            return (Batch<T>) super.permission(permission);
+        }
+
         /**
          * Builds and returns the batch source.
          */
@@ -511,7 +534,7 @@ public final class SourceBuilder<C> {
         public BatchSource<T> build() {
             Preconditions.checkNotNull(fillBufferFn, "fillBufferFn must be non-null");
             return new BatchSourceTransform<>(name, convenientSourceP(createFn, fillBufferFn, createSnapshotFn,
-                    restoreSnapshotFn, destroyFn, preferredLocalParallelism, true));
+                    restoreSnapshotFn, destroyFn, preferredLocalParallelism, true, permission));
         }
 
         /**
@@ -552,6 +575,11 @@ public final class SourceBuilder<C> {
             return (Stream<T>) super.distributed(preferredLocalParallelism);
         }
 
+        @Override
+        public Stream<T> permission(@Nonnull Permission permission) {
+            return (Stream<T>) super.permission(permission);
+        }
+
         @Override @Nonnull
         public <S> FaultTolerant<Stream<T>, S> createSnapshotFn(
                 @Nonnull FunctionEx<? super C, ? extends S> createSnapshotFn
@@ -572,12 +600,13 @@ public final class SourceBuilder<C> {
             BiConsumerEx<? super C, ? super List<Object>> restoreSnapshotFnLocal = restoreSnapshotFn;
             ConsumerEx<? super C> destroyFnLocal = destroyFn;
             int preferredLocalParallelismLocal = preferredLocalParallelism;
+            Permission requiredPermission = permission;
 
             return new StreamSourceTransform<>(
                     name,
                     eventTimePolicy -> convenientSourceP(
                             createFnLocal, fillBufferFnLocal, createSnapshotFnLocal, restoreSnapshotFnLocal,
-                            destroyFnLocal, preferredLocalParallelismLocal, false),
+                            destroyFnLocal, preferredLocalParallelismLocal, false, requiredPermission),
                     false, false);
         }
     }
@@ -636,6 +665,11 @@ public final class SourceBuilder<C> {
         @Override @Nonnull
         public TimestampedStream<T> distributed(int preferredLocalParallelism) {
             return (TimestampedStream<T>) super.distributed(preferredLocalParallelism);
+        }
+
+        @Override
+        public TimestampedStream<T> permission(@Nonnull Permission permission) {
+            return (TimestampedStream<T>) super.permission(permission);
         }
 
         @Override @Nonnull

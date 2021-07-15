@@ -19,7 +19,7 @@
 # the directory where you start your Hazelcast member.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
-# at https://hazelcast.org/documentation/
+# at https://docs.hazelcast.com/
 
 hazelcast:
 
@@ -1050,7 +1050,7 @@ hazelcast:
   # containsKey is called.  Valid values are integers between 0 and Integer.MAX VALUE. Its default value
   # is 0, which means infinite.
   # "eviction":
-  # By default map has no eviction configured. Its <eviction-policy> is NONE.
+  # By default map has no eviction configured. Its "eviction-policy" is NONE.
   # To make it work you have to configure it.
   # Configuration has the following attributes:
   # - size: Maximum size of the map.
@@ -1120,8 +1120,8 @@ hazelcast:
   # 	transfer larger chunks of the data structure in which a possible change
   # 	happened. On the other hand, a shallower tree consumes less memory.
   # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
-  # * "hot-restart":
-  # Used to enable Hazelcast's Hot Restart Persistence feature for the map. It is available only in Hazelcast
+  # * "data-persistence":
+  # Used to enable Hazelcast's Data Persistence feature for the map. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
   # sub-element.
   # - "fsync":
@@ -1298,7 +1298,7 @@ hazelcast:
         batch-size: 100
         class-name: PutIfAbsentMergePolicy
       read-backup-data: false
-      hot-restart:
+      data-persistence:
         enabled: false
         fsync: false
       event-journal:
@@ -1634,8 +1634,8 @@ hazelcast:
   # 	transfer larger chunks of the data structure in which a possible change
   # 	happened. On the other hand, a shallower tree consumes less memory.
   # 	The depth must be between 2 and 27 (exclusive). The default depth is 10.
-  # * "hot-restart":
-  # Used to enable Hazelcast's Hot Restart Persistence feature for the cache. It is available only in Hazelcast
+  # * "data-persistence":
+  # Used to enable Hazelcast's Data Persistence feature for the cache. It is available only in Hazelcast
   # Enterprise HD. Set its "enabled" to true to enable the feature. By default, it is disabled. It has the following
   # sub-element.
   # - "fsync":
@@ -1706,7 +1706,7 @@ hazelcast:
       merge-policy:
         batch-size: 100
         class-name: LatestAccessMergePolicy
-      hot-restart:
+      data-persistence:
         enabled: false
         fsync: false
       event-journal:
@@ -2134,15 +2134,15 @@ hazelcast:
   # - "persistent-memory-directory":
   #     Simple configuration option for a single directory where the non-volatile memory (e.g. Intel Optane) is mounted.
   #     This should be used only on single-socket systems as only one directory can be defined. On multi-socket systems
-  #     use <persistent-memory> instead.
-  #     If neither this or <persistent-memory> elements are defined, the RAM is used as native memory. This directory
+  #     use "persistent-memory" instead.
+  #     If neither this or "persistent-memory" elements are defined, the RAM is used as native memory. This directory
   #     will be created automatically if it does not exist. To avoid collisions, every member of the cluster will create
   #     its own subfolder to work with the non-volatile memory.
   # - "persistent-memory":
   #     Specifies the configuration for the non-volatile memory (e.g. Intel Optane) in the system. Under this configuration
   #     section multiple directories can be listed with optionally specifying the NUMA node the non-volatile memory mounted
   #     in the given directory is attached to for NUMA-aware allocations. If neither this or the
-  #     <persistent-memory-directory> elements are defined, the RAM is used as native memory. The directories defined under
+  #     "persistent-memory-directory" elements are defined, the RAM is used as native memory. The directories defined under
   #     this section will be created automatically if they do not exist. To avoid collisions, every member of the cluster
   #     will create its own subfolder to work with the non-volatile memory.
   #
@@ -2197,11 +2197,11 @@ hazelcast:
   #
   #  HAZELCAST SECURITY REALMS
   #  Security realms are named security configurations which can be referenced from Hazelcast security configuration.
-  #  Currently, the realms support configuring <authentication> and/or <identity>. Only one type of authentication
+  #  Currently, the realms support configuring "authentication" and/or "identity". Only one type of authentication
   #  configuration and one type of identity configuration is allowed per the realm.
   #  Authentication types:
   #  * jaas
-  #      Defines JAAS authentication - i.e. list of <login-modules> and its optional <properties>
+  #      Defines JAAS authentication - i.e. list of "login-modules" and its optional "properties"
   #  * tls
   #      TLS defines X.509 based authentication (for cases when SSL mutual authentication is configured
   #      in Hazelcast network configuration)
@@ -2213,8 +2213,8 @@ hazelcast:
   #      interface.
   #      This element has a mandatory "class-name" attribute where you should define the factory class implementing
   #      ICredentialsFactory used to create Credentials objects.
-  #      With the <properties> sub-element, you can define properties for the factory class. The properties can be
-  #      defined with the <property> sub-element nested in the <properties>. The <property> element has the attribute
+  #      With the "properties" sub-element, you can define properties for the factory class. The properties can be
+  #      defined with the "property "sub-element nested in the "properties". The "property" element has the attribute
   #      "name" used to define the name of the attribute. The value of the property is defined in the body.
   #  * username-password
   #      Defines a static UsernamePasswordCredentials instance as the member's identity. It has mandatory
@@ -2517,37 +2517,39 @@ hazelcast:
   lite-member:
     enabled: true
   #
-  # ===== HAZELCAST HOT RESTART PERSISTENCE CONFIGURATION =====
+  # ===== HAZELCAST PERSISTENCE CONFIGURATION =====
   #
   # This feature is available only in Hazelcast Enterprise HD. Configuration element's name is
-  # "hot-restart-persistence". It has the required attribute "enabled" to specify whether this feature will be enabled
+  # "persistence". It has the required attribute "enabled" to specify whether this feature will be enabled
   # on your cluster. This part is the feature's configuration itself and you define the general specifications for
-  # the feature. However, note that "map" and "cache" have a sub-element called "hot-restart" with which you should
-  # enable its usage on those data structures. Keep in mind that the Hot Restart feature is currently supported for
+  # the feature. However, note that "map" and "cache" have a sub-element called "data-persistence" with which you should
+  # enable its usage on those data structures. Keep in mind that the Persistence feature is currently supported for
   # Hazelcast's map and cache data structures.
   # It has the following sub-elements:
   # * "base-dir":
-  #     Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart.
+  #     Specifies the directory where the Persistence data will be stored. Its default value is persistence.
   #     You can use the default value, or you can specify another folder.
   #     This directory will be created automatically if it does not exist.
   # * "backup-dir":
-  #     Specifies the directory where the Hot backup data will be stored. If this element is not defined, hot backup will
+  #     Specifies the directory where the backup data will be stored. If this element is not defined, persistence backup will
   #     be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data
   #     on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
-  #     contain all hot restart data. This unique directory is created as a subdirectory of the configured `backup-dir`.
+  #     contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`.
   # * "parallelism":
-  #     Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
-  #     each writing in parallel to its own files. During the Hot Restart procedure, this many
+  #     Deprecated. Please leave it to default.
+  #     Level of parallelism in Persistence restart. There will be this many IO threads,
+  #     each writing in parallel to its own files. During the restart procedure, this many
   #     IO threads will be reading the files and this many Rebuilder threads will be rebuilding
-  #     the Hot Restart metadata.
+  #     the Persistence metadata.
   # * "validation-timeout-seconds":
-  #     Validation timeout for the Hot Restart process when validating the cluster members expected to join and the partition
+  #     Validation timeout for the Restart process when validating the cluster members expected to join and the partition
   #     table on the whole cluster.
   # * "data-load-timeout-seconds":
-  #     Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data
+  #     Deprecated. Please leave it to default.
+  #     Data load timeout for the Restart process. All members in the cluster should finish restoring their local data
   #     before this timeout period.
   # * "cluster-data-recovery-policy":
-  #     Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are;
+  #     Specifies the data recovery policy that will be respected during the cluster restart. Valid values are;
   #     FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails.
   #     This is the default value.
   #     PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and
@@ -2557,26 +2559,25 @@ hazelcast:
   #     table version and successfully restored their data. All other members will leave the cluster and force start themselves.
   #     If no member restores its data successfully, cluster start fails.
   # * "encryption-at-rest":
-  #     Specifies the (optional) encryption settings for Hot Restart persistence. It has the required attribute "enabled"
+  #     Specifies the (optional) encryption settings for Persistence. It has the required attribute "enabled"
   #     to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as
   #     AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the "secure-store"
   #     sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.
-  #          * <keystore>:
+  #          * "keystore":
   #              Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as
   #              PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and
   #              (optionally) a polling interval for checking for changes in the KeyStore.
-  #          * <vault>:
+  #          * "vault":
   #              Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets
   #              engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace,
-  #              the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for
+  #              the (optional) "ssl" configuration for HTTPS support, and an (optional) polling interval for checking for
   #              changes in Vault.
   #
-  hot-restart-persistence:
+  persistence:
     enabled: true
-    base-dir: /mnt/hot-restart
-    backup-dir: /mnt/hot-backup
+    base-dir: /mnt/persistence
+    backup-dir: /mnt/persistence-backup
     validation-timeout-seconds: 120
-    data-load-timeout-seconds: 900
     cluster-data-recovery-policy: PARTIAL_RECOVERY_MOST_COMPLETE
     encryption-at-rest:
       enabled: true
@@ -3508,7 +3509,7 @@ hazelcast:
 
   #  ===== HAZELCAST JET CONFIGURATION =====
   #
-  #  Configuration element's name is <jet>.
+  #  Configuration element's name is "jet".
   #  It has the following attributes:
   #  - enabled:
   #    Enables or disables Jet Service.
@@ -3517,21 +3518,21 @@ hazelcast:
   #
   #    It has the following sub-elements:
   #
-  #  * <instance>:
-  #      General configuration options pertaining to a Jet instance.
+  #  * "instance":
+  #      General configuration options pertaining to the Jet Service.
   #
   #        It has the following sub-elements:
-  #      * <cooperative-thread-count>:
+  #      * "cooperative-thread-count":
   #          Sets the number of threads each cluster member will use to execute Jet
   #          jobs. This refers only to threads executing `cooperative`
   #          processors; each `blocking` processor is assigned its own thread.
-  #      * <flow-control-period>:
+  #      * "flow-control-period":
   #          While executing a Jet job there is the issue of regulating the rate
   #          at which one member of the cluster sends data to another member. The
   #          receiver will regularly report to each sender how much more data it
   #          is allowed to send over a given DAG edge. This method sets the length
   #          (in milliseconds) of the interval between flow-control ("ack") packets.
-  #      * <backup-count>:
+  #      * "backup-count":
   #          Sets the number of backups that Jet will maintain for the job metadata
   #          and snapshots. Each backup is on another cluster member; all backup
   #          write operations must complete before the overall write operation can
@@ -3541,11 +3542,11 @@ hazelcast:
   #          the job metadata and snapshot data to two other members. If one or two
   #          members of the cluster fail, Jet can recover the data from the snapshot
   #          and continue executing the job on the remaining members without loss.
-  #      * <scale-up-delay-millis>:
+  #      * "scale-up-delay-millis":
   #          Sets the delay after which auto-scaled jobs will restart if a new member
   #          is added to the cluster. The default is 10 seconds. Has no effect on
   #          jobs with auto scaling disabled.
-  #      * <lossless-restart-enabled>:
+  #      * "lossless-restart-enabled":
   #          Sets whether lossless job restart is enabled for the node. With lossless
   #          restart you can restart the whole cluster without losing the jobs and
   #          their state. The feature is implemented on top of the Hot Restart
@@ -3556,7 +3557,7 @@ hazelcast:
   #          Feature is disabled by default. If you enable this option in open-source,
   #          the member will fail to start, you need Enterprise to run it and obtain a
   #          license from Hazelcast.
-  #      * <max-processor-accumulated-records>:
+  #      * "max-processor-accumulated-records":
   #          Sets the maximum number of records that can be accumulated by any single
   #          processor instance.
   #          Operations like grouping, sorting or joining require certain amount of
@@ -3574,12 +3575,12 @@ hazelcast:
   #          Note: the limit does not apply to streaming aggregations.
   #          The default value is Long.MAX_VALUE.
   #
-  #  * <edge-defaults>
+  #  * "edge-defaults"
   #  A configuration object for a DAG `Edge` that holds fine-tuning parameters
   #  that influence its performance characteristics.
   #
   #    It has the following sub-elements:
-  #  * <queue-size>:
+  #  * "queue-size":
   #      Sets the capacity of processor-to-processor concurrent queues. The value
   #      is rounded upwards to the next power of 2.
   #      When data needs to travel between two processors on the same cluster
@@ -3590,44 +3591,75 @@ hazelcast:
   #      `senderParallelism * receiverParallelism` queues representing the edge on
   #      each member. The edge capacity should strike a balance between
   #      performance and memory usage.
-  #  * <packet-size-limit>
-  #  For a distributed edge, data is sent to a remote member via Hazelcast network
-  #  packets. Each packet is dedicated to the data of a single edge, but may contain
-  #  any number of data items. This setting limits the size of the packet in bytes.
-  #  Packets should be large enough to drown out any fixed overheads, but small enough
-  #  to allow good interleaving with other packets.
-  #  Note that a single item cannot straddle packets, therefore the maximum packet size
-  #  can exceed the value configured here by the size of a single data item.
-  #  This setting has no effect on a non-distributed edge.
-  #  * <receive-window-multiplier>
-  #  Sets the scaling factor used by the adaptive receive window sizing
-  #  function.
-  #  For each distributed edge the receiving member regularly sends
-  #  flow-control ("ack") packets to its sender which prevent it from sending
-  #  too much data and overflowing the buffers. The sender is allowed to send
-  #  the data one `receive window` further than the last acknowledged byte and
-  #  the receive window is sized in proportion to the rate of processing at
-  #  the receiver.
-  #  Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs)
-  #  and the `receive window multiplier` sets the factor of the linear
-  #  relationship between the amount of data processed within one such
-  #  interval and the size of the receive window.
-  #  To put it another way, let us define an `ackworth` as the amount of data
-  #  processed between two consecutive ack packets. The receive window
-  #  multiplier determines the number of ackworths the sender can be ahead of
-  #  the last acked byte.
-  #  This setting has no effect on a non-distributed edge.
+  #  * "packet-size-limit"
+  #      For a distributed edge, data is sent to a remote member via Hazelcast network
+  #      packets. Each packet is dedicated to the data of a single edge, but may contain
+  #      any number of data items. This setting limits the size of the packet in bytes.
+  #      Packets should be large enough to drown out any fixed overheads, but small enough
+  #      to allow good interleaving with other packets.
+  #      Note that a single item cannot straddle packets, therefore the maximum packet size
+  #      can exceed the value configured here by the size of a single data item.
+  #      This setting has no effect on a non-distributed edge.
+  #  * "receive-window-multiplier"
+  #      Sets the scaling factor used by the adaptive receive window sizing
+  #      function.
+  #      For each distributed edge the receiving member regularly sends
+  #      flow-control ("ack") packets to its sender which prevent it from sending
+  #      too much data and overflowing the buffers. The sender is allowed to send
+  #      the data one `receive window` further than the last acknowledged byte and
+  #      the receive window is sized in proportion to the rate of processing at
+  #      the receiver.
+  #      Ack packets are sent in regular intervals (flow-control-period)
+  #      and the `receive window multiplier` sets the factor of the linear
+  #      relationship between the amount of data processed within one such
+  #      interval and the size of the receive window.
+  #      To put it another way, let us define an `ackworth` as the amount of data
+  #      processed between two consecutive ack packets. The receive window
+  #      multiplier determines the number of ackworths the sender can be ahead of
+  #      the last acked byte.
+  #      This setting has no effect on a non-distributed edge.
   jet:
     enabled: true
     resource-upload-enabled: true
     instance:
-      cooperative-thread-count: 4
+      # number of threads in the cooperative thread pool
+      cooperative-thread-count: 8
+      # period between flow control packets in milliseconds
       flow-control-period: 100
+      # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
       backup-count: 1
+      # the delay after which auto-scaled jobs will restart if a new member is added to the
+      # cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled
       scale-up-delay-millis: 10000
+      # Sets whether lossless job restart is enabled for the node. With
+      # lossless restart you can restart the whole cluster without losing the
+      # jobs and their state. The feature is implemented on top of the Hot
+      # Restart feature of Hazelcast IMDG which persists the data to disk.
       lossless-restart-enabled: false
+      # Sets the maximum number of records that can be accumulated by any single
+      # Processor instance.
+      #
+      # Operations like grouping, sorting or joining require certain amount of
+      # records to be accumulated before they can proceed. You can set this option
+      # to reduce the probability of OutOfMemoryError.
+      #
+      # This option applies to each Processor instance separately, hence the
+      # effective limit of records accumulated by each cluster member is influenced
+      # by the vertex's localParallelism and the number of jobs in the cluster.
+      #
+      # Currently, max-processor-accumulated-records limits:
+      #    - number of items sorted by the sort operation
+      #    - number of distinct keys accumulated by aggregation operations
+      #    - number of entries in the hash-join lookup tables
+      #    - number of entries in stateful transforms
+      #    - number of distinct items in distinct operation
+      #
+      # Note: the limit does not apply to streaming aggregations.
       max-processor-accumulated-records: 1000000000
     edge-defaults:
+      # capacity of the concurrent SPSC queue between each two processors
       queue-size: 1024
+      # network packet size limit in bytes, only applies to distributed edges
       packet-size-limit: 16384
+      # receive window size multiplier, only applies to distributed edges
       receive-window-multiplier: 3

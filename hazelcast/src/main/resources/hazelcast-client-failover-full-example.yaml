@@ -21,7 +21,7 @@
 #
 # To learn how to configure Hazelcast clients for Blue/Green Deployment and
 # Disaster Recovery, please see the Reference Manual at
-# https://hazelcast.org/documentation/
+# https://docs.hazelcast.com/
 
 hazelcast-client-failover:
   # 

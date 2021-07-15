@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastJetSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
@@ -114,12 +115,14 @@ public final class OptimizerContext {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         HazelcastSqlConformance conformance = HazelcastSqlConformance.INSTANCE;
+        HazelcastSqlConformance jetConformance = HazelcastJetSqlConformance.INSTANCE;
         HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, arguments, sqlBackend, jetSqlBackend);
+        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, jetConformance, arguments,
+                sqlBackend, jetSqlBackend);
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
@@ -148,6 +151,11 @@ public final class OptimizerContext {
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
         cluster.setParameterMetadata(parameterMetadata);
+    }
+
+
+    public void setRequiresJob(boolean requiresJob) {
+        cluster.setRequiresJob(requiresJob);
     }
 
     // For unit testing only

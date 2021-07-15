@@ -364,6 +364,26 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
+    public long getDifferentialPartitionReplicationCount() {
+        return 0;
+    }
+
+    @Override
+    public long getFullPartitionReplicationCount() {
+        return 0;
+    }
+
+    @Override
+    public long getDifferentialReplicationRecordCount() {
+        return 0;
+    }
+
+    @Override
+    public long getFullReplicationRecordCount() {
+        return 0;
+    }
+
+    @Override
     public String toString() {
         return "LocalReplicatedMapStatsImpl{"
                 + "lastAccessTime=" + lastAccessTime

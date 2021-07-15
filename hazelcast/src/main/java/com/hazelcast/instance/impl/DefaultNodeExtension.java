@@ -24,10 +24,10 @@ import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -91,8 +91,8 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.internal.util.MapUtil;
-import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.phonehome.PhoneHome;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
@@ -165,8 +165,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     }
 
     private void checkPersistenceAllowed() {
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = node.getConfig().getHotRestartPersistenceConfig();
-        if (hotRestartPersistenceConfig != null && hotRestartPersistenceConfig.isEnabled()) {
+        PersistenceConfig persistenceConfig = node.getConfig().getPersistenceConfig();
+        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Hot Restart requires Hazelcast Enterprise Edition");
             }
@@ -212,7 +212,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             // For this case, recommend disabling Jet.
             jetExtension.beforeStart();
         } else {
-            systemLogger.info("Jet extension is disabled with \"hazelcast.jet.disabled\" property.");
+            systemLogger.info("Jet is disabled. Enable it by setting the \"hz.jet.enabled\""
+                    + " property to true.");
         }
     }
 
@@ -297,6 +298,24 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
     @Override
     public InternalSerializationService createSerializationService() {
+        return createSerializationService(false);
+    }
+
+    @Override
+    public InternalSerializationService createCompatibilitySerializationService() {
+        return createSerializationService(true);
+    }
+
+    /**
+     * Creates a serialization service. The {@code isCompatibility} parameter defines
+     * whether the serialization format used by the service will conform to the
+     * 3.x or the 4.x format.
+     *
+     * @param isCompatibility {@code true} if the serialized format should conform to the
+     *                 3.x serialization format, {@code false} otherwise
+     * @return the serialization service
+     */
+    private InternalSerializationService createSerializationService(boolean isCompatibility) {
         InternalSerializationService ss;
         try {
             Config config = node.getConfig();
@@ -317,12 +336,14 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
+                    .setSchemaService(node.memberSchemaService)
                     .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
                         @Override
                         public RuntimeException get() {
                             return new HazelcastInstanceNotActiveException();
                         }
                     })
+                    .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

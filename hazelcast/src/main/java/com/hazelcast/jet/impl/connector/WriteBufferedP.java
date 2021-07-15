@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
+import com.hazelcast.security.PermissionsUtil;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -57,6 +58,7 @@ public final class WriteBufferedP<B, T> implements Processor {
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+        PermissionsUtil.checkPermission(createFn, context);
         B localBuff = createFn.apply(context);
         if (localBuff == null) {
             throw new JetException("Null buffer created");

@@ -510,10 +510,10 @@ public class TopologyChangeTest extends JetTestSupport {
         }
 
         Version version = instances[0].getCluster().getLocalMember().getVersion().asVersion();
-        JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet());
+        JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
-        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null, false);
+        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, version, memberInfos, null, false);
         Future<Object> future = Accessors.getOperationService(master)
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();

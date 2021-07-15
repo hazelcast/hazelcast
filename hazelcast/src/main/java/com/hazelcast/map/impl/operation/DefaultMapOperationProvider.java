@@ -306,9 +306,9 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
             String indexName,
             IndexIterationPointer[] pointers,
             PartitionIdSet partitionIdSet,
-            int sizeHint
+            int sizeLimit
     ) {
-        return new MapFetchIndexOperation(mapName, indexName, pointers, partitionIdSet, sizeHint);
+        return new MapFetchIndexOperation(mapName, indexName, pointers, partitionIdSet, sizeLimit);
     }
 
     @Override

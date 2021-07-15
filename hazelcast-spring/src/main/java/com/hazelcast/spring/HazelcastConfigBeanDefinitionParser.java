@@ -75,6 +75,8 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.ProbabilisticSplitBrainProtectionConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
@@ -327,6 +329,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleSplitBrainProtection(node);
                     } else if ("hot-restart-persistence".equals(nodeName)) {
                         handleHotRestartPersistence(node);
+                    } else if ("persistence".equals(nodeName)) {
+                        handlePersistence(node);
                     } else if ("flake-id-generator".equals(nodeName)) {
                         handleFlakeIdGenerator(node);
                     } else if ("crdt-replication".equals(nodeName)) {
@@ -356,6 +360,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
+        @Deprecated
         private void handleHotRestartPersistence(Node node) {
             BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartPersistenceConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
@@ -372,6 +377,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handlePersistence(Node node) {
+            BeanDefinitionBuilder persistenceConfigBuilder = createBeanBuilder(PersistenceConfig.class);
+            fillAttributeValues(node, persistenceConfigBuilder);
+
+            for (Node child : childElements(node)) {
+                String name = cleanNodeName(child);
+                if ("base-dir".equals(name)) {
+                    String value = getTextContent(child);
+                    persistenceConfigBuilder.addPropertyValue("baseDir", value);
+                } else if ("backup-dir".equals(name)) {
+                    persistenceConfigBuilder.addPropertyValue("backupDir", getTextContent(child));
+                } else if ("encryption-at-rest".equals(name)) {
+                    handleEncryptionAtRest(persistenceConfigBuilder, child);
+                }
+            }
+            configBuilder.addPropertyValue("persistenceConfig", persistenceConfigBuilder.getBeanDefinition());
         }
 
         private void handleEncryptionAtRest(BeanDefinitionBuilder hotRestartConfigBuilder, Node node) {
@@ -1232,6 +1255,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMerkleTreeConfig(mapConfigBuilder, childNode);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(mapConfigBuilder, childNode);
+                } else if ("data-persistence".equals(nodeName)) {
+                    handleDataPersistenceConfig(mapConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(mapConfigBuilder, childNode);
                 } else if ("eviction".equals(nodeName)) {
@@ -1250,10 +1275,17 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("merkleTreeConfig", merkleTreeBuilder.getBeanDefinition());
         }
 
+        @Deprecated
         private void handleHotRestartConfig(BeanDefinitionBuilder configBuilder, Node node) {
             BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
             configBuilder.addPropertyValue("hotRestartConfig", hotRestartConfigBuilder.getBeanDefinition());
+        }
+
+        private void handleDataPersistenceConfig(BeanDefinitionBuilder configBuilder, Node node) {
+            BeanDefinitionBuilder dataPersistenceConfigBuilder = createBeanBuilder(DataPersistenceConfig.class);
+            fillAttributeValues(node, dataPersistenceConfigBuilder);
+            configBuilder.addPropertyValue("dataPersistenceConfig", dataPersistenceConfigBuilder.getBeanDefinition());
         }
 
         private void handleEventJournalConfig(BeanDefinitionBuilder configBuilder, Node node) {
@@ -1372,6 +1404,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMergePolicyConfig(childNode, cacheConfigBuilder);
                 } else if ("hot-restart".equals(nodeName)) {
                     handleHotRestartConfig(cacheConfigBuilder, childNode);
+                } else if ("data-persistence".equals(nodeName)) {
+                    handleDataPersistenceConfig(cacheConfigBuilder, childNode);
                 } else if ("event-journal".equals(nodeName)) {
                     handleEventJournalConfig(cacheConfigBuilder, childNode);
                 } else if ("merkle-tree".equals(nodeName)) {

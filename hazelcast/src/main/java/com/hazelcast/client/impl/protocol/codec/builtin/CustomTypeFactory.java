@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -31,20 +32,25 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
+import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 
 @SuppressWarnings("checkstyle:ClassDataAbstractionCoupling")
 public final class CustomTypeFactory {
@@ -67,7 +73,7 @@ public final class CustomTypeFactory {
     }
 
     public static TimedExpiryPolicyFactoryConfig createTimedExpiryPolicyFactoryConfig(int expiryPolicyType,
-                                                                                        DurationConfig durationConfig) {
+                                                                                      DurationConfig durationConfig) {
         return new TimedExpiryPolicyFactoryConfig(ExpiryPolicyType.getById(expiryPolicyType), durationConfig);
     }
 
@@ -117,9 +123,9 @@ public final class CustomTypeFactory {
     }
 
     public static SimpleEntryView<Data, Data> createSimpleEntryView(Data key, Data value, long cost, long creationTime,
-                                                        long expirationTime, long hits, long lastAccessTime,
-                                                        long lastStoredTime, long lastUpdateTime, long version,
-                                                        long ttl, long maxIdle) {
+                                                                    long expirationTime, long hits, long lastAccessTime,
+                                                                    long lastStoredTime, long lastUpdateTime, long version,
+                                                                    long ttl, long maxIdle) {
         SimpleEntryView<Data, Data> entryView = new SimpleEntryView<>();
         entryView.setKey(key);
         entryView.setValue(value);
@@ -137,7 +143,7 @@ public final class CustomTypeFactory {
     }
 
     public static DefaultQueryCacheEventData createQueryCacheEventData(Data dataKey, Data dataNewValue, long sequence,
-                                                                int eventType, int partitionId) {
+                                                                       int eventType, int partitionId) {
         DefaultQueryCacheEventData eventData = new DefaultQueryCacheEventData();
         eventData.setDataKey(dataKey);
         eventData.setDataNewValue(dataNewValue);
@@ -213,5 +219,18 @@ public final class CustomTypeFactory {
         }
 
         return new SqlColumnMetadata(name, sqlColumnType, true);
+    }
+
+    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
+        FieldType fieldType = FieldType.get((byte) type);
+        return new FieldDescriptor(fieldName, fieldType);
+    }
+
+    public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
+        TreeMap<String, FieldDescriptor> map = new TreeMap<>(Comparator.naturalOrder());
+        for (FieldDescriptor field : fields) {
+            map.put(field.getFieldName(), field);
+        }
+        return new Schema(typeName, map);
     }
 }

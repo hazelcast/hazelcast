@@ -32,6 +32,7 @@ import org.apache.calcite.rex.RexVisitor;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -41,7 +42,9 @@ import static java.util.stream.Collectors.toList;
  */
 public abstract class ExpressionValues implements Serializable {
 
-    public abstract List<JetSqlRow> toValues(ExpressionEvalContext context);
+    public abstract int size();
+
+    public abstract Stream<JetSqlRow> toValues(ExpressionEvalContext context);
 
     /**
      * Representation of the VALUES clause data in the form of a simple {@code
@@ -58,10 +61,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<JetSqlRow> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return expressions.size();
+        }
+
+        @Override
+        public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return expressions.stream()
-                    .map(es -> new JetSqlRow(es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)))
-                    .collect(toList());
+                    .map(es -> new JetSqlRow(es.stream().map(e -> e.eval(EmptyRow.INSTANCE, context)).toArray(Object[]::new)));
         }
 
         @Override
@@ -98,11 +105,14 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
-        public List<JetSqlRow> toValues(ExpressionEvalContext context) {
+        public int size() {
+            return values.stream().mapToInt(ExpressionValues::size).sum();
+        }
+
+        @Override
+        public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return values.stream()
-                    .flatMap(vs ->
-                            ExpressionUtil.evaluate(predicate, projection, vs.toValues(context).stream(), context).stream())
-                    .collect(toList());
+                    .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream());
         }
 
         @Override
