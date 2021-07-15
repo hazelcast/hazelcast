@@ -70,13 +70,17 @@ public final class UpdatingEntryProcessor
 
     @Override
     public Long process(Map.Entry<Object, Object> entry) {
-        Object[] row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
-        Object value = valueProjectorSupplier.get(evalContext).project(row);
-        if (value == null) {
-            throw QueryException.error("Cannot assign null to value");
+        if (entry.getValue() == null) {
+            return 0L;
         } else {
-            entry.setValue(value);
-            return 1L;
+            Object[] row = rowProjectorSupplier.get(evalContext, extractors).project(entry.getKey(), entry.getValue());
+            Object value = valueProjectorSupplier.get(evalContext).project(row);
+            if (value == null) {
+                throw QueryException.error("Cannot assign null to value");
+            } else {
+                entry.setValue(value);
+                return 1L;
+            }
         }
     }
 
