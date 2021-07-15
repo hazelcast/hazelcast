@@ -43,9 +43,8 @@ public class LogicalSinkTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SINK INTO m VALUES (1, '1'), (2, '2')", true, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SinkLogicalRel.class),
-                        planRow(2, ValuesLogicalRel.class)
+                        planRow(0, SinkLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
                 )
         );
     }
