@@ -381,12 +381,15 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
 
         Job job = instance().getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE));
         assertTrueEventually(() -> {
+            // This might add multiple `0` events to the topic - we need to do this because the source starts from
+            // the latest position and we don't exactly know when it starts, so we try repeatedly
             kafkaTestSupport.produce(topic1Name, 0, "0").get();
             assertFalse(sinkList.isEmpty());
             assertEquals(entry(0, "0"), sinkList.get(0));
         });
         job.suspend();
         assertJobStatusEventually(job, JobStatus.SUSPENDED);
+        // Note that the job might not have consumed all the zeroes from the topic at this point
 
         // When
         kafkaTestSupport.setPartitionCount(topic1Name, INITIAL_PARTITION_COUNT + 2);
@@ -395,6 +398,8 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         Entry<Integer, String> event = produceEventToNewPartition(INITIAL_PARTITION_COUNT);
 
         job.resume();
+        // All events after the resume will be loaded: the non-consumed zeroes, and the possibly multiple
+        // events added in produceEventToNewPartition(). But they must include the event added to the new partition.
         assertTrueEventually(() -> assertThat(sinkList).contains(event));
     }
 
@@ -542,6 +547,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
             Future<RecordMetadata> future = kafkaTestSupport.produce(topic1Name, partitionId, null, 0, value);
             RecordMetadata recordMetadata = future.get();
             if (recordMetadata.partition() == partitionId) {
+                // if the event was added to the correct partition, stop
                 break;
             }
             sleepMillis(250);
