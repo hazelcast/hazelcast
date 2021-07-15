@@ -109,7 +109,7 @@ public final class JetIndexResolver {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     public static Collection<RelNode> createIndexScans(FullScanLogicalRel scan, List<MapTableIndex> indexes) {
-        RexNode filter = scan.table().getFilter();
+        RexNode filter = OptUtils.extractHazelcastTable(scan).getFilter();
 
         // Filter out unsupported indexes. Only SORTED and HASH indexes are supported.
         List<MapTableIndex> supportedIndexes = new ArrayList<>(indexes.size());
@@ -827,7 +827,7 @@ public final class JetIndexResolver {
             return RelCollations.of(Collections.emptyList());
         }
         List<RelFieldCollation> fields = new ArrayList<>(index.getFieldOrdinals().size());
-        HazelcastTable table = scan.table();
+        HazelcastTable table = OptUtils.extractHazelcastTable(scan);
 
         for (int i = 0; i < index.getFieldOrdinals().size(); ++i) {
             Integer indexFieldOrdinal = index.getFieldOrdinals().get(i);
@@ -878,7 +878,7 @@ public final class JetIndexResolver {
     ) {
         assert isIndexSupported(index);
 
-        RexNode scanFilter = scan.table().getFilter();
+        RexNode scanFilter = OptUtils.extractHazelcastTable(scan).getFilter();
 
         RelTraitSet traitSet = OptUtils.toPhysicalConvention(scan.getTraitSet());
 

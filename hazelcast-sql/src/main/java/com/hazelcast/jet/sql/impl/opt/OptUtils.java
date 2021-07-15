@@ -243,12 +243,6 @@ public final class OptUtils {
         return new RexToExpressionVisitor(schema, parameterMetadata);
     }
 
-    public static HazelcastTable extractHazelcastTable(TableScan scan) {
-        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
-        assert table != null;
-        return table;
-    }
-
     /**
      * Converts a {@link TableField} to {@link RelDataType}.
      */
@@ -281,6 +275,12 @@ public final class OptUtils {
 
         HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
+    }
+
+    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
+        assert table != null;
+        return table;
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")

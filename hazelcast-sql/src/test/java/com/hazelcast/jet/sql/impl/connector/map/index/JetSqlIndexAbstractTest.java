@@ -464,8 +464,7 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
     }
 
     private void checkPlan(boolean withIndex, String sql) {
-        final boolean requiresJob = false;
-        List<QueryDataType> types = asList(QueryDataType.INT, f1.getFieldConverterType(), f2.getFieldConverterType());
+        List<QueryDataType> parameterTypes = asList(QueryDataType.INT, f1.getFieldConverterType(), f2.getFieldConverterType());
         List<TableField> mapTableFields = asList(
                 new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
                 new MapTableField("field1", f1.getFieldConverterType(), false, new QueryPath("field1", false)),
@@ -478,12 +477,15 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
                 isHd(),
                 map.size()
         );
-        assertPlan(optimizeLogical(sql, table), plan(planRow(0, FullScanLogicalRel.class)));
-        if (withIndex) {
-            assertPlan(optimizePhysical(sql, requiresJob, types, table), plan(planRow(0, IndexScanMapPhysicalRel.class)));
-        } else {
-            assertPlan(optimizePhysical(sql, requiresJob, types, table), plan(planRow(0, FullScanPhysicalRel.class)));
-        }
+        OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
+        assertPlan(
+                optimizationResult.getLogical(),
+                plan(planRow(0, FullScanLogicalRel.class))
+        );
+        assertPlan(
+                optimizationResult.getPhysical(),
+                plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
+        );
     }
 
     // Utilities

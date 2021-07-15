@@ -34,18 +34,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+// TODO: mark as slow ?
 public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 10_000;
     private static final String MAP_NAME = "map";
 
-    private final AtomicBoolean requesterFinished = new AtomicBoolean(false);
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
     private IMap<Integer, Integer> map;
@@ -87,7 +86,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         mutator.start();
         requester.start();
         requester.join();
-        requesterFinished.set(true);
+        mutator.terminate();
         mutator.join();
 
         assertThat(requester.allQueriesSucceeded()).isTrue();
@@ -114,22 +113,29 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         mutator.start();
         requester.start();
         requester.join();
-        requesterFinished.set(true);
+        mutator.terminate();
         mutator.join();
 
         assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
     private class MutatorThread extends Thread {
+
+        private volatile boolean active = true;
         private final long delay;
 
         private MutatorThread(long delay) {
             this.delay = delay;
         }
 
+        private void terminate() {
+            active = false;
+        }
+
         @Override
+        @SuppressWarnings("BusyWait")
         public void run() {
-            while (!requesterFinished.get()) {
+            while (active) {
                 int index = 1 + ThreadLocalRandom.current().nextInt(instances.length - 1);
                 factory.terminate(instances[index]);
                 instances[index] = factory.newHazelcastInstance(smallInstanceConfig());
@@ -149,6 +155,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         private final long delay;
 
         private boolean result = true;
+        private int performedIterations;
 
         private QueryThread(Supplier<Tuple2<String, List<Row>>> sqlAndExpectedRowsSupplier, int iterations, long delay) {
             this.sqlAndExpectedRowsSupplier = sqlAndExpectedRowsSupplier;
@@ -159,7 +166,6 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         @Override
         @SuppressWarnings("ConstantConditions")
         public void run() {
-            int actualIterations = 0;
             try {
                 for (int i = 0; i < iterations; ++i) {
                     Tuple2<String, List<Row>> sqlAndExpectedRows = sqlAndExpectedRowsSupplier.get();
@@ -168,8 +174,8 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
                             .execute(sqlAndExpectedRows.f0())
                             .iterator()
                             .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
-                    boolean tempResult = sqlAndExpectedRows.f1().equals(actualRows);
-                    result &= tempResult;
+                    result &= sqlAndExpectedRows.f1().equals(actualRows);
+                    performedIterations++;
 
                     try {
                         Thread.sleep(delay);
@@ -177,18 +183,16 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
                         e.printStackTrace();
                     }
                 }
-            } catch (HazelcastSqlException e) {
+            } catch (HazelcastSqlException e) { // TODO: why? remove ???
                 e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
                 result = false;
-            } finally {
-                assertThat(actualIterations).isEqualTo(iterations);
             }
         }
 
         private boolean allQueriesSucceeded() {
-            return result;
+            return result && performedIterations == iterations;
         }
     }
 }

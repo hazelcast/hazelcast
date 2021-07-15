@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * Logical root node. Installed on top of logical relational tree manually at the end of logical optimization phase.
  */
-public class RootLogicalRel extends AbstractRootRel implements LogicalRel, com.hazelcast.jet.sql.impl.opt.logical.LogicalRel {
+public class RootLogicalRel extends AbstractRootRel implements LogicalRel {
     public RootLogicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
         super(cluster, traits, input);
     }

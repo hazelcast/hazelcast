@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.index.JetIndexResolver;
 import com.hazelcast.sql.impl.schema.Table;
@@ -49,6 +50,6 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
     }
 
     private static <T extends Table> T table(FullScanLogicalRel scan) {
-        return scan.table().getTarget();
+        return OptUtils.extractHazelcastTable(scan).getTarget();
     }
 }

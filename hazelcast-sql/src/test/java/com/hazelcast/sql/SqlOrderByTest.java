@@ -906,7 +906,6 @@ public class SqlOrderByTest extends SqlTestSupport {
         return res.toString();
     }
 
-
     private String sqlWithOrderBy(String orderCondition) {
         StringBuilder res = new StringBuilder(basicSql());
 

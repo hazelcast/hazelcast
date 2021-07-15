@@ -35,8 +35,8 @@ public final class PhysicalRules {
                 ProjectPhysicalRule.INSTANCE,
 
                 // Scan rules
-                IndexScanMapPhysicalRule.INSTANCE,
                 FullScanPhysicalRule.INSTANCE,
+                IndexScanMapPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregatePhysicalRule.INSTANCE,

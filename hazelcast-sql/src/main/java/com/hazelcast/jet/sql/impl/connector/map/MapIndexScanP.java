@@ -24,7 +24,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
@@ -340,8 +339,8 @@ public final class MapIndexScanP extends AbstractProcessor {
 
         private static final int FETCH_SIZE_HINT = 128;
 
-        private HazelcastInstance hazelcastInstance;
-        private String indexName;
+        private final HazelcastInstance hazelcastInstance;
+        private final String indexName;
 
         private LocalMapIndexReader(
                 @Nonnull HazelcastInstance hzInstance,
@@ -375,11 +374,11 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
-    static ProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
-        return ProcessorMetaSupplier.of(new MapIndexScanProcessorSupplier(indexScanMetadata));
+    static ProcessorSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
+        return new MapIndexScanProcessorSupplier(indexScanMetadata);
     }
 
-    public static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
+    private static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
         private MapIndexScanMetadata indexScanMetadata;
 
@@ -387,7 +386,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         private MapIndexScanProcessorSupplier() {
         }
 
-        public MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
             this.indexScanMetadata = indexScanMetadata;
         }
 
@@ -410,4 +409,3 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 }
-
