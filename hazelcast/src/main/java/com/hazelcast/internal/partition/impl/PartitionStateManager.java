@@ -449,9 +449,7 @@ public class PartitionStateManager {
     }
 
     void storeSnapshot(UUID crashedMemberUuid) {
-        if (logger.isFineEnabled()) {
-            logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
-        }
+        logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
         snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
     }
 
