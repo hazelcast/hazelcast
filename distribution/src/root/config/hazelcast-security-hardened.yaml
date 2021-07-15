@@ -1,9 +1,26 @@
 # This is a sample Hazelcast configuration focused on hardened security.
+# It lists configuration sections which could help with securing your installation.
+#
+# How to use it:
+#   * rename `hazelcast.xml` in the `[HAZELCAST_INSTALL]/config` directory to `hazelcast.xml.bak`
+#   * copy this file to the `[HAZELCAST_INSTALL]/config` directory with a new name `hazelcast.yaml`
+#   * edit the copied `hazelcast.yaml` file - update IP addresses to match your environment
+#   * run Hazelcast with a custom cluster name specified via a system property:
+#
+#     $ export JAVA_OPTS="-Dcustom.cluster.name=[YOUR_CLUSTER_NAME]"
+#     $ [HAZELCAST_INSTALL]/bin/hz-start
+#
+
 hazelcast:
   # Custom cluster name protects against unintended cluster formation between foreign members.
+  # Let's set it via a system property.
   cluster-name: ${custom.cluster.name}
   properties:
     # Don't listen on all network interfaces, but bind to just one.
+    # You should specify the interface IP address in the socket-endpoint configuration sections
+    # within the advanced-network configuration part of this file.
+    # E.g. advanced-network/member-server-socket-endpoint-config/interfaces/interfaces
+    # See also https://docs.hazelcast.com/imdg/4.2/clusters/network-configuration.html#interfaces
     hazelcast.socket.bind.any: false
 
   management-center:
@@ -17,9 +34,11 @@ hazelcast:
     enabled: false
 
   jet:
-    # If you don't need stream/batch processing features, leave them disabled.
+    # Keep the Jet stream/batch processing engine disabled if you don't need it.
+    # The default value is false already so this one is just to be sure and explicit.
     enabled: false
     # If you allow the Jet jobs, think twice before allowing custom code upload to the cluster!
+    # The default value is false already so this one is just to be sure and explicit.
     resource-upload-enabled: false
 
   # Use the Advanced networking feature to separate protocols used in Hazelcast. Each protocol will have its own endpoint.
@@ -37,7 +56,8 @@ hazelcast:
       # The TCP-IP discovery directly lists explicitly cluster member addresses.
       tcp-ip:
         enabled: true
-        # Use the member addresses including the port numbers, so Hazelcast won't try other socket addresses as a fallback.'
+        # Use the member addresses including the port numbers, so Hazelcast won't try other socket addresses as a fallback.
+        # UPDATE ADDRESSES IN THE LIST TO FIT TO YOUR ENVIRONMENT!
         member-list:
           - 192.168.1.101:15701
           - 192.168.1.102:15701
@@ -60,6 +80,7 @@ hazelcast:
     member-server-socket-endpoint-config:
       interfaces:
         enabled: true
+        # UPDATE THE INTERFACE VALUE TO FIT TO YOUR ENVIRONMENT!
         interfaces:
           - 192.168.1.*
       port:
@@ -67,8 +88,12 @@ hazelcast:
         auto-increment: false
         # using a non-default port number can prevent an attacker to identify the scanned open port
         port: 15701
-      # If you have an Enterprise license, you can enable the TLS (SSL) to secure the communication between members.
+      # TLS configuration for the Hazelcast member-to-member communication protocol.
       ssl:
+        # TLS (SSL) is an enterprise feature and it's not available in Hazelcast community distribution
+        # (therefor the value of enable attribute is `false` here).
+        # If you have an Enterprise license and the Hazelcast Enterprise distribution,
+        # you can enable the TLS (SSL) to secure the communication between members.
         enabled: false
         properties:
           # The PKCS12 is a standard and recommended type for keystores and truststores.
@@ -94,13 +119,18 @@ hazelcast:
     client-server-socket-endpoint-config:
       interfaces:
         enabled: true
+        # UPDATE THE INTERFACE VALUE TO FIT TO YOUR ENVIRONMENT!
         interfaces:
           - 192.168.1.*
       port:
         auto-increment: false
         port: 22957
-      # TLS configuration for the client protocol listener (acceptor). It can only be enabled in enterprise edition.
+      # TLS configuration for the client protocol listener (acceptor).
       ssl:
+        # TLS (SSL) is an enterprise feature and it's not available in Hazelcast community distribution
+        # (therefor the value of enable attribute is `false` here).
+        # If you have an Enterprise license and the Hazelcast Enterprise distribution,
+        # you should enable the TLS to secure the communication between clients and members.
         enabled: false
         properties:
           keyStoreType: PKCS12
@@ -221,6 +251,7 @@ hazelcast:
         # clients with role "application" can work with the "accounts" map if they come from given network segments
         - name: accounts
           principal: application
+          # UPDATE THE ENDPOINTS TO FIT TO YOUR ENVIRONMENT!
           endpoints:
             - 192.168.1.*
             - 192.168.2.*
