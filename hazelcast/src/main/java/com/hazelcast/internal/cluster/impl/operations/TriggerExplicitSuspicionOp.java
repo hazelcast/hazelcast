@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.TRIGGER_EXPLICIT_SUSPICION;
 
@@ -47,7 +49,8 @@ public class TriggerExplicitSuspicionOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        clusterService.handleExplicitSuspicionTrigger(getCallerAddress(), callerMemberListVersion, suspectedMembersViewMetadata);
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
+        clusterService.handleExplicitSuspicionTrigger(callerAddresses, callerMemberListVersion, suspectedMembersViewMetadata);
     }
 
     @Override

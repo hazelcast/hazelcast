@@ -16,13 +16,14 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
 
@@ -46,11 +47,11 @@ public class ExplicitSuspicionOp extends AbstractClusterOperation {
 
     @Override
     public void run() throws Exception {
-        Address suspectedAddress = getCallerAddress();
-        getLogger().info("Received suspicion request from: " + suspectedAddress);
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
+        getLogger().info("Received suspicion request from: " + getCallerAddress());
 
         final ClusterServiceImpl clusterService = getService();
-        clusterService.handleExplicitSuspicion(membersViewMetadata, suspectedAddress);
+        clusterService.handleExplicitSuspicion(membersViewMetadata, callerAddresses);
     }
 
     @Override

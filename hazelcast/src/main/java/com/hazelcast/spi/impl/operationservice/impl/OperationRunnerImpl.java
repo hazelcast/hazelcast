@@ -67,6 +67,7 @@ import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.impl.SplitBrainProtectionServiceImpl;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
@@ -509,9 +510,11 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
     }
 
     private boolean ensureValidMember(Operation op) {
-        if (node.clusterService.getMember(op.getCallerAddress()) != null
-                || isJoinOperation(op)
-                || isWanReplicationOperation(op)) {
+        MemberImpl member = node.clusterService.getMember(op.getCallerAddress());
+        if (member == null) {
+            member = node.clusterService.getMember(op.getCallerUuid());
+        }
+        if (member != null || isJoinOperation(op) || isWanReplicationOperation(op)) {
             return true;
         }
 
@@ -527,6 +530,16 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
 
         }
         MemberImpl callerMember = node.clusterService.getMember(caller);
+        if (callerMember == null) {
+            Iterator<Address> aliasIterator = op.getAllKnownAliases(caller).iterator();
+            while (aliasIterator.hasNext() && callerMember == null) {
+                Address alias = aliasIterator.next();
+                if (alias.equals(caller)) {
+                    continue;
+                }
+                callerMember = node.clusterService.getMember(alias);
+            }
+        }
         if (callerMember != null) {
             op.setCallerUuid(callerMember.getUuid());
         }

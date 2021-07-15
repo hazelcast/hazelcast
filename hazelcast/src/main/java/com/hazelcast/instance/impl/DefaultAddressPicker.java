@@ -56,7 +56,7 @@ import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
 import static com.hazelcast.internal.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
-class DefaultAddressPicker
+public class DefaultAddressPicker
         implements AddressPicker {
 
     /**

@@ -50,6 +50,7 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -110,14 +111,16 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         Address masterAddress = nodeEngine.getMasterAddress();
-        Address caller = getCallerAddress();
-        if (!caller.equals(masterAddress)) {
-            throw new IllegalStateException("Caller is not master node! Caller: " + caller + ", Master: " + masterAddress);
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
+        if (callerAddresses.stream().noneMatch(a -> a.equals(masterAddress))) {
+            throw new IllegalStateException("Caller is not master node! Caller: " + callerAddresses.get(0)
+                    + ", Master: " + masterAddress);
         }
 
         InternalPartitionServiceImpl partitionService = getService();
-        if (!partitionService.isMemberMaster(caller)) {
-            throw new RetryableHazelcastException("Caller is not master node known by migration system! Caller: " + caller);
+        if (!partitionService.isMemberMaster(callerAddresses)) {
+            throw new RetryableHazelcastException("Caller is not master node known by migration system! Caller: "
+                    + callerAddresses.get(0));
         }
     }
 
