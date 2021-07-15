@@ -33,6 +33,7 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
@@ -255,6 +256,10 @@ public final class OptUtils {
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
         return Util.toList(rowType.getFieldList(),
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
+    }
+
+    public static boolean requiresJob(RelNode rel) {
+        return ((HazelcastRelOptCluster) rel.getCluster()).requiresJob();
     }
 
     public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {

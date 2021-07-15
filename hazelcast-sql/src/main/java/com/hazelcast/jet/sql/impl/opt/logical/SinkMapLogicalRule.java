@@ -41,7 +41,8 @@ public final class SinkMapLogicalRule extends RelOptRule {
     private SinkMapLogicalRule() {
         super(
                 operandJ(
-                        SinkLogicalRel.class, LOGICAL, sink -> OptUtils.hasTableType(sink, PartitionedMapTable.class),
+                        SinkLogicalRel.class, LOGICAL, sink -> !OptUtils.requiresJob(sink)
+                                && OptUtils.hasTableType(sink, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
                 RelFactories.LOGICAL_BUILDER,

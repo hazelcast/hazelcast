@@ -38,6 +38,19 @@ public class LogicalInsertTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("INSERT INTO m VALUES (1, '1')", true, table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, InsertLogicalRel.class),
+                        planRow(2, ValuesLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_insertValues() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
         assertPlan(

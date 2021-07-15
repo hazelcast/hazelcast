@@ -153,6 +153,11 @@ public final class OptimizerContext {
         cluster.setParameterMetadata(parameterMetadata);
     }
 
+
+    public void setRequiresJob(boolean requiresJob) {
+        cluster.setRequiresJob(requiresJob);
+    }
+
     // For unit testing only
     public HazelcastRelOptCluster getCluster() {
         return cluster;

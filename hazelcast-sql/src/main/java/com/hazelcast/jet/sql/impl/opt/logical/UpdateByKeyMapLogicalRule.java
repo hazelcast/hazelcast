@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -43,7 +42,7 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
     private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, TableModify::isUpdate,
+                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
                         operand(
                                 LogicalProject.class,
                                 operandJ(

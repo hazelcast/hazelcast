@@ -40,6 +40,19 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("DELETE FROM m WHERE __key = 1", true, table),
+                plan(
+                        planRow(0, RootLogicalRel.class),
+                        planRow(1, DeleteLogicalRel.class),
+                        planRow(2, FullScanLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_deleteWithoutWhere() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
         assertPlan(
