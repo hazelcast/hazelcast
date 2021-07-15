@@ -282,6 +282,8 @@ public class JetSqlBackend implements SqlBackend {
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
 
+        List<Permission> permissions = extractPermissions(physicalRel);
+
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
@@ -293,7 +295,8 @@ public class JetSqlBackend implements SqlBackend {
                     select.keyCondition(parameterMetadata),
                     select.rowProjectorSupplier(parameterMetadata),
                     rowMetadata,
-                    planExecutor
+                    planExecutor,
+                    permissions
             );
         } else if (physicalRel instanceof InsertMapPhysicalRel) {
             assert !isCreateJob;
@@ -304,7 +307,8 @@ public class JetSqlBackend implements SqlBackend {
                     parameterMetadata,
                     insert.mapName(),
                     insert.entriesFn(),
-                    planExecutor
+                    planExecutor,
+                    permissions
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
@@ -315,7 +319,8 @@ public class JetSqlBackend implements SqlBackend {
                     parameterMetadata,
                     sink.mapName(),
                     sink.entriesFn(),
-                    planExecutor
+                    planExecutor,
+                    permissions
             );
         } else if (physicalRel instanceof UpdateByKeyMapPhysicalRel) {
             assert !isCreateJob;
@@ -327,7 +332,8 @@ public class JetSqlBackend implements SqlBackend {
                     update.mapName(),
                     update.keyCondition(parameterMetadata),
                     update.updaterSupplier(parameterMetadata),
-                    planExecutor
+                    planExecutor,
+                    permissions
             );
         } else if (physicalRel instanceof DeleteByKeyMapPhysicalRel) {
             assert !isCreateJob;
@@ -338,12 +344,12 @@ public class JetSqlBackend implements SqlBackend {
                     parameterMetadata,
                     delete.mapName(),
                     delete.keyCondition(parameterMetadata),
-                    planExecutor
+                    planExecutor,
+                    permissions
             );
         } else if (physicalRel instanceof TableModify) {
             Operation operation = ((TableModify) physicalRel).getOperation();
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
-            List<Permission> permissions = extractPermissions(physicalRel);
             return new DmlPlan(
                     operation,
                     planKey,
@@ -356,7 +362,6 @@ public class JetSqlBackend implements SqlBackend {
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
-            List<Permission> permissions = extractPermissions(physicalRel);
             return new SelectPlan(
                     planKey,
                     parameterMetadata,

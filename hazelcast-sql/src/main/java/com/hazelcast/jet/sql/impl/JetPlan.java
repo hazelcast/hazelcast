@@ -680,6 +680,7 @@ abstract class JetPlan extends SqlPlan {
         private final KvRowProjector.Supplier rowProjectorSupplier;
         private final SqlRowMetadata rowMetadata;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         IMapSelectPlan(
                 PlanKey planKey,
@@ -689,7 +690,8 @@ abstract class JetPlan extends SqlPlan {
                 Expression<?> keyCondition,
                 KvRowProjector.Supplier rowProjectorSupplier,
                 SqlRowMetadata rowMetadata,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             super(planKey);
 
@@ -700,6 +702,7 @@ abstract class JetPlan extends SqlPlan {
             this.rowProjectorSupplier = rowProjectorSupplier;
             this.rowMetadata = rowMetadata;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -735,6 +738,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -754,6 +758,7 @@ abstract class JetPlan extends SqlPlan {
         private final String mapName;
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         IMapInsertPlan(
                 PlanKey planKey,
@@ -761,7 +766,8 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             super(planKey);
 
@@ -770,6 +776,7 @@ abstract class JetPlan extends SqlPlan {
             this.mapName = mapName;
             this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -797,6 +804,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -816,6 +824,7 @@ abstract class JetPlan extends SqlPlan {
         private final String mapName;
         private final Function<ExpressionEvalContext, Map<Object, Object>> entriesFn;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         IMapSinkPlan(
                 PlanKey planKey,
@@ -823,7 +832,8 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Function<ExpressionEvalContext, Map<Object, Object>> entriesFn,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             super(planKey);
 
@@ -832,6 +842,7 @@ abstract class JetPlan extends SqlPlan {
             this.mapName = mapName;
             this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -859,6 +870,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -879,6 +891,7 @@ abstract class JetPlan extends SqlPlan {
         private final Expression<?> keyCondition;
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         IMapUpdatePlan(
                 PlanKey planKey,
@@ -887,7 +900,8 @@ abstract class JetPlan extends SqlPlan {
                 String mapName,
                 Expression<?> keyCondition,
                 UpdatingEntryProcessor.Supplier updaterSupplier,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             super(planKey);
 
@@ -897,6 +911,7 @@ abstract class JetPlan extends SqlPlan {
             this.keyCondition = keyCondition;
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -928,6 +943,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new MapPermission(mapName, ACTION_PUT, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -947,6 +963,7 @@ abstract class JetPlan extends SqlPlan {
         private final String mapName;
         private final Expression<?> keyCondition;
         private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
 
         IMapDeletePlan(
                 PlanKey planKey,
@@ -954,7 +971,8 @@ abstract class JetPlan extends SqlPlan {
                 QueryParameterMetadata parameterMetadata,
                 String mapName,
                 Expression<?> keyCondition,
-                JetPlanExecutor planExecutor
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
         ) {
             super(planKey);
 
@@ -963,6 +981,7 @@ abstract class JetPlan extends SqlPlan {
             this.mapName = mapName;
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
+            this.permissions = permissions;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -990,6 +1009,7 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public void checkPermissions(SqlSecurityContext context) {
             context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
