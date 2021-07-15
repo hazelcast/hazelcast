@@ -5,9 +5,9 @@
 #   * rename `hazelcast.xml` in the `[HAZELCAST_INSTALL]/config` directory to `hazelcast.xml.bak`
 #   * copy this file to the `[HAZELCAST_INSTALL]/config` directory with a new name `hazelcast.yaml`
 #   * edit the copied `hazelcast.yaml` file - update IP addresses to match your environment
-#   * run Hazelcast with a custom cluster name specified via a system property:
+#   * run Hazelcast with some sensitive config values specified via a system property:
 #
-#     $ export JAVA_OPTS="-Dcustom.cluster.name=[YOUR_CLUSTER_NAME]"
+#     $ export JAVA_OPTS="-Dcustom.cluster.name=[YOUR_CLUSTER_NAME] -Duser.root.password=[SECRET_VALUE_HERE] -Duser.appuser.password=[ANOTHER_SECRET_HERE]"
 #     $ [HAZELCAST_INSTALL]/bin/hz-start
 #
 
@@ -206,30 +206,28 @@ hazelcast:
           username-password:
              username: aUserNameOfYourChoice
              password: PutAPasswordHere
-      # As a sample configuration for client protocol is the LDAP authentication. It allows a fine-grained control
+      # As a sample configuration for client protocol is the simple authentication. It allows a fine-grained control
       # over the role assignment. As this realm is used to verify incoming client requests only, there is no need
       # to specify the identity.
-      - name: ldapRealm-clients
+      - name: simpleRealm-clients
         authentication:
-          ldap:
-             url: ldap://ldap.mycompany.example
-             system-user-dn: uid=admin,ou=system
-             system-user-password: secret
-             system-authentication: simple
-             user-context: ou=Users,dc=mycompany,dc=example
-             user-filter: (&(cn={login})(objectClass=inetOrgPerson))
-             user-search-scope: subtree
-             user-name-attribute: cn
-             role-mapping-mode: attribute
-             role-mapping-attribute: memberOf
-             parse-dn: true
-             role-name-attribute: cn
+          simple:
+            users:
+              - username: root
+                password: ${user.root.password}
+                roles:
+                  - admin
+              - username: appuser
+                password: ${user.appuser.password}
+                roles:
+                  - monitor
+                  - application
     # map the member protocol authentication to one of the defined realms
     member-authentication:
       realm: passwordRealm-members
     # map the client protocol authentication to one of the defined realms
     client-authentication:
-      realm: ldapRealm-clients
+      realm: simpleRealm-clients
     # Assing permissions to role names (principals) and remote addresses (endpoints).
     # Follow the least privilege principle.
     client-permissions:
