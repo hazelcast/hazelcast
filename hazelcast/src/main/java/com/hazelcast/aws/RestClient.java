@@ -17,6 +17,7 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.spi.utils.RetryUtils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

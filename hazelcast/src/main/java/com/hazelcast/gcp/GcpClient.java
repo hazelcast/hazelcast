@@ -19,10 +19,10 @@ package com.hazelcast.gcp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.spi.utils.RetryUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -71,24 +71,14 @@ class GcpClient {
             return gcpConfig.getProjects();
         }
         LOGGER.finest("Property 'projects' not configured, fetching the current GCP project");
-        return singletonList(RetryUtils.retry(new Callable<String>() {
-            @Override
-            public String call() {
-                return gcpMetadataApi.currentProject();
-            }
-        }, RETRIES, NON_RETRYABLE_KEYWORDS));
+        return singletonList(RetryUtils.retry(gcpMetadataApi::currentProject, RETRIES, NON_RETRYABLE_KEYWORDS));
     }
 
     private List<String> zonesFromConfigOrComputeApi(final GcpConfig gcpConfig) {
         try {
             if (gcpConfig.getRegion() != null) {
                 LOGGER.finest("Property 'region' configured, fetching GCP zones of the specified GCP region");
-                return RetryUtils.retry(new Callable<List<String>>() {
-                    @Override
-                    public List<String> call() {
-                        return fetchZones(gcpConfig.getRegion());
-                    }
-                }, RETRIES, NON_RETRYABLE_KEYWORDS);
+                return RetryUtils.retry(() -> fetchZones(gcpConfig.getRegion()), RETRIES, NON_RETRYABLE_KEYWORDS);
             }
 
             if (!gcpConfig.getZones().isEmpty()) {
@@ -96,12 +86,9 @@ class GcpClient {
             }
 
             LOGGER.finest("Property 'zones' not configured, fetching GCP zones of the current GCP region");
-            return RetryUtils.retry(new Callable<List<String>>() {
-                @Override
-                public List<String> call() {
-                    String region = gcpMetadataApi.currentRegion();
-                    return fetchZones(region);
-                }
+            return RetryUtils.retry(() -> {
+                String region = gcpMetadataApi.currentRegion();
+                return fetchZones(region);
             }, RETRIES, NON_RETRYABLE_KEYWORDS);
         } catch (RestClientException e) {
             handleKnownException(e);
@@ -111,12 +98,7 @@ class GcpClient {
 
     List<GcpAddress> getAddresses() {
         try {
-            return RetryUtils.retry(new Callable<List<GcpAddress>>() {
-                @Override
-                public List<GcpAddress> call() {
-                    return fetchGcpAddresses();
-                }
-            }, RETRIES, NON_RETRYABLE_KEYWORDS);
+            return RetryUtils.retry(this::fetchGcpAddresses, RETRIES, NON_RETRYABLE_KEYWORDS);
         } catch (RestClientException e) {
             handleKnownException(e);
             return emptyList();
@@ -136,7 +118,7 @@ class GcpClient {
         LOGGER.finest("Fetching OAuth Access Token");
         final String accessToken = fetchAccessToken();
 
-        List<GcpAddress> result = new ArrayList<GcpAddress>();
+        List<GcpAddress> result = new ArrayList<>();
         for (final String project : projects) {
             for (final String zone : zones) {
                 LOGGER.finest(String.format("Fetching instances for project '%s' and zone '%s'", project, zone));

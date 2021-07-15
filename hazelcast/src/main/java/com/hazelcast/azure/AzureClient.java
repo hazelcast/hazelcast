@@ -17,6 +17,8 @@
 package com.hazelcast.azure;
 
 
+import com.hazelcast.spi.utils.RetryUtils;
+
 import java.util.Collection;
 import java.util.logging.Logger;
 
@@ -37,9 +39,9 @@ class AzureClient {
     private final AzureConfig azureConfig;
     private final Tag tag;
 
-    private String subscriptionId;
-    private String resourceGroup;
-    private String scaleSet;
+    private final String subscriptionId;
+    private final String resourceGroup;
+    private final String scaleSet;
 
     AzureClient(AzureMetadataApi azureMetadataApi, AzureComputeApi azureComputeApi,
                 AzureAuthenticator azureAuthenticator, AzureConfig azureConfig) {
@@ -59,7 +61,7 @@ class AzureClient {
             return azureConfig.getSubscriptionId();
         }
         LOGGER.finest("Property 'subscriptionId' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(() -> azureMetadataApi.subscriptionId(), RETRIES);
+        return RetryUtils.retry(azureMetadataApi::subscriptionId, RETRIES);
     }
 
     private String resourceGroupFromConfigOrMetadataApi() {
@@ -67,7 +69,7 @@ class AzureClient {
             return azureConfig.getResourceGroup();
         }
         LOGGER.finest("Property 'resourceGroup' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(() -> azureMetadataApi.resourceGroupName(), RETRIES);
+        return RetryUtils.retry(azureMetadataApi::resourceGroupName, RETRIES);
     }
 
     private String scaleSetFromConfigOrMetadataApi() {
@@ -75,7 +77,7 @@ class AzureClient {
             return azureConfig.getScaleSet();
         }
         LOGGER.finest("Property 'scaleSet' not configured, fetching from the VM metadata service");
-        return RetryUtils.retry(() -> azureMetadataApi.scaleSet(), RETRIES);
+        return RetryUtils.retry(azureMetadataApi::scaleSet, RETRIES);
     }
 
     Collection<AzureAddress> getAddresses() {
