@@ -332,7 +332,8 @@ public final class MapIndexScanP extends AbstractProcessor {
     private static final class LocalMapIndexReader
             extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
-        private static final int FETCH_SIZE_HINT = 128;
+        @SuppressWarnings("checkstyle:MagicNumber")
+        static int fetchSizeHint = 128;
 
         private final HazelcastInstance hazelcastInstance;
         private final String indexName;
@@ -363,7 +364,7 @@ public final class MapIndexScanP extends AbstractProcessor {
                     indexName,
                     pointers,
                     partitions,
-                    FETCH_SIZE_HINT
+                    fetchSizeHint
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }

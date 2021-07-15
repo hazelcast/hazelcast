@@ -74,7 +74,7 @@ public class QueryParser {
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parse(sql, jetSqlBackend, jetConformance);
+                return parse(sql, sqlBackend, conformance);
             } catch (Exception e) {
                 return parse(sql, jetSqlBackend, jetConformance);
             }

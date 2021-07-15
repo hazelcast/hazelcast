@@ -21,29 +21,31 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.SqlTestSupport.Row;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-// TODO: mark as slow ?
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
-    private static final int ITEM_COUNT = 10_000;
-    private static final String MAP_NAME = "map";
+    private static final int ITEM_COUNT = 1_000_000;
+    private String mapName;
 
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
@@ -51,12 +53,13 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     @Before
     public void before() {
+        mapName = randomMapName();
         factory = new TestHazelcastFactory();
-        instances = new HazelcastInstance[3];
-        for (int i = 0; i < instances.length; i++) {
+        instances = new HazelcastInstance[4];
+        for (int i = 0; i < instances.length - 1; i++) {
             instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
         }
-        map = instances[0].getMap(MAP_NAME);
+        map = instances[0].getMap(mapName);
     }
 
     @After
@@ -65,35 +68,28 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore
     public void stressTest_hash() throws InterruptedException {
+        List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
-            map.put(i, i);
+            map.put(1, 1);
+            expected.add(new Row(1, 1));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(50L);
-        QueryThread requester = new QueryThread(
-                () -> {
-                    int i = new Random().nextInt(ITEM_COUNT);
-                    return Tuple2.tuple2("SELECT * FROM " + MAP_NAME + " WHERE this = " + i, singletonList(new Row(i, i)));
-                },
-                500,
-                10L
-        );
+        MutatorThread mutator = new MutatorThread(250L);
         mutator.start();
-        requester.start();
-        requester.join();
+
+        assertRowsAnyOrder("SELECT * FROM " + mapName + " WHERE this = 1", expected);
+
         mutator.terminate();
         mutator.join();
-
-        assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
+    @Ignore
     public void stressTest_sorted() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -104,19 +100,10 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(10L);
-        QueryThread requester = new QueryThread(
-                () -> Tuple2.tuple2("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected),
-                500,
-                10L
-        );
+        MutatorThread mutator = new MutatorThread(250L);
         mutator.start();
-        requester.start();
-        requester.join();
-        mutator.terminate();
+        assertRowsOrdered("SELECT * FROM " + mapName + " ORDER BY this DESC", expected);
         mutator.join();
-
-        assertThat(requester.allQueriesSucceeded()).isTrue();
     }
 
     private class MutatorThread extends Thread {
@@ -136,9 +123,8 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         @SuppressWarnings("BusyWait")
         public void run() {
             while (active) {
-                int index = 1 + ThreadLocalRandom.current().nextInt(instances.length - 1);
-                factory.terminate(instances[index]);
-                instances[index] = factory.newHazelcastInstance(smallInstanceConfig());
+                instances[3].shutdown();
+                instances[3] = factory.newHazelcastInstance(smallInstanceConfig());
                 try {
                     Thread.sleep(delay);
                 } catch (InterruptedException e) {
@@ -148,51 +134,25 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         }
     }
 
-    private class QueryThread extends Thread {
+    private void assertRowsAnyOrder(String sql, Collection<Row> expectedRows) {
+        List<Row> actualRows = new ArrayList<>();
+        instances[0].getSql()
+                .execute(sql)
+                .iterator()
+                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
 
-        private final Supplier<Tuple2<String, List<Row>>> sqlAndExpectedRowsSupplier;
-        private final int iterations;
-        private final long delay;
+        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
+        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
+    }
 
-        private boolean result = true;
-        private int performedIterations;
+    private void assertRowsOrdered(String sql, Collection<Row> expectedRows) {
+        List<Row> actualRows = new ArrayList<>();
+        instances[0].getSql()
+                .execute(sql)
+                .iterator()
+                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
 
-        private QueryThread(Supplier<Tuple2<String, List<Row>>> sqlAndExpectedRowsSupplier, int iterations, long delay) {
-            this.sqlAndExpectedRowsSupplier = sqlAndExpectedRowsSupplier;
-            this.iterations = iterations;
-            this.delay = delay;
-        }
-
-        @Override
-        @SuppressWarnings("ConstantConditions")
-        public void run() {
-            try {
-                for (int i = 0; i < iterations; ++i) {
-                    Tuple2<String, List<Row>> sqlAndExpectedRows = sqlAndExpectedRowsSupplier.get();
-                    List<Row> actualRows = new ArrayList<>();
-                    instances[0].getSql()
-                            .execute(sqlAndExpectedRows.f0())
-                            .iterator()
-                            .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
-                    result &= sqlAndExpectedRows.f1().equals(actualRows);
-                    performedIterations++;
-
-                    try {
-                        Thread.sleep(delay);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            } catch (HazelcastSqlException e) { // TODO: why? remove ???
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-                result = false;
-            }
-        }
-
-        private boolean allQueriesSucceeded() {
-            return result && performedIterations == iterations;
-        }
+        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
+        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 }
