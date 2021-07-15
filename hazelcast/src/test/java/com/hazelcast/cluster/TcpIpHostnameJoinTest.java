@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.DefaultAddressPicker;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Assume;
@@ -36,6 +37,7 @@ import java.net.UnknownHostException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DefaultAddressPicker.class)
@@ -78,13 +80,9 @@ public class TcpIpHostnameJoinTest {
     }
 
     @Test
-    public void test_whenMembersDefinedHostnamesFormIndependentClusters() {
-        HazelcastInstance hz1 = instance("cluster1", HOSTNAME1);
-        HazelcastInstance hz2 = instance("cluster2", HOSTNAME2);
-        //mocking doesn't always work properly if I use "localhost" and "localhost2" here...
-
-        assertClusterSize(1, hz1);
-        assertClusterSize(1, hz2);
+    public void test_whenClusterNamesDifferSecondMemberFailsToStart() {
+        instance("cluster1", HOSTNAME1);
+        assertThrows(IllegalStateException.class, () -> instance("cluster2", HOSTNAME2));
     }
 
     private HazelcastInstance instance(String hostnameOrIp) {
@@ -93,7 +91,7 @@ public class TcpIpHostnameJoinTest {
 
     private HazelcastInstance instance(String cluster, String hostnameOrIp) {
         Config config = new Config();
-
+        config.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "15");
         config.setClusterName(cluster);
 
         config.getMetricsConfig().setEnabled(false);
@@ -101,7 +99,8 @@ public class TcpIpHostnameJoinTest {
         config.setProperty("hazelcast.logging.type", "log4j2");
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).clear().addMember(hostnameOrIp);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(15)
+            .clear().addMember(hostnameOrIp);
 
         return Hazelcast.newHazelcastInstance(config);
     }
