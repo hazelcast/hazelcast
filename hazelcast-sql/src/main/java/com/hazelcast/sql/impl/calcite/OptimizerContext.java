@@ -133,7 +133,7 @@ public final class OptimizerContext {
      * @return SQL tree.
      */
     public QueryParseResult parse(String sql) {
-        return parser.parse(sql);
+        return parser. parse(sql);
     }
 
     /**

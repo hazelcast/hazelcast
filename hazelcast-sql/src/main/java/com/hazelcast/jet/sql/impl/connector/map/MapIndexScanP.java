@@ -55,7 +55,6 @@ import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -376,40 +375,11 @@ public final class MapIndexScanP extends AbstractProcessor {
         }
     }
 
-    static MapIndexScanProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
-        return new MapIndexScanProcessorMetaSupplier(indexScanMetadata);
+    static ProcessorMetaSupplier readMapIndexSupplier(MapIndexScanMetadata indexScanMetadata) {
+        return ProcessorMetaSupplier.of(new MapIndexScanProcessorSupplier(indexScanMetadata));
     }
 
-    public static final class MapIndexScanProcessorMetaSupplier implements ProcessorMetaSupplier, DataSerializable {
-
-        private MapIndexScanMetadata indexScanMetadata;
-
-        @SuppressWarnings("unused")
-        private MapIndexScanProcessorMetaSupplier() {
-        }
-
-        private MapIndexScanProcessorMetaSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
-            this.indexScanMetadata = indexScanMetadata;
-        }
-
-        @Override
-        @Nonnull
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new MapIndexScanProcessorSupplier(indexScanMetadata);
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(indexScanMetadata);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            indexScanMetadata = in.readObject();
-        }
-    }
-
-    private static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
+    public static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
         private MapIndexScanMetadata indexScanMetadata;
 
@@ -417,7 +387,7 @@ public final class MapIndexScanP extends AbstractProcessor {
         private MapIndexScanProcessorSupplier() {
         }
 
-        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
+        public MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
             this.indexScanMetadata = indexScanMetadata;
         }
 

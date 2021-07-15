@@ -19,18 +19,19 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
-import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.JetPlan;
-import com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.MapIndexScanProcessorMetaSupplier;
+import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlServiceImpl;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
@@ -39,9 +40,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
-import javax.annotation.Nonnull;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,6 +53,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import static com.hazelcast.sql.impl.SqlTestSupport.getLocalKeys;
+import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
+import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq_2;
@@ -84,14 +84,13 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
-import static org.junit.Assert.assertNotNull;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
-
-    private static final int DEFAULT_MEMBERS_COUNT = 2;
+public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
+    protected static final int DEFAULT_MEMBERS_COUNT = 2;
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
 
@@ -372,7 +371,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
 
     private void check(Query query, boolean expectedUseIndex, Predicate<ExpressionValue> expectedKeysPredicate) {
         // Prepare two additional queries with an additional AND/OR predicate
-        String condition = "key / 2 = 0";
+        String condition = "__key / 2 = 0";
         Query queryWithAnd = addConditionToQuery(query, condition, true);
         Query queryWithOr = addConditionToQuery(query, condition, false);
 
@@ -401,8 +400,7 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
             Predicate<ExpressionValue> expectedKeysPredicate
     ) {
         int runId = runIdGen++;
-        // TODO: [sasha] requires Jet parser to be enabled. Uncomment after IMDG removal.
-        // checkPlan(expectedUseIndex, sql, params);
+        checkPlan(expectedUseIndex, sql);
 
         Set<Integer> sqlKeys = sqlKeys(expectedUseIndex, sql, params);
         Set<Integer> expectedMapKeys = expectedMapKeys(expectedKeysPredicate);
@@ -465,27 +463,30 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
         fail(message.toString());
     }
 
-    private void checkPlan(boolean withIndex, String sql, List<Object> params) {
-        JetPlan.SelectPlan jetPlan = planFromQuery(sql, params);
-        assertNotNull(jetPlan);
+    private void checkPlan(boolean withIndex, String sql) {
 
-        DAG dag = jetPlan.getDag();
-
+        List<QueryDataType> types = asList(QueryDataType.INT, f1.getFieldConverterType(), f2.getFieldConverterType());
+        List<TableField> mapTableFields = asList(
+                new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
+                new MapTableField("field1", f1.getFieldConverterType(), false, new QueryPath("field1", false)),
+                new MapTableField("field2", f2.getFieldConverterType(), false, new QueryPath("field2", false))
+        );
+        HazelcastTable table = partitionedTable(
+                mapName,
+                mapTableFields,
+                getPartitionedMapIndexes(getMapContainer(map), mapTableFields),
+                isHd(),
+                map.size()
+        );
+        assertPlan(optimizeLogical(sql, table), plan(planRow(0, FullScanLogicalRel.class)));
         if (withIndex) {
-            final String indexVertexName = String.format("Index(IMap[partitioned.%s])", mapName);
-            final Vertex indexVertexCandidate = dag.getVertex(indexVertexName);
-            assertNotNull("Index Scan wasn't triggered", indexVertexCandidate);
-            assertInstanceOf(MapIndexScanProcessorMetaSupplier.class, indexVertexCandidate.getMetaSupplier());
-
+            assertPlan(optimizePhysical(sql, types, table), plan(planRow(0, IndexScanMapPhysicalRel.class)));
         } else {
-            final Vertex scanVertexCandidate = dag.getVertex(String.format("IMap[partitioned.%s]", mapName));
-            assertNotNull(scanVertexCandidate);
-            assertInstanceOf(ReadMapOrCacheP.LocalProcessorMetaSupplier.class, scanVertexCandidate.getMetaSupplier());
+            assertPlan(optimizePhysical(sql, types, table), plan(planRow(0, FullScanPhysicalRel.class)));
         }
     }
 
     // Utilities
-
     protected abstract boolean isHd();
 
     protected MapConfig getMapConfig() {
@@ -621,29 +622,6 @@ public abstract class JetSqlIndexAbstractTest extends SqlTestSupport {
 
     private Query query(String condition, Object... parameters) {
         return new Query(sql(condition), parameters != null ? Arrays.asList(parameters) : null);
-    }
-
-    private JetPlan.SelectPlan planFromQuery(String sql, @Nonnull List<Object> parameters) {
-        SqlServiceImpl sqlService = (SqlServiceImpl) instance().getSql();
-        Method prepareMethod;
-        try {
-            prepareMethod = sqlService.getClass()
-                    .getDeclaredMethod("prepare", String.class, String.class, List.class, SqlExpectedResultType.class);
-            prepareMethod.setAccessible(true);
-            Object erasedPlan = prepareMethod.invoke(
-                    sqlService,
-                    null,
-                    sql,
-                    parameters,
-                    SqlExpectedResultType.ANY
-            );
-            // Logically, only Select/Scan plan is allowed for ... index scan :)
-            JetPlan.SelectPlan plan = (JetPlan.SelectPlan) erasedPlan;
-            return plan;
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     private static class Query {
