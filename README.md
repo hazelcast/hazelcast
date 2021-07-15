@@ -20,8 +20,9 @@ to a large cluster of cloud instances.
 
 A cluster of Hazelcast nodes share both the data storage and computational load
 which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster. Running computational
-tasks (known as jobs) snapshot their state and scale with processing guarantees.
+the data is automatically rebalanced across the cluster and currently running
+computational tasks (known as jobs) snapshot their state and scale with
+processing guarantees.
 
 ## When to use Hazelcast
 
@@ -122,10 +123,9 @@ languages](https://docs.hazelcast.com/hazelcast/latest/clients/hazelcast-clients
 Here are some exmaples in Java and Python:
 
 ```java
-HazelcastInstance hz = HazelcastClient.newHazelcastClient();
+var hz = HazelcastClient.newHazelcastClient();
 IMap<String, Integer> map = hz.getMap("myMap");
 map.set(Alice, 25);
-int age = map.get("Alice");
 ```
 
 ```python
@@ -133,7 +133,6 @@ import hazelcast
 
 client = hazelcast.HazelcastClient()
 my_map = client.get_map("myMap")
-my_map.set("Alice", 25).result()
 age = my_map.get("Alice").result()
 ```
 
@@ -179,9 +178,9 @@ second with 10-millisecond resolution from Kafka looks like the
 following:
 
 ```java
-HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+var hz = Hazelcast.bootstrappedInstance();
 
-Pipeline p = Pipeline.create();
+var p = Pipeline.create();
 
 p.readFrom(KafkaSources.<String, Reading>kafka(kafkaProperties, "sensors"))
  .withTimestamps(event -> event.getValue().timestamp(), 10) // use event timestamp, allowed lag in ms
@@ -236,7 +235,14 @@ The two main constructs for messaging are topics and queues.
 #### Topics
 
 Topics provide a publish-subscribe pattern where each message is fanned out to
-multiple subscribers. 
+multiple subscribers. See the examples below in Java and Python:
+
+```java
+var hz = Hazelcast.bootstrappedInstance();
+ITopic<String> topic = hz.getTopic("my_topic");
+topic.addMessageListener(msg -> System.out.println(msg));
+topic.publish("message");
+```
 
 ```python
 topic = client.get_topic("my_topic")
@@ -252,17 +258,20 @@ For examples in other languages, please refer to the [docs](https://docs.hazelca
 #### Queues
 
 Queues provide FIFO-semantics and you can add items from one client and remove
-from another.
+from another. See the examples below in Java and Python:
+
+```java
+var client = Hazelcast.newHazelcastClient();
+IQueue<String> queue = client.getQueue("my_queue");
+queue.put("new-item")
+```
 
 ```python
 import hazelcast
 
 client = hazelcast.HazelcastClient()
 q = client.get_queue("my_queue")
-
-q.add("my-item")
 my_item = q.take().result()
-
 print("Received item %s" % my_item)
 ```
 
@@ -288,26 +297,31 @@ You can use the following channels for getting help with Hazelcast:
   development team and other Hazelcast users.
 * [Stack Overflow](https://stackoverflow.com/tags/hazelcast)
 
+## How to Contribute
+
+Thanks for your interest in contributing! The easiest way is to just send a pull
+request. Have a look at the
+[issues](https://github.com/hazelcast/hazelcast-jet/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires JDK 1.8. Pull the latest source from the repository
-and use Maven install (or package) to build:
+Building Hazelcast requires minimum JDK 1.8. Pull the latest source from the
+repository and use Maven install (or package) to build:
 
 ```bash
 $ git pull origin master
-$ mvn clean install
+$ mvn clean package -Dtests
 ```
 
-Take into account that the default build executes thousands of tests which may
-take a considerable amount of time. Additionally, there is a `quick` build
-activated by setting the `-Dquick` system property that skips tests, checkstyle
-validation, javadoc and source plugins and does not build `extensions` and
-`distribution` modules.
+Additionally, there is a `quick` build activated by setting the `-Dquick` system
+property that skips tests, checkstyle validation, javadoc and source plugins and
+does not build `extensions` and `distribution` modules.
 
 ### Testing
 
-Hazelcast has 3 testing profiles:
+Take into account that the default build executes thousands of tests which may
+take a considerable amount of time. Hazelcast has 3 testing profiles:
 
 * Default: Type `mvn test` to run quick/integration tests (those can be run
   in parallel without using network).
@@ -316,11 +330,21 @@ Hazelcast has 3 testing profiles:
 * All Tests: Type `mvn test -P all-tests` to run all tests serially using
   network.
 
+## Trigger Phrases in the Pull Request Conversation
+
+When you create a pull request (PR), it must pass a build-and-test
+procedure. Maintainers will be notified about your PR, and they can
+trigger the build using special comments. So you may see some phrases
+like `run-lab-run` in your PR.
+
+Where not indicated, the builds run on a Linux machine with Oracle JDK
+8.
+
 ## License
 
 Source code in this repository is covered by one of two licenses:
 
- 1. [Apache License 2.0](https://docs.hazelcast.com/hazelcast/latest/licenses.html)
+ 1. [Apache License 2.0](https://docs.hazelcast.com/hazelcast/latest/index.html#licenses-and-support)
  2. [Hazelcast Community
     License](http://hazelcast.com/hazelcast-community-license)
 
@@ -332,6 +356,9 @@ header specifies another license.
 
 Thanks to [YourKit](http://www.yourkit.com/) for supporting open source software
 by providing us a free license for their Java profiler.
+
+We owe (the good parts of) our CLI tool's user experience to
+[picocli](https://picocli.info/).
 
 ## Copyright
 
