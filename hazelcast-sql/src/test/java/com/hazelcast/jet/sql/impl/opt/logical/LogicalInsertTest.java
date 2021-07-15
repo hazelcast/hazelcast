@@ -43,9 +43,8 @@ public class LogicalInsertTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("INSERT INTO m VALUES (1, '1')", true, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, InsertLogicalRel.class),
-                        planRow(2, ValuesLogicalRel.class)
+                        planRow(0, InsertLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
                 )
         );
     }

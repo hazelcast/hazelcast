@@ -45,9 +45,8 @@ public class LogicalUpdateTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("UPDATE m SET this = '2' WHERE __key = 1", true, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, UpdateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, UpdateLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }

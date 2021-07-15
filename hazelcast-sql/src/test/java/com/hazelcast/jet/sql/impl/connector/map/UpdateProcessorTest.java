@@ -20,7 +20,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -41,6 +40,7 @@ import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
@@ -56,7 +56,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
-    private IMap<Integer, Object> map;
+    private Map<Integer, Object> map;
 
     @BeforeClass
     public static void beforeClass() {
@@ -72,6 +72,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
     public void test_update() {
         Object updated = executeUpdate(
                 1,
+                1,
                 partitionedTable(INT),
                 singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT)),
                 emptyList()
@@ -83,11 +84,25 @@ public class UpdateProcessorTest extends SqlTestSupport {
     public void test_updateWithDynamicParameter() {
         Object updated = executeUpdate(
                 2L,
+                1,
                 partitionedTable(BIGINT),
                 singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, BIGINT), ParameterExpression.create(0, BIGINT), BIGINT)),
                 singletonList(2L)
         );
         assertThat(updated).isEqualTo(4L);
+    }
+
+    @Test
+    public void when_keyDoesNotExist_then_doesNotCreateEntry() {
+        Object updated = executeUpdate(
+                1,
+                0,
+                partitionedTable(INT),
+                singletonMap(VALUE, PlusFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(1, INT), INT)),
+                emptyList()
+        );
+        assertThat(updated).isEqualTo(1);
+        assertThat(map).containsExactly(entry(1, 1));
     }
 
     private static PartitionedMapTable partitionedTable(QueryDataType valueType) {
@@ -111,6 +126,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     private Object executeUpdate(
             Object initialValue,
+            int inputValue,
             PartitionedMapTable table,
             Map<String, Expression<?>> updatesByFieldNames,
             List<Object> arguments
@@ -123,7 +139,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
                 .verifyProcessor(adaptSupplier(processor))
                 .jobConfig(new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, arguments))
                 .executeBeforeEachRun(() -> map.put(1, initialValue))
-                .input(singletonList(new Object[]{1}))
+                .input(singletonList(new Object[]{inputValue}))
                 .hazelcastInstance(instance())
                 .outputChecker(SqlTestSupport::compareRowLists)
                 .disableProgressAssertion()

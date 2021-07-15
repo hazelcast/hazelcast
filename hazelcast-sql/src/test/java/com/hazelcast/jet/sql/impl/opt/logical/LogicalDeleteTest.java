@@ -45,9 +45,8 @@ public class LogicalDeleteTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("DELETE FROM m WHERE __key = 1", true, table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, DeleteLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, DeleteLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
