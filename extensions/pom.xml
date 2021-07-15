@@ -68,10 +68,10 @@
         </argLine>
 
         <!-- needed for CheckStyle -->
-        <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
-        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
-        <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
-        <checkstyle.supressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+        <main.basedir>${project.basedir}/../..</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
     </properties>
 
     <licenses>

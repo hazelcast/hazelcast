@@ -32,6 +32,10 @@
         <version>5.0-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <main.basedir>${project.basedir}/../../..</main.basedir>
+    </properties>
+
     <modules>
         <module>files-azure</module>
         <module>files-gcs</module>
