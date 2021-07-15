@@ -69,7 +69,7 @@ class AzureComputeApi {
 
         Map<String, String> publicIpMap = parsePublicIpResponse(publicIpResponse);
 
-        Set<AzureAddress> addresses = new LinkedHashSet<AzureAddress>(networkInterfaces.size());
+        Set<AzureAddress> addresses = new LinkedHashSet<>(networkInterfaces.size());
 
         for (AzureNetworkInterface anInterface : networkInterfaces.values()) {
             if (tag == null || anInterface.hasTag(tag)) {
@@ -92,7 +92,7 @@ class AzureComputeApi {
     }
 
     private Map<String, AzureNetworkInterface> parsePrivateIpResponse(String response) {
-        Map<String, AzureNetworkInterface> interfaces = new HashMap<String, AzureNetworkInterface>();
+        Map<String, AzureNetworkInterface> interfaces = new HashMap<>();
 
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             Set<Tag> tagList = new HashSet<>();
@@ -128,7 +128,7 @@ class AzureComputeApi {
     }
 
     private Map<String, String> parsePublicIpResponse(String response) {
-        Map<String, String> publicIps = new HashMap<String, String>();
+        Map<String, String> publicIps = new HashMap<>();
 
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             String id = item.asObject().getString("id", null);

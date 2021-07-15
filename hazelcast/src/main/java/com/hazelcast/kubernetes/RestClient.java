@@ -50,7 +50,7 @@ final class RestClient {
     private static final int HTTP_OK = 200;
 
     private final String url;
-    private final List<Header> headers = new ArrayList<Header>();
+    private final List<Header> headers = new ArrayList<>();
     private String body;
     private String caCertificate;
 
@@ -201,7 +201,7 @@ final class RestClient {
      * Generates CA Certificate from the default CA Cert file or from the externally provided "ca-certificate" property.
      */
     private Collection<? extends Certificate> generateCertificates()
-            throws IOException, CertificateException {
+            throws CertificateException {
         InputStream caInput = null;
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");

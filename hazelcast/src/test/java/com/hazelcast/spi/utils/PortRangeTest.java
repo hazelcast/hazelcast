@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
+import com.hazelcast.spi.utils.PortRange;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

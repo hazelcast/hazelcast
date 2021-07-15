@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.azure;
+package com.hazelcast.spi.exception;
 
 /**
  * Exception to indicate that no credentials are possible to retrieve.
  */
-class NoCredentialsException extends RuntimeException {
-    NoCredentialsException(String message, Throwable cause) {
-        super(message, cause);
+public class NoCredentialsException extends RuntimeException {
+    public NoCredentialsException() {
     }
 
+    public NoCredentialsException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

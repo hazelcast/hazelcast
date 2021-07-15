@@ -16,6 +16,8 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.spi.utils.PortRange;
+
 import java.util.ArrayList;
 import java.util.List;
 

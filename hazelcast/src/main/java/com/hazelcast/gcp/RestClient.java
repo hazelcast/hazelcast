@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -38,7 +39,7 @@ final class RestClient {
     private static final int HTTP_OK = 200;
 
     private final String url;
-    private final Map<String, String> headers = new LinkedHashMap<String, String>();
+    private final Map<String, String> headers = new LinkedHashMap<>();
     private String body;
 
     private RestClient(String url) {
@@ -78,7 +79,7 @@ final class RestClient {
                 connection.setRequestProperty(header.getKey(), header.getValue());
             }
             if (body != null) {
-                byte[] bodyData = body.getBytes("UTF-8");
+                byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
 
                 connection.setDoOutput(true);
                 connection.setRequestProperty("charset", "utf-8");
@@ -134,21 +135,4 @@ final class RestClient {
         }
     }
 
-    private static final class Header {
-        private final String key;
-        private final String value;
-
-        private Header(String key, String value) {
-            this.key = key;
-            this.value = value;
-        }
-
-        private String getKey() {
-            return key;
-        }
-
-        private String getValue() {
-            return value;
-        }
-    }
 }

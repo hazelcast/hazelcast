@@ -19,6 +19,7 @@ package com.hazelcast.aws;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.NoCredentialsException;
 import com.hazelcast.spi.exception.RestClientException;
 
 class AwsCredentialsProvider {

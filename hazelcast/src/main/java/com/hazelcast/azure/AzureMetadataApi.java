@@ -18,6 +18,7 @@ package com.hazelcast.azure;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.spi.exception.NoCredentialsException;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -17,6 +17,7 @@
 package com.hazelcast.azure;
 
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.spi.exception.NoCredentialsException;
 
 /**
  * Fetches OAuth 2.0 Access Token from Microsoft Azure API.

@@ -24,8 +24,10 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.exception.NoCredentialsException;
 import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
+import com.hazelcast.spi.utils.PortRange;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -37,12 +39,12 @@ import java.util.Map;
 
 import static com.hazelcast.azure.AzureProperties.CLIENT_ID;
 import static com.hazelcast.azure.AzureProperties.CLIENT_SECRET;
+import static com.hazelcast.azure.AzureProperties.INSTANCE_METADATA_AVAILABLE;
 import static com.hazelcast.azure.AzureProperties.PORT;
 import static com.hazelcast.azure.AzureProperties.RESOURCE_GROUP;
 import static com.hazelcast.azure.AzureProperties.SCALE_SET;
 import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
 import static com.hazelcast.azure.AzureProperties.TENANT_ID;
-import static com.hazelcast.azure.AzureProperties.INSTANCE_METADATA_AVAILABLE;
 import static com.hazelcast.azure.Utils.isAllFilled;
 import static com.hazelcast.azure.Utils.isAnyFilled;
 
@@ -57,7 +59,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
     private final AzureClient azureClient;
     private final PortRange portRange;
-    private final Map<String, String> memberMetadata = new HashMap<String, String>();
+    private final Map<String, String> memberMetadata = new HashMap<>();
 
     private boolean isKnownExceptionAlreadyLogged;
 
@@ -146,7 +148,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
         try {
             Collection<AzureAddress> azureAddresses = azureClient.getAddresses();
             logAzureAddresses(azureAddresses);
-            List<DiscoveryNode> result = new ArrayList<DiscoveryNode>();
+            List<DiscoveryNode> result = new ArrayList<>();
             for (AzureAddress azureAddress : azureAddresses) {
                 for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
                     result.add(createDiscoveryNode(azureAddress, port));
