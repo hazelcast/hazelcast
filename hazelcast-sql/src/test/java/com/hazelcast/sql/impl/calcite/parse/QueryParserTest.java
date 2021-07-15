@@ -59,6 +59,9 @@ public class QueryParserTest {
     private SqlConformance conformance;
 
     @Mock
+    private SqlConformance jetConformance;
+
+    @Mock
     private SqlBackend sqlBackend;
 
     @Mock
@@ -80,10 +83,10 @@ public class QueryParserTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, emptyList(), sqlBackend, jetSqlBackend);
+        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, conformance, jetConformance, emptyList(), sqlBackend, jetSqlBackend);
 
         given(sqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance, emptyList())).willReturn(sqlValidator);
-        given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, conformance, emptyList())).willReturn(jetSqlValidator);
+        given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, jetConformance, emptyList())).willReturn(jetSqlValidator);
     }
 
     @Test
@@ -152,6 +155,17 @@ public class QueryParserTest {
 
         parser.parse("SELECT * FROM t;");
         parser.parse("SELECT * FROM t;;");
+    }
+
+    @Test
+    public void test_noFrom() {
+        given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
+        given(sqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
+
+        parser.parse("SELECT 1");
+        parser.parse("SELECT 'test'");
+        parser.parse("SELECT TO_TIMESTAMP_TZ(1)");
+        parser.parse("SELECT rand()");
     }
 
     @Test

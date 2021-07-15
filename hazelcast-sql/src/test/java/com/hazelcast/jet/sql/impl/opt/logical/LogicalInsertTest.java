@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import junitparams.JUnitParamsRunner;
 import org.junit.BeforeClass;
@@ -44,8 +43,7 @@ public class LogicalInsertTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("INSERT INTO m VALUES (1, '1')", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, InsertMapLogicalRel.class)
+                        planRow(0, InsertMapLogicalRel.class)
                 )
         );
     }
@@ -56,9 +54,8 @@ public class LogicalInsertTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("INSERT INTO m VALUES (1, '1'), (2, '2')", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, InsertLogicalRel.class),
-                        planRow(2, ValuesLogicalRel.class)
+                        planRow(0, InsertLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
                 )
         );
     }
@@ -70,9 +67,8 @@ public class LogicalInsertTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("INSERT INTO m1 SELECT * FROM m2", target, source),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, InsertLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, InsertLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }
