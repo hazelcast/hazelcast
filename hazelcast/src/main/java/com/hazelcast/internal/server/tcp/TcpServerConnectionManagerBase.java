@@ -34,6 +34,7 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -243,6 +244,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private final class ConnectionLifecycleListenerImpl implements ConnectionLifecycleListener<TcpServerConnection> {
         @Override
         public void onConnectionClose(TcpServerConnection connection, Throwable cause, boolean silent) {
@@ -288,7 +290,9 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
             long lastReadTime = connection.getChannel().lastReadTimeMillis();
             boolean hadNoDataTraffic = lastReadTime < 0;
             if (hadNoDataTraffic) {
-                serverContext.onFailedConnection(remoteAddress);
+                if (!(cause instanceof IOException)) {
+                    serverContext.onFailedConnection(remoteAddress);
+                }
                 if (!silent && plane != null) {
                     getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
                 }
