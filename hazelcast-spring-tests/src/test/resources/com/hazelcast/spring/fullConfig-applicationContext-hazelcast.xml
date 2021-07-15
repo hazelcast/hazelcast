@@ -374,7 +374,7 @@
                               implementation="dummyMapStore"
                               write-delay-seconds="0"
                               initial-mode="LAZY"/>
-                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"/>
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PutIfAbsentMergePolicy"/>
 
                 <hz:entry-listeners>
                     <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener" include-value="true"/>
@@ -508,7 +508,8 @@
             </hz:map>
 
             <hz:cache name="testCache" disable-per-entry-invalidation-events="true">
-                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PUT_IF_ABSENT"
+                <hz:merkle-tree enabled="${testCache.merkleTree.enabled}" depth="${testCache.merkleTree.depth}"/>
+                <hz:wan-replication-ref name="testWan" merge-policy-class-name="PutIfAbsentMergePolicy"
                                         republishing-enabled="false">
                     <hz:filters>
                         <hz:filter-impl>com.example.SampleFilter</hz:filter-impl>
@@ -517,8 +518,7 @@
                 <hz:split-brain-protection-ref>my-split-brain-protection</hz:split-brain-protection-ref>
                 <hz:hot-restart enabled="true" fsync="true"/>
                 <hz:event-journal enabled="true"
-                                  capacity="123"
-                                  time-to-live-seconds="321"/>
+                                  capacity="123" time-to-live-seconds="321"/>
             </hz:cache>
 
             <hz:multimap name="testMultimap" value-collection-type="LIST" binary="false" statistics-enabled="false">
@@ -672,6 +672,19 @@
                         <hz:identity>
                             <hz:token encoding="base64">aGF6ZWxjYXN0</hz:token>
                         </hz:identity>
+                    </hz:realm>
+                    <hz:realm name="simpleRealm">
+                        <hz:authentication>
+                            <hz:simple>
+                                <hz:user username="test" password="a1234">
+                                    <hz:role>monitor</hz:role>
+                                    <hz:role>hazelcast</hz:role>
+                                </hz:user>
+                                <hz:user username="root" password="secret">
+                                    <hz:role>root</hz:role>
+                                </hz:user>
+                            </hz:simple>
+                        </hz:authentication>
                     </hz:realm>
                     <hz:realm name="kerberosRealm">
                         <hz:authentication>
@@ -876,6 +889,16 @@
                         </hz:actions>
                     </hz:replicatedmap-permission>
                     <hz:management-permission principal="mcadmin"/>
+                    <hz:job-permission>
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:job-permission>
+                    <hz:connector-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:connector-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
@@ -911,13 +934,13 @@
                 <hz:recently-active-split-brain-protection heartbeat-tolerance-millis="5123"/>
             </hz:split-brain-protection>
 
-            <hz:hot-restart-persistence enabled="false"
+            <hz:persistence enabled="false"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
                                         cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
-                <hz:base-dir>/mnt/hot-restart/</hz:base-dir>
-                <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
+                <hz:base-dir>/mnt/persistence/</hz:base-dir>
+                <hz:backup-dir>/mnt/persistence-backup/</hz:backup-dir>
                 <hz:encryption-at-rest enabled="true">
                     <hz:algorithm>AES/CBC/PKCS5Padding</hz:algorithm>
                     <hz:salt>sugar</hz:salt>
@@ -933,7 +956,7 @@
                         </hz:vault>
                     </hz:secure-store>
                 </hz:encryption-at-rest>
-            </hz:hot-restart-persistence>
+            </hz:persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10"
                                    epochStart="1514764800001" nodeIdOffset="30"

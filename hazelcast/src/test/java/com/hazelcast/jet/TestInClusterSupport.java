@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -51,12 +53,11 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     protected static final String JOURNALED_MAP_PREFIX = "journaledMap.";
     protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
     protected static final int MEMBER_COUNT = 2;
+    protected static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static HazelcastInstance[] allHazelcastInstances;
 
-    protected static JetTestInstanceFactory factory = new JetTestInstanceFactory();
-    private static JetInstance[] allJetInstances;
-
-    protected static JetInstance member;
-    protected static JetInstance client;
+    protected static HazelcastInstance member;
+    protected static HazelcastInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
@@ -73,7 +74,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     @BeforeClass
     public static void setupCluster() {
         member = createCluster(MEMBER_COUNT, prepareConfig());
-        client = factory.newClient();
+        client = factory.newHazelcastClient();
     }
 
     protected static Config prepareConfig() {
@@ -99,7 +100,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
                 .get(1, TimeUnit.MINUTES);
 
         factory = null;
-        allJetInstances = null;
+        allHazelcastInstances = null;
         member = null;
         client = null;
     }
@@ -107,45 +108,45 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     @After
     public void after() throws Exception {
         Future future = spawn(() ->
-                cleanUpCluster(allJetInstances()));
+                cleanUpCluster(allHazelcastInstances()));
         future.get(1, TimeUnit.MINUTES);
     }
 
-    protected JetInstance jet() {
-        return testMode.getJet();
+    protected HazelcastInstance hz() {
+        return testMode.getHazelcastInstance();
     }
 
     protected Job execute(Pipeline p, JobConfig config) {
-        Job job = jet().newJob(p, config);
+        Job job = hz().getJet().newJob(p, config);
         job.join();
         return job;
     }
 
-    protected static JetInstance[] allJetInstances() {
-        return allJetInstances;
+    protected static HazelcastInstance[] allHazelcastInstances() {
+        return allHazelcastInstances;
     }
 
-    private static JetInstance createCluster(int nodeCount, Config config) {
-        factory = new JetTestInstanceFactory();
-        allJetInstances = new JetInstance[nodeCount];
+    private static HazelcastInstance createCluster(int nodeCount, Config config) {
+        factory = new TestHazelcastFactory();
+        allHazelcastInstances = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
-            allJetInstances[i] = factory.newMember(config);
+            allHazelcastInstances[i] = factory.newHazelcastInstance(config);
         }
-        return allJetInstances[0];
+        return allHazelcastInstances[0];
     }
 
     protected static final class TestMode {
 
         private final String name;
-        private final Supplier<JetInstance> getJetFn;
+        private final Supplier<HazelcastInstance> getHazelcastInstanceFn;
 
-        TestMode(String name, Supplier<JetInstance> getJetFn) {
+        TestMode(String name, Supplier<HazelcastInstance> getHazelcastInstanceFn) {
             this.name = name;
-            this.getJetFn = getJetFn;
+            this.getHazelcastInstanceFn = getHazelcastInstanceFn;
         }
 
-        public JetInstance getJet() {
-            return getJetFn.get();
+        public HazelcastInstance getHazelcastInstance() {
+            return getHazelcastInstanceFn.get();
         }
 
         @Override

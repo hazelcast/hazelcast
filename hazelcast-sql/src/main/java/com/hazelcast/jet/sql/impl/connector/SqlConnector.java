@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -21,11 +21,10 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
-import org.apache.calcite.sql.SqlNodeList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -284,24 +283,33 @@ public interface SqlConnector {
     }
 
     /**
-     * Returns {@code true}, if {@code SINK INTO} is required instead of {@code
-     * INSERT INTO} statements.
-     * <p>
-     * Unused for connectors that don't override {@link #sink}.
+     * Returns the supplier for the insert processor.
      */
-    default boolean requiresSink() {
-        return false;
+    @Nonnull
+    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sink(
+    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
+    }
+
+    /**
+     * Returns the supplier for the update processor that will update given
+     * {@code table}. The input to the processor will be the fields
+     * returned by {@link #getPrimaryKey(Table)}.
+     */
+    @Nonnull
+    default Vertex updateProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table
+            @Nonnull Table table,
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
-        throw new UnsupportedOperationException("INSERT INTO or SINK INTO not supported for " + typeName());
+        throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
     }
 
     /**
@@ -316,16 +324,17 @@ public interface SqlConnector {
 
     /**
      * Return the indexes of fields that are primary key. These fields will be
-     * fed to the delete processor.
+     * fed to the delete and update processors.
      * <p>
-     * Every connector that supports a {@link #deleteProcessor} should have a
-     * primary key on each table, otherwise deleting cannot work. If some table
-     * doesn't have a primary key and an empty node list is returned from this
-     * method, an error will be thrown.
+     * Every connector that supports {@link #deleteProcessor} or
+     * {@link #updateProcessor} should have a primary key on each table,
+     * otherwise deleting/updating cannot work. If some table doesn't have a
+     * primary key and an empty node list is returned from this method, an error
+     * will be thrown.
      */
     @Nonnull
-    default SqlNodeList getPrimaryKey(Table table) {
-        throw new UnsupportedOperationException("DELETE not supported by connector: " + typeName());
+    default List<String> getPrimaryKey(Table table) {
+        throw new UnsupportedOperationException("PRIMARY KEY not supported by connector: " + typeName());
     }
 
     /**

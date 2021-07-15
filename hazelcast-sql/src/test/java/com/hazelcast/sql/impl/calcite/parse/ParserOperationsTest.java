@@ -1,37 +1,45 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
+import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,7 +53,17 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ParserOperationsTest {
+public class ParserOperationsTest extends SqlTestSupport {
+    private static OptimizerContext context;
+
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, smallInstanceConfig());
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
+        JetSqlCoreBackend jetSqlService = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
+        context = createContext(new HazelcastSqlBackend(nodeEngine), (SqlBackend) jetSqlService.sqlBackend());
+    }
+
     @Test
     public void testSelectColumn() {
         checkSuccess("SELECT a, b FROM t");
@@ -101,56 +119,34 @@ public class ParserOperationsTest {
     }
 
     @Test
-    public void testUnsupportedSelectScalar() {
-        checkFailure(
-                "SELECT (SELECT a FROM t) FROM t",
-                "SCALAR QUERY is not supported"
-        );
+    public void testSelectScalar() {
+        checkFailure("SELECT (SELECT a FROM t) FROM t", "SCALAR QUERY not supported");
     }
 
     @Test
-    public void testUnsupportedWhereScalar() {
-        checkFailure(
-                "SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL",
-                "SCALAR QUERY is not supported"
-        );
+    public void testWhereScalar() {
+        checkFailure("SELECT a, b FROM t WHERE (SELECT a FROM t) IS NULL", "SCALAR QUERY not supported");
     }
 
     @Test
-    public void testUnsupportedNullsFirstLast() {
-        checkFailure(
-                "SELECT a, b FROM t ORDER BY a DESC NULLS FIRST",
-                "Function 'NULLS FIRST' does not exist"
-        );
-
-        checkFailure(
-                "SELECT a, b FROM t ORDER BY a DESC NULLS LAST",
-                "Function 'NULLS LAST' does not exist"
-        );
+    public void testNullsFirstLast() {
+        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS FIRST", "Function 'NULLS FIRST' does not exist");
+        checkFailure("SELECT a, b FROM t ORDER BY a DESC NULLS LAST", "Function 'NULLS LAST' does not exist");
     }
 
     @Test
     public void testUnsupportedGroupBy() {
-        checkFailure(
-                "SELECT a FROM t GROUP BY a",
-                "GROUP BY is not supported"
-        );
+        checkSuccess("SELECT a FROM t GROUP BY a");
     }
 
     @Test
     public void testUnsupportedAggregate() {
-        checkFailure(
-                "SELECT SUM(a) FROM t",
-                "Function 'SUM' does not exist"
-        );
+        checkSuccess("SELECT SUM(a) FROM t");
     }
 
     @Test
     public void testUnsupportedJoin() {
-        checkFailure(
-                "SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a",
-                "JOIN is not supported"
-        );
+        checkSuccess("SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a");
     }
 
     @Test
@@ -159,12 +155,12 @@ public class ParserOperationsTest {
     }
 
     private static void checkSuccess(String sql) {
-        createContext().parse(sql);
+        context.parse(sql);
     }
 
     private static void checkFailure(String sql, String message) {
         try {
-            createContext().parse(sql);
+            context.parse(sql);
 
             fail("Exception is not thrown: " + message);
         } catch (QueryException e) {
@@ -174,26 +170,35 @@ public class ParserOperationsTest {
         }
     }
 
-    private static OptimizerContext createContext() {
+    private static OptimizerContext createContext(SqlBackend hzBackend, SqlBackend jetBackend) {
+        PartitionedMapTable partitionedMapTable = new PartitionedMapTable(
+                "public",
+                "t",
+                "t",
+                Arrays.asList(TestMapTable.field("a"), TestMapTable.field("b")),
+                new ConstantTableStatistics(100L),
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        );
+
         TableResolver resolver = TestTableResolver.create(
                 "public",
-                TestMapTable.create("public", "t", TestMapTable.field("a"), TestMapTable.field("b"))
+                partitionedMapTable
         );
-
         List<TableResolver> tableResolvers = Collections.singletonList(resolver);
-
-        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(
-                emptyList(),
-                tableResolvers
-        );
+        List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(emptyList(), tableResolvers);
 
         return OptimizerContext.create(
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
                 1,
-                new HazelcastSqlBackend(null),
-                null
+                hzBackend,
+                jetBackend
         );
     }
 }

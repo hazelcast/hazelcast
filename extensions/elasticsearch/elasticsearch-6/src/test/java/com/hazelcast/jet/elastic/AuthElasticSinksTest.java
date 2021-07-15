@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.elastic;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.elastic.CommonElasticSinksTest.TestItem;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category(SlowTest.class)
 public class AuthElasticSinksTest extends BaseElasticTest {
 
-    private final JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
     public void afterClass() throws Exception {
@@ -56,8 +56,8 @@ public class AuthElasticSinksTest extends BaseElasticTest {
     }
 
     @Override
-    protected JetInstance createJetInstance() {
-        return factory.newMember(config());
+    protected HazelcastInstance createHazelcastInstance() {
+        return factory.newHazelcastInstance(config());
     }
 
     @Test

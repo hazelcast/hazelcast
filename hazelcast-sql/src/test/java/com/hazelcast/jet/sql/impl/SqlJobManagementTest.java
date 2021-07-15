@@ -1,22 +1,22 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -27,6 +27,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.TestUtil.createMap;
@@ -105,7 +106,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
-        assertNotNull("job doesn't exist", instance().getJob("testJob"));
+        assertNotNull("job doesn't exist", instance().getJet().getJob("testJob"));
 
         sqlService.execute("DROP JOB testJob");
     }
@@ -184,7 +185,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
                 "'maxProcessorAccumulatedRecords'='10')" +
                 "AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
-        JobConfig config = instance().getJob("testJob").getConfig();
+        JobConfig config = instance().getJet().getJob("testJob").getConfig();
 
         assertEquals(EXACTLY_ONCE, config.getProcessingGuarantee());
         assertEquals(6000, config.getSnapshotIntervalMillis());
@@ -193,6 +194,64 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
         assertEquals(10L, config.getMaxProcessorAccumulatedRecords());
+    }
+
+    @Test
+    public void test_insert() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(0, "value-0", 2, "value-1")
+        );
+    }
+
+    @Test
+    public void test_insertFromValues() {
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT * FROM (VALUES (1, '1'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1")
+        );
+    }
+
+    @Test
+    public void test_sink() {
+        TestBatchSqlConnector.create(sqlService, "src", 3);
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v > 0");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(2, "value-1", 4, "value-2")
+        );
+    }
+
+    @Test
+    public void test_sinkFromValues() {
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT * FROM (VALUES (1, '1'), (2, '2'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1", 2, "2")
+        );
     }
 
     @Test
@@ -214,13 +273,13 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_clientDisconnects_then_jobContinues() {
-        JetInstance client = factory().newClient();
+        HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
         sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
-        Job job = instance().getJob("testJob");
+        Job job = instance().getJet().getJob("testJob");
         assertNotNull(job);
         assertJobStatusEventually(job, RUNNING);
 
@@ -238,7 +297,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
-        Job job = instance().getJob("testJob");
+        Job job = instance().getJet().getJob("testJob");
         long executionId = assertJobRunningEventually(instance(), job, null);
 
         sqlService.execute("ALTER JOB testJob SUSPEND");
@@ -358,12 +417,12 @@ public class SqlJobManagementTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, "t", 1);
         sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
         sqlService.execute("create job " + COMPLETED_JOB_NAME + " as sink into m select v, v from t");
-        Job job = instance().getJob(COMPLETED_JOB_NAME);
+        Job job = instance().getJet().getJob(COMPLETED_JOB_NAME);
         assertNotNull(job);
         job.join();
     }
 
     private long countActiveJobs() {
-        return instance().getJobs().stream().filter(j -> !j.getStatus().isTerminal()).count();
+        return instance().getJet().getJobs().stream().filter(j -> !j.getStatus().isTerminal()).count();
     }
 }

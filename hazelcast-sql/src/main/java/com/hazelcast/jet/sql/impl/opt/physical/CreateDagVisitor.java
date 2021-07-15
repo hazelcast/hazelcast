@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -78,14 +78,6 @@ public class CreateDagVisitor {
         this.parameterMetadata = parameterMetadata;
     }
 
-    public Vertex onDelete(DeletePhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
-
-        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
-        connectInput(rel.getInput(), vertex, null);
-        return vertex;
-    }
-
     public Vertex onValues(ValuesPhysicalRel rel) {
         List<ExpressionValues> values = rel.values();
 
@@ -100,7 +92,8 @@ public class CreateDagVisitor {
                 },
                 ConsumerEx.noop(),
                 0,
-                true)
+                true,
+                null)
         );
     }
 
@@ -108,7 +101,33 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
-        Vertex vertex = getJetSqlConnector(table).sink(dag, table);
+        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getInput(), vertex, vertexWithConfig.configureEdgeFn());
+        return vertex;
+    }
+
+    public Vertex onSink(SinkPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+
+        Vertex vertex = getJetSqlConnector(table).sinkProcessor(dag, table);
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onUpdate(UpdatePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
+        connectInput(rel.getInput(), vertex, null);
+        return vertex;
+    }
+
+    public Vertex onDelete(DeletePhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+
+        Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -140,7 +159,6 @@ public class CreateDagVisitor {
                         ExpressionUtil.projectionFn(projection, SimpleExpressionEvalContext.from(ctx))),
                 (BiFunctionEx<Function<Object[], Object[]>, Object[], Object[]>) Function::apply
         ));
-
         connectInputPreserveCollation(rel, vertex);
         return vertex;
     }
@@ -257,17 +275,18 @@ public class CreateDagVisitor {
                 rel.rightProjection(parameterMetadata),
                 rel.joinInfo(parameterMetadata)
         );
-        connectInput(rel.getLeft(), vertexWithConfig.vertex(), vertexWithConfig.configureEdgeFn());
-        return vertexWithConfig.vertex();
+        Vertex vertex = vertexWithConfig.vertex();
+        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
+        return vertex;
     }
 
     public Vertex onRoot(JetRootRel rootRel) {
         RelNode input = rootRel.getInput();
         Expression<?> fetch;
+        Expression<?> offset;
 
         if (input instanceof SortPhysicalRel) {
             SortPhysicalRel sortRel = (SortPhysicalRel) input;
-            assert sortRel.offset == null : "Offset is not supported";
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -275,16 +294,23 @@ public class CreateDagVisitor {
                 fetch = sortRel.fetch(parameterMetadata);
             }
 
-            if (sortRel.collation.getFieldCollations().isEmpty()) {
+            if (sortRel.offset == null) {
+                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+            } else {
+                offset = sortRel.offset(parameterMetadata);
+            }
+
+            if (!sortRel.requiresSort()) {
                 input = sortRel.getInput();
             }
         } else {
             fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
         }
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch)
+                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.

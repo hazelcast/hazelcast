@@ -17,11 +17,13 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,26 +31,32 @@ public class SubmitJobOperation extends AsyncJobOperation {
 
     // force serialization of fields to avoid sharing of the mutable instances if submitted to the master member
     private Data jobDefinition;
-    private Data config;
+    private Data serializedConfig;
     private boolean isLightJob;
+    private Subject subject;
 
     public SubmitJobOperation() {
     }
 
     public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob) {
+        this(jobId, jobDefinition, config, isLightJob, null);
+    }
+
+    public SubmitJobOperation(long jobId, Data jobDefinition, Data config, boolean isLightJob, Subject subject) {
         super(jobId);
         this.jobDefinition = jobDefinition;
-        this.config = config;
+        this.serializedConfig = config;
         this.isLightJob = isLightJob;
+        this.subject = subject;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
+        JobConfig jobConfig = getNodeEngine().getSerializationService().toObject(serializedConfig);
         if (isLightJob) {
-            assert !getNodeEngine().getLocalMember().isLiteMember() : "light job submitted to a lite member";
-            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition);
+            return getJobCoordinationService().submitLightJob(jobId(), jobDefinition, jobConfig, subject);
         } else {
-            return getJobCoordinationService().submitJob(jobId(), jobDefinition, config);
+            return getJobCoordinationService().submitJob(jobId(), jobDefinition, jobConfig, subject);
         }
     }
 
@@ -61,15 +69,17 @@ public class SubmitJobOperation extends AsyncJobOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         IOUtil.writeData(out, jobDefinition);
-        IOUtil.writeData(out, config);
+        IOUtil.writeData(out, serializedConfig);
         out.writeBoolean(isLightJob);
+        out.writeObject(subject);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         jobDefinition = IOUtil.readData(in);
-        config = IOUtil.readData(in);
+        serializedConfig = IOUtil.readData(in);
         isLightJob = in.readBoolean();
+        subject = in.readObject();
     }
 }

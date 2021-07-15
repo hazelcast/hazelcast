@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -44,10 +45,10 @@ public class JetTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         config.getMapConfig("default")
                 .setTimeToLiveSeconds(MapConfig.DEFAULT_TTL_SECONDS + 1);
-        JetInstance instance = createJetMember(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
 
         // Then
-        int actualTTL = instance.getHazelcastInstance().getConfig()
+        int actualTTL = instance.getConfig()
                 .findMapConfig(INTERNAL_JET_OBJECTS_PREFIX + "fooMap").getTimeToLiveSeconds();
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, actualTTL);
     }
@@ -64,9 +65,35 @@ public class JetTest extends JetTestSupport {
     }
 
     @Test
+    public void when_jetDisabled_and_usingClient_then_getJetInstanceThrowsException() {
+        // When
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1))
+                .writeTo(Sinks.noop());
+
+        assertThrows(IllegalArgumentException.class, () -> client.getJet().newJob(p).join());
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getSummaryListThrowsException() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetClientInstanceImpl jet = (JetClientInstanceImpl) client.getJet();
+
+        assertThrows(IllegalArgumentException.class, jet::getJobSummaryList);
+    }
+
+    @Test
     public void when_resourceUploadDisabled_and_submitJobWithResource_then_jobFails() {
         // When
-        JetInstance jet = createJetMember();
+        HazelcastInstance hz = createHazelcastInstance();
 
         JobConfig jobConfig = new JobConfig().addClass(JetTest.class);
         Pipeline p = Pipeline.create();
@@ -74,7 +101,7 @@ public class JetTest extends JetTestSupport {
                 .writeTo(Sinks.noop());
 
         // Then
-        assertThrows(JetException.class, () -> jet.newJob(p, jobConfig));
+        assertThrows(JetException.class, () -> hz.getJet().newJob(p, jobConfig));
     }
 
 }

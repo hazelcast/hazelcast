@@ -48,7 +48,7 @@ import static org.junit.Assert.assertFalse;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MemberCompatibilityNullTest_2_0_1 {
-    private List<ClientMessage> clientMessages = new ArrayList<>();
+    private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
@@ -6602,6 +6602,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
         assertTrue(isEqual(null, parameters.wanReplicationRef));
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.hotRestartConfig));
+        assertFalse(parameters.isMerkleTreeConfigExists);
     }
 
     @Test

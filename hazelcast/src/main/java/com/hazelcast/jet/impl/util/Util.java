@@ -16,9 +16,15 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -56,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -80,6 +87,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -493,6 +501,19 @@ public final class Util {
         }
     }
 
+    public static <T> T doWithClassLoader(ClassLoader cl, Callable<T> callable) {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousCl = currentThread.getContextClassLoader();
+        currentThread.setContextClassLoader(cl);
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw rethrow(e);
+        } finally {
+            currentThread.setContextClassLoader(previousCl);
+        }
+    }
+
     /**
      * Returns the lower of the given guarantees.
      */
@@ -668,7 +689,57 @@ public final class Util {
         };
     }
 
+    public static InternalSerializationService getSerializationService(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientInstanceImpl) {
+            return  ((HazelcastClientInstanceImpl) instance).getSerializationService();
+        } else if (instance instanceof HazelcastClientProxy) {
+            return ((HazelcastClientProxy) instance).getSerializationService();
+        } else {
+            throw new IllegalArgumentException("Could not access serialization service." +
+                    " Unsupported HazelcastInstance type:" + instance);
+        }
+    }
+
     public static NodeEngineImpl getNodeEngine(HazelcastInstance instance) {
-        return ((HazelcastInstanceImpl) instance).node.nodeEngine;
+        return getHazelcastInstanceImpl(instance).node.nodeEngine;
+    }
+
+    public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance instance) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return ((HazelcastInstanceImpl) instance);
+        } else if (instance instanceof HazelcastInstanceProxy) {
+            return ((HazelcastInstanceProxy) instance).getOriginal();
+        } else {
+            throw new IllegalArgumentException("This method can be called only with member" +
+                    " instances such as HazelcastInstanceImpl and HazelcastInstanceProxy.");
+        }
+    }
+
+    /**
+     * Returns a predicate that can be applied as a filter to a non-parallel
+     * {@link Stream} to remove items that have duplicate key.
+     * <p>
+     * Don't use in parallel streams, it uses non-concurrent Set internally.
+     * Don't reuse the returned instance, it's not stateless.
+     * <p>
+     * <pre>{@code
+     *    List<String> list = asList("alice", "adela", "ben");
+     *    list.stream()
+     *        .filter(distinctBy(s -> s.charAt(0)))
+     *        ... // returns "alice", "ben", "adela" is filtered out
+     * }</pre>
+     */
+    public static <T> Predicate<T> distinctBy(Function<? super T, ?> keyFn) {
+        Set<Object> seen = new HashSet<>();
+        return t -> seen.add(keyFn.apply(t));
+    }
+
+    public static MembersView getMembersView(NodeEngine nodeEngine) {
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        return clusterService.getMembershipManager().getMembersView();
     }
 }

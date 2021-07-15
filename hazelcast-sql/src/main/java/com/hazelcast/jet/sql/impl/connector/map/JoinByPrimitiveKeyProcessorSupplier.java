@@ -1,21 +1,22 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.AsyncTransformUsingServiceOrderedP;
@@ -34,7 +35,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -57,7 +57,6 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     private String mapName;
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
-    private transient IMap<Object, Object> map;
     private transient ExpressionEvalContext evalContext;
     private transient Extractors extractors;
 
@@ -81,7 +80,6 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
 
     @Override
     public void init(@Nonnull Context context) {
-        map = context.hazelcastInstance().getMap(mapName);
         evalContext = SimpleExpressionEvalContext.from(context);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
@@ -91,18 +89,18 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
+            String mapName = this.mapName;
             KvRowProjector projector = rightRowProjectorSupplier.get(evalContext, extractors);
-            TransientReference<IMap<Object, Object>> context = new TransientReference<>(map);
             Processor processor = new AsyncTransformUsingServiceOrderedP<>(
-                    ServiceFactories.nonSharedService(ctx -> context),
+                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
-                    (TransientReference<IMap<Object, Object>> ctx, Object[] left) -> {
+                    (IMap<Object, Object> map, Object[] left) -> {
                         Object key = left[leftEquiJoinIndex];
                         if (key == null) {
                             return inner ? null : completedFuture(null);
                         }
-                        return ctx.ref.getAsync(key).toCompletableFuture();
+                        return map.getAsync(key).toCompletableFuture();
                     },
                     (left, value) -> {
                         Object[] joined = join(left, left[leftEquiJoinIndex], value, projector, condition, evalContext);
@@ -152,23 +150,5 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
         condition = in.readObject();
         mapName = in.readObject();
         rightRowProjectorSupplier = in.readObject();
-    }
-
-    /**
-     * A reference to an object, which is serializable, but the reference is
-     * transient. Used to workaround the need for ServiceContext to be
-     * serializable, but never actually serialized.
-     */
-    @SuppressFBWarnings(
-            value = {"SE_TRANSIENT_FIELD_NOT_RESTORED"},
-            justification = "the class is never serialized"
-    )
-    private static final class TransientReference<T> implements Serializable {
-
-        private final transient T ref;
-
-        private TransientReference(T ref) {
-            this.ref = ref;
-        }
     }
 }

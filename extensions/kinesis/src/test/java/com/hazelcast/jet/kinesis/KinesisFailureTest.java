@@ -108,7 +108,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         System.err.println("Cutting network connection ...");
         PROXY.setConnectionCut(true);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
         Map<String, List<String>> expectedMessages = sendMessages();
 
         SECONDS.sleep(5);
@@ -124,7 +124,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     public void networkOutageWhileRunning() throws Exception {
         HELPER.createStream(10);
 
-        jet().newJob(getPipeline(kinesisSource().build()));
+        hz().getJet().newJob(getPipeline(kinesisSource().build()));
         Map<String, List<String>> expectedMessages = sendMessages();
 
         //wait for some data to start coming out of the pipeline
@@ -158,7 +158,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                         .withRetryStrategy(KinesisTestHelper.RETRY_STRATEGY)
                         .build());
 
-        Job job = jet().newJob(p);
+        Job job = hz().getJet().newJob(p);
         assertThrowsJetException(job, "The security token included in the request is invalid");
     }
 
@@ -180,7 +180,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                 .withoutTimestamps()
                 .writeTo(Sinks.noop());
 
-        Job job = jet().newJob(p);
+        Job job = hz().getJet().newJob(p);
         assertThrowsJetException(job, "The security token included in the request is invalid");
     }
 
@@ -232,7 +232,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
         p.readFrom(TestSources.items(entry))
                 .writeTo(kinesisSink());
 
-        return jet().newJob(p);
+        return hz().getJet().newJob(p);
     }
 
     private static void assertThrowsJetException(Job job, String messageFragment) {

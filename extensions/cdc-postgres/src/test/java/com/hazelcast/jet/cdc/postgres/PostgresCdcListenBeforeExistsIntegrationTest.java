@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cdc.postgres;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -62,8 +62,8 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         assertReplicationSlotActive();
@@ -74,7 +74,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
             createTableWithData(SCHEMA, "someTable");
             insertIntoTable(SCHEMA, "someTable", 1001, "someValue1", "someValue2");
 
-            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap(SINK_MAP_NAME))));
+            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -98,8 +98,8 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
         assertReplicationSlotActive();
 
@@ -108,7 +108,7 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
             createTableWithData(SCHEMA, "someTable");
             insertIntoTable(SCHEMA, "someTable", 1001, "someValue1", "someValue2");
 
-            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap(SINK_MAP_NAME))));
+            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -135,20 +135,20 @@ public class PostgresCdcListenBeforeExistsIntegrationTest extends AbstractPostgr
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
         assertReplicationSlotActive();
 
         try {
             assertTrueEventually(() -> assertMatch(Collections.singletonList(
                     "1001/0:(SYNC|INSERT):TableRow \\{id=1001, value1=someValue1, value2=someValue2, value3=null\\}"),
-                    mapResultsToSortedList(jet.getMap(SINK_MAP_NAME))));
+                    mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
             //then
             addColumnToTable(SCHEMA, "someTable", "value_3");
             insertIntoTable(SCHEMA, "someTable", 1002, "someValue4", "someValue5", "someValue6");
 
-            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(jet.getMap(SINK_MAP_NAME))));
+            assertTrueEventually(() -> assertMatch(expectedRecords, mapResultsToSortedList(hz.getMap(SINK_MAP_NAME))));
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);

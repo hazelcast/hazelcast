@@ -88,6 +88,7 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
+import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
 import static java.lang.String.format;
@@ -158,12 +159,14 @@ public abstract class HazelcastTestSupport {
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         assertContainsAll(expected, actual);
     }
 
     protected static <T> void assertCollection(Collection<T> expected, Collection<T> actual, Comparator<T> comparator) {
-        assertEquals(expected.size(), actual.size());
+        assertEquals(String.format("Expected collection: `%s`, actual collection: `%s`", expected, actual),
+                expected.size(), actual.size());
         for (T item : expected) {
             if (!containsIn(item, actual, comparator)) {
                 throw new AssertionError("Actual collection does not contain the item " + item);
@@ -191,7 +194,7 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(2);
+        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(2);
 
         config.getSqlConfig().setExecutorPoolSize(2);
 
@@ -199,7 +202,9 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Config regularInstanceConfig() {
-        return new Config();
+        Config config = new Config();
+        config.getJetConfig().setEnabled(true);
+        return config;
     }
 
     // disables auto-detection/tcp-ip network discovery on the given config and returns the same
@@ -223,6 +228,15 @@ public abstract class HazelcastTestSupport {
 
     protected HazelcastInstance createHazelcastInstance(Config config) {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(int nodeCount) {
+        return createHazelcastInstances(getConfig(), nodeCount);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(Config config, int nodeCount) {
+        createHazelcastInstanceFactory(nodeCount);
+        return factory.newInstances(config, nodeCount);
     }
 
     protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory(int nodeCount) {
@@ -1632,7 +1646,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoWindowsOS() {
-        assumeFalse(System.getProperty("os.name").toLowerCase().contains("windows"));
+        assumeFalse(lowerCaseInternal(System.getProperty("os.name")).contains("windows"));
     }
 
     public static void assumeThatLinuxOS() {

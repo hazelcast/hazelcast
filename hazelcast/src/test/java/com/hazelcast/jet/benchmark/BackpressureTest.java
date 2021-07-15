@@ -19,7 +19,7 @@ package com.hazelcast.jet.benchmark;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
@@ -64,30 +64,30 @@ public class BackpressureTest extends JetTestSupport {
     private static final int KEY_COUNT = 1000;
     private static final int COUNT_PER_KEY_AND_SLICE = 10_000;
 
-    private JetInstance jet1;
-    private JetInstance jet2;
+    private HazelcastInstance hz1;
+    private HazelcastInstance hz2;
 
     @Before
     public void setUp() {
         Config config = new Config();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
-        jet1 = createJetMember(config);
-        jet2 = createJetMember(config);
+        hz1 = createHazelcastInstance(config);
+        hz2 = createHazelcastInstance(config);
     }
 
     @Test
     public void testBackpressure() {
         DAG dag = new DAG();
 
-        final int member1Port = jet1.getCluster().getLocalMember().getAddress().getPort();
-        final Member member2 = jet2.getCluster().getLocalMember();
+        final int member1Port = hz1.getCluster().getLocalMember().getAddress().getPort();
+        final Member member2 = hz2.getCluster().getLocalMember();
         final int ptionOwnedByMember2 =
-                jet1.getHazelcastInstance().getPartitionService()
+                hz1.getPartitionService()
                     .getPartitions().stream()
                     .filter(p -> p.getOwner().equals(member2))
                     .map(Partition::getPartitionId)
                     .findAny()
-                    .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
+                    .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + hz2));
         Vertex source = dag.newVertex("source", ProcessorMetaSupplier.of((Address address) ->
                 ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : noopP())
         ));
@@ -98,8 +98,8 @@ public class BackpressureTest extends JetTestSupport {
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
            .edge(between(hiccup, sink));
 
-        jet1.newJob(dag).join();
-        assertCounts(jet1.getMap("counts"));
+        hz1.getJet().newJob(dag).join();
+        assertCounts(hz1.getMap("counts"));
     }
 
     private static void assertCounts(Map<String, Long> wordCounts) {

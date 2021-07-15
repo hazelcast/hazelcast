@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,21 +44,22 @@ public class ClientDeployment_StandaloneClusterTest extends JetTestSupport {
         URLClassLoader urlClassLoader = new URLClassLoader(new URL[]{classUrl}, null);
         Class<?> personClz = urlClassLoader.loadClass("com.sample.pojo.person.Person$Appereance");
 
-        ClientConfig jetClientConfig = new ClientConfig();
-        jetClientConfig.setClassLoader(urlClassLoader);
-        jetClientConfig.getUserCodeDeploymentConfig()
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClassLoader(urlClassLoader);
+        clientConfig.getUserCodeDeploymentConfig()
                        .setEnabled(true)
                        .addClass(personClz);
 
         Config config = new Config();
+        config.getJetConfig().setEnabled(true);
         config.getUserCodeDeploymentConfig().setEnabled(true);
 
-        JetInstance instance = createJetMember(config);
-        JetInstance client = createJetClient(jetClientConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient(clientConfig);
 
         DAG dag = new DAG();
         dag.newVertex("v", () -> new LoadClassesIsolated(true));
 
-        instance.newJob(dag).join();
+        instance.getJet().newJob(dag).join();
     }
 }

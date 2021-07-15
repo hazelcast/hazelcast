@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a cluster view listener to a connection.
  */
-@Generated("d9efa1ec477d9f6385101c3af3783308")
+@Generated("2932d8ee24e33a70cb3c515c7b73aa95")
 public final class ClientAddClusterViewListenerCodec {
     //hex: 0x000300
     public static final int REQUEST_MESSAGE_TYPE = 768;
@@ -68,7 +68,6 @@ public final class ClientAddClusterViewListenerCodec {
         return clientMessage;
     }
 
-
     public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -77,7 +76,6 @@ public final class ClientAddClusterViewListenerCodec {
 
         return clientMessage;
     }
-
 
     public static ClientMessage encodeMembersViewEvent(int version, java.util.Collection<com.hazelcast.internal.cluster.MemberInfo> memberInfos) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -91,6 +89,7 @@ public final class ClientAddClusterViewListenerCodec {
         ListMultiFrameCodec.encode(clientMessage, memberInfos, MemberInfoCodec::encode);
         return clientMessage;
     }
+
     public static ClientMessage encodePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_PARTITIONS_VIEW_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

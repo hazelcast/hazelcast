@@ -70,18 +70,18 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
     @Before
     public void before() {
-        jet().getObservables().forEach(Observable::destroy);
+        hz().getJet().getObservables().forEach(Observable::destroy);
 
         observableName = randomName();
         testObserver = new TestObserver();
-        testObservable = jet().getObservable(observableName);
+        testObservable = hz().getJet().getObservable(observableName);
         registrationId = testObservable.addObserver(testObserver);
     }
 
     @After
     @Override
     public void after() throws Exception {
-        jet().getObservables().forEach(Observable::destroy);
+        hz().getJet().getObservables().forEach(Observable::destroy);
         super.after();
     }
 
@@ -92,7 +92,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         List<Long> items = new ArrayList<>();
         for (Long item : testObservable) {
@@ -109,7 +109,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         assertSortedValues(testObserver, 0L, 1L, 2L, 3L, 4L);
         assertError(testObserver, null);
@@ -131,7 +131,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         assertTrueEventually(() -> assertEquals(JobStatus.FAILED, job.getStatus()));
         //then
         assertSortedValues(testObserver);
@@ -148,7 +148,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         //then
         assertTrueEventually(() -> assertTrue(testObserver.getNoOfValues() > 10));
         assertError(testObserver, null);
@@ -170,7 +170,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         //then
         assertTrueEventually(() -> assertTrue(testObserver.getNoOfValues() > 10));
         assertError(testObserver, null);
@@ -192,14 +192,14 @@ public class ObservableResultsTest extends TestInClusterSupport {
         BatchStage<Long> stage = pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L));
 
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> otherObservable = jet().getObservable("otherObservable");
+        Observable<Long> otherObservable = hz().getJet().getObservable("otherObservable");
         otherObservable.addObserver(otherTestObserver);
 
         stage.filter(i -> i % 2 == 0).writeTo(Sinks.observable(observableName));
         stage.filter(i -> i % 2 != 0).writeTo(Sinks.observable("otherObservable"));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         job.join();
         //then
         assertSortedValues(testObserver, 0L, 2L, 4L);
@@ -219,7 +219,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         readStage.writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         job.join();
         //then
         assertSortedValues(testObserver, 0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L);
@@ -243,8 +243,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
-        Job job2 = jet().newJob(pipeline2);
+        Job job = hz().getJet().newJob(pipeline);
+        Job job2 = hz().getJet().newJob(pipeline2);
         //then
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job2.getStatus()));
@@ -268,8 +268,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        jet().newJob(pipeline).join();
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         assertSortedValues(testObserver, 0L, 0L, 1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L);
         assertError(testObserver, null);
@@ -283,7 +283,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         assertSortedValues(testObserver, 0L, 1L, 2L, 3L, 4L);
         assertError(testObserver, null);
@@ -291,7 +291,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         TestObserver otherTestObserver = new TestObserver();
-        jet().<Long>getObservable(observableName).addObserver(otherTestObserver);
+        hz().getJet().<Long>getObservable(observableName).addObserver(otherTestObserver);
         //then
         assertSortedValues(otherTestObserver, 0L, 1L, 2L, 3L, 4L);
         assertError(otherTestObserver, null);
@@ -305,9 +305,9 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName + "late"));
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> lateObservable = jet().getObservable(observableName + "late");
+        Observable<Long> lateObservable = hz().getJet().getObservable(observableName + "late");
         lateObservable.addObserver(otherTestObserver);
         //then
         assertSortedValues(otherTestObserver, 0L, 1L, 2L, 3L, 4L);
@@ -329,12 +329,12 @@ public class ObservableResultsTest extends TestInClusterSupport {
         pipeline.readFrom(errorSource)
                 .writeTo(Sinks.observable(observableName));
 
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         assertTrueEventually(() -> assertEquals(JobStatus.FAILED, job.getStatus()));
 
         //when
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> lateObservable = jet().getObservable(observableName);
+        Observable<Long> lateObservable = hz().getJet().getObservable(observableName);
         lateObservable.addObserver(otherTestObserver);
         //then
         assertSortedValues(testObserver);
@@ -356,8 +356,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
-        Job job2 = jet().newJob(pipeline2);
+        Job job = hz().getJet().newJob(pipeline);
+        Job job2 = hz().getJet().newJob(pipeline2);
         //then
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job2.getStatus()));
@@ -386,7 +386,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         //then
         assertTrueEventually(() -> assertTrue(testObserver.getNoOfValues() > 10));
         assertError(testObserver, null);
@@ -410,10 +410,10 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName + "destroyed"));
 
         TestObserver otherTestObserver = new TestObserver();
-        Observable<Long> destroyedObservable = jet().getObservable(observableName + "destroyed");
+        Observable<Long> destroyedObservable = hz().getJet().getObservable(observableName + "destroyed");
         destroyedObservable.addObserver(otherTestObserver);
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         //then
         assertTrueEventually(() -> assertTrue(otherTestObserver.getNoOfValues() > 10));
         assertError(otherTestObserver, null);
@@ -450,7 +450,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable(observableName));
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         assertSortedValues(testObserver, sourceItems.toArray(new Long[0]));
         assertError(testObserver, null);
@@ -472,7 +472,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         //when
         Future<Long> stream = testObservable.toFuture(Stream::count);
-        jet().newJob(pipeline);
+        hz().getJet().newJob(pipeline);
         //then
         assertEquals(noOfResults, stream.get().longValue());
         assertError(testObserver, null);
@@ -492,8 +492,8 @@ public class ObservableResultsTest extends TestInClusterSupport {
                 .writeTo(Sinks.observable("throwables"));
 
         //when
-        jet().newJob(pipeline).join();
-        List<Object> results = jet().getObservable("throwables")
+        hz().getJet().newJob(pipeline).join();
+        List<Object> results = hz().getJet().getObservable("throwables")
                 .toFuture(s -> {
                     Comparator<Object> comparator = Comparator.comparing(o -> ((Throwable) o).getMessage());
                     return s.sorted(comparator).collect(Collectors.toList());
@@ -510,7 +510,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
     @Test
     public void configureCapacity() {
         //when
-        Observable<Object> o = jet().newObservable();
+        Observable<Object> o = hz().getJet().newObservable();
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
                 .writeTo(Sinks.observable(o));
@@ -519,7 +519,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         assertThrowsException(o::getConfiguredCapacity, IllegalStateException.class);
 
         //when
-        Job job = jet().newJob(pipeline);
+        Job job = hz().getJet().newJob(pipeline);
         assertExecutionStarted(job);
         //then
         assertThrowsException(() -> o.configureCapacity(30_000), IllegalStateException.class);
@@ -534,14 +534,14 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
     @Test
     public void configureCapacityMultipleTimes() {
-        Observable<Object> o = jet().newObservable();
+        Observable<Object> o = hz().getJet().newObservable();
         o.configureCapacity(10);
         assertThrowsException(() -> o.configureCapacity(20), RuntimeException.class);
     }
 
     @Test
     public void unnamedObservable() {
-        Observable<Long> unnamedObservable = jet().newObservable();
+        Observable<Long> unnamedObservable = hz().getJet().newObservable();
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(TestSources.items(0L, 1L, 2L, 3L, 4L))
@@ -551,7 +551,7 @@ public class ObservableResultsTest extends TestInClusterSupport {
         unnamedObservable.addObserver(observer);
 
         //when
-        jet().newJob(pipeline).join();
+        hz().getJet().newJob(pipeline).join();
         //then
         assertSortedValues(observer, 0L, 1L, 2L, 3L, 4L);
         assertError(observer, null);
@@ -561,16 +561,16 @@ public class ObservableResultsTest extends TestInClusterSupport {
     @Test
     public void onlyObservedObservablesGetActivated() {
         //when
-        Observable<Object> a = jet().newObservable();
-        Observable<Object> b = jet().newObservable();
-        Observable<Object> c = jet().newObservable();
+        Observable<Object> a = hz().getJet().newObservable();
+        Observable<Object> b = hz().getJet().newObservable();
+        Observable<Object> c = hz().getJet().newObservable();
 
         a.addObserver(Observer.of(ConsumerEx.noop()));
         c.addObserver(Observer.of(ConsumerEx.noop()));
 
         //then
         assertTrueEventually(() -> {
-            Set<String> observables = jet().getObservables().stream().map(Observable::name).collect(Collectors.toSet());
+            Set<String> observables = hz().getJet().getObservables().stream().map(Observable::name).collect(Collectors.toSet());
             assertTrue(observables.containsAll(Arrays.asList(a.name(), c.name())));
             assertFalse(observables.contains(b.name()));
         });
@@ -584,10 +584,10 @@ public class ObservableResultsTest extends TestInClusterSupport {
 
         for (int i = 0; i < 20; i++) {
             TestObserver repeatedTestObserver = new TestObserver();
-            Observable<Long> repeatedObservable = jet().getObservable("repeatedObservable");
+            Observable<Long> repeatedObservable = hz().getJet().getObservable("repeatedObservable");
             repeatedObservable.addObserver(repeatedTestObserver);
             //when
-            jet().newJob(pipeline).join();
+            hz().getJet().newJob(pipeline).join();
             //then
             assertSortedValues(repeatedTestObserver, 0L, 1L, 2L, 3L, 4L);
             assertError(repeatedTestObserver, null);

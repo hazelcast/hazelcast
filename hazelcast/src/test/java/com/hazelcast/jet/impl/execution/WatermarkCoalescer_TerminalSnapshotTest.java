@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.config.JobConfig;
@@ -62,7 +62,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
     private static final int PARTITION_COUNT = 2;
     private static final int COUNT = 10;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
     private IMap<String, Integer> sourceMap;
 
     @Before
@@ -77,7 +77,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         // to work correctly
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(PARTITION_COUNT));
 
-        instance = createJetMember(config);
+        instance = createHazelcastInstance(config);
         sourceMap = instance.getMap("test");
     }
 
@@ -99,8 +99,8 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
         and then does a graceful restart in at-least-once mode and checks that the results are
         correct.
          */
-        String key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
-        String key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
+        String key0 = generateKeyForPartition(instance, 0);
+        String key1 = generateKeyForPartition(instance, 1);
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.mapJournal(sourceMap, JournalInitialPosition.START_FROM_OLDEST))
@@ -117,7 +117,7 @@ public class WatermarkCoalescer_TerminalSnapshotTest extends JetTestSupport {
                             }
                         }).build());
 
-        Job job = instance.newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
+        Job job = instance.getJet().newJob(p, new JobConfig().setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE));
 
         List<Future> futures = new ArrayList<>();
         futures.add(spawn(() -> {

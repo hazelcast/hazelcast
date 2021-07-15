@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobProxy;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -52,7 +52,7 @@ public final class SinkStressTestUtil {
     private SinkStressTestUtil() { }
 
     public static void test_withRestarts(
-            @Nonnull JetInstance instance,
+            @Nonnull HazelcastInstance instance,
             @Nonnull ILogger logger,
             @Nonnull Sink<Integer> sink,
             boolean graceful,
@@ -79,7 +79,7 @@ public final class SinkStressTestUtil {
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(exactlyOnce ? EXACTLY_ONCE : AT_LEAST_ONCE)
                 .setSnapshotIntervalMillis(50);
-        JobProxy job = (JobProxy) instance.newJob(p, config);
+        JobProxy job = (JobProxy) instance.getJet().newJob(p, config);
 
         long endTime = System.nanoTime() + SECONDS.toNanos(TEST_TIMEOUT_SECONDS);
         int lastCount = 0;

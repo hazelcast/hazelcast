@@ -63,7 +63,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     public void when_jobRunning_then_suspensionCauseThrows() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
-        Job job = jet().newJob(dag, jobConfig);
+        Job job = hz().getJet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
         // Then
@@ -78,7 +78,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     public void when_jobCompleted_then_suspensionCauseThrows() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", Processors.noopP()));
-        Job job = jet().newJob(dag, jobConfig);
+        Job job = hz().getJet().newJob(dag, jobConfig);
 
         // When
         job.join();
@@ -94,7 +94,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
     public void when_jobFailed_then_suspensionCauseThrows() {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", () -> new NoOutputSourceP()));
-        Job job = jet().newJob(dag, jobConfig);
+        Job job = hz().getJet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
 
         // When
@@ -113,7 +113,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, MEMBER_COUNT)));
 
         // When
-        Job job = jet().newJob(dag, jobConfig);
+        Job job = hz().getJet().newJob(dag, jobConfig);
         assertJobStatusEventually(job, RUNNING);
         job.suspend();
         assertJobStatusEventually(job, SUSPENDED);
@@ -134,7 +134,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
         // When
         jobConfig.setName("faultyJob");
-        Job job = jet().newJob(dag, jobConfig);
+        Job job = hz().getJet().newJob(dag, jobConfig);
 
         // Then
         assertJobStatusEventually(job, JobStatus.SUSPENDED);
@@ -179,16 +179,16 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
                         }).setLocalParallelism(1)
                 .writeTo(Sinks.map("SuspendExecutionOnFailureTest_sinkMap"));
 
-        IMap<String, Boolean> counterMap = jet().getMap("SuspendExecutionOnFailureTest_failureMap");
+        IMap<String, Boolean> counterMap = hz().getMap("SuspendExecutionOnFailureTest_failureMap");
         counterMap.put("key", true);
 
         jobConfig.setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
                 .setSnapshotIntervalMillis(50);
 
-        Job job = jet().newJob(p, jobConfig);
+        Job job = hz().getJet().newJob(p, jobConfig);
         assertJobStatusEventually(job, SUSPENDED);
 
-        IMap<Integer, Integer> sinkMap = jet().getMap("SuspendExecutionOnFailureTest_sinkMap");
+        IMap<Integer, Integer> sinkMap = hz().getMap("SuspendExecutionOnFailureTest_sinkMap");
         assertTrueEventually(() -> assertEquals(interuptItem, sinkMap.size()));
 
         counterMap.put("key", false);

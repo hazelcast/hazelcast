@@ -99,7 +99,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     public void test_completedFutures() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> completedFuture(traverseItems(item + "-1", item + "-2"))))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(asList("a", "b"))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2"))
@@ -117,7 +117,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                             return f;
                         })
                 )
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(asList("a", "b", new Watermark(10)))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10)))
@@ -132,7 +132,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .verifyProcessor(getSupplier((ctx, item) -> {
                     throw new UnsupportedOperationException();
                 }))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -141,7 +141,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     public void when_mapFnReturnsNullFuture_then_filteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(asList("a", "b"))
                 .expectOutput(emptyList());
     }
@@ -150,7 +150,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     public void when_futureReturnsNullTraverser_then_resultFilteredOut() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> null))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
     }
@@ -162,7 +162,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) ->
                         exceptionallyCompletedFuture(new RuntimeException("test exception"))))
-                .hazelcastInstance(instance().getHazelcastInstance())
+                .hazelcastInstance(instance())
                 .input(singletonList("a"))
                 .expectOutput(emptyList());
     }

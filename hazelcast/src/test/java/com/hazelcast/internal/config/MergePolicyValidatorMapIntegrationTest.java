@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyValidatorIntegrationTest {
 
-    private boolean perEntryStatsEnabled = false;
+    private boolean perEntryStatsEnabled = true;
 
     @Override
     void addConfig(Config config, String name, MergePolicyConfig mergePolicyConfig) {
@@ -60,9 +60,9 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
 
     @Test
     public void testMap_withHyperLogLogMergePolicy() {
+        expectCardinalityEstimatorException();
         HazelcastInstance hz = getHazelcastInstance("cardinalityEstimator", hyperLogLogMergePolicy);
 
-        expectCardinalityEstimatorException();
         hz.getMap("cardinalityEstimator");
     }
 
@@ -76,9 +76,9 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
 
     @Test
     public void testMap_withInvalidMergePolicy() {
+        expectedInvalidMergePolicyException();
         HazelcastInstance hz = getHazelcastInstance("invalid", invalidMergePolicyConfig);
 
-        expectedInvalidMergePolicyException();
         hz.getMap("invalid");
     }
 
@@ -105,9 +105,11 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
      */
     @Test
     public void testMap_withLastStoredTimeMergePolicy() {
+        perEntryStatsEnabled = false;
+        expectedMapStatisticsDisabledException(lastStoredTimeMergePolicy);
+
         HazelcastInstance hz = getHazelcastInstance("lastStoredTime", lastStoredTimeMergePolicy);
 
-        expectedMapStatisticsDisabledException(lastStoredTimeMergePolicy);
         hz.getMap("lastStoredTime");
     }
 
@@ -124,9 +126,11 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
      */
     @Test
     public void testMap_withLastStoredTimeMergePolicyNoTypeVariable() {
+        perEntryStatsEnabled = false;
+        expectedMapStatisticsDisabledException(lastStoredTimeMergePolicyNoTypeVariable);
+
         HazelcastInstance hz = getHazelcastInstance("lastStoredTimeNoTypeVariable", lastStoredTimeMergePolicyNoTypeVariable);
 
-        expectedMapStatisticsDisabledException(lastStoredTimeMergePolicyNoTypeVariable);
         hz.getMap("lastStoredTimeNoTypeVariable");
     }
 
@@ -163,9 +167,10 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
      */
     @Test
     public void testMap_withCustomMapMergePolicy() {
+        perEntryStatsEnabled = false;
+        expectedMapStatisticsDisabledException(customMapMergePolicy);
         HazelcastInstance hz = getHazelcastInstance("customMap", customMapMergePolicy);
 
-        expectedMapStatisticsDisabledException(customMapMergePolicy);
         hz.getMap("customMap");
     }
 
@@ -183,9 +188,11 @@ public class MergePolicyValidatorMapIntegrationTest extends AbstractMergePolicyV
      */
     @Test
     public void testMap_withCustomMapMergePolicyNoTypeVariable() {
+        perEntryStatsEnabled = false;
+        expectedMapStatisticsDisabledException(customMapMergePolicyNoTypeVariable);
+
         HazelcastInstance hz = getHazelcastInstance("customMapNoTypeVariable", customMapMergePolicyNoTypeVariable);
 
-        expectedMapStatisticsDisabledException(customMapMergePolicyNoTypeVariable);
         hz.getMap("customMapNoTypeVariable");
     }
 

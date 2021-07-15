@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Return the all elements of this collection
  */
-@Generated("2495dd864050bf41762ff405af9ba1fd")
+@Generated("7199a2e7c11fc84bb9e533be2e296d9b")
 public final class ListGetAllCodec {
     //hex: 0x050A00
     public static final int REQUEST_MESSAGE_TYPE = 330240;
@@ -89,5 +89,4 @@ public final class ListGetAllCodec {
         iterator.next();
         return ListMultiFrameCodec.decode(iterator, DataCodec::decode);
     }
-
 }

@@ -510,6 +510,25 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    protected InternalCompletableFuture<Data> putIfAbsentAsyncInternal(Object key, Data value,
+                                                                       long ttl, TimeUnit ttlUnit,
+                                                                       long maxIdle, TimeUnit maxIdleUnit) {
+        Data keyData = toDataWithStrategy(key);
+        int partitionId = partitionService.getPartitionId(key);
+        MapOperation operation = newPutIfAbsentOperation(keyData, value, ttl, ttlUnit, maxIdle, maxIdleUnit);
+        operation.setThreadId(getThreadId());
+        try {
+            long startTimeNanos = Timer.nanos();
+            InvocationFuture<Data> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            if (statisticsEnabled) {
+                future.whenCompleteAsync(new IncrementStatsExecutionCallback<>(operation, startTimeNanos), CALLER_RUNS);
+            }
+            return future;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
     protected InternalCompletableFuture<Data> setAsyncInternal(Object key, Data valueData, long ttl, TimeUnit timeunit,
                                                                long maxIdle, TimeUnit maxIdleUnit) {
         Data keyData = toDataWithStrategy(key);

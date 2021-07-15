@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.math;
 
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 

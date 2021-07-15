@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.s3;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -56,12 +56,12 @@ abstract class S3TestBase extends JetTestSupport {
 
     private static final Charset CHARSET = UTF_8;
 
-    JetInstance jet;
+    HazelcastInstance hz;
 
     @Before
     public void setupCluster() {
-        jet = createJetMember();
-        createJetMember();
+        hz = createHazelcastInstance();
+        createHazelcastInstance();
     }
 
     void testSink(String bucketName, String prefix, int itemCount) {
@@ -69,7 +69,7 @@ abstract class S3TestBase extends JetTestSupport {
     }
 
     void testSink(String bucketName, String prefix, int itemCount, String payload) {
-        IMap<Integer, String> map = jet.getMap("map");
+        IMap<Integer, String> map = hz.getMap("map");
 
         for (int i = 0; i < itemCount; i++) {
             map.put(i, payload);
@@ -79,7 +79,7 @@ abstract class S3TestBase extends JetTestSupport {
         p.readFrom(Sources.map(map, alwaysTrue(), Map.Entry::getValue))
          .writeTo(S3Sinks.s3(bucketName, prefix, CHARSET, clientSupplier(), Object::toString));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
 
         try (S3Client client = clientSupplier().get()) {
             assertTrueEventually(() -> {
@@ -119,7 +119,7 @@ abstract class S3TestBase extends JetTestSupport {
                     assertEquals(lineCount, entries.size());
                 }));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
     }
 
     public void testSourceWithEmptyResults(String bucketName, String prefix) {
@@ -129,7 +129,7 @@ abstract class S3TestBase extends JetTestSupport {
                     assertEquals(0, entries.size());
                 }));
 
-        jet.newJob(p).join();
+        hz.getJet().newJob(p).join();
     }
 
     public void testSourceWithNotExistingBucket(String bucketName) {
@@ -138,7 +138,7 @@ abstract class S3TestBase extends JetTestSupport {
                 .writeTo(Sinks.logger());
 
         try {
-            jet.newJob(p).join();
+            hz.getJet().newJob(p).join();
             fail();
         } catch (Exception e) {
             assertCausedByNoSuchBucketException(e);
@@ -151,7 +151,7 @@ abstract class S3TestBase extends JetTestSupport {
                 .writeTo(S3Sinks.s3(bucketName, "ignore", UTF_8, clientSupplier(), Object::toString));
 
         try {
-            jet.newJob(p).join();
+            hz.getJet().newJob(p).join();
             fail();
         } catch (Exception e) {
             assertCausedByNoSuchBucketException(e);

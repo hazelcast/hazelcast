@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.collection.IList;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
@@ -53,11 +53,11 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
     private static final String HOST = "localhost";
     private static final int PORT = 8888;
 
-    private JetInstance instance;
+    private HazelcastInstance instance;
 
     @Before
     public void setupEngine() {
-        instance = createJetMember();
+        instance = createHazelcastInstance();
     }
 
     @Test
@@ -93,7 +93,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
             dag.edge(between(producer, consumer));
 
             // When
-            Job job = instance.newJob(dag);
+            Job job = instance.getJet().newJob(dag);
             IList<Object> list = instance.getList("consumer");
 
             assertTrueEventually(() -> assertEquals(2, list.size()));
@@ -130,7 +130,7 @@ public class StreamSocketP_integrationTest extends JetTestSupport {
                     .vertex(sink)
                     .edge(between(producer, sink));
 
-            Job job = instance.newJob(dag);
+            Job job = instance.getJet().newJob(dag);
             acceptationLatch.await();
             job.cancel();
 

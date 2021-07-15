@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.StringJoiner;
 
 /**
@@ -188,7 +189,7 @@ public class PythonServiceConfig implements Serializable {
                     "You already set handlerModule, it would be overwritten by setting handlerFile");
         }
         String handlerFileStr = requireNonBlank(handlerFile, "handlerFile");
-        if (!handlerFileStr.toLowerCase().endsWith(".py")) {
+        if (!handlerFileStr.toLowerCase(Locale.ROOT).endsWith(".py")) {
             throw new IllegalArgumentException("The handler file must be a .py file");
         }
         try {

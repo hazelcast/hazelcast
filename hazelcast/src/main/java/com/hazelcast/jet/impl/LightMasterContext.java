@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -29,14 +29,19 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
+import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
+import javax.security.auth.Subject;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -58,10 +63,6 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 public class LightMasterContext {
 
-    public static final JobConfig LIGHT_JOB_CONFIG = new JobConfig()
-            .setMetricsEnabled(false)
-            .setAutoScaling(false);
-
     private static final Object NULL_OBJECT = new Object() {
         @Override
         public String toString() {
@@ -70,31 +71,46 @@ public class LightMasterContext {
     };
 
     private final NodeEngine nodeEngine;
-    private final DAG dag;
     private final long jobId;
 
     private final ILogger logger;
     private final String jobIdString;
+    private final long startTime = System.nanoTime();
 
-    private Map<MemberInfo, ExecutionPlan> executionPlanMap;
+    private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
-    private Set<Vertex> vertices;
+    private final Set<Vertex> vertices;
 
-    public LightMasterContext(NodeEngine nodeEngine, DAG dag, long jobId) {
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
+    public LightMasterContext(
+            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
+            JobConfig config, Subject subject
+    ) {
         this.nodeEngine = nodeEngine;
-        this.dag = dag;
         this.jobId = jobId;
 
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
-    }
 
-    public CompletableFuture<Void> start() {
-        MembersView membersView = getMembersView();
+        // find a subset of members with version equal to the coordinator version.
+        MembersView membersView = Util.getMembersView(nodeEngine);
+        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
+        List<MemberInfo> members = membersView.getMembers().stream()
+                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion)
+                        && !m.isLiteMember()
+                        && !coordinationService.isMemberShuttingDown(m.getUuid()))
+                .collect(Collectors.toList());
+        if (members.isEmpty()) {
+            throw new JetException("No data member with version equal to the coordinator version found");
+        }
+        if (members.size() < membersView.size()) {
+            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
+                    idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
+        }
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
-            logFine(logger, "Start executing light %s, execution graph in DOT format:\n%s"
+            logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);
             logFine(logger, "Building execution plan for %s", jobIdString);
@@ -102,35 +118,40 @@ public class LightMasterContext {
 
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
+        Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
         try {
-            executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, jobId, jobId, LIGHT_JOB_CONFIG, 0, true);
+            executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
         } catch (Throwable e) {
+            executionPlanMap = null;
             finalizeJob(e);
-            return jobCompletionFuture;
+            return;
         }
+        executionPlanMap = executionPlanMapTmp;
         logFine(logger, "Built execution plans for %s", jobIdString);
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), participants, serializedPlan, true);
+            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
+                    serializedPlan, true);
         };
         invokeOnParticipants(operationCtor,
                 responses -> finalizeJob(findError(responses)),
                 error -> cancelInvocations()
         );
-        return jobCompletionFuture;
+    }
+
+    public long getJobId() {
+        return jobId;
     }
 
     private void finalizeJob(@Nullable Throwable failure) {
         // close ProcessorMetaSuppliers
-        if (vertices != null) {
-            for (Vertex vertex : vertices) {
-                try {
-                    vertex.getMetaSupplier().close(failure);
-                } catch (Throwable e) {
-                    logger.severe(jobIdString
-                            + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
-                }
+        for (Vertex vertex : vertices) {
+            try {
+                vertex.getMetaSupplier().close(failure);
+            } catch (Throwable e) {
+                logger.severe(jobIdString
+                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
             }
         }
 
@@ -221,11 +242,6 @@ public class LightMasterContext {
         });
     }
 
-    private MembersView getMembersView() {
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
-        return clusterService.getMembershipManager().getMembersView();
-    }
-
     /**
      * Returns any error from a collection of responses. Ignores non-Throwable
      * responses. Exceptions other than {@link CancellationException} and
@@ -242,6 +258,14 @@ public class LightMasterContext {
                 result = (Throwable) response;
             }
         }
+        if (result != null
+                && !(result instanceof CancellationException)
+                && !(result instanceof JobTerminateRequestedException)) {
+            // We must wrap the exception. Otherwise the error will become the error of the SubmitJobOp. And
+            // if the error is, for example, MemberLeftException, the job will be resubmitted even though it
+            // was already running. Fixes https://github.com/hazelcast/hazelcast/issues/18844
+            result = new JetException("Execution on a member failed: " + result, result);
+        }
         return result;
     }
 
@@ -251,5 +275,13 @@ public class LightMasterContext {
 
     public boolean isCancelled() {
         return invocationsCancelled.get();
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public CompletableFuture<Void> getCompletionFuture() {
+        return jobCompletionFuture;
     }
 }

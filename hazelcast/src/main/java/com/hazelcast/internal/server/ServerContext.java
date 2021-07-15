@@ -35,9 +35,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.Future;
 
 /**
  * Contains many of the dependencies passed to the {@link Server}.
@@ -100,9 +100,9 @@ public interface ServerContext {
 
     int getConnectionMonitorMaxFaults();
 
-    void onDisconnect(Address endpoint, Throwable cause);
+    void onDisconnect(List<Address> endpointAliases, Throwable cause);
 
-    Future<Void> submitAsync(Runnable runnable);
+    void executeAsync(Runnable runnable);
 
     EventService getEventService();
 

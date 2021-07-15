@@ -18,20 +18,23 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
@@ -39,9 +42,25 @@ import java.util.List;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class HazelcastBootstrapTest {
 
+    @ClassRule
+    public static OverridePropertyRule enableJetRule = OverridePropertyRule.set("hz.jet.enabled", "true");
+
     @AfterClass
-    public static void teardown() {
+    public static void teardown() throws NoSuchFieldException, IllegalAccessException {
         Hazelcast.bootstrappedInstance().shutdown();
+        cleanUpHazelcastBootstrapSupplier();
+    }
+
+    private static void cleanUpHazelcastBootstrapSupplier() throws NoSuchFieldException, IllegalAccessException {
+        // Set the static instance supplier field of HazelcastBootstrap
+        // to null. Because of the lifetime of this field spans many
+        // test classes run on the same JVM, HazelcastBootstrapTest
+        // and HazelcastCommandLineTest were interfering with each
+        // other before this cleanup step added.
+        // See: https://github.com/hazelcast/hazelcast/issues/18725
+        Field field = HazelcastBootstrap.class.getDeclaredField("supplier");
+        field.setAccessible(true);
+        field.set(null, null);
     }
 
     @Test

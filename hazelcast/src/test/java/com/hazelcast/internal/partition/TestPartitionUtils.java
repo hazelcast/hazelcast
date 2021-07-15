@@ -42,12 +42,16 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.test.Accessors.getAddress;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.ReflectionUtils.getDelegateFromMock;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.lang.reflect.Proxy.isProxyClass;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("WeakerAccess")
 public final class TestPartitionUtils {
@@ -201,7 +205,7 @@ public final class TestPartitionUtils {
                     (PartitionReplicaManager) partitionService.getPartitionReplicaVersionManager();
 
             Collection<ServiceNamespace> namespaces = replicaManager.getNamespaces(partitionId);
-            Map<ServiceNamespace, long[]> versionMap = new HashMap<ServiceNamespace, long[]>(namespaces.size());
+            Map<ServiceNamespace, long[]> versionMap = new HashMap<>(namespaces.size());
             Set<ServiceNamespace> dirty = new HashSet<ServiceNamespace>();
             for (ServiceNamespace ns : namespaces) {
                 long[] originalVersions = replicaManager.getPartitionReplicaVersions(partitionId, ns);
@@ -225,5 +229,35 @@ public final class TestPartitionUtils {
             assertOpenEventually(latch, TimeUnit.MINUTES.toSeconds(1));
             return replicaVersions;
         }
+    }
+
+    public static void assertAllPartitionsBelongTo(HazelcastInstance instance) {
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        int partitionCount = internalPartitionService.getPartitionCount();
+        assertTrue(internalPartitionService.getMemberPartitionsIfAssigned(getAddress(instance)).size() == partitionCount);
+    }
+
+    public static void assertSomePartitionsBelongTo(HazelcastInstance instance, Address address) {
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        assertTrue(internalPartitionService.getMemberPartitionsIfAssigned(address).size() > 0);
+    }
+
+    public static void assertSomePartitionsBelongTo(HazelcastInstance instance) {
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        assertTrue(internalPartitionService.getMemberPartitionsIfAssigned(getAddress(instance)).size() > 0);
+    }
+
+    public static void assertNoPartitionsBelongTo(HazelcastInstance instance) {
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        assertEquals(0, internalPartitionService.getMemberPartitionsIfAssigned(getAddress(instance)).size());
+    }
+
+    public static String dumpPartitionTable(PartitionTableView partitionTableView) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < partitionTableView.length(); i++) {
+            sb.append(i).append(" -> [")
+              .append(Arrays.toString(partitionTableView.getReplicas(i))).append("]\n");
+        }
+        return sb.toString();
     }
 }

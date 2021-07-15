@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cdc.mysql;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.cdc.ChangeRecord;
@@ -34,6 +34,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.Util.entry;
@@ -47,7 +48,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
 
     @Test
     public void listenBeforeDatabaseExists() throws Exception {
-        List<String> expectedRecords = Arrays.asList(
+        List<String> expectedRecords = Collections.singletonList(
                 "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
         );
 
@@ -58,8 +59,8 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         try {
@@ -68,7 +69,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
             createTableWithData(DATABASE, "someTable");
             insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -80,7 +81,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         // given
         createDb(DATABASE);
 
-        List<String> expectedRecords = Arrays.asList(
+        List<String> expectedRecords = Collections.singletonList(
                 "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
         );
 
@@ -92,8 +93,8 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         try {
@@ -101,7 +102,7 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
             createTableWithData(DATABASE, "someTable");
             insertToTable(DATABASE, "someTable", 1001, "someValue1", "someValue2");
 
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);
@@ -128,19 +129,19 @@ public class MySqlCdcListenBeforeExistIntegrationTest extends AbstractMySqlCdcIn
         Pipeline pipeline = pipeline(source);
 
         // when
-        JetInstance jet = createJetMembers(2)[0];
-        Job job = jet.newJob(pipeline);
+        HazelcastInstance hz = createHazelcastInstances(2)[0];
+        Job job = hz.getJet().newJob(pipeline);
         assertJobStatusEventually(job, RUNNING);
 
         try {
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), Arrays.asList(
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), Collections.singletonList(
                     "1001/0:INSERT:TableRow {id=1001, value1=someValue1, value2=someValue2, value3=null}"
             ));
             //then
             addColumnToTable(DATABASE, "someTable", "value_3");
             insertToTable(DATABASE, "someTable", 1002, "someValue4", "someValue5", "someValue6");
 
-            assertEqualsEventually(() -> mapResultsToSortedList(jet.getMap(SINK_MAP_NAME)), expectedRecords);
+            assertEqualsEventually(() -> mapResultsToSortedList(hz.getMap(SINK_MAP_NAME)), expectedRecords);
         } finally {
             job.cancel();
             assertJobStatusEventually(job, JobStatus.FAILED);

@@ -41,6 +41,7 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -113,7 +114,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
          .setLocalParallelism(2);
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         try (Stream<Path> stream = Files.list(directory)) {
@@ -127,7 +128,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(null, rangeIterable(0, 10));
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -139,7 +140,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(null, rangeIterable(0, 100_000));
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         checkFileContents(0, 100_000, false, false, true);
@@ -155,7 +156,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         }
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -174,7 +175,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                          .localParallelism(1);
         dag.edge(between(source, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
         for (int i = 0; i < numItems; i++) {
             // When
             semaphore.release();
@@ -195,7 +196,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         Pipeline p = buildPipeline(charset, singletonList(text));
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(onlyFile), charset));
@@ -211,7 +212,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
          .writeTo(Sinks.files(myFile.toString()));
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         assertTrue(Files.exists(directory.resolve("subdir1")));
@@ -228,7 +229,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                  .build());
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -245,7 +246,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
                 (LongSupplier & Serializable) () -> clock.get()));
         dag.edge(between(src, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         for (int i = 0; i < numItems; i++) {
             // When
@@ -263,6 +264,25 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
     }
 
     @Test
+    public void test_rollByDateHour() throws Exception {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(rangeIterable(1, 10)))
+                .writeTo(Sinks.filesBuilder(directory.toString())
+                        .rollByDate("yyyy-MM-dd.HH")
+                        .build());
+        instance().getJet().newJob(p).join();
+
+        String expectedNamePattern = "\\d{4}-\\d{2}-\\d{2}\\.\\d{2}-0$";
+        long numberOfFilesWithExpectedPattern =
+                Stream.of(new File(directory.toString()).listFiles())
+                        .filter(f -> f.getName().matches(expectedNamePattern))
+                        .count();
+
+        assertEquals(1, numberOfFilesWithExpectedPattern);
+        checkFileContents(1, 10, false, false, true);
+    }
+
+    @Test
     public void test_rollByFileSize() throws Exception {
         int numItems = 10;
         DAG dag = new DAG();
@@ -275,7 +295,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         dag.edge(between(src, map));
         dag.edge(between(map, sink));
 
-        Job job = instance().newJob(dag);
+        Job job = instance().getJet().newJob(dag);
 
         // Then
         for (int i = 0; i < numItems; i++) {
@@ -301,7 +321,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
          .writeTo(Sinks.json(directory.toString()));
 
         // When
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         // Then
         List<String> lines = Files
@@ -323,7 +343,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(HOURS.toMillis(1));
-        instance().newJob(p, config).join();
+        instance().getJet().newJob(p, config).join();
 
         // Then
         checkFileContents(0, 10, false, false, true);
@@ -343,10 +363,10 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(500);
-        Job job = instance().newJob(dag, config);
+        Job job = instance().getJet().newJob(dag, config);
         assertJobStatusEventually(job, RUNNING);
 
-        JobRepository jr = new JobRepository(instance().getHazelcastInstance());
+        JobRepository jr = new JobRepository(instance());
         waitForFirstSnapshot(jr, job.getId(), 10, true);
         for (int i = 0; i < numItems; i++) {
             waitForNextSnapshot(jr, job.getId(), 10, true);
@@ -400,7 +420,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig()
                 .setProcessingGuarantee(EXACTLY_ONCE)
                 .setSnapshotIntervalMillis(50);
-        JobProxy job = (JobProxy) instance().newJob(p, config);
+        JobProxy job = (JobProxy) instance().getJet().newJob(p, config);
 
         long endTime = System.nanoTime() + SECONDS.toNanos(60);
         do {
@@ -415,7 +435,7 @@ public class WriteFilePTest extends SimpleTestInClusterSupport {
             }
         } while (System.nanoTime() < endTime);
 
-        waitForNextSnapshot(new JobRepository(instance().getHazelcastInstance()), job.getId(), 10, true);
+        waitForNextSnapshot(new JobRepository(instance()), job.getId(), 10, true);
         ditchJob(job, instances());
         // when the job is cancelled, there should be no temporary files
         checkFileContents(0, numItems, exactlyOnce, false, false);

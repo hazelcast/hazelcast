@@ -143,6 +143,7 @@ import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUUID;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.SYSTEM_EXECUTOR;
@@ -1050,7 +1051,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
 
         checkTrue(name.indexOf("@", i + 1) == -1, "Custom group name must be specified at most once");
         String groupName = name.substring(i + 1).trim();
-        if (groupName.equalsIgnoreCase(DEFAULT_GROUP_NAME)) {
+        if (equalsIgnoreCase(groupName, DEFAULT_GROUP_NAME)) {
             return name.substring(0, i);
         }
 
@@ -1068,8 +1069,9 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         checkTrue(name.indexOf("@", i + 1) == -1, "Custom group name must be specified at most once");
         String groupName = name.substring(i + 1).trim();
         checkTrue(groupName.length() > 0, "Custom CP group name cannot be empty string");
-        checkFalse(groupName.equalsIgnoreCase(METADATA_CP_GROUP_NAME), "CP data structures cannot run on the METADATA CP group!");
-        return groupName.equalsIgnoreCase(DEFAULT_GROUP_NAME) ? DEFAULT_GROUP_NAME : groupName;
+        checkFalse(equalsIgnoreCase(groupName, METADATA_CP_GROUP_NAME),
+                "CP data structures cannot run on the METADATA CP group!");
+        return equalsIgnoreCase(groupName, DEFAULT_GROUP_NAME) ? DEFAULT_GROUP_NAME : groupName;
     }
 
     public static String getObjectNameForProxy(String name) {

@@ -73,7 +73,7 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJoinValidation();
 
     @Test
-    public abstract void testSecurityInterceptorConfig();
+    public abstract void testSecurityConfig();
 
     @Test
     public abstract void readAwsConfig();
@@ -389,6 +389,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public abstract void testHotRestartEncryptionAtRest_whenVault();
+
+    @Test
+    public abstract void testPersistence();
+
+    @Test
+    public abstract void testPersistenceEncryptionAtRest_whenJavaKeyStore();
+
+    @Test
+    public abstract void testPersistenceEncryptionAtRest_whenVault();
 
     @Test
     public abstract void testOnJoinPermissionOperation();

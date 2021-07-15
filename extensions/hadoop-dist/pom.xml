@@ -44,24 +44,6 @@
         <pluginManagement>
             <plugins>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>license-maven-plugin</artifactId>
-                    <version>1.19</version>
-
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>add-third-party</goal>
-                            </goals>
-                            <phase>generate-resources</phase>
-                            <configuration>
-                                <fileTemplate>${project.basedir}/../../../distribution/src/NOTICE.ftl
-                                </fileTemplate>
-                            </configuration>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <configuration>
@@ -91,6 +73,20 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <includedLicenses combine.children="append">
+                        <includedLicense>The Go license</includedLicense>
+                        <includedLicense>CDDL</includedLicense>
+                        <includedLicense>CDDL 1.1</includedLicense>
+                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                    </includedLicenses>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <dependencyManagement>
@@ -148,6 +144,10 @@
                 <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jline</groupId>
+                    <artifactId>jline</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

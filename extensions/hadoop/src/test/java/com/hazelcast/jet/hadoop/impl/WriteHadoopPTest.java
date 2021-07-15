@@ -117,7 +117,7 @@ public class WriteHadoopPTest extends HadoopTestSupport {
          // we use higher value to increase the race chance for LazyOutputFormat
          .setLocalParallelism(8);
 
-        instances()[1].newJob(p).join();
+        instances()[1].getJet().newJob(p).join();
         Configuration readJobConf = getReadJobConf(hadoopDir);
 
         p = Pipeline.create();
@@ -125,7 +125,7 @@ public class WriteHadoopPTest extends HadoopTestSupport {
         p.readFrom(HadoopSources.inputFormat(readJobConf))
          .writeTo(Sinks.list(resultList));
 
-        instance().newJob(p).join();
+        instance().getJet().newJob(p).join();
         assertEquals(messageCount, resultList.size());
     }
 

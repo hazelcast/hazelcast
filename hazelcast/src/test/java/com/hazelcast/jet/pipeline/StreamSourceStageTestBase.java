@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -45,9 +45,9 @@ import static org.junit.Assert.fail;
 
 public abstract class StreamSourceStageTestBase extends JetTestSupport {
 
-    protected static JetInstance instance;
+    protected static HazelcastInstance instance;
     static final String JOURNALED_MAP_NAME = "journaledMap";
-    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
+    private static TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -70,9 +70,10 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
         Config config = new Config();
         config.getMapConfig("*")
               .getEventJournalConfig().setEnabled(true);
+        config.getJetConfig().setEnabled(true);
         // use 1 partition for the map journal to have an item in each ption
         config.setProperty(PARTITION_COUNT.getName(), "1");
-        instance = factory.newMember(config);
+        instance = factory.newHazelcastInstance(config);
     }
 
     @AfterClass
@@ -110,7 +111,7 @@ public abstract class StreamSourceStageTestBase extends JetTestSupport {
                 .writeTo(Sinks.fromProcessor("wmCollector",
                         preferLocalParallelismOne(WatermarkCollector::new))
                 );
-        Job job = instance.newJob(p);
+        Job job = instance.getJet().newJob(p);
 
         AssertTask assertTask = () -> assertEquals(expectedWms, WatermarkCollector.watermarks);
         assertTrueEventually(assertTask, 24);

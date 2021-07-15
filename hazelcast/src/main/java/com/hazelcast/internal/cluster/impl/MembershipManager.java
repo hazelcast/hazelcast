@@ -152,6 +152,17 @@ public class MembershipManager {
         memberMapRef.set(MemberMap.singleton(thisMember));
     }
 
+    public MemberImpl getMember(List<Address> addresses) {
+        assert addresses != null && !addresses.isEmpty() : "Address required!";
+        for (Address address : addresses) {
+            MemberImpl member = getMember(address);
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     public MemberImpl getMember(Address address) {
         assert address != null : "Address required!";
         MemberMap memberMap = memberMapRef.get();
@@ -186,7 +197,6 @@ public class MembershipManager {
         return memberMapRef.get();
     }
 
-    // used in Jet, must be public
     public MembersView getMembersView() {
         return memberMapRef.get().toMembersView();
     }
@@ -198,41 +208,41 @@ public class MembershipManager {
     /**
      * Sends the current member list to the {@code target}. Called on the master node.
      *
-     * @param target the destination for the member update operation
+     * @param callerAliases all known addresses of the destination for the member update operation
      */
-    public void sendMemberListToMember(Address target) {
+    public void sendMemberListToMember(List<Address> callerAliases) {
         clusterServiceLock.lock();
         try {
             if (!clusterService.isMaster() || !clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Cannot publish member list to " + target + ". Is-master: "
+                    logger.fine("Cannot publish member list to " + callerAliases.get(0) + ". Is-master: "
                             + clusterService.isMaster() + ", joined: " + clusterService.isJoined());
                 }
 
                 return;
             }
-            if (clusterService.getThisAddress().equals(target)) {
+            if (callerAliases.stream().anyMatch(clusterService.getThisAddress()::equals)) {
                 return;
             }
 
             MemberMap memberMap = memberMapRef.get();
-            MemberImpl member = memberMap.getMember(target);
+            MemberImpl member = memberMap.getMember(callerAliases);
             if (member == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not member: " + target + ", cannot send member list.");
+                    logger.fine("Not member: " + callerAliases.get(0) + ", cannot send member list.");
                 }
 
                 return;
             }
 
             if (logger.isFineEnabled()) {
-                logger.fine("Sending member list to member: " + target + " " + memberListString());
+                logger.fine("Sending member list to member: " + callerAliases.get(0) + " " + memberListString());
             }
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), memberMap.toMembersView(),
                     clusterService.getClusterTime(), null, false);
             op.setCallerUuid(clusterService.getThisUuid());
-            nodeEngine.getOperationService().send(op, target);
+            nodeEngine.getOperationService().send(op, member.getAddress());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -529,17 +539,17 @@ public class MembershipManager {
         return true;
     }
 
-    void handleExplicitSuspicionTrigger(Address caller, int callerMemberListVersion,
+    void handleExplicitSuspicionTrigger(List<Address> callerAliases, int callerMemberListVersion,
             MembersViewMetadata suspectedMembersViewMetadata) {
         clusterServiceLock.lock();
         try {
             Address masterAddress = clusterService.getMasterAddress();
             int memberListVersion = getMemberListVersion();
 
-            if (!(masterAddress.equals(caller) && memberListVersion == callerMemberListVersion)) {
+            if (callerAliases.stream().noneMatch(masterAddress::equals) || memberListVersion != callerMemberListVersion) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Ignoring explicit suspicion trigger for " + suspectedMembersViewMetadata
-                            + ". Caller: " + caller + ", caller member list version: " + callerMemberListVersion
+                            + ". Caller: " + callerAliases.get(0) + ", caller member list version: " + callerMemberListVersion
                             + ", known master: " + masterAddress + ", local member list version: " + memberListVersion);
                 }
 
@@ -552,23 +562,23 @@ public class MembershipManager {
         }
     }
 
-    void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, Address suspectedAddress) {
+    void handleExplicitSuspicion(MembersViewMetadata expectedMembersViewMetadata, List<Address> suspectedAddresses) {
         clusterServiceLock.lock();
         try {
             MembersViewMetadata localMembersViewMetadata = createLocalMembersViewMetadata();
             if (!localMembersViewMetadata.equals(expectedMembersViewMetadata)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Ignoring explicit suspicion of " + suspectedAddress
+                    logger.fine("Ignoring explicit suspicion of " + suspectedAddresses.get(0)
                             + ". Expected: " + expectedMembersViewMetadata + ", Local: " + localMembersViewMetadata);
                 }
 
                 return;
             }
 
-            MemberImpl suspectedMember = getMember(suspectedAddress);
+            MemberImpl suspectedMember = getMember(suspectedAddresses);
             if (suspectedMember == null) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("No need for explicit suspicion, " + suspectedAddress + " is not a member.");
+                    logger.fine("No need for explicit suspicion, " + suspectedAddresses.get(0) + " is not a member.");
                 }
 
                 return;
@@ -691,6 +701,7 @@ public class MembershipManager {
                 .addParameter("address", address)
                 .addParameter("reason", reason)
                 .log();
+            clusterService.getClusterJoinManager().addLeftMember(suspectedMember);
         }
 
         if (shouldCloseConn) {
@@ -725,6 +736,7 @@ public class MembershipManager {
 
             logger.info("Removing " + member);
             clusterService.getClusterJoinManager().removeJoin(address);
+            clusterService.getClusterJoinManager().addLeftMember(member);
             clusterService.getClusterHeartbeatManager().removeMember(member);
             partialDisconnectionHandler.removeMember(member);
 
@@ -1144,15 +1156,15 @@ public class MembershipManager {
         }
     }
 
-    public MembersView promoteToDataMember(Address address, UUID uuid) {
+    public MembersView promoteToDataMember(List<Address> addresses, UUID uuid) {
         clusterServiceLock.lock();
         try {
             ensureLiteMemberPromotionIsAllowed();
 
             MemberMap memberMap = getMemberMap();
-            MemberImpl member = memberMap.getMember(address, uuid);
+            MemberImpl member = memberMap.getMember(addresses, uuid);
             if (member == null) {
-                throw new IllegalStateException(uuid + "/" + address + " is not a member!");
+                throw new IllegalStateException(uuid + "/" + addresses.get(0) + " is not a member!");
             }
 
             if (!member.isLiteMember()) {

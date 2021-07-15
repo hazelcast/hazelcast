@@ -150,19 +150,27 @@ public interface JetService {
     Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
+     * Submits a new light job with a default config. See {@link
+     * #newLightJob(Pipeline, JobConfig)}.
+     */
+    @Nonnull
+    default Job newLightJob(@Nonnull Pipeline p) {
+        return newLightJob(p, new JobConfig());
+    }
+
+    /**
      * Submits a light job for execution. This kind of job is focused on
      * reducing the job startup and teardown time: only a single operation is
      * used to deploy the job instead of 2 for normal jobs.
-     *
-     * Limitation of light jobs:
+     * <p>
+     * Limitations of light jobs:
      * <ul>
-     *     <li>no job configuration, that means no processing guarantee, no custom
-     *         classes or job resources
+     *     <li>very limited job configuration: no processing guarantee, no custom
+     *         classes or job resources - all job code must be available in the cluster.
+     *         Refer to {@link JobConfig} for details.
      *
-     *     <li>no metrics after job completion
-     *
-     *     <li>no visibility in {@link #getJobs()} or in Management Center (this
-     *         will be added later)
+     *     <li>metrics not available through {@link Job#getMetrics()}. However,
+     *         light jobs are included in member metrics accessed through other means.
      *
      *     <li>failures will be only reported to the caller and logged in the
      *         cluster logs, but no trace of the job will remain in the cluster after
@@ -178,19 +186,30 @@ public interface JetService {
      * A light job will not be cancelled if the client disconnects. It's
      * potential failure will be only logged in member logs.
      */
+    Job newLightJob(@Nonnull Pipeline p, @Nonnull JobConfig config);
+
+    /**
+     * Submits a job defined in the Core API with a default config.
+     * <p>
+     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
+     */
     @Nonnull
-    LightJob newLightJob(Pipeline p);
+    default Job newLightJob(@Nonnull DAG dag) {
+        return newLightJob(dag, new JobConfig());
+    }
 
     /**
      * Submits a job defined in the Core API.
      * <p>
-     * See {@link #newLightJob(Pipeline)}.
+     * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
      */
-    @Nonnull
-    LightJob newLightJob(DAG dag);
+    Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
 
     /**
-     * Returns all submitted jobs including running and completed ones.
+     * Returns all submitted jobs. The result includes completed normal jobs,
+     * but doesn't include completed {@linkplain #newLightJob(Pipeline) light
+     * jobs} - for light jobs the cluster doesn't retain any information after
+     * they complete.
      */
     @Nonnull
     List<Job> getJobs();

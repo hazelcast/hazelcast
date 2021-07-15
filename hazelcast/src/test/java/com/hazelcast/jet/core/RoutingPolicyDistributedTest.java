@@ -64,7 +64,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(2, null);
-        address1 = instances()[1].getHazelcastInstance().getCluster().getLocalMember().getAddress();
+        address1 = instances()[1].getCluster().getLocalMember().getAddress();
     }
 
     @Before
@@ -83,7 +83,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .vertex(consumer)
            .edge(between(producer, consumer).distributeTo(address1).partitioned((Integer i) -> i % 271));
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         for (int i = 0; i < consumerSup.getLists().size(); i++) {
             logger.info("size" + i + ": " + consumerSup.getListAt(i).size());
@@ -141,7 +141,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .edge(edge);
 
         exception.expectMessage(expectedError);
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
     }
 
     @Test
@@ -157,7 +157,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
                    .allToOne("foo"));
 
         exception.expectMessage("The target member of an edge is not present in the cluster");
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
     }
 
     @Test
@@ -170,7 +170,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .vertex(consumer)
            .edge(between(producer, consumer).fanout());
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         assertEquals("items on member0-processor0", ImmutableSet.of(1), new HashSet<>(consumerSup.getListAt(0)));
         assertEquals("items on member0-processor1", ImmutableSet.of(2), new HashSet<>(consumerSup.getListAt(1)));
@@ -188,7 +188,7 @@ public class RoutingPolicyDistributedTest extends SimpleTestInClusterSupport {
            .vertex(consumer)
            .edge(between(producer, consumer).distributed().fanout());
 
-        instance().newJob(dag).join();
+        instance().getJet().newJob(dag).join();
 
         assertEquals("items on member0-processor0", ImmutableSet.of(1, 3), new HashSet<>(consumerSup.getListAt(0)));
         assertEquals("items on member0-processor1", ImmutableSet.of(2, 4), new HashSet<>(consumerSup.getListAt(1)));

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.job;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -69,7 +69,7 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
     public void setup() {
         Config config = new Config();
         config.setProperty("hazelcast.logging.type", "none");
-        createJetMember(config);
+        createHazelcastInstance(config);
     }
 
     @Test
@@ -82,7 +82,7 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
         double measurementBRateSum = 0;
 
         DAG dag = twoVertex();
-        JetInstance client = createJetClient();
+        HazelcastInstance client = createHazelcastClient();
         while (measurementCount < MEASUREMENT_B_CYCLE_SECTION) {
             AtomicInteger completedRoundTrips = new AtomicInteger();
             long start = System.nanoTime();
@@ -90,7 +90,7 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
             for (int i = 0; i < THREADS_COUNT; i++) {
                 Future<?> f = executorService.submit(() -> {
                     bench(() -> {
-                        client.newJob(dag, new JobConfig()).join();
+                        client.getJet().newJob(dag, new JobConfig()).join();
                     }, completedRoundTrips);
                 });
                 futures.add(f);

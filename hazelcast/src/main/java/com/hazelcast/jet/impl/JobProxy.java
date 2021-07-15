@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
@@ -41,9 +40,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -52,18 +49,25 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 /**
  * {@link Job} proxy on member.
  */
-public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
+public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
-    public JobProxy(NodeEngineImpl nodeEngine, long jobId) {
-        super(nodeEngine, jobId);
+    public JobProxy(NodeEngineImpl nodeEngine, long jobId, Address coordinator) {
+        super(nodeEngine, jobId, coordinator);
     }
 
-    public JobProxy(NodeEngineImpl engine, long jobId, Object jobDefinition, JobConfig config) {
-        super(engine, jobId, jobDefinition, config);
+    public JobProxy(
+            NodeEngineImpl engine,
+            long jobId,
+            boolean isLightJob,
+            @Nonnull Object jobDefinition,
+            @Nonnull JobConfig config
+    ) {
+        super(engine, jobId, isLightJob, jobDefinition, config);
     }
 
     @Nonnull @Override
-    public JobStatus getStatus() {
+    public JobStatus getStatus0() {
+        assert !isLightJob();
         try {
             return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
         } catch (Throwable t) {
@@ -71,9 +75,9 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         }
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JobSuspensionCause getSuspensionCause() {
+        checkNotLightJob("suspensionCause");
         try {
             return this.<JobSuspensionCause>invokeOp(new GetJobSuspensionCauseOperation(getId())).get();
         } catch (Throwable t) {
@@ -83,6 +87,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 
     @Nonnull @Override
     public JobMetrics getMetrics() {
+        checkNotLightJob("metrics");
         try {
             List<RawJobMetrics> shards = this.<List<RawJobMetrics>>invokeOp(new GetJobMetricsOperation(getId())).get();
             return toJobMetrics(shards);
@@ -92,22 +97,32 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     @Override
+    protected Address findLightJobCoordinator() {
+        // If a light job is submitted from a member, it's always coordinated locally.
+        // This is important for SQL jobs running in mixed-version clusters - the job DAG
+        // was created locally and uses features available to the local member version.
+        // A lite member can also coordinate.
+        return container().getThisAddress();
+    }
+
+    @Override
     protected CompletableFuture<Void> invokeSubmitJob(Data dag, JobConfig config) {
-        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), false));
+        return invokeOp(new SubmitJobOperation(getId(), dag, serializationService().toData(config), isLightJob()));
     }
 
     @Override
     protected CompletableFuture<Void> invokeJoinJob() {
-        return invokeOp(new JoinSubmittedJobOperation(getId()));
+        return invokeOp(new JoinSubmittedJobOperation(getId(), isLightJob()));
     }
 
     @Override
     protected CompletableFuture<Void> invokeTerminateJob(TerminationMode mode) {
-        return invokeOp(new TerminateJobOperation(getId(), mode, false));
+        return invokeOp(new TerminateJobOperation(getId(), mode, isLightJob()));
     }
 
     @Override
     public void resume() {
+        checkNotLightJob("resume");
         try {
             invokeOp(new ResumeJobOperation(getId())).get();
         } catch (Exception e) {
@@ -126,6 +141,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     }
 
     private JobStateSnapshot doExportSnapshot(String name, boolean cancelJob) {
+        checkNotLightJob("export snapshot");
         JetServiceBackend jetServiceBackend = container().getService(JetServiceBackend.SERVICE_NAME);
         try {
             Operation operation = jetServiceBackend.createExportSnapshotOperation(getId(), name, cancelJob);
@@ -139,7 +155,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     @Override
     protected long doGetJobSubmissionTime() {
         try {
-            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId())).get();
+            return this.<Long>invokeOp(new GetJobSubmissionTimeOperation(getId(), isLightJob())).get();
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -152,15 +168,6 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
         } catch (Throwable t) {
             throw rethrow(t);
         }
-    }
-
-    @Nonnull @Override
-    protected UUID masterUuid() {
-        Collection<Member> members = container().getClusterService().getMembers();
-        if (members.isEmpty()) {
-            throw new IllegalStateException("No members in cluster");
-        }
-        return members.iterator().next().getUuid();
     }
 
     @Override
@@ -181,11 +188,12 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
     private <T> CompletableFuture<T> invokeOp(Operation op) {
         return container()
                 .getOperationService()
-                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, masterAddress())
+                .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
                 .invoke();
     }
 
-    private Address masterAddress() {
+    @Nonnull @Override
+    protected Address masterId() {
         Address masterAddress = container().getMasterAddress();
         if (masterAddress == null) {
             throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");

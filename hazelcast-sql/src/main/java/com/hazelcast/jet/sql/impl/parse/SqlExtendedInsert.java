@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -41,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.parse.ParserResource.RESOURCE;
 
 public class SqlExtendedInsert extends SqlInsert {
@@ -66,6 +64,24 @@ public class SqlExtendedInsert extends SqlInsert {
         return ((SqlIdentifier) getTargetTable()).names;
     }
 
+    public boolean isInsert() {
+        return !isSink();
+    }
+
+    private boolean isSink() {
+        for (SqlNode keyword : extendedKeywords) {
+            if (((SqlLiteral) keyword).symbolValue(Keyword.class) == Keyword.SINK) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public SqlNodeList getTargetColumnList() {
+        return overrideColumnList != null ? overrideColumnList : super.getTargetColumnList();
+    }
+
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.startList(SqlWriter.FrameTypeEnum.SELECT);
@@ -82,12 +98,6 @@ public class SqlExtendedInsert extends SqlInsert {
         }
         writer.newlineAndIndent();
         getSource().unparse(writer, 0, 0);
-    }
-
-    @Override
-    public SqlNodeList getTargetColumnList() {
-        return overrideColumnList != null ? overrideColumnList
-                : super.getTargetColumnList();
     }
 
     @Override
@@ -125,20 +135,6 @@ public class SqlExtendedInsert extends SqlInsert {
                 }
             }
         }
-
-        SqlConnector connector = getJetSqlConnector(table.getTarget());
-        if (!isSink() && connector.requiresSink()) {
-            throw validator.newValidationError(this, RESOURCE.insertIntoNotSupported(connector.typeName()));
-        }
-    }
-
-    private boolean isSink() {
-        for (SqlNode keyword : extendedKeywords) {
-            if (((SqlLiteral) keyword).symbolValue(Keyword.class) == Keyword.SINK) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public enum Keyword {

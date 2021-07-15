@@ -63,7 +63,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .aggregate(AggregateOperations.toList())
                 .writeTo(assertOrdered(singletonList(list(MAX_PROCESSOR_ACCUMULATED_RECORDS))));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -74,7 +74,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .aggregate(counting())
                 .writeTo(assertOrdered(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -85,7 +85,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .aggregate(counting())
                 .writeTo(noop());
 
-        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
@@ -96,7 +96,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .sort()
                 .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -106,7 +106,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .sort()
                 .writeTo(noop());
 
-        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
@@ -118,7 +118,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
         left.hashJoin(right, JoinClause.joinMapEntries(wholeItem()), Util::entry)
                 .writeTo(assertOrdered(cardinalities(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -129,7 +129,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
         left.hashJoin(right, JoinClause.joinMapEntries(wholeItem()), Util::entry)
                 .writeTo(noop());
 
-        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
@@ -140,7 +140,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .mapStateful(() -> 1, (s, i) -> i)
                 .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .mapStateful(() -> 1, (a, k, i) -> i)
                 .writeTo(noop());
 
-        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
@@ -162,7 +162,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .distinct()
                 .writeTo(assertOrdered(list(MAX_PROCESSOR_ACCUMULATED_RECORDS)));
 
-        instance().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline).join();
     }
 
     @Test
@@ -172,7 +172,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
                 .distinct()
                 .writeTo(noop());
 
-        assertThatThrownBy(() -> instance().newJob(pipeline).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 
@@ -186,7 +186,7 @@ public class MemoryManagementTest extends SimpleTestInClusterSupport {
 
         JobConfig jobConfig = new JobConfig().setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS - 1);
 
-        assertThatThrownBy(() -> instance().newJob(pipeline, jobConfig).join())
+        assertThatThrownBy(() -> instance().getJet().newJob(pipeline, jobConfig).join())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
     }
 

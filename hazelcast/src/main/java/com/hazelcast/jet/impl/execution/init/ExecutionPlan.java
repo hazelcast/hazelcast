@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -48,15 +49,16 @@ import com.hazelcast.jet.impl.execution.Tasklet;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,15 +79,14 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
-import static com.hazelcast.jet.impl.LightMasterContext.LIGHT_JOB_CONFIG;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.stream.Collectors.toList;
@@ -110,6 +111,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private int memberCount;
     private long lastSnapshotId;
     private boolean isLightJob;
+    private Subject subject;
 
     // *** Transient state below, used during #initialize() ***
 
@@ -130,6 +132,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient PartitionArrangement ptionArrgmt;
 
     private transient NodeEngineImpl nodeEngine;
+    private transient JobExecutionService jobExecutionService;
     private transient long executionId;
 
     // list of unique remote members
@@ -142,13 +145,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     ExecutionPlan(Map<Address, int[]> partitionAssignment, JobConfig jobConfig, long lastSnapshotId,
-                  int memberIndex, int memberCount, boolean isLightJob) {
+                  int memberIndex, int memberCount, boolean isLightJob, Subject subject) {
         this.partitionAssignment = partitionAssignment;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
         this.memberIndex = memberIndex;
         this.memberCount = memberCount;
         this.isLightJob = isLightJob;
+        this.subject = subject;
     }
 
     /**
@@ -156,13 +160,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      * Creates tasklets, inboxes/outboxes and connects these to make them ready
      * for a later StartExecutionOperation.
      */
-    public void initialize(NodeEngine nodeEngine,
+    public void initialize(NodeEngineImpl nodeEngine,
                            long jobId,
                            long executionId,
                            @Nonnull SnapshotContext snapshotContext,
                            ConcurrentHashMap<String, File> tempDirectories,
                            InternalSerializationService jobSerializationService) {
-        this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.nodeEngine = nodeEngine;
+        this.jobExecutionService =
+                ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobExecutionService();
         this.executionId = executionId;
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
@@ -174,7 +180,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
         }
         for (VertexDef vertex : vertices) {
-            Collection<? extends Processor> processors = createProcessors(vertex, vertex.localParallelism());
+            ClassLoader processorClassLoader = isLightJob ? null :
+                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+            Collection<? extends Processor> processors = doWithClassLoader(
+                    processorClassLoader,
+                    () -> createProcessors(vertex, vertex.localParallelism())
+            );
             String jobPrefix = prefix(jobConfig.getName(), jobId, vertex.name());
 
             // create StoreSnapshotTasklet and the queues to it
@@ -202,7 +213,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 String processorPrefix = prefix(jobConfig.getName(), jobId, vertex.name(), globalProcessorIndex);
                 ILogger logger = prefixedLogger(nodeEngine.getLogger(processor.getClass()), processorPrefix);
                 ProcCtx context = new ProcCtx(
-                        hazelcastInstance,
+                        nodeEngine,
                         jobId,
                         executionId,
                         getJobConfig(),
@@ -216,7 +227,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         memberIndex,
                         memberCount,
                         tempDirectories,
-                        jobSerializationService
+                        jobSerializationService,
+                        subject,
+                        processorClassLoader
                 );
 
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
@@ -293,11 +306,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         out.writeLong(lastSnapshotId);
         out.writeObject(partitionAssignment);
         out.writeBoolean(isLightJob);
-        if (!isLightJob) {
-            out.writeObject(jobConfig);
-        }
+        out.writeObject(jobConfig);
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
+        ImdgUtil.writeSubject(out, subject);
     }
 
     @Override
@@ -306,9 +318,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         lastSnapshotId = in.readLong();
         partitionAssignment = in.readObject();
         isLightJob = in.readBoolean();
-        jobConfig = isLightJob ? LIGHT_JOB_CONFIG : in.readObject();
+        jobConfig = in.readObject();
         memberIndex = in.readInt();
         memberCount = in.readInt();
+        subject = ImdgUtil.readSubject(in);
     }
 
     // End implementation of IdentifiedDataSerializable
@@ -316,32 +329,31 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initProcSuppliers(long jobId,
                                    ConcurrentHashMap<String, File> tempDirectories,
                                    InternalSerializationService jobSerializationService) {
-        JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-
         for (VertexDef vertex : vertices) {
+            ClassLoader processorClassLoader = isLightJob ? null :
+                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
             String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
-            try {
-                supplier.init(new ProcSupplierCtx(
-                        nodeEngine.getHazelcastInstance(),
-                        jobId,
-                        executionId,
-                        jobConfig,
-                        logger,
-                        vertex.name(),
-                        vertex.localParallelism(),
-                        vertex.localParallelism() * memberCount,
-                        memberIndex,
-                        memberCount,
-                        isLightJob,
-                        partitionAssignment,
-                        tempDirectories,
-                        jobSerializationService
-                ));
-            } catch (Exception e) {
-                throw sneakyThrow(e);
-            }
+            doWithClassLoader(processorClassLoader, () ->
+                    supplier.init(new ProcSupplierCtx(
+                            nodeEngine,
+                            jobId,
+                            executionId,
+                            jobConfig,
+                            logger,
+                            vertex.name(),
+                            vertex.localParallelism(),
+                            vertex.localParallelism() * memberCount,
+                            memberIndex,
+                            memberCount,
+                            isLightJob,
+                            partitionAssignment,
+                            tempDirectories,
+                            jobSerializationService,
+                            subject,
+                            processorClassLoader
+                    )));
         }
     }
 

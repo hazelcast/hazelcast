@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -49,9 +49,9 @@ public class MultigraphTest extends JetTestSupport {
         dag.edge(from(source, 0).to(sink, 0));
         dag.edge(from(source, 1).to(sink, 1).partitioned(wholeItem()).distributed());
 
-        JetInstance instance = createJetMember();
-        createJetMember();
-        instance.newJob(dag).join();
+        HazelcastInstance instance = createHazelcastInstance();
+        createHazelcastInstance();
+        instance.getJet().newJob(dag).join();
 
         int numMembers = 2;
         long numEdges = 2;

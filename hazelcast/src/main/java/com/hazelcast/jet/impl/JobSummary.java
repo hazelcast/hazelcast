@@ -33,7 +33,7 @@ public class JobSummary implements IdentifiedDataSerializable {
 
     private long jobId;
     private long executionId;
-    private String name;
+    private String nameOrId;
     private JobStatus status;
     private long submissionTime;
     private long completionTime;
@@ -48,13 +48,13 @@ public class JobSummary implements IdentifiedDataSerializable {
     public JobSummary(
             long jobId,
             long executionId,
-            @Nonnull String name,
+            @Nonnull String nameOrId,
             @Nonnull JobStatus status,
             long submissionTime
     ) {
         this.jobId = jobId;
         this.executionId = executionId;
-        this.name = name;
+        this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;
     }
@@ -64,14 +64,14 @@ public class JobSummary implements IdentifiedDataSerializable {
      */
     public JobSummary(
             long jobId,
-            @Nonnull String name,
+            @Nonnull String nameOrId,
             @Nonnull JobStatus status,
             long submissionTime,
             long completionTime,
             @Nullable String failureText
     ) {
         this.jobId = jobId;
-        this.name = name;
+        this.nameOrId = nameOrId;
         this.status = status;
         this.submissionTime = submissionTime;
         this.completionTime = completionTime;
@@ -89,9 +89,21 @@ public class JobSummary implements IdentifiedDataSerializable {
         return executionId;
     }
 
+    /**
+     * Return the job name (from jobConfig). If it doesn't have the name,
+     * return the formatted job ID.
+     */
+    @Nonnull
+    public String getNameOrId() {
+        return nameOrId;
+    }
+
+    /**
+     * @deprecated use {@link #getNameOrId()}, semantics is the same
+     */
     @Nonnull
     public String getName() {
-        return name;
+        return nameOrId;
     }
 
     @Nonnull
@@ -132,22 +144,22 @@ public class JobSummary implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(jobId);
         out.writeLong(executionId);
-        out.writeUTF(name);
+        out.writeString(nameOrId);
         out.writeObject(status);
         out.writeLong(submissionTime);
         out.writeLong(completionTime);
-        out.writeUTF(failureText);
+        out.writeString(failureText);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jobId = in.readLong();
         executionId = in.readLong();
-        name = in.readUTF();
+        nameOrId = in.readString();
         status = in.readObject();
         submissionTime = in.readLong();
         completionTime = in.readLong();
-        failureText = in.readUTF();
+        failureText = in.readString();
     }
 
     @Override
@@ -155,7 +167,7 @@ public class JobSummary implements IdentifiedDataSerializable {
         return "JobSummary{" +
                 "jobId=" + idToString(jobId) +
                 ", executionId=" + idToString(executionId) +
-                ", name='" + name + '\'' +
+                ", name='" + nameOrId + '\'' +
                 ", status=" + status +
                 ", submissionTime=" + toLocalTime(submissionTime) +
                 ", completionTime=" + toLocalTime(completionTime) +

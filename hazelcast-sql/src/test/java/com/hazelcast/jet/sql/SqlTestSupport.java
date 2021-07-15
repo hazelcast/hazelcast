@@ -1,23 +1,24 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -64,7 +65,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() {
-        for (JetInstance instance : instances()) {
+        for (HazelcastInstance instance : instances()) {
             PlanCache planCache = planCache(instance);
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
             planCache.clear();
@@ -236,13 +237,13 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static String hadoopNonExistingPath() {
-        return System.getProperty("os.name").toLowerCase().contains("windows")
+        return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows")
                 ? "c:\\non\\existing\\path"
                 : "/non/existing/path";
     }
 
-    public static PlanCache planCache(JetInstance instance) {
-        return nodeEngine(instance.getHazelcastInstance()).getSqlService().getPlanCache();
+    public static PlanCache planCache(HazelcastInstance instance) {
+        return nodeEngine(instance).getSqlService().getPlanCache();
     }
 
     /**

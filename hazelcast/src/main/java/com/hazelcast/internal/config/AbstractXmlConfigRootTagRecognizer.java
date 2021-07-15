@@ -28,6 +28,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -98,7 +99,7 @@ public class AbstractXmlConfigRootTagRecognizer implements ConfigRecognizer {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            if (expectedRootNode.equalsIgnoreCase(qName)) {
+            if (equalsIgnoreCase(expectedRootNode, qName)) {
                 isMemberXml = true;
             }
             throw new TerminateParseException();

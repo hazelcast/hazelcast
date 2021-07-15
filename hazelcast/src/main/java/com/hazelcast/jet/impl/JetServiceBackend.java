@@ -20,6 +20,8 @@ import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -43,6 +45,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
 import javax.annotation.Nullable;
@@ -55,6 +59,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_TTL_SECONDS;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
+import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -144,6 +152,28 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
+        JetConfig jetConfig = config.getJetConfig();
+        MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
+                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                // we query creationTime of resources maps
+                .setStatisticsEnabled(true);
+
+        internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
+
+        MapConfig resultsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_RESULTS_MAP_NAME)
+                .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        MapConfig metricsMapConfig = new MapConfig(internalMapConfig)
+                .setName(JOB_METRICS_MAP_NAME)
+                .setTimeToLiveSeconds(properties.getSeconds(JOB_RESULTS_TTL_SECONDS));
+
+        config.addMapConfig(internalMapConfig)
+                .addMapConfig(resultsMapConfig)
+                .addMapConfig(metricsMapConfig);
     }
 
     /**

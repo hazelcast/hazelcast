@@ -50,5 +50,10 @@ public abstract class AbstractCompositeIterator<E> implements Iterator<E> {
         return entry;
     }
 
+    /**
+     * Return the next inner iterator or {@code null}. The returned iterator
+     * MUST NOT be empty.
+     */
+    // TODO remove this ill-defined class after IMDG SQL engine is removed.
     protected abstract Iterator<E> nextIterator();
 }
