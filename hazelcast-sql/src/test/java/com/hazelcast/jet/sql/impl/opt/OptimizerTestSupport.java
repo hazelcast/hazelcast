@@ -21,6 +21,7 @@ import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.sql.impl.JetPlanExecutor;
 import com.hazelcast.jet.sql.impl.JetSqlBackend;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.jet.sql.impl.schema.MappingStorage;
@@ -29,8 +30,6 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
-import com.hazelcast.sql.impl.calcite.opt.logical.LogicalRel;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
@@ -99,8 +98,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     private static LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
-        RelNode logicalRel = context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
-        return new RootLogicalRel(logicalRel.getCluster(), logicalRel.getTraitSet(), logicalRel);
+        return (LogicalRel) context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
     }
 
     protected static HazelcastTable partitionedTable(String name, List<TableField> fields, long rowCount) {
