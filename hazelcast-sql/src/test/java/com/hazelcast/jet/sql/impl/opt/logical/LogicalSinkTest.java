@@ -38,6 +38,18 @@ public class LogicalSinkTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("SINK INTO m VALUES (1, '1'), (2, '2')", true, table),
+                plan(
+                        planRow(0, SinkLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_sinkValues() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
         assertPlan(

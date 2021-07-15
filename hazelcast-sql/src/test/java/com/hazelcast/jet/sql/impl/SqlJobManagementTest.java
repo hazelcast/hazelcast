@@ -212,6 +212,20 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_insertFromValues() {
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT * FROM (VALUES (1, '1'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1")
+        );
+    }
+
+    @Test
     public void test_sink() {
         TestBatchSqlConnector.create(sqlService, "src", 3);
         sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
@@ -223,6 +237,20 @@ public class SqlJobManagementTest extends SqlTestSupport {
                 "dest",
                 "SELECT * FROM dest",
                 createMap(2, "value-1", 4, "value-2")
+        );
+    }
+
+    @Test
+    public void test_sinkFromValues() {
+        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT * FROM (VALUES (1, '1'), (2, '2'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1", 2, "2")
         );
     }
 
