@@ -276,7 +276,7 @@ to install and start using Hazelcast.
 
 ## Documentation
 
-Read the [documentation](https://hardcore-allen-f5257d.netlify.app/) for
+Read the [documentation](https://docs.hazelcast.com/) for
 in-depth details about how to install Hazelcast and an overview of the features.
 
 ## Get Help
