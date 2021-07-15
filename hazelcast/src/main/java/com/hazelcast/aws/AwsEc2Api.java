@@ -29,7 +29,7 @@ import java.util.Optional;
 import static com.hazelcast.aws.AwsRequestUtils.canonicalQueryString;
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
 import static com.hazelcast.aws.AwsRequestUtils.currentTimestamp;
-import static com.hazelcast.aws.StringUtils.isNotEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 
 /**
  * Responsible for connecting to AWS EC2 API.
@@ -79,7 +79,7 @@ class AwsEc2Api {
             addTagFilter(filter, tag);
         }
 
-        if (isNotEmpty(awsConfig.getSecurityGroupName())) {
+        if (isNotBlank(awsConfig.getSecurityGroupName())) {
             filter.add("instance.group-name", awsConfig.getSecurityGroupName());
         }
 
@@ -95,11 +95,11 @@ class AwsEc2Api {
      *     EC2 Describe Instances - Request Parameters</a>
      */
     private void addTagFilter(Filter filter, Tag tag) {
-        if (isNotEmpty(tag.getKey()) && isNotEmpty(tag.getValue())) {
+        if (isNotBlank(tag.getKey()) && isNotBlank(tag.getValue())) {
             filter.add("tag:" + tag.getKey(), tag.getValue());
-        } else if (isNotEmpty(tag.getKey())) {
+        } else if (isNotBlank(tag.getKey())) {
             filter.add("tag-key", tag.getKey());
-        } else if (isNotEmpty(tag.getValue())) {
+        } else if (isNotBlank(tag.getValue())) {
             filter.add("tag-value", tag.getValue());
         }
     }
@@ -200,7 +200,7 @@ class AwsEc2Api {
     private Map<String, String> createHeaders(Map<String, String> attributes, AwsCredentials credentials) {
         Map<String, String> headers = new HashMap<>();
 
-        if (isNotEmpty(credentials.getToken())) {
+        if (isNotBlank(credentials.getToken())) {
             headers.put("X-Amz-Security-Token", credentials.getToken());
         }
         headers.put("Host", endpoint);

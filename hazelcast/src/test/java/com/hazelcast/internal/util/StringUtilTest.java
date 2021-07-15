@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.isAllNotBlank;
+import static com.hazelcast.internal.util.StringUtil.isAnyNotBlank;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -208,6 +210,28 @@ public class StringUtilTest extends HazelcastTestSupport {
                 "param: value, param: $OTHER_PREFIX{param}",
                 "param: $PREFIX{param}, param: $OTHER_PREFIX{param}",
                 "PREFIX", "param", "value");
+    }
+
+    @Test
+    public void isNotBlank() {
+        assertTrue(StringUtil.isNotBlank("string"));
+        assertFalse(StringUtil.isNotBlank("  "));
+        assertFalse(StringUtil.isNotBlank(""));
+        assertFalse(StringUtil.isNotBlank(null));
+    }
+
+    @Test
+    public void isAllFilledTest() {
+        assertTrue(isAllNotBlank("test-string-1", "test-string-2"));
+        assertFalse(isAllNotBlank("test-string-1", ""));
+        assertFalse(isAllNotBlank("", "", null));
+    }
+
+    @Test
+    public void isAnyFilledTest() {
+        assertTrue(isAnyNotBlank("test-string-1", "test-string-2"));
+        assertTrue(isAnyNotBlank("test-string-1", ""));
+        assertFalse(isAnyNotBlank("", "", null));
     }
 
     private void assertResolvePlaceholder(String expected,

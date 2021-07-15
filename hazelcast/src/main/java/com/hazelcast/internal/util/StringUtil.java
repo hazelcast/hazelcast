@@ -114,12 +114,56 @@ public final class StringUtil {
      * @param s the string to check.
      * @return true if the string is {@code null} or empty, false otherwise
      */
-
     public static boolean isNullOrEmptyAfterTrim(String s) {
         if (s == null) {
             return true;
         }
         return s.trim().isEmpty();
+    }
+
+    /**
+     * Check if all Strings are not blank
+     * @param values the strings to check
+     * @return true if all the strings are not {@code null} and not blank, false otherwise
+     */
+    public static boolean isAllNotBlank(String... values) {
+        if (values == null) {
+            return false;
+        }
+        for (final String val : values) {
+            if (isNullOrEmptyAfterTrim(val)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if any String from the provided Strings
+     * @param values the strings to check
+     * @return true if at least one string of the {@param values} are not {@code null} and not blank
+     */
+    public static boolean isAnyNotBlank(String... values) {
+        if (values == null) {
+            return false;
+        }
+        for (final String val : values) {
+            if (isNotBlank(val)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Checks if a string is not blank or not null
+     *
+     * @param s the string to check.
+     * @return true if the string is not blank or not {@code null}, false otherwise
+     */
+    public static boolean isNotBlank(String s) {
+        return !isNullOrEmptyAfterTrim(s);
     }
 
     /**

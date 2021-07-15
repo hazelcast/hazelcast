@@ -22,7 +22,8 @@ import com.hazelcast.spi.utils.RetryUtils;
 import java.util.Collection;
 import java.util.logging.Logger;
 
-import static com.hazelcast.azure.Utils.isEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNotBlank;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Responsible for fetching the discovery information from Azure APIs.
@@ -57,7 +58,7 @@ class AzureClient {
     }
 
     private String subscriptionIdFromConfigOrMetadataApi() {
-        if (!isEmpty(azureConfig.getSubscriptionId())) {
+        if (isNotBlank(azureConfig.getSubscriptionId())) {
             return azureConfig.getSubscriptionId();
         }
         LOGGER.finest("Property 'subscriptionId' not configured, fetching from the VM metadata service");
@@ -112,7 +113,7 @@ class AzureClient {
      */
     String getAvailabilityZone() {
         String zone = azureMetadataApi.availabilityZone();
-        if (isEmpty(zone)) {
+        if (isNullOrEmptyAfterTrim(zone)) {
             return azureMetadataApi.faultDomain();
         } else {
             return String.format("%s-%s", azureMetadataApi.location(), zone);

@@ -169,7 +169,7 @@ public class AwsDiscoveryStrategy
         }
         StringBuilder result = new StringBuilder(placementGroup.get());
         awsClient.getPlacementPartitionNumber().ifPresent(ppn -> result.append('-').append(ppn));
-        LOGGER.info(String.format("Placement group found: '%s'", result.toString()));
+        LOGGER.info(String.format("Placement group found: '%s'", result));
         return Optional.of(result.toString());
     }
 
