@@ -18,6 +18,7 @@ package com.hazelcast.gcp;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.RestClientException;
 
 import java.util.ArrayList;
 import java.util.List;

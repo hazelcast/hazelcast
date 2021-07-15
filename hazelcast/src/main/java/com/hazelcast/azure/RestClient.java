@@ -16,6 +16,8 @@
 
 package com.hazelcast.azure;
 
+import com.hazelcast.spi.exception.RestClientException;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

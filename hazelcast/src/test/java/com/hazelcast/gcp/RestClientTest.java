@@ -17,6 +17,8 @@
 package com.hazelcast.gcp;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.spi.exception.RestClientException;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +30,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 public class RestClientTest {
@@ -69,21 +72,23 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                                  .withHeader(headerKey, headerValue)
-                                  .get();
+                .withHeader(headerKey, headerValue)
+                .get();
 
         // then
         assertEquals(BODY_RESPONSE, result);
     }
 
-    @Test(expected = RestClientException.class)
+    @Test
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
                 .willReturn(aResponse().withStatus(500).withBody("Internal error")));
 
         // when
-        RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
+        assertThatThrownBy(() -> RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get())
+                .isInstanceOf(RestClientException.class)
+                .hasMessageContaining("Message: Internal error. HTTP Error Code: 500");
 
         // then
         // throw exception
@@ -98,8 +103,8 @@ public class RestClientTest {
 
         // when
         String result = RestClient.create(String.format("%s%s", address, API_ENDPOINT))
-                                  .withBody(BODY_REQUEST)
-                                  .post();
+                .withBody(BODY_REQUEST)
+                .post();
 
         // then
         assertEquals(BODY_RESPONSE, result);

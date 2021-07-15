@@ -17,6 +17,7 @@
 package com.hazelcast.azure;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,6 +29,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 public class RestClientTest {
@@ -76,14 +78,16 @@ public class RestClientTest {
         assertEquals(BODY_RESPONSE, result);
     }
 
-    @Test(expected = RestClientException.class)
+    @Test
     public void getFailure() {
         // given
         stubFor(get(urlEqualTo(API_ENDPOINT))
                 .willReturn(aResponse().withStatus(500).withBody("Internal error")));
 
         // when
-        RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get();
+        assertThatThrownBy(() -> RestClient.create(String.format("%s%s", address, API_ENDPOINT)).get())
+                .isInstanceOf(RestClientException.class)
+                .hasMessageContaining("Message: Internal error. HTTP Error Code: 500");
 
         // then
         // throw exception

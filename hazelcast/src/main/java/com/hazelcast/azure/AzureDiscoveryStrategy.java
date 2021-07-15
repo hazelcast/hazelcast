@@ -24,6 +24,7 @@ import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 
 import java.net.UnknownHostException;

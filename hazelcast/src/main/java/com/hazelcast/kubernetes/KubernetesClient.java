@@ -22,6 +22,7 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.RestClientException;
 
 import java.util.ArrayList;
 import java.util.Collections;
