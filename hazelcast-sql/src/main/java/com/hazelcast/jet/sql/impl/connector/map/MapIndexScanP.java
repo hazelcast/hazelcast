@@ -137,11 +137,6 @@ public final class MapIndexScanP extends AbstractProcessor {
     }
 
     @Override
-    public boolean isCooperative() {
-        return true;
-    }
-
-    @Override
     public boolean closeIsCooperative() {
         return true;
     }

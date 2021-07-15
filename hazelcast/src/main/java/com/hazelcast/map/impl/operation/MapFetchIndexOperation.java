@@ -22,9 +22,10 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -342,7 +343,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return MAP_FETCH_INDEX_OPERATION;
     }
 
-    public static final class MapFetchIndexOperationResult implements DataSerializable {
+    public static final class MapFetchIndexOperationResult implements IdentifiedDataSerializable {
         private List<QueryableEntry<?, ?>> entries;
         private IndexIterationPointer[] pointers;
 
@@ -386,6 +387,16 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
             for (int i = 0; i < len; ++i) {
                 pointers[i] = in.readObject();
             }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return MapDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT;
         }
     }
 
