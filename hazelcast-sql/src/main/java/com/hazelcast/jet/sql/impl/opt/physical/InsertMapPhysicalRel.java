@@ -21,11 +21,13 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -42,30 +44,33 @@ import static java.util.stream.Collectors.toList;
 
 public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-    private final PartitionedMapTable table;
+    private final RelOptTable table;
     private final ExpressionValues values;
 
     InsertMapPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            PartitionedMapTable table,
+            RelOptTable table,
             ExpressionValues values
     ) {
         super(cluster, traitSet);
+
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.values = values;
     }
 
     public String mapName() {
-        return table.getMapName();
+        return table().getMapName();
     }
 
     public PlanObjectKey objectKey() {
-        return table.getObjectKey();
+        return table().getObjectKey();
     }
 
     public Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
+        PartitionedMapTable table = table();
         ExpressionValues values = this.values;
         return evalContext -> {
             KvProjector projector = KvProjector.supplier(
@@ -79,6 +84,10 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
                     .map(projector::project)
                     .collect(toList());
         };
+    }
+
+    private PartitionedMapTable table() {
+        return table.unwrap(HazelcastTable.class).getTarget();
     }
 
     @Override
@@ -99,7 +108,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getSqlName())
+                .item("table", table.getQualifiedName())
                 .item("values", values);
     }
 

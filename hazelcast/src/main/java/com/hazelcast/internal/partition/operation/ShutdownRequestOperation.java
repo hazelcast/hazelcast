@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -34,21 +33,22 @@ public class ShutdownRequestOperation extends AbstractPartitionOperation impleme
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
         ILogger logger = getLogger();
-        Address caller = getCallerAddress();
 
         if (partitionService.isLocalMemberMaster()) {
             ClusterService clusterService = getNodeEngine().getClusterService();
-            Member member = clusterService.getMember(caller);
+            Member member = clusterService.getMember(getAllKnownAliases(getCallerAddress()));
+
             if (member != null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Received shutdown request from " + caller);
+                    logger.finest("Received shutdown request from " + getCallerAddress());
                 }
                 partitionService.onShutdownRequest(member);
             } else {
-                logger.warning("Ignoring shutdown request from " + caller + " because it is not a member");
+                logger.warning("Ignoring shutdown request from " + getCallerAddress() + " because it is not a member");
             }
+
         } else {
-            logger.warning("Received shutdown request from " + caller + " but this node is not master.");
+            logger.warning("Received shutdown request from " + getCallerAddress() + " but this node is not master.");
         }
     }
 

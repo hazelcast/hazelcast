@@ -284,7 +284,9 @@ public final class OptUtils {
     }
 
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    public static RexNode extractKeyConstantExpression(HazelcastTable table, RexBuilder rexBuilder) {
+    public static RexNode extractKeyConstantExpression(RelOptTable relTable, RexBuilder rexBuilder) {
+        HazelcastTable table = relTable.unwrap(HazelcastTable.class);
+
         RexNode filter = table.getFilter();
         if (filter == null) {
             return null;

@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
-    private static final int ITEM_COUNT = 1_000_000;
-    private String mapName;
+    private static final int ITEM_COUNT = 850_000;
+    private static final String MAP_NAME = "map";
 
     private TestHazelcastFactory factory;
     private HazelcastInstance[] instances;
@@ -53,13 +53,12 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     @Before
     public void before() {
-        mapName = randomMapName();
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[4];
         for (int i = 0; i < instances.length - 1; i++) {
             instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
         }
-        map = instances[0].getMap(mapName);
+        map = instances[0].getMap(MAP_NAME);
     }
 
     @After
@@ -69,6 +68,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     @Test
     @Ignore
+    // TODO: [sasha] Doesn't work due to bug in MapOperation : it always returns 1 row instead of ITEM_COUNT
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -79,10 +79,10 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(250L);
+        MutatorThread mutator = new MutatorThread(500L);
         mutator.start();
 
-        assertRowsAnyOrder("SELECT * FROM " + mapName + " WHERE this = 1", expected);
+        assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected);
 
         mutator.terminate();
         mutator.join();
@@ -100,9 +100,12 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(250L);
+        MutatorThread mutator = new MutatorThread(1000L);
         mutator.start();
-        assertRowsOrdered("SELECT * FROM " + mapName + " ORDER BY this DESC", expected);
+
+        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+
+        mutator.terminate();
         mutator.join();
     }
 

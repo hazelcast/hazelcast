@@ -218,6 +218,7 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     /**
      * Perform splitting of a {@link Split} after receiving {@link MissingPartitionException}.
+     * <p>
      * Method gets current partition table and proceeds with following procedure:
      * <p>
      * It splits the partitions assigned to the split according to the new
@@ -243,6 +244,9 @@ public final class MapIndexScanP extends AbstractProcessor {
     }
 
     private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+        /** Was added to prevent NPE in any {@link QueryableEntry} implementor. **/
+        entry.setSerializationService(evalContext.getSerializationService());
+
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         if (metadata.getRemainingFilter() != null
                 && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {

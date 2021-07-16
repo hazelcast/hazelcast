@@ -131,7 +131,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     private MapFetchIndexOperationResult runInternalSorted(InternalIndex index) {
-        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeLimit + 1);
+        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeLimit);
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
         for (int i = 0; i < pointers.length; i++) {
@@ -268,7 +268,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     private MapFetchIndexOperationResult runInternalHash(InternalIndex index) {
-        List<QueryableEntry<?, ?>> entries = new ArrayList<>();
+        List<QueryableEntry<?, ?>> entries = new ArrayList<>(sizeLimit);
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
 
         int pointerIndex;
@@ -318,9 +318,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         super.readInternal(in);
         indexName = in.readString();
         partitionIdSet = in.readObject();
-        int len = in.readInt();
-        pointers = new IndexIterationPointer[len];
-        for (int i = 0; i < len; ++i) {
+        int pointersLength = in.readInt();
+        pointers = new IndexIterationPointer[pointersLength];
+        for (int i = 0; i < pointersLength; i++) {
             pointers[i] = in.readObject();
         }
         sizeLimit = in.readInt();

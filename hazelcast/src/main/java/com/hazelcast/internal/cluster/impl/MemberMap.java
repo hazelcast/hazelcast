@@ -16,15 +16,16 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.cluster.Address;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -168,6 +169,16 @@ final class MemberMap {
         }
     }
 
+    MemberImpl getMember(List<Address> addresses) {
+        for (Address address : addresses) {
+            MemberImpl member = addressToMemberMap.get(address);
+            if (member != null) {
+                return member;
+            }
+        }
+        return null;
+    }
+
     MemberImpl getMember(Address address) {
         return addressToMemberMap.get(address);
     }
@@ -176,9 +187,19 @@ final class MemberMap {
         return uuidToMemberMap.get(uuid);
     }
 
+    MemberImpl getMember(List<Address> addresses, UUID uuid) {
+        MemberImpl member1 = getMember(addresses);
+        MemberImpl member2 = getMember(uuid);
+
+        if (member1 != null && member1.equals(member2)) {
+            return member1;
+        }
+        return null;
+    }
+
     MemberImpl getMember(Address address, UUID uuid) {
-        MemberImpl member1 = addressToMemberMap.get(address);
-        MemberImpl member2 = uuidToMemberMap.get(uuid);
+        MemberImpl member1 = getMember(address);
+        MemberImpl member2 = getMember(uuid);
 
         if (member1 != null && member1.equals(member2)) {
             return member1;

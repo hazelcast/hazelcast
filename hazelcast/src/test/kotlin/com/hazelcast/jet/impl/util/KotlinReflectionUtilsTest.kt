@@ -1,10 +1,17 @@
 package com.hazelcast.jet.impl.util
 
+import com.hazelcast.test.HazelcastParallelClassRunner
+import com.hazelcast.test.annotation.ParallelJVMTest
+import com.hazelcast.test.annotation.QuickTest
 import org.hamcrest.Matchers.containsInAnyOrder
 import org.hamcrest.Matchers.hasSize
 import org.junit.Assert.assertThat
 import org.junit.Test
+import org.junit.experimental.categories.Category
+import org.junit.runner.RunWith
 
+@RunWith(HazelcastParallelClassRunner::class)
+@Category(QuickTest::class, ParallelJVMTest::class)
 class KotlinReflectionUtilsTest {
 
     @Test
