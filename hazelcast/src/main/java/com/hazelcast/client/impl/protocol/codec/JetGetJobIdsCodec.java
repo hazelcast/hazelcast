@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("eefec3deee3e9fc8aff1563d4b5258da")
+@Generated("500c7a646df9f5b6da4fe7559838d6fe")
 public final class JetGetJobIdsCodec {
     //hex: 0xFE0400
     public static final int REQUEST_MESSAGE_TYPE = 16647168;
@@ -58,18 +58,6 @@ public final class JetGetJobIdsCodec {
         /**
          */
         public long onlyJobId;
-
-        /**
-         * True if the onlyName is received from the client, false otherwise.
-         * If this is false, onlyName has the default value for its type.
-         */
-        public boolean isOnlyNameExists;
-
-        /**
-         * True if the onlyJobId is received from the client, false otherwise.
-         * If this is false, onlyJobId has the default value for its type.
-         */
-        public boolean isOnlyJobIdExists;
     }
 
     public static ClientMessage encodeRequest(@Nullable java.lang.String onlyName, long onlyJobId) {
@@ -89,33 +77,9 @@ public final class JetGetJobIdsCodec {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        if (initialFrame.content.length >= REQUEST_ONLY_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES) {
-            request.onlyJobId = decodeLong(initialFrame.content, REQUEST_ONLY_JOB_ID_FIELD_OFFSET);
-            request.isOnlyJobIdExists = true;
-        } else {
-            request.isOnlyJobIdExists = false;
-        }
-        if (iterator.hasNext()) {
-            request.onlyName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-            request.isOnlyNameExists = true;
-        } else {
-            request.isOnlyNameExists = false;
-        }
+        request.onlyJobId = decodeLong(initialFrame.content, REQUEST_ONLY_JOB_ID_FIELD_OFFSET);
+        request.onlyName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return request;
-    }
-
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class ResponseParameters {
-
-        /**
-         */
-        public com.hazelcast.internal.serialization.Data response;
-
-        /**
-         * True if the response is received from the member, false otherwise.
-         * If this is false, response has the default value for its type.
-         */
-        public boolean isResponseExists;
     }
 
     public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
@@ -128,17 +92,12 @@ public final class JetGetJobIdsCodec {
         return clientMessage;
     }
 
-    public static JetGetJobIdsCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+    /**
+     */
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ResponseParameters response = new ResponseParameters();
         //empty initial frame
         iterator.next();
-        if (iterator.hasNext()) {
-            response.response = DataCodec.decode(iterator);
-            response.isResponseExists = true;
-        } else {
-            response.isResponseExists = false;
-        }
-        return response;
+        return DataCodec.decode(iterator);
     }
 }

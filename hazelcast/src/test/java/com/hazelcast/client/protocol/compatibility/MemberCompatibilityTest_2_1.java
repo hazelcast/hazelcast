@@ -7533,25 +7533,8 @@ public class MemberCompatibilityTest_2_1 {
     }
 
     @Test
-    public void test_JetGetJobIdsCodec_decodeRequest() {
-        int fileClientMessageIndex = 849;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        JetGetJobIdsCodec.RequestParameters parameters = JetGetJobIdsCodec.decodeRequest(fromFile);
-        assertFalse(parameters.isOnlyNameExists);
-        assertFalse(parameters.isOnlyJobIdExists);
-    }
-
-    @Test
-    public void test_JetGetJobIdsCodec_encodeResponse() {
-        int fileClientMessageIndex = 850;
-        ClientMessage encoded = JetGetJobIdsCodec.encodeResponse(aData);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
     public void test_JetJoinSubmittedJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 851;
+        int fileClientMessageIndex = 849;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetJoinSubmittedJobCodec.RequestParameters parameters = JetJoinSubmittedJobCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7560,7 +7543,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetJoinSubmittedJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 852;
+        int fileClientMessageIndex = 850;
         ClientMessage encoded = JetJoinSubmittedJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7568,7 +7551,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_decodeRequest() {
-        int fileClientMessageIndex = 853;
+        int fileClientMessageIndex = 851;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobSubmissionTimeCodec.RequestParameters parameters = JetGetJobSubmissionTimeCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7577,7 +7560,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_encodeResponse() {
-        int fileClientMessageIndex = 854;
+        int fileClientMessageIndex = 852;
         ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeResponse(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7585,14 +7568,14 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 855;
+        int fileClientMessageIndex = 853;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobConfigCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 856;
+        int fileClientMessageIndex = 854;
         ClientMessage encoded = JetGetJobConfigCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7600,14 +7583,14 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetResumeJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 857;
+        int fileClientMessageIndex = 855;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetResumeJobCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetResumeJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 858;
+        int fileClientMessageIndex = 856;
         ClientMessage encoded = JetResumeJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7615,7 +7598,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetExportSnapshotCodec_decodeRequest() {
-        int fileClientMessageIndex = 859;
+        int fileClientMessageIndex = 857;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetExportSnapshotCodec.RequestParameters parameters = JetExportSnapshotCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7625,7 +7608,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetExportSnapshotCodec_encodeResponse() {
-        int fileClientMessageIndex = 860;
+        int fileClientMessageIndex = 858;
         ClientMessage encoded = JetExportSnapshotCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7633,12 +7616,12 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobSummaryListCodec_decodeRequest() {
-        int fileClientMessageIndex = 861;
+        int fileClientMessageIndex = 859;
     }
 
     @Test
     public void test_JetGetJobSummaryListCodec_encodeResponse() {
-        int fileClientMessageIndex = 862;
+        int fileClientMessageIndex = 860;
         ClientMessage encoded = JetGetJobSummaryListCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7646,7 +7629,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetExistsDistributedObjectCodec_decodeRequest() {
-        int fileClientMessageIndex = 863;
+        int fileClientMessageIndex = 861;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetExistsDistributedObjectCodec.RequestParameters parameters = JetExistsDistributedObjectCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.serviceName));
@@ -7655,7 +7638,7 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetExistsDistributedObjectCodec_encodeResponse() {
-        int fileClientMessageIndex = 864;
+        int fileClientMessageIndex = 862;
         ClientMessage encoded = JetExistsDistributedObjectCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7663,14 +7646,14 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobMetricsCodec_decodeRequest() {
-        int fileClientMessageIndex = 865;
+        int fileClientMessageIndex = 863;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobMetricsCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobMetricsCodec_encodeResponse() {
-        int fileClientMessageIndex = 866;
+        int fileClientMessageIndex = 864;
         ClientMessage encoded = JetGetJobMetricsCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7678,14 +7661,14 @@ public class MemberCompatibilityTest_2_1 {
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_decodeRequest() {
-        int fileClientMessageIndex = 867;
+        int fileClientMessageIndex = 865;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobSuspensionCauseCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_encodeResponse() {
-        int fileClientMessageIndex = 868;
+        int fileClientMessageIndex = 866;
         ClientMessage encoded = JetGetJobSuspensionCauseCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
