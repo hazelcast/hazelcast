@@ -1,3 +1,0 @@
-hazelcast:
-  cluster-name: imdg
-  instance-name: ${imdg.instance.name}
