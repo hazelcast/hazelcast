@@ -366,8 +366,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         }
     }
 
-    // react to member leaving unexpectedly -- members leaving with graceful shutdown
-    // have had their migrations already done before removal
     @Override
     public void memberRemoved(Member member) {
         logger.fine("Removing " + member);
@@ -389,11 +387,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     assert !shouldFetchPartitionTables;
                     shouldFetchPartitionTables = true;
                 }
-                // keep partition table snapshot as member leaves
-                if (logger.isFineEnabled()) {
-                    logger.fine("Storing partition assignments snapshot for " + member + " from memberRemoved");
+                // keep partition table snapshot as member leaves, unless
+                // no partitions were assigned to it (member left with graceful shutdown)
+                if (!partitionStateManager.isAbsentInPartitionTable(member)) {
+                    partitionStateManager.storeSnapshot(member.getUuid());
                 }
-                partitionStateManager.storeSnapshot(member.getUuid());
                 if (isMaster) {
                     migrationManager.triggerControlTaskWithDelay();
                 }

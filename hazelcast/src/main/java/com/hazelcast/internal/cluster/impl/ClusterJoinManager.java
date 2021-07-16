@@ -715,7 +715,8 @@ public class ClusterJoinManager {
                 // or it is still in member list because connection timeout hasn't been reached yet
                 || previousMembersMap.contains(memberUuid)
                 // or it is a known missing member
-                || clusterService.getMembershipManager().isMissingMember(address, memberUuid));
+                || clusterService.getMembershipManager().isMissingMember(address, memberUuid))
+                && (node.getPartitionService().getLeftMemberSnapshot(memberUuid) != null);
     }
 
     private boolean checkIfUsingAnExistingMemberUuid(JoinMessage joinMessage) {
@@ -782,9 +783,7 @@ public class ClusterJoinManager {
                 for (MemberInfo member : joiningMembers.values()) {
                     if (isMemberRestartingWithPersistence(member.getAttributes())
                         && isMemberRejoining(memberMap, member.getAddress(), member.getUuid())) {
-                        if (logger.isFineEnabled()) {
-                            logger.fine(member + " is rejoining the cluster");
-                        }
+                        logger.info(member + " is rejoining the cluster");
                         // do not trigger repartition immediately, wait for joining member to load hot-restart data
                         shouldTriggerRepartition = false;
                     }
