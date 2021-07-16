@@ -22,11 +22,11 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
 
@@ -36,8 +36,8 @@ public final class LimitOffsetP extends AbstractProcessor {
     private final Expression<?> limitExpression;
     private final Expression<?> offsetExpression;
 
-    private long limit;
-    private long offset;
+    private Long limit;
+    private Long offset;
 
     private LimitOffsetP(Expression<?> limitExpression, Expression<?> offsetExpression) {
         this.limitExpression = limitExpression;
@@ -48,7 +48,7 @@ public final class LimitOffsetP extends AbstractProcessor {
     protected void init(@Nonnull Context context) throws Exception {
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
 
-        Number limit = evaluate(limitExpression, evalContext);
+        Number limit = (Number) ExpressionUtil.evaluate(limitExpression, evalContext);
         if (limit == null) {
             throw QueryException.error("LIMIT value cannot be null");
         }
@@ -57,7 +57,7 @@ public final class LimitOffsetP extends AbstractProcessor {
         }
         this.limit = limit.longValue();
 
-        Number offset = evaluate(offsetExpression, evalContext);
+        Number offset = (Number) ExpressionUtil.evaluate(offsetExpression, evalContext);
         if (offset == null) {
             throw QueryException.error("OFFSET value cannot be null");
         }
@@ -88,11 +88,6 @@ public final class LimitOffsetP extends AbstractProcessor {
     }
 
     @Override
-    public boolean complete() {
-        return super.complete();
-    }
-
-    @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         return true;
     }
@@ -104,9 +99,5 @@ public final class LimitOffsetP extends AbstractProcessor {
     ) {
         ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new LimitOffsetP(limitExpression, offsetExpression));
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
-    }
-
-    private static Number evaluate(Expression<?> expression, ExpressionEvalContext evalContext) {
-        return (Number) expression.eval(EmptyRow.INSTANCE, evalContext);
     }
 }

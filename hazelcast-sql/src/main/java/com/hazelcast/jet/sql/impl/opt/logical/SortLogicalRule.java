@@ -40,26 +40,40 @@ final class SortLogicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         Sort sort = (Sort) rel;
 
-        SortLogicalRel sortLogicalRel = new SortLogicalRel(
-                sort.getCluster(),
-                OptUtils.toLogicalConvention(sort.getTraitSet()),
-                OptUtils.toLogicalInput(sort.getInput()),
-                sort.getCollation(),
-                null,
-                null
-        );
-        RelNode topNode = sortLogicalRel;
-
-        if (sort.offset != null || sort.fetch != null) {
-            topNode = new LimitOffsetLogicalRel(
+        if (sort.getCollation().getFieldCollations().isEmpty()) {
+            assert sort.fetch != null || sort.offset != null;
+            return new LimitOffsetLogicalRel(
+                    sort.getCluster(),
+                    OptUtils.toLogicalConvention(sort.getTraitSet()),
+                    OptUtils.toLogicalInput(sort.getInput()),
+                    sort.fetch,
+                    sort.offset
+            );
+        } else if (sort.fetch != null || sort.offset != null) {
+            SortLogicalRel sortLogicalRel = new SortLogicalRel(
+                    sort.getCluster(),
+                    OptUtils.toLogicalConvention(sort.getTraitSet()),
+                    OptUtils.toLogicalInput(sort.getInput()),
+                    sort.getCollation(),
+                    null,
+                    null
+            );
+            return new LimitOffsetLogicalRel(
                     sort.getCluster(),
                     OptUtils.toLogicalConvention(sort.getTraitSet()),
                     sortLogicalRel,
                     sort.fetch,
                     sort.offset
             );
+        } else {
+            return new SortLogicalRel(
+                    sort.getCluster(),
+                    OptUtils.toLogicalConvention(sort.getTraitSet()),
+                    OptUtils.toLogicalInput(sort.getInput()),
+                    sort.getCollation(),
+                    null,
+                    null
+            );
         }
-
-        return topNode;
     }
 }

@@ -300,12 +300,10 @@ public class CreateDagVisitor {
 
     public Vertex onRoot(JetRootRel rootRel) {
         RelNode input = rootRel.getInput();
-        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
+                rootResultConsumerSink(rootRel.getInitiatorAddress())
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.

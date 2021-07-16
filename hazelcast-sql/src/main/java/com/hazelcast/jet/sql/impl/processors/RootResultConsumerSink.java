@@ -25,13 +25,9 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl;
-import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CancellationException;
@@ -42,14 +38,9 @@ import static com.hazelcast.sql.impl.SqlErrorCode.CANCELLED_BY_USER;
 
 public final class RootResultConsumerSink implements Processor {
 
-    private final Expression<?> limitExpression;
-    private final Expression<?> offsetExpression;
-
     private JetQueryResultProducer rootResultConsumer;
 
-    private RootResultConsumerSink(Expression<?> limitExpression, Expression<?> offsetExpression) {
-        this.limitExpression = limitExpression;
-        this.offsetExpression = offsetExpression;
+    private RootResultConsumerSink() {
     }
 
     @Override
@@ -58,30 +49,6 @@ public final class RootResultConsumerSink implements Processor {
         JetSqlCoreBackendImpl jetSqlCoreBackend = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
         rootResultConsumer = jetSqlCoreBackend.getResultConsumerRegistry().remove(context.jobId());
         assert rootResultConsumer != null;
-
-        ExpressionEvalContext evalContext = SimpleExpressionEvalContext.from(context);
-
-        Number limit = evaluate(limitExpression, evalContext);
-        if (limit == null) {
-            throw QueryException.error("LIMIT value cannot be null");
-        }
-        if (limit.longValue() < 0L) {
-            throw QueryException.error("LIMIT value cannot be negative: " + limit);
-        }
-
-        Number offset = evaluate(offsetExpression, evalContext);
-        if (offset == null) {
-            throw QueryException.error("OFFSET value cannot be null");
-        }
-        if (offset.longValue() < 0L) {
-            throw QueryException.error("OFFSET value cannot be negative: " + offset);
-        }
-
-        rootResultConsumer.init(limit.longValue(), offset.longValue());
-    }
-
-    private static Number evaluate(Expression<?> expression, ExpressionEvalContext evalContext) {
-        return (Number) expression.eval(EmptyRow.INSTANCE, evalContext);
     }
 
     @Override
@@ -120,12 +87,8 @@ public final class RootResultConsumerSink implements Processor {
         return true;
     }
 
-    public static ProcessorMetaSupplier rootResultConsumerSink(
-            Address initiatorAddress,
-            Expression<?> limitExpression,
-            Expression<?> offsetExpression
-    ) {
-        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink(limitExpression, offsetExpression));
+    public static ProcessorMetaSupplier rootResultConsumerSink(Address initiatorAddress) {
+        ProcessorSupplier pSupplier = ProcessorSupplier.of(() -> new RootResultConsumerSink());
         return forceTotalParallelismOne(pSupplier, initiatorAddress);
     }
 }
