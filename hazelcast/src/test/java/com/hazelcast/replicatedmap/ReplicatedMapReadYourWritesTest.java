@@ -67,8 +67,8 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
         ReplicatedMap<String, Integer> map1 = instance1.getReplicatedMap("default");
         ReplicatedMap<String, Integer> map2 = instance2.getReplicatedMap("default");
         for (int i = 0; i < 1000; i++) {
-            assertReadYourWriteByGet(instance2, map1, i);
-            assertReadYourWriteByGet(instance1, map2, i);
+            assertEventuallyReadYourWriteByGet(instance2, map1, i);
+            assertEventuallyReadYourWriteByGet(instance1, map2, i);
         }
     }
 
@@ -80,8 +80,8 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
         ReplicatedMap<String, Integer> map1 = instance1.getReplicatedMap("default");
         ReplicatedMap<String, Integer> map2 = instance2.getReplicatedMap("default");
         for (int i = 0; i < 1000; i++) {
-            assertReadYourWriteByContainsKey(instance2, map1, i);
-            assertReadYourWriteByContainsKey(instance1, map2, i);
+            assertEventuallyReadYourWriteByContainsKey(instance2, map1, i);
+            assertEventuallyReadYourWriteByContainsKey(instance1, map2, i);
         }
     }
 
@@ -93,25 +93,39 @@ public class ReplicatedMapReadYourWritesTest extends ReplicatedMapAbstractTest {
         ReplicatedMap<String, Integer> map1 = instance1.getReplicatedMap("default");
         ReplicatedMap<String, Integer> map2 = instance2.getReplicatedMap("default");
         for (int i = 0; i < 1000; i++) {
-            assertReadYourWriteByContainsValue(instance2, map1, i);
-            assertReadYourWriteByContainsValue(instance1, map2, i);
+            assertEventuallyReadYourWriteByContainsValue(instance2, map1, i);
+            assertEventuallyReadYourWriteByContainsValue(instance1, map2, i);
         }
     }
 
-
-    private void assertReadYourWriteByGet(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
+    private void assertEventuallyReadYourWriteByGet(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
         String key = generateKeyAndPutValue(instance, map, value);
-        assertEquals(value, (int) map.get(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(value, (int) map.get(key));
+            }
+        });
     }
 
-    private void assertReadYourWriteByContainsKey(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
+    private void assertEventuallyReadYourWriteByContainsKey(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
         String key = generateKeyAndPutValue(instance, map, value);
-        assertTrue(map.containsKey(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(map.containsKey(key));
+            }
+        });
     }
 
-    private void assertReadYourWriteByContainsValue(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
+    private void assertEventuallyReadYourWriteByContainsValue(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
         generateKeyAndPutValue(instance, map, value);
-        assertTrue(map.containsValue(value));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(map.containsValue(value));
+            }
+        });
     }
 
     private String generateKeyAndPutValue(HazelcastInstance instance, ReplicatedMap<String, Integer> map, int value) {
