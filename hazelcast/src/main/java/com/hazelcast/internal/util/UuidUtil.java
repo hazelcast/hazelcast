@@ -101,10 +101,9 @@ public final class UuidUtil {
         assert data.length == 16 : "data must be 16 bytes in length";
         for (int i = 0; i < 8; i++) {
             mostSigBits = (mostSigBits << 8) | (data[i] & 0xff);
+            leastSigBits = (leastSigBits << 8) | (data[i + 8] & 0xff);
         }
-        for (int i = 8; i < 16; i++) {
-            leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
-        }
+
         return new UUID(mostSigBits, leastSigBits);
     }
 }
