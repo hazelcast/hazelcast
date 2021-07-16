@@ -51,6 +51,7 @@ final class HazelcastKubernetesDiscoveryStrategy
             endpointResolver = new KubernetesApiEndpointResolver(logger, config.getServiceName(), config.getServicePort(),
                     config.getServiceLabelName(), config.getServiceLabelValue(),
                     config.getPodLabelName(), config.getPodLabelValue(),
+                    config.getMatchServicePodNames(), config.getLbLabelName(), config.getLbLabelValue(),
                     config.isResolveNotReadyAddresses(), client);
         }
 
