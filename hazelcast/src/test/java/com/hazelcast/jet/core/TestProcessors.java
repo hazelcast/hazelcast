@@ -220,9 +220,9 @@ public final class TestProcessors {
         static AtomicInteger closeCount = new AtomicInteger();
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
 
-        private Throwable initError;
-        private Throwable getError;
-        private Throwable closeError;
+        private SupplierEx<Throwable> initError;
+        private SupplierEx<Throwable> getError;
+        private SupplierEx<Throwable> closeError;
 
         private final SupplierEx<Processor> supplier;
         private final int nodeCount;
@@ -235,17 +235,22 @@ public final class TestProcessors {
         }
 
         public MockPS setInitError(Throwable initError) {
+            this.initError = () -> initError;
+            return this;
+        }
+
+        public MockPS setInitError(SupplierEx<Throwable> initError) {
             this.initError = initError;
             return this;
         }
 
         public MockPS setGetError(Throwable getError) {
-            this.getError = getError;
+            this.getError = () -> getError;
             return this;
         }
 
         public MockPS setCloseError(Throwable closeError) {
-            this.closeError = closeError;
+            this.closeError = () -> closeError;
             return this;
         }
 
@@ -255,14 +260,14 @@ public final class TestProcessors {
             initCount.incrementAndGet();
 
             if (initError != null) {
-                throw sneakyThrow(initError);
+                throw sneakyThrow(initError.get());
             }
         }
 
         @Nonnull @Override
         public List<Processor> get(int count) {
             if (getError != null) {
-                throw sneakyThrow(getError);
+                throw sneakyThrow(getError.get());
             }
             return Stream.generate(supplier).limit(count).collect(toList());
         }
@@ -281,7 +286,7 @@ public final class TestProcessors {
                     + initCount.get() + " times!", closeCount.get() <= initCount.get());
 
             if (closeError != null) {
-                throw sneakyThrow(closeError);
+                throw sneakyThrow(closeError.get());
             }
         }
     }
