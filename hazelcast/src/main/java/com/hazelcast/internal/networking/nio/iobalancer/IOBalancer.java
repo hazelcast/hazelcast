@@ -38,6 +38,7 @@ import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.IO_THREAD_COUNT;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
@@ -67,7 +68,7 @@ public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
     private final ILogger logger;
 
-    private final int balancerIntervalSeconds;
+    private final long balancerIntervalMs;
     private final MigrationStrategy strategy;
 
     private final LoadTracker inLoadTracker;
@@ -88,9 +89,18 @@ public class IOBalancer {
     public IOBalancer(NioThread[] inputThreads,
                       NioThread[] outputThreads,
                       String hzName,
-                      int balancerIntervalSeconds, LoggingService loggingService) {
+                      int balancerIntervalSeconds,
+                      LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
-        this.balancerIntervalSeconds = balancerIntervalSeconds;
+
+        // this property is only here for testing purposes so that we can schedule migrations
+        // at an insane rate.
+        String millis = System.getProperty("hazelcast.io.balancer.interval.millis");
+        if (millis == null) {
+            this.balancerIntervalMs = SECONDS.toMillis(balancerIntervalSeconds);
+        } else {
+            this.balancerIntervalMs = Long.parseLong(millis);
+        }
 
         this.strategy = createMigrationStrategy();
         this.hzName = hzName;
@@ -134,7 +144,7 @@ public class IOBalancer {
 
     public void start() {
         if (enabled) {
-            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, hzName, logger, workQueue);
+            ioBalancerThread = new IOBalancerThread(this, balancerIntervalMs, hzName, logger, workQueue);
             ioBalancerThread.start();
         }
     }
@@ -181,9 +191,9 @@ public class IOBalancer {
     }
 
     private boolean isEnabled(NioThread[] inputThreads, NioThread[] outputThreads) {
-        if (balancerIntervalSeconds <= 0) {
-            logger.warning("I/O Balancer is disabled as the '" + IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
-                    + balancerIntervalSeconds + ". Set the property to a value larger than 0 to enable the I/O Balancer.");
+        if (balancerIntervalMs <= 0) {
+            logger.warning("I/O Balancer is disabled. Set `" + IO_BALANCER_INTERVAL_SECONDS + "` to a value larger than 0 "
+                    + "to enable the I/O Balancer.");
             return false;
         }
 
@@ -194,7 +204,7 @@ public class IOBalancer {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("I/O Balancer is enabled. Scanning every " + balancerIntervalSeconds + " seconds for imbalances.");
+            logger.finest("I/O Balancer is enabled. Scanning every " + balancerIntervalMs + " ms for imbalances.");
         }
 
         return true;

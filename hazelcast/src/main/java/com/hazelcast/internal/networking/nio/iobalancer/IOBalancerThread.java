@@ -24,7 +24,6 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 class IOBalancerThread extends Thread {
     private static final String THREAD_NAME_PREFIX = "IO.BalancerThread";
@@ -36,14 +35,14 @@ class IOBalancerThread extends Thread {
     private volatile boolean shutdown;
 
     IOBalancerThread(IOBalancer ioBalancer,
-                     int balancerIntervalSeconds,
+                     long balancerIntervalMillis,
                      String hzName,
                      ILogger log,
                      BlockingQueue<Runnable> workQueue) {
         super(createThreadName(hzName, THREAD_NAME_PREFIX));
         this.ioBalancer = ioBalancer;
         this.log = log;
-        this.balancerIntervalMs = SECONDS.toMillis(balancerIntervalSeconds);
+        this.balancerIntervalMs = balancerIntervalMillis;
         this.workQueue = workQueue;
     }
 

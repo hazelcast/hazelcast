@@ -299,6 +299,21 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      */
     @Override
     public final void requestMigration(NioThread newOwner) {
+        if (newOwner == null) {
+            // guard for null migrations
+            return;
+        }
+
+        if (this.newOwner != null) {
+            // migration is still in progress. So lets ignore this request.
+            return;
+        }
+
+        if (owner == newOwner) {
+            // migration to itself; lets ignore this.
+            return;
+        }
+
         this.newOwner = newOwner;
 
         // we can't call wakeup directly unfortunately because wakeup isn't defined on this
@@ -319,7 +334,6 @@ public abstract class NioPipeline implements MigratablePipeline, Runnable {
      * Starts the migration.
      * <p>
      * This method needs to run on a thread that is executing the {@link #process()}  method.
-     *
      */
     void startMigration() {
         assert newOwner != null : "newOwner can't be null";
