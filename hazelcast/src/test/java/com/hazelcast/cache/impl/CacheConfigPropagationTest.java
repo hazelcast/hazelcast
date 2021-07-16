@@ -16,9 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -33,12 +35,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheManager;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -110,11 +114,27 @@ public class CacheConfigPropagationTest extends HazelcastTestSupport {
         assertNotNull(cacheServiceOnRemote.getCacheConfig(distributedObjectName));
     }
 
+    @Test
+    public void server_receives_same_merkle_tree_config_given_from_client() {
+        MerkleTreeConfig expectedMerkleTreeConfig = new MerkleTreeConfig()
+                .setDepth(11).setEnabled(true);
+
+        CacheConfig<String, String> cacheConfig = new CacheConfig<>();
+        cacheConfig.setMerkleTreeConfig(expectedMerkleTreeConfig);
+        cacheManagerDriver.createCache(DYNAMIC_CACHE_NAME, cacheConfig);
+        CacheService cacheService = getCacheService(members[0]);
+
+        ConcurrentMap<String, CacheConfig> configs = cacheService.getConfigs();
+        CacheConfig actualConfig = configs.get(HazelcastCacheManager.CACHE_MANAGER_PREFIX + DYNAMIC_CACHE_NAME);
+
+        assertEquals(expectedMerkleTreeConfig, actualConfig.getMerkleTreeConfig());
+    }
+
     @Override
     protected Config getConfig() {
         Config config = super.getConfig();
         config.addCacheConfig(new CacheSimpleConfig()
-                                .setName("declared-cache*"));
+                .setName("declared-cache*"));
         return config;
     }
 

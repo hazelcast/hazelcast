@@ -244,7 +244,9 @@ public class CacheConfigHolder {
 
         config.setMergePolicyConfig(mergePolicyConfig);
         config.setDisablePerEntryInvalidationEvents(disablePerEntryInvalidationEvents);
-        config.setMerkleTreeConfig(merkleTreeConfig);
+        if (merkleTreeConfigExists) {
+            config.setMerkleTreeConfig(merkleTreeConfig);
+        }
 
         if (cachePartitionLostListenerConfigs != null) {
             List<CachePartitionLostListenerConfig> partitionLostListenerConfigs = new ArrayList<>(
@@ -288,7 +290,7 @@ public class CacheConfigHolder {
                 config.isStoreByValue(), config.isManagementEnabled(), config.isStatisticsEnabled(), config.getHotRestartConfig(),
                 config.getEventJournalConfig(), config.getSplitBrainProtectionName(), listenerConfigurations,
                 config.getMergePolicyConfig(), config.isDisablePerEntryInvalidationEvents(),
-                cachePartitionLostListenerConfigs, config.getMerkleTreeConfig().isEnabled(), config.getMerkleTreeConfig());
+                cachePartitionLostListenerConfigs, config.getMerkleTreeConfig() != null, config.getMerkleTreeConfig());
     }
 
 }

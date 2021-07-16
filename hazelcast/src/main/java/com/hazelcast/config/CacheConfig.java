@@ -484,7 +484,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements Vers
      * @param merkleTreeConfig merkle tree config
      */
     public void setMerkleTreeConfig(MerkleTreeConfig merkleTreeConfig) {
-        this.merkleTreeConfig = merkleTreeConfig;
+        this.merkleTreeConfig = checkNotNull(merkleTreeConfig, "merkleTreeConfig cannot be null!");
     }
 
     /**
