@@ -115,6 +115,10 @@ public final class ProxyRegistry {
         return proxies.keySet();
     }
 
+    public boolean existsDistributedObject(String name) {
+        return proxies.containsKey(name);
+    }
+
     /**
      * Gets the ProxyInfo of all fully initialized proxies in this registry.
      * The result is written into 'result'.

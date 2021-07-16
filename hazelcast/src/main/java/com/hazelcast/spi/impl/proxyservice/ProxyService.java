@@ -45,6 +45,8 @@ public interface ProxyService extends CoreService {
 
     Collection<DistributedObject> getAllDistributedObjects();
 
+    boolean existsDistributedObject(String serviceName, String objectId);
+
     /**
      * Returns the total number of created proxies for the given {@code serviceName},
      * even if some have already been destroyed.
