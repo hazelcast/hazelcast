@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.internal.ascii.HttpContentTypeParser;
 import com.hazelcast.internal.ascii.NoOpCommand;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
@@ -24,6 +25,7 @@ import com.hazelcast.internal.util.StringUtil;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_POST;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
@@ -134,12 +136,20 @@ public class HttpPostCommand extends HttpCommand {
         }
     }
 
-    byte[] getContentType() {
+    byte[] getContentTypeBytes() {
         if (contentType == null) {
             return null;
         } else {
             return stringToBytes(contentType);
         }
+    }
+
+    Charset getCharset() {
+        return HttpContentTypeParser.parseCharset(contentType);
+    }
+
+    String getMediaType() {
+        return HttpContentTypeParser.parseMediaType(contentType);
     }
 
     private void readCRLFOrPositionChunkSize(ByteBuffer cb) {
