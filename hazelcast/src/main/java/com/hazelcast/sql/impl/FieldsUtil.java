@@ -89,6 +89,13 @@ public final class FieldsUtil {
 
         String fieldNameWithWrongCase;
 
+        // If field name is same as method name simply return that
+        try {
+            clazz.getDeclaredField(methodName);
+            return methodName;
+        } catch (NoSuchFieldException ignored) {
+            // No (private) field has the same name as the method name, so continue
+        }
         if (methodName.startsWith(METHOD_PREFIX_GET) && methodName.length() > METHOD_PREFIX_GET.length()) {
             fieldNameWithWrongCase = methodName.substring(METHOD_PREFIX_GET.length());
         } else if (methodName.startsWith(METHOD_PREFIX_IS) && methodName.length() > METHOD_PREFIX_IS.length()) {
