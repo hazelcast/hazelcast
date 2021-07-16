@@ -75,10 +75,10 @@ class KubernetesClient {
      * @return all POD addresses
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpoints() {
+    List<Endpoint> endpoints(boolean matchNames, String lbLabel, String lbLabelValue) {
         try {
             String urlString = String.format("%s/api/v1/namespaces/%s/pods", kubernetesMaster, namespace);
-            return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
+            return enrichWithPublicAddresses(parsePodsList(callGet(urlString)), matchNames, lbLabel, lbLabelValue);
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
@@ -93,11 +93,11 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} filtered by the label
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByServiceLabel(String serviceLabel, String serviceLabelValue) {
+    List<Endpoint> endpointsByServiceLabel(String serviceLabel, String serviceLabelValue, boolean matchNames, String lbLabel, String lbLabelValue) {
         try {
             String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
             String urlString = String.format("%s/api/v1/namespaces/%s/endpoints?%s", kubernetesMaster, namespace, param);
-            return enrichWithPublicAddresses(parseEndpointsList(callGet(urlString)));
+            return enrichWithPublicAddresses(parseEndpointsList(callGet(urlString)), matchNames, lbLabel, lbLabelValue);
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
@@ -110,10 +110,10 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} and the given {@code endpointName}
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByName(String endpointName) {
+    List<Endpoint> endpointsByName(String endpointName, boolean matchNames, String lbLabel, String lbLabelValue) {
         try {
             String urlString = String.format("%s/api/v1/namespaces/%s/endpoints/%s", kubernetesMaster, namespace, endpointName);
-            return enrichWithPublicAddresses(parseEndpoints(callGet(urlString)));
+            return enrichWithPublicAddresses(parseEndpoints(callGet(urlString), false), matchNames, lbLabel, lbLabelValue);
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
@@ -128,11 +128,11 @@ class KubernetesClient {
      * @return all POD addresses from the specified {@code namespace} filtered by the label
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByPodLabel(String podLabel, String podLabelValue) {
+    List<Endpoint> endpointsByPodLabel(String podLabel, String podLabelValue, boolean matchNames, String lbLabel, String lbLabelValue) {
         try {
             String param = String.format("labelSelector=%s=%s", podLabel, podLabelValue);
             String urlString = String.format("%s/api/v1/namespaces/%s/pods?%s", kubernetesMaster, namespace, param);
-            return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
+            return enrichWithPublicAddresses(parsePodsList(callGet(urlString)), matchNames, lbLabel, lbLabelValue);
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
@@ -210,24 +210,46 @@ class KubernetesClient {
     private static List<Endpoint> parseEndpointsList(JsonObject endpointsListJson) {
         List<Endpoint> endpoints = new ArrayList<Endpoint>();
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
-            endpoints.addAll(parseEndpoints(item));
+            endpoints.addAll(parseEndpoints(item, false));
         }
         return endpoints;
     }
 
-    private static List<Endpoint> parseEndpoints(JsonValue endpointItemJson) {
+    private static List<Endpoint> parseEndpoints(JsonValue endpointItemJson, boolean matchNames) {
         List<Endpoint> addresses = new ArrayList<Endpoint>();
+
+        String endpointName = matchNames ? extractEndpointName(endpointItemJson) : null;
 
         for (JsonValue subset : toJsonArray(endpointItemJson.asObject().get("subsets"))) {
             Integer endpointPort = extractPort(subset);
             for (JsonValue address : toJsonArray(subset.asObject().get("addresses"))) {
+                if (matchNames) {
+                    String targetName = extractTargetName(address);
+                    if (targetName == null || !targetName.equals(endpointName))
+                        continue;
+                }
                 addresses.add(extractEntrypointAddress(address, endpointPort, true));
             }
             for (JsonValue address : toJsonArray(subset.asObject().get("notReadyAddresses"))) {
+                if (matchNames) {
+                    String targetName = extractTargetName(address);
+                    if (targetName == null || !targetName.equals(endpointName))
+                        continue;
+                }
                 addresses.add(extractEntrypointAddress(address, endpointPort, false));
             }
         }
         return addresses;
+    }
+
+    private static String extractEndpointName(JsonValue endpointItemJson) {
+        return endpointItemJson.asObject().get("metadata").asObject().get("name").toString();
+    }
+
+    private static String extractTargetName(JsonValue addressJson) {
+		JsonValue targetRefJson = addressJson.asObject().get("targetRef");
+		if (targetRefJson == null) return null;
+        return targetRefJson.asObject().get("name").toString();
     }
 
     private static Integer extractPort(JsonValue subsetJson) {
@@ -306,13 +328,16 @@ class KubernetesClient {
      * </li>
      * </ol>
      */
-    private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints) {
+    private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints, boolean matchNames, String lbLabel, String lbLabelValue) {
         try {
             String endpointsUrl = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
+            if (lbLabel != null && !lbLabel.isEmpty() && lbLabelValue != null && !lbLabelValue.isEmpty()) {
+                endpointsUrl += String.format("?labelSelector=%s!=%s", lbLabel, lbLabelValue);
+            }
             JsonObject endpointsJson = callGet(endpointsUrl);
 
             List<EndpointAddress> privateAddresses = privateAddresses(endpoints);
-            Map<EndpointAddress, String> services = extractServices(endpointsJson, privateAddresses);
+            Map<EndpointAddress, String> services = extractServices(endpointsJson, privateAddresses, matchNames);
             Map<EndpointAddress, String> nodes = extractNodes(endpointsJson, privateAddresses);
 
             Map<EndpointAddress, String> publicIps = new HashMap<EndpointAddress, String>();
@@ -368,12 +393,14 @@ class KubernetesClient {
     }
 
     private static Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
-                                                                List<EndpointAddress> privateAddresses) {
+                                                                List<EndpointAddress> privateAddresses,
+                                                                boolean matchNames) {
         Map<EndpointAddress, String> result = new HashMap<EndpointAddress, String>();
         Set<EndpointAddress> left = new HashSet<EndpointAddress>(privateAddresses);
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             String service = toString(item.asObject().get("metadata").asObject().get("name"));
-            List<Endpoint> endpoints = parseEndpoints(item);
+            List<Endpoint> endpoints = parseEndpoints(item, matchNames);
+
             // Service must point to exactly one endpoint address, otherwise the public IP would be ambiguous.
             if (endpoints.size() == 1) {
                 EndpointAddress address = endpoints.get(0).getPrivateAddress();
