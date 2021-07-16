@@ -42,7 +42,6 @@ public final class PhysicalRules {
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
-
                 LimitOffsetPhysicalRule.INSTANCE,
 
                 // Join rules

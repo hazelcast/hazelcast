@@ -65,8 +65,6 @@ public final class LogicalRules {
                 // Sort rules
                 SortLogicalRule.INSTANCE,
 
-                LimitOffsetLogicalRule.INSTANCE,
-
                 // Join rules
                 JoinLogicalRule.INSTANCE,
                 JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
