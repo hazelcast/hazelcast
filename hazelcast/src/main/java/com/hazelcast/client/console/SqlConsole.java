@@ -247,7 +247,7 @@ public final class SqlConsole {
                 .append("Hints:\n")
                 .append("  Semicolon completes a query\n")
                 .append("  Ctrl+C cancels a streaming query\n")
-                .append("  https://docs.hazelcast.com/");
+                .append("  https://docs.hazelcast.com/hazelcast/latest/sql/sql-statements.html");
         return builder.toAnsi();
     }
 
