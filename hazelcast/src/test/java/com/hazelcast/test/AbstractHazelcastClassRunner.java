@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import com.hazelcast.cache.jsr.JsrTestUtil;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.ConcurrencyUtil;
@@ -44,6 +45,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -310,6 +312,12 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 if (!instances.isEmpty()) {
                     String message = "Instances haven't been shut down: " + instances;
                     Hazelcast.shutdownAll();
+                    throw new IllegalStateException(message);
+                }
+                Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
+                if (!clientInstances.isEmpty()) {
+                    String message = "Client instances haven't been shut down: " + clientInstances;
+                    HazelcastClient.shutdownAll();
                     throw new IllegalStateException(message);
                 }
 
