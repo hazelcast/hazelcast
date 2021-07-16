@@ -120,79 +120,79 @@ public final class FailoverClientConfigSupport {
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternative(ClientConfig mainConfig, ClientConfig alternativeConfig) {
         String mainClusterName = mainConfig.getClusterName();
-        String alterNativeClusterName = alternativeConfig.getClusterName();
+        String alternativeClusterName = alternativeConfig.getClusterName();
 
         checkValidAlternativeForNetwork(mainConfig, alternativeConfig);
 
         if (notEqual(mainConfig.getProperties(), alternativeConfig.getProperties())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "properties");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "properties");
         }
         if (notEqual(mainConfig.getLoadBalancer(), alternativeConfig.getLoadBalancer())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "loadBalancer");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "loadBalancer");
         }
         if (notEqual(mainConfig.getLoadBalancerClassName(), alternativeConfig.getLoadBalancerClassName())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "loadBalancerClassName");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "loadBalancerClassName");
         }
         if (notEqual(mainConfig.getListenerConfigs(), alternativeConfig.getListenerConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "listeners");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "listeners");
         }
         if (notEqual(mainConfig.getInstanceName(), alternativeConfig.getInstanceName())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "instanceName");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "instanceName");
         }
         if (notEqual(mainConfig.getConfigPatternMatcher(), alternativeConfig.getConfigPatternMatcher())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "configPatternMatcher");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "configPatternMatcher");
         }
         if (notEqual(mainConfig.getNearCacheConfigMap(), alternativeConfig.getNearCacheConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "nearCache");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "nearCache");
         }
         if (notEqual(mainConfig.getReliableTopicConfigMap(), alternativeConfig.getReliableTopicConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "reliableTopic");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "reliableTopic");
         }
         if (notEqual(mainConfig.getQueryCacheConfigs(), alternativeConfig.getQueryCacheConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "queryCacheConfigs");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "queryCacheConfigs");
         }
         if (notEqual(mainConfig.getSerializationConfig(), alternativeConfig.getSerializationConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "serializationConfig");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "serializationConfig");
         }
         if (notEqual(mainConfig.getNativeMemoryConfig(), alternativeConfig.getNativeMemoryConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "nativeMemory");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "nativeMemory");
         }
         if (notEqual(mainConfig.getProxyFactoryConfigs(), alternativeConfig.getProxyFactoryConfigs())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "proxyFactory");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "proxyFactory");
         }
         if (notEqual(mainConfig.getManagedContext(), alternativeConfig.getManagedContext())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "managedContext");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "managedContext");
         }
         if (notEqual(mainConfig.getClassLoader(), alternativeConfig.getClassLoader())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "classLoader");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "classLoader");
         }
         if (notEqual(mainConfig.getConnectionStrategyConfig(), alternativeConfig.getConnectionStrategyConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "connectionStrategy");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "connectionStrategy");
         }
         if (notEqual(mainConfig.getUserCodeDeploymentConfig(), alternativeConfig.getUserCodeDeploymentConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userCodeDeployment");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "userCodeDeployment");
         }
         if (notEqual(mainConfig.getFlakeIdGeneratorConfigMap(), alternativeConfig.getFlakeIdGeneratorConfigMap())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "flakeIdGenerator");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "flakeIdGenerator");
         }
         if (notEqual(mainConfig.getLabels(), alternativeConfig.getLabels())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "labels");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "labels");
         }
         if (notEqual(mainConfig.getUserContext(), alternativeConfig.getUserContext())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "userContext");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "userContext");
         }
         if (notEqual(mainConfig.getMetricsConfig(), alternativeConfig.getMetricsConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "metricsConfig");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "metricsConfig");
         }
         if (mainConfig.isBackupAckToClientEnabled() != alternativeConfig.isBackupAckToClientEnabled()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "isBackupAckToClientEnabled");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "isBackupAckToClientEnabled");
         }
     }
 
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private static void checkValidAlternativeForNetwork(ClientConfig mainConfig, ClientConfig alternativeConfig) {
         String mainClusterName = mainConfig.getClusterName();
-        String alterNativeClusterName = alternativeConfig.getClusterName();
+        String alternativeClusterName = alternativeConfig.getClusterName();
 
         ClientNetworkConfig mainNetworkConfig = mainConfig.getNetworkConfig();
         ClientNetworkConfig alternativeNetworkConfig = alternativeConfig.getNetworkConfig();
@@ -202,29 +202,29 @@ public final class FailoverClientConfigSupport {
         }
 
         if (mainNetworkConfig == null || alternativeNetworkConfig == null) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network");
         }
 
         if (mainNetworkConfig.isSmartRouting() != alternativeNetworkConfig.isSmartRouting()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:smartRouting");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:smartRouting");
         }
         if (mainNetworkConfig.isRedoOperation() != alternativeNetworkConfig.isRedoOperation()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:redoOperation");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:redoOperation");
         }
         if (mainNetworkConfig.getConnectionTimeout() != alternativeNetworkConfig.getConnectionTimeout()) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:connectionTimeout");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:connectionTimeout");
         }
         if (notEqual(mainNetworkConfig.getSocketOptions(), alternativeNetworkConfig.getSocketOptions())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:socketOptions");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:socketOptions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPortDefinitions(), alternativeNetworkConfig.getOutboundPortDefinitions())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPortDefinitions");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:outboundPortDefinitions");
         }
         if (notEqual(mainNetworkConfig.getOutboundPorts(), alternativeNetworkConfig.getOutboundPorts())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:outboundPorts");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:outboundPorts");
         }
         if (notEqual(mainNetworkConfig.getClientIcmpPingConfig(), alternativeNetworkConfig.getClientIcmpPingConfig())) {
-            throwInvalidConfigurationException(mainClusterName, alterNativeClusterName, "network:clientIcmp");
+            throwInvalidConfigurationException(mainClusterName, alternativeClusterName, "network:clientIcmp");
         }
     }
 }
