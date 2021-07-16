@@ -1,0 +1,8 @@
+hazelcast:
+  cluster-name: '1234'
+  instance-name: 'true'
+  map:
+    my-map:
+      split-brain-protection-ref: 'true'
+      backup-count: '2'
+      statistics-enabled: 'y'

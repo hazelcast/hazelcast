@@ -468,7 +468,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.12.3</version>
+            <version>1.13.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
