@@ -43,8 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class MapIndexScanPMigrationStressTest extends JetTestSupport {
-
-    private static final int ITEM_COUNT = 850_000;
+    private static final int ITEM_COUNT = 650_000;
     private static final String MAP_NAME = "map";
 
     private TestHazelcastFactory factory;
@@ -68,20 +67,20 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     @Test
     @Ignore
-    // TODO: [sasha] Doesn't work due to bug in MapOperation : it always returns 1 row instead of ITEM_COUNT
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
-        for (int i = 0; i <= ITEM_COUNT; i++) {
-            map.put(1, 1);
-            expected.add(new Row(1, 1));
+        for (int i = 0; i <= ITEM_COUNT / 4; i++) {
+            map.put(i, 1);
+            expected.add(new Row(i, 1));
         }
 
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        MutatorThread mutator = new MutatorThread(500L);
+        MutatorThread mutator = new MutatorThread(1500L);
         mutator.start();
 
+        // Awful performance of such a query, but still a good load for test.
         assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected);
 
         mutator.terminate();
