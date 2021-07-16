@@ -65,12 +65,12 @@ public class ClientStateListener implements LifecycleListener {
      * Note that ClientStateListener should be created after all the alternative client configs are added to the
      * client failoverConfig.
      * Example usage:
-     * <code>
+     * <pre>{@code
      * ClientFailoverConfig clientFailoverConfig = new ClientFailoverConfig();
      * clientFailoverConfig.addClientConfig(clientConfig).addClientConfig(clientConfig2);
      * ClientStateListener listener = new ClientStateListener(clientFailoverConfig);
      * HazelcastClient.newHazelcastFailoverClient(clientFailoverConfig);
-     * </code>
+     * }<pre>
      *
      * @param clientFailoverConfig The client configuration to which this listener will be registered
      * @since 5.0
@@ -80,7 +80,6 @@ public class ClientStateListener implements LifecycleListener {
         for (ClientConfig clientConfig : clientConfigs) {
             clientConfig.addListenerConfig(new ListenerConfig(this));
         }
-
     }
 
     /**
