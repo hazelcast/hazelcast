@@ -112,42 +112,49 @@ public abstract class BaseSingleValueIndexStore extends BaseIndexStore {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void unwrapAndInsertToIndex(Object newValue, QueryableEntry queryableEntry, IndexOperationStats operationStats) {
+    private void unwrapAndInsertToIndex(Object newValue, QueryableEntry<?, ?> queryableEntry,
+                                        IndexOperationStats operationStats) {
         if (newValue == NonTerminalJsonValue.INSTANCE) {
             return;
         }
         if (newValue instanceof MultiResult) {
             multiResultHasToDetectDuplicates = true;
-            List<Object> results = ((MultiResult) newValue).getResults();
+            List<?> results = ((MultiResult<?>) newValue).getResults();
             for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue(o);
+                Comparable<?> sanitizedValue = sanitizeValue(o);
                 Object oldValue = insertInternal(sanitizedValue, queryableEntry);
-                operationStats.onEntryAdded(oldValue, newValue);
+                if (oldValue == null) {
+                    operationStats.onEntryAdded(newValue);
+                }
             }
         } else {
-            Comparable sanitizedValue = sanitizeValue(newValue);
+            Comparable<?> sanitizedValue = sanitizeValue(newValue);
             Object oldValue = insertInternal(sanitizedValue, queryableEntry);
-            operationStats.onEntryAdded(oldValue, newValue);
+            if (oldValue == null) {
+                operationStats.onEntryAdded(newValue);
+            }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void unwrapAndRemoveFromIndex(Object oldValue, Data indexKey, IndexOperationStats operationStats) {
+    private void unwrapAndRemoveFromIndex(Object oldValue, Data recordKey, IndexOperationStats operationStats) {
         if (oldValue == NonTerminalJsonValue.INSTANCE) {
             return;
         }
         if (oldValue instanceof MultiResult) {
-            List<Object> results = ((MultiResult) oldValue).getResults();
+            List<?> results = ((MultiResult<?>) oldValue).getResults();
             for (Object o : results) {
-                Comparable sanitizedValue = sanitizeValue(o);
-                Object removedValue = removeInternal(sanitizedValue, indexKey);
-                operationStats.onEntryRemoved(removedValue);
+                Comparable<?> sanitizedValue = sanitizeValue(o);
+                Object removedValue = removeInternal(sanitizedValue, recordKey);
+                if (removedValue != null) {
+                    operationStats.onEntryRemoved(oldValue);
+                }
             }
         } else {
-            Comparable sanitizedValue = sanitizeValue(oldValue);
-            Object removedValue = removeInternal(sanitizedValue, indexKey);
-            operationStats.onEntryRemoved(removedValue);
+            Comparable<?> sanitizedValue = sanitizeValue(oldValue);
+            Object removedValue = removeInternal(sanitizedValue, recordKey);
+            if (removedValue != null) {
+                operationStats.onEntryRemoved(oldValue);
+            }
         }
     }
 

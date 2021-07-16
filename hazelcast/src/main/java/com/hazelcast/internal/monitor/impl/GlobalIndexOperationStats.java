@@ -38,21 +38,15 @@ public class GlobalIndexOperationStats implements IndexOperationStats {
     }
 
     @Override
-    public void onEntryAdded(Object replacedValue, Object addedValue) {
+    public void onEntryAdded(Object addedValue) {
+        ++entryCountDelta;
         memoryCostDelta += IndexHeapMemoryCostUtil.estimateValueCost(addedValue);
-        if (replacedValue == null) {
-            ++entryCountDelta;
-        } else {
-            memoryCostDelta -= IndexHeapMemoryCostUtil.estimateValueCost(replacedValue);
-        }
     }
 
     @Override
     public void onEntryRemoved(Object removedValue) {
-        if (removedValue != null) {
-            --entryCountDelta;
-            memoryCostDelta -= IndexHeapMemoryCostUtil.estimateValueCost(removedValue);
-        }
+        --entryCountDelta;
+        memoryCostDelta -= IndexHeapMemoryCostUtil.estimateValueCost(removedValue);
     }
 
 }
