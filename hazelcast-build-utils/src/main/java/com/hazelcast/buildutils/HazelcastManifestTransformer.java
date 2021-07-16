@@ -211,7 +211,7 @@ public class HazelcastManifestTransformer extends ManifestResourceTransformer {
             }
         }
 
-        // the Manifest in hazelcast-all uberjar won't have the Automatic-Module-Name
+        // the Manifest in hazelcast uberjar won't have the Automatic-Module-Name
         attributes.remove(AUTOMATIC_MODULE_NAME);
 
         jarOutputStream.putNextEntry(new JarEntry(JarFile.MANIFEST_NAME));
