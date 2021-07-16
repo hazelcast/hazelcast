@@ -91,7 +91,7 @@ class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K
         }
 
         private boolean testEntry(Map.Entry<K, ReplicatedRecord<K, V>> entry) {
-            return entry.getKey() != null && entry.getValue() != null && !entry.getValue().isTombstone();
+            return entry.getKey() != null && entry.getValue() != null;
         }
 
         private Map.Entry<K, ReplicatedRecord<K, V>> findNextEntry() {

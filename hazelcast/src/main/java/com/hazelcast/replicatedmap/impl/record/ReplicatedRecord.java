@@ -45,6 +45,8 @@ public class ReplicatedRecord<K, V> {
     private volatile long creationTime = Clock.currentTimeMillis();
 
     public ReplicatedRecord(K key, V value, long ttlMillis) {
+        assert key != null;
+        assert value != null;
         this.key = key;
         this.value = value;
         this.ttlMillis = ttlMillis;
@@ -68,10 +70,6 @@ public class ReplicatedRecord<K, V> {
         return value;
     }
 
-    public boolean isTombstone() {
-        return value == null;
-    }
-
     public long getTtlMillis() {
         return ttlMillis;
     }
@@ -82,6 +80,7 @@ public class ReplicatedRecord<K, V> {
     }
 
     public V setValueInternal(V value, long ttlMillis) {
+        assert value != null;
         V oldValue = this.value;
         this.value = value;
         this.updateTime = Clock.currentTimeMillis();
