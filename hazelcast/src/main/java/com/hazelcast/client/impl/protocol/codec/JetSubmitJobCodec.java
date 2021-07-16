@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,19 +35,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("4626f71b31582e1d5b5c66d232b71189")
-public final class JetTerminateJobCodec {
-    //hex: 0xFE0200
-    public static final int REQUEST_MESSAGE_TYPE = 16646656;
-    //hex: 0xFE0201
-    public static final int RESPONSE_MESSAGE_TYPE = 16646657;
+@Generated("62c58dbff264559e15ad3c370bd885da")
+public final class JetSubmitJobCodec {
+    //hex: 0xFE0100
+    public static final int REQUEST_MESSAGE_TYPE = 16646400;
+    //hex: 0xFE0101
+    public static final int RESPONSE_MESSAGE_TYPE = 16646401;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_TERMINATE_MODE_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET = REQUEST_TERMINATE_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
+    private static final int REQUEST_IS_LIGHT_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetTerminateJobCodec() {
+    private JetSubmitJobCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -59,45 +58,51 @@ public final class JetTerminateJobCodec {
 
         /**
          */
-        public int terminateMode;
+        public com.hazelcast.internal.serialization.Data dag;
 
         /**
          */
-        public @Nullable java.util.UUID lightJobCoordinator;
+        public @Nullable com.hazelcast.internal.serialization.Data jobConfig;
 
         /**
-         * True if the lightJobCoordinator is received from the client, false otherwise.
-         * If this is false, lightJobCoordinator has the default value for its type.
          */
-        public boolean isLightJobCoordinatorExists;
+        public boolean isLightJob;
+
+        /**
+         * True if the isLightJob is received from the client, false otherwise.
+         * If this is false, isLightJob has the default value for its type.
+         */
+        public boolean isIsLightJobExists;
     }
 
-    public static ClientMessage encodeRequest(long jobId, int terminateMode, @Nullable java.util.UUID lightJobCoordinator) {
+    public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data dag, @Nullable com.hazelcast.internal.serialization.Data jobConfig, boolean isLightJob) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Jet.TerminateJob");
+        clientMessage.setOperationName("Jet.SubmitJob");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
-        encodeInt(initialFrame.content, REQUEST_TERMINATE_MODE_FIELD_OFFSET, terminateMode);
-        encodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET, lightJobCoordinator);
+        encodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET, isLightJob);
         clientMessage.add(initialFrame);
+        DataCodec.encode(clientMessage, dag);
+        CodecUtil.encodeNullable(clientMessage, jobConfig, DataCodec::encode);
         return clientMessage;
     }
 
-    public static JetTerminateJobCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static JetSubmitJobCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        request.terminateMode = decodeInt(initialFrame.content, REQUEST_TERMINATE_MODE_FIELD_OFFSET);
-        if (initialFrame.content.length >= REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
-            request.lightJobCoordinator = decodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET);
-            request.isLightJobCoordinatorExists = true;
+        if (initialFrame.content.length >= REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.isLightJob = decodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET);
+            request.isIsLightJobExists = true;
         } else {
-            request.isLightJobCoordinatorExists = false;
+            request.isIsLightJobExists = false;
         }
+        request.dag = DataCodec.decode(iterator);
+        request.jobConfig = CodecUtil.decodeNullable(iterator, DataCodec::decode);
         return request;
     }
 
@@ -109,6 +114,4 @@ public final class JetTerminateJobCodec {
 
         return clientMessage;
     }
-
-
 }

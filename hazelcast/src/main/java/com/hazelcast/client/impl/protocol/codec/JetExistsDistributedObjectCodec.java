@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,56 +35,69 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("2eceabbaee0153e6e5af4dd180b9e9f5")
-public final class JetGetJobMetricsCodec {
-    //hex: 0xFE0D00
-    public static final int REQUEST_MESSAGE_TYPE = 16649472;
-    //hex: 0xFE0D01
-    public static final int RESPONSE_MESSAGE_TYPE = 16649473;
-    private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+@Generated("6307de6358154fb41e784fd3b9526ee7")
+public final class JetExistsDistributedObjectCodec {
+    //hex: 0xFE0C00
+    public static final int REQUEST_MESSAGE_TYPE = 16649216;
+    //hex: 0xFE0C01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649217;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
-    private JetGetJobMetricsCodec() {
+    private JetExistsDistributedObjectCodec() {
     }
 
-    public static ClientMessage encodeRequest(long jobId) {
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
+    public static class RequestParameters {
+
+        /**
+         */
+        public java.lang.String serviceName;
+
+        /**
+         */
+        public java.lang.String objectName;
+    }
+
+    public static ClientMessage encodeRequest(java.lang.String serviceName, java.lang.String objectName) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.GetJobMetrics");
+        clientMessage.setOperationName("Jet.ExistsDistributedObject");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
-        encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
         clientMessage.add(initialFrame);
+        StringCodec.encode(clientMessage, serviceName);
+        StringCodec.encode(clientMessage, objectName);
         return clientMessage;
     }
 
-    /**
-     */
-    public static long decodeRequest(ClientMessage clientMessage) {
+    public static JetExistsDistributedObjectCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ClientMessage.Frame initialFrame = iterator.next();
-        return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
+        RequestParameters request = new RequestParameters();
+        //empty initial frame
+        iterator.next();
+        request.serviceName = StringCodec.decode(iterator);
+        request.objectName = StringCodec.decode(iterator);
+        return request;
     }
 
-    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
+    public static ClientMessage encodeResponse(boolean response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
+        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
-        DataCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     /**
      */
-    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
+    public static boolean decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        //empty initial frame
-        iterator.next();
-        return DataCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
     }
-
 }
