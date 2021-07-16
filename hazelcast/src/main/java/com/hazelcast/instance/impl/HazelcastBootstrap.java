@@ -25,6 +25,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
@@ -60,6 +61,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
@@ -261,7 +263,13 @@ public final class HazelcastBootstrap {
         LOGGER.info("Bootstrapped instance requested but application wasn't called from hazelcast submit script. "
                 + "Creating a standalone Hazelcast instance instead. Jet is enabled in this standalone instance.");
         Config config = Config.load();
+        // enable jet
         config.getJetConfig().setEnabled(true);
+
+        // Disable Hazelcast from binding to all local network interfaces
+        config.setProperty(ClusterProperty.SOCKET_BIND_ANY.getName(), "false");
+        // Add localhost to available interfaces to bind
+        config.getNetworkConfig().setInterfaces(new InterfacesConfig().setEnabled(true).addInterface("127.0.0.1"));
 
         // turn off all discovery to make sure node doesn't join any existing cluster
         config.setProperty("hazelcast.wait.seconds.before.join", "0");
