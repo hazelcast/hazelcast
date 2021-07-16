@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,70 +35,45 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("aa603d5be6013116a7d92a678ce0ec79")
-public final class JetExistsDistributedObjectCodec {
-    //hex: 0xFE0C00
-    public static final int REQUEST_MESSAGE_TYPE = 16649216;
-    //hex: 0xFE0C01
-    public static final int RESPONSE_MESSAGE_TYPE = 16649217;
+@Generated("e675f74ee32b162b4339e61aa1fac162")
+public final class JetGetJobSummaryListCodec {
+    //hex: 0xFE0B00
+    public static final int REQUEST_MESSAGE_TYPE = 16648960;
+    //hex: 0xFE0B01
+    public static final int RESPONSE_MESSAGE_TYPE = 16648961;
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetExistsDistributedObjectCodec() {
+    private JetGetJobSummaryListCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         */
-        public java.lang.String serviceName;
-
-        /**
-         */
-        public java.lang.String objectName;
-    }
-
-    public static ClientMessage encodeRequest(java.lang.String serviceName, java.lang.String objectName) {
+    public static ClientMessage encodeRequest() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.ExistsDistributedObject");
+        clientMessage.setOperationName("Jet.GetJobSummaryList");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, serviceName);
-        StringCodec.encode(clientMessage, objectName);
         return clientMessage;
     }
 
-    public static JetExistsDistributedObjectCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
-        //empty initial frame
-        iterator.next();
-        request.serviceName = StringCodec.decode(iterator);
-        request.objectName = StringCodec.decode(iterator);
-        return request;
-    }
-
-    public static ClientMessage encodeResponse(boolean response) {
+    public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
+        DataCodec.encode(clientMessage, response);
         return clientMessage;
     }
 
     /**
      */
-    public static boolean decodeResponse(ClientMessage clientMessage) {
+    public static com.hazelcast.internal.serialization.Data decodeResponse(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ClientMessage.Frame initialFrame = iterator.next();
-        return decodeBoolean(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
+        //empty initial frame
+        iterator.next();
+        return DataCodec.decode(iterator);
     }
-
 }

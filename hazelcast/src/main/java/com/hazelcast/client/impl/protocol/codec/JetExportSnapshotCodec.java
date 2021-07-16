@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,18 +35,18 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("3b32878d110bfafa11e033b78f7fa073")
-public final class JetSubmitJobCodec {
-    //hex: 0xFE0100
-    public static final int REQUEST_MESSAGE_TYPE = 16646400;
-    //hex: 0xFE0101
-    public static final int RESPONSE_MESSAGE_TYPE = 16646401;
+@Generated("114d00f8ae926620df9bdd23e84f6195")
+public final class JetExportSnapshotCodec {
+    //hex: 0xFE0A00
+    public static final int REQUEST_MESSAGE_TYPE = 16648704;
+    //hex: 0xFE0A01
+    public static final int RESPONSE_MESSAGE_TYPE = 16648705;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_IS_LIGHT_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_CANCEL_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CANCEL_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetSubmitJobCodec() {
+    private JetExportSnapshotCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -58,51 +58,34 @@ public final class JetSubmitJobCodec {
 
         /**
          */
-        public com.hazelcast.internal.serialization.Data dag;
+        public java.lang.String name;
 
         /**
          */
-        public @Nullable com.hazelcast.internal.serialization.Data jobConfig;
-
-        /**
-         */
-        public boolean isLightJob;
-
-        /**
-         * True if the isLightJob is received from the client, false otherwise.
-         * If this is false, isLightJob has the default value for its type.
-         */
-        public boolean isIsLightJobExists;
+        public boolean cancelJob;
     }
 
-    public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data dag, @Nullable com.hazelcast.internal.serialization.Data jobConfig, boolean isLightJob) {
+    public static ClientMessage encodeRequest(long jobId, java.lang.String name, boolean cancelJob) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Jet.SubmitJob");
+        clientMessage.setOperationName("Jet.ExportSnapshot");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
-        encodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET, isLightJob);
+        encodeBoolean(initialFrame.content, REQUEST_CANCEL_JOB_FIELD_OFFSET, cancelJob);
         clientMessage.add(initialFrame);
-        DataCodec.encode(clientMessage, dag);
-        CodecUtil.encodeNullable(clientMessage, jobConfig, DataCodec::encode);
+        StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
-    public static JetSubmitJobCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static JetExportSnapshotCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        if (initialFrame.content.length >= REQUEST_IS_LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
-            request.isLightJob = decodeBoolean(initialFrame.content, REQUEST_IS_LIGHT_JOB_FIELD_OFFSET);
-            request.isIsLightJobExists = true;
-        } else {
-            request.isIsLightJobExists = false;
-        }
-        request.dag = DataCodec.decode(iterator);
-        request.jobConfig = CodecUtil.decodeNullable(iterator, DataCodec::decode);
+        request.cancelJob = decodeBoolean(initialFrame.content, REQUEST_CANCEL_JOB_FIELD_OFFSET);
+        request.name = StringCodec.decode(iterator);
         return request;
     }
 
@@ -114,6 +97,4 @@ public final class JetSubmitJobCodec {
 
         return clientMessage;
     }
-
-
 }

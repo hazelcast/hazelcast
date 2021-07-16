@@ -17,10 +17,10 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;

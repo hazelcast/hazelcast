@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,29 +35,38 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("08f8b3e7cedc4e0ad18844b0245cfd8e")
-public final class JetGetJobSummaryListCodec {
-    //hex: 0xFE0B00
-    public static final int REQUEST_MESSAGE_TYPE = 16648960;
-    //hex: 0xFE0B01
-    public static final int RESPONSE_MESSAGE_TYPE = 16648961;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+@Generated("d0b9643c8fe9f9b972b3670b58e70efe")
+public final class JetGetJobMetricsCodec {
+    //hex: 0xFE0D00
+    public static final int REQUEST_MESSAGE_TYPE = 16649472;
+    //hex: 0xFE0D01
+    public static final int RESPONSE_MESSAGE_TYPE = 16649473;
+    private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetGetJobSummaryListCodec() {
+    private JetGetJobMetricsCodec() {
     }
 
-    public static ClientMessage encodeRequest() {
+    public static ClientMessage encodeRequest(long jobId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.GetJobSummaryList");
+        clientMessage.setOperationName("Jet.GetJobMetrics");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
+        encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
+    /**
+     */
+    public static long decodeRequest(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        ClientMessage.Frame initialFrame = iterator.next();
+        return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
+    }
 
     public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
@@ -77,5 +86,4 @@ public final class JetGetJobSummaryListCodec {
         iterator.next();
         return DataCodec.decode(iterator);
     }
-
 }
