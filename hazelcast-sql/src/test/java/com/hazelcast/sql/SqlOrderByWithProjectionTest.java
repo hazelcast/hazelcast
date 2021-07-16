@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
-public class SqlOrderByLimitJoinTest extends SqlTestSupport {
+public class SqlOrderByWithProjectionTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(1, new Config().setJetConfig(new JetConfig().setEnabled(true)));
@@ -52,10 +52,10 @@ public class SqlOrderByLimitJoinTest extends SqlTestSupport {
 
     @Test
     public void when_orderByWithLimitUsedOnJoinedTable_limitWorks() {
-        final List<Map<String, Object>> results = execute("select abs(t0.this) as c1, t1.this as c2 "
-                + "from t0 join t1 on t0.__key = t1.__key "
-                + "order by t0.this desc "
-                + "limit 5");
+        final List<Map<String, Object>> results = execute("SELECT ABS(t0.this) AS c1, t1.this AS c2 "
+                + "FROM t0 JOIN t1 ON t0.__key = t1.__key "
+                + "ORDER BY t0.this DESC "
+                + "LIMIT 5");
 
         final List<Object> c1s = results.stream().map(m -> m.get("c1")).collect(Collectors.toList());
 
@@ -65,10 +65,10 @@ public class SqlOrderByLimitJoinTest extends SqlTestSupport {
 
     @Test
     public void when_orderByWithLimitAndOffsetUsedOnJoinedTable_limitAndOffsetWork() {
-        final List<Map<String, Object>> results = execute("select abs(t0.this) as c1, t1.this as c2 "
-                + "from t0 join t1 on t0.__key = t1.__key "
-                + "order by t0.this desc "
-                + "limit 5 offset 2");
+        final List<Map<String, Object>> results = execute("SELECT ABS(t0.this) AS c1, t1.this AS c2 "
+                + "FROM t0 JOIN t1 ON t0.__key = t1.__key "
+                + "ORDER BY t0.this DESC "
+                + "LIMIT 5 OFFSET 2");
 
         final List<Object> c1s = results.stream().map(m -> m.get("c1")).collect(Collectors.toList());
 
