@@ -43,7 +43,6 @@ import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
 import static com.hazelcast.jet.core.TestProcessors.reset;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
