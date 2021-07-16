@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -34,7 +36,7 @@ import java.util.List;
 
 public class UpdateByKeyMapLogicalRel extends AbstractRelNode implements LogicalRel {
 
-    private final PartitionedMapTable table;
+    private final RelOptTable table;
     private final RexNode keyCondition;
     private final List<String> updatedColumns;
     private final List<RexNode> sourceExpressions;
@@ -42,12 +44,14 @@ public class UpdateByKeyMapLogicalRel extends AbstractRelNode implements Logical
     UpdateByKeyMapLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            PartitionedMapTable table,
+            RelOptTable table,
             RexNode keyCondition,
             List<String> updatedColumns,
             List<RexNode> sourceExpressions
     ) {
         super(cluster, traitSet);
+
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.keyCondition = keyCondition;
@@ -55,7 +59,7 @@ public class UpdateByKeyMapLogicalRel extends AbstractRelNode implements Logical
         this.sourceExpressions = sourceExpressions;
     }
 
-    public PartitionedMapTable table() {
+    public RelOptTable table() {
         return table;
     }
 
@@ -78,13 +82,14 @@ public class UpdateByKeyMapLogicalRel extends AbstractRelNode implements Logical
 
     @Override
     public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeTinyCost();
+        // zero as not starting any job
+        return planner.getCostFactory().makeZeroCost();
     }
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getSqlName())
+                .item("table", table.getQualifiedName())
                 .item("keyCondition", keyCondition)
                 .item("updatedColumns", updatedColumns)
                 .item("sourceExpressions", sourceExpressions);

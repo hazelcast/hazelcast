@@ -17,12 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.RelFactories;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
@@ -45,7 +42,6 @@ public final class SinkMapLogicalRule extends RelOptRule {
                                 && OptUtils.hasTableType(sink, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
-                RelFactories.LOGICAL_BUILDER,
                 SinkMapLogicalRule.class.getSimpleName()
         );
     }
@@ -58,13 +54,9 @@ public final class SinkMapLogicalRule extends RelOptRule {
         SinkMapLogicalRel rel = new SinkMapLogicalRel(
                 logicalSink.getCluster(),
                 OptUtils.toLogicalConvention(logicalSink.getTraitSet()),
-                table(logicalSink),
+                logicalSink.getTable(),
                 logicalValues.values()
         );
         call.transformTo(rel);
-    }
-
-    private static <T extends Table> T table(SinkLogicalRel sink) {
-        return sink.getTable().unwrap(HazelcastTable.class).getTarget();
     }
 }

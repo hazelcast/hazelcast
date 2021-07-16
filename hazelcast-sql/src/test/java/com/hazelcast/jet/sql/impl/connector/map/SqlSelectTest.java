@@ -77,6 +77,18 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_selectWithEqFilterAndProject() {
+        HazelcastInstance hazelcastInstance = instance();
+        String name = randomName();
+        IMap<Integer, String> map = hazelcastInstance.getMap(name);
+
+        fillIMapAndGetData(map, 14);
+        List<Row> filteredAndProjectedRows = Collections.singletonList(new Row(10L, "F"));
+
+        assertRowsAnyOrder("SELECT __key * 2, this FROM " + name + " AS I WHERE I.__key = 5", filteredAndProjectedRows);
+    }
+
+    @Test
     public void test_selectWithEvenNumbersFilter() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();

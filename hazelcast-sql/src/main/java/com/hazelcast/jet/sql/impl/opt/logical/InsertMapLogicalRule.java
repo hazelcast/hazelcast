@@ -17,12 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.RelFactories;
 
 import static com.hazelcast.jet.sql.impl.opt.JetConventions.LOGICAL;
 
@@ -46,7 +43,6 @@ public final class InsertMapLogicalRule extends RelOptRule {
                                 && OptUtils.hasTableType(insert, PartitionedMapTable.class),
                         operand(ValuesLogicalRel.class, none())
                 ),
-                RelFactories.LOGICAL_BUILDER,
                 InsertMapLogicalRule.class.getSimpleName()
         );
     }
@@ -60,14 +56,10 @@ public final class InsertMapLogicalRule extends RelOptRule {
             InsertMapLogicalRel rel = new InsertMapLogicalRel(
                     logicalInsert.getCluster(),
                     OptUtils.toLogicalConvention(logicalInsert.getTraitSet()),
-                    table(logicalInsert),
+                    logicalInsert.getTable(),
                     logicalValues.values().get(0)
             );
             call.transformTo(rel);
         }
-    }
-
-    private static <T extends Table> T table(InsertLogicalRel insert) {
-        return insert.getTable().unwrap(HazelcastTable.class).getTarget();
     }
 }
