@@ -139,7 +139,8 @@ public final class MetricNames {
      * Tracks the start time of a given execution of a specific job.
      * The execution and the job can be identified based on the
      * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
-     * the metric.
+     * the metric. It uses {@link System#currentTimeMillis} to measure
+     * the time on the job start.
      *
      * @since Jet 4.0
      */
@@ -149,7 +150,8 @@ public final class MetricNames {
      * Tracks the completion time of a given execution of a specific job.
      * The execution and the job can be identified based on the
      * {@link MetricTags#EXECUTION} & {@link MetricTags#JOB} tags of
-     * the metric.
+     * the metric. It uses {@link System#currentTimeMillis} to measure
+     * the time on the job completion.
      *
      * @since Jet 4.0
      */
