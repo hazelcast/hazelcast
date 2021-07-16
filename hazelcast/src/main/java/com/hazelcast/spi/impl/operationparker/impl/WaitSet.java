@@ -76,6 +76,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     public void park(BlockingOperation op) {
         long timeout = op.getWaitTimeout();
         WaitSetEntry entry = new WaitSetEntry(queue, op);
+        entry.setOperationResponseHandler(entry);
         entry.setNodeEngine(nodeEngine);
         queue.offer(entry);
         if (timeout > -1 && timeout < TIMEOUT_UPPER_BOUND) {

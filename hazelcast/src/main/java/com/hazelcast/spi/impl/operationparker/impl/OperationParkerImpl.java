@@ -228,6 +228,30 @@ public class OperationParkerImpl implements OperationParker, LiveOperationsTrack
                 WaitSetEntry entry = (WaitSetEntry) delayQueue.poll(waitTime, MILLISECONDS);
                 if (entry != null) {
                     if (entry.isValid()) {
+                        // CORRECTNESS NOTE
+                        // Invalidation effectively means executing the WaitSetEntry operation.
+
+                        // BUT: WaitSetEntry execution can fail, for example when a partition migration is in-progress
+                        // then OperationRunner may refuses to execute it.
+
+                        // This means WaitSetEntry operation is consumed from the delayQueue, execution failed
+                        // and the WaitSetEntry might appear to be lost. In fact, the WaitSetEntry operation is
+                        // actually *not lost*. It still remains in the WaitSet which is iterated over every
+                        // 1 second or so.
+                        //
+                        // So in the worst case it means a user timeout won't be respected, especially when
+                        // the timeout is sub 1 second. However that's not a big deal as when data migration is
+                        // in-progress then some extra latency is tolerable.
+
+                        // SIMPLICITY NOTE
+                        // I tried to simplify OperationParkerImpl logic by removing the delayQueue altogether.
+                        // Because what's the point of a delayQueue when we are iterating over all entries anyway?
+                        // It turns out the delayQueue is still useful for sub-second timeouts.
+                        // Think of a user invoking iqueue.poll(50, TimeUnit.MILLISECONDS);
+                        // By removing the delayQueue this call could take up to 1 second. This clearly violates user
+                        // expectations. It's acceptable to violate it during extraordinary situations, for example
+                        // during cluster topology changes and partition migration. But when everything is running fine
+                        // we should do our best to fulfill the expectation.
                         invalidate(entry);
                     }
                 }
