@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.processors.LimitOffsetP;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -163,6 +164,23 @@ public class CreateDagVisitor {
         return vertex;
     }
 
+    public Vertex onLimitOffset(LimitOffsetPhysicalRel rel) {
+        Expression<?> limit = rel.limit(parameterMetadata);
+        if (limit == null) {
+            limit = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        }
+        Expression<?> offset = rel.offset(parameterMetadata);
+        if (offset == null) {
+            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+        }
+
+        Vertex vertex = dag.newUniqueVertex("LimitOffset",
+                LimitOffsetP.limitOffset(localMemberAddress, limit, offset)
+        );
+        connectInputPreserveCollation(rel, vertex);
+        return vertex;
+    }
+
     public Vertex onSort(SortPhysicalRel rel) {
         ComparatorEx<?> comparator = ExpressionUtil.comparisonFn(rel.getCollations());
 
@@ -282,31 +300,8 @@ public class CreateDagVisitor {
 
     public Vertex onRoot(JetRootRel rootRel) {
         RelNode input = rootRel.getInput();
-        Expression<?> fetch;
-        Expression<?> offset;
-
-        if (input instanceof SortPhysicalRel) {
-            SortPhysicalRel sortRel = (SortPhysicalRel) input;
-
-            if (sortRel.fetch == null) {
-                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            } else {
-                fetch = sortRel.fetch(parameterMetadata);
-            }
-
-            if (sortRel.offset == null) {
-                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-            } else {
-                offset = sortRel.offset(parameterMetadata);
-            }
-
-            if (!sortRel.requiresSort()) {
-                input = sortRel.getInput();
-            }
-        } else {
-            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-        }
+        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",

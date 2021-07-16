@@ -40,13 +40,26 @@ final class SortLogicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         Sort sort = (Sort) rel;
 
-        return new SortLogicalRel(
+        SortLogicalRel sortLogicalRel = new SortLogicalRel(
                 sort.getCluster(),
                 OptUtils.toLogicalConvention(sort.getTraitSet()),
                 OptUtils.toLogicalInput(sort.getInput()),
                 sort.getCollation(),
-                sort.offset,
-                sort.fetch
+                null,
+                null
         );
+        RelNode topNode = sortLogicalRel;
+
+        if (sort.offset != null || sort.fetch != null) {
+            topNode = new LimitOffsetLogicalRel(
+                    sort.getCluster(),
+                    OptUtils.toLogicalConvention(sort.getTraitSet()),
+                    sortLogicalRel,
+                    sort.fetch,
+                    sort.offset
+            );
+        }
+
+        return topNode;
     }
 }
