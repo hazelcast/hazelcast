@@ -67,7 +67,7 @@ public final class JobSubmissionSlownessRegressionTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
+        Config config = defaultInstanceConfigWithJetEnabled();
         config.setProperty("hazelcast.logging.type", "none");
         createHazelcastInstance(config);
     }
