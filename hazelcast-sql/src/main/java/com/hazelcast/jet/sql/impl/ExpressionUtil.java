@@ -22,6 +22,7 @@ import com.hazelcast.function.PredicateEx;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import org.apache.calcite.rel.RelFieldCollation.Direction;
@@ -205,5 +206,9 @@ public final class ExpressionUtil {
             @Nonnull ExpressionEvalContext context
     ) {
         return expression.eval(row, context);
+    }
+
+    public static <T> T evaluate(@Nonnull Expression<T> expression, @Nonnull ExpressionEvalContext context) {
+        return expression.eval(EmptyRow.INSTANCE, context);
     }
 }

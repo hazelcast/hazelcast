@@ -78,6 +78,24 @@ public class SqlSortTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_orderByOnNonProjectExpressionWithOffsetLimit() {
+        String tableName = createTable(
+                new String[]{"A", "1"},
+                new String[]{"B", "4"},
+                new String[]{"H", "3"},
+                new String[]{"Z", "2"}
+        );
+
+        assertRowsOrdered(
+                String.format("SELECT name, distance FROM %s ORDER BY LENGTH(name) + distance LIMIT 2 OFFSET 1", tableName),
+                asList(
+                        new Row("Z", 2),
+                        new Row("H", 3)
+                )
+        );
+    }
+
+    @Test
     public void test_nullAscending() {
         String tableName = createTable(
                 new String[]{"B", null},

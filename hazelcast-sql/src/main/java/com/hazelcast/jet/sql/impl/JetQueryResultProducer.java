@@ -47,13 +47,6 @@ public class JetQueryResultProducer implements QueryResultProducer {
     private final AtomicReference<Exception> done = new AtomicReference<>();
 
     private InternalIterator iterator;
-    private long limit = Long.MAX_VALUE;
-    private long offset;
-
-    public void init(long limit, long offset) {
-        this.limit = limit;
-        this.offset = offset;
-    }
 
     @Override
     public ResultIterator<Row> iterator() {
@@ -76,19 +69,9 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         ensureNotDone();
-        while (offset > 0 && inbox.poll() != null) {
-            offset--;
-        }
 
         for (Object[] row; (row = (Object[]) inbox.peek()) != null && rows.offer(new HeapRow(row)); ) {
             inbox.remove();
-            if (limit != Long.MAX_VALUE) {
-                limit -= 1;
-                if (limit < 1) {
-                    done.compareAndSet(null, new ResultLimitReachedException());
-                    ensureNotDone();
-                }
-            }
         }
     }
 
