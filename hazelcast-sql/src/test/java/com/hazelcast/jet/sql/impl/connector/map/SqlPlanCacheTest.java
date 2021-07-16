@@ -18,13 +18,12 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -130,24 +129,21 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_indexCaching() {
-        fillMapAndCreateIndex(instance(), "m", IndexType.SORTED, "__key.id");
-        createMapping("map", "m", "id", PersonId.class, "varchar");
+    @Ignore // TODO: [sasha] enable after IMDG engine removal
+    public void test_index() {
+        IMap<Object, Object> map = instance().getMap("m");
+
+        createMapping("map", map.getName(), "id", PersonId.class, "varchar");
+        String indexName = randomName();
+
+        map.addIndex(new IndexConfig(IndexType.SORTED, "__key.id").setName(indexName));
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
-        SqlPlan firstPlan = planCache(instance()).getPlans().values().iterator().next();
 
-        removeAllIndexes(instance(), "m");
+        getMapContainer(map).getIndexes().destroyIndexes();
+        map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
 
-        fillMapAndCreateIndex(instance(), "m2", IndexType.HASH, "__key.id");
-        createMapping("map", "m2", "id", PersonId.class, "varchar");
-        assertThat(planCache(instance()).size()).isZero();
-
-        sqlService.execute("SELECT * FROM map WHERE id = 0");
-        assertThat(planCache(instance()).size()).isEqualTo(1);
-        SqlPlan secondPlan = planCache(instance()).getPlans().values().iterator().next();
-
-        assertThat(firstPlan).isNotEqualTo(secondPlan);
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -188,24 +184,5 @@ public class SqlPlanCacheTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
                 + ")"
         );
-    }
-
-    private static void fillMapAndCreateIndex(
-            HazelcastInstance instance,
-            String mapName,
-            IndexType indexType,
-            String... attributes) {
-        // Empty map doesn't have converters, so, map filling is required to create converters.
-        IMap<PersonId, String> map = instance.getMap(mapName);
-        map.put(new PersonId(1), "Ann");
-        map.put(new PersonId(2), "Boris");
-
-        IndexConfig indexConfig = new IndexConfig(indexType, attributes).setName(randomName());
-        map.addIndex(indexConfig);
-    }
-
-    private static void removeAllIndexes(HazelcastInstance instance, String mapName) {
-        IMap<PersonId, String> map = instance.getMap(mapName);
-        getMapContainer(map).getIndexes().destroyIndexes();
     }
 }
