@@ -62,6 +62,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     public static final Character CHAR_VAL = 'f';
     public static final String STRING_VAL = "foo";
+    public static final String SEPARATOR_VAL = "-";
     public static final boolean BOOLEAN_VAL = true;
     public static final byte BYTE_VAL = (byte) 1;
     public static final short SHORT_VAL = (short) 1;

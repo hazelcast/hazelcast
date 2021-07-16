@@ -184,6 +184,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOWER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT_WS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
