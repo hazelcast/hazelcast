@@ -111,7 +111,9 @@ public interface MultiMap<K, V> extends BaseMultiMap<K, V> {
      * @param key   the key to be stored
      * @param value the value to be stored
      * @return {@code true} if size of the multimap is increased,
-     * {@code false} if the multimap already contains the key-value pair
+     * {@code false} if the collection type is SET and multimap already
+     * contains the key-value pair, {@code false} otherwise if
+     * the collection type is LIST
      */
     boolean put(@Nonnull K key, @Nonnull V value);
 
