@@ -78,8 +78,8 @@ public class ClientReplicatedMapListenerTest extends AbstractReplicatedMapListen
         // wait to get event on client side
         assertOpenEventually(eventReceivedLatch);
 
-        assertEquals(0, key.DESERIALIZATION_COUNT.get());
-        assertEquals(0, value.DESERIALIZATION_COUNT.get());
+        assertEquals(0, DeserializationCounter.DESERIALIZATION_COUNT.get());
+        assertEquals(0, DeserializationCounter.DESERIALIZATION_COUNT.get());
     }
 
     public static class DeserializationCounter implements DataSerializable {
