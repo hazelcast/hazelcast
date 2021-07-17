@@ -78,6 +78,13 @@ public class ClientMultiMapListenersTest {
         mm.addLocalEntryListener(myEntryListener);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddLocalEntryListener_whenValueIncluded() {
+        final MultiMap mm = client.getMultiMap(randomString());
+        MyEntryListener myEntryListener = new CountDownValueNotNullListener(1);
+        mm.addLocalEntryListener(myEntryListener, true);
+    }
+
     @Test(expected = NullPointerException.class)
     public void testAddListener_whenListenerNull() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());

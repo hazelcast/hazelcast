@@ -330,6 +330,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Nonnull
     @Override
+    public UUID addLocalEntryListener(@Nonnull EntryListener<K, V> listener, boolean includeValue) {
+        throw new UnsupportedOperationException("Locality for client is ambiguous");
+    }
+
+    @Nonnull
+    @Override
     public UUID addEntryListener(@Nonnull EntryListener<K, V> listener, final boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
