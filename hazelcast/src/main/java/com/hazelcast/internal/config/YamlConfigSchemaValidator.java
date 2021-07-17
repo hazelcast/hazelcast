@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.cp.internal.raft.impl.state.LeaderState;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
@@ -24,19 +23,17 @@ import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 public class YamlConfigSchemaValidator {
 
@@ -97,7 +94,7 @@ public class YamlConfigSchemaValidator {
         }
         ObjectSchema schema = (ObjectSchema) SCHEMA;
         Set<String> forbiddenRootPropNames = ((ObjectSchema) schema.getPropertySchemas()
-                        .get(hzConfigRootNodeName)).getPropertySchemas().keySet();
+                .get(hzConfigRootNodeName)).getPropertySchemas().keySet();
         List<String> misIndentedRootProps = new ArrayList<>();
         rootNode.children().forEach(yamlNode -> {
             if (forbiddenRootPropNames.contains(yamlNode.nodeName())) {
@@ -118,7 +115,6 @@ public class YamlConfigSchemaValidator {
         }
     }
 
-    @NotNull
     private SchemaViolationConfigurationException createExceptionForMisIndentedConfigProp(String propName) {
         return new SchemaViolationConfigurationException("Mis-indented hazelcast configuration property found: ["
                 + propName + "]", "#", "#", emptyList());
