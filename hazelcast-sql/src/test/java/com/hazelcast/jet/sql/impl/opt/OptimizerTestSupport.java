@@ -23,9 +23,13 @@ import com.hazelcast.jet.sql.impl.JetSqlBackend;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.jet.sql.impl.schema.MappingStorage;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
@@ -35,19 +39,22 @@ import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
+import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
-import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static java.util.Arrays.asList;
@@ -62,18 +69,44 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
-        HazelcastSchema schema =
-                new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
-        return optimize(sql, false, schema).getLogical();
+        HazelcastSchema schema = schema(tables);
+        OptimizerContext context = context(schema);
+        return optimizeLogicalInternal(sql, context);
     }
 
     protected RelNode optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
-        HazelcastSchema schema =
-                new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
-        return optimize(sql, requiresJob, schema).getLogical();
+        HazelcastSchema schema = schema(tables);
+        OptimizerContext context = context(schema);
+        context.setRequiresJob(requiresJob);
+        return optimizeLogicalInternal(sql, context);
     }
 
-    protected static Result optimize(String sql, boolean requiresJob, HazelcastSchema schema) {
+    protected Result optimizePhysical(String sql, List<QueryDataType> parameterTypes, HazelcastTable... tables) {
+        HazelcastSchema schema = schema(tables);
+        OptimizerContext context = context(schema, parameterTypes.toArray(new QueryDataType[0]));
+        return optimizePhysicalInternal(sql, context);
+    }
+
+    private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
+        QueryParseResult parseResult = context.parse(sql);
+        RelNode rel = context.convert(parseResult).getRel();
+
+        return (LogicalRel) context
+                .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+    }
+
+    private static Result optimizePhysicalInternal(String sql, OptimizerContext context) {
+        LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
+        PhysicalRel physicalRel = (PhysicalRel) context
+                .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
+        return new Result(logicalRel, physicalRel);
+    }
+
+    private static HazelcastSchema schema(HazelcastTable... tables) {
+        return new HazelcastSchema(stream(tables).collect(toMap(table -> table.getTarget().getSqlName(), identity())));
+    }
+
+    private static OptimizerContext context(HazelcastSchema schema, QueryDataType... parameterTypes) {
         HazelcastInstance instance = instance();
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
@@ -89,26 +122,27 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 new HazelcastSqlBackend(nodeEngine),
                 new JetSqlBackend(nodeEngine, planExecutor)
         );
-        context.setRequiresJob(requiresJob);
 
-        return optimize(sql, context);
-    }
+        ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
+                .mapToObj(i -> new StrictParameterConverter(i, SqlParserPos.ZERO, parameterTypes[i]))
+                .toArray(ParameterConverter[]::new);
+        QueryParameterMetadata parameterMetadata = new QueryParameterMetadata(parameterConverters);
+        context.setParameterMetadata(parameterMetadata);
 
-    private static Result optimize(String sql, OptimizerContext context) {
-        QueryParseResult parseResult = context.parse(sql);
-
-        SqlNode node = parseResult.getNode();
-        RelNode convertedRel = context.convert(parseResult).getRel();
-        LogicalRel logicalRel = optimizeLogicalInternal(context, convertedRel);
-
-        return new Result(node, convertedRel, logicalRel);
-    }
-
-    private static LogicalRel optimizeLogicalInternal(OptimizerContext context, RelNode node) {
-        return (LogicalRel) context.optimize(node, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(node.getTraitSet()));
+        return context;
     }
 
     protected static HazelcastTable partitionedTable(String name, List<TableField> fields, long rowCount) {
+        return partitionedTable(name, fields, emptyList(), false, rowCount);
+    }
+
+    protected static HazelcastTable partitionedTable(
+            String name,
+            List<TableField> fields,
+            List<MapTableIndex> indexes,
+            boolean isHd,
+            long rowCount
+    ) {
         PartitionedMapTable table = new PartitionedMapTable(
                 SCHEMA_NAME_PARTITIONED,
                 name,
@@ -119,8 +153,8 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 null,
                 null,
                 null,
-                emptyList(),
-                false
+                indexes,
+                isHd
         );
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
@@ -163,26 +197,20 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     protected static class Result {
 
-        private final SqlNode sql;
-        private final RelNode original;
         private final LogicalRel logical;
+        private final PhysicalRel physical;
 
-        private Result(SqlNode sql, RelNode original, LogicalRel logical) {
-            this.sql = sql;
-            this.original = original;
+        private Result(LogicalRel logical, PhysicalRel physical) {
             this.logical = logical;
-        }
-
-        public SqlNode getSql() {
-            return sql;
-        }
-
-        public RelNode getOriginal() {
-            return original;
+            this.physical = physical;
         }
 
         public LogicalRel getLogical() {
             return logical;
+        }
+
+        public PhysicalRel getPhysical() {
+            return physical;
         }
     }
 

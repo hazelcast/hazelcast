@@ -62,6 +62,10 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return extractAttributeValue(attributeName);
     }
 
+    public void setSerializationService(InternalSerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
     public abstract K getKey();
 
     public abstract Data getKeyData();

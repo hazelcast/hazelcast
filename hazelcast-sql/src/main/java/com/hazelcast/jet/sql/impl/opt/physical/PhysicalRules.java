@@ -36,6 +36,7 @@ public final class PhysicalRules {
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,
+                IndexScanMapPhysicalRule.INSTANCE,
 
                 // Aggregate rules
                 AggregatePhysicalRule.INSTANCE,

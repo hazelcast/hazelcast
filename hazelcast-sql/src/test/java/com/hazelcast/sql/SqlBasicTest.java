@@ -587,6 +587,11 @@ public class SqlBasicTest extends SqlTestSupport {
         public long getKey() {
             return key;
         }
+
+        @Override
+        public String toString() {
+            return "AbstractPojoKey{key=" + key + '}';
+        }
     }
 
     abstract static class AbstractPojo implements Serializable {

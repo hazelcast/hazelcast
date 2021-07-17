@@ -76,6 +76,13 @@ public class PartitionIdSet extends AbstractSet<Integer> implements IdentifiedDa
         }
     }
 
+    public PartitionIdSet(int partitionCount, int[] initialPartitionIds) {
+        this(partitionCount);
+        for (int partitionId : initialPartitionIds) {
+            bitSet.set(partitionId);
+        }
+    }
+
     public PartitionIdSet(PartitionIdSet initialPartitionIds) {
         this(initialPartitionIds.partitionCount, initialPartitionIds);
     }

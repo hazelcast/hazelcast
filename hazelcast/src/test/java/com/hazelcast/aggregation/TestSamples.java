@@ -240,7 +240,7 @@ final class TestSamples {
             this.key = key;
         }
 
-        void setSerializationService(InternalSerializationService serializationService) {
+        public void setSerializationService(InternalSerializationService serializationService) {
             this.serializationService = serializationService;
         }
 
