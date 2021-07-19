@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - spi-code-unification
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
       - 'hazelcast/pom.xml'
