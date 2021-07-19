@@ -234,7 +234,7 @@ operations.
 
 # Shutdown implementation
 
-So i think it can work if not the member that wants to shut down
+So i think it can work that not the member that wants to shut down
 notifies all other members, but the master.
 
 For example: M0 is master, M1 is about to leave, M2 is about to join. M1

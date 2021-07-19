@@ -183,7 +183,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
-            notifyWeAreShuttingDown(shutdownFuture.get());
+            notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
@@ -197,7 +197,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    private void notifyWeAreShuttingDown(CompletableFuture<Void> future) {
+    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
@@ -207,7 +207,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                                   " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                           // recursive call
                           nodeEngine.getExecutionService().schedule(
-                                  () -> notifyWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                       } else {
                           future.complete(null);
                       }
