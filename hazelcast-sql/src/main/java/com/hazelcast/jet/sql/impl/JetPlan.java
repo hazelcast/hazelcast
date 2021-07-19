@@ -58,7 +58,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_RESTART;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
 
-abstract class JetPlan extends SqlPlan {
+public abstract class JetPlan extends SqlPlan {
 
     protected JetPlan(PlanKey planKey) {
         super(planKey);
@@ -533,7 +533,7 @@ abstract class JetPlan extends SqlPlan {
         }
     }
 
-    static class SelectPlan extends JetPlan {
+    public static class SelectPlan extends JetPlan {
         private final Set<PlanObjectKey> objectKeys;
         private final QueryParameterMetadata parameterMetadata;
         private final DAG dag;
@@ -575,7 +575,7 @@ abstract class JetPlan extends SqlPlan {
             return isStreaming;
         }
 
-        SqlRowMetadata getRowMetadata() {
+        public SqlRowMetadata getRowMetadata() {
             return rowMetadata;
         }
 

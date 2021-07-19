@@ -16,48 +16,40 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.sql.impl.JetPlan;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.cache.PlanCacheTestSupport;
-import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.List;
 
+import static com.hazelcast.jet.sql.impl.connector.TestJetSqlQueryUtils.planFromQuery;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public class SqlNullableColumnTest extends PlanCacheTestSupport {
-
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    @After
-    public void after() {
-        factory.shutdownAll();
+public class SqlNullableColumnTest extends SimpleTestInClusterSupport {
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, smallInstanceConfig());
     }
 
     @Test
     public void testSelectWithNonNullSupport() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<String, Integer> map = member.getMap("map");
+        IMap<String, Integer> map = instance().getMap("map");
         map.put("key", 1);
 
-        Plan plan = getPlan(member, "SELECT __key, 1 FROM map");
+        JetPlan jetPlan = planFromQuery(instance(), "SELECT __key, 1 FROM map", emptyList());
+        assertNotNull(jetPlan);
+        assertInstanceOf(JetPlan.SelectPlan.class, jetPlan);
+
+        JetPlan.SelectPlan plan = (JetPlan.SelectPlan) jetPlan;
         List<SqlColumnMetadata> columns = plan.getRowMetadata().getColumns();
         assertEquals(columns.size(), 2);
         assertTrue(columns.get(0).isNullable());
         assertFalse(columns.get(1).isNullable());
-    }
-
-    private Plan getPlan(HazelcastInstance instance, String sql) {
-        try (SqlResult result = instance.getSql().execute(sql)) {
-            SqlResultImpl result0 = (SqlResultImpl) result;
-
-            return result0.getPlan();
-        }
     }
 }

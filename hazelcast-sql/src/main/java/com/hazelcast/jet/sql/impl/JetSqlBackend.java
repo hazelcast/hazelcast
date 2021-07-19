@@ -85,6 +85,7 @@ import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.util.SqlVisitor;
@@ -287,7 +288,16 @@ public class JetSqlBackend implements SqlBackend {
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
-            SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
+            List<Boolean> columnsNullable = new ArrayList<>(rel.getRowType().getFieldList().size());
+            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                Boolean nullable = field.getType().isNullable();
+                columnsNullable.add(nullable);
+            }
+            SqlRowMetadata rowMetadata = createRowMetadata(
+                    fieldNames,
+                    physicalRel.schema(parameterMetadata).getTypes(),
+                    columnsNullable
+            );
             return new IMapSelectPlan(
                     planKey,
                     select.objectKey(),
@@ -361,7 +371,16 @@ public class JetSqlBackend implements SqlBackend {
             );
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
-            SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
+            List<Boolean> columnsNullable = new ArrayList<>(rel.getRowType().getFieldList().size());
+            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
+                Boolean nullable = field.getType().isNullable();
+                columnsNullable.add(nullable);
+            }
+            SqlRowMetadata rowMetadata = createRowMetadata(
+                    fieldNames,
+                    physicalRel.schema(parameterMetadata).getTypes(),
+                    columnsNullable
+            );
             return new SelectPlan(
                     planKey,
                     parameterMetadata,
@@ -452,12 +471,19 @@ public class JetSqlBackend implements SqlBackend {
         );
     }
 
-    private SqlRowMetadata createRowMetadata(List<String> columnNames, List<QueryDataType> columnTypes) {
+    private SqlRowMetadata createRowMetadata(
+            List<String> columnNames,
+            List<QueryDataType> columnTypes,
+            List<Boolean> columnNullables) {
         assert columnNames.size() == columnTypes.size();
 
         List<SqlColumnMetadata> columns = new ArrayList<>(columnNames.size());
         for (int i = 0; i < columnNames.size(); i++) {
-            SqlColumnMetadata column = QueryUtils.getColumnMetadata(columnNames.get(i), columnTypes.get(i), true);
+            SqlColumnMetadata column = QueryUtils.getColumnMetadata(
+                    columnNames.get(i),
+                    columnTypes.get(i),
+                    columnNullables.get(i)
+            );
             columns.add(column);
         }
         return new SqlRowMetadata(columns);
