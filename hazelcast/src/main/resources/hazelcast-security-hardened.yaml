@@ -4,11 +4,13 @@
 # How to use it:
 #   * rename `hazelcast.xml` in the `[HAZELCAST_INSTALL]/config` directory to `hazelcast.xml.bak`
 #   * copy this file to the `[HAZELCAST_INSTALL]/config` directory with a new name `hazelcast.yaml`
-#   * edit the copied `hazelcast.yaml` file - update IP addresses to match your environment
-#   * run Hazelcast with some sensitive config values specified via a system property:
+#   * edit the copied `hazelcast.yaml` file:
+#     - update IP addresses to match your environment;
+#     - enable TLS, security and auditlog if you use the Hazelcast Enterprise;
+#   * run Hazelcast with sensitive config values specified via a system property:
 #
 #     $ export JAVA_OPTS="-Dcustom.cluster.name=[YOUR_CLUSTER_NAME] -Duser.root.password=[SECRET_VALUE_HERE] -Duser.appuser.password=[ANOTHER_SECRET_HERE]"
-#     $ [HAZELCAST_INSTALL]/bin/hz-start
+#     $ HAZELCAST_CONFIG=config/hazelcast.yaml [HAZELCAST_INSTALL]/bin/hz-start
 #
 
 hazelcast:
