@@ -84,7 +84,6 @@ public class YamlConfigSchemaValidator {
                     .build()
                     .performValidation(SCHEMA, YamlToJsonConverter.convert(rootNode));
         } catch (ValidationException e) {
-            e.printStackTrace();
             throw wrap(e);
         }
     }
