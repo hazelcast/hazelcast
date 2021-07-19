@@ -45,29 +45,22 @@ public class QueryParser {
 
     private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
-    private final SqlConformance conformance;
     private final SqlConformance jetConformance;
     private final List<Object> arguments;
 
-    private final SqlBackend sqlBackend;
     private final SqlBackend jetSqlBackend;
 
     public QueryParser(
             HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
-            SqlConformance conformance,
             SqlConformance jetConformance,
             List<Object> arguments,
-            @Nonnull SqlBackend sqlBackend,
             @Nonnull SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
-        this.conformance = conformance;
         this.jetConformance = jetConformance;
         this.arguments = arguments;
-
-        this.sqlBackend = sqlBackend;
         this.jetSqlBackend = jetSqlBackend;
     }
 

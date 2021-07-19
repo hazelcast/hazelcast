@@ -119,7 +119,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSearchPaths(),
                 task.getArguments(),
                 memberCount,
-                sqlBackend,
                 jetSqlBackend
         );
 
