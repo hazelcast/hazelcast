@@ -182,7 +182,8 @@ public class SqlJobManagementTest extends SqlTestSupport {
                 "'metricsEnabled'='false'," +
                 "'initialSnapshotName'='fooSnapshot'," +
                 "'storeMetricsAfterJobCompletion'='true'," +
-                "'maxProcessorAccumulatedRecords'='10')" +
+                "'maxProcessorAccumulatedRecords'='10'," +
+                "'preventShutdown'='true')" +
                 "AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
         JobConfig config = instance().getJet().getJob("testJob").getConfig();
@@ -194,6 +195,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         assertFalse("isMetricsEnabled", config.isMetricsEnabled());
         assertEquals("fooSnapshot", config.getInitialSnapshotName());
         assertEquals(10L, config.getMaxProcessorAccumulatedRecords());
+        assertTrue(config.isPreventShutdown());
     }
 
     @Test

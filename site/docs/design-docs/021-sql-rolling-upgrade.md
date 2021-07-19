@@ -227,3 +227,58 @@ operations.
 
 - The IMap scan operations `MapFetchEntriesOperation`,
 `MapFetchIndexOperation`
+
+
+
+
+
+# Shutdown implementation
+
+So i think it can work if not the member that wants to shut down
+notifies all other members, but the master.
+
+For example: M0 is master, M1 is about to leave, M2 is about to join. M1
+notifies M0 that it wants to shut down. M0 (master) notifies everybody
+else. If the pre-join op wasn't yet sent to M2, it will include the info
+about M1. If it was sent already, M2 will be notified as any other
+member. I can synchronize this on master.
+
+
+So on master I now need to synchronize sending of NotifyMemberShutdownOps:
+- initially to all members
+- to new members as a part of PreJoinOp
+
+So I need to obtain a list of all members to which the PreJoinOp was
+already sent, before they finish the join.
+
+
+
+- M1 sends `NotifyMemberShutdownOperation` to master.
+- master adds to `JCS.membersShuttingDown` collection and to `preJoinedButNotAddedMembers`
+- if about to send pre-join op, include `JCS.membersShuttingDown` members
+- master forwards `NotifyMemberShutdownOperation` to union of `preJoinedButNotAddedMembers` and all other members
+
+`NotifyMemberShutdownOperation` behavior:
+- all members add to `JCS.membersShuttingDown`
+- only on master:
+  - send to all known members and to `preJoinedButNotAddedMembers`
+
+JCB.getPreJoinOperation
+- add to `preJoinedButNotAddedMembers`
+- return `NotifyMemberShutdownOperation` with all members in `JCS.membersShuttingDown`
+
+JCB.memberAdded
+- remove from `preJoinedButNotAddedMembers`
+
+
+As a result, other coordinators will know, which member is going down, and won't use it for new jobs.
+
+Clients, if they ask a shutting-down member, will get a special response and will retry with another member.
+
+----
+
+- send to all known members. On any failure, retry
+- at regular intervals (e.g. every second), check all known members. If we didn't send to some, send to that member too
+- done when
+  1. all local executions are done - doesn't work. There might be no executions and still a new member can join and start one before we shut down for real
+  2. all members reply successfully or have left - doesn't work. All members reply, but a new member might join in the meantime and execute a job which we must finish

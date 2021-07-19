@@ -179,6 +179,9 @@ public class SqlCreateJob extends SqlCreate {
                 case "maxProcessorAccumulatedRecords":
                     jobConfig.setMaxProcessorAccumulatedRecords(Long.parseLong(value));
                     break;
+                case "preventShutdown":
+                    jobConfig.setPreventShutdown(Boolean.parseBoolean(value));
+                    break;
                 default:
                     throw validator.newValidationError(option.key(), RESOURCE.unknownJobOption(key));
             }

@@ -18,9 +18,11 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -46,13 +48,13 @@ public final class InvocationUtil {
 
     /**
      * Invoke operation on all cluster members.
-     *
+     * <p>
      * The invocation is serial: It iterates over all members starting from the oldest member to the youngest one.
      * If there is a cluster membership change while invoking then it will restart invocations on all members. This
      * implies the operation should be idempotent.
-     *
-     * If there is an exception - other than {@link com.hazelcast.core.MemberLeftException} or
-     * {@link com.hazelcast.spi.exception.TargetNotMemberException} while invoking then the iteration
+     * <p>
+     * If there is an exception - other than {@link MemberLeftException} or
+     * {@link TargetNotMemberException} while invoking then the iteration
      * is interrupted and the exception is propagated to the caller.
      */
     public static <V> InternalCompletableFuture<V> invokeOnStableClusterSerial(NodeEngine nodeEngine,

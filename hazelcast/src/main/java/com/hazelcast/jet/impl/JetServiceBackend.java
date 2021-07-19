@@ -30,6 +30,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -67,7 +68,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker {
+public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker, PreJoinAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
@@ -182,7 +183,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
-            notifyMasterWeAreShuttingDown(shutdownFuture.get());
+            notifyWeAreShuttingDown(shutdownFuture.get());
         }
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
@@ -196,7 +197,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
     }
 
-    private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
+    private void notifyWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
@@ -206,7 +207,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                                   " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                           // recursive call
                           nodeEngine.getExecutionService().schedule(
-                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                                  () -> notifyWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                       } else {
                           future.complete(null);
                       }
@@ -348,5 +349,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     public TaskletExecutionService getTaskletExecutionService() {
         return taskletExecutionService;
+    }
+
+    @Override
+    public Operation getPreJoinOperation() {
+        return null;
     }
 }

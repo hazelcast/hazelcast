@@ -85,6 +85,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private Map<String, List<String>> customClassPaths = new HashMap<>();
     private JobClassLoaderFactory classLoaderFactory;
     private String initialSnapshotName;
+    private boolean preventShutdown;
 
     /**
      * Returns the name of the job or {@code null} if no name was given.
@@ -1361,6 +1362,32 @@ public class JobConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Sets whether the execution of a job should prevent the member it's
+     * running on from gracefully shutting down.
+     * <p>
+     * This option is useful for non-fault-tolerant, short-running jobs to
+     * avoid failure in case of a graceful member shutdown. If it's enabled for
+     * a streaming job, the member will never shutdown unless the job is
+     * cancelled.
+     *
+     * @since 5.0
+     */
+    public JobConfig setPreventShutdown(boolean preventShutdown) {
+        this.preventShutdown = preventShutdown;
+        return this;
+    }
+
+    /**
+     * Returns whether the job prevents the members it runs on from shutting
+     * down while it's running. See {@link #setPreventShutdown(boolean)}.
+     *
+     * @since 5.0
+     */
+    public boolean isPreventShutdown() {
+        return preventShutdown;
+    }
+
     @Override
     public int getFactoryId() {
         return JetConfigDataSerializerHook.FACTORY_ID;
@@ -1389,6 +1416,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         out.writeBoolean(storeMetricsAfterJobCompletion);
         out.writeLong(maxProcessorAccumulatedRecords);
         out.writeLong(timeoutMillis);
+        out.writeBoolean(preventShutdown);
     }
 
     @Override
@@ -1409,6 +1437,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         storeMetricsAfterJobCompletion = in.readBoolean();
         maxProcessorAccumulatedRecords = in.readLong();
         timeoutMillis = in.readLong();
+        preventShutdown = in.readBoolean();
     }
 
     @Override
@@ -1435,7 +1464,8 @@ public class JobConfig implements IdentifiedDataSerializable {
                 && Objects.equals(classLoaderFactory, jobConfig.classLoaderFactory)
                 && Objects.equals(initialSnapshotName, jobConfig.initialSnapshotName)
                 && maxProcessorAccumulatedRecords == jobConfig.maxProcessorAccumulatedRecords
-                && timeoutMillis == jobConfig.timeoutMillis;
+                && timeoutMillis == jobConfig.timeoutMillis
+                && preventShutdown == jobConfig.preventShutdown;
     }
 
     @Override
@@ -1443,7 +1473,7 @@ public class JobConfig implements IdentifiedDataSerializable {
         return Objects.hash(name, processingGuarantee, snapshotIntervalMillis, autoScaling, suspendOnFailure,
                 splitBrainProtectionEnabled, enableMetrics, storeMetricsAfterJobCompletion, resourceConfigs,
                 customClassPaths, serializerConfigs, arguments, classLoaderFactory, initialSnapshotName,
-                maxProcessorAccumulatedRecords, timeoutMillis);
+                maxProcessorAccumulatedRecords, timeoutMillis, preventShutdown);
     }
 
     @Override
@@ -1455,6 +1485,7 @@ public class JobConfig implements IdentifiedDataSerializable {
                 ", resourceConfigs=" + resourceConfigs + ", serializerConfigs=" + serializerConfigs +
                 ", arguments=" + arguments + ", classLoaderFactory=" + classLoaderFactory +
                 ", initialSnapshotName=" + initialSnapshotName + ", maxProcessorAccumulatedRecords=" +
-                maxProcessorAccumulatedRecords + ", timeoutMillis=" + timeoutMillis + "}";
+                maxProcessorAccumulatedRecords + ", timeoutMillis=" + timeoutMillis + ", preventShutdown=" +
+                preventShutdown + "}";
     }
 }

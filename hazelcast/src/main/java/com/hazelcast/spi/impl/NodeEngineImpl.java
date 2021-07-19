@@ -492,7 +492,7 @@ public class NodeEngineImpl implements NodeEngine {
             Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
-                    logger.severe("Post-join operations should not have partition ID set! Service: "
+                    logger.severe("Post-join operations must not have partition ID set! Service: "
                             + service + ", Operation: "
                             + postJoinOperation);
                     continue;
@@ -510,7 +510,7 @@ public class NodeEngineImpl implements NodeEngine {
             Operation preJoinOperation = service.getPreJoinOperation();
             if (preJoinOperation != null) {
                 if (preJoinOperation.getPartitionId() >= 0) {
-                    logger.severe("Pre-join operations operations should not have partition ID set! Service: "
+                    logger.severe("Pre-join operations operations must not have partition ID set! Service: "
                             + service + ", Operation: "
                             + preJoinOperation);
                     continue;
