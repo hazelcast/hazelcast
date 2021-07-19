@@ -501,9 +501,10 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
+                .parse(KubernetesRestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
                         .withCaCertificates(caCertificate)
-                        .get())
+                        .get()
+                        .getBody())
                 .asObject(), retries, NON_RETRYABLE_KEYWORDS);
     }
 

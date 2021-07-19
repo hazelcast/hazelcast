@@ -24,7 +24,6 @@ import java.util.concurrent.Callable;
 
 import static com.hazelcast.spi.utils.RetryUtils.BACKOFF_MULTIPLIER;
 import static com.hazelcast.spi.utils.RetryUtils.INITIAL_BACKOFF_MS;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;

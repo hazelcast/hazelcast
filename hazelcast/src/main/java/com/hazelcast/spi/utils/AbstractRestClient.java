@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
 import com.hazelcast.spi.exception.RestClientException;
-import com.hazelcast.spi.utils.RetryUtils;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -34,10 +33,10 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-final class RestClient {
+public abstract class AbstractRestClient<T extends AbstractRestClient<T>> {
 
-    static final int HTTP_OK = 200;
-    static final int HTTP_NOT_FOUND = 404;
+    public static final int HTTP_OK = 200;
+    public static final int HTTP_NOT_FOUND = 404;
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -47,56 +46,61 @@ final class RestClient {
     private int connectTimeoutSeconds;
     private int retries;
 
-    private RestClient(String url) {
+    protected AbstractRestClient(String url) {
         this.url = url;
     }
 
-    static RestClient create(String url) {
-        return new RestClient(url);
-    }
-
-    RestClient withHeaders(Map<String, String> headers) {
+    public T withHeaders(Map<String, String> headers) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            this.headers.add(new Parameter(entry.getKey(), entry.getValue()));
+            withHeader(entry.getKey(), entry.getValue());
         }
-        return this;
+        return self();
     }
 
-    RestClient withBody(String body) {
+    public T withHeader(String name, String value) {
+        this.headers.add(new Parameter(name, value));
+        return self();
+    }
+
+    public T withBody(String body) {
         this.body = body;
-        return this;
+        return self();
     }
 
-    RestClient withReadTimeoutSeconds(int readTimeoutSeconds) {
+    public T withReadTimeoutSeconds(int readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
-        return this;
+        return self();
     }
 
-    RestClient withConnectTimeoutSeconds(int connectTimeoutSeconds) {
+    public T withConnectTimeoutSeconds(int connectTimeoutSeconds) {
         this.connectTimeoutSeconds = connectTimeoutSeconds;
-        return this;
+        return self();
     }
 
-    RestClient withRetries(int retries) {
+    public T withRetries(int retries) {
         this.retries = retries;
-        return this;
+        return self();
     }
 
-    RestClient expectResponseCodes(Integer... codes) {
+    public T expectResponseCodes(Integer... codes) {
         if (expectedResponseCodes == null) {
             expectedResponseCodes = new HashSet<>();
         }
         expectedResponseCodes.addAll(Arrays.asList(codes));
-        return this;
+        return self();
     }
 
-    Response get() {
+    public Response get() {
         return callWithRetries("GET");
     }
 
-    Response post() {
+    public Response post() {
         return callWithRetries("POST");
     }
+
+    protected abstract HttpURLConnection buildHttpConnection(URL urlToConnect) throws IOException;
+
+    protected abstract T self();
 
     private Response callWithRetries(String method) {
         return RetryUtils.retry(() -> call(method), retries);
@@ -106,7 +110,7 @@ final class RestClient {
         HttpURLConnection connection = null;
         try {
             URL urlToConnect = new URL(url);
-            connection = (HttpURLConnection) urlToConnect.openConnection();
+            connection = buildHttpConnection(urlToConnect);
             connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
             connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
             connection.setRequestMethod(method);
@@ -175,7 +179,7 @@ final class RestClient {
         return scanner.next();
     }
 
-    static class Response {
+    public static class Response {
 
         private final int code;
         private final String body;
@@ -185,11 +189,11 @@ final class RestClient {
             this.body = body;
         }
 
-        int getCode() {
+        public int getCode() {
             return code;
         }
 
-        String getBody() {
+        public String getBody() {
             return body;
         }
     }

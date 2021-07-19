@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,14 +60,16 @@ class AzureComputeApi {
         String privateIpResponse = RestClient
                 .create(urlForPrivateIpList(subscriptionId, resourceGroup, scaleSet))
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         Map<String, AzureNetworkInterface> networkInterfaces = parsePrivateIpResponse(privateIpResponse);
 
         String publicIpResponse = RestClient
                 .create(urlForPublicIpList(subscriptionId, resourceGroup, scaleSet))
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         Map<String, String> publicIpMap = parsePublicIpResponse(publicIpResponse);
 

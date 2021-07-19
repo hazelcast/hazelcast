@@ -19,6 +19,7 @@ package com.hazelcast.azure;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.spi.exception.NoCredentialsException;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,15 +101,16 @@ class AzureMetadataApi {
             String accessTokenResponse = callGet(urlString);
             return extractAccessToken(accessTokenResponse);
         } catch (Exception e) {
-                throw new NoCredentialsException("Error while fetching access token from Azure API using managed identity.", e);
+            throw new NoCredentialsException("Error while fetching access token from Azure API using managed identity.", e);
         }
     }
 
 
     private String callGet(String urlString) {
         return RestClient.create(urlString)
-                         .withHeader("Metadata", "true")
-                         .get();
+                .withHeader("Metadata", "true")
+                .get()
+                .getBody();
     }
 
     private String extractAccessToken(String accessTokenResponse) {

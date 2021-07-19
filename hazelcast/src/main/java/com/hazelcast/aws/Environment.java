@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import static com.hazelcast.internal.util.StringUtil.isNotBlank;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * This class is introduced to lookup system parameters.

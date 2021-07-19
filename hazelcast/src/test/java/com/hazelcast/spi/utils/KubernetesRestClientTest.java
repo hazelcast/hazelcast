@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.spi.exception.RestClientException;
@@ -34,7 +34,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
-public class RestClientTest {
+public class KubernetesRestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
     private static final String BODY_RESPONSE = "some body response";
