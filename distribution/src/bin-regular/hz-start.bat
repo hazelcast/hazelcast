@@ -39,10 +39,15 @@ IF NOT "%JAVA_VERSION%" == "8" (
 	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
 )
 
+REM HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).
+if "x%HAZELCAST_CONFIG%" == "x" (
+    set HAZELCAST_CONFIG=config/hazelcast.xml
+)
+
 set JAVA_OPTS=%JAVA_OPTS%^
  "-Dhazelcast.logging.type=log4j2"^
  "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
- "-Dhazelcast.config=%HAZELCAST_HOME%\config\hazelcast.xml"^
+ "-Dhazelcast.config=%HAZELCAST_HOME%\%HAZELCAST_CONFIG%"^
  "-Dhz.home=%HAZELCAST_HOME%"
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*";%CLASSPATH%
