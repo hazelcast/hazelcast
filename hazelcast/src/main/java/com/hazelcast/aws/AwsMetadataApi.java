@@ -25,8 +25,8 @@ import com.hazelcast.spi.utils.RestClient;
 import java.util.Optional;
 
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
-import static com.hazelcast.spi.utils.RestClient.HTTP_NOT_FOUND;
-import static com.hazelcast.spi.utils.RestClient.HTTP_OK;
+import static com.hazelcast.spi.utils.AbstractRestClient.HTTP_NOT_FOUND;
+import static com.hazelcast.spi.utils.AbstractRestClient.HTTP_OK;
 
 /**
  * Responsible for connecting to AWS EC2 and ECS Metadata API.

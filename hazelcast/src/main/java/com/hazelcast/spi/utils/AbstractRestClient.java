@@ -35,7 +35,14 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractRestClient<T extends AbstractRestClient<T>> {
 
+    /**
+     * HTTP status code 200 OK
+     */
     public static final int HTTP_OK = 200;
+
+    /**
+     * HTTP status code 404 NOT FOUND
+     */
     public static final int HTTP_NOT_FOUND = 404;
 
     private final String url;

@@ -752,7 +752,6 @@ public class KubernetesClientTest {
         assertThatThrownBy(() -> kubernetesClient.endpoints())
                 .isInstanceOf(RestClientException.class)
                 .hasMessageContaining("Message: \"reason\":\"Forbidden\". HTTP Error Code: 501");
-        ;
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {

@@ -34,7 +34,6 @@ import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
 import static com.hazelcast.aws.AwsRequestUtils.currentTimestamp;
 import static com.hazelcast.aws.AwsRequestUtils.urlFor;
 import static com.hazelcast.internal.util.StringUtil.isNotBlank;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static java.util.Collections.emptyMap;
 
 /**

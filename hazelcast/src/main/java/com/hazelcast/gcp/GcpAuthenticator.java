@@ -16,21 +16,20 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.utils.RestClient;
 
-import java.io.FileNotFoundException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 
 /**
  * Fetches OAuth 2.0 Access Token from Google API.

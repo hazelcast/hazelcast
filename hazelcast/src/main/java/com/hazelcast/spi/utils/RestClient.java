@@ -21,10 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
 
-public final class RestClient extends AbstractRestClient<RestClient>{
-
-    public static final int HTTP_OK = 200;
-    public static final int HTTP_NOT_FOUND = 404;
+public final class RestClient extends AbstractRestClient<RestClient> {
 
     protected RestClient(String url) {
         super(url);
