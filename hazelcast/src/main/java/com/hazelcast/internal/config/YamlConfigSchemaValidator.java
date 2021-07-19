@@ -77,7 +77,7 @@ public class YamlConfigSchemaValidator {
             if (definedRootNodes.size() != 1) {
                 throw new SchemaViolationConfigurationException(
                         "exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
-                                + " root schema document, " + definedRootNodes + " are present",
+                                + " root schema document, " + definedRootNodes.size() + " are present",
                         "#", "#", emptyList());
             } else {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
