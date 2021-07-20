@@ -51,7 +51,7 @@ import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.observer.WrappedThrowable;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
-import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -158,7 +158,7 @@ public class JobCoordinationService {
      * Map of {memberUuid; removeTime}.
      *
      * A collection of UUIDs of members which left the cluster and for which we
-     * didn't receive {@link NotifyMemberShutdownOperation}.
+     * didn't receive {@link NotifyShutdownToMasterOperation}.
      */
     private final Map<UUID, Long> removedMembers = new ConcurrentHashMap<>();
     private final Object lock = new Object();
@@ -704,7 +704,7 @@ public class JobCoordinationService {
      * cluster. The returned future will complete when all executions of which
      * the member is a participant terminate.
      * <p>
-     * The method is idempotent, the {@link NotifyMemberShutdownOperation}
+     * The method is idempotent, the {@link NotifyShutdownToMasterOperation}
      * which calls it can be retried.
      */
     @Nonnull

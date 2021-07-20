@@ -37,7 +37,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
-import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -198,7 +198,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
-        Operation op = new NotifyMemberShutdownOperation();
+        Operation op = new NotifyShutdownToMasterOperation();
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
                   .whenCompleteAsync((response, throwable) -> {

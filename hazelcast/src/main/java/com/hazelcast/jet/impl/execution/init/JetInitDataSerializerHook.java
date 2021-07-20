@@ -40,7 +40,8 @@ import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
-import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMembersOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
@@ -89,7 +90,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 24;
     public static final int SNAPSHOT_PHASE1_RESULT = 25;
     public static final int RESUME_JOB_OP = 26;
-    public static final int NOTIFY_MEMBER_SHUTDOWN_OP = 27;
+    public static final int NOTIFY_MEMBER_SHUTDOWN_P1_OP = 27;
     public static final int GET_JOB_SUMMARY_LIST_OP = 28;
     public static final int JOB_SUMMARY = 29;
     public static final int SNAPSHOT_STATS = 30;
@@ -106,6 +107,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int PROCESSOR_SUPPLIER_FROM_SIMPLE_SUPPLIER = 45;
     public static final int NOOP_PROCESSOR_SUPPLIER = 46;
     public static final int CHECK_LIGHT_JOBS_OP = 47;
+    public static final int NOTIFY_MEMBER_SHUTDOWN_P2_OP = 48;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -176,8 +178,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new SnapshotPhase1Result();
                 case RESUME_JOB_OP:
                     return new ResumeJobOperation();
-                case NOTIFY_MEMBER_SHUTDOWN_OP:
-                    return new NotifyMemberShutdownOperation();
+                case NOTIFY_MEMBER_SHUTDOWN_P1_OP:
+                    return new NotifyShutdownToMasterOperation();
                 case GET_JOB_SUMMARY_LIST_OP:
                     return new GetJobSummaryListOperation();
                 case JOB_SUMMARY:
@@ -206,6 +208,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new NoopP.NoopPSupplier();
                 case CHECK_LIGHT_JOBS_OP:
                     return new CheckLightJobsOperation();
+                case NOTIFY_MEMBER_SHUTDOWN_P2_OP:
+                    return new NotifyShutdownToMembersOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }
