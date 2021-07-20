@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
@@ -48,6 +49,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -69,6 +71,7 @@ import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.json.JsonUtil.hazelcastJsonValue;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -913,6 +916,19 @@ public class SinksTest extends PipelineTestSupport {
 
         // Then
         assertTrueEventually(() -> assertEquals(itemCount, receivedList.size()));
+    }
+
+    @Test
+    public void remoteReliableTopicSinkClosesClient() {
+        // Check we are in a clean state
+        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(0);
+
+        // When
+        Sink<Object> sink = Sinks.remoteReliableTopic(sinkName, clientConfig);
+        p.readFrom(Sources.list(srcName)).writeTo(sink);
+        execute();
+
+        assertThat(HazelcastClient.getAllHazelcastClients()).hasSize(0);
     }
 
     @Test
