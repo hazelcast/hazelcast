@@ -29,7 +29,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
@@ -111,7 +110,7 @@ class AzureComputeApi {
                     JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
                     String privateIp = ipProps.getString("privateIPAddress", null);
                     String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
-                    if (isNotBlank(privateIp)) {
+                    if (!isNullOrEmptyAfterTrim(privateIp)) {
                         interfaces.put(privateIp, new AzureNetworkInterface(privateIp, publicIpId, tagList));
                     }
                 }
@@ -137,7 +136,7 @@ class AzureComputeApi {
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             String id = item.asObject().getString("id", null);
             String ip = toJsonObject(item.asObject().get("properties")).getString("ipAddress", null);
-            if (isNotBlank(ip)) {
+            if (!isNullOrEmptyAfterTrim(ip)) {
                 publicIps.put(id, ip);
             }
         }

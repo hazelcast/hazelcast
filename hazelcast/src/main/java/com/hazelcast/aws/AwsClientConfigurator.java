@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.aws.RegionValidator.validateRegion;
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
@@ -71,7 +70,7 @@ final class AwsClientConfigurator {
     }
 
     static String resolveRegion(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {
-        if (isNotBlank(awsConfig.getRegion())) {
+        if (!isNullOrEmptyAfterTrim(awsConfig.getRegion())) {
             return awsConfig.getRegion();
         }
 
@@ -129,16 +128,16 @@ final class AwsClientConfigurator {
      * </ul>
      */
     static boolean explicitlyEc2Configured(AwsConfig awsConfig) {
-        return isNotBlank(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ec2");
+        return !isNullOrEmptyAfterTrim(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ec2");
     }
 
     static boolean explicitlyEcsConfigured(AwsConfig awsConfig) {
-        return isNotBlank(awsConfig.getCluster())
-            || (isNotBlank(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ecs"));
+        return !isNullOrEmptyAfterTrim(awsConfig.getCluster())
+            || (!isNullOrEmptyAfterTrim(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ecs"));
     }
 
     static String resolveCluster(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {
-        if (isNotBlank(awsConfig.getCluster())) {
+        if (!isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
             return awsConfig.getCluster();
         }
         if (environment.isRunningOnEcs()) {

@@ -5,7 +5,7 @@ on:
     branches:
       - master
     paths:
-      - 'hazelcast/src/main/java/com/hazelcast/gcp/**'
+      - 'hazelcast/src/main/java/com/hazelcast/azure/**'
       - 'hazelcast/pom.xml'
       - '.github/terraform/gcp/**'
 

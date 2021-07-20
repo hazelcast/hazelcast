@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws;
 
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Node;
@@ -29,7 +30,6 @@ import java.util.Optional;
 import static com.hazelcast.aws.AwsRequestUtils.canonicalQueryString;
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
 import static com.hazelcast.aws.AwsRequestUtils.currentTimestamp;
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 
 /**
  * Responsible for connecting to AWS EC2 API.
@@ -79,7 +79,7 @@ class AwsEc2Api {
             addTagFilter(filter, tag);
         }
 
-        if (isNotBlank(awsConfig.getSecurityGroupName())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getSecurityGroupName())) {
             filter.add("instance.group-name", awsConfig.getSecurityGroupName());
         }
 
@@ -95,11 +95,11 @@ class AwsEc2Api {
      *     EC2 Describe Instances - Request Parameters</a>
      */
     private void addTagFilter(Filter filter, Tag tag) {
-        if (isNotBlank(tag.getKey()) && isNotBlank(tag.getValue())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(tag.getKey()) && !StringUtil.isNullOrEmptyAfterTrim(tag.getValue())) {
             filter.add("tag:" + tag.getKey(), tag.getValue());
-        } else if (isNotBlank(tag.getKey())) {
+        } else if (!StringUtil.isNullOrEmptyAfterTrim(tag.getKey())) {
             filter.add("tag-key", tag.getKey());
-        } else if (isNotBlank(tag.getValue())) {
+        } else if (!StringUtil.isNullOrEmptyAfterTrim(tag.getValue())) {
             filter.add("tag-value", tag.getValue());
         }
     }
@@ -200,7 +200,7 @@ class AwsEc2Api {
     private Map<String, String> createHeaders(Map<String, String> attributes, AwsCredentials credentials) {
         Map<String, String> headers = new HashMap<>();
 
-        if (isNotBlank(credentials.getToken())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(credentials.getToken())) {
             headers.put("X-Amz-Security-Token", credentials.getToken());
         }
         headers.put("Host", endpoint);

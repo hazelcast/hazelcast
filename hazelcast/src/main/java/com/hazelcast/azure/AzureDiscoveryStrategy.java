@@ -45,8 +45,8 @@ import static com.hazelcast.azure.AzureProperties.RESOURCE_GROUP;
 import static com.hazelcast.azure.AzureProperties.SCALE_SET;
 import static com.hazelcast.azure.AzureProperties.SUBSCRIPTION_ID;
 import static com.hazelcast.azure.AzureProperties.TENANT_ID;
-import static com.hazelcast.internal.util.StringUtil.isAllNotBlank;
-import static com.hazelcast.internal.util.StringUtil.isAnyNotBlank;
+import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
 
 /**
  * Azure implementation of {@link DiscoveryStrategy}
@@ -120,7 +120,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
     private void validate(AzureConfig azureConfig) {
         if (!azureConfig.isInstanceMetadataAvailable()) {
             LOGGER.info("instance-metadata-available is set to false, validating other properties...");
-            if (!isAllNotBlank(azureConfig.getTenantId(),
+            if (!isAllNullOrEmptyAfterTrim(azureConfig.getTenantId(),
                     azureConfig.getClientId(),
                     azureConfig.getClientSecret(),
                     azureConfig.getSubscriptionId(),
@@ -130,7 +130,7 @@ public class AzureDiscoveryStrategy extends AbstractDiscoveryStrategy {
                         + "clientSecret, subscriptionId, and resourceGroup properties.");
             }
         } else {
-            if (isAnyNotBlank(azureConfig.getTenantId(),
+            if (isAnyNullOrEmptyAfterTrim(azureConfig.getTenantId(),
                     azureConfig.getClientId(),
                     azureConfig.getClientSecret(),
                     azureConfig.getSubscriptionId(),

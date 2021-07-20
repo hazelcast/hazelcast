@@ -17,12 +17,11 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.NoCredentialsException;
 import com.hazelcast.spi.exception.RestClientException;
-
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 
 class AwsCredentialsProvider {
     private static final ILogger LOGGER = Logger.getLogger(AwsCredentialsProvider.class);
@@ -42,12 +41,12 @@ class AwsCredentialsProvider {
     }
 
     private String resolveEc2IamRole() {
-        if (isNotBlank(awsConfig.getAccessKey())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getAccessKey())) {
             // no need to resolve IAM Role, since using hardcoded Access/Secret keys takes precedence
             return null;
         }
 
-        if (isNotBlank(awsConfig.getIamRole()) && !"DEFAULT".equals(awsConfig.getIamRole())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getIamRole()) && !"DEFAULT".equals(awsConfig.getIamRole())) {
             return awsConfig.getIamRole();
         }
 
@@ -75,13 +74,13 @@ class AwsCredentialsProvider {
     }
 
     AwsCredentials credentials() {
-        if (isNotBlank(awsConfig.getAccessKey())) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(awsConfig.getAccessKey())) {
             return AwsCredentials.builder()
                 .setAccessKey(awsConfig.getAccessKey())
                 .setSecretKey(awsConfig.getSecretKey())
                 .build();
         }
-        if (isNotBlank(ec2IamRole)) {
+        if (!StringUtil.isNullOrEmptyAfterTrim(ec2IamRole)) {
             return fetchCredentialsFromEc2();
         }
         if (environment.isRunningOnEcs()) {

@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
@@ -110,27 +109,27 @@ final class AwsConfig {
                     + " or ECS properties ('cluster', 'family', 'service-name'). You cannot define both of them"
             );
         }
-        if (isNotBlank(family) && isNotBlank(serviceName)) {
+        if (!isNullOrEmptyAfterTrim(family) && !isNullOrEmptyAfterTrim(serviceName)) {
             throw new InvalidConfigurationException(
                 "You cannot configure ECS discovery with both 'family' and 'service-name', these filters are mutually"
                     + " exclusive"
             );
         }
-        if (isNotBlank(iamRole)
-                && (isNotBlank(accessKey) || isNotBlank(secretKey))) {
+        if (!isNullOrEmptyAfterTrim(iamRole)
+                && (!isNullOrEmptyAfterTrim(accessKey) || !isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
                 "You cannot define both 'iam-role' and 'access-key'/'secret-key'. Choose how you want to authenticate"
                     + " with AWS API, either with IAM Role or with hardcoded AWS Credentials");
         }
-        if ((isNullOrEmptyAfterTrim(accessKey) && isNotBlank(secretKey))
-                || (isNotBlank(accessKey) && isNullOrEmptyAfterTrim(secretKey))) {
+        if ((isNullOrEmptyAfterTrim(accessKey) && !isNullOrEmptyAfterTrim(secretKey))
+                || (!isNullOrEmptyAfterTrim(accessKey) && isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
                 "You have to either define both ('access-key', 'secret-key') or none of them");
         }
     }
 
     private boolean anyOfEc2PropertiesConfigured() {
-        return isNotBlank(iamRole) || isNotBlank(securityGroupName) || hasTags(tags);
+        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName) || hasTags(tags);
     }
 
     private boolean hasTags(List<Tag> tags) {
@@ -138,7 +137,7 @@ final class AwsConfig {
     }
 
     private boolean anyOfEcsPropertiesConfigured() {
-        return isNotBlank(cluster) || isNotBlank(family) || isNotBlank(serviceName);
+        return !isNullOrEmptyAfterTrim(cluster) || !isNullOrEmptyAfterTrim(family) || !isNullOrEmptyAfterTrim(serviceName);
     }
 
     static Builder builder() {

@@ -22,7 +22,6 @@ import com.hazelcast.spi.utils.RetryUtils;
 import java.util.Collection;
 import java.util.logging.Logger;
 
-import static com.hazelcast.internal.util.StringUtil.isNotBlank;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
@@ -58,7 +57,7 @@ class AzureClient {
     }
 
     private String subscriptionIdFromConfigOrMetadataApi() {
-        if (isNotBlank(azureConfig.getSubscriptionId())) {
+        if (!isNullOrEmptyAfterTrim(azureConfig.getSubscriptionId())) {
             return azureConfig.getSubscriptionId();
         }
         LOGGER.finest("Property 'subscriptionId' not configured, fetching from the VM metadata service");

@@ -42,8 +42,6 @@ import java.util.Collection;
  */
 final class KubernetesRestClient extends AbstractRestClient<KubernetesRestClient> {
 
-    private static final ILogger LOGGER = Logger.getLogger(KubernetesRestClient.class);
-
     private String caCertificate;
 
     private KubernetesRestClient(String url) {

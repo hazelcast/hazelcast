@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -27,8 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
 
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
@@ -126,16 +125,11 @@ public final class StringUtil {
      * @param values the strings to check
      * @return true if all the strings are not {@code null} and not blank, false otherwise
      */
-    public static boolean isAllNotBlank(String... values) {
+    public static boolean isAllNullOrEmptyAfterTrim(String... values) {
         if (values == null) {
             return false;
         }
-        for (final String val : values) {
-            if (isNullOrEmptyAfterTrim(val)) {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.stream(values).noneMatch(StringUtil::isNullOrEmptyAfterTrim);
     }
 
     /**
@@ -143,27 +137,11 @@ public final class StringUtil {
      * @param values the strings to check
      * @return true if at least one string of the {@param values} are not {@code null} and not blank
      */
-    public static boolean isAnyNotBlank(String... values) {
+    public static boolean isAnyNullOrEmptyAfterTrim(String... values) {
         if (values == null) {
             return false;
         }
-        for (final String val : values) {
-            if (isNotBlank(val)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    /**
-     * Checks if a string is not blank or not null
-     *
-     * @param s the string to check.
-     * @return true if the string is not blank or not {@code null}, false otherwise
-     */
-    public static boolean isNotBlank(String s) {
-        return !isNullOrEmptyAfterTrim(s);
+        return Arrays.stream(values).anyMatch(s -> !isNullOrEmptyAfterTrim(s));
     }
 
     /**
