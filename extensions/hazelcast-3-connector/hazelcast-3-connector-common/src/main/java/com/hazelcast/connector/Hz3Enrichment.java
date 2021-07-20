@@ -60,7 +60,7 @@ import java.util.concurrent.CompletableFuture;
  * config.addCustomClasspaths(name, jars);
  * } </pre>
  * The jars must exist in the directory specified by the
- * {@link com.hazelcast.jet.core.JetProperties#PROCESSOR_CUSTOM_LIB_DIR}
+ * {@link com.hazelcast.spi.properties.ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
  * directory. This is already set up for the regular zip distribution.
  */
 public final class Hz3Enrichment {
