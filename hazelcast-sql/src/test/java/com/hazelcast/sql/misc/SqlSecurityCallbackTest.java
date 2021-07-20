@@ -17,59 +17,63 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.IMap;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
+import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test that ensures that a security callback is invoked as expected.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlSecurityCallbackTest extends SqlTestSupport {
+public class SqlSecurityCallbackTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
 
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance member;
+    @BeforeClass
+    public static void beforeClass() {
+        initialize(1, smallInstanceConfig());
+    }
 
     @Before
     public void before() {
-        member = factory.newHazelcastInstance(getConfig());
-
-        IMap<Integer, Integer> map = member.getMap(MAP_NAME);
-        map.addIndex(IndexType.SORTED, "this");
+        IMap<Integer, Integer> map = instance().getMap(MAP_NAME);
+        map.addIndex(IndexType.HASH, "this");
         map.put(1, 1);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
     }
 
     @Test
@@ -87,30 +91,52 @@ public class SqlSecurityCallbackTest extends SqlTestSupport {
         for (int i = 0; i < 2; i++) {
             TestSqlSecurityContext securityContext = new TestSqlSecurityContext();
 
-            try (SqlResult result = ((SqlServiceImpl) member.getSql()).execute(new SqlStatement(sql), securityContext)) {
+            try (SqlResult result = ((SqlServiceImpl) instance().getSql()).execute(new SqlStatement(sql), securityContext)) {
                 // Check whether the index is used as expected.
-                MapIndexScanPlanNode indexScanNode = findFirstIndexNode(result);
-
-                if (useIndex) {
-                    assertNotNull(indexScanNode);
-                } else {
-                    assertNull(indexScanNode);
-                }
+                checkIndexUsage(sql, useIndex);
 
                 // Check permissions.
-                List<Permission> permissions = securityContext.getPermissions();
-                assertEquals(1, permissions.size());
+                Set<Permission> permissions = new HashSet<>(securityContext.getPermissions());
+                assertFalse(permissions.isEmpty());
 
-                Permission permission = permissions.get(0);
-                assertTrue(permission instanceof MapPermission);
-
-                MapPermission mapPermission = (MapPermission) permission;
                 MapPermission expectedMapPermission = new MapPermission(MAP_NAME, ActionConstants.ACTION_READ);
+                assertContains(permissions, expectedMapPermission);
 
+                Permission mapPermission = null;
+                for (Permission f : permissions) {
+                    if (f.equals(expectedMapPermission)) {
+                        mapPermission = f;
+                    }
+                }
+                assertNotNull(mapPermission);
                 assertEquals(expectedMapPermission.getName(), mapPermission.getName());
                 assertEquals(expectedMapPermission.getActions(), mapPermission.getActions());
             }
         }
+    }
+
+    private void checkIndexUsage(String sql, boolean expectedIndexUsage) {
+        List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
+        List<TableField> mapTableFields = asList(
+                new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
+                new MapTableField("this", QueryDataType.INT, false, QueryPath.VALUE_PATH)
+        );
+        HazelcastTable table = partitionedTable(
+                MAP_NAME,
+                mapTableFields,
+                getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
+                false,
+                1
+        );
+        OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
+        assertPlan(
+                optimizationResult.getLogical(),
+                plan(planRow(0, FullScanLogicalRel.class))
+        );
+        assertPlan(
+                optimizationResult.getPhysical(),
+                plan(planRow(0, expectedIndexUsage ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
+        );
     }
 
     private static class TestSqlSecurityContext implements SqlSecurityContext {
