@@ -117,8 +117,8 @@ public final class ElasticClients {
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(ANY, new UsernamePasswordCredentials(username, password));
         return RestClient.builder(new HttpHost(hostname, port, scheme))
-                .setHttpClientConfigCallback(httpClientBuilder ->
-                        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
-                );
+                         .setHttpClientConfigCallback(httpClientBuilder ->
+                                 httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
+                         );
     }
 }
