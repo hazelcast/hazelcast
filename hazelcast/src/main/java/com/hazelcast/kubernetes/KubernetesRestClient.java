@@ -17,8 +17,6 @@
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.utils.AbstractRestClient;
 
 import javax.net.ssl.HttpsURLConnection;
