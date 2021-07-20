@@ -24,6 +24,9 @@ import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -31,6 +34,10 @@ import java.util.concurrent.CompletableFuture;
  * The operation is sent from the master to all members informing them
  * about a member that wants to gracefully shut down. It's also sent as a
  * pre-join op to newly-joining members.
+ * <p>
+ * The operation has to be idempotent: it can be sent as a part of pre-join
+ * op, and again as a part of sending to all current members. It can be
+ * also sent again from a new master after the old master failure.
  * <p>
  * After receiving, the member ensures no new light job uses the
  * shutting-down member as a participant. For current light jobs that have
@@ -45,18 +52,22 @@ import java.util.concurrent.CompletableFuture;
 public class NotifyShutdownToMembersOperation extends AsyncOperation implements UrgentSystemOperation,
         AllowedDuringPassiveState {
 
-    private UUID shuttingDownMemberId;
+    private Collection<UUID> shuttingDownMemberIds;
 
     public NotifyShutdownToMembersOperation() {
     }
 
-    public NotifyShutdownToMembersOperation(UUID shuttingDownMemberId) {
-        this.shuttingDownMemberId = shuttingDownMemberId;
+    public NotifyShutdownToMembersOperation(Collection<UUID> shuttingDownMemberIds) {
+        this.shuttingDownMemberIds = shuttingDownMemberIds;
     }
 
     @Override
     protected CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().addShuttingDownMember(getCallerUuid());
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        for (UUID uuid : shuttingDownMemberIds) {
+            futures.add(getJobCoordinationService().addShuttingDownMember(uuid));
+        }
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     @Override
@@ -67,12 +78,12 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(shuttingDownMemberId);
+        out.writeObject(shuttingDownMemberIds);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        shuttingDownMemberId = in.readObject();
+        shuttingDownMemberIds = in.readObject();
     }
 }

@@ -34,6 +34,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -213,7 +214,7 @@ public class TenantControlServiceImpl
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
         // RU_COMPAT_4_1
         return isTenantControlEnabled() && clusterVersion.isGreaterOrEqual(Versions.V4_2)

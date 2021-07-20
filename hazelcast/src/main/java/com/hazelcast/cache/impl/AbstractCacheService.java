@@ -733,7 +733,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         OnJoinCacheOperation preJoinCacheOperation;
         preJoinCacheOperation = new OnJoinCacheOperation();
         for (Map.Entry<String, CompletableFuture<CacheConfig>> cacheConfigEntry : configs.entrySet()) {

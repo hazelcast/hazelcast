@@ -503,11 +503,12 @@ public class NodeEngineImpl implements NodeEngine {
         return postJoinOps;
     }
 
-    public Collection<Operation> getPreJoinOperations() {
+    @Nonnull
+    public Collection<Operation> getPreJoinOperations(UUID uuid) {
         Collection<Operation> preJoinOps = new LinkedList<>();
         Collection<PreJoinAwareService> services = getServices(PreJoinAwareService.class);
         for (PreJoinAwareService service : services) {
-            Operation preJoinOperation = service.getPreJoinOperation();
+            Operation preJoinOperation = service.getPreJoinOperation(uuid);
             if (preJoinOperation != null) {
                 if (preJoinOperation.getPartitionId() >= 0) {
                     logger.severe("Pre-join operations operations must not have partition ID set! Service: "

@@ -19,6 +19,8 @@ package com.hazelcast.internal.services;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
+import java.util.UUID;
+
 /**
  * Services which need to perform operations on a joining member just before the member is set as joined must implement
  * this interface. These operations are executed on the joining member before it is set as joined, in contrast to
@@ -43,6 +45,7 @@ public interface PreJoinAwareService {
      * Pre join operations should return response, which may also be a {@code null} response.
      *
      * @return an operation to be executed on joining member before it is set as joined. Can be {@code null}.
+     * @param uuid
      */
-    Operation getPreJoinOperation();
+    Operation getPreJoinOperation(UUID uuid);
 }

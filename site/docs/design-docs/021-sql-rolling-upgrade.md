@@ -282,3 +282,9 @@ Clients, if they ask a shutting-down member, will get a special response and wil
 - done when
   1. all local executions are done - doesn't work. There might be no executions and still a new member can join and start one before we shut down for real
   2. all members reply successfully or have left - doesn't work. All members reply, but a new member might join in the meantime and execute a job which we must finish
+
+
+- pre-join op is sent, member is guaranteed to be added already
+- notify shutdown to master is received
+- we notify all current members (the list on master includes the pre-joined ones)
+- if the operation on a pre-joined member fails because it didn't join yet, it's retried

@@ -799,7 +799,18 @@ public class MasterJobContext {
      */
     @Nonnull
     CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
-        return hasParticipant(uuid) ? gracefullyTerminate() : completedFuture(null);
+        if (!hasParticipant(uuid)) {
+            return completedFuture(null);
+        }
+        if (mc.jobConfig().isPreventShutdown() && mc.jobConfig().getProcessingGuarantee() == NONE) {
+            mc.lock();
+            try {
+                return executionCompletionFuture;
+            } finally {
+                mc.unlock();
+            }
+        }
+        return gracefullyTerminate();
     }
 
     @Nonnull

@@ -139,12 +139,6 @@ public class JobCoordinationService {
 
     private static final int MIN_JOB_SCAN_PERIOD_MILLIS = 100;
 
-    /**
-     * Inserted temporarily to {@link #lightMasterContexts} to safely check for double job submission.
-     * When reading, it's treated as if the job doesn't exist.
-     */
-    private static final Object UNINITIALIZED_LIGHT_JOB_MARKER = new Object();
-
     private final NodeEngineImpl nodeEngine;
     private final JetServiceBackend jetServiceBackend;
     private final JetConfig config;
@@ -313,7 +307,8 @@ public class JobCoordinationService {
         } else {
             int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
             dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                @Override public int defaultLocalParallelism() {
+                @Override
+                public int defaultLocalParallelism() {
                     return coopThreadCount;
                 }
             });
@@ -321,18 +316,27 @@ public class JobCoordinationService {
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
-        Object oldContext = lightMasterContexts.putIfAbsent(jobId, UNINITIALIZED_LIGHT_JOB_MARKER);
+        CompletableFuture<LightMasterContext> initializationFuture = new CompletableFuture<>();
+        Object oldContext = lightMasterContexts.putIfAbsent(jobId, new UninitializedLightJobMarker(initializationFuture));
         if (oldContext != null) {
             throw new JetException("duplicate jobId " + idToString(jobId));
         }
 
-        checkPermissions(subject, dag);
+        LightMasterContext mc = null;
+        try {
+            checkPermissions(subject, dag);
 
-        // Initialize and start the job (happens in the constructor). We do this before adding the actual
-        // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
-        oldContext = lightMasterContexts.put(jobId, mc);
-        assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
+            // Initialize and start the job (happens in the constructor). We do this before adding the actual
+            // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
+            mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
+            oldContext = lightMasterContexts.put(jobId, mc);
+            assert oldContext instanceof UninitializedLightJobMarker;
+        } catch (Throwable e) {
+            lightMasterContexts.remove(jobId);
+            throw e;
+        } finally {
+            initializationFuture.complete(mc);
+        }
 
         scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
@@ -443,7 +447,7 @@ public class JobCoordinationService {
 
     public CompletableFuture<Void> joinLightJob(long jobId) {
         Object mc = lightMasterContexts.get(jobId);
-        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+        if (mc == null || mc instanceof UninitializedLightJobMarker) {
             throw new JobNotFoundException(jobId);
         }
         return ((LightMasterContext) mc).getCompletionFuture();
@@ -487,7 +491,7 @@ public class JobCoordinationService {
 
     public void terminateLightJob(long jobId) {
         Object mc = lightMasterContexts.get(jobId);
-        if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+        if (mc == null || mc instanceof UninitializedLightJobMarker) {
             throw new JobNotFoundException(jobId);
         }
         ((LightMasterContext) mc).requestTermination();
@@ -505,7 +509,7 @@ public class JobCoordinationService {
         return submitToCoordinatorThread(() -> {
             if (onlyJobId != ALL_JOBS) {
                 Object lmc = lightMasterContexts.get(onlyJobId);
-                if (lmc != null && lmc != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                if (lmc != null && !(lmc instanceof UninitializedLightJobMarker)) {
                     return new GetJobIdsResult(onlyJobId, true);
                 }
 
@@ -529,7 +533,7 @@ public class JobCoordinationService {
             // add light jobs - only if no name is requested, light jobs can't have a name
             if (onlyName == null) {
                 for (Object ctx : lightMasterContexts.values()) {
-                    if (ctx != UNINITIALIZED_LIGHT_JOB_MARKER) {
+                    if (!(ctx instanceof UninitializedLightJobMarker)) {
                         result.add(tuple2(((LightMasterContext) ctx).getJobId(), true));
                     }
                 }
@@ -643,7 +647,7 @@ public class JobCoordinationService {
     public CompletableFuture<Long> getJobSubmissionTime(long jobId, boolean isLightJob) {
         if (isLightJob) {
             Object mc = lightMasterContexts.get(jobId);
-            if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
+            if (mc == null || mc instanceof UninitializedLightJobMarker) {
                 throw new JobNotFoundException(jobId);
             }
             return completedFuture(((LightMasterContext) mc).getStartTime());
@@ -688,7 +692,7 @@ public class JobCoordinationService {
 
             // light jobs
             lightMasterContexts.values().stream()
-                    .filter(lmc -> lmc != UNINITIALIZED_LIGHT_JOB_MARKER)
+                    .filter(lmc -> !(lmc instanceof UninitializedLightJobMarker))
                     .map(LightMasterContext.class::cast)
                     .map(lmc -> new JobSummary(
                             lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
@@ -699,13 +703,32 @@ public class JobCoordinationService {
     }
 
     /**
-     * Add the given member to shutting down members. This will prevent
-     * submission of more executions until the member actually leaves the
-     * cluster. The returned future will complete when all executions of which
-     * the member is a participant terminate.
+     * Add the given member to the collection shutting down members and invoke
+     * `onParticipantGracefulShutdown()` for all existing jobs.
      * <p>
-     * The method is idempotent, the {@link NotifyShutdownToMasterOperation}
-     * which calls it can be retried.
+     * Adding to the collection ensures, for normal jobs, that no more
+     * executions will be started until that member leaves the cluster. For
+     * light jobs, more executions are allowed, but will not run on the given
+     * member.
+     * <p>
+     * The returned future will complete when all executions of which the
+     * member is a participant terminate.
+     * <p>
+     * Note that jobs can terminate in 3 ways:
+     * <ol>
+     *     <li>fault-tolerant job terminates after a terminal snapshot, regardless
+     *     of the prevent-shutdown flag
+     *
+     *     <li>non-fault-tolerant jobs (light or normal) with the prevent-shutdown
+     *     flag block completing of the returned future until they complete
+     *     normally
+     *
+     *     <li>non-fault-tolerant jobs (light or normal) without the
+     *     prevent-shutdown flag are terminated abruptly
+     * </ol>
+     *
+     * <p>
+     * The method is idempotent.
      */
     @Nonnull
     public CompletableFuture<Void> addShuttingDownMember(UUID uuid) {
@@ -720,11 +743,29 @@ public class JobCoordinationService {
             return completedFuture(null);
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
-        CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                                                    .toArray(CompletableFuture[]::new);
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        // handle normal jobs
+        for (MasterContext mc : masterContexts.values()) {
+            futures.add(mc.jobContext().onParticipantGracefulShutdown(uuid));
+        }
+        // handle light jobs
+        for (Entry<Long, Object> en : lightMasterContexts.entrySet()) {
+            CompletableFuture<?> f;
+            if (en.getValue() instanceof UninitializedLightJobMarker) {
+                f = ((UninitializedLightJobMarker) en.getValue()).initializationFuture
+                        .thenCompose(mc -> {
+                            if (mc == null) {
+                                return completedFuture(null);
+                            }
+                            return mc.onParticipantGracefulShutdown(uuid);
+                        });
+            } else {
+                f = ((LightMasterContext) en).onParticipantGracefulShutdown(uuid);
+            }
+            futures.add(f);
+        }
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
-        CompletableFuture.allOf(futures)
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                          .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
@@ -885,7 +926,7 @@ public class JobCoordinationService {
             removedMembers.put(uuid, System.nanoTime());
         }
 
-        // clean up old entries from removedMembers (the value is time when the member was removed)
+        // clean up old entries from removedMembers (the value is the time when the member was removed)
         long removeThreshold = System.nanoTime() - HOURS.toNanos(1);
         removedMembers.entrySet().removeIf(en -> en.getValue() < removeThreshold);
     }
@@ -1314,5 +1355,22 @@ public class JobCoordinationService {
 
     boolean isMemberShuttingDown(UUID uuid) {
         return membersShuttingDown.containsKey(uuid);
+    }
+
+    Collection<UUID> membersShuttingDown() {
+        return membersShuttingDown.keySet();
+    }
+
+    /**
+     * Instance of this class is inserted temporarily to {@link
+     * #lightMasterContexts} to safely check for double job submission. When
+     * reading, it's treated as if the job doesn't exist.
+     */
+    private static final class UninitializedLightJobMarker {
+        private final CompletableFuture<LightMasterContext> initializationFuture;
+
+        private UninitializedLightJobMarker(CompletableFuture<LightMasterContext> initializationFuture) {
+            this.initializationFuture = initializationFuture;
+        }
     }
 }

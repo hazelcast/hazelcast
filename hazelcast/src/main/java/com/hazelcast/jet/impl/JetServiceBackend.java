@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -38,6 +38,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMembersOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -200,18 +202,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyShutdownToMasterOperation();
         nodeEngine.getOperationService()
-                  .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
-                  .whenCompleteAsync((response, throwable) -> {
-                      if (throwable != null) {
-                          logger.warning("Failed to notify master member that this member is shutting down," +
-                                  " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
-                          // recursive call
-                          nodeEngine.getExecutionService().schedule(
-                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
-                      } else {
-                          future.complete(null);
-                      }
-                  });
+                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                .whenCompleteAsync((response, throwable) -> {
+                    if (throwable != null) {
+                        logger.warning("Failed to notify master member that this member is shutting down," +
+                                " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
+                        // recursive call
+                        nodeEngine.getExecutionService().schedule(
+                                () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                    } else {
+                        future.complete(null);
+                    }
+                });
     }
 
     @Override
@@ -352,7 +354,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     @Override
-    public Operation getPreJoinOperation() {
-        return null;
+    public Operation getPreJoinOperation(UUID uuid) {
+        assert nodeEngine.getClusterService().isMaster();
+        assert nodeEngine.getClusterService().getMember(uuid) != null : "pre-joined member not member on master";
+        return new NotifyShutdownToMembersOperation(jobCoordinationService.membersShuttingDown());
     }
 }

@@ -668,7 +668,7 @@ public class ClusterJoinManager {
 
                 // send members update back to node trying to join again...
                 boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
-                OnJoinOp preJoinOp = preparePreJoinOps();
+                OnJoinOp preJoinOp = preparePreJoinOps(joinMessage.getUuid());
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
@@ -771,11 +771,6 @@ public class ClusterJoinManager {
                     return;
                 }
 
-                // post join operations must be lock free, that means no locks at all:
-                // no partition locks, no key-based locks, no service level locks!
-                OnJoinOp preJoinOp = preparePreJoinOps();
-                OnJoinOp postJoinOp = preparePostJoinOp();
-
                 // this is the current partition assignment state, not taking into account the
                 // currently joining members
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
@@ -789,6 +784,10 @@ public class ClusterJoinManager {
                         shouldTriggerRepartition = false;
                     }
                     long startTime = clusterClock.getClusterStartTime();
+                    // post join operations must be lock free, that means no locks at all:
+                    // no partition locks, no key-based locks, no service level locks!
+                    OnJoinOp preJoinOp = preparePreJoinOps(member.getUuid());
+                    OnJoinOp postJoinOp = preparePostJoinOp();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
                             clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition);
@@ -820,9 +819,9 @@ public class ClusterJoinManager {
         return (postJoinOps != null && !postJoinOps.isEmpty()) ? new OnJoinOp(postJoinOps) : null;
     }
 
-    private OnJoinOp preparePreJoinOps() {
-        Collection<Operation> preJoinOps = nodeEngine.getPreJoinOperations();
-        return (preJoinOps != null && !preJoinOps.isEmpty()) ? new OnJoinOp(preJoinOps) : null;
+    private OnJoinOp preparePreJoinOps(UUID uuid) {
+        Collection<Operation> preJoinOps = nodeEngine.getPreJoinOperations(uuid);
+        return !preJoinOps.isEmpty() ? new OnJoinOp(preJoinOps) : null;
     }
 
     private Future invokeClusterOp(Operation op, Address target) {

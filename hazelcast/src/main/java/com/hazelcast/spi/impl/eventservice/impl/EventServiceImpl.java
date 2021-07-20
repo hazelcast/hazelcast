@@ -676,7 +676,7 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         // pre-join operations are only sent by master member
         return getOnJoinRegistrationOperation();
     }

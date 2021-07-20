@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -64,7 +65,7 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         if (schemas.size() == 0) {
             return null;
         }

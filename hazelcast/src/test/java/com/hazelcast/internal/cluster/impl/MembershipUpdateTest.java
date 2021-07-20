@@ -53,6 +53,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -876,7 +877,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Operation getPreJoinOperation() {
+        public Operation getPreJoinOperation(UUID uuid) {
             return new TimeConsumingPreJoinOperation();
         }
     }
@@ -921,7 +922,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         static final String SERVICE_NAME = "failing-pre-join-service";
 
         @Override
-        public Operation getPreJoinOperation() {
+        public Operation getPreJoinOperation(UUID uuid) {
             return new FailsDeserializationOperation();
         }
     }

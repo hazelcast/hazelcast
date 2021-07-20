@@ -16,46 +16,34 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.cluster.Member;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Operation sent from a member that wants to gracefully shut down to the
- * master.
+ * master. Master sends it to itself.
  * <p>
- * The master, for normal jobs, requests graceful termination of all
- * executions where the caller is participant (by sending a
- * TerminateExecutionOperation), except for those that have the {@link
- * JobConfig#isPreventShutdown()} flag enabled. It also prevents starting
- * of any new normal jobs, until the shutting-down member is actually
- * removed from the cluster.
+ * The operation calls {@link
+ * JobCoordinationService#addShuttingDownMember(UUID)} with the caller
+ * UUID. It also forwards the information to all members using {@link
+ * NotifyShutdownToMembersOperation}.
  * <p>
- * For light jobs, the master sends {@link
- * NotifyShutdownToMembersOperation} to all members (including itself) to
- * deal with them (see that operation for description). This operation is
- * also sent to all newly-joining members.
- * <p>
- * It responds to the caller when all normal jobs have terminated and when
+ * It responds to the caller when all executions have terminated and when
  * all responses for {@link NotifyShutdownToMembersOperation} are received.
  * <p>
- * Note that normal jobs can terminate in 3 ways:
- * <ol>
- *     <li>fault-tolerant job terminate after a terminal snapshot, regardless
- *     of the prevent-shutdown flag
- *
- *     <li>non-fault-tolerant jobs with the prevent-shutdown flag block
- *     response to this op until they complete normally
- *
- *     <li>non-fault-tolerant jobs without the prevent-shutdown flag are
- *     cancelled abruptly
- * </ol>
- *
  * If the operation fails, the caller will retry it indefinitely with the
- * new master.
+ * new master. The operation has to be idempotent.
  */
 public class NotifyShutdownToMasterOperation extends AsyncOperation implements UrgentSystemOperation,
         AllowedDuringPassiveState {
@@ -65,7 +53,16 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
 
     @Override
     protected CompletableFuture<Void> doRun() {
-        return getJobCoordinationService().addShuttingDownMember(getCallerUuid());
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+        futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
+
+        for (Member member : getNodeEngine().getClusterService().getMembers()) {
+            NotifyShutdownToMembersOperation op = new NotifyShutdownToMembersOperation(singletonList(getCallerUuid()));
+            futures.add(getNodeEngine().getOperationService().
+                    invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress()));
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     @Override

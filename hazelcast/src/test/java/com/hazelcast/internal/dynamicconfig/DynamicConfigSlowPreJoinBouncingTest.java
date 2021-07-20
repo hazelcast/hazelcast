@@ -27,6 +27,8 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingTest {
@@ -49,7 +51,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
         }
 
         @Override
-        public Operation getPreJoinOperation() {
+        public Operation getPreJoinOperation(UUID uuid) {
             sleepSeconds(1);
             return null;
         }

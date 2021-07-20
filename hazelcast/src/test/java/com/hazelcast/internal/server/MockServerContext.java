@@ -330,7 +330,7 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
-            public Operation getPreJoinOperation() {
+            public Operation getPreJoinOperation(UUID uuid) {
                 return null;
             }
 

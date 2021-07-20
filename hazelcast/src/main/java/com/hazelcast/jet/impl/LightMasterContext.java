@@ -37,6 +37,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.Collection;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,6 +62,7 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class LightMasterContext {
 
@@ -72,6 +75,7 @@ public class LightMasterContext {
 
     private final NodeEngine nodeEngine;
     private final long jobId;
+    private final JobConfig config;
 
     private final ILogger logger;
     private final String jobIdString;
@@ -89,6 +93,7 @@ public class LightMasterContext {
     ) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
+        this.config = config;
 
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
@@ -181,6 +186,30 @@ public class LightMasterContext {
                         .invoke();
             }
         }
+    }
+
+    /**
+     * Called when job participant is going to gracefully shut down. Will
+     * initiate terminal snapshot and when it's done, it will complete the
+     * returned future.
+     *
+     * @return a future to wait for, which may be already completed
+     */
+    @Nonnull
+    CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
+        if (!hasParticipant(uuid)) {
+            return completedFuture(null);
+        }
+        if (!config.isPreventShutdown()) {
+            requestTermination();
+        }
+        return jobCompletionFuture;
+    }
+
+    private boolean hasParticipant(UUID uuid) {
+        // a member is a participant when it is the coordinator (that's we) or it's in the execution plan
+        return nodeEngine.getLocalMember().getUuid().equals(uuid)
+                || executionPlanMap != null && executionPlanMap.keySet().stream().anyMatch(mi -> mi.getUuid().equals(uuid));
     }
 
     /**

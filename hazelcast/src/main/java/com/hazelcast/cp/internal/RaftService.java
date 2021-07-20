@@ -566,7 +566,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         if (!cpSubsystemEnabled) {
             return null;
         }

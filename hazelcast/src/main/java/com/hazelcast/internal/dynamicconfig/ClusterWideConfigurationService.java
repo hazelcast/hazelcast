@@ -61,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -152,7 +153,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public Operation getPreJoinOperation(UUID uuid) {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
