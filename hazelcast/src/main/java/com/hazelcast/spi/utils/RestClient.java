@@ -14,16 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.spi.exception.RestClientException;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +44,17 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-final class RestClient {
+public final class RestClient {
 
-    static final int HTTP_OK = 200;
-    static final int HTTP_NOT_FOUND = 404;
+    /**
+     * HTTP status code 200 OK
+     */
+    public static final int HTTP_OK = 200;
+
+    /**
+     * HTTP status code 404 NOT FOUND
+     */
+    public static final int HTTP_NOT_FOUND = 404;
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -43,43 +63,54 @@ final class RestClient {
     private int readTimeoutSeconds;
     private int connectTimeoutSeconds;
     private int retries;
+    private String caCertificate;
 
-    private RestClient(String url) {
+    protected RestClient(String url) {
         this.url = url;
     }
 
-    static RestClient create(String url) {
+    public static RestClient create(String url) {
         return new RestClient(url);
     }
 
-    RestClient withHeaders(Map<String, String> headers) {
+    public RestClient withHeaders(Map<String, String> headers) {
         for (Map.Entry<String, String> entry : headers.entrySet()) {
-            this.headers.add(new Parameter(entry.getKey(), entry.getValue()));
+            withHeader(entry.getKey(), entry.getValue());
         }
         return this;
     }
 
-    RestClient withBody(String body) {
+    public RestClient withHeader(String name, String value) {
+        this.headers.add(new Parameter(name, value));
+        return this;
+    }
+
+    public RestClient withBody(String body) {
         this.body = body;
         return this;
     }
 
-    RestClient withReadTimeoutSeconds(int readTimeoutSeconds) {
+    public RestClient withReadTimeoutSeconds(int readTimeoutSeconds) {
         this.readTimeoutSeconds = readTimeoutSeconds;
         return this;
     }
 
-    RestClient withConnectTimeoutSeconds(int connectTimeoutSeconds) {
+    public RestClient withConnectTimeoutSeconds(int connectTimeoutSeconds) {
         this.connectTimeoutSeconds = connectTimeoutSeconds;
         return this;
     }
 
-    RestClient withRetries(int retries) {
+    public RestClient withRetries(int retries) {
         this.retries = retries;
         return this;
     }
 
-    RestClient expectResponseCodes(Integer... codes) {
+    public RestClient withCaCertificates(String caCertificate) {
+        this.caCertificate = caCertificate;
+        return this;
+    }
+
+    public RestClient expectResponseCodes(Integer... codes) {
         if (expectedResponseCodes == null) {
             expectedResponseCodes = new HashSet<>();
         }
@@ -87,11 +118,11 @@ final class RestClient {
         return this;
     }
 
-    Response get() {
+    public Response get() {
         return callWithRetries("GET");
     }
 
-    Response post() {
+    public Response post() {
         return callWithRetries("POST");
     }
 
@@ -104,6 +135,9 @@ final class RestClient {
         try {
             URL urlToConnect = new URL(url);
             connection = (HttpURLConnection) urlToConnect.openConnection();
+            if (connection instanceof HttpsURLConnection && caCertificate != null) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
+            }
             connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
             connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
             connection.setRequestMethod(method);
@@ -157,6 +191,47 @@ final class RestClient {
                 : expectedResponseCodes.contains(responseCode);
     }
 
+    /**
+     * Builds SSL Socket Factory with the public CA Certificate from Kubernetes Master.
+     */
+    private SSLSocketFactory buildSslSocketFactory() {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+
+            int i = 0;
+            for (Certificate certificate : generateCertificates()) {
+                String alias = String.format("ca-%d", i++);
+                keyStore.setCertificateEntry(alias, certificate);
+            }
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(keyStore);
+
+            SSLContext context = SSLContext.getInstance("TLSv1.2");
+            context.init(null, tmf.getTrustManagers(), null);
+            return context.getSocketFactory();
+
+        } catch (Exception e) {
+            throw new RestClientException("Failure in generating SSLSocketFactory", e);
+        }
+    }
+
+    /**
+     * Generates CA Certificate from the default CA Cert file or from the externally provided "ca-certificate" property.
+     */
+    private Collection<? extends Certificate> generateCertificates()
+            throws CertificateException {
+        InputStream caInput = null;
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            caInput = new ByteArrayInputStream(caCertificate.getBytes(StandardCharsets.UTF_8));
+            return cf.generateCertificates(caInput);
+        } finally {
+            IOUtil.closeResource(caInput);
+        }
+    }
+
     private static String read(HttpURLConnection connection) {
         InputStream stream;
         try {
@@ -172,7 +247,7 @@ final class RestClient {
         return scanner.next();
     }
 
-    static class Response {
+    public static class Response {
 
         private final int code;
         private final String body;
@@ -182,11 +257,11 @@ final class RestClient {
             this.body = body;
         }
 
-        int getCode() {
+        public int getCode() {
             return code;
         }
 
-        String getBody() {
+        public String getBody() {
             return body;
         }
     }
@@ -208,5 +283,4 @@ final class RestClient {
             return value;
         }
     }
-
 }

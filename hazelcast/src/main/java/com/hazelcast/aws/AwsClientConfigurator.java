@@ -21,14 +21,13 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.time.Clock;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.aws.RegionValidator.validateRegion;
-import static com.hazelcast.aws.StringUtils.isNotEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Responsible for creating the correct {@code AwsClient} implementation.
@@ -71,7 +70,7 @@ final class AwsClientConfigurator {
     }
 
     static String resolveRegion(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {
-        if (isNotEmpty(awsConfig.getRegion())) {
+        if (!isNullOrEmptyAfterTrim(awsConfig.getRegion())) {
             return awsConfig.getRegion();
         }
 
@@ -100,7 +99,7 @@ final class AwsClientConfigurator {
 
     static String resolveEc2Endpoint(AwsConfig awsConfig, String region) {
         String ec2HostHeader = awsConfig.getHostHeader();
-        if (StringUtils.isEmpty(ec2HostHeader)
+        if (isNullOrEmptyAfterTrim(ec2HostHeader)
             || ec2HostHeader.startsWith("ecs")
             || ec2HostHeader.equals("ec2")
         ) {
@@ -111,7 +110,7 @@ final class AwsClientConfigurator {
 
     static String resolveEcsEndpoint(AwsConfig awsConfig, String region) {
         String ecsHostHeader = awsConfig.getHostHeader();
-        if (StringUtils.isEmpty(ecsHostHeader)
+        if (isNullOrEmptyAfterTrim(ecsHostHeader)
             || ecsHostHeader.equals("ecs")
         ) {
             ecsHostHeader = DEFAULT_ECS_HOST_HEADER;
@@ -129,16 +128,16 @@ final class AwsClientConfigurator {
      * </ul>
      */
     static boolean explicitlyEc2Configured(AwsConfig awsConfig) {
-        return isNotEmpty(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ec2");
+        return !isNullOrEmptyAfterTrim(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ec2");
     }
 
     static boolean explicitlyEcsConfigured(AwsConfig awsConfig) {
-        return isNotEmpty(awsConfig.getCluster())
-            || (isNotEmpty(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ecs"));
+        return !isNullOrEmptyAfterTrim(awsConfig.getCluster())
+            || (!isNullOrEmptyAfterTrim(awsConfig.getHostHeader()) && awsConfig.getHostHeader().startsWith("ecs"));
     }
 
     static String resolveCluster(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {
-        if (isNotEmpty(awsConfig.getCluster())) {
+        if (!isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
             return awsConfig.getCluster();
         }
         if (environment.isRunningOnEcs()) {
@@ -189,7 +188,7 @@ final class AwsClientConfigurator {
     private static String logFilters(Map<String, String> parameters) {
         return parameters.entrySet().stream()
             .filter(e -> e.getValue() != null)
-            .sorted(Comparator.comparing(Map.Entry::getKey))
+            .sorted(Map.Entry.comparingByKey())
             .map(e -> String.format("%s:%s", e.getKey(), e.getValue()))
             .collect(Collectors.joining(", "));
     }

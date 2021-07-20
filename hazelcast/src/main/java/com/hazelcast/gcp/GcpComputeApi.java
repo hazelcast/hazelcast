@@ -19,6 +19,7 @@ package com.hazelcast.gcp;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +51,8 @@ class GcpComputeApi {
         String response = RestClient
                 .create(urlFor(project, zone, label))
                 .withHeader("Authorization", String.format("OAuth %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         List<GcpAddress> result = new ArrayList<GcpAddress>();
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("items"))) {
@@ -77,7 +79,8 @@ class GcpComputeApi {
         String response = RestClient
                 .create(url)
                 .withHeader("Authorization", String.format("OAuth %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         JsonArray zoneUrls = toJsonArray(Json.parse(response).asObject().get("zones"));
 

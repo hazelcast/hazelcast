@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 /**
  * Represents the range of IPv4 Ports.
  */
-final class PortRange {
+public final class PortRange {
     private static final Pattern PORT_NUMBER_REGEX = Pattern.compile("^(\\d+)$");
     private static final Pattern PORT_RANGE_REGEX = Pattern.compile("^(\\d+)-(\\d+)$");
 
@@ -38,7 +38,7 @@ final class PortRange {
      * @param spec port number (e.g "5701") or port range (e.g. "5701-5708")
      * @throws IllegalArgumentException if the specified spec is not a valid port or port range
      */
-    PortRange(String spec) {
+    public PortRange(String spec) {
         Matcher portNumberMatcher = PORT_NUMBER_REGEX.matcher(spec);
         Matcher portRangeMatcher = PORT_RANGE_REGEX.matcher(spec);
         if (portNumberMatcher.find()) {
@@ -69,11 +69,11 @@ final class PortRange {
         }
     }
 
-    int getFromPort() {
+    public int getFromPort() {
         return fromPort;
     }
 
-    int getToPort() {
+    public int getToPort() {
         return toPort;
     }
 

@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.kubernetes;
+package com.hazelcast.spi.exception;
 
 /**
  * Exception to indicate any issues while executing a REST call.
  */
-class RestClientException
+public class RestClientException
         extends RuntimeException {
     private int httpErrorCode;
 
-    RestClientException(String message, int httpErrorCode) {
+    public RestClientException(String message, int httpErrorCode) {
         super(String.format("%s. HTTP Error Code: %s", message, httpErrorCode));
         this.httpErrorCode = httpErrorCode;
     }
 
-    RestClientException(String message, Throwable cause) {
+    public RestClientException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    int getHttpErrorCode() {
+    public int getHttpErrorCode() {
         return httpErrorCode;
     }
 }

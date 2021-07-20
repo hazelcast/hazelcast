@@ -14,24 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.azure;
+package com.hazelcast.spi.exception;
 
 /**
- * Exception to indicate any issues while executing a REST call.
+ * Exception to indicate that no credentials are possible to retrieve.
  */
-class RestClientException extends RuntimeException {
-    private int httpErrorCode;
-
-    RestClientException(String message, int httpErrorCode) {
-        super(String.format("%s. HTTP Error Code: %s", message, httpErrorCode));
-        this.httpErrorCode = httpErrorCode;
+public class NoCredentialsException extends RuntimeException {
+    public NoCredentialsException() {
     }
 
-    RestClientException(String message, Throwable cause) {
+    public NoCredentialsException(String message, Throwable cause) {
         super(message, cause);
-    }
-
-    int getHttpErrorCode() {
-        return httpErrorCode;
     }
 }

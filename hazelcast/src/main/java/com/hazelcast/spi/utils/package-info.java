@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.gcp;
-
 /**
- * Exception to indicate any issues while executing a REST call.
+ * Contains utils classes for Hazelcast SPI.
+ *
+ * All classes/interfaces/packages in or underneath this com.hazelcast.spi.utils package are private. They are for
+ * internal usage only and we do not provide backwards compatibility on them. These classes should not be used by
+ * anyone apart from developers working on Hazelcast itself.
  */
-class RestClientException
-        extends RuntimeException {
-    private int httpErrorCode;
-
-    RestClientException(String message, int httpErrorCode) {
-        super(String.format("%s. HTTP Error Code: %s", message, httpErrorCode));
-        this.httpErrorCode = httpErrorCode;
-    }
-
-    RestClientException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    int getHttpErrorCode() {
-        return httpErrorCode;
-    }
-}
+package com.hazelcast.spi.utils;

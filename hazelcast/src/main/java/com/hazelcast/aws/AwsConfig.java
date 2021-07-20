@@ -17,6 +17,7 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.spi.utils.PortRange;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +25,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import static com.hazelcast.aws.StringUtils.isEmpty;
-import static com.hazelcast.aws.StringUtils.isNotEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * AWS Discovery Strategy configuration that corresponds to the properties passed in the Hazelcast configuration and listed in
@@ -99,7 +99,7 @@ final class AwsConfig {
     }
 
     private static List<String> splitValue(String value) {
-        return isEmpty(value) ? Collections.emptyList() : Arrays.asList(value.split(","));
+        return isNullOrEmptyAfterTrim(value) ? Collections.emptyList() : Arrays.asList(value.split(","));
     }
 
     private void validateConfig() {
@@ -109,25 +109,27 @@ final class AwsConfig {
                     + " or ECS properties ('cluster', 'family', 'service-name'). You cannot define both of them"
             );
         }
-        if (isNotEmpty(family) && isNotEmpty(serviceName)) {
+        if (!isNullOrEmptyAfterTrim(family) && !isNullOrEmptyAfterTrim(serviceName)) {
             throw new InvalidConfigurationException(
                 "You cannot configure ECS discovery with both 'family' and 'service-name', these filters are mutually"
                     + " exclusive"
             );
         }
-        if (isNotEmpty(iamRole) && (isNotEmpty(accessKey) || isNotEmpty(secretKey))) {
+        if (!isNullOrEmptyAfterTrim(iamRole)
+                && (!isNullOrEmptyAfterTrim(accessKey) || !isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
                 "You cannot define both 'iam-role' and 'access-key'/'secret-key'. Choose how you want to authenticate"
                     + " with AWS API, either with IAM Role or with hardcoded AWS Credentials");
         }
-        if ((isEmpty(accessKey) && isNotEmpty(secretKey)) || (isNotEmpty(accessKey) && isEmpty(secretKey))) {
+        if ((isNullOrEmptyAfterTrim(accessKey) && !isNullOrEmptyAfterTrim(secretKey))
+                || (!isNullOrEmptyAfterTrim(accessKey) && isNullOrEmptyAfterTrim(secretKey))) {
             throw new InvalidConfigurationException(
                 "You have to either define both ('access-key', 'secret-key') or none of them");
         }
     }
 
     private boolean anyOfEc2PropertiesConfigured() {
-        return isNotEmpty(iamRole) || isNotEmpty(securityGroupName) || hasTags(tags);
+        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName) || hasTags(tags);
     }
 
     private boolean hasTags(List<Tag> tags) {
@@ -135,7 +137,7 @@ final class AwsConfig {
     }
 
     private boolean anyOfEcsPropertiesConfigured() {
-        return isNotEmpty(cluster) || isNotEmpty(family) || isNotEmpty(serviceName);
+        return !isNullOrEmptyAfterTrim(cluster) || !isNullOrEmptyAfterTrim(family) || !isNullOrEmptyAfterTrim(serviceName);
     }
 
     static Builder builder() {

@@ -19,6 +19,7 @@ package com.hazelcast.gcp;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.ParseException;
+import com.hazelcast.spi.utils.RestClient;
 
 import static com.hazelcast.gcp.Utils.lastPartOf;
 
@@ -76,6 +77,6 @@ class GcpMetadataApi {
     }
 
     private static String callGet(String urlString) {
-        return RestClient.create(urlString).withHeader("Metadata-Flavor", "Google").get();
+        return RestClient.create(urlString).withHeader("Metadata-Flavor", "Google").get().getBody();
     }
 }

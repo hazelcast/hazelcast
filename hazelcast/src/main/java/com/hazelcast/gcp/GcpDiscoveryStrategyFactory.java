@@ -23,6 +23,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -118,6 +119,7 @@ public class GcpDiscoveryStrategyFactory
         return !RestClient.create(url)
                 .withHeader("Metadata-Flavor", "Google")
                 .get()
+                .getBody()
                 .isEmpty();
     }
 

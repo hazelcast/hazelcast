@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.kubernetes;
+package com.hazelcast.spi.utils;
 
 import com.hazelcast.core.HazelcastException;
 import org.junit.Test;
@@ -22,9 +22,8 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.kubernetes.RetryUtils.BACKOFF_MULTIPLIER;
-import static com.hazelcast.kubernetes.RetryUtils.INITIAL_BACKOFF_MS;
-import static java.util.Arrays.asList;
+import static com.hazelcast.spi.utils.RetryUtils.BACKOFF_MULTIPLIER;
+import static com.hazelcast.spi.utils.RetryUtils.INITIAL_BACKOFF_MS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.verify;
 public class RetryUtilsTest {
     private static final Integer RETRIES = 1;
     private static final String RESULT = "result string";
-    private static final String NON_RETRYABLE_KEYWORD = "\"reason\":\"Forbidden\"";
+    private static final String NON_RETRYABLE_KEYWORDS = "Non retryable keywords";
 
     private Callable<String> callable = mock(Callable.class);
 
@@ -46,7 +45,7 @@ public class RetryUtilsTest {
         given(callable.call()).willReturn(RESULT);
 
         // when
-        String result = RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
+        String result = RetryUtils.retry(callable, RETRIES);
 
         // then
         assertEquals(RESULT, result);
@@ -60,7 +59,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
-        String result = RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
+        String result = RetryUtils.retry(callable, RETRIES);
 
         // then
         assertEquals(RESULT, result);
@@ -74,7 +73,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
-        RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
+        RetryUtils.retry(callable, RETRIES);
 
         // then
         // throws exception
@@ -87,7 +86,7 @@ public class RetryUtilsTest {
         given(callable.call()).willThrow(new Exception()).willThrow(new Exception()).willReturn(RESULT);
 
         // when
-        RetryUtils.retry(callable, RETRIES, Collections.<String>emptyList());
+        RetryUtils.retry(callable, RETRIES);
 
         // then
         // throws exception
@@ -102,43 +101,23 @@ public class RetryUtilsTest {
 
         // when
         long startTimeMs = System.currentTimeMillis();
-        RetryUtils.retry(callable, 5, Collections.<String>emptyList());
+        RetryUtils.retry(callable, 5);
         long endTimeMs = System.currentTimeMillis();
 
         // then
         assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
     }
 
-    @Test(expected = NonRetryableException.class)
-    public void retryNonRetryableKeyword()
+    @Test(expected = HazelcastException.class)
+    public void retryNonRetryableKeywords()
             throws Exception {
         // given
-        given(callable.call()).willThrow(new NonRetryableException()).willReturn(RESULT);
+        given(callable.call()).willThrow(new HazelcastException(NON_RETRYABLE_KEYWORDS)).willThrow(new RuntimeException());
 
         // when
-        RetryUtils.retry(callable, RETRIES, asList(NON_RETRYABLE_KEYWORD));
+        String result = RetryUtils.retry(callable, RETRIES, Collections.singletonList(NON_RETRYABLE_KEYWORDS));
 
         // then
         // throws exception
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void retryNonRetryableKeywordOnCause()
-            throws Exception {
-        // given
-        given(callable.call()).willThrow(new RuntimeException(new NonRetryableException())).willReturn(RESULT);
-
-        // when
-        RetryUtils.retry(callable, RETRIES, asList(NON_RETRYABLE_KEYWORD));
-
-        // then
-        // throws exception
-    }
-
-    private static class NonRetryableException
-            extends RuntimeException {
-        private NonRetryableException() {
-            super(String.format("Message: %s", NON_RETRYABLE_KEYWORD));
-        }
     }
 }

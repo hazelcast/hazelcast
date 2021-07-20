@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.aws;
+package com.hazelcast.spi.utils;
 
 import org.junit.Test;
 

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.gcp;
+package com.hazelcast.spi.utils;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -27,13 +28,14 @@ import java.util.concurrent.Callable;
 /**
  * Static utility class to retry operations.
  */
-final class RetryUtils {
+public final class RetryUtils {
     static final long INITIAL_BACKOFF_MS = 1500L;
     static final double BACKOFF_MULTIPLIER = 1.5;
+    private static final long MAX_BACKOFF_MS = 5 * 60 * 1000L;
+
+    private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
 
     private static final long MS_IN_SECOND = 1000L;
-    private static final long MAX_BACKOFF_MS = 5 * 60 * MS_IN_SECOND;
-    private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
 
     private RetryUtils() {
     }
@@ -45,7 +47,18 @@ final class RetryUtils {
      * <p>
      * If {@code callable} throws an unchecked exception, it is wrapped into {@link HazelcastException}.
      */
-    static <T> T retry(Callable<T> callable, int retries, List<String> nonRetryableKeywords) {
+    public static <T> T retry(Callable<T> callable, int retries) {
+        return retry(callable, retries, Collections.emptyList());
+    }
+
+    /**
+     * Calls {@code callable.call()} until it does not throw an exception (but no more than {@code retries} times).
+     * <p>
+     * Note that {@code callable} should be an idempotent operation.
+     * <p>
+     * If {@code callable} throws an unchecked exception, it is wrapped into {@link HazelcastException}.
+     */
+    public static <T> T retry(Callable<T> callable, int retries, List<String> nonRetryableKeywords) {
         int retryCount = 0;
         while (true) {
             try {
@@ -53,7 +66,7 @@ final class RetryUtils {
             } catch (Exception e) {
                 retryCount++;
                 if (retryCount > retries || containsAnyOf(e, nonRetryableKeywords)) {
-                    throw unchecked(e);
+                    throw ExceptionUtil.rethrow(e);
                 }
                 long waitIntervalMs = backoffIntervalForRetry(retryCount);
                 LOGGER.warning(String.format("Couldn't connect to the service, [%s] retrying in %s seconds...", retryCount,
@@ -61,10 +74,6 @@ final class RetryUtils {
                 sleep(waitIntervalMs);
             }
         }
-    }
-
-    static <T> T retry(Callable<T> callable, int retries) {
-        return retry(callable, retries, Collections.<String>emptyList());
     }
 
     private static boolean containsAnyOf(Exception e, List<String> nonRetryableKeywords) {
@@ -100,12 +109,4 @@ final class RetryUtils {
             throw new HazelcastException(e);
         }
     }
-
-    private static RuntimeException unchecked(Exception e) {
-        if (e instanceof RuntimeException) {
-            return (RuntimeException) e;
-        }
-        return new HazelcastException(e);
-    }
-
 }
