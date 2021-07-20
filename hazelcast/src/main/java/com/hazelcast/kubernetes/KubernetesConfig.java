@@ -69,9 +69,8 @@ final class KubernetesConfig {
     private final String namespace;
     private final String podLabelName;
     private final String podLabelValue;
-    private final boolean matchServicePodNames;
-    private final String lbLabelName;
-    private final String lbLabelValue;
+    private final String discoveryLabelName;
+    private final String discoveryLabelValue;
     private final boolean resolveNotReadyAddresses;
     private final boolean useNodeNameAsExternalAddress;
     private final int kubernetesApiRetries;
@@ -91,9 +90,8 @@ final class KubernetesConfig {
         this.serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         this.podLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_NAME);
         this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
-        this.matchServicePodNames = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, MATCH_SERVICE_POD_NAMES, true);
-        this.lbLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_NAME);
-        this.lbLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_VALUE);
+        this.discoveryLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_NAME);
+        this.discoveryLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_VALUE);
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
@@ -304,14 +302,12 @@ final class KubernetesConfig {
         return podLabelValue;
     }
 
-    public boolean getMatchServicePodNames() { return matchServicePodNames; }
-
-    public String getLbLabelName() {
-        return lbLabelName;
+    public String getDiscoveryLabelName() {
+        return discoveryLabelName;
     }
 
-    public String getLbLabelValue() {
-        return lbLabelValue;
+    public String getDiscoveryLabelValue() {
+        return discoveryLabelValue;
     }
 
     boolean isResolveNotReadyAddresses() {
@@ -354,9 +350,8 @@ final class KubernetesConfig {
                 + "namespace: " + namespace + ", "
                 + "pod-label: " + podLabelName + ", "
                 + "pod-label-value: " + podLabelValue + ", "
-				+ "match-service-pod-names: " + matchServicePodNames + ", "
-                + "lb-label: " + lbLabelName + ", "
-                + "lb-label-value: " + lbLabelValue + ", "
+                + "lb-label: " + discoveryLabelName + ", "
+                + "lb-label-value: " + discoveryLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "

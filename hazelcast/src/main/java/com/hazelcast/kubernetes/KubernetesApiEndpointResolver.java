@@ -36,8 +36,8 @@ class KubernetesApiEndpointResolver
     private final String podLabel;
     private final String podLabelValue;
     private final boolean matchNames;
-    private final String lbLabel;
-    private final String lbLabelValue;
+    private final String discoveryLabel;
+    private final String discoveryLabelValue;
     private final Boolean resolveNotReadyAddresses;
     private final int port;
     private final KubernetesClient client;
@@ -45,7 +45,7 @@ class KubernetesApiEndpointResolver
     KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port,
                                   String serviceLabel, String serviceLabelValue,
                                   String podLabel, String podLabelValue,
-                                  boolean matchNames, String lbLabel, String lbLabelValue,
+                                  String discoveryLabel, String discoveryLabelValue,
                                   Boolean resolveNotReadyAddresses, KubernetesClient client) {
 
         super(logger);
@@ -56,9 +56,9 @@ class KubernetesApiEndpointResolver
         this.serviceLabelValue = serviceLabelValue;
         this.podLabel = podLabel;
         this.podLabelValue = podLabelValue;
-        this.matchNames = matchNames;
-        this.lbLabel = lbLabel;
-        this.lbLabelValue = lbLabelValue;
+        this.matchNames = discoveryLabel == null || discoveryLabel.isEmpty();
+        this.discoveryLabel = discoveryLabel;
+        this.discoveryLabelValue = discoveryLabelValue;
         this.resolveNotReadyAddresses = resolveNotReadyAddresses;
         this.client = client;
     }
@@ -67,15 +67,15 @@ class KubernetesApiEndpointResolver
     List<DiscoveryNode> resolve() {
         if (serviceName != null && !serviceName.isEmpty()) {
             logger.fine("Using service name to discover nodes.");
-            return getSimpleDiscoveryNodes(client.endpointsByName(serviceName, matchNames, lbLabel, lbLabelValue));
+            return getSimpleDiscoveryNodes(client.endpointsByName(serviceName, matchNames, discoveryLabel, discoveryLabelValue));
         } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
             logger.fine("Using service label to discover nodes.");
-            return getSimpleDiscoveryNodes(client.endpointsByServiceLabel(serviceLabel, serviceLabelValue, matchNames, lbLabel, lbLabelValue));
+            return getSimpleDiscoveryNodes(client.endpointsByServiceLabel(serviceLabel, serviceLabelValue, matchNames, discoveryLabel, discoveryLabelValue));
         } else if (podLabel != null && !podLabel.isEmpty()) {
             logger.fine("Using pod label to discover nodes.");
-            return getSimpleDiscoveryNodes(client.endpointsByPodLabel(podLabel, podLabelValue, matchNames, lbLabel, lbLabelValue));
+            return getSimpleDiscoveryNodes(client.endpointsByPodLabel(podLabel, podLabelValue, matchNames, discoveryLabel, discoveryLabelValue));
         }
-        return getSimpleDiscoveryNodes(client.endpoints(matchNames, lbLabel, lbLabelValue));
+        return getSimpleDiscoveryNodes(client.endpoints(matchNames, discoveryLabel, discoveryLabelValue));
     }
 
     private List<DiscoveryNode> getSimpleDiscoveryNodes(List<Endpoint> endpoints) {

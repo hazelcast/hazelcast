@@ -97,21 +97,15 @@ public final class KubernetesProperties {
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
     /**
-     * <p>Configuration key: <code>match-service-pod-names</code></p>
-     * Whether to match the service and pod names.
-     */
-    public static final PropertyDefinition MATCH_SERVICE_POD_NAMES = property("match-service-pod-names", BOOLEAN);
-
-    /**
-     * <p>Configuration key: <code>lb-label-name</code></p>
+     * <p>Configuration key: <code>discovery-label-name</code></p>
      * Defines the load balancer label name.
      */
-    public static final PropertyDefinition LB_LABEL_NAME = property("lb-label-name", STRING);
+    public static final PropertyDefinition DISCOVERY_LABEL_NAME = property("discovery-label-name", STRING);
     /**
-     * <p>Configuration key: <code>lb-label-value</code></p>
+     * <p>Configuration key: <code>discovery-label-value</code></p>
      * Defines the load balancer label value.
      */
-    public static final PropertyDefinition LB_LABEL_VALUE = property("lb-label-value", STRING);
+    public static final PropertyDefinition DISCOVERY_LABEL_VALUE = property("discovery-label-value", STRING);
 
     /**
      * <p>Configuration key: <code>resolve-not-ready-addresses</code></p>
