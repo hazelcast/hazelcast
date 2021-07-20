@@ -39,6 +39,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -451,6 +452,10 @@ public class PartitionStateManager {
     void storeSnapshot(UUID crashedMemberUuid) {
         logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
         snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
+    }
+
+    Collection<PartitionTableView> snapshots() {
+        return Collections.unmodifiableCollection(snapshotOnRemove.values());
     }
 
     PartitionTableView getSnapshot(UUID crashedMemberUuid) {

@@ -75,7 +75,8 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
      * @since 5.0
      */
     private static final String PARTITION_REPLICA_ALLOW_OFFLOAD = "hazelcast.partition.replica.offload";
-    private static final boolean ALLOW_OFFLOAD = Boolean.getBoolean(System.getProperty(PARTITION_REPLICA_ALLOW_OFFLOAD, "true"));
+    private static final boolean ALLOW_OFFLOAD =
+            Boolean.parseBoolean(System.getProperty(PARTITION_REPLICA_ALLOW_OFFLOAD, "true"));
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
