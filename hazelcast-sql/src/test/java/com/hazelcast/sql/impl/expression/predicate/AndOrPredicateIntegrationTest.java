@@ -35,6 +35,7 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanOffsetDate
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanShortVal;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanStringVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,9 +53,10 @@ import static com.hazelcast.sql.impl.SqlDataSerializerHook.EXPRESSION_AND;
 import static com.hazelcast.sql.impl.SqlDataSerializerHook.EXPRESSION_OR;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanFloatVal;
 import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanIntegerVal;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
