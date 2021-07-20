@@ -7,7 +7,7 @@ on:
     paths:
       - 'hazelcast/src/main/java/com/hazelcast/azure/**'
       - 'hazelcast/pom.xml'
-      - '.github/terraform/gcp/**'
+      - '.github/terraform/azure/**'
 
 
 jobs:
