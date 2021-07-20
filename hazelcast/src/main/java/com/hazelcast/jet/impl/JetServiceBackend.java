@@ -54,6 +54,8 @@ import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -76,7 +78,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
-    private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
     private NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -84,7 +85,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
     private final JetConfig jetConfig;
 
-    private HazelcastInstance hazelcastInstance;
     private JetService jet;
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
@@ -121,12 +121,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
 
-        this.hazelcastInstance = engine.getHazelcastInstance();
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
                 nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
         );
-        jobRepository = new JobRepository(hazelcastInstance);
+        jobRepository = new JobRepository(engine.getHazelcastInstance());
 
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
@@ -150,7 +149,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         if (sqlCoreBackend != null) {
             try {
                 Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", HazelcastInstance.class);
-                initJetInstanceMethod.invoke(sqlCoreBackend, hazelcastInstance);
+                initJetInstanceMethod.invoke(sqlCoreBackend, engine.getHazelcastInstance());
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException(e);
             }
@@ -189,7 +188,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         try {
             CompletableFuture<Void> future = shutdownFuture.get();
-            future.get(SHUTDOWN_JOBS_MAX_WAIT_SECONDS, SECONDS);
+            future.get();
             // Note that at this point there can still be executions running - those for light jobs
             // or those created automatically after a packet was received.
             // They are all non-fault-tolerant or contain only the packets, that will be dropped
@@ -356,7 +355,12 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     @Override
     public Operation getPreJoinOperation(UUID uuid) {
         assert nodeEngine.getClusterService().isMaster();
-        assert nodeEngine.getClusterService().getMember(uuid) != null : "pre-joined member not member on master";
-        return new NotifyShutdownToMembersOperation(jobCoordinationService.membersShuttingDown());
+        assert nodeEngine.getClusterService().getMember(uuid) != null : "pre-joined member not yet a valid member on master";
+
+        Collection<UUID> shuttingDownMemberIds = new ArrayList<>(jobCoordinationService.membersShuttingDown());
+        if (shuttingDownMemberIds.isEmpty()) {
+            return null;
+        }
+        return new NotifyShutdownToMembersOperation(shuttingDownMemberIds);
     }
 }

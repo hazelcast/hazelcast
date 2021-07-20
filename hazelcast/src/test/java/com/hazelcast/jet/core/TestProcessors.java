@@ -90,6 +90,10 @@ public final class TestProcessors {
         return dag;
     }
 
+    /**
+     * Returns a DAG of a job that runs forever (i.e. a streaming job), but
+     * that does nothing. It runs on all members all the time.
+     */
     public static DAG streamingDag() {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new MockP().streaming());

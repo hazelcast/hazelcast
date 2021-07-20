@@ -99,7 +99,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
         if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
             throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
         }
-        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
+        assert JetServiceBackend.SERVICE_NAME.equals(getServiceName()) : "Service is not Jet Service for " + this;
         return getService();
     }
 

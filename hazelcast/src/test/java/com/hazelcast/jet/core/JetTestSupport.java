@@ -383,7 +383,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * given {@code instance}.
      */
     public static void assertJobExecuting(Job job, HazelcastInstance instance) {
-        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
+        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().findExecutionContext(job.getId());
         assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
     }
 
@@ -392,7 +392,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * on the given {@code instance}.
      */
     public static void assertJobNotExecuting(Job job, HazelcastInstance instance) {
-        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
+        ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().findExecutionContext(job.getId());
         assertNull("Job should not be executing on member " + instance + ", but is", execCtx);
     }
 }

@@ -55,6 +55,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @Category({SlowTest.class, ParallelJVMTest.class})
@@ -216,6 +217,58 @@ public class GracefulShutdownTest extends JetTestSupport {
         Map<Integer, Integer> expected = IntStream.range(0, numItems).boxed()
                 .collect(Collectors.toMap(Function.identity(), item -> item < minCounter ? 2 : 1));
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_lightJob_coordinator_v0() {
+        when_preventShutdownFlag_then_blocksTheShutdown(true, instances[0], instances[0]);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_lightJob_coordinator_v1() {
+        when_preventShutdownFlag_then_blocksTheShutdown(true, instances[1], instances[1]);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_lightJob_nonCoordinator_v0() {
+        when_preventShutdownFlag_then_blocksTheShutdown(true, instances[0], instances[1]);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_lightJob_nonCoordinator_v1() {
+        when_preventShutdownFlag_then_blocksTheShutdown(true, instances[1], instances[0]);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_normalJob_coordinator() {
+        when_preventShutdownFlag_then_blocksTheShutdown(false, instances[0], instances[0]);
+    }
+
+    @Test
+    public void when_preventShutdownFlag_then_blocksTheShutdown_normalJob_nonCoordinator() {
+        when_preventShutdownFlag_then_blocksTheShutdown(false, instances[0], instances[1]);
+    }
+
+    private void when_preventShutdownFlag_then_blocksTheShutdown(
+            boolean useLightJob,
+            HazelcastInstance submittingInstance,
+            HazelcastInstance shutdownInstance
+    ) {
+        Job job;
+        JobConfig jobConfig = new JobConfig().setPreventShutdown(true);
+        if (useLightJob) {
+            job = submittingInstance.getJet().newLightJob(TestProcessors.streamingDag(), jobConfig);
+        } else {
+            job = submittingInstance.getJet().newJob(TestProcessors.streamingDag(), jobConfig);
+        }
+
+        assertTrueEventually(() -> assertJobExecuting(job, submittingInstance));
+
+        Future<?> shutdownFuture = spawn(shutdownInstance::shutdown);
+        assertTrueAllTheTime(() -> assertJobExecuting(job, submittingInstance), 1);
+        assertFalse("shutdown returned before the job completed", shutdownFuture.isDone());
+        job.cancel();
+        assertTrueEventually(() -> assertTrue(shutdownFuture.isDone()));
     }
 
     private static final class EmitIntegersP extends AbstractProcessor {

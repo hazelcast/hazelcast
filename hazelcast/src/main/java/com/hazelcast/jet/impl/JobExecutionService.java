@@ -242,6 +242,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return executionContexts.get(executionId);
     }
 
+    // for testing
+    public ExecutionContext findExecutionContext(long jobId) {
+        return executionContexts.values().stream().filter(c -> c.jobId() == jobId).findAny().orElse(null);
+    }
+
     /**
      * Gets the execution context or creates it, if it doesn't exist. If
      * we're creating it, we assume it's for a light job and that the

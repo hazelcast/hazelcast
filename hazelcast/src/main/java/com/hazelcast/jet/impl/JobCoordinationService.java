@@ -760,7 +760,7 @@ public class JobCoordinationService {
                             return mc.onParticipantGracefulShutdown(uuid);
                         });
             } else {
-                f = ((LightMasterContext) en).onParticipantGracefulShutdown(uuid);
+                f = ((LightMasterContext) en.getValue()).onParticipantGracefulShutdown(uuid);
             }
             futures.add(f);
         }

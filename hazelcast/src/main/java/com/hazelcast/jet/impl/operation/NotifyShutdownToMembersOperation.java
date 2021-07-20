@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,6 +69,11 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
             futures.add(getJobCoordinationService().addShuttingDownMember(uuid));
         }
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+    }
+
+    @Override
+    public String getServiceName() {
+        return JetServiceBackend.SERVICE_NAME;
     }
 
     @Override
