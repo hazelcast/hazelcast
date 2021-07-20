@@ -109,7 +109,7 @@ public class SqlParameterTest {
                 + "CAST(? as DATE), "
                 + "CAST(? as TIME), "
                 + "CAST(? as TIMESTAMP), "
-                + "CAST(? as TIMESTAMP WITH LOCAL TIME ZONE), "
+                + "CAST(? as TIMESTAMP WITH TIME ZONE), "
                 + "CAST(? as OBJECT), "
                 + "CAST(? as OBJECT) "
                 + "FROM " + MAP_NAME);
