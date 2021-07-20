@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
@@ -203,6 +204,10 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
         try {
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
+                throw QueryException.error("SQL queries cannot be executed on clusters with version less than 5.0");
+            }
+
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
