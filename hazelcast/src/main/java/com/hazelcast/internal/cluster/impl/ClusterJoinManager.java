@@ -683,6 +683,16 @@ public class ClusterJoinManager {
             return true;
         }
 
+        // TODO check if the TcpServerControl.process0(TcpServerConnection, Address, Collection<Address>, MemberHandshake)
+        // could be a better place for the following validation
+        Address remoteAddress = connection.getRemoteAddress();
+        if (node.server.doAddressesMatch(clusterService.getThisAddress(), remoteAddress)) {
+            String msg = "New join request has been received from " + remoteAddress + " which is address of this node!";
+            logger.warning(msg);
+            connection.close(msg, null);
+            return true;
+        }
+
         // If I am the master, I will just suspect from the target. If it sends a new join request, it will be processed.
         // If I am not the current master, I can turn into the new master and start the claim process
         // after I suspect from the target.

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.server;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
@@ -134,4 +135,8 @@ public interface Server extends ConnectionListenable<ServerConnection> {
      */
     void shutdown();
 
+    default boolean doAddressesMatch(Address expected, Address checked) {
+        ServerConnectionManager conManager = getConnectionManager(EndpointQualifier.MEMBER);
+        return conManager != null && conManager.doAddressesMatch(expected, checked);
+    }
 }

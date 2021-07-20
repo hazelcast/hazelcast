@@ -1269,12 +1269,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         ClusterServiceImpl clusterService = node.getClusterService();
 
         // If this is the only node, we can rely on ClusterService only.
+        Address clusterServiceMaster = clusterService.getMasterAddress();
         if (master == null && clusterService.getSize() == 1) {
-            master = clusterService.getMasterAddress();
+            master = clusterServiceMaster;
         }
 
         // address should be the known master by both PartitionService and ClusterService.
-        return address.equals(master) && address.equals(clusterService.getMasterAddress());
+        return node.server.doAddressesMatch(master, address)
+                && (master.equals(clusterServiceMaster) || node.server.doAddressesMatch(clusterServiceMaster, address));
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

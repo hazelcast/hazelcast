@@ -452,8 +452,32 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return Collections.singletonList(caller);
     }
 
+    /**
+     * Returns {@code true} if the caller is the master node.
+     */
+    public final boolean isCallerMaster() {
+        return isAddressMatch(getNodeEngine().getClusterService().getMasterAddress(), callerAddress);
+    }
+
+    /**
+     * Returns {@code true} if given addresses matches - i.e. they are equal or aliases of the same member.
+     * @param expectedAdddress
+     * @param expandAndCheckAddress
+     */
+    public final boolean isAddressMatch(Address expectedAdddress, Address expandAndCheckAddress) {
+        if (expectedAdddress == null || expandAndCheckAddress == null) {
+            return false;
+        }
+        List<Address> expandedAddresses = getAllKnownAliases(expandAndCheckAddress);
+        return expandedAddresses.stream().anyMatch(a -> a.equals(expectedAdddress));
+    }
+
     public final Address getCallerAddress() {
         return callerAddress;
+    }
+
+    public final List<Address> getCallerAddresses() {
+        return getAllKnownAliases(callerAddress);
     }
 
     // Accessed using OperationAccessor
