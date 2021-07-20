@@ -23,6 +23,7 @@ import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import java.util.ArrayList;
@@ -501,7 +502,7 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(KubernetesRestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
+                .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
                         .withCaCertificates(caCertificate)
                         .get()
                         .getBody())

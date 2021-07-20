@@ -34,7 +34,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
-public class KubernetesRestClientTest {
+public class RestClientTest {
     private static final String API_ENDPOINT = "/some/endpoint";
     private static final String BODY_REQUEST = "some body request";
     private static final String BODY_RESPONSE = "some body response";
