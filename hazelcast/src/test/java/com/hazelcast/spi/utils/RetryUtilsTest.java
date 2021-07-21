@@ -22,10 +22,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.spi.utils.RetryUtils.BACKOFF_MULTIPLIER;
-import static com.hazelcast.spi.utils.RetryUtils.INITIAL_BACKOFF_MS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -90,22 +87,6 @@ public class RetryUtilsTest {
 
         // then
         // throws exception
-    }
-
-    @Test
-    public void retryRetriesWaitExponentialBackoff()
-            throws Exception {
-        // given
-        double twoBackoffIntervalsMs = INITIAL_BACKOFF_MS + (BACKOFF_MULTIPLIER * INITIAL_BACKOFF_MS);
-        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
-
-        // when
-        long startTimeMs = System.currentTimeMillis();
-        RetryUtils.retry(callable, 5);
-        long endTimeMs = System.currentTimeMillis();
-
-        // then
-        assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
     }
 
     @Test(expected = HazelcastException.class)
