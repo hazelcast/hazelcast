@@ -116,11 +116,6 @@ public final class RootResultConsumerSink implements Processor {
     }
 
     @Override
-    public boolean isCooperative() {
-        return true;
-    }
-
-    @Override
     public boolean closeIsCooperative() {
         return true;
     }
