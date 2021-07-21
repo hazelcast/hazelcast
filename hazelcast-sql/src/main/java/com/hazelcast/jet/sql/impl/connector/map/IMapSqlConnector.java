@@ -187,7 +187,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull MapTableIndex tableIndex,
             @Nullable Expression<Boolean> reminderFilter,
             @Nonnull List<Expression<?>> projection,
-            @Nullable IndexFilter filter,
+            @Nullable IndexFilter indexFilter,
             @Nullable ComparatorEx<Object[]> comparator,
             boolean descending
     ) {
@@ -199,7 +199,7 @@ public class IMapSqlConnector implements SqlConnector {
                 table.getValueDescriptor(),
                 Arrays.asList(table.paths()),
                 Arrays.asList(table.types()),
-                filter,
+                indexFilter,
                 projection,
                 reminderFilter,
                 comparator,

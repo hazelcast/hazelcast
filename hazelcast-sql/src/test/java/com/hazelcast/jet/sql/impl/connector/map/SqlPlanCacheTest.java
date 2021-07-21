@@ -110,6 +110,24 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore // TODO: [sasha] enable after IMDG engine removal
+    public void test_index() {
+        IMap<Object, Object> map = instance().getMap("m");
+
+        createMapping("map", map.getName(), "id", PersonId.class, "varchar");
+        String indexName = randomName();
+
+        map.addIndex(new IndexConfig(IndexType.SORTED, "__key.id").setName(indexName));
+        sqlService.execute("SELECT * FROM map ORDER BY id");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        getMapContainer(map).getIndexes().destroyIndexes();
+        map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
+
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
+    }
+
+    @Test
     public void test_dmlCaching() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
         sqlService.execute("INSERT INTO map VALUES(0, 'value-0')");
@@ -126,24 +144,6 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
         sqlService.execute("DROP MAPPING map");
         assertThat(planCache(instance()).size()).isZero();
-    }
-
-    @Test
-    @Ignore // TODO: [sasha] enable after IMDG engine removal
-    public void test_index() {
-        IMap<Object, Object> map = instance().getMap("m");
-
-        createMapping("map", map.getName(), "id", PersonId.class, "varchar");
-        String indexName = randomName();
-
-        map.addIndex(new IndexConfig(IndexType.SORTED, "__key.id").setName(indexName));
-        sqlService.execute("SELECT * FROM map ORDER BY id");
-        assertThat(planCache(instance()).size()).isEqualTo(1);
-
-        getMapContainer(map).getIndexes().destroyIndexes();
-        map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
-
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @SuppressWarnings("SameParameterValue")

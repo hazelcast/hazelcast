@@ -80,7 +80,7 @@ import static java.util.stream.Collectors.toList;
  * with the new owners. If all partitions in a `split` were read, the
  * `split` is removed from execution.
  */
-public final class MapIndexScanP extends AbstractProcessor {
+final class MapIndexScanP extends AbstractProcessor {
 
     private final MapIndexScanMetadata metadata;
 
@@ -99,8 +99,6 @@ public final class MapIndexScanP extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        super.init(context);
-
         hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
@@ -152,16 +150,16 @@ public final class MapIndexScanP extends AbstractProcessor {
             Object[] extreme = null;
             int extremeIndex = -1;
             for (int i = 0; i < splits.size(); ++i) {
-                Split s = splits.get(i);
+                Split split = splits.get(i);
                 try {
-                    s.peek();
+                    split.peek();
                 } catch (MissingPartitionException e) {
-                    splits.addAll(splitOnMigration(s));
+                    splits.addAll(splitOnMigration(split));
                     splits.remove(i--);
                     continue;
                 }
-                if (s.currentRow == null) {
-                    if (s.done()) {
+                if (split.currentRow == null) {
+                    if (split.done()) {
                         // No more items to read, remove finished split.
                         splits.remove(i--);
                         continue;
@@ -170,9 +168,9 @@ public final class MapIndexScanP extends AbstractProcessor {
                     return false;
                 }
                 if (extremeIndex < 0
-                        || metadata.getComparator().compare(s.currentRow, splits.get(extremeIndex).currentRow) < 0) {
+                        || metadata.getComparator().compare(split.currentRow, splits.get(extremeIndex).currentRow) < 0) {
                     extremeIndex = i;
-                    extreme = s.currentRow;
+                    extreme = split.currentRow;
                 }
             }
 
@@ -189,16 +187,16 @@ public final class MapIndexScanP extends AbstractProcessor {
     private boolean runHashIndex() {
         for (; ; ) {
             for (int i = 0; i < splits.size(); ++i) {
-                Split s = splits.get(i);
+                Split split = splits.get(i);
                 try {
-                    s.peek();
+                    split.peek();
                 } catch (MissingPartitionException e) {
-                    splits.addAll(splitOnMigration(s));
+                    splits.addAll(splitOnMigration(split));
                     splits.remove(i--);
                     continue;
                 }
-                if (s.currentRow == null) {
-                    if (s.done()) {
+                if (split.currentRow == null) {
+                    if (split.done()) {
                         // No more items to read, remove finished split.
                         splits.remove(i--);
                         if (splits.isEmpty()) {
@@ -206,8 +204,8 @@ public final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
-                    if (tryEmit(s.currentRow)) {
-                        s.remove();
+                    if (tryEmit(split.currentRow)) {
+                        split.remove();
                     } else {
                         return false;
                     }
