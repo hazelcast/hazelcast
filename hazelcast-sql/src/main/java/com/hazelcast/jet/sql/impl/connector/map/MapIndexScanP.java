@@ -235,7 +235,6 @@ public final class MapIndexScanP extends AbstractProcessor {
         while (partitionIterator.hasNext()) {
             int partitionId = partitionIterator.nextInt();
             Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
-            // TODO: does it possible that owner is NULL?
             newSplits.computeIfAbsent(owner, x -> new Split(
                     new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
             ).partitions.add(partitionId);
