@@ -92,22 +92,6 @@ public class RetryUtilsTest {
         // throws exception
     }
 
-    @Test
-    public void retryRetriesWaitExponentialBackoff()
-            throws Exception {
-        // given
-        double twoBackoffIntervalsMs = INITIAL_BACKOFF_MS + (BACKOFF_MULTIPLIER * INITIAL_BACKOFF_MS);
-        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
-
-        // when
-        long startTimeMs = System.currentTimeMillis();
-        RetryUtils.retry(callable, 5);
-        long endTimeMs = System.currentTimeMillis();
-
-        // then
-        assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
-    }
-
     @Test(expected = HazelcastException.class)
     public void retryNonRetryableKeywords()
             throws Exception {
