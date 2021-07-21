@@ -241,7 +241,7 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
-        row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
+        row.setKeyValue(entry.getKey(), entry.getKeyDataIfPresent(), entry.getValue(), entry.getValueDataIfPresent());
         if (metadata.getRemainingFilter() != null
                 && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {
             return null;

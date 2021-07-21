@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceAware;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -37,8 +36,7 @@ import java.io.IOException;
  * @param <K> key
  * @param <V> value
  */
-public class CachedQueryEntry<K, V> extends QueryableEntry<K, V>
-        implements IdentifiedDataSerializable, SerializationServiceAware {
+public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements IdentifiedDataSerializable {
 
     protected Data keyData;
     protected Data valueData;
@@ -263,8 +261,4 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V>
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
 
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = (InternalSerializationService) serializationService;
-    }
 }
