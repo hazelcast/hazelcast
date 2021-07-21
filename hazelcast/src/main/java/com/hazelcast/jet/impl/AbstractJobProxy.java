@@ -32,6 +32,8 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -58,7 +60,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
     /** Null for normal jobs, non-null for light jobs  */
-    protected final M lightJobCoordinator;
+    public M lightJobCoordinator;  // TODO [viliam] change back to protected
 
     private final long jobId;
     private final ILogger logger;
@@ -76,6 +78,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
+
+    private final Set<M> shuttingDownMembers = new HashSet<>();
 
     /**
      * True if this instance submitted the job. False if it was created later
@@ -97,7 +101,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     AbstractJobProxy(C container, long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
         this.jobId = jobId;
         this.container = container;
-        this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
+        this.lightJobCoordinator = isLightJob ? findLightJobCoordinator(shuttingDownMembers) : null;
         this.logger = loggingService().getLogger(Job.class);
         submittingInstance = true;
 
@@ -266,7 +270,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return lightJobCoordinator != null;
     }
 
-    protected abstract M findLightJobCoordinator();
+    protected abstract M findLightJobCoordinator(Set<M> shuttingDownMembers);
 
     /**
      * Submit and join job with a given DAG and config
@@ -322,7 +326,8 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
                 || t instanceof TargetNotMemberException
-                || t instanceof HazelcastInstanceNotActiveException && isRunning();
+                || t instanceof HazelcastInstanceNotActiveException && isRunning()
+                || t instanceof MemberShuttingDownException;
     }
 
     private void doInvokeJoinJob() {
@@ -349,7 +354,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         }
 
         @Override
-        public final void accept(Void aVoid, Throwable t) {
+        public void accept(Void aVoid, Throwable t) {
             if (t != null) {
                 Throwable ex = peel(t);
                 if (ex instanceof LocalMemberResetException) {
@@ -402,6 +407,12 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
         @Override
         protected void retryActionInt(Throwable t) {
+            if (t instanceof MemberShuttingDownException && lightJobCoordinator != null) {
+                // The member we submitted the job to is shutting down, let's pick another coordinator.
+                // We're also sure that the job wasn't yet executed, unlike the other restartable exceptions.
+                shuttingDownMembers.add(lightJobCoordinator);
+                lightJobCoordinator = findLightJobCoordinator(shuttingDownMembers);
+            }
             logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
             invokeSubmitJob(serializationService().toData(jobDefinition), config).whenCompleteAsync(this);
         }

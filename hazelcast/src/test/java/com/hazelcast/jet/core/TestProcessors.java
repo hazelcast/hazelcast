@@ -86,7 +86,7 @@ public final class TestProcessors {
 
     public static DAG batchDag() {
         DAG dag = new DAG();
-        dag.newVertex("v", MockP::new);
+        dag.newVertex("batchP", MockP::new);
         return dag;
     }
 
@@ -96,7 +96,7 @@ public final class TestProcessors {
      */
     public static DAG streamingDag() {
         DAG dag = new DAG();
-        dag.newVertex("v", () -> new MockP().streaming());
+        dag.newVertex("streamingP", () -> new MockP().streaming());
         return dag;
     }
 

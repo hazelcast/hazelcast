@@ -288,3 +288,7 @@ Clients, if they ask a shutting-down member, will get a special response and wil
 - notify shutdown to master is received
 - we notify all current members (the list on master includes the pre-joined ones)
 - if the operation on a pre-joined member fails because it didn't join yet, it's retried
+
+
+
+SqlExecute from client should retry if it hits a member going down.

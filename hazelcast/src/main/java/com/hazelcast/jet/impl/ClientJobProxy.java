@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -41,6 +42,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -112,15 +114,23 @@ public class ClientJobProxy extends AbstractJobProxy<JetClientInstanceImpl, UUID
     }
 
     @Override
-    protected UUID findLightJobCoordinator() {
+    protected UUID findLightJobCoordinator(Set<UUID> shuttingDownMembers) {
         // find random non-lite member
         Member[] members = container().getCluster().getMembers().toArray(new Member[0]);
         int randomMemberIndex = ThreadLocalRandom.current().nextInt(members.length);
-        for (int i = 0; i < members.length && members[randomMemberIndex].isLiteMember(); i++) {
+        int i;
+        for (i = 0; i < members.length; i++) {
+            Member m = members[randomMemberIndex];
+            if (!members[randomMemberIndex].isLiteMember() && !shuttingDownMembers.contains(m.getUuid())) {
+                break;
+            }
             randomMemberIndex++;
             if (randomMemberIndex == members.length) {
                 randomMemberIndex = 0;
             }
+        }
+        if (i == members.length) {
+            throw new JetException("No data member found");
         }
         return members[randomMemberIndex].getUuid();
     }

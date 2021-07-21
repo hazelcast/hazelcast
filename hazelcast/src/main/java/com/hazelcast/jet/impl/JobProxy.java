@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -41,6 +42,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -97,12 +99,16 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    protected Address findLightJobCoordinator() {
+    protected Address findLightJobCoordinator(Set<Address> shuttingDownMembers) {
         // If a light job is submitted from a member, it's always coordinated locally.
         // This is important for SQL jobs running in mixed-version clusters - the job DAG
         // was created locally and uses features available to the local member version.
         // A lite member can also coordinate.
-        return container().getThisAddress();
+        Address address = container().getThisAddress();
+        if (shuttingDownMembers.contains(address)) {
+            throw new JetException("Member is shutting down");
+        }
+        return address;
     }
 
     @Override

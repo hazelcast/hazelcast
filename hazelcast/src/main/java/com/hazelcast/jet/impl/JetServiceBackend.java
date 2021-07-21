@@ -363,4 +363,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         return new NotifyShutdownToMembersOperation(shuttingDownMemberIds);
     }
+
+    public boolean isShutdownInitiated() {
+        return shutdownFuture.get() != null;
+    }
 }

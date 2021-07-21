@@ -27,7 +27,9 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.impl.MemberShuttingDownException;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -52,8 +54,11 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.TestProcessors.batchDag;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static java.util.concurrent.TimeUnit.HOURS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -254,21 +259,83 @@ public class GracefulShutdownTest extends JetTestSupport {
             HazelcastInstance submittingInstance,
             HazelcastInstance shutdownInstance
     ) {
-        Job job;
-        JobConfig jobConfig = new JobConfig().setPreventShutdown(true);
-        if (useLightJob) {
-            job = submittingInstance.getJet().newLightJob(TestProcessors.streamingDag(), jobConfig);
-        } else {
-            job = submittingInstance.getJet().newJob(TestProcessors.streamingDag(), jobConfig);
-        }
-
+        Job job = newJob(submittingInstance, streamingDag(), new JobConfig().setPreventShutdown(true),
+                useLightJob);
         assertTrueEventually(() -> assertJobExecuting(job, submittingInstance));
 
         Future<?> shutdownFuture = spawn(shutdownInstance::shutdown);
-        assertTrueAllTheTime(() -> assertJobExecuting(job, submittingInstance), 1);
+        assertTrueAllTheTime(() -> assertJobExecuting(job, submittingInstance), 2);
         assertFalse("shutdown returned before the job completed", shutdownFuture.isDone());
         job.cancel();
         assertTrueEventually(() -> assertTrue(shutdownFuture.isDone()));
+    }
+
+    @Test
+    public void when_shuttingDown_then_lightJobCanExecute_normalJobCanNot_lightJob() throws Exception {
+        when_shuttingDown_then_lightJobCanExecute_normalJobCanNot(true);
+    }
+
+    @Test
+    public void when_shuttingDown_then_lightJobCanExecute_normalJobCanNot_normalJob() throws Exception {
+        when_shuttingDown_then_lightJobCanExecute_normalJobCanNot(false);
+    }
+
+    private void when_shuttingDown_then_lightJobCanExecute_normalJobCanNot(boolean useLightJob) throws Exception {
+        // submit a streaming job that will block the shutdown
+        Job jobPreventingShutdown = newJob(instances[0], streamingDag(), new JobConfig().setPreventShutdown(true),
+                useLightJob);
+        assertTrueEventually(() -> assertJobExecuting(jobPreventingShutdown, instances[1]));
+
+        // shutdown one instance
+        Future<?> shutdownFuture = spawn(() -> instances[1].shutdown());
+
+        // When - light job
+        instances[0].getJet().newLightJob(batchDag()).join();
+        assertThatThrownBy(() -> instances[1].getJet().newLightJob(batchDag()).join())
+                .hasRootCauseInstanceOf(MemberShuttingDownException.class)
+                .hasMessageContaining("The member is shutting down, cannot submit jobs");
+
+        // When - normal job
+        Job normalJob0 = instances[0].getJet().newJob(batchDag());
+        Job normalJob1 = instances[1].getJet().newJob(batchDag());
+        assertTrueAllTheTime(() -> {
+            assertFalse(normalJob0.getFuture().isDone());
+            assertFalse(normalJob1.getFuture().isDone());
+        }, 2);
+
+        jobPreventingShutdown.cancel();
+        shutdownFuture.get();
+
+        // check that the two normal jobs completed after the shutdown finished
+        normalJob0.join();
+        instances[0].getJet().getJob(normalJob1.getId()).join();
+    }
+
+    @Test
+    public void when_shuttingDown_then_clientRetriesWithTheGoodMember() throws Exception {
+        Job jobPreventingShutdown = instances[0].getJet().newLightJob(streamingDag(),
+                new JobConfig().setPreventShutdown(true));
+        assertTrueEventually(() -> assertJobExecuting(jobPreventingShutdown, instances[1]));
+
+        Future<?> shutdownFuture = spawn(() -> instances[1].shutdown());
+
+        // the client chooses a random member. So let's try multiple times - if it randomly chooses the
+        // shutting-down member, it should still work by retrying with the other member.
+        for (int i = 0; i < 10; i++) {
+            client.getJet().newLightJob(batchDag()).join();
+            for (SqlRow r : client.getSql().execute("select * from table(generate_series(1))")) {
+                System.out.println(r);
+            }
+        }
+
+        jobPreventingShutdown.cancel();
+        shutdownFuture.get();
+    }
+
+    private Job newJob(HazelcastInstance instance, DAG dag, JobConfig config, boolean useLightJob) {
+        return useLightJob
+                ? instance.getJet().newLightJob(dag, config)
+                : instance.getJet().newJob(dag, config);
     }
 
     private static final class EmitIntegersP extends AbstractProcessor {
@@ -276,7 +343,7 @@ public class GracefulShutdownTest extends JetTestSupport {
 
         private int counter;
         private int globalIndex;
-        private int numItems;
+        private final int numItems;
 
         EmitIntegersP(int numItems) {
             this.numItems = numItems;

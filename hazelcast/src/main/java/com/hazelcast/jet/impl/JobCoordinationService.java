@@ -324,6 +324,9 @@ public class JobCoordinationService {
 
         LightMasterContext mc = null;
         try {
+            if (jetServiceBackend.isShutdownInitiated()) {
+                throw new MemberShuttingDownException();
+            }
             checkPermissions(subject, dag);
 
             // Initialize and start the job (happens in the constructor). We do this before adding the actual

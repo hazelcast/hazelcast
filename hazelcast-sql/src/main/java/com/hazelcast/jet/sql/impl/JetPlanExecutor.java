@@ -205,7 +205,8 @@ public class JetPlanExecutor {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
-                .setTimeoutMillis(timeout);
+                .setTimeoutMillis(timeout)
+                .setPreventShutdown(!plan.isStreaming());
 
         JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
