@@ -241,9 +241,6 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
-        /** Was added to prevent NPE in any {@link QueryableEntry} implementor. **/
-        entry.setSerializationService(evalContext.getSerializationService());
-
         row.setKeyValue(entry.getKey(), entry.getKeyData(), entry.getValue(), entry.getValueData());
         if (metadata.getRemainingFilter() != null
                 && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {

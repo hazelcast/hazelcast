@@ -66,7 +66,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT / 4; i++) {
@@ -88,7 +88,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore
+    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTest_sorted() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {

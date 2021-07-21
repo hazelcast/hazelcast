@@ -894,7 +894,7 @@ public final class JetIndexResolver {
 
         RelOptTable newRelTable = OptUtils.createRelTable(
                 originalRelTable.getDelegate().getQualifiedName(),
-                originalHazelcastTable,
+                originalHazelcastTable.withFilter(null),
                 scan.getCluster().getTypeFactory()
         );
 
