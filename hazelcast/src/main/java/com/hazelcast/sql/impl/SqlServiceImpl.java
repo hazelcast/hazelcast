@@ -205,7 +205,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         try {
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
-                throw QueryException.error("SQL queries cannot be executed on clusters with version less than 5.0");
+                throw QueryException.error("SQL queries cannot be executed until the cluster fully updates to 5.0");
             }
 
             if (nodeEngine.getLocalMember().isLiteMember()) {
