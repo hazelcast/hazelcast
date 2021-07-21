@@ -22,10 +22,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
-import static com.hazelcast.spi.utils.RetryUtils.BACKOFF_MULTIPLIER;
-import static com.hazelcast.spi.utils.RetryUtils.INITIAL_BACKOFF_MS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
