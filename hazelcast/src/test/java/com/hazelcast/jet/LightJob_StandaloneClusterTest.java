@@ -48,4 +48,19 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
                 .hasRootCauseInstanceOf(JetException.class)
                 .hasRootCauseMessage("No data member with version equal to the coordinator version found");
     }
+
+    @Test
+    public void when_coordinatorFails_then_jobNotRetriedWithAnotherCoordinator() {
+        HazelcastInstance coordinatorInst = createHazelcastInstance();
+        createHazelcastInstance();
+        HazelcastInstance coordinatorClient = createHazelcastClient(configForNonSmartClientConnectingTo(coordinatorInst));
+
+        Job job = coordinatorClient.getJet().newLightJob(streamingDag());
+        assertTrueEventually(() -> assertJobExecuting(job, coordinatorInst));
+
+        coordinatorInst.shutdown();
+
+        assertThatThrownBy(job::join)
+                .hasMessageContaining("com.hazelcast.spi.exception.TargetDisconnectedException: Mocked Remote socket closed");
+    }
 }
