@@ -92,8 +92,10 @@
             <destName>hazelcast.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
         <file>
-            <source>${configs.from.jar}/hazelcast-client-default.xml</source>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.xml</source>
             <destName>hazelcast-client.xml</destName>
             <outputDirectory>config</outputDirectory>
         </file>
@@ -106,8 +108,10 @@
             <destName>hazelcast.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
         <file>
-            <source>${configs.from.jar}/hazelcast-client-default.yaml</source>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.yaml</source>
             <destName>hazelcast-client.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
