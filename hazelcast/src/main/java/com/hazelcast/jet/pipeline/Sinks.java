@@ -18,12 +18,12 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Observable;
@@ -34,6 +34,7 @@ import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.topic.ITopic;
 
@@ -64,6 +65,7 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asClientConfig;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
@@ -889,9 +891,15 @@ public final class Sinks {
     @Nonnull
     public static <T> Sink<T> remoteReliableTopic(@Nonnull String reliableTopicName, @Nonnull ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig); //conversion needed for serializability
-        return SinkBuilder.<ITopic<T>>sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
-                ctx -> newHazelcastClient(asClientConfig(clientXml)).getReliableTopic(reliableTopicName))
-                .<T>receiveFn(ITopic::publish)
+        return SinkBuilder
+                .sinkBuilder("reliableTopicSink(" + reliableTopicName + "))",
+                        ctx -> {
+                            HazelcastInstance client = newHazelcastClient(asClientConfig(clientXml));
+                            ITopic<T> topic = client.getReliableTopic(reliableTopicName);
+                            return tuple2(client, topic);
+                        })
+                .<T>receiveFn((clientTopicTuple, message) -> clientTopicTuple.f1().publish(message))
+                .destroyFn(clientTopicTuple -> clientTopicTuple.f0().shutdown())
                 .build();
     }
 

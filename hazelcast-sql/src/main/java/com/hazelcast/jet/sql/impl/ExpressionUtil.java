@@ -76,7 +76,7 @@ public final class ExpressionUtil {
                 Direction direction = fieldCollation.getDirection();
 
                 int result;
-                if (o1 == null && o2 == null) {
+                if (o1 == o2) {
                     result = 0;
                 } else if (o1 == null) {
                     result = -1;
@@ -177,6 +177,28 @@ public final class ExpressionUtil {
         JetSqlRow result = new JetSqlRow(projection.size());
         for (int i = 0; i < projection.size(); i++) {
             result.set(i, evaluate(projection.get(i), row, context));
+        }
+        return result;
+    }
+
+    /**
+     * Evaluate projection&predicate for a single row. Returns {@code null} if
+     * the row is rejected by the predicate.
+     */
+    @Nullable
+    public static Object[] evaluate(
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projection,
+            @Nonnull Row row,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
+            return null;
+        }
+
+        Object[] result = new Object[projection.size()];
+        for (int i = 0; i < projection.size(); i++) {
+            result[i] = evaluate(projection.get(i), row, context);
         }
         return result;
     }

@@ -53,7 +53,7 @@ public interface PhysicalRel extends RelNode {
 
     default List<Expression<?>> project(
             PlanNodeFieldTypeProvider schema,
-            List<RexNode> nodes,
+            List<? extends RexNode> nodes,
             QueryParameterMetadata parameterMetadata
     ) {
         RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);

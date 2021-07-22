@@ -16,7 +16,7 @@
 
 package com.hazelcast.aws;
 
-import static com.hazelcast.aws.StringUtils.isNotEmpty;
+import com.hazelcast.internal.util.StringUtil;
 
 /**
  * This class is introduced to lookup system parameters.
@@ -35,6 +35,6 @@ class Environment {
 
     private static boolean isRunningOnEcsEnvironment() {
         String execEnv = System.getenv("AWS_EXECUTION_ENV");
-        return isNotEmpty(execEnv) && execEnv.contains("ECS");
+        return !StringUtil.isNullOrEmptyAfterTrim(execEnv) && execEnv.contains("ECS");
     }
 }

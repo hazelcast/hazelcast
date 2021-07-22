@@ -21,12 +21,13 @@ import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -40,11 +41,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 import static java.util.stream.Collectors.toMap;
 
 public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-    private final PartitionedMapTable table;
+    private final RelOptTable table;
     private final RexNode keyCondition;
     private final List<String> updatedColumns;
     private final List<RexNode> sourceExpressions;
@@ -52,12 +54,14 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     UpdateByKeyMapPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            PartitionedMapTable table,
+            RelOptTable table,
             RexNode keyCondition,
             List<String> updatedColumns,
             List<RexNode> sourceExpressions
     ) {
         super(cluster, traitSet);
+
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.keyCondition = keyCondition;
@@ -66,18 +70,15 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     }
 
     public String mapName() {
-        return table.getMapName();
+        return table().getMapName();
     }
 
     public PlanObjectKey objectKey() {
-        return table.getObjectKey();
+        return table().getObjectKey();
     }
 
     public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
-        RexToExpressionVisitor visitor = new RexToExpressionVisitor(
-                PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
-                parameterMetadata
-        );
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         return keyCondition.accept(visitor);
     }
 
@@ -86,7 +87,11 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
         Map<String, Expression<?>> updates = IntStream.range(0, projects.size())
                 .boxed()
                 .collect(toMap(updatedColumns::get, projects::get));
-        return UpdatingEntryProcessor.supplier(table, updates);
+        return UpdatingEntryProcessor.supplier(table(), updates);
+    }
+
+    private PartitionedMapTable table() {
+        return table.unwrap(HazelcastTable.class).getTarget();
     }
 
     @Override
@@ -107,7 +112,7 @@ public class UpdateByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getSqlName())
+                .item("table", table.getQualifiedName())
                 .item("keyCondition", keyCondition)
                 .item("updatedColumns", updatedColumns)
                 .item("sourceExpressions", sourceExpressions);

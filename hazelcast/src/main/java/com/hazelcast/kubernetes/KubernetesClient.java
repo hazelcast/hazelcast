@@ -22,6 +22,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.RestClientException;
+import com.hazelcast.spi.utils.RestClient;
+import com.hazelcast.spi.utils.RetryUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -54,7 +56,7 @@ class KubernetesClient {
     private final String apiToken;
     private final String caCertificate;
     private final int retries;
-    private boolean useNodeNameAsExternalAddress;
+    private final boolean useNodeNameAsExternalAddress;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
@@ -166,7 +168,7 @@ class KubernetesClient {
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
-        List<Endpoint> addresses = new ArrayList<Endpoint>();
+        List<Endpoint> addresses = new ArrayList<>();
 
         for (JsonValue item : toJsonArray(podsListJson.get("items"))) {
             JsonObject status = item.asObject().get("status").asObject();
@@ -208,7 +210,7 @@ class KubernetesClient {
     }
 
     private static List<Endpoint> parseEndpointsList(JsonObject endpointsListJson) {
-        List<Endpoint> endpoints = new ArrayList<Endpoint>();
+        List<Endpoint> endpoints = new ArrayList<>();
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             endpoints.addAll(parseEndpoints(item));
         }
@@ -216,7 +218,7 @@ class KubernetesClient {
     }
 
     private static List<Endpoint> parseEndpoints(JsonValue endpointItemJson) {
-        List<Endpoint> addresses = new ArrayList<Endpoint>();
+        List<Endpoint> addresses = new ArrayList<>();
 
         for (JsonValue subset : toJsonArray(endpointItemJson.asObject().get("subsets"))) {
             Integer endpointPort = extractPort(subset);
@@ -255,10 +257,10 @@ class KubernetesClient {
     }
 
     private static Map<String, String> extractAdditionalPropertiesFrom(JsonValue endpointAddressJson) {
-        Set<String> knownFieldNames = new HashSet<String>(
+        Set<String> knownFieldNames = new HashSet<>(
                 asList("ip", "nodeName", "targetRef", "hostname", "hazelcast-service-port"));
 
-        Map<String, String> result = new HashMap<String, String>();
+        Map<String, String> result = new HashMap<>();
         for (JsonObject.Member member : endpointAddressJson.asObject()) {
             if (!knownFieldNames.contains(member.getName())) {
                 result.put(member.getName(), toString(member.getValue()));
@@ -315,9 +317,9 @@ class KubernetesClient {
             Map<EndpointAddress, String> services = extractServices(endpointsJson, privateAddresses);
             Map<EndpointAddress, String> nodes = extractNodes(endpointsJson, privateAddresses);
 
-            Map<EndpointAddress, String> publicIps = new HashMap<EndpointAddress, String>();
-            Map<EndpointAddress, Integer> publicPorts = new HashMap<EndpointAddress, Integer>();
-            Map<String, String> cachedNodePublicIps = new HashMap<String, String>();
+            Map<EndpointAddress, String> publicIps = new HashMap<>();
+            Map<EndpointAddress, Integer> publicPorts = new HashMap<>();
+            Map<String, String> cachedNodePublicIps = new HashMap<>();
 
             for (Map.Entry<EndpointAddress, String> serviceEntry : services.entrySet()) {
                 EndpointAddress privateAddress = serviceEntry.getKey();
@@ -360,7 +362,7 @@ class KubernetesClient {
     }
 
     private static List<EndpointAddress> privateAddresses(List<Endpoint> endpoints) {
-        List<EndpointAddress> result = new ArrayList<EndpointAddress>();
+        List<EndpointAddress> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             result.add(endpoint.getPrivateAddress());
         }
@@ -369,8 +371,8 @@ class KubernetesClient {
 
     private static Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
                                                                 List<EndpointAddress> privateAddresses) {
-        Map<EndpointAddress, String> result = new HashMap<EndpointAddress, String>();
-        Set<EndpointAddress> left = new HashSet<EndpointAddress>(privateAddresses);
+        Map<EndpointAddress, String> result = new HashMap<>();
+        Set<EndpointAddress> left = new HashSet<>(privateAddresses);
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             String service = toString(item.asObject().get("metadata").asObject().get("name"));
             List<Endpoint> endpoints = parseEndpoints(item);
@@ -392,17 +394,17 @@ class KubernetesClient {
 
     private static Map<EndpointAddress, String> extractNodes(JsonObject endpointsListJson,
                                                              List<EndpointAddress> privateAddresses) {
-        Map<EndpointAddress, String> result = new HashMap<EndpointAddress, String>();
-        Set<EndpointAddress> left = new HashSet<EndpointAddress>(privateAddresses);
+        Map<EndpointAddress, String> result = new HashMap<>();
+        Set<EndpointAddress> left = new HashSet<>(privateAddresses);
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             for (JsonValue subset : toJsonArray(item.asObject().get("subsets"))) {
                 JsonObject subsetObject = subset.asObject();
-                List<Integer> ports = new ArrayList<Integer>();
+                List<Integer> ports = new ArrayList<>();
                 for (JsonValue port : toJsonArray(subsetObject.get("ports"))) {
                     ports.add(port.asObject().get("port").asInt());
                 }
 
-                Map<EndpointAddress, String> nodes = new HashMap<EndpointAddress, String>();
+                Map<EndpointAddress, String> nodes = new HashMap<>();
                 nodes.putAll(extractNodes(subsetObject.get("addresses"), ports));
                 nodes.putAll(extractNodes(subsetObject.get("notReadyAddresses"), ports));
                 for (Map.Entry<EndpointAddress, String> nodeEntry : nodes.entrySet()) {
@@ -422,7 +424,7 @@ class KubernetesClient {
     }
 
     private static Map<EndpointAddress, String> extractNodes(JsonValue addressesJson, List<Integer> ports) {
-        Map<EndpointAddress, String> result = new HashMap<EndpointAddress, String>();
+        Map<EndpointAddress, String> result = new HashMap<>();
         for (JsonValue address : toJsonArray(addressesJson)) {
             String ip = address.asObject().get("ip").asString();
             String nodeName = toString(address.asObject().get("nodeName"));
@@ -481,7 +483,7 @@ class KubernetesClient {
 
     private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<EndpointAddress, String> publicIps,
                                                   Map<EndpointAddress, Integer> publicPorts) {
-        List<Endpoint> result = new ArrayList<Endpoint>();
+        List<Endpoint> result = new ArrayList<>();
         for (Endpoint endpoint : endpoints) {
             EndpointAddress privateAddress = endpoint.getPrivateAddress();
             EndpointAddress publicAddress = new EndpointAddress(publicIps.get(privateAddress),
@@ -499,16 +501,12 @@ class KubernetesClient {
      * @throws KubernetesClientException if Kubernetes API didn't respond with 200 and a valid JSON content
      */
     private JsonObject callGet(final String urlString) {
-        return RetryUtils.retry(new Callable<JsonObject>() {
-            @Override
-            public JsonObject call() {
-                return Json
-                        .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
-                                .withCaCertificates(caCertificate)
-                                .get())
-                        .asObject();
-            }
-        }, retries, NON_RETRYABLE_KEYWORDS);
+        return RetryUtils.retry(() -> Json
+                .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
+                        .withCaCertificates(caCertificate)
+                        .get()
+                        .getBody())
+                .asObject(), retries, NON_RETRYABLE_KEYWORDS);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")

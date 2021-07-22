@@ -106,6 +106,13 @@
             <destName>hazelcast-client-full-example.xml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
+
+        <!-- Other Example config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.yaml</source>
+            <destName>hazelcast-security-hardened.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
     </files>
 
     <fileSets>
