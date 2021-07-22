@@ -38,6 +38,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -47,6 +48,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +59,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -367,32 +371,37 @@ final class MapIndexScanP extends AbstractProcessor {
 
     private static final class MapIndexScanProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
-        private MapIndexScanMetadata indexScanMetadata;
+        private MapIndexScanMetadata metadata;
 
         @SuppressWarnings("unused")
         private MapIndexScanProcessorSupplier() {
         }
 
-        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata indexScanMetadata) {
-            this.indexScanMetadata = indexScanMetadata;
+        private MapIndexScanProcessorSupplier(@Nonnull MapIndexScanMetadata metadata) {
+            this.metadata = metadata;
         }
 
         @Override
         @Nonnull
         public List<Processor> get(int count) {
             return IntStream.range(0, count)
-                    .mapToObj(i -> new MapIndexScanP(indexScanMetadata))
+                    .mapToObj(i -> new MapIndexScanP(metadata))
                     .collect(toList());
         }
 
         @Override
+        public Permission permission() {
+            return new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ);
+        }
+
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(indexScanMetadata);
+            out.writeObject(metadata);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            indexScanMetadata = in.readObject();
+            metadata = in.readObject();
         }
     }
 }
