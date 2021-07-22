@@ -19,6 +19,7 @@ package com.hazelcast.kubernetes;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
+import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,6 +39,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -740,14 +742,16 @@ public class KubernetesClientTest {
         assertEquals(emptyList(), result);
     }
 
-    @Test(expected = RestClientException.class)
+    @Test
     public void unknownException() {
         // given
         String notRetriedErrorBody = "\"reason\":\"Forbidden\"";
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), 501, notRetriedErrorBody);
 
         // when
-        kubernetesClient.endpoints();
+        assertThatThrownBy(() -> kubernetesClient.endpoints())
+                .isInstanceOf(RestClientException.class)
+                .hasMessageContaining("Message: \"reason\":\"Forbidden\". HTTP Error Code: 501");
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {

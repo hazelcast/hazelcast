@@ -69,7 +69,7 @@ public class BackpressureTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
+        Config config = defaultInstanceConfigWithJetEnabled();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
         hz1 = createHazelcastInstance(config);
         hz2 = createHazelcastInstance(config);

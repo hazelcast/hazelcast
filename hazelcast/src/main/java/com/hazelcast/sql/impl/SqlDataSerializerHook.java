@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
@@ -205,8 +206,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int MAPPING = 75;
     public static final int MAPPING_FIELD = 76;
+    public static final int MAP_INDEX_SCAN_METADATA = 77;
 
-    public static final int LEN = MAPPING_FIELD + 1;
+    public static final int LEN = MAP_INDEX_SCAN_METADATA + 1;
 
     @Override
     public int getFactoryId() {
@@ -316,6 +318,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
+
+        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         return new ArrayDataSerializableFactory(constructors);
     }

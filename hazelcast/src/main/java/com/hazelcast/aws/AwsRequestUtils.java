@@ -17,6 +17,7 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

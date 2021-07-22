@@ -25,6 +25,7 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
+import com.hazelcast.spi.utils.PortRange;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ public class GcpDiscoveryStrategy
     private final GcpClient gcpClient;
     private final PortRange portRange;
 
-    private final Map<String, String> memberMetadata = new HashMap<String, String>();
+    private final Map<String, String> memberMetadata = new HashMap<>();
 
     GcpDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
@@ -113,7 +114,7 @@ public class GcpDiscoveryStrategy
             List<GcpAddress> gcpAddresses = gcpClient.getAddresses();
             logGcpAddresses(gcpAddresses);
 
-            List<DiscoveryNode> result = new ArrayList<DiscoveryNode>();
+            List<DiscoveryNode> result = new ArrayList<>();
             for (GcpAddress gcpAddress : gcpAddresses) {
                 for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
                     result.add(createDiscoveryNode(gcpAddress, port));

@@ -16,19 +16,20 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.utils.RestClient;
 
-import java.io.FileNotFoundException;
-import java.util.Base64;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 
 /**
  * Fetches OAuth 2.0 Access Token from Google API.
@@ -72,7 +73,8 @@ class GcpAuthenticator {
 
     private String createBody(String privateKeyPath, long currentTimeMs)
             throws Exception {
-        JsonObject privateKeyJson = Json.parse(new InputStreamReader(new FileInputStream(privateKeyPath), "UTF-8")).asObject();
+        JsonObject privateKeyJson = Json.parse(
+                new InputStreamReader(new FileInputStream(privateKeyPath), StandardCharsets.UTF_8)).asObject();
         String privateKey = privateKeyJson.get("private_key").asString();
         String clientEmail = privateKeyJson.get("client_email").asString();
 
@@ -106,15 +108,15 @@ class GcpAuthenticator {
         String dataToSign = String.format("%s.%s", headerBase64, claimSetBase64);
 
         String clearPrivateKeyString = clear(privateKeyString);
-        byte[] b1 = Base64.getMimeDecoder().decode(clearPrivateKeyString.getBytes("UTF-8"));
+        byte[] b1 = Base64.getMimeDecoder().decode(clearPrivateKeyString.getBytes(StandardCharsets.UTF_8));
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(b1);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         Signature privateSignature = Signature.getInstance("SHA256withRSA");
         PrivateKey privateKey = kf.generatePrivate(spec);
 
         privateSignature.initSign(privateKey);
-        privateSignature.update(dataToSign.getBytes("UTF-8"));
-        return new String(base64encodeUrlSafe(privateSignature.sign()), "UTF-8");
+        privateSignature.update(dataToSign.getBytes(StandardCharsets.UTF_8));
+        return new String(base64encodeUrlSafe(privateSignature.sign()), StandardCharsets.UTF_8);
     }
 
     private static String clear(String privateKey) {
@@ -123,10 +125,9 @@ class GcpAuthenticator {
                          .replaceAll("\\\\n", "");
     }
 
-    private static String base64encodeUrlSafe(String data)
-            throws UnsupportedEncodingException {
-        byte[] encoded = base64encodeUrlSafe(data.getBytes("UTF-8"));
-        return new String(encoded, "UTF-8");
+    private static String base64encodeUrlSafe(String data) {
+        byte[] encoded = base64encodeUrlSafe(data.getBytes(StandardCharsets.UTF_8));
+        return new String(encoded, StandardCharsets.UTF_8);
     }
 
     private static byte[] base64encodeUrlSafe(byte[] data) {
@@ -142,7 +143,7 @@ class GcpAuthenticator {
     }
 
     private String callService(String body) {
-        return RestClient.create(endpoint).withBody(body).post();
+        return RestClient.create(endpoint).withBody(body).post().getBody();
     }
 
     private static String parseResponse(String response) {

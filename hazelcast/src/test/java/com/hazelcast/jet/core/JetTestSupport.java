@@ -166,6 +166,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return config;
     }
 
+    public static Config defaultInstanceConfigWithJetEnabled() {
+        Config config = new Config();
+        config.getJetConfig().setEnabled(true);
+        return config;
+    }
+
     /**
      * Asserts that a job status is eventually RUNNING. When it's running,
      * checks that the execution ID is different from the given {@code

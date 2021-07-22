@@ -95,9 +95,28 @@ public final class ElasticClients {
             @Nonnull String hostname,
             int port
     ) {
+        return client(username, password, hostname, port, "http");
+    }
+    /**
+     * Convenience method to create {@link RestClientBuilder} with basic authentication
+     * and given hostname, port and scheme. Valid schemes are "http" and "https".
+     * <p>
+     * Usage:
+     * <pre>{@code
+     * BatchSource<SearchHit> source = elastic(() -> client("user", "password", "host", 9200, "https"));
+     * }</pre>
+     */
+    @Nonnull
+    public static RestClientBuilder client(
+            @Nonnull String username,
+            @Nonnull String password,
+            @Nonnull String hostname,
+            int port,
+            @Nonnull String scheme
+    ) {
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(ANY, new UsernamePasswordCredentials(username, password));
-        return RestClient.builder(new HttpHost(hostname, port))
+        return RestClient.builder(new HttpHost(hostname, port, scheme))
                          .setHttpClientConfigCallback(httpClientBuilder ->
                                  httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider)
                          );

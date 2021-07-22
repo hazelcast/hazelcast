@@ -18,13 +18,17 @@ package com.hazelcast.aws;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.exception.NoCredentialsException;
+import com.hazelcast.spi.exception.RestClientException;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
+import com.hazelcast.spi.utils.PortRange;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -165,7 +169,7 @@ public class AwsDiscoveryStrategy
         }
         StringBuilder result = new StringBuilder(placementGroup.get());
         awsClient.getPlacementPartitionNumber().ifPresent(ppn -> result.append('-').append(ppn));
-        LOGGER.info(String.format("Placement group found: '%s'", result.toString()));
+        LOGGER.info(String.format("Placement group found: '%s'", result));
         return Optional.of(result.toString());
     }
 
