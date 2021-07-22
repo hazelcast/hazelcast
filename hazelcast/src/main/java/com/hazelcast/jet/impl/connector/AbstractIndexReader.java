@@ -40,10 +40,6 @@ public abstract class AbstractIndexReader<B, R> {
 
     protected FunctionEx<B, List<R>> toRecordSetFn;
 
-    public AbstractIndexReader() {
-        // no-op
-    }
-
     public AbstractIndexReader(@Nonnull String objectName, @Nonnull FunctionEx<B, List<R>> toRecordSetFn) {
         this.objectName = objectName;
         this.toRecordSetFn = toRecordSetFn;

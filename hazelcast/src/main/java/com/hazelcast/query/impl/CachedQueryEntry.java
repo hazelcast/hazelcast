@@ -260,5 +260,4 @@ public class CachedQueryEntry<K, V> extends QueryableEntry<K, V> implements Iden
         // then you are not wrong. Please see commit message for reasoning.
         return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
-
 }

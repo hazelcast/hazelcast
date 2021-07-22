@@ -185,7 +185,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull Address localMemberAddress,
             @Nonnull Table table0,
             @Nonnull MapTableIndex tableIndex,
-            @Nullable Expression<Boolean> reminderFilter,
+            @Nullable Expression<Boolean> remainingFilter,
             @Nonnull List<Expression<?>> projection,
             @Nullable IndexFilter indexFilter,
             @Nullable ComparatorEx<Object[]> comparator,
@@ -201,7 +201,7 @@ public class IMapSqlConnector implements SqlConnector {
                 Arrays.asList(table.types()),
                 indexFilter,
                 projection,
-                reminderFilter,
+                remainingFilter,
                 comparator,
                 descending
         );

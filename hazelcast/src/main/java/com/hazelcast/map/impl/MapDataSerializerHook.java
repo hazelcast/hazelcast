@@ -323,7 +323,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int INDEX_ITERATION_POINTER = 156;
     public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 157;
 
-
     private static final int LEN = MAP_FETCH_INDEX_OPERATION_RESULT + 1;
 
     @Override

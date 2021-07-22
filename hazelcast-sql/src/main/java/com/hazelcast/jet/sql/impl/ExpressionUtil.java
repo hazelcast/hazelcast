@@ -199,6 +199,28 @@ public final class ExpressionUtil {
         return result;
     }
 
+    /**
+     * Evaluate projection&predicate for a single row. Returns {@code null} if
+     * the row is rejected by the predicate.
+     */
+    @Nullable
+    public static Object[] evaluate(
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projection,
+            @Nonnull Row row,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
+            return null;
+        }
+
+        Object[] result = new Object[projection.size()];
+        for (int i = 0; i < projection.size(); i++) {
+            result[i] = evaluate(projection.get(i), row, context);
+        }
+        return result;
+    }
+
     public static <T> T evaluate(
             @Nonnull Expression<T> expression,
             @Nonnull Row row,

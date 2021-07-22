@@ -33,7 +33,12 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
 
     private IndexScanMapPhysicalRule() {
         super(
-                operandJ(FullScanLogicalRel.class, LOGICAL, scan -> table(scan) instanceof PartitionedMapTable, none()),
+                operandJ(
+                        FullScanLogicalRel.class,
+                        LOGICAL,
+                        scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                        none()
+                ),
                 IndexScanMapPhysicalRule.class.getSimpleName()
         );
     }

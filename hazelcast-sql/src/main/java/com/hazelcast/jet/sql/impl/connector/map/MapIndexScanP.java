@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.AbstractIndexReader;
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
@@ -43,7 +44,6 @@ import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -57,7 +57,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -240,20 +239,6 @@ final class MapIndexScanP extends AbstractProcessor {
         return new ArrayList<>(newSplits.values());
     }
 
-    private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
-        row.setKeyValue(entry.getKey(), entry.getKeyDataIfPresent(), entry.getValue(), entry.getValueDataIfPresent());
-        if (metadata.getRemainingFilter() != null
-                && TernaryLogic.isNotTrue(metadata.getRemainingFilter().evalTop(row, evalContext))) {
-            return null;
-        }
-
-        Object[] row = new Object[metadata.getProjection().size()];
-        for (int j = 0; j < metadata.getProjection().size(); j++) {
-            row[j] = evaluate(metadata.getProjection().get(j), this.row, evalContext);
-        }
-        return row;
-    }
-
     /**
      * Basic unit of index scan execution bounded to concrete member and partitions set.
      * Can be split into smaller splits after migration is detected.
@@ -315,6 +300,14 @@ final class MapIndexScanP extends AbstractProcessor {
                     currentBatchPosition++;
                 }
             }
+        }
+
+        private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
+            row.setKeyValue(
+                    entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
+                    entry.getValueIfPresent(), entry.getValueDataIfPresent()
+            );
+            return ExpressionUtil.evaluate(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
         }
 
         private void remove() {
