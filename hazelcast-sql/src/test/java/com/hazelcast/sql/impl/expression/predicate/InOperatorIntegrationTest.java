@@ -212,7 +212,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 .hasMessage(null);
     }
 
-    @Ignore(value = "Should be enabled after engines merge.")
+    @Ignore(value = "Support ROW().")
     @Test
     public void inPredicateRowsTest() {
         putAll(0, 1);

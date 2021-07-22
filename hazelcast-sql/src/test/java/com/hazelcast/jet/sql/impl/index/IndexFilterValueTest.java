@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.scan.index;
+package com.hazelcast.jet.sql.impl.index;
 
+import com.hazelcast.jet.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.query.impl.AbstractIndex;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,6 +41,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+;
 
 @SuppressWarnings("rawtypes")
 @RunWith(HazelcastParallelClassRunner.class)
@@ -59,43 +62,43 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
     @Test
     public void testEquals() {
         IndexFilterValue value = new IndexFilterValue(
-            singletonList(constant(1, QueryDataType.INT)),
-            singletonList(true)
-        );
-
-        checkEquals(
-            value,
-            new IndexFilterValue(
                 singletonList(constant(1, QueryDataType.INT)),
                 singletonList(true)
-            ),
-            true
         );
 
         checkEquals(
-            value,
-            new IndexFilterValue(
-                singletonList(constant(1, QueryDataType.BIGINT)),
-                singletonList(true)
-            ),
-            false
+                value,
+                new IndexFilterValue(
+                        singletonList(constant(1, QueryDataType.INT)),
+                        singletonList(true)
+                ),
+                true
         );
 
         checkEquals(
-            value,
-            new IndexFilterValue(
-                singletonList(constant(1, QueryDataType.INT)),
-                singletonList(false)
-            ),
-            false
+                value,
+                new IndexFilterValue(
+                        singletonList(constant(1, QueryDataType.BIGINT)),
+                        singletonList(true)
+                ),
+                false
+        );
+
+        checkEquals(
+                value,
+                new IndexFilterValue(
+                        singletonList(constant(1, QueryDataType.INT)),
+                        singletonList(false)
+                ),
+                false
         );
     }
 
     @Test
     public void testSerialization() {
         IndexFilterValue original = new IndexFilterValue(
-            singletonList(constant(1, QueryDataType.INT)),
-            singletonList(true)
+                singletonList(constant(1, QueryDataType.INT)),
+                singletonList(true)
         );
 
         IndexFilterValue restored = serializeAndCheck(original, SqlDataSerializerHook.INDEX_FILTER_VALUE);
@@ -108,20 +111,20 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
 
         IndexFilterValue value = new IndexFilterValue(
-            singletonList(constant(1, QueryDataType.BIGINT)),
-            singletonList(true)
+                singletonList(constant(1, QueryDataType.BIGINT)),
+                singletonList(true)
         );
         assertEquals(1L, value.getValue(evalContext));
 
         value = new IndexFilterValue(
-            singletonList(constant(null, QueryDataType.BIGINT)),
-            singletonList(true)
+                singletonList(constant(null, QueryDataType.BIGINT)),
+                singletonList(true)
         );
         assertEquals(AbstractIndex.NULL, value.getValue(evalContext));
 
         value = new IndexFilterValue(
-            singletonList(constant(null, QueryDataType.BIGINT)),
-            singletonList(false)
+                singletonList(constant(null, QueryDataType.BIGINT)),
+                singletonList(false)
         );
         assertNull(value.getValue(evalContext));
     }
@@ -131,26 +134,26 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
 
         IndexFilterValue value = new IndexFilterValue(
-            asList(constant(1, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
-            asList(true, true)
+                asList(constant(1, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
+                asList(true, true)
         );
         assertEquals(composite(1L, "2"), value.getValue(evalContext));
 
         value = new IndexFilterValue(
-            asList(constant(null, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
-            asList(true, true)
+                asList(constant(null, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
+                asList(true, true)
         );
         assertEquals(composite(AbstractIndex.NULL, "2"), value.getValue(evalContext));
 
         value = new IndexFilterValue(
-            asList(constant(null, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
-            asList(false, true)
+                asList(constant(null, QueryDataType.BIGINT), constant("2", QueryDataType.VARCHAR)),
+                asList(false, true)
         );
         assertNull(value.getValue(evalContext));
 
         value = new IndexFilterValue(
-            asList(constant(1L, QueryDataType.BIGINT), constant(null, QueryDataType.VARCHAR)),
-            asList(true, false)
+                asList(constant(1L, QueryDataType.BIGINT), constant(null, QueryDataType.VARCHAR)),
+                asList(true, false)
         );
         assertNull(value.getValue(evalContext));
     }
@@ -160,8 +163,8 @@ public class IndexFilterValueTest extends IndexFilterTestSupport {
         ExpressionEvalContext evalContext = SimpleExpressionEvalContext.create();
 
         IndexFilterValue value = new IndexFilterValue(
-            singletonList(constant(new Object(), QueryDataType.OBJECT)),
-            singletonList(true)
+                singletonList(constant(new Object(), QueryDataType.OBJECT)),
+                singletonList(true)
         );
 
         try {

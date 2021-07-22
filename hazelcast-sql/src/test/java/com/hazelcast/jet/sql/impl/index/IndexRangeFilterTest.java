@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.scan.index;
+package com.hazelcast.jet.sql.impl.index;
 
+import com.hazelcast.jet.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
+import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

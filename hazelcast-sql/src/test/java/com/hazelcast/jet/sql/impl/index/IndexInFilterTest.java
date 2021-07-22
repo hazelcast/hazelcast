@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.scan.index;
+package com.hazelcast.jet.sql.impl.index;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.predicate;
 
+import com.hazelcast.jet.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
