@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression;
+package com.hazelcast.jet.sql.impl.expression;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Objects;
 
-public class ConstantPredicateExpression implements Expression<Boolean> {
+public class FunctionalPredicateExpression implements Expression<Boolean> {
 
-    private boolean value;
+    private NullablePredicate predicate;
 
-    public ConstantPredicateExpression() {
+    public FunctionalPredicateExpression() {
         // No-op.
     }
 
-    public ConstantPredicateExpression(boolean value) {
-        this.value = value;
+    public FunctionalPredicateExpression(NullablePredicate predicate) {
+        this.predicate = predicate;
     }
 
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
-        return value;
+        return predicate.test(row);
     }
 
     @Override
@@ -48,31 +49,16 @@ public class ConstantPredicateExpression implements Expression<Boolean> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(value);
+        out.writeObject(predicate);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        value = in.readBoolean();
+        predicate = in.readObject();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        ConstantPredicateExpression that = (ConstantPredicateExpression) o;
-
-        return value == that.value;
+    @FunctionalInterface
+    public interface NullablePredicate {
+        Boolean test(Row row);
     }
 }

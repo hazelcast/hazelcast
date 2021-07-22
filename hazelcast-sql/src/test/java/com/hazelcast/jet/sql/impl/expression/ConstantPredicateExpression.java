@@ -14,74 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.node;
+package com.hazelcast.jet.sql.impl.expression;
 
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Objects;
 
-public class MockPlanNode implements PlanNode {
+public class ConstantPredicateExpression implements Expression<Boolean> {
 
-    private int id;
-    private List<QueryDataType> schema;
+    private boolean value;
 
-    public static MockPlanNode create(int id, QueryDataType... types) {
-        List<QueryDataType> types0 = types == null || types.length == 0 ? Collections.emptyList() : Arrays.asList(types);
-
-        return new MockPlanNode(id, types0);
-    }
-
-    public MockPlanNode() {
+    public ConstantPredicateExpression() {
         // No-op.
     }
 
-    public MockPlanNode(int id, List<QueryDataType> schema) {
-        this.id = id;
-        this.schema = schema;
+    public ConstantPredicateExpression(boolean value) {
+        this.value = value;
     }
 
     @Override
-    public int getId() {
-        return id;
+    public Boolean eval(Row row, ExpressionEvalContext context) {
+        return value;
     }
 
     @Override
-    public PlanNodeSchema getSchema() {
-        return new PlanNodeSchema(schema);
-    }
-
-    @Override
-    public void visit(PlanNodeVisitor visitor) {
-        // No-op.
+    public QueryDataType getType() {
+        return QueryDataType.BOOLEAN;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(id);
-        SerializationUtil.writeList(schema, out);
+        out.writeBoolean(value);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        id = in.readInt();
-        schema = SerializationUtil.readList(in);
+        value = in.readBoolean();
     }
 
     @Override
     public int hashCode() {
-        int res = id;
-
-        for (QueryDataType type : schema) {
-            res = 31 * res + type.hashCode();
-        }
-
-        return res;
+        return Objects.hash(value);
     }
 
     @Override
@@ -94,8 +73,8 @@ public class MockPlanNode implements PlanNode {
             return false;
         }
 
-        MockPlanNode that = (MockPlanNode) o;
+        ConstantPredicateExpression that = (ConstantPredicateExpression) o;
 
-        return id == that.id && schema.equals(that.schema);
+        return value == that.value;
     }
 }

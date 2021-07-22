@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression.predicate;
+package com.hazelcast.jet.sql.impl.expression.predicate;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.predicate.TernaryLogic;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;

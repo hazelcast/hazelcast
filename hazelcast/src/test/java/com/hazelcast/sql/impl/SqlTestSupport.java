@@ -31,13 +31,8 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
-import com.hazelcast.sql.impl.row.RowBatch;
-import com.hazelcast.sql.impl.state.QueryStateCallback;
-import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
@@ -67,8 +62,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
     /**
      * Check object equality with additional hash code check.
      *
-     * @param first First object.
-     * @param second Second object.
+     * @param first    First object.
+     * @param second   Second object.
      * @param expected Expected result.
      */
     public static void checkEquals(Object first, Object second, boolean expected) {
@@ -107,77 +102,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
         assertEquals(expectedClassId, original0.getClassId());
 
         return serialize(original);
-    }
-
-    public static ListRowBatch createMonotonicBatch(int startValue, int size) {
-        List<Row> rows = new ArrayList<>(size);
-
-        for (int i = startValue; i < startValue + size; i++) {
-            rows.add(HeapRow.of(i));
-        }
-
-        return new ListRowBatch(rows);
-    }
-
-    public static void checkMonotonicBatch(RowBatch batch, int startValue, int size) {
-        assertEquals(size, batch.getRowCount());
-
-        for (int i = 0; i < size; i++) {
-            int value = batch.getRow(i).get(0);
-
-            assertEquals(startValue + i, value);
-        }
-    }
-
-    public static QueryFragmentContext emptyFragmentContext() {
-        return emptyFragmentContext(Collections.emptyList());
-    }
-
-    public static QueryFragmentContext emptyFragmentContext(List<Object> args) {
-        QueryStateCallback stateCallback = new QueryStateCallback() {
-            @Override
-            public void onFragmentFinished() {
-                // No-op.
-            }
-
-            @Override
-            public void cancel(Exception e, boolean local) {
-                // No-op.
-            }
-
-            @Override
-            public void checkCancelled() {
-                // No-op.
-            }
-        };
-
-        return new QueryFragmentContext(
-            args,
-            new LoggingQueryFragmentScheduleCallback(),
-            stateCallback,
-            new DefaultSerializationServiceBuilder().build()
-        );
-    }
-
-    /**
-     * Creates an opaque plan for tests where concrete values inside the plan are not important.
-     *
-     * @return Plan.
-     */
-    public static Plan opaquePlan() {
-        return new Plan(
-            Collections.emptyMap(),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            null,
-            QueryParameterMetadata.EMPTY,
-            null,
-            Collections.emptySet(),
-            Collections.emptyList()
-        );
     }
 
     public static QueryPath keyPath(String path) {
@@ -248,26 +172,26 @@ public class SqlTestSupport extends HazelcastTestSupport {
     }
 
     public static <K> List<K> getLocalKeys(
-        HazelcastInstance member,
-        int count,
-        IntFunction<K> keyProducer
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer
     ) {
         return new ArrayList<>(getLocalEntries(member, count, keyProducer, keyProducer).keySet());
     }
 
     public static <K, V> Map.Entry<K, V> getLocalEntry(
-        HazelcastInstance member,
-        IntFunction<K> keyProducer,
-        IntFunction<V> valueProducer
+            HazelcastInstance member,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
     ) {
         return getLocalEntries(member, 1, keyProducer, valueProducer).entrySet().iterator().next();
     }
 
     public static <K, V> Map<K, V> getLocalEntries(
-        HazelcastInstance member,
-        int count,
-        IntFunction<K> keyProducer,
-        IntFunction<V> valueProducer
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
     ) {
         if (count == 0) {
             return Collections.emptyMap();
