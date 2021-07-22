@@ -36,6 +36,7 @@ import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -59,7 +60,7 @@ public class QueryParser {
             SqlConformance jetConformance,
             List<Object> arguments,
             @Nonnull SqlBackend sqlBackend,
-            @Nonnull SqlBackend jetSqlBackend
+            @Nullable SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
@@ -76,7 +77,12 @@ public class QueryParser {
             try {
                 return parse(sql, sqlBackend, conformance);
             } catch (Exception e) {
-                return parse(sql, jetSqlBackend, jetConformance);
+                // TODO: once IMDG engine is removed, move the check (and fail fast) to SqlServiceImpl?
+                if (jetSqlBackend != null) {
+                    return parse(sql, jetSqlBackend, jetConformance);
+                } else {
+                    throw e;
+                }
             }
         } catch (Exception e) {
             String message;
