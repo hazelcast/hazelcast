@@ -97,6 +97,17 @@ public final class KubernetesProperties {
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
     /**
+     * <p>Configuration key: <code>discovery-label-name</code></p>
+     * Defines the load balancer label name.
+     */
+    public static final PropertyDefinition DISCOVERY_LABEL_NAME = property("discovery-label-name", STRING);
+    /**
+     * <p>Configuration key: <code>discovery-label-value</code></p>
+     * Defines the load balancer label value.
+     */
+    public static final PropertyDefinition DISCOVERY_LABEL_VALUE = property("discovery-label-value", STRING);
+
+    /**
      * <p>Configuration key: <code>resolve-not-ready-addresses</code></p>
      * Defines if not ready addresses should be evaluated to be discovered on startup.
      */
