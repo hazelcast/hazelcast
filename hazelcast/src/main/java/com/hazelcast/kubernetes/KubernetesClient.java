@@ -249,8 +249,8 @@ class KubernetesClient {
     }
 
     private static String extractTargetName(JsonValue addressJson) {
-		JsonValue targetRefJson = addressJson.asObject().get("targetRef");
-		if (targetRefJson == null) return null;
+        JsonValue targetRefJson = addressJson.asObject().get("targetRef");
+        if (targetRefJson == null) return null;
         return targetRefJson.asObject().get("name").toString();
     }
 
