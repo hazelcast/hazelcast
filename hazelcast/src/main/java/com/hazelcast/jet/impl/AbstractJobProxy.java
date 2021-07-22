@@ -46,7 +46,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
-import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -260,8 +259,10 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     public String toString() {
         return "Job{id=" + getIdString()
                 + ", name=" + getName()
-                + ", submissionTime=" + toLocalDateTime(getSubmissionTime())
-                + ", status=" + getStatus()
+                // Don't include these, they do remote calls and wreak havoc when the debugger tries to display
+                // the string value. They can also fail at runtime.
+                //+ ", submissionTime=" + toLocalDateTime(getSubmissionTime())
+                //+ ", status=" + getStatus()
                 + "}";
     }
 
@@ -323,6 +324,11 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     private boolean isRestartable(Throwable t) {
+        if (isLightJob()) {
+            return false;
+        }
+        // these exceptions are restartable only for non-light jobs. If the light job coordinator leaves
+        // or disconnects, the job fails. For normal jobs, the new master will take over.
         return t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
                 || t instanceof TargetNotMemberException
@@ -366,7 +372,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                     future.internalCompleteExceptionally(ex);
                 } else {
                     try {
-                        retryAction(t);
+                        retryAction(ex);
                     } catch (Exception e) {
                         future.internalCompleteExceptionally(peel(e));
                     }
