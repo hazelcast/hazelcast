@@ -1,5 +1,5 @@
 SCRIPT_DIR="$(dirname "$0")"
-HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+export HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"
