@@ -30,13 +30,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.exec.CreateExecPlanNodeVisitorHook;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.PlanNode;
-import com.hazelcast.sql.impl.plan.node.TestPlanNodeVisitorAdapter;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.row.Row;
@@ -46,6 +41,7 @@ import com.hazelcast.sql.impl.worker.QueryFragmentContext;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
+import org.junit.ClassRule;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,10 +49,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
-
-import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -210,13 +203,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new HeapRow(values);
     }
 
-    public static void setExecHook(HazelcastInstance instance, CreateExecPlanNodeVisitorHook hook) {
-        QueryOperationHandlerImpl operationHandler =
-            ((SqlServiceImpl) instance.getSql()).getInternalService().getOperationHandler();
-
-        operationHandler.setExecHook(hook);
-    }
-
     public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getInternalService();
     }
@@ -259,13 +245,6 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         return res;
-    }
-
-    public static <K> K getLocalKey(
-        HazelcastInstance member,
-        IntFunction<K> keyProducer
-    ) {
-        return getLocalKeys(member, 1, keyProducer).get(0);
     }
 
     public static <K> List<K> getLocalKeys(
@@ -331,26 +310,4 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return res;
     }
 
-    protected static MapIndexScanPlanNode findFirstIndexNode(SqlResult result) {
-        SqlResultImpl result0 = (SqlResultImpl) result;
-
-        AtomicReference<MapIndexScanPlanNode> nodeRef = new AtomicReference<>();
-
-        for (int i = 0; i < result0.getPlan().getFragmentCount(); i++) {
-            PlanNode fragment = result0.getPlan().getFragment(i);
-
-            fragment.visit(new TestPlanNodeVisitorAdapter() {
-
-                @Override
-                public void onMapIndexScanNode(MapIndexScanPlanNode node) {
-                    nodeRef.compareAndSet(null, node);
-
-                    super.onMapIndexScanNode(node);
-                }
-
-            });
-        }
-
-        return nodeRef.get();
-    }
 }

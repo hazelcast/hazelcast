@@ -35,7 +35,7 @@ import org.apache.calcite.sql.parser.impl.ParseException;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -55,7 +55,7 @@ public class QueryParser {
             CatalogReader catalogReader,
             SqlConformance jetConformance,
             List<Object> arguments,
-            @Nonnull SqlBackend jetSqlBackend
+            @Nullable SqlBackend jetSqlBackend
     ) {
         this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
@@ -66,7 +66,12 @@ public class QueryParser {
 
     public QueryParseResult parse(String sql) {
         try {
-            return parse(sql, jetSqlBackend, jetConformance);
+            if (jetSqlBackend != null) {
+                return parse(sql, jetSqlBackend, jetConformance);
+            } else {
+                // TODO: move this check to SqlServiceImpl.
+                throw new RuntimeException("Jet is not enabled.");
+            }
         } catch (Exception e) {
             String message;
             // Check particular type of exception which causes typical long multiline error messages.
