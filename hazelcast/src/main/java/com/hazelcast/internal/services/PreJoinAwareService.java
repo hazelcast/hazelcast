@@ -45,7 +45,6 @@ public interface PreJoinAwareService {
      * Pre join operations should return response, which may also be a {@code null} response.
      *
      * @return an operation to be executed on joining member before it is set as joined. Can be {@code null}.
-     * @param uuid
      */
     Operation getPreJoinOperation(UUID uuid);
 }

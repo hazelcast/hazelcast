@@ -19,10 +19,14 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * An exception thrown when a job or sql query is submitted to a member
- * that is in the process of shutting down. Such member is still fully
- * functional, but waits for current jobs to complete and then it will shut
- * down. The caller should retry with a different target.
+ * An exception thrown when a light job or sql query is submitted to a
+ * member that is in the process of shutting down. Such member is still
+ * fully functional, but waits for current jobs to complete and then it
+ * will shut down. The caller should retry with a different target.
+ * <p>
+ * This exception isn't used for non-light jobs - they can be submitted
+ * even to shutting-down members, but they will not start, but just be
+ * stored in the metadata so that the new master will start them.
  */
 public class MemberShuttingDownException extends HazelcastException {
 

@@ -201,18 +201,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyShutdownToMasterOperation();
         nodeEngine.getOperationService()
-                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
-                .whenCompleteAsync((response, throwable) -> {
-                    if (throwable != null) {
-                        logger.warning("Failed to notify master member that this member is shutting down," +
-                                " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
-                        // recursive call
-                        nodeEngine.getExecutionService().schedule(
-                                () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
-                    } else {
-                        future.complete(null);
-                    }
-                });
+                  .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                  .whenCompleteAsync((response, throwable) -> {
+                      if (throwable != null) {
+                          logger.warning("Failed to notify master member that this member is shutting down," +
+                                  " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
+                          // recursive call
+                          nodeEngine.getExecutionService().schedule(
+                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                      } else {
+                          future.complete(null);
+                      }
+                  });
     }
 
     @Override

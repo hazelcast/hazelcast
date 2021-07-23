@@ -32,10 +32,10 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
@@ -46,6 +46,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -59,7 +60,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private static final long TERMINATE_RETRY_DELAY_NS = MILLISECONDS.toNanos(100);
 
     /** Null for normal jobs, non-null for light jobs  */
-    public M lightJobCoordinator;  // TODO [viliam] change back to protected
+    protected M lightJobCoordinator;
 
     private final long jobId;
     private final ILogger logger;
@@ -78,7 +79,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private volatile JobConfig jobConfig;
     private final Supplier<Long> submissionTimeSup = memoizeConcurrent(this::doGetJobSubmissionTime);
 
-    private final Set<M> shuttingDownMembers = new HashSet<>();
+    private final Set<M> shuttingDownMembers = newSetFromMap(new ConcurrentHashMap<>());
 
     /**
      * True if this instance submitted the job. False if it was created later
@@ -332,8 +333,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         return t instanceof MemberLeftException
                 || t instanceof TargetDisconnectedException
                 || t instanceof TargetNotMemberException
-                || t instanceof HazelcastInstanceNotActiveException && isRunning()
-                || t instanceof MemberShuttingDownException;
+                || t instanceof HazelcastInstanceNotActiveException && isRunning();
     }
 
     private void doInvokeJoinJob() {
@@ -360,7 +360,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         }
 
         @Override
-        public void accept(Void aVoid, Throwable t) {
+        public final void accept(Void aVoid, Throwable t) {
             if (t != null) {
                 Throwable ex = peel(t);
                 if (ex instanceof LocalMemberResetException) {
@@ -415,7 +415,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         protected void retryActionInt(Throwable t) {
             if (t instanceof MemberShuttingDownException && lightJobCoordinator != null) {
                 // The member we submitted the job to is shutting down, let's pick another coordinator.
-                // We're also sure that the job wasn't yet executed, unlike the other restartable exceptions.
+                // In case of this exception we're sure that the job wasn't yet executed, unlike the other restartable exceptions
                 shuttingDownMembers.add(lightJobCoordinator);
                 lightJobCoordinator = findLightJobCoordinator(shuttingDownMembers);
             }

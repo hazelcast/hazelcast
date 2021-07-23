@@ -55,8 +55,12 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
     protected CompletableFuture<Void> doRun() {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
+        UUID localMemberUuid = getNodeEngine().getLocalMember().getUuid();
 
         for (Member member : getNodeEngine().getClusterService().getMembers()) {
+            if (member.getUuid().equals(localMemberUuid)) {
+                continue;
+            }
             NotifyShutdownToMembersOperation op = new NotifyShutdownToMembersOperation(singletonList(getCallerUuid()));
             futures.add(getNodeEngine().getOperationService().
                     invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress()));
@@ -67,6 +71,6 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_P1_OP;
+        return JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_TO_MASTER_OP;
     }
 }

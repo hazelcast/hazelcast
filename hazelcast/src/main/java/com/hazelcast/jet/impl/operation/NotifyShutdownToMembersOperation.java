@@ -78,7 +78,7 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_P2_OP;
+        return JetInitDataSerializerHook.NOTIFY_MEMBER_SHUTDOWN_TO_MEMBERS_OP;
     }
 
     @Override

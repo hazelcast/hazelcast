@@ -1363,7 +1363,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets whether the execution of a job should prevent the member it's
+     * Sets whether the execution of a job should prevent the members it's
      * running on from gracefully shutting down.
      * <p>
      * This option is useful for non-fault-tolerant, short-running jobs to
