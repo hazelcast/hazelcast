@@ -40,8 +40,7 @@ class KubernetesApiEndpointResolver
     private final KubernetesClient client;
 
     KubernetesApiEndpointResolver(ILogger logger, String serviceName, int port,
-                                  String serviceLabel, String serviceLabelValue,
-                                  String podLabel, String podLabelValue,
+                                  String serviceLabel, String serviceLabelValue, String podLabel, String podLabelValue,
                                   Boolean resolveNotReadyAddresses, KubernetesClient client) {
 
         super(logger);

@@ -20,7 +20,9 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.TypeConverter;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.*;
+import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
  * <p>Configuration class of the Hazelcast Discovery Plugin for <a href="http://kubernetes.io">Kubernetes</a>.</p>

@@ -68,12 +68,10 @@ final class KubernetesConfig {
     private final String namespace;
     private final String podLabelName;
     private final String podLabelValue;
-    private final String servicePerPodLabelName;
-    private final String servicePerPodLabelValue;
-    private final String discoveryLabelName;
-    private final String discoveryLabelValue;
     private final boolean resolveNotReadyAddresses;
     private final boolean useNodeNameAsExternalAddress;
+    private final String servicePerPodLabelName;
+    private final String servicePerPodLabelValue;
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
     private final String kubernetesApiToken;
@@ -93,8 +91,6 @@ final class KubernetesConfig {
         this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
         this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
         this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
-        this.discoveryLabelName = null;
-        this.discoveryLabelValue = null;
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
@@ -313,14 +309,6 @@ final class KubernetesConfig {
         return servicePerPodLabelValue;
     }
 
-    public String getDiscoveryLabelName() {
-        return discoveryLabelName;
-    }
-
-    public String getDiscoveryLabelValue() {
-        return discoveryLabelValue;
-    }
-
     boolean isResolveNotReadyAddresses() {
         return resolveNotReadyAddresses;
     }
@@ -361,8 +349,8 @@ final class KubernetesConfig {
                 + "namespace: " + namespace + ", "
                 + "pod-label: " + podLabelName + ", "
                 + "pod-label-value: " + podLabelValue + ", "
-                + "lb-label: " + discoveryLabelName + ", "
-                + "lb-label-value: " + discoveryLabelValue + ", "
+                + "service-per-pod-label: " + servicePerPodLabelName + ", "
+                + "service-per-pod-label-value: " + servicePerPodLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "

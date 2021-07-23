@@ -395,8 +395,8 @@ class KubernetesClient {
 
     private static Map<EndpointAddress, String> extractServices(JsonObject endpointsListJson,
                                                                 List<EndpointAddress> privateAddresses) {
-        Map<EndpointAddress, String> result = new HashMap<EndpointAddress, String>();
-        Set<EndpointAddress> left = new HashSet<EndpointAddress>(privateAddresses);
+        Map<EndpointAddress, String> result = new HashMap<>();
+        Set<EndpointAddress> left = new HashSet<>(privateAddresses);
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             String service = toString(item.asObject().get("metadata").asObject().get("name"));
             List<Endpoint> endpoints = parseEndpoints(item);
