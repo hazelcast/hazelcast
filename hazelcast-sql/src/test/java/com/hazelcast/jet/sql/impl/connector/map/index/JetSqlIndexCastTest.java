@@ -38,7 +38,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,7 +75,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_tinyint() {
         check(ExpressionTypes.BYTE, QueryDataTypeFamily.TINYINT, true);
         check(ExpressionTypes.BYTE, QueryDataTypeFamily.SMALLINT, true);
@@ -88,7 +86,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_smallint() {
         check(ExpressionTypes.SHORT, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.SHORT, QueryDataTypeFamily.SMALLINT, true);
@@ -100,7 +97,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_integer() {
         check(ExpressionTypes.INTEGER, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.INTEGER, QueryDataTypeFamily.SMALLINT, false);
@@ -112,7 +108,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_bigint() {
         check(ExpressionTypes.LONG, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.LONG, QueryDataTypeFamily.SMALLINT, false);
@@ -124,7 +119,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_decimal() {
         check(ExpressionTypes.BIG_DECIMAL, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.BIG_DECIMAL, QueryDataTypeFamily.SMALLINT, false);
@@ -136,7 +130,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_real() {
         check(ExpressionTypes.FLOAT, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.FLOAT, QueryDataTypeFamily.SMALLINT, false);
@@ -148,7 +141,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_double() {
         check(ExpressionTypes.DOUBLE, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.DOUBLE, QueryDataTypeFamily.SMALLINT, false);

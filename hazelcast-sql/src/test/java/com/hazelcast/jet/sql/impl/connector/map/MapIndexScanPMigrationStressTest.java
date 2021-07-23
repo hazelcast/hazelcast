@@ -28,7 +28,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,7 +65,6 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT / 4; i++) {
@@ -88,7 +86,6 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void stressTest_sorted() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
