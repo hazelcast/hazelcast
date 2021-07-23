@@ -168,7 +168,7 @@ public class SplitBrainProtectionListenerTest extends HazelcastTestSupport {
     private Config configWithSplitBrainProtection(String name, SplitBrainProtectionListener listener) {
         SplitBrainProtectionListenerConfig listenerConfig = new SplitBrainProtectionListenerConfig();
         listenerConfig.setImplementation(listener);
-        Config config = new Config();
+        Config config = regularInstanceConfig();
         config.addSplitBrainProtectionConfig(new SplitBrainProtectionConfig(name, true, 3).addListenerConfig(listenerConfig));
         return config;
     }

@@ -458,8 +458,8 @@ public class ClientServiceTest extends ClientTestSupport {
     }
 
     @Test
-    public void testClientListener_withShuttingDownOwnerMember() throws InterruptedException {
-        Config config = new Config();
+    public void testClientListener_withShuttingDownOwnerMember() {
+        Config config = regularInstanceConfig();
         final AtomicInteger atomicInteger = new AtomicInteger();
         ListenerConfig listenerConfig = new ListenerConfig(new ClientListener() {
             @Override
