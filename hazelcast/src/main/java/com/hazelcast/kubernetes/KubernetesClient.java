@@ -332,7 +332,8 @@ class KubernetesClient {
     private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints) {
         try {
             String endpointsUrl = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
-            if (!StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelName) && !StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelValue)) {
+            if (!StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelName)
+                    && !StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelValue)) {
                 endpointsUrl += String.format("?labelSelector=%s=%s", servicePerPodLabelName, servicePerPodLabelValue);
             }
             JsonObject endpointsJson = callGet(endpointsUrl);

@@ -576,12 +576,12 @@ public class KubernetesClientTest {
         return "{\n"
                 + "  \"kind\": \"PodList\",\n"
                 + "  \"items\": [\n"
-                + "    {\n" +
-                "      \"metadata\" : {\n" +
-                "        \"name\" : \"hazelcast-0\"\n" +
-                "      " +
-                "},\n" +
-                "      \"spec\": {\n"
+                + "    {\n"
+                + "      \"metadata\" : {\n"
+                + "        \"name\" : \"hazelcast-0\"\n"
+                + "      "
+                + "},\n"
+                + "      \"spec\": {\n"
                 + "        \"containers\": [\n"
                 + "          {\n"
                 + "            \"ports\": [\n"
@@ -601,10 +601,10 @@ public class KubernetesClientTest {
                 + "        ]\n"
                 + "      }\n"
                 + "    },\n"
-                + "    {\n" +
-                "      \"metadata\" : {\n" +
-                "        \"name\" : \"hazelcast-1\"\n" +
-                "      },\n"
+                + "    {\n"
+                + "      \"metadata\" : {\n"
+                + "        \"name\" : \"hazelcast-1\"\n"
+                + "      },\n"
                 + "      \"spec\": {\n"
                 + "        \"containers\": [\n"
                 + "          {\n"
@@ -643,8 +643,8 @@ public class KubernetesClientTest {
                 + "          \"addresses\": [\n"
                 + "            {\n"
                 + "              \"ip\": \"192.168.0.25\",\n"
-                + "              \"nodeName\": \"node-name-1\"\n" +
-                "            },\n"
+                + "              \"nodeName\": \"node-name-1\"\n"
+                + "            },\n"
                 + "            {\n"
                 + "              \"ip\": \"172.17.0.5\",\n"
                 + "              \"nodeName\": \"node-name-2\"\n"
@@ -657,8 +657,8 @@ public class KubernetesClientTest {
                 + "          ]\n"
                 + "        }\n"
                 + "      ]\n"
-                + "    },\n" +
-                "    {\n"
+                + "    },\n"
+                + "    {\n"
                 + "      \"metadata\": {\n"
                 + "        \"name\": \"service-0\"\n"
                 + "      },\n"
@@ -667,8 +667,8 @@ public class KubernetesClientTest {
                 + "          \"addresses\": [\n"
                 + "            {\n"
                 + "              \"ip\": \"192.168.0.25\",\n"
-                + "              \"nodeName\": \"node-name-1\"\n" +
-                "            }\n"
+                + "              \"nodeName\": \"node-name-1\"\n"
+                + "            }\n"
                 + "          ],\n"
                 + "          \"ports\": [\n"
                 + "            {\n"
@@ -677,30 +677,30 @@ public class KubernetesClientTest {
                 + "          ]\n"
                 + "        }\n"
                 + "      ]\n"
-                + "    },\n" +
-                "    {\n" +
-                "      \"metadata\": {\n" +
-                "        \"name\": \"hazelcast-0\"\n" +
-                "      },\n" +
-                "      \"subsets\": [\n" +
-                "        {\n" +
-                "          \"addresses\": [\n" +
-                "            {\n" +
-                "              \"ip\": \"192.168.0.25\",\n" +
-                "              \"nodeName\": \"node-name-1\",\n" +
-                "              \"targetRef\" : {\n" +
-                "                \"name\" : \"hazelcast-0\"\n" +
-                "              }\n" +
-                "            }\n" +
-                "          ],\n" +
-                "          \"ports\": [\n" +
-                "            {\n" +
-                "              \"port\": 5701\n" +
-                "            }\n" +
-                "          ]\n" +
-                "        }\n" +
-                "      ]\n" +
-                "    },\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"metadata\": {\n"
+                + "        \"name\": \"hazelcast-0\"\n"
+                + "      },\n"
+                + "      \"subsets\": [\n"
+                + "        {\n"
+                + "          \"addresses\": [\n"
+                + "            {\n"
+                + "              \"ip\": \"192.168.0.25\",\n"
+                + "              \"nodeName\": \"node-name-1\",\n"
+                + "              \"targetRef\" : {\n"
+                + "                \"name\" : \"hazelcast-0\"\n"
+                + "              }\n"
+                + "            }\n"
+                + "          ],\n"
+                + "          \"ports\": [\n"
+                + "            {\n"
+                + "              \"port\": 5701\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    },\n"
                 + "    {\n"
                 + "      \"metadata\": {\n"
                 + "        \"name\": \"service-1\"\n"

@@ -51,7 +51,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXT
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
  */
-@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
