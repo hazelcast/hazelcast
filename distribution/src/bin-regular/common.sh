@@ -1,10 +1,9 @@
-
 if [ -z "$SCRIPT_DIR" ]; then
   echo "Variable SCRIPT_DIR is expected to be set by the calling script";
   exit 1;
 fi;
 
-HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+export HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"

@@ -44,4 +44,9 @@ public class TransformP<T, R> extends AbstractProcessor {
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         return flatMapper.tryProcess((T) item);
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }
