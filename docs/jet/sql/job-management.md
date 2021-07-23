@@ -45,6 +45,7 @@ AS query_spec
 |`storeMetricsAfterJobCompletion`|`true`, `false`|
 |`initialSnapshotName`|any string|
 |`maxProcessorAccumulatedRecords`|a positive number or -1|
+|`preventShutdown`|`true`, `false`|
 
 The methods to add resources and classes to the job classpath (e.g.
 `addClass`, `addJar`) aren't supported. If you need some library or
