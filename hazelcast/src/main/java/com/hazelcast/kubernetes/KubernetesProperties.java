@@ -20,9 +20,7 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.TypeConverter;
 
-import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
-import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
-import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
+import static com.hazelcast.config.properties.PropertyTypeConverter.*;
 
 /**
  * <p>Configuration class of the Hazelcast Discovery Plugin for <a href="http://kubernetes.io">Kubernetes</a>.</p>
@@ -97,15 +95,15 @@ public final class KubernetesProperties {
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
     /**
-     * <p>Configuration key: <code>discovery-label-name</code></p>
-     * Defines the load balancer label name.
+     * <p>Configuration key: <code>service-per-pod-label-name</code></p>
+     * Defines the label name of the service used to expose one Hazelcast pod (for the external smart client use case).
      */
-    public static final PropertyDefinition DISCOVERY_LABEL_NAME = property("discovery-label-name", STRING);
+    public static final PropertyDefinition SERVICE_PER_POD_LABEL_NAME = property("service-per-pod-label-name", STRING);
     /**
-     * <p>Configuration key: <code>discovery-label-value</code></p>
-     * Defines the load balancer label value.
+     * <p>Configuration key: <code>service-per-pod-label-value</code></p>
+     * Defines the label name of the service used to expose one Hazelcast pod (for the external smart client use case).
      */
-    public static final PropertyDefinition DISCOVERY_LABEL_VALUE = property("discovery-label-value", STRING);
+    public static final PropertyDefinition SERVICE_PER_POD_LABEL_VALUE = property("service-per-pod-label-value", STRING);
 
     /**
      * <p>Configuration key: <code>resolve-not-ready-addresses</code></p>

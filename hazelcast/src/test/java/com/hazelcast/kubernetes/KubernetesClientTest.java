@@ -450,7 +450,7 @@ public class KubernetesClientTest {
                 + "    }\n"
                 + "  }\n"
                 + "}\n";
-        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), serviceResponse1);
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), serviceResponse1);
 
         //language=JSON
         String serviceResponse2 = "{\n"
@@ -485,48 +485,15 @@ public class KubernetesClientTest {
     }
 
     @Test
-    public void endpointsByNamespaceWithNodePublicIp() {
+    public void endpointsByNamespaceWithNodePortPublicIp() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
 
-        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortService1Response());
         stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
-
-        //language=JSON
-        String nodeResponse1 = "{\n"
-                + "  \"kind\": \"Node\",\n"
-                + "  \"status\": {\n"
-                + "    \"addresses\": [\n"
-                + "      {\n"
-                + "        \"type\": \"InternalIP\",\n"
-                + "        \"address\": \"10.240.0.21\"\n"
-                + "      },\n"
-                + "      {\n"
-                + "        \"type\": \"ExternalIP\",\n"
-                + "        \"address\": \"35.232.226.200\"\n"
-                + "      }\n"
-                + "    ]\n"
-                + "  }\n"
-                + "}\n";
-        stub("/api/v1/nodes/node-name-1", nodeResponse1);
-
-        String nodeResponse2 = "{\n"
-                + "  \"kind\": \"Node\",\n"
-                + "  \"status\": {\n"
-                + "    \"addresses\": [\n"
-                + "      {\n"
-                + "        \"type\": \"InternalIP\",\n"
-                + "        \"address\": \"10.240.0.22\"\n"
-                + "      },\n"
-                + "      {\n"
-                + "        \"type\": \"ExternalIP\",\n"
-                + "        \"address\": \"35.232.226.201\"\n"
-                + "      }\n"
-                + "    ]\n"
-                + "  }\n"
-                + "}\n";
-        stub("/api/v1/nodes/node-name-2", nodeResponse2);
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
 
         // when
         List<Endpoint> result = kubernetesClient.endpoints();
@@ -534,6 +501,32 @@ public class KubernetesClientTest {
         // then
         assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
         assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+    }
+
+    @Test
+    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByName() {
+        // given
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortServiceIncorrectResponse());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
+    }
+
+    @Test
+    public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByServicePerPodLabel() {
+        // TODO
+
     }
 
     @Test
@@ -545,7 +538,7 @@ public class KubernetesClientTest {
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
         stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
 
-        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortService1Response());
         stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
 
         String forbiddenBody = "\"reason\":\"Forbidden\"";
@@ -565,8 +558,12 @@ public class KubernetesClientTest {
         return "{\n"
                 + "  \"kind\": \"PodList\",\n"
                 + "  \"items\": [\n"
-                + "    {\n"
-                + "      \"spec\": {\n"
+                + "    {\n" +
+                "      \"metadata\" : {\n" +
+                "        \"name\" : \"hazelcast-0\"\n" +
+                "      " +
+                "},\n" +
+                "      \"spec\": {\n"
                 + "        \"containers\": [\n"
                 + "          {\n"
                 + "            \"ports\": [\n"
@@ -586,7 +583,10 @@ public class KubernetesClientTest {
                 + "        ]\n"
                 + "      }\n"
                 + "    },\n"
-                + "    {\n"
+                + "    {\n" +
+                "      \"metadata\" : {\n" +
+                "        \"name\" : \"hazelcast-1\"\n" +
+                "      },\n"
                 + "      \"spec\": {\n"
                 + "        \"containers\": [\n"
                 + "          {\n"
@@ -625,8 +625,8 @@ public class KubernetesClientTest {
                 + "          \"addresses\": [\n"
                 + "            {\n"
                 + "              \"ip\": \"192.168.0.25\",\n"
-                + "              \"nodeName\": \"node-name-1\"\n"
-                + "            },\n"
+                + "              \"nodeName\": \"node-name-1\"\n" +
+                "            },\n"
                 + "            {\n"
                 + "              \"ip\": \"172.17.0.5\",\n"
                 + "              \"nodeName\": \"node-name-2\"\n"
@@ -639,8 +639,8 @@ public class KubernetesClientTest {
                 + "          ]\n"
                 + "        }\n"
                 + "      ]\n"
-                + "    },\n"
-                + "    {\n"
+                + "    },\n" +
+                "    {\n"
                 + "      \"metadata\": {\n"
                 + "        \"name\": \"service-0\"\n"
                 + "      },\n"
@@ -649,8 +649,8 @@ public class KubernetesClientTest {
                 + "          \"addresses\": [\n"
                 + "            {\n"
                 + "              \"ip\": \"192.168.0.25\",\n"
-                + "              \"nodeName\": \"node-name-1\"\n"
-                + "            }\n"
+                + "              \"nodeName\": \"node-name-1\"\n" +
+                "            }\n"
                 + "          ],\n"
                 + "          \"ports\": [\n"
                 + "            {\n"
@@ -659,7 +659,30 @@ public class KubernetesClientTest {
                 + "          ]\n"
                 + "        }\n"
                 + "      ]\n"
-                + "    },\n"
+                + "    },\n" +
+                "    {\n" +
+                "      \"metadata\": {\n" +
+                "        \"name\": \"hazelcast-0\"\n" +
+                "      },\n" +
+                "      \"subsets\": [\n" +
+                "        {\n" +
+                "          \"addresses\": [\n" +
+                "            {\n" +
+                "              \"ip\": \"192.168.0.25\",\n" +
+                "              \"nodeName\": \"node-name-1\",\n" +
+                "              \"targetRef\" : {\n" +
+                "                \"name\" : \"hazelcast-0\"\n" +
+                "              }\n" +
+                "            }\n" +
+                "          ],\n" +
+                "          \"ports\": [\n" +
+                "            {\n" +
+                "              \"port\": 5701\n" +
+                "            }\n" +
+                "          ]\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    },\n"
                 + "    {\n"
                 + "      \"metadata\": {\n"
                 + "        \"name\": \"service-1\"\n"
@@ -716,6 +739,61 @@ public class KubernetesClientTest {
                 + "}";
     }
 
+
+    private String nodePortServiceIncorrectResponse() {
+        //language=JSON
+        return "{\n"
+                + "  \"kind\": \"Service\",\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 0,\n"
+                + "        \"targetPort\": 0,\n"
+                + "        \"nodePort\": 0\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+    }
+
+    private String node1Response() {
+        //language=JSON
+        return "{\n"
+                + "  \"kind\": \"Node\",\n"
+                + "  \"status\": {\n"
+                + "    \"addresses\": [\n"
+                + "      {\n"
+                + "        \"type\": \"InternalIP\",\n"
+                + "        \"address\": \"10.240.0.21\"\n"
+                + "      },\n"
+                + "      {\n"
+                + "        \"type\": \"ExternalIP\",\n"
+                + "        \"address\": \"35.232.226.200\"\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}\n";
+    }
+
+    private String node2Response() {
+        //language=JSON
+        return "{\n"
+                + "  \"kind\": \"Node\",\n"
+                + "  \"status\": {\n"
+                + "    \"addresses\": [\n"
+                + "      {\n"
+                + "        \"type\": \"InternalIP\",\n"
+                + "        \"address\": \"10.240.0.22\"\n"
+                + "      },\n"
+                + "      {\n"
+                + "        \"type\": \"ExternalIP\",\n"
+                + "        \"address\": \"35.232.226.201\"\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}\n";
+    }
+
     @Test
     public void forbidden() {
         // given
@@ -756,7 +834,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress, null, null);
     }
 
     private static List<String> format(List<Endpoint> addresses) {

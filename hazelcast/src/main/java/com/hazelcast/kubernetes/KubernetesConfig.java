@@ -43,11 +43,10 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS;
-import static com.hazelcast.kubernetes.KubernetesProperties.MATCH_SERVICE_POD_NAMES;
-import static com.hazelcast.kubernetes.KubernetesProperties.LB_LABEL_NAME;
-import static com.hazelcast.kubernetes.KubernetesProperties.LB_LABEL_VALUE;
 
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
@@ -69,6 +68,8 @@ final class KubernetesConfig {
     private final String namespace;
     private final String podLabelName;
     private final String podLabelValue;
+    private final String servicePerPodLabelName;
+    private final String servicePerPodLabelValue;
     private final String discoveryLabelName;
     private final String discoveryLabelValue;
     private final boolean resolveNotReadyAddresses;
@@ -90,8 +91,10 @@ final class KubernetesConfig {
         this.serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         this.podLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_NAME);
         this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
-        this.discoveryLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_NAME);
-        this.discoveryLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, LB_LABEL_VALUE);
+        this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
+        this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
+        this.discoveryLabelName = null;
+        this.discoveryLabelValue = null;
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
@@ -300,6 +303,14 @@ final class KubernetesConfig {
 
     public String getPodLabelValue() {
         return podLabelValue;
+    }
+
+    public String getServicePerPodLabelName() {
+        return servicePerPodLabelName;
+    }
+
+    public String getServicePerPodLabelValue() {
+        return servicePerPodLabelValue;
     }
 
     public String getDiscoveryLabelName() {

@@ -51,7 +51,6 @@ final class HazelcastKubernetesDiscoveryStrategy
             endpointResolver = new KubernetesApiEndpointResolver(logger, config.getServiceName(), config.getServicePort(),
                     config.getServiceLabelName(), config.getServiceLabelValue(),
                     config.getPodLabelName(), config.getPodLabelValue(),
-                    config.getDiscoveryLabelName(), config.getDiscoveryLabelValue(),
                     config.isResolveNotReadyAddresses(), client);
         }
 
@@ -60,7 +59,8 @@ final class HazelcastKubernetesDiscoveryStrategy
 
     private static KubernetesClient buildKubernetesClient(KubernetesConfig config) {
         return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getKubernetesApiToken(),
-                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.isUseNodeNameAsExternalAddress());
+                config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.isUseNodeNameAsExternalAddress(),
+                config.getServicePerPodLabelName(), config.getServicePerPodLabelValue());
     }
 
     public void start() {
