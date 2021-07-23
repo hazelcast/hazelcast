@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
@@ -331,9 +332,9 @@ class KubernetesClient {
     private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints) {
         try {
             String endpointsUrl = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
-//            if (lbLabel != null && !lbLabel.isEmpty() && lbLabelValue != null && !lbLabelValue.isEmpty()) {
-//                endpointsUrl += String.format("?labelSelector=%s!=%s", lbLabel, lbLabelValue);
-//            }
+            if (!StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelName) && !StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelValue)) {
+                endpointsUrl += String.format("?labelSelector=%s=%s", servicePerPodLabelName, servicePerPodLabelValue);
+            }
             JsonObject endpointsJson = callGet(endpointsUrl);
 
             List<EndpointAddress> privateAddresses = privateAddresses(endpoints);

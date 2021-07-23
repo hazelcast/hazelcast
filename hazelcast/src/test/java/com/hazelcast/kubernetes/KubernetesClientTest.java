@@ -525,8 +525,26 @@ public class KubernetesClientTest {
 
     @Test
     public void endpointsByNamespaceWithMultipleNodePortPublicIpMatchByServicePerPodLabel() {
-        // TODO
+        // given
+        String servicePerPodLabel = "sample-service-per-pod-service-label";
+        String servicePerPodLabelValue = "sample-service-per-pod-service-label-value";
+        kubernetesClient = newKubernetesClient(false, servicePerPodLabel, servicePerPodLabelValue);
 
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        Map<String, String> queryParams = singletonMap("labelSelector", String.format("%s=%s", servicePerPodLabel, servicePerPodLabelValue));
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), queryParams, endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortService1Response());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortService2Response());
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPublic(result), containsInAnyOrder(ready("35.232.226.200", 31916), ready("35.232.226.201", 31917)));
     }
 
     @Test
@@ -833,8 +851,12 @@ public class KubernetesClientTest {
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
+        return newKubernetesClient(useNodeNameAsExternalAddress, null, null);
+    }
+
+    private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress, null, null);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
     }
 
     private static List<String> format(List<Endpoint> addresses) {
