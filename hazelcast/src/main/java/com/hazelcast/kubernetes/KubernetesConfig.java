@@ -349,10 +349,10 @@ final class KubernetesConfig {
                 + "namespace: " + namespace + ", "
                 + "pod-label: " + podLabelName + ", "
                 + "pod-label-value: " + podLabelValue + ", "
-                + "service-per-pod-label: " + servicePerPodLabelName + ", "
-                + "service-per-pod-label-value: " + servicePerPodLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
+                + "service-per-pod-label: " + servicePerPodLabelName + ", "
+                + "service-per-pod-label-value: " + servicePerPodLabelValue + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "
                 + "kubernetes-master: " + kubernetesMasterUrl + "}";
     }
