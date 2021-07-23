@@ -33,8 +33,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,8 +52,8 @@ import static java.util.Arrays.asList;
  * Make sure that CAST expressions are unwrapped properly.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class JetSqlIndexCastTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
