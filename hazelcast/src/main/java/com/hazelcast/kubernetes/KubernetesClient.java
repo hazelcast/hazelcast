@@ -352,9 +352,9 @@ class KubernetesClient {
                 String serviceUrl = String.format("%s/api/v1/namespaces/%s/services/%s", kubernetesMaster, namespace, service);
                 JsonObject serviceJson = callGet(serviceUrl);
                 try {
-                    String loadBalancerIp = extractLoadBalancerIp(serviceJson);
+                    String loadBalancerAddress = extractLoadBalancerAddress(serviceJson);
                     Integer servicePort = extractServicePort(serviceJson);
-                    publicIps.put(privateAddress, loadBalancerIp);
+                    publicIps.put(privateAddress, loadBalancerAddress);
                     publicPorts.put(privateAddress, servicePort);
                 } catch (Exception e) {
                     // Load Balancer public IP cannot be found, try using NodePort.
@@ -464,11 +464,16 @@ class KubernetesClient {
         return result;
     }
 
-    private static String extractLoadBalancerIp(JsonObject serviceResponse) {
-        return serviceResponse.get("status").asObject()
+    private static String extractLoadBalancerAddress(JsonObject serviceResponse) {
+        JsonObject ingress = serviceResponse
+                .get("status").asObject()
                 .get("loadBalancer").asObject()
-                .get("ingress").asArray().get(0).asObject()
-                .get("ip").asString();
+                .get("ingress").asArray().get(0).asObject();
+        JsonValue address = ingress.get("ip");
+        if (address == null) {
+            address = ingress.get("hostname");
+        }
+        return address.asString();
     }
 
     private static Integer extractServicePort(JsonObject serviceJson) {

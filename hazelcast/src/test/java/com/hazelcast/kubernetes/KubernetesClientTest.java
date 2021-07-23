@@ -485,6 +485,68 @@ public class KubernetesClientTest {
     }
 
     @Test
+    public void endpointsByNamespaceWithLoadBalancerHostname() {
+        // given
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+
+        //language=JSON
+        String serviceResponse1 = "{\n"
+                + "  \"kind\": \"Service\",\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 32123,\n"
+                + "        \"targetPort\": 5701,\n"
+                + "        \"nodePort\": 31916\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  },\n"
+                + "  \"status\": {\n"
+                + "    \"loadBalancer\": {\n"
+                + "      \"ingress\": [\n"
+                + "        {\n"
+                + "          \"hostname\": \"abc.hostname\"\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  }\n"
+                + "}\n";
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), serviceResponse1);
+
+        //language=JSON
+        String serviceResponse2 = "{\n"
+                + "  \"kind\": \"Service\",\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 32124,\n"
+                + "        \"targetPort\": 5701,\n"
+                + "        \"nodePort\": 31916\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  },\n"
+                + "  \"status\": {\n"
+                + "    \"loadBalancer\": {\n"
+                + "      \"ingress\": [\n"
+                + "        {\n"
+                + "          \"hostname\": \"abc2.hostname\"\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  }\n"
+                + "}";
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), serviceResponse2);
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+        assertThat(formatPublic(result), containsInAnyOrder(ready("abc.hostname", 32123), ready("abc2.hostname", 32124)));
+    }
+
+    @Test
     public void endpointsByNamespaceWithNodePortPublicIp() {
         // given
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
