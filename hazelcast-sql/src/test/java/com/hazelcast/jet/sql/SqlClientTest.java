@@ -18,20 +18,24 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.client.SqlClientService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -111,6 +115,34 @@ public class SqlClientTest extends SqlTestSupport {
         result.close();
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, FAILED);
+    }
+
+    @Test
+    public void when_memberShuttingDown_then_retriesWithAnotherMember() throws Exception {
+        // Use a standalone cluster in this test - we shut down one of th members
+        HazelcastInstance inst1 = createHazelcastInstance();
+        HazelcastInstance inst2 = createHazelcastInstance();
+        HazelcastInstance client = createHazelcastClient();
+
+        Job job = inst1.getJet().newLightJob(streamingDag(), new JobConfig().setPreventShutdown(true));
+        assertTrueEventually(() -> assertJobExecuting(job, inst2));
+        Future<?> shutdownFuture = spawn(inst2::shutdown);
+
+        // inst2 is now shutting down, but will not shut down until job is cancelled.
+        // Try a couple of times - the client picks a random member, we need to ensure that
+        // at least once it pick the shutting-down one.
+        try {
+            for (int i = 0; i < 10; i++) {
+                logger.info("Executing query " + i + "...");
+                SqlResult result = client.getSql().execute("select * from table(generate_series(0, -1))");
+                assertFalse(result.iterator().hasNext());
+            }
+        } finally {
+            job.cancel();
+            shutdownFuture.get();
+        }
+
+        assertEquals(0, ((SqlClientService) client.getSql()).numberOfShuttingDownMembers());
     }
 
     private static Job awaitSingleRunningJob(HazelcastInstance hz) {

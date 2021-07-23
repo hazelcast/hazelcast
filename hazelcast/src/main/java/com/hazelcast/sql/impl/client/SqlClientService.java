@@ -24,6 +24,8 @@ import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.MembershipEvent;
+import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -42,9 +44,12 @@ import javax.annotation.Nonnull;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Client-side implementation of SQL service.
@@ -60,16 +65,36 @@ public class SqlClientService implements SqlService {
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
+    private final Set<UUID> shuttingDownMembers = newSetFromMap(new ConcurrentHashMap<>());
+
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
+
+        client.getCluster().addMembershipListener(new MembershipListener() {
+            @Override
+            public void memberAdded(MembershipEvent event) {
+            }
+
+            @Override
+            public void memberRemoved(MembershipEvent event) {
+                shuttingDownMembers.remove(event.getMember().getUuid());
+            }
+        });
     }
 
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
+        SqlClientResult res = new SqlClientResult(this, statement.getCursorBufferSize());
+        executeInt(res, statement);
+        return res;
+    }
+
+    private void executeInt(SqlClientResult res, SqlStatement statement) {
         ClientConnection connection = getQueryConnection();
         QueryId id = QueryId.create(connection.getRemoteUuid());
+        res.init(connection, id);
 
         try {
             List<Object> params = statement.getParameters();
@@ -90,29 +115,21 @@ public class SqlClientService implements SqlService {
                 id
             );
 
-            SqlClientResult res = new SqlClientResult(
-                this,
-                connection,
-                id,
-                statement.getCursorBufferSize()
-            );
-
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
             future.whenComplete(withTryCatch(logger,
-                    (message, error) -> handleExecuteResponse(connection, res, message, error))).get();
-
-            return res;
+                    (message, error) -> handleExecuteResponse(connection, statement, res, message, error))).get();
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
     }
 
     private void handleExecuteResponse(
-        ClientConnection connection,
-        SqlClientResult res,
-        ClientMessage message,
-        Throwable error
+            ClientConnection connection,
+            SqlStatement statement,
+            SqlClientResult res,
+            ClientMessage message,
+            Throwable error
     ) {
         if (error != null) {
             res.onExecuteError(rethrow(error, connection));
@@ -125,8 +142,13 @@ public class SqlClientService implements SqlService {
         HazelcastSqlException responseError = handleResponseError(response.error);
 
         if (responseError != null) {
-            res.onExecuteError(responseError);
-
+            if (responseError.getCode() == SqlErrorCode.MEMBER_SHUTTING_DOWN) {
+                shuttingDownMembers.add(connection.getRemoteUuid());
+                logger.fine("Client added a shutting-down member: " + connection.getRemoteUuid());
+                executeInt(res, statement);
+            } else {
+                res.onExecuteError(responseError);
+            }
             return;
         }
 
@@ -186,7 +208,7 @@ public class SqlClientService implements SqlService {
 
     // public for testing only
     public ClientConnection getQueryConnection() {
-        ClientConnection connection = client.getConnectionManager().getConnectionForSql();
+        ClientConnection connection = client.getConnectionManager().getConnectionForSql(shuttingDownMembers);
 
         if (connection == null) {
             throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
@@ -278,5 +300,10 @@ public class SqlClientService implements SqlService {
         int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
 
         return serviceId == SQL_SERVICE_ID;
+    }
+
+    // for tests
+    public int numberOfShuttingDownMembers() {
+        return shuttingDownMembers.size();
     }
 }

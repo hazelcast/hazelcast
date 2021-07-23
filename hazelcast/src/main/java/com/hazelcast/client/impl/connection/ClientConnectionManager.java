@@ -74,6 +74,8 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      *         member
      *     <li>if there's no such connection, return any random connection
      * </ol>
+     *
+     * @param ignoredMembers Members in the given collection will not be considered.
      */
-    ClientConnection getConnectionForSql();
+    ClientConnection getConnectionForSql(@Nonnull Collection<UUID> ignoredMembers);
 }

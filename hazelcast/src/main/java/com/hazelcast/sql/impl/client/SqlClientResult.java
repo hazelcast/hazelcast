@@ -39,9 +39,10 @@ import java.util.NoSuchElementException;
 public class SqlClientResult implements SqlResult {
 
     private final SqlClientService service;
-    private final Connection connection;
-    private final QueryId queryId;
     private final int cursorBufferSize;
+
+    private Connection connection;
+    private QueryId queryId;
 
     /** Mutex to synchronize access between operations. */
     private final Object mux = new Object();
@@ -58,11 +59,20 @@ public class SqlClientResult implements SqlResult {
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
-    public SqlClientResult(SqlClientService service, Connection connection, QueryId queryId, int cursorBufferSize) {
+    public SqlClientResult(SqlClientService service, int cursorBufferSize) {
         this.service = service;
-        this.connection = connection;
-        this.queryId = queryId;
         this.cursorBufferSize = cursorBufferSize;
+    }
+
+    public void init(Connection connection, QueryId queryId) {
+        synchronized (mux) {
+            this.connection = connection;
+            this.queryId = queryId;
+            if (closed) {
+                // close also on the new connection
+                service.close(connection, queryId);
+            }
+        }
     }
 
     /**

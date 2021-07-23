@@ -97,6 +97,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
@@ -837,15 +838,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getConnectionForSql() {
+    public ClientConnection getConnectionForSql(@Nonnull Collection<UUID> ignoredMembers) {
         if (isSmartRoutingEnabled) {
+            Collection<Member> members = client.getClientClusterService().getMemberList();
+            if (!ignoredMembers.isEmpty()) {
+                members = members.stream()
+                        .filter(m -> ignoredMembers.contains(m.getUuid()))
+                        .collect(Collectors.toList());
+            }
             // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
             for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
-                Member member = QueryUtils.memberOfLargerSameVersionGroup(
-                        client.getClientClusterService().getMemberList(), null);
-                if (member == null) {
+                Member member = QueryUtils.memberOfLargerSameVersionGroup(members, null);
+                if (member == null || ignoredMembers.contains(member.getUuid())) {
                     break;
                 }
                 ClientConnection connection = activeConnections.get(member.getUuid());
@@ -857,16 +863,18 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
 
         // Otherwise iterate over connections and return the first one that's not to a lite member
         ClientConnection firstConnection = null;
-        for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
-            if (firstConnection == null) {
-                firstConnection = connectionEntry.getValue();
+        for (TcpClientConnection connection : activeConnections.values()) {
+            if (ignoredMembers.contains(connection.getRemoteUuid())) {
+                continue;
             }
-            UUID memberId = connectionEntry.getKey();
-            Member member = client.getClientClusterService().getMember(memberId);
+            if (firstConnection == null) {
+                firstConnection = connection;
+            }
+            Member member = client.getClientClusterService().getMember(connection.getRemoteUuid());
             if (member == null || member.isLiteMember()) {
                 continue;
             }
-            return connectionEntry.getValue();
+            return connection;
         }
 
         // Failed to get a connection to a data member

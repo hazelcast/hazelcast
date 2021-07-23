@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.jet.impl.MemberShuttingDownException;
+
 /**
  * Error codes used in Hazelcast SQL.
  */
@@ -25,6 +27,9 @@ public final class SqlErrorCode {
 
     /** A network connection problem between members, or between a client and a member. */
     public static final int CONNECTION_PROBLEM = 1001;
+
+    /** See {@link MemberShuttingDownException}. */
+    public static final int MEMBER_SHUTTING_DOWN = 1002;
 
     /** Query was cancelled due to user request. */
     public static final int CANCELLED_BY_USER = 1003;

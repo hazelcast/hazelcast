@@ -23,6 +23,7 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.MemberShuttingDownException;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
@@ -219,7 +220,7 @@ public class JetPlanExecutor {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     queryResultProducer.onError(
-                            QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
+                            QueryException.error(errorCode, "The SQL job failed: " + t.getMessage(), t));
                 }
             });
         } catch (Throwable e) {
@@ -340,6 +341,9 @@ public class JetPlanExecutor {
 
     private static int findQueryExceptionCode(Throwable t) {
         while (t != null) {
+            if (t instanceof MemberShuttingDownException) {
+                return SqlErrorCode.MEMBER_SHUTTING_DOWN;
+            }
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
