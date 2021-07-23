@@ -89,11 +89,11 @@ final class KubernetesConfig {
         this.serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         this.podLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_NAME);
         this.podLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, POD_LABEL_VALUE);
-        this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
-        this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
+        this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
+        this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
         this.kubernetesApiRetries
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         this.kubernetesMasterUrl = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
