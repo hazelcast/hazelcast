@@ -38,6 +38,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -57,14 +58,18 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static com.hazelcast.sql.impl.type.converter.AbstractTemporalConverter.DEFAULT_ZONE;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeFalse;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
+
+    private static final LocalDate TODAY = LocalDate.now();
+    private static final LocalDate TOMORROW = TODAY.plusDays(1);
 
     @Parameter
     public TestParams testParams;
@@ -76,20 +81,20 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
     public static Object[] parameters() {
         return new Object[]{
                 // NULL
-                TestParams.passingCase(1001, NULL, VARCHAR, "null", null, null),
-                TestParams.passingCase(1002, NULL, BOOLEAN, "null", null, null),
-                TestParams.passingCase(1003, NULL, TINYINT, "null", null, null),
-                TestParams.passingCase(1004, NULL, SMALLINT, "null", null, null),
-                TestParams.passingCase(1005, NULL, INTEGER, "null", null, null),
-                TestParams.passingCase(1006, NULL, BIGINT, "null", null, null),
-                TestParams.passingCase(1007, NULL, DECIMAL, "null", null, null),
-                TestParams.passingCase(1008, NULL, REAL, "null", null, null),
-                TestParams.passingCase(1009, NULL, DOUBLE, "null", null, null),
-                TestParams.passingCase(1010, NULL, TIME, "null", null, null),
-                TestParams.passingCase(1011, NULL, DATE, "null", null, null),
-                TestParams.passingCase(1012, NULL, TIMESTAMP, "null", null, null),
-                TestParams.passingCase(1013, NULL, TIMESTAMP_WITH_TIME_ZONE, null, null, null),
-                TestParams.passingCase(1014, NULL, OBJECT, "null", null, null),
+                TestParams.passingCase(1001, NULL, VARCHAR, "null", null, (Object) null),
+                TestParams.passingCase(1002, NULL, BOOLEAN, "null", null, (Object) null),
+                TestParams.passingCase(1003, NULL, TINYINT, "null", null, (Object) null),
+                TestParams.passingCase(1004, NULL, SMALLINT, "null", null, (Object) null),
+                TestParams.passingCase(1005, NULL, INTEGER, "null", null, (Object) null),
+                TestParams.passingCase(1006, NULL, BIGINT, "null", null, (Object) null),
+                TestParams.passingCase(1007, NULL, DECIMAL, "null", null, (Object) null),
+                TestParams.passingCase(1008, NULL, REAL, "null", null, (Object) null),
+                TestParams.passingCase(1009, NULL, DOUBLE, "null", null, (Object) null),
+                TestParams.passingCase(1010, NULL, TIME, "null", null, (Object) null),
+                TestParams.passingCase(1011, NULL, DATE, "null", null, (Object) null),
+                TestParams.passingCase(1012, NULL, TIMESTAMP, "null", null, (Object) null),
+                TestParams.passingCase(1013, NULL, TIMESTAMP_WITH_TIME_ZONE, null, null, (Object) null),
+                TestParams.passingCase(1014, NULL, OBJECT, "null", null, (Object) null),
 
                 // VARCHAR
                 TestParams.passingCase(1101, VARCHAR, VARCHAR, "'foo'", "foo", "foo"),
@@ -400,14 +405,12 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(2010, TIME, TIME, "cast('01:42:00' as time)", "01:42:00", LocalTime.of(1, 42)),
                 TestParams.failingCase(2011, TIME, DATE, "cast('01:42:00' as time)",
                         "01:42:00", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME"),
-                // this variant can fail around midnight
                 TestParams.passingCase(2012, TIME, TIMESTAMP, "cast('01:42:00' as time)", "01:42:00",
-                        LocalDateTime.of(LocalDate.now(), LocalTime.of(1, 42))),
-                // this variant can fail around midnight
+                        LocalDateTime.of(TODAY, LocalTime.of(1, 42)),
+                        LocalDateTime.of(TOMORROW, LocalTime.of(1, 42))),
                 TestParams.passingCase(2013, TIME, TIMESTAMP_WITH_TIME_ZONE, "cast('01:42:00' as time)", "01:42:00",
-                        ZonedDateTime.of(
-                                LocalDateTime.of(LocalDate.now(), LocalTime.of(1, 42)),
-                                DEFAULT_ZONE).toOffsetDateTime()),
+                        ZonedDateTime.of(LocalDateTime.of(TODAY, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime(),
+                        ZonedDateTime.of(LocalDateTime.of(TOMORROW, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime()),
                 TestParams.passingCase(2014, TIME, OBJECT, "cast('01:42:00' as time)", "01:42:00", LocalTime.of(1, 42)),
 
                 // DATE
@@ -556,7 +559,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            assertEquals(testParams.targetValue, extractValue("m", "field1"));
+            assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -599,7 +602,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            assertEquals(testParams.targetValue, extractValue("target", "field1"));
+            assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
                 throw new AssertionError("The query failed unexpectedly: " + e, e);
@@ -637,7 +640,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            assertEquals(testParams.targetValue, extractValue("target", "field1"));
+            assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -668,7 +671,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            assertEquals(testParams.targetValue, extractValue("m", "field1"));
+            assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null) {
                 throw e;
@@ -703,7 +706,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
             if (testParams.expectedFailureRegex != null) {
                 fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
             }
-            assertEquals(testParams.targetValue, extractValue("m", "field1"));
+            assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
             if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
                 throw new AssertionError("The query failed unexpectedly: " + e, e);
@@ -731,24 +734,24 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         private final QueryDataTypeFamily targetType;
         private final String valueLiteral;
         private final String valueTestSource;
-        private final Object targetValue;
+        private final List<Object> targetValues;
         private final Pattern expectedFailureRegex;
         private Pattern expectedFailureNonLiteralRegex;
 
         private TestParams(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType, String valueLiteral,
-                           String valueTestSource, Object targetValue, String expectedFailureRegex) {
+                           String valueTestSource, List<Object> targetValues, String expectedFailureRegex) {
             this.testId = testId;
             this.srcType = srcType;
             this.targetType = targetType;
             this.valueLiteral = valueLiteral;
             this.valueTestSource = valueTestSource;
-            this.targetValue = targetValue;
+            this.targetValues = targetValues;
             this.expectedFailureRegex = expectedFailureRegex != null ? Pattern.compile(expectedFailureRegex) : null;
         }
 
         static TestParams passingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,
-                                      String valueLiteral, String valueTestSource, Object targetValue) {
-            return new TestParams(testId, srcType, targetType, valueLiteral, valueTestSource, targetValue, null);
+                                      String valueLiteral, String valueTestSource, Object... targetValues) {
+            return new TestParams(testId, srcType, targetType, valueLiteral, valueTestSource, asList(targetValues), null);
         }
 
         static TestParams failingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,
@@ -781,7 +784,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                     ", srcType=" + srcType +
                     ", targetType=" + targetType +
                     ", value=" + valueTestSource +
-                    ", targetValue=" + targetValue +
+                    ", targetValues=" + targetValues +
                     ", expectedFailureRegex=" + expectedFailureRegex +
                     '}';
         }
