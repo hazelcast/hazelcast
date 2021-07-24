@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import static java.util.Collections.singletonList;
 
 /**
- * Operation sent from a member that wants to gracefully shut down to the
+ * A member that wants to gracefully shut down sends this operation to the
  * master. Master sends it to itself.
  * <p>
  * The operation calls {@link

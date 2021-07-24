@@ -51,7 +51,9 @@ import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.jet.impl.observer.WrappedThrowable;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
+import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -709,11 +711,24 @@ public class JobCoordinationService {
      * Add the given member to the collection shutting down members and invoke
      * `onParticipantGracefulShutdown()` for all existing jobs.
      * <p>
-     * Adding to the collection ensures, for normal jobs, that no more
-     * executions will be started until that member leaves the cluster. For
-     * light jobs, more executions are allowed, but will not run on the given
-     * member.
-     * <p>
+     * Adding a member to a shutting-down members list ensures:<ul>
+     *
+     *     <li>on master, no new normal job executions are started until this list
+     *     is empty again (that is after the member actually leaves the cluster).
+     *     Note though that {@link InitExecutionOperation} and {@link
+     *     StartExecutionOperation} are still handled normally because master might
+     *     not yet know about the shutdown when the operations were sent. This
+     *     bullet is about the master not starting new executions.
+     *
+     *     <li>this member will be excluded from the participant list for light
+     *     jobs. Light jobs can still execute on the remaining members. This means
+     *     that if the local member is the coordinator and some other member is
+     *     shutting down, it will be excluded. But if this member is the
+     *     coordinator and is also shutting down, it will throw {@link
+     *     MemberShuttingDownException} to the caller and reject to start the job.
+     *
+     * </ul>
+     *
      * The returned future will complete when all executions of which the
      * member is a participant terminate.
      * <p>

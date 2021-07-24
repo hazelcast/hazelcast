@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,20 +33,15 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * The operation is sent from the master to all members informing them
- * about a member that wants to gracefully shut down. It's also sent as a
- * pre-join op to newly-joining members.
+ * about a member that wants to gracefully shut down. Secondly, it's sent
+ * as a pre-join op to newly-joining members.
  * <p>
  * The operation has to be idempotent: it can be sent as a part of pre-join
  * op, and again as a part of sending to all current members. It can be
  * also sent again from a new master after the old master failure.
  * <p>
- * After receiving, the member ensures no new light job uses the
- * shutting-down member as a participant. For current light jobs that have
- * the shutting-down member as a participant, it cancels those without the
- * {@link JobConfig#isPreventShutdown()} flag enabled immediately. Those
- * with the prevent-shutdown flag enabled are allowed to continue. The
- * operation responds to the caller, when all light jobs coordinated by
- * this member terminated.
+ * See {@link JobCoordinationService#addShuttingDownMember(UUID)} for more
+ * information.
  * <p>
  * This operation doesn't deal at all with normal jobs.
  */

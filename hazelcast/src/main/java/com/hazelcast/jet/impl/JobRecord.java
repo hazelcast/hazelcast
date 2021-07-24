@@ -123,6 +123,7 @@ public class JobRecord implements IdentifiedDataSerializable {
         out.writeObject(config);
         out.writeObject(ownedObservables);
         ImdgUtil.writeSubject(out, subject);
+        // NOTE: this class must support rolling upgrades
     }
 
     @Override

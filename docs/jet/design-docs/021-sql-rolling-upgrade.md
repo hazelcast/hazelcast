@@ -43,7 +43,7 @@ size, the enterprise licence allows it.
 
 This feature won't provide rolling upgrades for Jet light jobs in
 general. To do that we would have to provide Jet client compatibility
-and DAG binary compatibility.
+and DAG/Pipeline binary compatibility.
 
 Fault-tolerant SQL jobs also won't be supported.
 
@@ -79,8 +79,8 @@ version.
 
 During rolling upgrades, members are gracefully shut down. We want SQL
 engine to be available during this time. We'll add a new
-`JobConfig.blockShutdown` option. The SQL engine will enable this option
-for batch jobs, but not for streaming jobs.
+`JobConfig.preventShutdown` option. The SQL engine will enable this
+option for batch jobs, but not for streaming jobs.
 
 Jobs submitted during this time will not use the member in the shutdown
 process as a coordinator. Other members can handle new jobs, but they
@@ -97,24 +97,22 @@ this option enabled) will be cancelled (light jobs) or restarted (normal
 jobs).
 
 It can happen that the member will never shut down if the user submits a
-streaming job with the `blockShutdown` option. For this scenario there
-is a hard-coded timeout of 10 seconds after which the member proceeds
-with the shutdown without waiting for all jobs to terminate. In this
-case the administrator must be able to see that job and cancel it
-manually, using either Management center or Java API. Another option is
-to kill the member, however in this case a proper migration will not
-take place.
+streaming job with the `preventShutdown` option. We'll remove the
+hard-coded timeout of 10 seconds for this case - the shutdown will be
+blocked for unbounded time. The administrator will be able to see that
+job and cancel it manually, using either Management center or other API.
+Another option is to kill the member, however in this case a proper
+migration will not take place.
 
 ### Client compatibility
 
 A client able to communicate with multiple versions of members is a
 prerequisite for rolling upgrades. When using Jet as a backing engine
-for SQL, the jobs are never submitted from the client. Instead, the
-client submits a SQL string using the SQL client messages, and on the
-member it is converted to a DAG and submitted to Jet. We must make sure
-that the member that optimizes the query is also the member that
-coordinates the Jet job. Otherwise, the processor behavior might not be
-compatible.
+for SQL, the jobs are submitted from a member. The client submits a SQL
+string using the SQL client messages, and on the member it is converted
+to a DAG and submitted to Jet. We must make sure that the member that
+optimizes the query is also the member that coordinates the Jet job.
+Otherwise, the processor behavior might not be compatible.
 
 We don't plan to provide client compatibility for JetService in 5.0.
 
@@ -126,13 +124,14 @@ version is added, even in a fault-tolerant job.
 
 ### Changes to the SQL engine
 
-For non-smart client, the `SqlExecute` client operation will route to a
-random member - it might not be from the larger same-version group. To
-address this, we need to add member-to-member variants of `SqlExecute`,
-`SqlFetch` and `SqlCancel` operations so that a query submitted from a
-non-smart client can be redirected to execute on a member from the
-larger same-version subset. This wil also address the current limitation
-that SQL queries can't be submitted from lite members.
+For non-smart client, the `SqlExecute` client operation will route to
+the only member the client is connected to - it might not be from the
+larger same-version group. To address this, we need to add
+member-to-member variants of `SqlExecute`, `SqlFetch` and `SqlCancel`
+operations so that a query submitted from a non-smart client can be
+redirected to execute on a member from the larger same-version subset.
+This wil also address the current limitation that SQL queries can't be
+submitted from lite members.
 
 ### LoadBalancer changes
 
@@ -220,7 +219,7 @@ they will use less members than they could.
 
 ## Parts that will need to support backwards compatibility
 
-- The client protocol
+- The SQL client protocol
 
 - The `SqlExecute`, `SqlFetch` and `SqlClose` member-to-member
 operations.
@@ -228,67 +227,58 @@ operations.
 - The IMap scan operations `MapFetchEntriesOperation`,
 `MapFetchIndexOperation`
 
-
-
-
+- The JobRecord - a newer master must be able to deserialize it and
+determine the submitter version
 
 # Shutdown implementation
 
-So i think it can work that not the member that wants to shut down
-notifies all other members, but the master.
+The coordinator of each job needs to coordinate the shutdown of each
+execution. Therefore we need to send the NotifyShutdownOperation to all
+members. We also need to ensure that new members know about the shutting
+down member before they have any chance to start a job (every member can
+start a light job). Therefore we added the list of shutting-down members
+to the pre-join operation.
 
-For example: M0 is master, M1 is about to leave, M2 is about to join. M1
-notifies M0 that it wants to shut down. M0 (master) notifies everybody
-else. If the pre-join op wasn't yet sent to M2, it will include the info
-about M1. If it was sent already, M2 will be notified as any other
-member. I can synchronize this on master.
+So the procedure is as follows:
 
+- each member maintains a collection of `shuttingDownMembers`.
 
-So on master I now need to synchronize sending of NotifyMemberShutdownOps:
-- initially to all members
-- to new members as a part of PreJoinOp
+- when shutdown is invoked on a member, it sends
+NotifyShutdownToMasterOperation to the master
+  
+- the master sends it to all other members (except itself), and also to
+all future joining members.
+  
+- a member, after receiving the notify-to-master or notify-to-members
+operation, adds the member to the `shuttingDownMembers` collection
+  
+- after adding to the collection, the member calls
+`onParticipantGracefulShutdown()` for all jobs it coordinates. This
+method is present in both `MasterJobContext` and `LightMasterContext`.
+It starts the terminal snapshot for fault-tolerant jobs, terminates
+executions for jobs without prevent-shutdown flag and does nothing to
+jobs with the prevent-shutdown flag. It also ignores the jobs where the
+shutting-down member isn't a participant (those can be normal jobs
+started before that member joined, or light jobs started after the
+member entered the shutdown process).
 
-So I need to obtain a list of all members to which the PreJoinOp was
-already sent, before they finish the join.
+## Retrying of client operations
+  
+Tricky part of the shutdown is the SQL client can receive
+`MemberShuttingDownException` when submitting a query. We want to ensure
+availability of the sql engine while a member is being shut down.
+Before, the client picked the coordinator and the coordinator remained
+the same for the duration of the query. Now, we must pick a new
+coordinator if we (randomly) picked a shutting-down member. 
+If the query is cancelled before 
 
+### Issue with non-smart clients
 
+Non-smart clients have only 1 connection available. If that connection
+happens to be to a shutting-down member, SQL queries won't work, but the
+client will report "no data member found". See
+https://github.com/hazelcast/hazelcast/issues/19171.
 
-- M1 sends `NotifyMemberShutdownOperation` to master.
-- master adds to `JCS.membersShuttingDown` collection and to `preJoinedButNotAddedMembers`
-- if about to send pre-join op, include `JCS.membersShuttingDown` members
-- master forwards `NotifyMemberShutdownOperation` to union of `preJoinedButNotAddedMembers` and all other members
+### Jobs/SQL submitted locally
 
-`NotifyMemberShutdownOperation` behavior:
-- all members add to `JCS.membersShuttingDown`
-- only on master:
-  - send to all known members and to `preJoinedButNotAddedMembers`
-
-JCB.getPreJoinOperation
-- add to `preJoinedButNotAddedMembers`
-- return `NotifyMemberShutdownOperation` with all members in `JCS.membersShuttingDown`
-
-JCB.memberAdded
-- remove from `preJoinedButNotAddedMembers`
-
-
-As a result, other coordinators will know, which member is going down, and won't use it for new jobs.
-
-Clients, if they ask a shutting-down member, will get a special response and will retry with another member.
-
-----
-
-- send to all known members. On any failure, retry
-- at regular intervals (e.g. every second), check all known members. If we didn't send to some, send to that member too
-- done when
-  1. all local executions are done - doesn't work. There might be no executions and still a new member can join and start one before we shut down for real
-  2. all members reply successfully or have left - doesn't work. All members reply, but a new member might join in the meantime and execute a job which we must finish
-
-
-- pre-join op is sent, member is guaranteed to be added already
-- notify shutdown to master is received
-- we notify all current members (the list on master includes the pre-joined ones)
-- if the operation on a pre-joined member fails because it didn't join yet, it's retried
-
-
-
-SqlExecute from client should retry if it hits a member going down.
+If a light job or SQL query is submitted locally on a shutting-down
