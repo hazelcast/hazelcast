@@ -177,7 +177,7 @@ public class CreateDagVisitor {
         Vertex vertex = dag.newUniqueVertex("LimitOffset",
                 LimitOffsetP.limitOffset(localMemberAddress, limit, offset)
         );
-        connectInputPreserveCollation(rel, vertex);
+        connectInput(rel.getInput(), vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
         return vertex;
     }
 
