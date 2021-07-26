@@ -145,6 +145,12 @@ public class ChildFirstClassLoader extends URLClassLoader {
         closed = true;
     }
 
+    /**
+     * Returns if this classloader has been already closed.
+     * <p>
+     * Visible for testing because there is no easy way to find out if
+     * {@link URLClassLoader} has been closed.
+     */
     public boolean isClosed() {
         return closed;
     }
