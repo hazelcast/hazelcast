@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.internal.cluster.impl.operations.JoinOperation;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -46,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
  * This operation doesn't deal at all with normal jobs.
  */
 public class NotifyShutdownToMembersOperation extends AsyncOperation implements UrgentSystemOperation,
-        AllowedDuringPassiveState {
+        AllowedDuringPassiveState, JoinOperation {
 
     private Collection<UUID> shuttingDownMemberIds;
 

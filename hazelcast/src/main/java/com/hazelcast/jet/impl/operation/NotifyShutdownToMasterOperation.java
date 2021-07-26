@@ -62,8 +62,14 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
                 continue;
             }
             NotifyShutdownToMembersOperation op = new NotifyShutdownToMembersOperation(singletonList(getCallerUuid()));
-            futures.add(getNodeEngine().getOperationService().
-                    invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress()));
+            CompletableFuture<Object> future = getNodeEngine().getOperationService().
+                    invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress());
+            future = future.whenComplete((r, t) -> {
+                if (t != null) {
+                    getLogger().info("aaa returned from " + member.getAddress() + ", t=" + t, t);
+                }
+            });
+            futures.add(future);
         }
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
