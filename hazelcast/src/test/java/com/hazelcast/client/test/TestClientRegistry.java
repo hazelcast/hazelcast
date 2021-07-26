@@ -26,8 +26,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.Node;
-import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioNetworking;
 import com.hazelcast.internal.nio.ConnectionType;
@@ -118,7 +116,7 @@ class TestClientRegistry {
             try {
                 HazelcastInstance instance = nodeRegistry.getInstance(address);
                 if (instance == null) {
-                    throw new IOException("Can not connected to " + address + ": instance does not exist");
+                    throw new IOException("Can not connect to " + address + ": instance does not exist");
                 }
                 Address localAddress = new Address(host, ports.incrementAndGet());
                 LockPair lockPair = getLockPair(address);
@@ -180,7 +178,6 @@ class TestClientRegistry {
 
     private class MockedTcpClientConnection extends TcpClientConnection {
 
-        private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
         private final TwoWayBlockableExecutor executor;
@@ -194,7 +191,6 @@ class TestClientRegistry {
                                   int connectionId, NodeEngineImpl serverNodeEngine, Address address, Address localAddress,
                                   LockPair lockPair) {
             super(client, connectionId);
-            this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
@@ -223,10 +219,6 @@ class TestClientRegistry {
         @Override
         public boolean write(final OutboundFrame frame) {
             if (!isAlive()) {
-                return false;
-            }
-            final Node node = serverNodeEngine.getNode();
-            if (node.getState() == NodeState.SHUT_DOWN) {
                 return false;
             }
             executor.executeOutgoing(new Runnable() {

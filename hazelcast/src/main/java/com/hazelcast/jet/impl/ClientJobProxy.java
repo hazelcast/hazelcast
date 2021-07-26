@@ -17,6 +17,16 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
@@ -28,16 +38,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.JobSuspensionCause;
 import com.hazelcast.jet.core.metrics.JobMetrics;
-import com.hazelcast.jet.impl.client.protocol.codec.JetExportSnapshotCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobConfigCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobMetricsCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobStatusCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSubmissionTimeCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSuspensionCauseCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetJoinSubmittedJobCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetResumeJobCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetSubmitJobCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 

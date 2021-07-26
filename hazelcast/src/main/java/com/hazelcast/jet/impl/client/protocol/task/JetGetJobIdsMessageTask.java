@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -24,8 +25,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.security.permission.ActionConstants;
@@ -42,7 +41,7 @@ import java.util.function.Supplier;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
-public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<RequestParameters> {
+public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<JetGetJobIdsCodec.RequestParameters> {
 
     private transient Address masterAddress;
 
@@ -97,7 +96,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected JetGetJobIdsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return JetGetJobIdsCodec.decodeRequest(clientMessage);
     }
 
