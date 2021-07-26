@@ -130,7 +130,7 @@ public class SqlClientTest extends SqlTestSupport {
 
         // inst2 is now shutting down, but will not shut down until job is cancelled.
         // Try a couple of times - the client picks a random member, we need to ensure that
-        // at least once it pick the shutting-down one.
+        // at least once it picks the shutting-down one.
         try {
             for (int i = 0; i < 10; i++) {
                 logger.info("Executing query " + i + "...");
