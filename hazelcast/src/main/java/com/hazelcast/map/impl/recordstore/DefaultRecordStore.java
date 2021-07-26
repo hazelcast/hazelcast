@@ -196,8 +196,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                               boolean indexesMustBePopulated, long now) {
         Record newRecord = storage.get(dataKey);
         if (newRecord == null) {
-            newRecord = createRecord(replicatedRecord != null
-                    ? replicatedRecord.getValue() : null, now);
+            Object value = replicatedRecord != null ? replicatedRecord.getValue() : null;
+            newRecord = createRecord(dataKey, value, expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), now);
             storage.put(dataKey, newRecord);
         } else {
             storage.updateRecordValue(dataKey, newRecord, replicatedRecord.getValue());
@@ -925,7 +925,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long maxIdle, long expiryTime, long now, UUID transactionId,
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
-        Record record = createRecord(newValue, now);
+        Record record = createRecord(key, newValue, ttl, maxIdle, now);
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }

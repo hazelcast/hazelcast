@@ -62,7 +62,7 @@ public abstract class AbstractRecordFactoryTest<T> extends HazelcastTestSupport 
 
     @Test
     public void test_expected_record_per_config_is_created() {
-        Record record = factory.newRecord("value");
+        Record record = factory.newRecord(serializationService.toData("key"), "value");
         assertEquals(expectedRecordClass.getCanonicalName(), record.getClass().getCanonicalName());
     }
 

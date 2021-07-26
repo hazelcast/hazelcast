@@ -497,7 +497,13 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Object value, long now);
+    R createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now);
+
+    /**
+     * Creates a new record from a replicated record
+     * by making memory format related conversions.
+     */
+    R createRecord(R fromRecord, long nowInMillis);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 

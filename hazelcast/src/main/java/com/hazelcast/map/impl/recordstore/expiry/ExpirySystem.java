@@ -130,7 +130,7 @@ public class ExpirySystem {
     }
 
     // this method is overridden
-    protected ExpiryMetadata createExpiryMetadata(long ttlMillis, long maxIdleMillis,
+    protected ExpiryMetadata createExpiryMetadata(Data key, long ttlMillis, long maxIdleMillis,
                                                   long expirationTime, long lastUpdateTime) {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime, lastUpdateTime);
     }
@@ -191,8 +191,7 @@ public class ExpirySystem {
 
         // create expiryMetadata if not exists
         if (expiryMetadata == null) {
-            expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis,
-                    expirationTime, lastUpdateTime);
+            expiryMetadata = createExpiryMetadata(key, ttlMillis, maxIdleMillis, expirationTime, lastUpdateTime);
             Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
             expireTimeByKey.put(nativeKey, expiryMetadata);
             return;
@@ -426,5 +425,9 @@ public class ExpirySystem {
         }
 
         clearExpiredRecordsTask.tryToSendBackupExpiryOp(recordStore, true);
+    }
+
+    protected MapContainer getMapContainer() {
+        return mapContainer;
     }
 }

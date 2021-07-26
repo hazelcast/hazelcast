@@ -39,6 +39,7 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
@@ -138,8 +139,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long now) {
-        Record record = recordFactory.newRecord(value);
+    public Record createRecord(Data key, Object value, long ttlMillis, long maxIdle, long now) {
+        Record record = recordFactory.newRecord(key, value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
         if (record.getMatchingRecordReaderWriter()
@@ -152,6 +153,18 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
         updateStatsOnPut(false, now);
         return record;
+    }
+
+    @Override
+    public Record createRecord(Record fromRecord, long nowInMillis) {
+        Data key = fromRecord == null ? null : fromRecord.getKey();
+        Object value = fromRecord == null ? null : fromRecord.getValue();
+        Record newRecord = recordFactory.newRecord(key, value);
+        if (fromRecord != null) {
+            Records.copyMetadataFrom(fromRecord, newRecord);
+        }
+        updateStatsOnPut(false, nowInMillis);
+        return newRecord;
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
