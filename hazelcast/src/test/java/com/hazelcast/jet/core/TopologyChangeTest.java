@@ -272,8 +272,15 @@ public class TopologyChangeTest extends JetTestSupport {
             NoOutputSourceP.executionStarted.await();
 
             instances[0].getLifecycleService().terminate();
+            // Wait for job executions terminated in non-terminated instances
+            // before proceeding. Otherwise, job executions on these members
+            // may complete successfully without exception and without calling
+            // Processor#close.
+            for (int i = 1; i < 3; i++) {
+                JetServiceBackend jetServiceBackend = getJetServiceBackend(instances[i]);
+                jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
+            }
             NoOutputSourceP.proceedLatch.countDown();
-
             future.get();
             fail();
         } catch (ExecutionException expected) {
