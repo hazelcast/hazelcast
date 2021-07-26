@@ -39,7 +39,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -996,20 +995,6 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertEquals(RUNNING, job1ThroughClient2.getStatus());
         assertTrue(job1ThroughClient2.isLightJob());
         cancelAndJoin(job1ThroughClient2);
-    }
-
-    @Test
-    @Ignore // TODO [viliam] https://github.com/hazelcast/hazelcast/issues/19151
-    public void test_nonSmartClient() {
-        HazelcastInstance client = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instance()));
-
-        // try multiple times - we test the case when the client randomly picks a member it's not connected to.
-        // It should not pick such a member.
-        for (int i = 0; i < 10; i++) {
-            Job job = client.getJet().newLightJob(streamingDag());
-            assertTrueEventually(() -> assertJobExecuting(job, instance()));
-            cancelAndJoin(job);
-        }
     }
 
     private void joinAndExpectCancellation(Job job) {
