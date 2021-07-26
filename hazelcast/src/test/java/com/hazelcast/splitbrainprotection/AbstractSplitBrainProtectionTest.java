@@ -222,7 +222,7 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
             config.addPNCounterConfig(newPNCounterConfig(splitBrainProtectionOn, splitBrainProtectionName));
         }
 
-        cluster.createFiveMemberCluster(config);
+        cluster.createFiveMemberCluster(config, splitBrainProtectionNames);
         initData(types);
         cluster.splitFiveMembersThreeAndTwo(splitBrainProtectionNames);
     }
