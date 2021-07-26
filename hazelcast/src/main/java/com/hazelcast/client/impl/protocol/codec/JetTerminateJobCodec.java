@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,19 +35,19 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("1285d3287cc9f9cdf7b6b447d1b77124")
-public final class JetGetJobSubmissionTimeCodec {
-    //hex: 0xFE0700
-    public static final int REQUEST_MESSAGE_TYPE = 16647936;
-    //hex: 0xFE0701
-    public static final int RESPONSE_MESSAGE_TYPE = 16647937;
+@Generated("880ec69a6eacccd844b1f489eabad8f4")
+public final class JetTerminateJobCodec {
+    //hex: 0xFE0200
+    public static final int REQUEST_MESSAGE_TYPE = 16646656;
+    //hex: 0xFE0201
+    public static final int RESPONSE_MESSAGE_TYPE = 16646657;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_TERMINATE_MODE_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET = REQUEST_TERMINATE_MODE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetGetJobSubmissionTimeCodec() {
+    private JetTerminateJobCodec() {
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -56,6 +56,10 @@ public final class JetGetJobSubmissionTimeCodec {
         /**
          */
         public long jobId;
+
+        /**
+         */
+        public int terminateMode;
 
         /**
          */
@@ -68,24 +72,26 @@ public final class JetGetJobSubmissionTimeCodec {
         public boolean isLightJobCoordinatorExists;
     }
 
-    public static ClientMessage encodeRequest(long jobId, @Nullable java.util.UUID lightJobCoordinator) {
+    public static ClientMessage encodeRequest(long jobId, int terminateMode, @Nullable java.util.UUID lightJobCoordinator) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        clientMessage.setRetryable(true);
-        clientMessage.setOperationName("Jet.GetJobSubmissionTime");
+        clientMessage.setRetryable(false);
+        clientMessage.setOperationName("Jet.TerminateJob");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
+        encodeInt(initialFrame.content, REQUEST_TERMINATE_MODE_FIELD_OFFSET, terminateMode);
         encodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET, lightJobCoordinator);
         clientMessage.add(initialFrame);
         return clientMessage;
     }
 
-    public static JetGetJobSubmissionTimeCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    public static JetTerminateJobCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
+        request.terminateMode = decodeInt(initialFrame.content, REQUEST_TERMINATE_MODE_FIELD_OFFSET);
         if (initialFrame.content.length >= REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
             request.lightJobCoordinator = decodeUUID(initialFrame.content, REQUEST_LIGHT_JOB_COORDINATOR_FIELD_OFFSET);
             request.isLightJobCoordinatorExists = true;
@@ -95,22 +101,12 @@ public final class JetGetJobSubmissionTimeCodec {
         return request;
     }
 
-    public static ClientMessage encodeResponse(long response) {
+    public static ClientMessage encodeResponse() {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
-        encodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET, response);
         clientMessage.add(initialFrame);
 
         return clientMessage;
     }
-
-    /**
-     */
-    public static long decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        ClientMessage.Frame initialFrame = iterator.next();
-        return decodeLong(initialFrame.content, RESPONSE_RESPONSE_FIELD_OFFSET);
-    }
-
 }

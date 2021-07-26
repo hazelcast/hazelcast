@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,58 +35,37 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("3032b84e3b6729f82abe4acd7408961e")
-public final class JetExportSnapshotCodec {
-    //hex: 0xFE0A00
-    public static final int REQUEST_MESSAGE_TYPE = 16648704;
-    //hex: 0xFE0A01
-    public static final int RESPONSE_MESSAGE_TYPE = 16648705;
+@Generated("c20a86688d0f5d51ccb268ac9d893aa9")
+public final class JetResumeJobCodec {
+    //hex: 0xFE0900
+    public static final int REQUEST_MESSAGE_TYPE = 16648448;
+    //hex: 0xFE0901
+    public static final int RESPONSE_MESSAGE_TYPE = 16648449;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_CANCEL_JOB_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_CANCEL_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
 
-    private JetExportSnapshotCodec() {
+    private JetResumeJobCodec() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
-    public static class RequestParameters {
-
-        /**
-         */
-        public long jobId;
-
-        /**
-         */
-        public java.lang.String name;
-
-        /**
-         */
-        public boolean cancelJob;
-    }
-
-    public static ClientMessage encodeRequest(long jobId, java.lang.String name, boolean cancelJob) {
+    public static ClientMessage encodeRequest(long jobId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
-        clientMessage.setOperationName("Jet.ExportSnapshot");
+        clientMessage.setOperationName("Jet.ResumeJob");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET, jobId);
-        encodeBoolean(initialFrame.content, REQUEST_CANCEL_JOB_FIELD_OFFSET, cancelJob);
         clientMessage.add(initialFrame);
-        StringCodec.encode(clientMessage, name);
         return clientMessage;
     }
 
-    public static JetExportSnapshotCodec.RequestParameters decodeRequest(ClientMessage clientMessage) {
+    /**
+     */
+    public static long decodeRequest(ClientMessage clientMessage) {
         ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
-        RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
-        request.jobId = decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
-        request.cancelJob = decodeBoolean(initialFrame.content, REQUEST_CANCEL_JOB_FIELD_OFFSET);
-        request.name = StringCodec.decode(iterator);
-        return request;
+        return decodeLong(initialFrame.content, REQUEST_JOB_ID_FIELD_OFFSET);
     }
 
     public static ClientMessage encodeResponse() {
@@ -97,6 +76,4 @@ public final class JetExportSnapshotCodec {
 
         return clientMessage;
     }
-
-
 }

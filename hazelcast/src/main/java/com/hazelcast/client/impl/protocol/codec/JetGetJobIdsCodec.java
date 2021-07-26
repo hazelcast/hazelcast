@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.client.protocol.codec;
+package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("133a3dda23136a59afbfc76bdb321732")
+@Generated("eefec3deee3e9fc8aff1563d4b5258da")
 public final class JetGetJobIdsCodec {
     //hex: 0xFE0400
     public static final int REQUEST_MESSAGE_TYPE = 16647168;
@@ -117,6 +117,7 @@ public final class JetGetJobIdsCodec {
          */
         public boolean isResponseExists;
     }
+
     public static ClientMessage encodeResponse(com.hazelcast.internal.serialization.Data response) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -140,5 +141,4 @@ public final class JetGetJobIdsCodec {
         }
         return response;
     }
-
 }
