@@ -38,7 +38,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
@@ -70,7 +69,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<JetG
             }
             return singleton(masterMember);
         } else {
-            return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+            return nodeEngine.getClusterService().getMembers();
         }
     }
 

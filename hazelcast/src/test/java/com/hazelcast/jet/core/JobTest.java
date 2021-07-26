@@ -63,6 +63,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -979,6 +980,21 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(job::resume).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> job.cancelAndExportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> job.exportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    public void test_smartClientConnectedToNonCoordinator() {
+        HazelcastInstance clientConnectedToI1 = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instances()[1]));
+
+        Job job1 = instances()[0].getJet().newLightJob(streamingDag());
+        assertTrueEventually(() -> assertJobExecuting(job1, instances()[0]));
+
+        Job job1ThroughClient2 = clientConnectedToI1.getJet().getJob(job1.getId());
+        assertNotNull("job1ThroughClient2 not found", job1ThroughClient2);
+        job1ThroughClient2.getSubmissionTime();
+        assertEquals(RUNNING, job1ThroughClient2.getStatus());
+        assertTrue(job1ThroughClient2.isLightJob());
+        cancelAndJoin(job1ThroughClient2);
     }
 
     private void joinAndExpectCancellation(Job job) {
