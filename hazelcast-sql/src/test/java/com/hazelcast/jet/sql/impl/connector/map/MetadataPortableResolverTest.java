@@ -96,6 +96,7 @@ public class MetadataPortableResolverTest {
                         .addDateField("date")
                         .addTimestampField("timestamp")
                         .addTimestampWithTimezoneField("timestampTz")
+                        .addPortableField("object", new ClassDefinitionBuilder(4, 5, 6).build())
                         .build();
         ss.getPortableContext().registerClassDefinition(classDefinition);
         Map<String, String> options = ImmutableMap.of(
@@ -120,7 +121,8 @@ public class MetadataPortableResolverTest {
                 field("time", QueryDataType.TIME, prefix + ".time"),
                 field("date", QueryDataType.DATE, prefix + ".date"),
                 field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
-                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz"),
+                field("object", QueryDataType.OBJECT, prefix + ".object")
         );
     }
 
