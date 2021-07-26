@@ -7626,7 +7626,9 @@ public class MemberCompatibilityNullTest_2_3 {
         int fileClientMessageIndex = 859;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobIdsCodec.RequestParameters parameters = JetGetJobIdsCodec.decodeRequest(fromFile);
+        assertTrue(parameters.isOnlyNameExists);
         assertTrue(isEqual(null, parameters.onlyName));
+        assertTrue(parameters.isOnlyJobIdExists);
         assertTrue(isEqual(aLong, parameters.onlyJobId));
     }
 

@@ -6776,7 +6776,9 @@ public class ClientCompatibilityTest_2_3 {
     public void test_JetGetJobIdsCodec_decodeResponse() {
         int fileClientMessageIndex = 860;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, JetGetJobIdsCodec.decodeResponse(fromFile)));
+        JetGetJobIdsCodec.ResponseParameters parameters = JetGetJobIdsCodec.decodeResponse(fromFile);
+        assertTrue(parameters.isResponseExists);
+        assertTrue(isEqual(aData, parameters.response));
     }
 
     @Test

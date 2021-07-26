@@ -68,7 +68,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 JetGetJobIdsCodec.encodeRequest(onlyName, onlyJobId == null ? ALL_JOBS : onlyJobId),
                 resp -> {
-                    Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp);
+                    Data responseSerialized = JetGetJobIdsCodec.decodeResponse(resp).response;
                     return serializationService.toObject(responseSerialized);
                 });
     }
