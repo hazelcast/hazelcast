@@ -525,11 +525,13 @@ public class JobExecutionService implements DynamicMetricsProvider {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
             Map<String, ClassLoader> cls = processorCls.remove(executionContext.jobId());
-            for (ClassLoader cl : cls.values()) {
-                try {
-                    ((ChildFirstClassLoader) cl).close();
-                } catch (IOException e) {
-                    logger.fine("Exception when closing processor classloader", e);
+            if (cls != null) {
+                for (ClassLoader cl : cls.values()) {
+                    try {
+                        ((ChildFirstClassLoader) cl).close();
+                    } catch (IOException e) {
+                        logger.fine("Exception when closing processor classloader", e);
+                    }
                 }
             }
             executionCompleted.inc();
