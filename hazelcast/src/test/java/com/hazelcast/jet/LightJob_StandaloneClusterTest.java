@@ -22,6 +22,8 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CancellationException;
+
 import static com.hazelcast.jet.core.TestProcessors.batchDag;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,6 +63,6 @@ public class LightJob_StandaloneClusterTest extends JetTestSupport {
         coordinatorInst.shutdown();
 
         assertThatThrownBy(job::join)
-                .hasMessageContaining("com.hazelcast.spi.exception.TargetDisconnectedException: Mocked Remote socket closed");
+                .isInstanceOf(CancellationException.class);
     }
 }
