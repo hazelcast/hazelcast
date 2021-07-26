@@ -43,7 +43,7 @@ public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() throws Exception {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test
@@ -123,7 +123,7 @@ public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
         queryCacheConfig.getPredicateConfig().setImplementation(Predicates.alwaysTrue());
         queryCacheConfig.setPopulate(true);
 
-        Config config = new Config();
+        Config config = regularInstanceConfig();
         config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
 
         return config;

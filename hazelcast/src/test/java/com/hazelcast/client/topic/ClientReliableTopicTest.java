@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.impl.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.test.AssertTask;
@@ -64,8 +63,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = new Config();
-        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 
