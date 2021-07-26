@@ -239,7 +239,7 @@ public abstract class AbstractSplitBrainProtectionTest extends HazelcastTestSupp
             config.addSetConfig(newSetConfig(splitBrainProtectionOn, splitBrainProtectionName));
             config.addPNCounterConfig(newPNCounterConfig(splitBrainProtectionOn, splitBrainProtectionName));
         }
-        cluster.createFiveMemberCluster(config);
+        cluster.createFiveMemberCluster(config, splitBrainProtectionNames);
         for (SplitBrainProtectionOn splitBrainProtectionOn : types) {
             LOGGER.info("Queue size before data initialization for "
                     + splitBrainProtectionOn
