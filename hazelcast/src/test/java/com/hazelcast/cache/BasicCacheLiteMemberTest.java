@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -70,7 +69,7 @@ public class BasicCacheLiteMemberTest
     public void init() {
         factory = new TestHazelcastInstanceFactory(2);
         final HazelcastInstance instance = factory.newHazelcastInstance();
-        final HazelcastInstance lite = factory.newHazelcastInstance(new Config().setLiteMember(true));
+        final HazelcastInstance lite = factory.newHazelcastInstance(regularInstanceConfig().setLiteMember(true));
 
         instanceCachingProvider = createServerCachingProvider(instance);
         liteCachingProvider = createServerCachingProvider(lite);
@@ -82,7 +81,7 @@ public class BasicCacheLiteMemberTest
         instanceCachingProvider.getCacheManager().destroyCache(cacheName);
         instanceCachingProvider.close();
         liteCachingProvider.close();
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test

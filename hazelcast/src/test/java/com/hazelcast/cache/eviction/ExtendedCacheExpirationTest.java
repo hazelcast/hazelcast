@@ -89,7 +89,7 @@ public class ExtendedCacheExpirationTest extends CacheTestSupport {
 
     @Override
     protected void onTearDown() {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test

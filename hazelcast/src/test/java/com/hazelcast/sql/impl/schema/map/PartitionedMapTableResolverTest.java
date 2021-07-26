@@ -86,7 +86,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
         factory = createHazelcastInstanceFactory(2);
 
-        Config config = new Config()
+        Config config = regularInstanceConfig()
             .addMapConfig(new MapConfig(MAP_SERIALIZABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
             .addMapConfig(new MapConfig(MAP_SERIALIZABLE_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
             .addMapConfig(new MapConfig(MAP_PORTABLE_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
@@ -107,7 +107,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
     @After
     public void after() {
-        factory.shutdownAll();
+        factory.terminateAll();
     }
 
     @Test
