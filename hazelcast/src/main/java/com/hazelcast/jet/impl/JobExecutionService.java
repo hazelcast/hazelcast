@@ -61,6 +61,7 @@ import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -523,7 +524,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            processorCls.remove(executionContext.jobId());
+            Map<String, ClassLoader> cls = processorCls.remove(executionContext.jobId());
+            for (ClassLoader cl : cls.values()) {
+                try {
+                    ((ChildFirstClassLoader) cl).close();
+                } catch (IOException e) {
+                    logger.fine("Exception when closing processor classloader", e);
+                }
+            }
             executionCompleted.inc();
             // the class loader might not have been initialized if the job failed before that
             if (removedClassLoader != null) {

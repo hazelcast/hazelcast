@@ -33,6 +33,8 @@ import java.util.List;
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 
+    private boolean closed;
+
     public ChildFirstClassLoader(@Nonnull URL[] urls, @Nonnull ClassLoader parent) {
         super(urls, parent);
 
@@ -135,5 +137,15 @@ public class ChildFirstClassLoader extends URLClassLoader {
             res = super.getResource(name);
         }
         return res;
+    }
+
+    @Override
+    public void close() throws IOException {
+        super.close();
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 }
