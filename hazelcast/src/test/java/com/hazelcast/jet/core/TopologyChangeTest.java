@@ -276,7 +276,7 @@ public class TopologyChangeTest extends JetTestSupport {
             // before proceeding. Otherwise, job executions on these members
             // may complete successfully without exception and without calling
             // Processor#close.
-            for (int i = 1; i < 3; i++) {
+            for (int i = 1; i < instances.length; i++) {
                 JetServiceBackend jetServiceBackend = getJetServiceBackend(instances[i]);
                 jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
             }
