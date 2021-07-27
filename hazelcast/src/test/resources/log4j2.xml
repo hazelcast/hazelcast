@@ -36,7 +36,7 @@
         <Logger name="com.hazelcast.client.impl.spi.ClientListenerService" level="trace"/>
         <Logger name="com.hazelcast.cp.internal" level="trace"/>
         <Logger name="com.hazelcast.jet" level="debug"/>
-        <Logger name="com.hazelcast.sql.impl.client" level="trace"/>
+        <Logger name="com.hazelcast.sql.impl.client" level="debug"/>
         <!--<Logger name="com.hazelcast.client.impl.spi.ClientInvocationService" level="trace"/>-->
         <!--<Logger name="com.hazelcast.client.impl.connection.ClientConnectionManager" level="trace"/>-->
     </Loggers>

@@ -44,12 +44,15 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestProcessors.batchDag;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -216,5 +219,67 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         for (Future future : checkerFutures) {
             future.get();
         }
+    }
+
+    @Test
+    public void stressTest_clientSubmission() throws Throwable {
+        /*
+        This test submits jobs from a client while concurrently starting and removing members.
+        Jobs have the prevent-shutdown flag.
+         */
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        AtomicBoolean terminated = new AtomicBoolean();
+        AtomicInteger jobsExecuted = new AtomicInteger();
+        AtomicInteger membersAddedRemoved = new AtomicInteger();
+
+        List<Thread> threads = new ArrayList<>();
+
+        // add threads submitting jobs
+        for (int i = 0; i < 10; i++) {
+            threads.add(new Thread(() -> {
+                try {
+                    while (!terminated.get()) {
+                        instance1.getJet().newLightJob(batchDag(), new JobConfig().setPreventShutdown(true))
+                                .join();
+                        jobsExecuted.incrementAndGet();
+                    }
+                } catch (Throwable e) {
+                    logger.info("", e);
+                    error.compareAndSet(null, e);
+                }
+            }, "jobTread-" + i));
+        }
+
+        for (int i = 0; i < 2; i++) {
+            threads.add(new Thread(() -> {
+                try {
+                    while (!terminated.get()) {
+                        HazelcastInstance inst = createHazelcastInstance();
+                        inst.shutdown();
+                        membersAddedRemoved.incrementAndGet();
+                    }
+                } catch (Throwable e) {
+                    logger.info("", e);
+                    error.compareAndSet(null, e);
+                }
+            }, "memberAddRemoveThread-" + i));
+        }
+
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        sleepSeconds(10);
+        terminated.set(true);
+
+        for (Thread t : threads) {
+            t.join();
+        }
+
+        if (error.get() != null) {
+            throw error.get();
+        }
+        assertThat(jobsExecuted.get()).as("jobs executed").isGreaterThan(10);
+        assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
     }
 }
