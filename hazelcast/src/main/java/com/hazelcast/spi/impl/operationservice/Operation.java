@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.tcp.TcpServerConnection;
+import com.hazelcast.internal.server.tcp.TcpServerConnectionManager;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -36,10 +38,15 @@ import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -419,6 +426,30 @@ public abstract class Operation implements DataSerializable, Tenantable {
     public final Operation setService(Object service) {
         this.service = service;
         return this;
+    }
+
+    public final List<Address> getAllKnownAliases(Address caller) {
+        if (caller == null) {
+            return Collections.emptyList();
+        }
+
+        if (connection instanceof TcpServerConnection) {
+            TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
+            TcpServerConnectionManager tcpServerConnectionManager = tcpServerConnection.getConnectionManager();
+            Set<Address> aliases = tcpServerConnectionManager.getKnownAliases(tcpServerConnection);
+            if (aliases.size() == 1) {
+                assert aliases.iterator().next().equals(caller);
+                //optimization to avoid full blown array list creation
+                return Collections.singletonList(caller);
+            }
+
+            List<Address> addresses = new ArrayList<>();
+            addresses.add(caller);
+            addresses.addAll(aliases.stream().filter(a -> !a.equals(caller)).collect(Collectors.toSet()));
+            return addresses;
+        }
+
+        return Collections.singletonList(caller);
     }
 
     public final Address getCallerAddress() {

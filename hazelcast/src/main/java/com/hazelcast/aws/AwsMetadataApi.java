@@ -20,12 +20,13 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.util.Optional;
 
 import static com.hazelcast.aws.AwsRequestUtils.createRestClient;
-import static com.hazelcast.aws.RestClient.HTTP_NOT_FOUND;
-import static com.hazelcast.aws.RestClient.HTTP_OK;
+import static com.hazelcast.spi.utils.RestClient.HTTP_NOT_FOUND;
+import static com.hazelcast.spi.utils.RestClient.HTTP_OK;
 
 /**
  * Responsible for connecting to AWS EC2 and ECS Metadata API.

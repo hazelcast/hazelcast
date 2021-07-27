@@ -422,7 +422,7 @@ public class MapSampleMetadataResolverTest extends MapSchemaTestSupport {
             MapSampleMetadataResolver.resolve(ss, jetMapMetadataResolver, ss.toData(new HazelcastJsonValue("{ \"test\": 10 }")), true);
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
-            assertTrue(e.getMessage().contains("JSON objects are not supported"));
+            assertTrue(e.getMessage().contains("To query JSON objects, you have to define the data model using CREATE MAPPING."));
         }
     }
 

@@ -272,8 +272,15 @@ public class TopologyChangeTest extends JetTestSupport {
             NoOutputSourceP.executionStarted.await();
 
             instances[0].getLifecycleService().terminate();
+            // Wait for job executions terminated in non-terminated instances
+            // before proceeding. Otherwise, job executions on these members
+            // may complete successfully without exception and without calling
+            // Processor#close.
+            for (int i = 1; i < instances.length; i++) {
+                JetServiceBackend jetServiceBackend = getJetServiceBackend(instances[i]);
+                jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
+            }
             NoOutputSourceP.proceedLatch.countDown();
-
             future.get();
             fail();
         } catch (ExecutionException expected) {
@@ -513,7 +520,7 @@ public class TopologyChangeTest extends JetTestSupport {
         JobRecord jobRecord = new JobRecord(version, jobId, null, "", new JobConfig(), Collections.emptySet(), null);
         instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
-        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, null, memberInfos, null, false);
+        InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, version, memberInfos, null, false);
         Future<Object> future = Accessors.getOperationService(master)
                 .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, Accessors.getAddress(master))
                 .invoke();

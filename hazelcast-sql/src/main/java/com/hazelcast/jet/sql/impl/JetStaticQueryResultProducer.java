@@ -19,16 +19,23 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Collections.singletonList;
 
 public class JetStaticQueryResultProducer implements QueryResultProducer {
 
     private final Iterator<? extends Row> iterator;
 
     private boolean iteratorRequested;
+
+    public JetStaticQueryResultProducer(Object[] row) {
+        this(singletonList(new HeapRow(row)).iterator());
+    }
 
     public JetStaticQueryResultProducer(Iterator<? extends Row> iterator) {
         this.iterator = iterator;

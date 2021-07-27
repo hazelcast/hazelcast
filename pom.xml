@@ -34,7 +34,6 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
-        <module>hazelcast-all</module>
     </modules>
 
     <properties>
@@ -975,9 +974,6 @@
                     </plugin>
                 </plugins>
             </build>
-            <modules>
-                <module>hazelcast-all</module>
-            </modules>
         </profile>
 
         <!-- unfortunately it isn't possible to chain profiles, so we need to duplicate the javadoc plugin -->
@@ -986,9 +982,6 @@
             <properties>
                 <javadoc>true</javadoc>
             </properties>
-            <modules>
-                <module>hazelcast-all</module>
-            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -1010,13 +1003,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <id>zip</id>
-            <modules>
-                <module>hazelcast-all</module>
-            </modules>
         </profile>
 
         <profile>

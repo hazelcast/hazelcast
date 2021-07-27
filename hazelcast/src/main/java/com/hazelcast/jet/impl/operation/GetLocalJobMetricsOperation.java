@@ -44,7 +44,7 @@ public class GetLocalJobMetricsOperation extends AbstractJobOperation {
 
     @Override
     public void run() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         ExecutionContext executionContext = service.getJobExecutionService().getExecutionContext(executionId);
         if (executionContext == null) {
             throw new ExecutionNotFoundException(executionId);

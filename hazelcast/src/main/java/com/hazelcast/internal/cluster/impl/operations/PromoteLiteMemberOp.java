@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.cluster.impl.MembershipManager;
-import com.hazelcast.cluster.Address;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,11 +40,11 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
-        Address callerAddress = getCallerAddress();
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
         UUID callerUuid = getCallerUuid();
 
         MembershipManager membershipManager = service.getMembershipManager();
-        response = membershipManager.promoteToDataMember(callerAddress, callerUuid);
+        response = membershipManager.promoteToDataMember(callerAddresses, callerUuid);
     }
 
     @Override

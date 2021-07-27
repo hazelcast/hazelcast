@@ -16,17 +16,19 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.exception.CallerNotMemberException;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
@@ -57,7 +59,8 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
             throw new IllegalStateException("Rejecting mastership claim, since target UUID[" + targetUuid
                     + "] is not matching local member UUID[" + thisUuid + "].");
         }
-        membersView = service.handleMastershipClaim(getCallerAddress(), getCallerUuid());
+        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
+        membersView = service.handleMastershipClaim(callerAddresses, getCallerUuid());
     }
 
     @Override

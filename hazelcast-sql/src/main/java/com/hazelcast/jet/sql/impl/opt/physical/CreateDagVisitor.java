@@ -33,6 +33,8 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -138,6 +140,24 @@ public class CreateDagVisitor {
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+    }
+
+    public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+
+        return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
+                .indexScanReader(
+                        dag,
+                        localMemberAddress,
+                        table,
+                        rel.getIndex(),
+                        rel.filter(parameterMetadata),
+                        rel.projection(parameterMetadata),
+                        rel.getIndexFilter(),
+                        rel.getComparator(),
+                        rel.isDescending()
+                );
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -300,7 +320,7 @@ public class CreateDagVisitor {
                 offset = sortRel.offset(parameterMetadata);
             }
 
-            if (sortRel.collation.getFieldCollations().isEmpty()) {
+            if (!sortRel.requiresSort()) {
                 input = sortRel.getInput();
             }
         } else {
@@ -354,7 +374,7 @@ public class CreateDagVisitor {
      * vertices normally connected by an unicast or isolated edge, depending on
      * whether the {@code rel} has collation fields.
      *
-     * @param rel The rel to connect to input
+     * @param rel    The rel to connect to input
      * @param vertex The vertex for {@code rel}
      */
     private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {

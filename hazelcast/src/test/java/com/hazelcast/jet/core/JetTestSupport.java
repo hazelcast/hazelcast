@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
@@ -40,7 +41,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -96,6 +96,19 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected HazelcastInstance createHazelcastClient(ClientConfig config) {
         return instanceFactory.newHazelcastClient(config);
+    }
+
+    /**
+     * Returns config to configure a non-smart client that connects to the
+     * given instance only.
+     */
+    protected ClientConfig configForNonSmartClientConnectingTo(HazelcastInstance targetInstance) {
+        ClientConfig clientConfig = new ClientConfig();
+        Member coordinator = targetInstance.getCluster().getLocalMember();
+        clientConfig.getNetworkConfig()
+                .addAddress(coordinator.getAddress().getHost() + ':' + coordinator.getAddress().getPort())
+                .setSmartRouting(false);
+        return clientConfig;
     }
 
     protected HazelcastInstance createHazelcastInstance() {
@@ -163,6 +176,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public static Config smallInstanceWithResourceUploadConfig() {
         Config config = smallInstanceConfig();
         config.getJetConfig().setResourceUploadEnabled(true);
+        return config;
+    }
+
+    public static Config defaultInstanceConfigWithJetEnabled() {
+        Config config = new Config();
+        config.getJetConfig().setEnabled(true);
         return config;
     }
 

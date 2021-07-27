@@ -16,6 +16,7 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

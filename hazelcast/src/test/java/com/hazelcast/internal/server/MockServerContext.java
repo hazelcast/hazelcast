@@ -51,6 +51,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -191,8 +192,8 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public void onDisconnect(Address endpoint, Throwable cause) {
-        logger.warning("Disconnected address: " + endpoint, cause);
+    public void onDisconnect(List<Address> endpointAddresses, Throwable cause) {
+        logger.warning("Disconnected address: " + endpointAddresses.get(0), cause);
     }
 
     @Override

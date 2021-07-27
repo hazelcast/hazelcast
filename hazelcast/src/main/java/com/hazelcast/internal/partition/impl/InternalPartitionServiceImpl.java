@@ -1247,6 +1247,16 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     /**
+     * Checks a collection of addresses if any one of them is the last known
+     * master, just as {@link #isMemberMaster(Address)} would. The addresses
+     * are supposed to represent the known addresses of the same member, ie.
+     * aliases.
+     */
+    public boolean isMemberMaster(Collection<Address> addresses) {
+        return addresses.stream().anyMatch(this::isMemberMaster);
+    }
+
+    /**
      * Returns true only if the member is the last known master by
      * {@code InternalPartitionServiceImpl} and {@code ClusterServiceImpl}.
      * <p>

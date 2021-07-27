@@ -16,6 +16,8 @@
 
 package com.hazelcast.azure;
 
+import com.hazelcast.spi.utils.PortRange;
+
 /**
  * Azure Discovery Strategy configuration that corresponds to the properties passed in the Hazelcast configuration and
  * listed in {@link AzureProperties}.

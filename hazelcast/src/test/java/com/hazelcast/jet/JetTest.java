@@ -20,11 +20,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JetTest extends HazelcastTestSupport {
+public class JetTest extends JetTestSupport {
 
     @Test
     public void when_defaultMapConfig_then_notUsed() {
@@ -61,6 +62,32 @@ public class JetTest extends HazelcastTestSupport {
 
         // Then
         assertThrows(IllegalArgumentException.class, instance::getJet);
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getJetInstanceThrowsException() {
+        // When
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1))
+                .writeTo(Sinks.noop());
+
+        assertThrows(IllegalArgumentException.class, () -> client.getJet().newJob(p).join());
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getSummaryListThrowsException() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetClientInstanceImpl jet = (JetClientInstanceImpl) client.getJet();
+
+        assertThrows(IllegalArgumentException.class, jet::getJobSummaryList);
     }
 
     @Test

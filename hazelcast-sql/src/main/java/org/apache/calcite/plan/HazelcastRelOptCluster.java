@@ -38,6 +38,9 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
     /** Metadata about parameters. */
     private QueryParameterMetadata parameterMetadata;
 
+    /** Whether 'CREATE JOB' is used */
+    private boolean requiresJob;
+
     private HazelcastRelOptCluster(
             RelOptPlanner planner,
             RelDataTypeFactory typeFactory,
@@ -76,6 +79,14 @@ public final class HazelcastRelOptCluster extends RelOptCluster {
 
     public void setParameterMetadata(QueryParameterMetadata parameterMetadata) {
         this.parameterMetadata = parameterMetadata;
+    }
+
+    public boolean requiresJob() {
+        return requiresJob;
+    }
+
+    public void setRequiresJob(boolean requiresJob) {
+        this.requiresJob = requiresJob;
     }
 
     @Override

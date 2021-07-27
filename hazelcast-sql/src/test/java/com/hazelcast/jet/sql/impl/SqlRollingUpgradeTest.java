@@ -22,7 +22,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
@@ -62,7 +61,6 @@ public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/19035")
     public void when_clientSql_then_usesEitherVersion() {
         // Since the subsets of members with same version have the same size, the smart client must send the SQL command
         // to the member with newer version.

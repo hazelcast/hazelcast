@@ -180,7 +180,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
         }
         for (VertexDef vertex : vertices) {
-            ClassLoader processorClassLoader = jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+            ClassLoader processorClassLoader = isLightJob ? null :
+                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
             Collection<? extends Processor> processors = doWithClassLoader(
                     processorClassLoader,
                     () -> createProcessors(vertex, vertex.localParallelism())
@@ -329,7 +330,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                    ConcurrentHashMap<String, File> tempDirectories,
                                    InternalSerializationService jobSerializationService) {
         for (VertexDef vertex : vertices) {
-            ClassLoader processorClassLoader = jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+            ClassLoader processorClassLoader = isLightJob ? null :
+                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
             String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);

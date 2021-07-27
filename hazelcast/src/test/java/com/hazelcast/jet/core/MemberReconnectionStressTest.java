@@ -61,7 +61,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         typically at most 1 restart per job. We assert that the jobs
         eventually successfully complete.
          */
-        Config config = new Config();
+        Config config = defaultInstanceConfigWithJetEnabled();
         // The connection drop often causes regular IMap operations to fail - shorten the timeout so that
         // it recovers more quickly
         config.setProperty(ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "2000");

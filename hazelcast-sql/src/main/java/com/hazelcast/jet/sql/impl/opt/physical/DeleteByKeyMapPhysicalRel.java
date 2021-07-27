@@ -19,12 +19,13 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
@@ -36,37 +37,42 @@ import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
 
+import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
+
 public class DeleteByKeyMapPhysicalRel extends AbstractRelNode implements PhysicalRel {
 
-    private final PartitionedMapTable table;
+    private final RelOptTable table;
     private final RexNode keyCondition;
 
     DeleteByKeyMapPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
-            PartitionedMapTable table,
+            RelOptTable table,
             RexNode keyCondition
     ) {
         super(cluster, traitSet);
+
+        assert table.unwrap(HazelcastTable.class).getTarget() instanceof PartitionedMapTable;
 
         this.table = table;
         this.keyCondition = keyCondition;
     }
 
     public String mapName() {
-        return table.getMapName();
+        return table().getMapName();
     }
 
     public PlanObjectKey objectKey() {
-        return table.getObjectKey();
+        return table().getObjectKey();
     }
 
     public Expression<?> keyCondition(QueryParameterMetadata parameterMetadata) {
-        RexToExpressionVisitor visitor = new RexToExpressionVisitor(
-                PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
-                parameterMetadata
-        );
+        RexToExpressionVisitor visitor = new RexToExpressionVisitor(FAILING_FIELD_TYPE_PROVIDER, parameterMetadata);
         return keyCondition.accept(visitor);
+    }
+
+    private PartitionedMapTable table() {
+        return table.unwrap(HazelcastTable.class).getTarget();
     }
 
     @Override
@@ -87,7 +93,7 @@ public class DeleteByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return pw
-                .item("table", table.getSqlName())
+                .item("table", table.getQualifiedName())
                 .item("keyCondition", keyCondition);
     }
 

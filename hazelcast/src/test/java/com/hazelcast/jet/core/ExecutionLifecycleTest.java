@@ -780,7 +780,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertBetween("close count", MockPS.closeCount.get(), minCount, MEMBER_COUNT);
         assertBetween("received close errors", MockPS.receivedCloseErrors.size(), minCount, MEMBER_COUNT);
 
-        for (int i = 0; i < MEMBER_COUNT; i++) {
+        for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
             assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
                     MOCK_ERROR,
                     new CancellationException(),

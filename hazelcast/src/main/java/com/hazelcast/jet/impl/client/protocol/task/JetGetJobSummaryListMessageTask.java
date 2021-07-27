@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobSummary;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobSummaryListOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
@@ -52,6 +52,9 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Collection<Member> getTargets() {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+        }
         return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -73,7 +74,7 @@ public class AwsDiscoveryStrategyFactory
      * check if an IAM Role is attached to the EC2 instance, because without any IAM Role the Hazelcast AWS discovery won't work.
      *
      * @return true if running on EC2 Instance which has an IAM Role attached
-     * @see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html
+     * @see <a href="https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/identify_ec2_instances.html" />
      */
     @Override
     public boolean isAutoDetectionApplicable() {

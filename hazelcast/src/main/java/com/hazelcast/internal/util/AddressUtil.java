@@ -16,10 +16,13 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.cluster.Address;
+
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -359,6 +362,19 @@ public final class AddressUtil {
             return Collections.emptySet();
         }
         return selectedPorts;
+    }
+
+    public static Collection<Address> getAliases(InetSocketAddress inetSocketAddress) {
+        String hostString = inetSocketAddress.getHostString();
+        if (hostString != null) {
+            try {
+                Address address = new Address(hostString, inetSocketAddress.getPort());
+                return Arrays.asList(new Address(inetSocketAddress), address);
+            } catch (UnknownHostException e) {
+                //failed resolving host, ignoring it
+            }
+        }
+        return Collections.singleton(new Address(inetSocketAddress));
     }
 
     private static void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {

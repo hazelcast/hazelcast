@@ -83,10 +83,15 @@ public final class LogicalRules {
                 // DML rules
                 InsertLogicalRule.INSTANCE,
                 SinkLogicalRule.INSTANCE,
-                UpdateLogicalRule.INSTANCE,
+                UpdateLogicalRules.INSTANCE,
+                UpdateLogicalRules.NOOP_INSTANCE,
                 DeleteLogicalRule.INSTANCE,
 
+                SelectByKeyMapLogicalRules.INSTANCE,
+                SelectByKeyMapLogicalRules.PROJECT_INSTANCE,
+                InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
+                UpdateByKeyMapLogicalRule.INSTANCE,
                 DeleteByKeyMapLogicalRule.INSTANCE,
 
                 // Miscellaneous

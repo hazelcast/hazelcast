@@ -17,6 +17,8 @@
 package com.hazelcast.azure;
 
 import com.hazelcast.internal.json.Json;
+import com.hazelcast.spi.exception.NoCredentialsException;
+import com.hazelcast.spi.utils.RestClient;
 
 /**
  * Fetches OAuth 2.0 Access Token from Microsoft Azure API.
@@ -61,7 +63,7 @@ class AzureAuthenticator {
     }
 
     private String callService(String url, String body) {
-        return RestClient.create(url).withBody(body).get();
+        return RestClient.create(url).withBody(body).get().getBody();
     }
 
     private String extractAccessToken(String accessTokenJson) {
