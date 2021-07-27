@@ -25,7 +25,6 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
-import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
