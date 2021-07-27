@@ -26,7 +26,7 @@ processing guarantees.
 ## When to use Hazelcast
 
 Hazelcast provides a platform that can handle multiple types of workloads for
-building responsive applications.
+building real-time applications.
 
 * Stateful data processing over streaming data or data at rest
 * Querying streaming and batch data sources directly using SQL
@@ -35,7 +35,7 @@ building responsive applications.
 * Pushing updates to applications on events
 * Low-latency queue-based or pub-sub messaging  
 * Fast access to contextual and transactional data via caching patterns such as
-  read/write-through and write-behind)
+  read/write-through and write-behind
 * Distributed coordination for microservices
 * Replicating data from one region to another or between data centers in the
   same region
