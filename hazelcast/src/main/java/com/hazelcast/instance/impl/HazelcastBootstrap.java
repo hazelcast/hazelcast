@@ -268,8 +268,8 @@ public final class HazelcastBootstrap {
 
         // Disable Hazelcast from binding to all local network interfaces
         config.setProperty(ClusterProperty.SOCKET_BIND_ANY.getName(), "false");
-        // Add localhost to available interfaces to bind
-        config.getNetworkConfig().setInterfaces(new InterfacesConfig().setEnabled(true).addInterface("127.0.0.1"));
+        // Enable the interfaces approach for binding, and add localhost to available interfaces to bind
+        config.getNetworkConfig().getInterfaces().setEnabled(true).addInterface("127.0.0.1");
 
         // turn off all discovery to make sure node doesn't join any existing cluster
         config.setProperty("hazelcast.wait.seconds.before.join", "0");
