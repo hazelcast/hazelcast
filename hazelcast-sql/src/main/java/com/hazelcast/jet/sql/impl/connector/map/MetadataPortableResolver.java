@@ -20,13 +20,13 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -48,6 +48,8 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FAC
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
+import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
+import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 
 final class MetadataPortableResolver implements KvMetadataResolver {
 
@@ -78,6 +80,12 @@ final class MetadataPortableResolver implements KvMetadataResolver {
     }
 
     Stream<MappingField> resolveFields(boolean isKey, ClassDefinition clazz) {
+        if (clazz.getFieldCount() == 0) {
+            // we didn't find any non-object fields, map the whole value
+            String name = isKey ? KEY : VALUE;
+            return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
+        }
+
         return clazz.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
@@ -148,27 +156,26 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-        ClassDefinition classDef =
-                resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);
+        ClassDefinition clazz = resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);
 
-        return resolveMetadata(isKey, resolvedFields, fieldsByPath, classDef);
+        return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
     }
 
     KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
-            @Nonnull ClassDefinition classDef
+            @Nonnull ClassDefinition clazz
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
 
-        return resolveMetadata(isKey, resolvedFields, fieldsByPath, classDef);
+        return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
     }
 
     private static KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<QueryPath, MappingField> fieldsByPath,
-            @Nonnull ClassDefinition classDef
+            @Nonnull ClassDefinition clazz
     ) {
         List<TableField> fields = new ArrayList<>();
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {
@@ -183,7 +190,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                new PortableUpsertTargetDescriptor(classDef)
+                new PortableUpsertTargetDescriptor(clazz)
         );
     }
 
@@ -263,7 +270,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                     classDefinitionBuilder.addTimestampWithTimezoneField(name);
                     break;
                 default:
-                    throw QueryException.error("Type " + type + " is not supported for Portable.");
+                    throw QueryException.error("Cannot derive Portable type for '" + type + "'");
             }
         }
         return classDefinitionBuilder.build();

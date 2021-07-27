@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A 'marker' exception that indicates that an operation can be retried. E.g. if map.get is send to a partition that
+ * A 'marker' exception that indicates that an operation can be retried. E.g. if map.get is sent to a partition that
  * is currently migrating, a subclass of this exception is thrown, so the caller can deal with it (e.g. sending the
  * request to the new partition owner).
  */

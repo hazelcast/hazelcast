@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
@@ -32,7 +33,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -57,18 +60,22 @@ class KubernetesClient {
     private final String caCertificate;
     private final int retries;
     private final boolean useNodeNameAsExternalAddress;
+    private final String servicePerPodLabelName;
+    private final String servicePerPodLabelValue;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     boolean useNodeNameAsExternalAddress) {
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
         this.caCertificate = caCertificate;
         this.retries = retries;
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
+        this.servicePerPodLabelName = servicePerPodLabelName;
+        this.servicePerPodLabelValue = servicePerPodLabelValue;
     }
 
     /**
@@ -232,6 +239,20 @@ class KubernetesClient {
         return addresses;
     }
 
+    private static String extractTargetRefName(JsonValue endpointItemJson) {
+        return Optional.of(endpointItemJson)
+                .flatMap(e -> toJsonArray(e.asObject().get("subsets")).values().stream().findFirst())
+                .flatMap(e -> Stream.concat(
+                        toJsonArray(e.asObject().get("addresses")).values().stream(),
+                        toJsonArray(e.asObject().get("notReadyAddresses")).values().stream()
+                        ).findFirst()
+                )
+                .map(e -> e.asObject().get("targetRef"))
+                .map(e -> e.asObject().get("name"))
+                .map(KubernetesClient::toString)
+                .orElse(null);
+    }
+
     private static Integer extractPort(JsonValue subsetJson) {
         JsonArray ports = toJsonArray(subsetJson.asObject().get("ports"));
         if (ports.size() == 1) {
@@ -311,6 +332,10 @@ class KubernetesClient {
     private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints) {
         try {
             String endpointsUrl = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
+            if (!StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelName)
+                    && !StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelValue)) {
+                endpointsUrl += String.format("?labelSelector=%s=%s", servicePerPodLabelName, servicePerPodLabelValue);
+            }
             JsonObject endpointsJson = callGet(endpointsUrl);
 
             List<EndpointAddress> privateAddresses = privateAddresses(endpoints);
@@ -327,9 +352,9 @@ class KubernetesClient {
                 String serviceUrl = String.format("%s/api/v1/namespaces/%s/services/%s", kubernetesMaster, namespace, service);
                 JsonObject serviceJson = callGet(serviceUrl);
                 try {
-                    String loadBalancerIp = extractLoadBalancerIp(serviceJson);
+                    String loadBalancerAddress = extractLoadBalancerAddress(serviceJson);
                     Integer servicePort = extractServicePort(serviceJson);
-                    publicIps.put(privateAddress, loadBalancerIp);
+                    publicIps.put(privateAddress, loadBalancerAddress);
                     publicPorts.put(privateAddress, servicePort);
                 } catch (Exception e) {
                     // Load Balancer public IP cannot be found, try using NodePort.
@@ -376,11 +401,15 @@ class KubernetesClient {
         for (JsonValue item : toJsonArray(endpointsListJson.get("items"))) {
             String service = toString(item.asObject().get("metadata").asObject().get("name"));
             List<Endpoint> endpoints = parseEndpoints(item);
+
             // Service must point to exactly one endpoint address, otherwise the public IP would be ambiguous.
             if (endpoints.size() == 1) {
                 EndpointAddress address = endpoints.get(0).getPrivateAddress();
-                if (left.contains(address)) {
-                    result.put(address, service);
+                if (privateAddresses.contains(address)) {
+                    // If multiple services match the pod, then match service and pod names
+                    if (!result.containsKey(address) || service.equals(extractTargetRefName(item))) {
+                        result.put(address, service);
+                    }
                     left.remove(address);
                 }
             }
@@ -435,11 +464,16 @@ class KubernetesClient {
         return result;
     }
 
-    private static String extractLoadBalancerIp(JsonObject serviceResponse) {
-        return serviceResponse.get("status").asObject()
+    private static String extractLoadBalancerAddress(JsonObject serviceResponse) {
+        JsonObject ingress = serviceResponse
+                .get("status").asObject()
                 .get("loadBalancer").asObject()
-                .get("ingress").asArray().get(0).asObject()
-                .get("ip").asString();
+                .get("ingress").asArray().get(0).asObject();
+        JsonValue address = ingress.get("ip");
+        if (address == null) {
+            address = ingress.get("hostname");
+        }
+        return address.asString();
     }
 
     private static Integer extractServicePort(JsonObject serviceJson) {

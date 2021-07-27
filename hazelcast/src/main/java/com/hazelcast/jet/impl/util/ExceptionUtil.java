@@ -34,7 +34,6 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
@@ -78,7 +77,6 @@ public final class ExceptionUtil {
         return t instanceof TopologyChangedException
                 || t instanceof MemberLeftException
                 || t instanceof TargetNotMemberException
-                || t instanceof CallerNotMemberException
                 || t instanceof HazelcastInstanceNotActiveException
                 || t instanceof EnteringPassiveClusterStateException
                 || t instanceof OperationTimeoutException

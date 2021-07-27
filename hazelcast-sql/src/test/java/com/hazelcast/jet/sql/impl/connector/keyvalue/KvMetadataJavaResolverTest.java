@@ -183,9 +183,7 @@ public class KvMetadataJavaResolverTest {
                 null
         );
 
-        assertThat(fields).containsExactly(
-                field("renamed_field", QueryDataType.INT, prefix + ".field")
-        );
+        assertThat(fields).containsExactly(field("renamed_field", QueryDataType.INT, prefix + ".field"));
     }
 
     @Test
@@ -206,9 +204,7 @@ public class KvMetadataJavaResolverTest {
                 null
         );
 
-        assertThat(fields).containsExactly(
-                field("field2", QueryDataType.VARCHAR, prefix + ".field2")
-        );
+        assertThat(fields).containsExactly(field("field2", QueryDataType.VARCHAR, prefix + ".field2"));
     }
 
     @Test
