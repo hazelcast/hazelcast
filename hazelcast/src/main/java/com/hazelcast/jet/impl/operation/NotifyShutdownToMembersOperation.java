@@ -61,9 +61,13 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
     @Override
     protected CompletableFuture<Void> doRun() {
         List<CompletableFuture<?>> futures = new ArrayList<>();
+        // add shutting-down members
         for (UUID uuid : shuttingDownMemberIds) {
             futures.add(getJobCoordinationService().addShuttingDownMember(uuid));
         }
+        // handle SQL client cursors
+        futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
+                .completionFutureForCurrentCursors());
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 

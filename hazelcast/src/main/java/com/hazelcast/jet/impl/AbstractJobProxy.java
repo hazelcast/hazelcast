@@ -326,7 +326,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     private boolean isRestartable(Throwable t) {
         if (isLightJob()) {
-            return false;
+            return t instanceof MemberShuttingDownException;
         }
         // these exceptions are restartable only for non-light jobs. If the light job coordinator leaves
         // or disconnects, the job fails. For normal jobs, the new master will take over.

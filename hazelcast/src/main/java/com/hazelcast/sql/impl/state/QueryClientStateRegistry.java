@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
@@ -232,7 +233,7 @@ public class QueryClientStateRegistry {
                 victims.add(clientCursor);
             }
 
-            // Close cursors created for the "cancel" operation, that are too old. This is needed to avoid a race
+            // Close cursors created for the "cancel" operation, that are too old. This is needed to address the race
             // condition between the query cancellation on a client and the query completion on a server.
             if (clientCursor.isClosed() && clientCursor.getCreatedAtNano() + closedCursorCleanupTimeoutNs < currentTimeNano) {
                 victims.add(clientCursor);
@@ -253,7 +254,16 @@ public class QueryClientStateRegistry {
     }
 
     private void deleteClientCursor(QueryId queryId) {
-        clientCursors.remove(queryId);
+        QueryClientState cursor = clientCursors.remove(queryId);
+        if (cursor != null) {
+            cursor.getCompletionFuture().complete(null);
+        }
+    }
+
+    public CompletableFuture<Void> completionFutureForCurrentCursors() {
+        return CompletableFuture.allOf(clientCursors.values().stream()
+                .map(QueryClientState::getCompletionFuture)
+                .toArray(CompletableFuture[]::new));
     }
 
     public int getCursorCount() {

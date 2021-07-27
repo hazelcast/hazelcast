@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -35,7 +36,8 @@ public final class SqlClientUtils {
         // No-op.
     }
 
-    public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
+    public static SqlError exceptionToClientError(ILogger logger, Exception exception, UUID localMemberId) {
+        logger.fine("query failed", exception);
         HazelcastSqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
 
         return new SqlError(

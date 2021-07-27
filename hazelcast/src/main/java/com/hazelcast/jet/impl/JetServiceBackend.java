@@ -179,8 +179,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     /**
-     * Tells master to gracefully terminate jobs on this member. Blocks until
-     * all are down.
+     * Tells coordinators to gracefully terminate jobs and SQL queries on this
+     * member. Blocks until all are down.
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {

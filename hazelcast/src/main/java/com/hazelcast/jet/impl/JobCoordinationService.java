@@ -750,6 +750,7 @@ public class JobCoordinationService {
      */
     @Nonnull
     public CompletableFuture<Void> addShuttingDownMember(UUID uuid) {
+        // TODO [viliam] print list of jobs we're waiting for
         CompletableFuture<Void> future = new CompletableFuture<>();
         CompletableFuture<Void> oldFuture = membersShuttingDown.putIfAbsent(uuid, future);
         if (oldFuture != null) {

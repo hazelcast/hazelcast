@@ -48,6 +48,7 @@ import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.util.Objects.requireNonNull;
 
 public class SenderTasklet implements Tasklet {
 
@@ -95,7 +96,7 @@ public class SenderTasklet implements Tasklet {
         this.sourceOrdinalString = "" + sourceOrdinal;
         this.packetSizeLimit = packetSizeLimit;
         // we use Connection directly because we rely on packets not being transparently skipped or reordered
-        this.connection = connection;
+        this.connection = requireNonNull(connection);
         this.outputBuffer = serializationService.createObjectDataOutput(BUFFER_SIZE);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(nodeEngine,
                 executionId, destinationVertexId, inboundEdgeStream.ordinal())));

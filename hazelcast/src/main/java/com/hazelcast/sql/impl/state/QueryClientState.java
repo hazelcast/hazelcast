@@ -22,6 +22,9 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class QueryClientState {
 
@@ -30,6 +33,7 @@ public class QueryClientState {
     private final AbstractSqlResult sqlResult;
     private final boolean closed;
     private final long createdAt;
+    private final CompletableFuture<Void> completionFuture;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -38,6 +42,7 @@ public class QueryClientState {
         this.queryId = queryId;
         this.sqlResult = sqlResult;
         this.closed = closed;
+        this.completionFuture = closed ? completedFuture(null) : new CompletableFuture<>();
 
         createdAt = System.nanoTime();
     }
@@ -70,5 +75,9 @@ public class QueryClientState {
         }
 
         return iterator;
+    }
+
+    public CompletableFuture<Void> getCompletionFuture() {
+        return completionFuture;
     }
 }

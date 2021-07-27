@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -106,7 +105,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         // A lite member can also coordinate.
         Address address = container().getThisAddress();
         if (shuttingDownMembers.contains(address)) {
-            throw new JetException("Member is shutting down");
+            throw new MemberShuttingDownException();
         }
         return address;
     }

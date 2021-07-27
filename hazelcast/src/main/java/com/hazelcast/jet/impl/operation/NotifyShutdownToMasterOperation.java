@@ -54,9 +54,16 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
     @Override
     protected CompletableFuture<Void> doRun() {
         List<CompletableFuture<?>> futures = new ArrayList<>();
-        futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
-        UUID localMemberUuid = getNodeEngine().getLocalMember().getUuid();
 
+        // handle jobs locally
+        futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
+
+        // handle SQL client cursors locally
+        futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
+                .completionFutureForCurrentCursors());
+
+        // forward to the rest of the cluster
+        UUID localMemberUuid = getNodeEngine().getLocalMember().getUuid();
         for (Member member : getNodeEngine().getClusterService().getMembers()) {
             if (member.getUuid().equals(localMemberUuid)) {
                 continue;
@@ -72,6 +79,8 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
             futures.add(future);
         }
 
+        // done when all are done
+        // TODO [viliam] handle the timeout
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 

@@ -17,13 +17,17 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,30 +36,64 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class GracefulShutdownStressTest extends JetTestSupport {
+public class SqlGracefulShutdownTest extends JetTestSupport {
+
+    private HazelcastInstance[] instances;
+    private Config config;
+
+    @Before
+    public void setup() {
+        config = regularInstanceConfig();
+        config.getFlakeIdGeneratorConfig("gen-*")
+                .setPrefetchCount(1);
+        instances = createHazelcastInstances(config, 2);
+    }
 
     @Test
-    public void test_smartClient() throws Throwable {
-        test(true);
+    public void when_shuttingDown_then_clientRetriesWithTheGoodMember() throws Exception {
+        Job jobPreventingShutdown = instances[0].getJet().newLightJob(streamingDag(),
+                new JobConfig().setPreventShutdown(true));
+        assertTrueEventually(() -> assertJobExecuting(jobPreventingShutdown, instances[1]));
+
+        Future<?> shutdownFuture = spawn(() -> instances[1].shutdown());
+
+        // the client chooses a random member. So let's try multiple times - if it randomly chooses the
+        // shutting-down member, it should still work by retrying with the other member.
+        for (int i = 0; i < 10; i++) {
+            HazelcastInstance client = createHazelcastClient();
+            for (SqlRow r : client.getSql().execute("select * from table(generate_series(1, 1))")) {
+                System.out.println(r);
+            }
+        }
+
+        jobPreventingShutdown.cancel();
+        shutdownFuture.get();
+    }
+
+    @Test
+    public void stressTest_smartClient() throws Throwable {
+        stressTest(true);
     }
 
     @Test
     @Ignore // https://github.com/hazelcast/hazelcast/issues/19171
-    public void test_nonSmartClient() throws Throwable {
-        test(false);
+    public void stressTest_nonSmartClient() throws Throwable {
+        stressTest(false);
     }
 
-    private void test(boolean useSmartRouting) throws Throwable {
+    private void stressTest(boolean useSmartRouting) throws Throwable {
         /*
         This test will start wih 1 member. Then it will continually add/remove members, while
         in parallel it will submit queries. The queries must not fail. All queries are batch queries
@@ -92,9 +130,10 @@ public class GracefulShutdownStressTest extends JetTestSupport {
                         queriesExecuted.incrementAndGet();
                     }
                 } catch (Throwable e) {
+                    logger.info("", e);
                     error.compareAndSet(null, e);
                 }
-            }));
+            }, "queryTread-" + i));
         }
 
         // add a thread starting/stopping members
@@ -107,9 +146,10 @@ public class GracefulShutdownStressTest extends JetTestSupport {
                         membersAddedRemoved.incrementAndGet();
                     }
                 } catch (Throwable e) {
+                    logger.info("", e);
                     error.compareAndSet(null, e);
                 }
-            }));
+            }, "memberAddRemoveThread-" + i));
         }
 
 
@@ -130,4 +170,59 @@ public class GracefulShutdownStressTest extends JetTestSupport {
         assertThat(queriesExecuted.get()).as("queries executed").isGreaterThan(10);
         assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
     }
+
+    // TODO [viliam] remove
+//    @Test
+//    public void test_flakeId() throws Throwable {
+//        HazelcastInstance client = createHazelcastClient();
+//
+//        AtomicReference<Throwable> error = new AtomicReference<>();
+//        AtomicBoolean terminated = new AtomicBoolean();
+//
+//        List<Thread> threads = new ArrayList<>();
+//
+//        // add threads executing queries
+//        for (int i = 0; i < 10; i++) {
+//            FlakeIdGenerator generator = client.getFlakeIdGenerator("gen-" + i);
+//            threads.add(new Thread(() -> {
+//                try {
+//                    while (!terminated.get()) {
+//                        generator.newId();
+//                    }
+//                } catch (Throwable e) {
+//                    logger.info("", e);
+//                    error.compareAndSet(null, e);
+//                }
+//            }, "queryTread-" + i));
+//        }
+//
+//        for (int i = 0; i < 2; i++) {
+//            threads.add(new Thread(() -> {
+//                try {
+//                    while (!terminated.get()) {
+//                        HazelcastInstance inst = createHazelcastInstance(config);
+//                        inst.shutdown();
+//                    }
+//                } catch (Throwable e) {
+//                    logger.info("", e);
+//                    error.compareAndSet(null, e);
+//                }
+//            }, "memberAddRemoveThread-" + i));
+//        }
+//
+//        for (Thread t : threads) {
+//            t.start();
+//        }
+//
+//        sleepSeconds(10);
+//        terminated.set(true);
+//
+//        for (Thread t : threads) {
+//            t.join();
+//        }
+//
+//        if (error.get() != null) {
+//            throw error.get();
+//        }
+//    }
 }
