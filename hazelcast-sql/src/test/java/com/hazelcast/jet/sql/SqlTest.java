@@ -36,6 +36,6 @@ public class SqlTest extends JetTestSupport {
 
         assertThatThrownBy(() -> client.getSql().execute("SELECT * FROM TABLE(GENERATE_SERIES(1, 1))").iterator().next())
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Jet is not enabled.");
+                .hasMessageContaining("Jet is disabled, see JetConfig#setEnabled.");
     }
 }
