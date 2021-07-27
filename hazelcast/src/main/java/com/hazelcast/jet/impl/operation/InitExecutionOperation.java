@@ -19,9 +19,9 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
@@ -104,7 +104,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isTopologyException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override
