@@ -61,7 +61,7 @@ building responsive applications.
 * Data replication between data centers and geographic regions using WAN 
 * Microsecond performance for key-value point lookups and pub-sub
 * Unique data processing architecture results in 99.99% latency of under 10ms
-  for streaming queries with millions of events per second (link to blog post).
+  for streaming queries with millions of events per second.
 * Client libraries in [Java](https://github.com/hazelcast/hazelcast),
  [Python](https://github.com/hazelcast/hazelcast-python-client), [Node.js](https://github.com/hazelcast/hazelcast-nodejs-client), [.NET](https://github.com/hazelcast/hazelcast-csharp-client), [C++](https://github.com/hazelcast/hazelcast-cpp-client) and [Go](https://github.com/hazelcast/hazelcast-go-client)
 
@@ -202,9 +202,9 @@ Jet supports advanced streaming features such as [exactly-once processing](https
 
 #### Data Processing using SQL
 
-Jet also powers the [SQL engine](link to SQL) in Hazelcast which can execute
-both streaming and batch queries. Internally, all SQL queries are converted to
-Jet jobs.
+Jet also powers the [SQL engine](https://docs.hazelcast.com/hazelcast/latest/query/sql-overview.html)
+in Hazelcast which can execute both streaming and batch queries. Internally, all SQL queries
+are converted to Jet jobs.
 
 ```sql
 CREATE MAPPING trades (
