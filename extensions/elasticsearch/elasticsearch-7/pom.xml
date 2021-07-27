@@ -34,6 +34,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <properties>
+        <main.basedir>${project.basedir}/../../..</main.basedir>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

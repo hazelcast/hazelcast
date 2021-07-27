@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.sql.impl.calcite.opt.logical.RootLogicalRel;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import junitparams.JUnitParamsRunner;
 import org.junit.BeforeClass;
@@ -39,13 +38,24 @@ public class LogicalSinkTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void test_requiresJob() {
+        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
+        assertPlan(
+                optimizeLogical("SINK INTO m VALUES (1, '1'), (2, '2')", true, table),
+                plan(
+                        planRow(0, SinkLogicalRel.class),
+                        planRow(1, ValuesLogicalRel.class)
+                )
+        );
+    }
+
+    @Test
     public void test_sinkValues() {
         HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 0);
         assertPlan(
                 optimizeLogical("SINK INTO m VALUES (1, '1'), (2, '2')", table),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SinkMapLogicalRel.class)
+                        planRow(0, SinkMapLogicalRel.class)
                 )
         );
     }
@@ -57,9 +67,8 @@ public class LogicalSinkTest extends OptimizerTestSupport {
         assertPlan(
                 optimizeLogical("SINK INTO m1 SELECT * FROM m2", target, source),
                 plan(
-                        planRow(0, RootLogicalRel.class),
-                        planRow(1, SinkLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
+                        planRow(0, SinkLogicalRel.class),
+                        planRow(1, FullScanLogicalRel.class)
                 )
         );
     }

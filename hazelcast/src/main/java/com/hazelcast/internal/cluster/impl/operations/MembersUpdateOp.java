@@ -16,19 +16,19 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.internal.util.UUIDSerializationUtil;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.util.Clock;
 
 import java.io.IOException;
 import java.util.List;
@@ -67,9 +67,9 @@ public class MembersUpdateOp extends AbstractClusterOperation {
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        Address callerAddress = getConnectionEndpointOrThisAddress();
+        List<Address> callerAddresses = getAllKnownAliases(getConnectionEndpointOrThisAddress());
         UUID callerUuid = getCallerUuid();
-        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid, targetUuid)) {
+        if (clusterService.updateMembers(getMembersView(), callerAddresses, callerUuid, targetUuid)) {
             processPartitionState();
         }
     }

@@ -116,6 +116,11 @@ public final class RootResultConsumerSink implements Processor {
     }
 
     @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
+    @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         return true;
     }

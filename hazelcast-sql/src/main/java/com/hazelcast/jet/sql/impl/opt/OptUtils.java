@@ -33,15 +33,18 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -156,25 +159,29 @@ public final class OptUtils {
         return new HazelcastRelOptTable(relTable);
     }
 
-    public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode node) {
-        if (node instanceof RelSubset) {
-            RelSubset subset = (RelSubset) node;
+    /**
+     * Get possible physical rels from the given subset.
+     * Every returned input is guaranteed to have a unique trait set.
+     *
+     * @param input Subset.
+     * @return Physical rels.
+     */
+    public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
+        Set<RelTraitSet> traitSets = new HashSet<>();
 
-            Set<RelTraitSet> traitSets = new HashSet<>();
-            Set<RelNode> result = Collections.newSetFromMap(new IdentityHashMap<>());
-            for (RelNode rel : subset.getRelList()) {
-                if (!isPhysical(rel)) {
-                    continue;
-                }
+        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
 
-                if (traitSets.add(rel.getTraitSet())) {
-                    result.add(RelOptRule.convert(node, rel.getTraitSet()));
-                }
+        for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
+            if (!isPhysical(rel)) {
+                continue;
             }
-            return result;
-        } else {
-            return Collections.emptyList();
+
+            if (traitSets.add(rel.getTraitSet())) {
+                res.add(rel);
+            }
         }
+
+        return res;
     }
 
     private static boolean isPhysical(RelNode rel) {
@@ -257,6 +264,10 @@ public final class OptUtils {
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
     }
 
+    public static boolean requiresJob(RelNode rel) {
+        return ((HazelcastRelOptCluster) rel.getCluster()).requiresJob();
+    }
+
     public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {
         if (rel.getTable() == null) {
             return false;
@@ -266,8 +277,16 @@ public final class OptUtils {
         return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
     }
 
+    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
+        assert table != null;
+        return table;
+    }
+
     @SuppressWarnings("checkstyle:AvoidNestedBlocks")
-    public static RexNode extractKeyConstantExpression(HazelcastTable table, RexBuilder rexBuilder) {
+    public static RexNode extractKeyConstantExpression(RelOptTable relTable, RexBuilder rexBuilder) {
+        HazelcastTable table = relTable.unwrap(HazelcastTable.class);
+
         RexNode filter = table.getFilter();
         if (filter == null) {
             return null;

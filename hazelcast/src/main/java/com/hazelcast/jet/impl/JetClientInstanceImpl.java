@@ -20,15 +20,15 @@ import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.client.protocol.codec.JetExistsDistributedObjectCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -84,7 +84,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     @Nonnull
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
-                response -> JetGetJobSummaryListCodec.decodeResponse(response));
+                JetGetJobSummaryListCodec::decodeResponse);
     }
 
     @Nonnull
@@ -96,14 +96,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     public boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName) {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 JetExistsDistributedObjectCodec.encodeRequest(serviceName, objectName),
-                response -> JetExistsDistributedObjectCodec.decodeResponse(response)
+                JetExistsDistributedObjectCodec::decodeResponse
         );
     }
 
     public List<DistributedObjectInfo> getDistributedObjects() {
         return invokeRequestOnAnyMemberAndDecodeResponse(
                 ClientGetDistributedObjectsCodec.encodeRequest(),
-                response -> ClientGetDistributedObjectsCodec.decodeResponse(response)
+                ClientGetDistributedObjectsCodec::decodeResponse
         );
     }
 

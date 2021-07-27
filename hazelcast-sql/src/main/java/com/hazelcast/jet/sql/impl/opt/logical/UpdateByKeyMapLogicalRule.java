@@ -17,11 +17,10 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.logical.LogicalTableModify;
 import org.apache.calcite.rel.logical.LogicalTableScan;
@@ -43,7 +42,7 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
     private UpdateByKeyMapLogicalRule() {
         super(
                 operandJ(
-                        LogicalTableModify.class, null, TableModify::isUpdate,
+                        LogicalTableModify.class, null, modify -> !OptUtils.requiresJob(modify) && modify.isUpdate(),
                         operand(
                                 LogicalProject.class,
                                 operandJ(
@@ -63,13 +62,13 @@ final class UpdateByKeyMapLogicalRule extends RelOptRule {
         LogicalTableModify update = call.rel(0);
         LogicalTableScan scan = call.rel(2);
 
-        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+        RelOptTable table = scan.getTable();
         RexNode keyCondition = OptUtils.extractKeyConstantExpression(table, update.getCluster().getRexBuilder());
         if (keyCondition != null) {
             UpdateByKeyMapLogicalRel rel = new UpdateByKeyMapLogicalRel(
                     update.getCluster(),
                     OptUtils.toLogicalConvention(update.getTraitSet()),
-                    table.getTarget(),
+                    table,
                     keyCondition,
                     update.getUpdateColumnList(),
                     update.getSourceExpressionList()

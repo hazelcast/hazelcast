@@ -16,6 +16,8 @@
 
 package com.hazelcast.gcp;
 
+import com.hazelcast.spi.utils.PortRange;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,8 +73,8 @@ final class GcpConfig {
 
     static final class Builder {
         private String privateKeyPath;
-        private List<String> projects = new ArrayList<String>();
-        private List<String> zones = new ArrayList<String>();
+        private List<String> projects = new ArrayList<>();
+        private List<String> zones = new ArrayList<>();
         private Label label;
         private PortRange hzPort;
         private String region;

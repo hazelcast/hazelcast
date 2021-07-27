@@ -28,6 +28,8 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import static com.hazelcast.internal.util.StringUtil.VERSION_PATTERN;
+import static com.hazelcast.internal.util.StringUtil.isAllNullOrEmptyAfterTrim;
+import static com.hazelcast.internal.util.StringUtil.isAnyNullOrEmptyAfterTrim;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -208,6 +210,28 @@ public class StringUtilTest extends HazelcastTestSupport {
                 "param: value, param: $OTHER_PREFIX{param}",
                 "param: $PREFIX{param}, param: $OTHER_PREFIX{param}",
                 "PREFIX", "param", "value");
+    }
+
+    @Test
+    public void isNotBlank() {
+        assertTrue(!StringUtil.isNullOrEmptyAfterTrim("string"));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim("  "));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(""));
+        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(null));
+    }
+
+    @Test
+    public void isAllFilledTest() {
+        assertTrue(isAllNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
+        assertFalse(isAllNullOrEmptyAfterTrim("test-string-1", ""));
+        assertFalse(isAllNullOrEmptyAfterTrim("", "", null));
+    }
+
+    @Test
+    public void isAnyFilledTest() {
+        assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", "test-string-2"));
+        assertTrue(isAnyNullOrEmptyAfterTrim("test-string-1", ""));
+        assertFalse(isAnyNullOrEmptyAfterTrim("", "", null));
     }
 
     private void assertResolvePlaceholder(String expected,

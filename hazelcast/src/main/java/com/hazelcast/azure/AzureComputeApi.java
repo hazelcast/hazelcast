@@ -20,6 +20,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.spi.utils.RestClient;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.azure.Utils.isEmpty;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Responsible for connecting to the Azure Cloud Compute API.
@@ -58,18 +59,20 @@ class AzureComputeApi {
         String privateIpResponse = RestClient
                 .create(urlForPrivateIpList(subscriptionId, resourceGroup, scaleSet))
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         Map<String, AzureNetworkInterface> networkInterfaces = parsePrivateIpResponse(privateIpResponse);
 
         String publicIpResponse = RestClient
                 .create(urlForPublicIpList(subscriptionId, resourceGroup, scaleSet))
                 .withHeader("Authorization", String.format("Bearer %s", accessToken))
-                .get();
+                .get()
+                .getBody();
 
         Map<String, String> publicIpMap = parsePublicIpResponse(publicIpResponse);
 
-        Set<AzureAddress> addresses = new LinkedHashSet<AzureAddress>(networkInterfaces.size());
+        Set<AzureAddress> addresses = new LinkedHashSet<>(networkInterfaces.size());
 
         for (AzureNetworkInterface anInterface : networkInterfaces.values()) {
             if (tag == null || anInterface.hasTag(tag)) {
@@ -81,7 +84,7 @@ class AzureComputeApi {
     }
 
     private String urlForPrivateIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isEmpty(scaleSet)) {
+        if (isNullOrEmptyAfterTrim(scaleSet)) {
             return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                     + "/networkInterfaces?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         } else {
@@ -92,7 +95,7 @@ class AzureComputeApi {
     }
 
     private Map<String, AzureNetworkInterface> parsePrivateIpResponse(String response) {
-        Map<String, AzureNetworkInterface> interfaces = new HashMap<String, AzureNetworkInterface>();
+        Map<String, AzureNetworkInterface> interfaces = new HashMap<>();
 
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             Set<Tag> tagList = new HashSet<>();
@@ -107,7 +110,7 @@ class AzureComputeApi {
                     JsonObject ipProps = ipConfiguration.asObject().get("properties").asObject();
                     String privateIp = ipProps.getString("privateIPAddress", null);
                     String publicIpId = toJsonObject(ipProps.get("publicIPAddress")).getString("id", null);
-                    if (!isEmpty(privateIp)) {
+                    if (!isNullOrEmptyAfterTrim(privateIp)) {
                         interfaces.put(privateIp, new AzureNetworkInterface(privateIp, publicIpId, tagList));
                     }
                 }
@@ -117,7 +120,7 @@ class AzureComputeApi {
     }
 
     private String urlForPublicIpList(String subscriptionId, String resourceGroup, String scaleSet) {
-        if (isEmpty(scaleSet)) {
+        if (isNullOrEmptyAfterTrim(scaleSet)) {
             return String.format("%s/subscriptions/%s/resourceGroups/%s/providers/Microsoft.Network"
                     + "/publicIPAddresses?api-version=%s", endpoint, subscriptionId, resourceGroup, API_VERSION);
         } else {
@@ -128,12 +131,12 @@ class AzureComputeApi {
     }
 
     private Map<String, String> parsePublicIpResponse(String response) {
-        Map<String, String> publicIps = new HashMap<String, String>();
+        Map<String, String> publicIps = new HashMap<>();
 
         for (JsonValue item : toJsonArray(Json.parse(response).asObject().get("value"))) {
             String id = item.asObject().getString("id", null);
             String ip = toJsonObject(item.asObject().get("properties")).getString("ipAddress", null);
-            if (!isEmpty(ip)) {
+            if (!isNullOrEmptyAfterTrim(ip)) {
                 publicIps.put(id, ip);
             }
         }

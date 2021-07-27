@@ -40,7 +40,7 @@ public interface IndexOperationStats {
         }
 
         @Override
-        public void onEntryAdded(Object replacedValue, Object addedValue) {
+        public void onEntryAdded(Object addedValue) {
             // do nothing
         }
 
@@ -64,19 +64,14 @@ public interface IndexOperationStats {
     /**
      * Invoked by the associated index on every entry addition.
      *
-     * @param replacedValue the old replaced value or {@code null} if no value
-     *                      was associated with an index key for which an
-     *                      operation was performed.
-     * @param addedValue    the new added value.
+     * @param addedValue the new added value.
      */
-    void onEntryAdded(Object replacedValue, Object addedValue);
+    void onEntryAdded(Object addedValue);
 
     /**
      * Invoked by the associated index on every entry removal.
      *
-     * @param removedValue the old removed value or {@code null} if no value
-     *                     was associated with an index key for which an
-     *                     operation was performed.
+     * @param removedValue the old removed value.
      */
     void onEntryRemoved(Object removedValue);
 
