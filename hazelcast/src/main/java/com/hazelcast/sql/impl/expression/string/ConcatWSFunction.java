@@ -45,13 +45,14 @@ public class ConcatWSFunction extends VariExpression<String> implements Identifi
     public String eval(Row row, ExpressionEvalContext context) {
 
         String separator = asVarchar(operands[0], row, context);
-        //TODO: what to do in this case
+
         if (separator == null) {
-            separator = " ";
+            return null;
         }
 
         return Arrays.stream(operands)
                 .skip(1)
+                .filter(expression -> expression.eval(row, context) != null)
                 .map(expression -> asVarchar(expression, row, context))
                 .collect(Collectors.joining(separator));
     }
