@@ -24,14 +24,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertEquals;
+import java.util.stream.Stream;
 
 public class SqlOrderByWithProjectionTest extends SqlTestSupport {
     @BeforeClass
@@ -46,49 +41,33 @@ public class SqlOrderByWithProjectionTest extends SqlTestSupport {
 
         for (long i = 0; i < 10; i++) {
             t0.put(i, (i + 1));
-            t1.put(i, "test-" + i);
+            t1.put(i, "test-" + (i + 1));
         }
     }
 
     @Test
     public void when_orderByWithLimitUsedOnJoinedTable_limitWorks() {
-        final List<Map<String, Object>> results = execute("SELECT ABS(t0.this) AS c1, t1.this AS c2 "
+        final String sql = "SELECT ABS(t0.this) AS c1, t1.this AS c2 "
                 + "FROM t0 JOIN t1 ON t0.__key = t1.__key "
                 + "ORDER BY t0.this DESC "
-                + "LIMIT 5");
+                + "LIMIT 5";
 
-        final List<Object> c1s = results.stream().map(m -> m.get("c1")).collect(Collectors.toList());
-
-        assertEquals(5, results.size());
-        assertEquals(Arrays.asList(10L, 9L, 8L, 7L, 6L), c1s);
+        assertRowsOrdered(sql, rows(10L, 9L, 8L, 7L, 6L));
     }
 
     @Test
     public void when_orderByWithLimitAndOffsetUsedOnJoinedTable_limitAndOffsetWork() {
-        final List<Map<String, Object>> results = execute("SELECT ABS(t0.this) AS c1, t1.this AS c2 "
+        final String sql = "SELECT ABS(t0.this) AS c1, t1.this AS c2 "
                 + "FROM t0 JOIN t1 ON t0.__key = t1.__key "
                 + "ORDER BY t0.this DESC "
-                + "LIMIT 5 OFFSET 2");
+                + "LIMIT 5 OFFSET 2";
 
-        final List<Object> c1s = results.stream().map(m -> m.get("c1")).collect(Collectors.toList());
-
-        assertEquals(5, results.size());
-        assertEquals(Arrays.asList(8L, 7L, 6L, 5L, 4L), c1s);
+        assertRowsOrdered(sql, rows(8L, 7L, 6L, 5L, 4L));
     }
 
-    private List<Map<String, Object>> execute(String sql) {
-        final List<Map<String, Object>> results = new ArrayList<>();
-        for (final SqlRow row : instance().getSql().execute(sql)) {
-            final Map<String, Object> result = new HashMap<>();
-            for (final SqlColumnMetadata column : row.getMetadata().getColumns()) {
-                final String key = column.getName();
-                final Object value = row.getObject(key);
-                result.put(key, value);
-            }
-            results.add(result);
-        }
-
-        return results;
+    private List<Row> rows(Long ...rows) {
+        return Stream.of(rows)
+                .map(i -> new Row(i, "test-" + i))
+                .collect(Collectors.toList());
     }
-
 }
