@@ -59,7 +59,7 @@ public final class HazelcastConcatWSOperator extends HazelcastFunction {
         HazelcastSqlValidator validator = binding.getValidator();
 
 
-        if (binding.getOperandType(0).getSqlTypeName() != VARCHAR ) {
+        if (binding.getOperandType(0).getSqlTypeName() != VARCHAR) {
             if (throwOnFailure) {
                 throw new AssertionError("");
             }

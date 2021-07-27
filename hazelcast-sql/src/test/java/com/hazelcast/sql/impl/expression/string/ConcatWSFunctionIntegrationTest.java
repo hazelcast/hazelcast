@@ -51,7 +51,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
                 checkColumns(
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                        "" + type1.valueFrom()+ "-" + type2.valueFrom()
+                        "" + type1.valueFrom() + "-" + type2.valueFrom()
                 );
 
                 checkColumns(
@@ -120,17 +120,17 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         check(getConcatWsExpression("-", "this", "?"), "1-2", '2');
         check(getConcatWsExpression("-", "this", "?"), "1",  new Object[]{null});
 
-        check(getConcatWsExpression("-", "this", "?"), "1-"+ LOCAL_DATE_VAL, LOCAL_DATE_VAL);
-        check(getConcatWsExpression("-", "this", "?"), "1-"+ LOCAL_TIME_VAL, LOCAL_TIME_VAL);
-        check(getConcatWsExpression("-", "this", "?"), "1-"+ LOCAL_DATE_TIME_VAL, LOCAL_DATE_TIME_VAL);
-        check(getConcatWsExpression("-", "this", "?"), "1-"+ OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+        check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_DATE_VAL, LOCAL_DATE_VAL);
+        check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_TIME_VAL, LOCAL_TIME_VAL);
+        check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_DATE_TIME_VAL, LOCAL_DATE_TIME_VAL);
+        check(getConcatWsExpression("-", "this", "?"), "1-" + OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
 
         check(getConcatWsExpression("-", "?", "?"), "1-2", 1, 2);
         check(getConcatWsExpression("-", "?", "?"), "1", 1, null);
         check(getConcatWsExpression("-", "?", "?"), "2", null, '2');
         check(getConcatWsExpression("-", "?", "?"), "", null, null);
 
-        check(getConcatWsExpression("?", false, "?", "?"),"", "-", null, null);
+        check(getConcatWsExpression("?", false, "?", "?"), "", "-", null, null);
         checkFail(getConcatWsExpression("?", false, "?", "?"), 1, null, null);
         check(getConcatWsExpression("?", false, "?", "?"), null, null, null, null);
 
@@ -144,8 +144,8 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkFail(getConcatWsExpression("-"));
 
         //more than 3 params
-        check(getConcatWsExpression("-", "__key", "field1","field2"), "1-2-3");
-        check(getConcatWsExpression("-", "1", "2","3","'4'"), "1-2-3-4");
+        check(getConcatWsExpression("-", "__key", "field1", "field2"), "1-2-3");
+        check(getConcatWsExpression("-", "1", "2", "3", "'4'"), "1-2-3-4");
     }
 
     @Test
@@ -191,12 +191,12 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         return getConcatWsExpression(separator, true, operands);
     }
 
-    private String getConcatWsExpression(String separator, boolean wrapSeparatorWithQuotation, String... operands){
-        if (wrapSeparatorWithQuotation){
+    private String getConcatWsExpression(String separator, boolean wrapSeparatorWithQuotation, String... operands) {
+        if (wrapSeparatorWithQuotation) {
             separator = "'" + separator + "'";
         }
         StringBuilder expression = new StringBuilder("Concat_WS(" + separator);
-        if (operands!=null){
+        if (operands != null) {
             for (String operand: operands) {
                 expression.append(", ").append(operand);
             }
