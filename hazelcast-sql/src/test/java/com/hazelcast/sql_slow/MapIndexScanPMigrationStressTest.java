@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.map;
+package com.hazelcast.sql_slow;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.IndexConfig;
@@ -143,13 +143,11 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     private void assertRowsAnyOrder(String sql, Collection<Row> expectedRows, Thread mutator) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
-        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows, Thread mutator) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
-        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 

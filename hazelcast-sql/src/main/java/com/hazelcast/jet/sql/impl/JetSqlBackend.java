@@ -288,15 +288,10 @@ public class JetSqlBackend implements SqlBackend {
         if (physicalRel instanceof SelectByKeyMapPhysicalRel) {
             assert !isCreateJob;
             SelectByKeyMapPhysicalRel select = (SelectByKeyMapPhysicalRel) physicalRel;
-            List<Boolean> columnsNullable = new ArrayList<>(rel.getRowType().getFieldList().size());
-            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                Boolean nullable = field.getType().isNullable();
-                columnsNullable.add(nullable);
-            }
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
-                    columnsNullable
+                    rel.getRowType().getFieldList()
             );
             return new IMapSelectPlan(
                     planKey,
@@ -371,15 +366,10 @@ public class JetSqlBackend implements SqlBackend {
             );
         } else {
             CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
-            List<Boolean> columnsNullable = new ArrayList<>(rel.getRowType().getFieldList().size());
-            for (RelDataTypeField field : rel.getRowType().getFieldList()) {
-                Boolean nullable = field.getType().isNullable();
-                columnsNullable.add(nullable);
-            }
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
-                    columnsNullable
+                    rel.getRowType().getFieldList()
             );
             return new SelectPlan(
                     planKey,
@@ -474,7 +464,7 @@ public class JetSqlBackend implements SqlBackend {
     private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
             List<QueryDataType> columnTypes,
-            List<Boolean> columnNullables) {
+            List<RelDataTypeField> fields) {
         assert columnNames.size() == columnTypes.size();
 
         List<SqlColumnMetadata> columns = new ArrayList<>(columnNames.size());
@@ -482,7 +472,7 @@ public class JetSqlBackend implements SqlBackend {
             SqlColumnMetadata column = QueryUtils.getColumnMetadata(
                     columnNames.get(i),
                     columnTypes.get(i),
-                    columnNullables.get(i)
+                    fields.get(i).getType().isNullable()
             );
             columns.add(column);
         }

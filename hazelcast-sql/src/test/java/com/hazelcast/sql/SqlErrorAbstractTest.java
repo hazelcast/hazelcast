@@ -146,10 +146,10 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
             fail("Exception is not thrown");
 
             return null;
-        } catch (Throwable e) {
+        } catch (HazelcastSqlException e) {
             System.out.println(">>> Caught expected SQL error: " + e);
 
-            return (HazelcastSqlException) e;
+            return e;
         }
     }
 

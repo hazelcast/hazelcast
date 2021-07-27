@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -548,19 +547,10 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     static Config memberConfig() {
-        Config config = new Config()
+        return smallInstanceConfig()
                 .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
                 .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
-                .setSerializationConfig(serializationConfig())
-                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
-                .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(2);
-
-        config.getSqlConfig().setExecutorPoolSize(2);
-
-        return config;
+                .setSerializationConfig(serializationConfig());
     }
 
     static ClientConfig clientConfig() {

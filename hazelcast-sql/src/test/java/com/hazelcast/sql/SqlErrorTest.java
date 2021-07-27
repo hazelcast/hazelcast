@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
 
 /**
@@ -33,6 +34,11 @@ import static junit.framework.TestCase.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorTest extends SqlErrorAbstractTest {
+
+    @Test
+    public void testTimeout() {
+        checkTimeout(false, DEFAULT_CURSOR_BUFFER_SIZE);
+    }
 
     @Test
     public void testDataTypeMismatch() {

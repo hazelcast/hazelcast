@@ -46,11 +46,11 @@ public class SqlNullableColumnTest extends SimpleTestInClusterSupport {
         IMap<String, Integer> map = instance().getMap("map");
         map.put("key", 1);
 
-        JetPlan jetPlan = planFromQuery(instance(), "SELECT __key, 1 FROM map", emptyList());
-        assertNotNull(jetPlan);
-        assertInstanceOf(JetPlan.SelectPlan.class, jetPlan);
+        JetPlan.SelectPlan plan =
+                (JetPlan.SelectPlan) planFromQuery(instance(), "SELECT __key, 1 FROM map", emptyList());
 
-        JetPlan.SelectPlan plan = (JetPlan.SelectPlan) jetPlan;
+        assertNotNull(plan);
+
         List<SqlColumnMetadata> columns = plan.getRowMetadata().getColumns();
         assertEquals(columns.size(), 2);
         assertTrue(columns.get(0).isNullable());
