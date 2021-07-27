@@ -520,27 +520,35 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         executionContexts.remove(executionContext.executionId());
-        JetDelegatingClassLoader removedClassLoader = classLoaders.remove(executionContext.jobId());
+        JetDelegatingClassLoader jobClassLoader = classLoaders.get(executionContext.jobId());
         try {
-            doWithClassLoader(removedClassLoader, () -> executionContext.completeExecution(error));
+            doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            Map<String, ClassLoader> cls = processorCls.remove(executionContext.jobId());
-            if (cls != null) {
-                for (ClassLoader cl : cls.values()) {
-                    try {
-                        ((ChildFirstClassLoader) cl).close();
-                    } catch (IOException e) {
-                        logger.fine("Exception when closing processor classloader", e);
-                    }
-                }
+            // If this is the coordinator we need to keep the classloader around for ProcesorMetaSupplier#close
+            if (!nodeEngine.getLocalMember().getAddress().equals(executionContext.coordinator())) {
+                removeClassloadersForJob(executionContext.jobId());
             }
             executionCompleted.inc();
-            // the class loader might not have been initialized if the job failed before that
-            if (removedClassLoader != null) {
-                removedClassLoader.shutdown();
-            }
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
+        }
+    }
+
+    public void removeClassloadersForJob(long jobId) {
+        Map<String, ClassLoader> cls = processorCls.remove(jobId);
+        if (cls != null) {
+            for (ClassLoader cl : cls.values()) {
+                try {
+                    ((ChildFirstClassLoader) cl).close();
+                } catch (IOException e) {
+                    logger.fine("Exception when closing processor classloader", e);
+                }
+            }
+        }
+        // the class loader might not have been initialized if the job failed before that
+        JetDelegatingClassLoader jobClassLoader = classLoaders.remove(jobId);
+        if (jobClassLoader != null) {
+            jobClassLoader.shutdown();
         }
     }
 

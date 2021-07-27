@@ -634,6 +634,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
+                mc.getJetServiceBackend().getJobExecutionService().removeClassloadersForJob(mc.jobId());
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
