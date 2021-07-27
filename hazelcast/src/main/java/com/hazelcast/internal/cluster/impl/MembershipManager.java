@@ -480,13 +480,6 @@ public class MembershipManager {
         if (logger.isFineEnabled()) {
             logger.fine("Setting members " + memberMap.getMembers() + ", version: " + memberMap.getVersion());
         }
-        System.out.println("aaa before");
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("aaa after");
         clusterServiceLock.lock();
         try {
             memberMapRef.set(memberMap);
