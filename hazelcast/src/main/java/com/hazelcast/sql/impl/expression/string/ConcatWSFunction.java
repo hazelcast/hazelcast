@@ -68,6 +68,6 @@ public class ConcatWSFunction extends VariExpression<String> implements Identifi
 
     @Override
     public int getClassId() {
-        return SqlDataSerializerHook.EXPRESSION_REPLACE;
+        return SqlDataSerializerHook.EXPRESSION_CONCAT_WS;
     }
 }

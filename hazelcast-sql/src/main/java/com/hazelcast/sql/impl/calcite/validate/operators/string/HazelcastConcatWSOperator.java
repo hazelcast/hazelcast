@@ -42,29 +42,33 @@ public final class HazelcastConcatWSOperator extends HazelcastFunction {
     private HazelcastConcatWSOperator() {
         super(
                 "CONCAT_WS",
-                //TODO: Ask what this should be, why is there other and other_function, ask the difference
                 SqlKind.OTHER_FUNCTION,
-                //TODO: ask this also
-                ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE,
+                ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE_VARYING,
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
                 SqlFunctionCategory.STRING
         );
     }
 
-    //TODO: Not sure if this should be 3
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.from(3);
+        return SqlOperandCountRanges.from(2);
     }
 
     @Override
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         HazelcastSqlValidator validator = binding.getValidator();
 
-        for (int i = 0; i < binding.getOperandCount(); i++) {
+
+        if (binding.getOperandType(0).getSqlTypeName() != VARCHAR ) {
+            if (throwOnFailure) {
+                throw new AssertionError("");
+            }
+            return false;
+        }
+
+        for (int i = 1; i < binding.getOperandCount(); i++) {
             SqlNode operand = binding.operand(i);
             RelDataType operandType = binding.getOperandType(i);
-
             if (operandType.getSqlTypeName() != VARCHAR) {
                 // Coerce everything to VARCHAR
                 RelDataType newOperandType = HazelcastTypeUtils.createType(
