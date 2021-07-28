@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.JetSqlCoreBackend;
+import com.hazelcast.version.Version;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,6 +44,8 @@ public class JetExtension {
     private final ILogger logger;
     private final JetServiceBackend jetServiceBackend;
     private final AtomicBoolean activated = new AtomicBoolean();
+
+    private volatile Version startVersion;
 
     public JetExtension(Node node, JetServiceBackend jetServiceBackend) {
         this.node = node;
@@ -67,9 +70,8 @@ public class JetExtension {
     }
 
     public void afterStart() {
-        if (tryActivate()) {
-            logger.info("Jet is enabled");
-        } else {
+        startVersion = node.getClusterService().getClusterVersion();
+        if (!tryActivate() && node.isRunning()) {
             logger.info("Jet is disabled due to current cluster version being less than 5.0.");
         }
     }
@@ -82,11 +84,17 @@ public class JetExtension {
             // this is a shortcut for the hot path when called for each operation and Jet is already activated.
             return true;
         }
+        Version currentVersion = node.getClusterService().getClusterVersion();
         if (node.isRunning()
-                && node.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_0)
+                && currentVersion.isGreaterOrEqual(Versions.V5_0)
                 && activated.compareAndSet(false, true)
         ) {
             jetServiceBackend.getJobCoordinationService().startScanningForJobs();
+            if (startVersion != null && !startVersion.equals(currentVersion)) {
+                logger.info("Jet is enabled after the cluster version upgrade.");
+            } else {
+                logger.info("Jet is enabled");
+            }
             return true;
         } else {
             return activated.get();
@@ -117,9 +125,7 @@ public class JetExtension {
     public void onClusterVersionChange() {
         // Activate Jet after rolling upgrade in which the cluster
         // version is upgraded from 4.x to 5.0
-        if (!activated.get() && tryActivate()) {
-            logger.info("Jet is enabled after the cluster version upgrade.");
-        }
+        tryActivate();
     }
 
     public void beforeShutdown(boolean terminate) {
@@ -151,5 +157,4 @@ public class JetExtension {
             throw new IllegalArgumentException("Jet is disabled because the current cluster version is less than 5.0");
         }
     }
-
 }
