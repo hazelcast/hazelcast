@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -51,14 +50,10 @@ import static org.junit.Assert.assertFalse;
 public class SqlGracefulShutdownTest extends JetTestSupport {
 
     private HazelcastInstance[] instances;
-    private Config config;
 
     @Before
     public void setup() {
-        config = regularInstanceConfig();
-        config.getFlakeIdGeneratorConfig("gen-*")
-                .setPrefetchCount(1);
-        instances = createHazelcastInstances(config, 2);
+        instances = createHazelcastInstances(2);
     }
 
     @Test
@@ -100,7 +95,6 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
         so that they prevent a graceful shutdown. We also set the page size to 1 to ensure that
         the query is executed using multiple iterations.
          */
-        createHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(useSmartRouting);
         HazelcastInstance client = createHazelcastClient(clientConfig);
@@ -115,12 +109,12 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
         List<Thread> threads = new ArrayList<>();
 
         // add threads executing queries
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 2; i++) {
             threads.add(new Thread(() -> {
                 try {
                     SqlStatement stmt = new SqlStatement("select * from table(generate_series(1, 2))")
                             .setCursorBufferSize(1);
-                    // TODO [viliam] ensure that 2 client calls are made: execute & one fetch
+                    // TODO [viliam] check that 2 client calls are made: execute & one fetch
                     while (!terminated.get()) {
                         Iterator<SqlRow> iterator = client.getSql().execute(stmt).iterator();
                         assertEquals(1, (int) iterator.next().getObject(0));
@@ -141,8 +135,11 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
             threads.add(new Thread(() -> {
                 try {
                     while (!terminated.get()) {
+                        logger.info("creating instance");
                         HazelcastInstance inst = createHazelcastInstance();
+                        logger.info("instance created, shutting it down");
                         inst.shutdown();
+                        logger.info("instance shut down");
                         membersAddedRemoved.incrementAndGet();
                     }
                 } catch (Throwable e) {
@@ -167,62 +164,8 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
         if (error.get() != null) {
             throw error.get();
         }
+        logger.info(queriesExecuted.get() + " queries executed, " + membersAddedRemoved.get() + " members added/removed");
         assertThat(queriesExecuted.get()).as("queries executed").isGreaterThan(10);
         assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
     }
-
-    // TODO [viliam] remove
-//    @Test
-//    public void test_flakeId() throws Throwable {
-//        HazelcastInstance client = createHazelcastClient();
-//
-//        AtomicReference<Throwable> error = new AtomicReference<>();
-//        AtomicBoolean terminated = new AtomicBoolean();
-//
-//        List<Thread> threads = new ArrayList<>();
-//
-//        // add threads executing queries
-//        for (int i = 0; i < 10; i++) {
-//            FlakeIdGenerator generator = client.getFlakeIdGenerator("gen-" + i);
-//            threads.add(new Thread(() -> {
-//                try {
-//                    while (!terminated.get()) {
-//                        generator.newId();
-//                    }
-//                } catch (Throwable e) {
-//                    logger.info("", e);
-//                    error.compareAndSet(null, e);
-//                }
-//            }, "queryTread-" + i));
-//        }
-//
-//        for (int i = 0; i < 2; i++) {
-//            threads.add(new Thread(() -> {
-//                try {
-//                    while (!terminated.get()) {
-//                        HazelcastInstance inst = createHazelcastInstance(config);
-//                        inst.shutdown();
-//                    }
-//                } catch (Throwable e) {
-//                    logger.info("", e);
-//                    error.compareAndSet(null, e);
-//                }
-//            }, "memberAddRemoveThread-" + i));
-//        }
-//
-//        for (Thread t : threads) {
-//            t.start();
-//        }
-//
-//        sleepSeconds(10);
-//        terminated.set(true);
-//
-//        for (Thread t : threads) {
-//            t.join();
-//        }
-//
-//        if (error.get() != null) {
-//            throw error.get();
-//        }
-//    }
 }

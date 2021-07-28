@@ -129,7 +129,7 @@ public final class ImdgUtil {
         return ((NodeEngineImpl) engine).getNode()
                                         .getServer()
                                         .getConnectionManager(EndpointQualifier.MEMBER)
-                                        .get(memberAddr);
+                                        .getOrConnect(memberAddr);
     }
 
     @Nonnull

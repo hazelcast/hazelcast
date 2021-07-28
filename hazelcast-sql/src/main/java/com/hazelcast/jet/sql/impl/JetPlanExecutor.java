@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
@@ -211,7 +212,17 @@ public class JetPlanExecutor {
 
         JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
-        Long jobId = jet.newJobId();
+        Long jobId;
+        try {
+            jobId = jet.newJobId();
+        } catch (HazelcastInstanceNotActiveException e) {
+            // `newJobId()` uses flake ID generator. Check that our instance isn't about to go down.
+            JetServiceBackend jetService = getNodeEngine(hazelcastInstance).getService(JetServiceBackend.SERVICE_NAME);
+            if (jetService.isShutdownInitiated()) {
+                throw QueryException.error(SqlErrorCode.MEMBER_SHUTTING_DOWN, "Member is shutting down");
+            }
+            throw e;
+        }
         Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {

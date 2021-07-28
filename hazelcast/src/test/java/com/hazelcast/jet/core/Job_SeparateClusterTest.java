@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -45,9 +46,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.core.TestProcessors.batchDag;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -231,12 +232,14 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         List<Thread> threads = new ArrayList<>();
 
         // add threads submitting jobs
+        DAG dag = new DAG();
+        dag.edge(between(dag.newVertex("v1", MockP::new), dag.newVertex("v2", MockP::new)).distributed());
         for (int i = 0; i < 2; i++) {
             threads.add(new Thread(() -> {
                 try {
                     while (!terminated.get()) {
                         logger.info("submitting and joining job");
-                        instance1.getJet().newLightJob(batchDag(), new JobConfig().setPreventShutdown(true))
+                        instance1.getJet().newLightJob(dag, new JobConfig().setPreventShutdown(true))
                                 .join();
                         logger.info("job completed");
                         jobsExecuted.incrementAndGet();
@@ -270,18 +273,25 @@ public class Job_SeparateClusterTest extends JetTestSupport {
             t.start();
         }
 
-        sleepSeconds(60);
+        for (int i = 0; i < 60; i++) {
+            checkError(error);
+            sleepSeconds(1);
+        }
         terminated.set(true);
 
         for (Thread t : threads) {
             t.join();
         }
 
-        if (error.get() != null) {
-            throw error.get();
-        }
+        checkError(error);
         logger.info(jobsExecuted.get() + " jobs executed, " + membersAddedRemoved.get() + " members added/removed");
         assertThat(jobsExecuted.get()).as("jobs executed").isGreaterThan(10);
         assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
+    }
+
+    private void checkError(AtomicReference<Throwable> error) {
+        if (error.get() != null) {
+            throw new RuntimeException(error.get());
+        }
     }
 }
