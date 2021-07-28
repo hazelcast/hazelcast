@@ -46,7 +46,7 @@
                     <signature>
                         <groupId>org.codehaus.mojo.signature</groupId>
                         <artifactId>java16</artifactId>
-                        <version>1.0</version>
+                        <version>${maven.animal.sniffer.signature16.version}</version>
                     </signature>
                 </configuration>
                 <executions>
