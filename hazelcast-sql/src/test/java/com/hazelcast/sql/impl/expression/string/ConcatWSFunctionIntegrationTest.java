@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.string;
 
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
@@ -31,8 +30,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
