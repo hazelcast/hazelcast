@@ -170,7 +170,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, CREATE_RECEIVER_QUEUE_FN);
                     ReceiverTasklet receiverTasklet = addressEntry.getValue();
                     receiverTasklet.initIncomingQueue(queue);
-                    receiverMapTmp.put(new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
+                    receiverMapTmp.put(
+                            new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
                             receiverTasklet);
                 }
             }
