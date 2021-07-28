@@ -32,6 +32,7 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.type.SqlTypeTransforms;
 
 import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 
@@ -43,7 +44,8 @@ public final class HazelcastConcatWSOperator extends HazelcastFunction {
         super(
                 "CONCAT_WS",
                 SqlKind.OTHER_FUNCTION,
-                ReturnTypes.DYADIC_STRING_SUM_PRECISION_NULLABLE_VARYING,
+                ReturnTypes.cascade(ReturnTypes.explicit(SqlTypeName.VARCHAR, RelDataType.PRECISION_NOT_SPECIFIED),
+                        SqlTypeTransforms.TO_NULLABLE),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
                 SqlFunctionCategory.STRING
         );
