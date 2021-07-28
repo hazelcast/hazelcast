@@ -35,6 +35,8 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -49,6 +51,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -197,6 +200,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
 
+        // JSON
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_QUERY);
+
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
@@ -319,6 +325,14 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                         || symbolValue == JoinConditionType.NONE
                         || symbolValue == JoinConditionType.USING
                 ) {
+                    return null;
+                }
+
+                if (Arrays.asList(SqlJsonQueryWrapperBehavior.values()).contains(symbolValue)) {
+                    return null;
+                }
+
+                if (Arrays.asList(SqlJsonQueryEmptyOrErrorBehavior.values()).contains(symbolValue)) {
                     return null;
                 }
 

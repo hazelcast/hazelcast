@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
+import com.hazelcast.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -423,6 +424,9 @@ public final class RexToExpression {
                     return ToEpochMillisFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
+                } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
+                    assert operands.length == 5;
+                    return JsonQueryFunction.create(operands);
                 }
 
                 break;

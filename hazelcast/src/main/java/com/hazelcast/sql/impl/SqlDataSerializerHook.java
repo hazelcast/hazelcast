@@ -35,6 +35,7 @@ import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
+import com.hazelcast.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
@@ -208,10 +209,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int MAPPING = 75;
     public static final int MAPPING_FIELD = 76;
     public static final int MAP_INDEX_SCAN_METADATA = 77;
-
     public static final int EXPRESSION_CONCAT_WS = 78;
+    public static final int JSON_QUERY = 79;
 
-    public static final int LEN = EXPRESSION_CONCAT_WS + 1;
+    public static final int LEN = JSON_QUERY + 1;
 
     @Override
     public int getFactoryId() {
@@ -323,6 +324,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
+        constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
 
         constructors[EXPRESSION_CONCAT_WS] = arg -> new ConcatWSFunction();
 
