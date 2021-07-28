@@ -51,7 +51,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
                 checkColumns(
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                        "" + type1.valueFrom() + "-" + type2.valueFrom()
+                        type1.valueFrom() + "-" + type2.valueFrom()
                 );
 
                 checkColumns(
@@ -180,8 +180,8 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
     private void checkFail(String sql, Object... params) {
         try {
-            List<SqlRow> rows = execute(member, sql, params);
-            fail("Test should have been failed");
+            execute(member, sql, params);
+            fail("Following query should have caused an error!  ===> " + sql);
         } catch (Exception e) {
             assertTrue(e instanceof HazelcastSqlException);
         }
