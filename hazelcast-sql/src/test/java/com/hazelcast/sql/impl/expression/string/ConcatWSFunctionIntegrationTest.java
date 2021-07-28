@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
+import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -153,6 +154,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         ConcatWSFunction function = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
 
         checkEquals(function, ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR)), true);
+        checkEquals(function, ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", INT), ConstantExpression.create("2", VARCHAR)), false);
         checkEquals(function, ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create("20", VARCHAR)), false);
         checkEquals(function, ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("2", VARCHAR)), false);
         checkEquals(function, ConcatWSFunction.create(ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR)), false);
@@ -161,9 +163,17 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testSerialization() {
         ConcatWSFunction original = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
+        ConcatWSFunction corrupted1 = ConcatWSFunction.create(ConstantExpression.create("===", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create("2", VARCHAR));
+        ConcatWSFunction corrupted2 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("10", VARCHAR), ConstantExpression.create("2", VARCHAR));
+        ConcatWSFunction corrupted3 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", INT), ConstantExpression.create("2", VARCHAR));
+        ConcatWSFunction corrupted4 = ConcatWSFunction.create(ConstantExpression.create("-", VARCHAR), ConstantExpression.create("1", VARCHAR), ConstantExpression.create(null, VARCHAR));
         ConcatWSFunction restored = serializeAndCheck(original, SqlDataSerializerHook.EXPRESSION_CONCAT_WS);
 
         checkEquals(original, restored, true);
+        checkEquals(corrupted1, restored, false);
+        checkEquals(corrupted2, restored, false);
+        checkEquals(corrupted3, restored, false);
+        checkEquals(corrupted4, restored, false);
     }
 
     private void checkColumns(ExpressionBiValue value, String expectedResult) {
