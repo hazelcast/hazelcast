@@ -16,17 +16,20 @@
 
 package com.hazelcast.test.mocknetwork;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_PORT_TRY_COUNT;
+import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_SHOULD_ISOLATE_CLUSTERS;
 
 class MockJoiner extends AbstractJoiner {
 
@@ -35,11 +38,16 @@ class MockJoiner extends AbstractJoiner {
     // blacklisted addresses
     private final Set<Address> blacklist;
     private final TestNodeRegistry registry;
+    private final boolean shouldIsolateClusters;
+    private final int maxTryCount;
 
     MockJoiner(Node node, TestNodeRegistry registry, Set<Address> initiallyBlockedAddresses) {
         super(node);
         this.registry = registry;
-        this.blacklist = new CopyOnWriteArraySet<Address>(initiallyBlockedAddresses);
+        this.blacklist = new CopyOnWriteArraySet<>(initiallyBlockedAddresses);
+
+        shouldIsolateClusters = node.getProperties().getBoolean(MOCK_JOIN_SHOULD_ISOLATE_CLUSTERS);
+        maxTryCount = node.getProperties().getInteger(MOCK_JOIN_PORT_TRY_COUNT);
     }
 
     public void doJoin() {
@@ -149,10 +157,22 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
+            if (shouldIsolateClusters && isMemberOfIsolatedCluster(foundNode)) {
+                logger.fine("Node for " + address + " is outside of the join range and should not be joined.");
+                continue;
+            }
+
             logger.fine("Found an alive node. Will ask master of " + address);
             return foundNode;
         }
         return null;
+    }
+
+    private boolean isMemberOfIsolatedCluster(Node foundNode) {
+        int rangeStartPort = node.getConfig().getNetworkConfig().getPort();
+        int foundNodePort = foundNode.getThisAddress().getPort();
+        return rangeStartPort + maxTryCount < foundNodePort
+                || rangeStartPort > foundNodePort;
     }
 
     public void searchForOtherClusters() {
