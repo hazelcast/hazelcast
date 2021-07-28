@@ -28,6 +28,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -195,6 +197,25 @@ public class SqlLimitTest extends SqlTestSupport {
                 .hasMessageContaining("LIMIT value cannot be negative");
     }
 
+    @Test
+    public void limitWithProjection() {
+        final String sql = "SELECT ABS(v) "
+                + "FROM TABLE (generate_series(1, 10)) "
+                + "ORDER BY v DESC "
+                + "LIMIT 5";
+        assertRowsOrdered(sql, rows(10L, 9L, 8L, 7L, 6L));
+    }
+
+    @Test
+    public void limitAndOffsetWithProjection() {
+        final String sql = "SELECT ABS(v) "
+                + "FROM TABLE (generate_series(1, 10)) "
+                + "ORDER BY v DESC "
+                + "LIMIT 5 "
+                + "OFFSET 2";
+        assertRowsOrdered(sql, rows(8L, 7L, 6L, 5L, 4L));
+    }
+
     private static void assertContainsOnlyOneOfRows(String sql, Collection<Row> expectedRows) {
         assertContainsSubsetOfRows(sql, 1, expectedRows);
     }
@@ -229,5 +250,11 @@ public class SqlLimitTest extends SqlTestSupport {
             actualRows.add(new Row(values));
         });
         assertThat(actualRows).hasSize(subsetSize).containsAnyOf(expectedRows.toArray(new Row[subsetSize]));
+    }
+
+    private static List<Row> rows(Long ...rows) {
+        return Stream.of(rows)
+                .map(Row::new)
+                .collect(Collectors.toList());
     }
 }
