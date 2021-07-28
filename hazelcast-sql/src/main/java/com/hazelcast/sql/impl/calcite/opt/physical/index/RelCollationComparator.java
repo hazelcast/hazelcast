@@ -27,7 +27,7 @@ import java.util.Comparator;
  * <p>
  * If one collation is a prefix of another one, the one with the bigger size is greater.
  */
-final class RelCollationComparator implements Comparator<RelCollation> {
+public final class RelCollationComparator implements Comparator<RelCollation> {
 
     public static final RelCollationComparator INSTANCE = new RelCollationComparator();
 

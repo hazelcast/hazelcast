@@ -72,6 +72,11 @@ public class YamlConfigSchemaValidatorTest {
         }
     }
 
+    @Test
+    public void lenientPrimitiveValidationIsEnabled() {
+        new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/lenient-primitives.yaml")).build();
+    }
+
     @Test(expected = InvalidConfigurationException.class)
     public void emptyObject() {
         new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/empty-object.yaml")).build();

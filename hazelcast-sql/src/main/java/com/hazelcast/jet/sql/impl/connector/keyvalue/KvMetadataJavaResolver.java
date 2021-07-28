@@ -20,11 +20,11 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -47,7 +47,6 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.e
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -58,7 +57,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
     public static final KvMetadataJavaResolver INSTANCE = new KvMetadataJavaResolver();
 
-    public KvMetadataJavaResolver() {
+    private KvMetadataJavaResolver() {
     }
 
     @Override
@@ -118,43 +117,48 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         return Stream.of(new MappingField(name, type, externalName));
     }
 
-    private Stream<MappingField> resolveObjectSchema(
+    private Stream<MappingField> resolveObjectSchema(boolean isKey, List<MappingField> userFields, Class<?> clazz) {
+        return userFields.isEmpty()
+                ? resolveObjectFields(isKey, clazz)
+                : resolveAndValidateObjectFields(isKey, userFields, clazz);
+    }
+
+    private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> clazz) {
+        Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(clazz);
+        if (fieldsInClass.isEmpty()) {
+            // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
+            String name = isKey ? KEY : VALUE;
+            return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
+        }
+
+        return fieldsInClass.entrySet().stream()
+                .map(classField -> {
+                    QueryPath path = new QueryPath(classField.getKey(), isKey);
+                    QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
+                    String name = classField.getKey();
+
+                    return new MappingField(name, type, path.toString());
+                });
+    }
+
+    private Stream<MappingField> resolveAndValidateObjectFields(
             boolean isKey,
             List<MappingField> userFields,
             Class<?> clazz
     ) {
-        Set<Entry<String, Class<?>>> fieldsInClass = FieldsUtil.resolveClass(clazz).entrySet();
-
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
+        for (Entry<String, Class<?>> classField : FieldsUtil.resolveClass(clazz).entrySet()) {
+            QueryPath path = new QueryPath(classField.getKey(), isKey);
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
 
-        if (!userFields.isEmpty()) {
-            // the user used explicit fields in the DDL, just validate them
-            for (Entry<String, Class<?>> classField : fieldsInClass) {
-                QueryPath path = new QueryPath(classField.getKey(), isKey);
-                QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
-
-                MappingField userField = userFieldsByPath.get(path);
-                if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
-                    throw QueryException.error("Mismatch between declared and resolved type for field '"
-                            + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
-                            + ", resolved: " + type.getTypeFamily());
-                }
+            MappingField userField = userFieldsByPath.get(path);
+            if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
+                throw QueryException.error("Mismatch between declared and resolved type for field '"
+                        + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
+                        + ", resolved: " + type.getTypeFamily());
             }
-            return userFieldsByPath.values().stream();
-        } else if (fieldsInClass.isEmpty()) {
-            // if we didn't find any fields in the class, map the whole value (e.g. in java.lang.Object)
-            String name = isKey ? KEY : VALUE;
-            return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
-        } else {
-            return fieldsInClass.stream()
-                    .map(classField -> {
-                        QueryPath path = new QueryPath(classField.getKey(), isKey);
-                        QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
-                        String name = classField.getKey();
-
-                        return new MappingField(name, type, path.toString());
-                    });
         }
+        return userFieldsByPath.values().stream();
     }
 
     @Override
@@ -185,12 +189,10 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
 
     private KvMetadata resolvePrimitiveMetadata(boolean isKey, Map<QueryPath, MappingField> fieldsByPath) {
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        MappingField field = fieldsByPath.get(path);
+        MappingField field = Objects.requireNonNull(fieldsByPath.get(path));
 
         return new KvMetadata(
-                field != null
-                        ? singletonList(new MapTableField(field.name(), field.type(), false, path))
-                        : emptyList(),
+                singletonList(new MapTableField(field.name(), field.type(), false, path)),
                 GenericQueryTargetDescriptor.DEFAULT,
                 PrimitiveUpsertTargetDescriptor.INSTANCE
         );

@@ -4034,10 +4034,7 @@
         "properties": {
           "type": "object"
         }
-      },
-      "required": [
-        "factory-class-name"
-      ]
+      }
     },
     "InstanceTracking": {
       "type": "object",

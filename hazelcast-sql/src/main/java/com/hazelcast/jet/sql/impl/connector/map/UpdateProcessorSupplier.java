@@ -27,16 +27,22 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
@@ -72,7 +78,7 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         for (int i = 0; i < count; i++) {
             String mapName = this.mapName;
             Processor processor = new AsyncTransformUsingServiceBatchedP<>(
-                    ServiceFactories.nonSharedService(ctx -> ctx.hazelcastInstance().getMap(mapName)),
+                    ServiceFactories.nonSharedService(SecuredFunctions.iMapFn(mapName)),
                     null,
                     MAX_CONCURRENT_OPS,
                     MAX_BATCH_SIZE,
@@ -92,6 +98,11 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
         return map.submitToKeys(keys, updaterSupplier.get(evalContext.getArguments()))
                 .toCompletableFuture()
                 .thenApply(m -> Traversers.empty());
+    }
+
+    @Override
+    public Permission permission() {
+        return new MapPermission(mapName, ACTION_CREATE, ACTION_PUT);
     }
 
     @Override

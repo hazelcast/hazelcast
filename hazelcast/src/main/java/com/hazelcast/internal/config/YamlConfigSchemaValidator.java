@@ -20,8 +20,10 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
 import org.everit.json.schema.ObjectSchema;
+import org.everit.json.schema.PrimitiveValidationStrategy;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.Validator;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -82,7 +84,10 @@ public class YamlConfigSchemaValidator {
             } else {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
-            SCHEMA.validate(YamlToJsonConverter.convert(rootNode));
+            Validator.builder()
+                    .primitiveValidationStrategy(PrimitiveValidationStrategy.LENIENT)
+                    .build()
+                    .performValidation(SCHEMA, YamlToJsonConverter.convert(rootNode));
         } catch (ValidationException e) {
             throw wrap(e);
         }
