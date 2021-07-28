@@ -30,6 +30,8 @@ import com.hazelcast.logging.ILogger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -50,6 +52,7 @@ import static com.hazelcast.internal.metrics.ProbeUnit.BYTES;
 import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.collection.ArrayUtils.append;
 import static com.hazelcast.internal.util.collection.ArrayUtils.replaceFirst;
@@ -231,7 +234,7 @@ public final class NioOutboundPipeline
 
     // executes the pipeline. Either on the calling thread or on th owning NIO thread.
     private void executePipeline() {
-         if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
+        if (writeThroughEnabled && !concurrencyDetection.isDetected()) {
             // we are allowed to do a write through, so lets process the request on the calling thread
             try {
                 process();
@@ -239,9 +242,19 @@ public final class NioOutboundPipeline
                 onError(t);
             }
         } else {
-            if (selectionKeyWakeupEnabled) {
-                registerOp(OP_WRITE);
-                selectionKey.selector().wakeup();
+            SelectionKey selectionKey = this.selectionKey;
+            if (selectionKeyWakeupEnabled && selectionKey != null) {
+                try {
+                    registerOp(OP_WRITE);
+                    selectionKey.selector().wakeup();
+                } catch (CancelledKeyException t) {
+                    //this means that the selection key is cancelled via another thread, which can happen only
+                    //on connection close. Only thing we can do is to ignore the exception. The calling thread could be
+                    //user thread and this exception should not be propagated to the user.
+                    //From the caller of `com.hazelcast.internal.nio.Connection#write`s perspective,
+                    // this is the same situation as connection closed after connection.write() successfully returns.
+                    ignore(t);
+                }
             } else {
                 owner.addTaskAndWakeup(this);
             }
@@ -255,7 +268,7 @@ public final class NioOutboundPipeline
             if (prevState == State.RESCHEDULE) {
                 break;
             } else {
-                  if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
+                if (scheduled.compareAndSet(prevState, State.RESCHEDULE)) {
                     if (prevState == State.UNSCHEDULED || prevState == State.BLOCKED) {
                         ownerAddTaskAndWakeup(this);
                     }
