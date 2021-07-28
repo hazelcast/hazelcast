@@ -30,13 +30,10 @@ import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -53,6 +50,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.TestProcessors.batchDag;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -65,9 +63,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
+    private Config config;
     private HazelcastInstance instance1;
     private HazelcastInstance instance2;
 
@@ -75,7 +71,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     public void setup() {
         TestProcessors.reset(NODE_COUNT * LOCAL_PARALLELISM);
 
-        Config config = smallInstanceConfig();
+        config = smallInstanceConfig();
         config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(10);
         instance1 = createHazelcastInstance(config);
@@ -98,8 +94,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         instance1.shutdown();
 
         // Then
-        expectedException.expect(JobAlreadyExistsException.class);
-        instance2.getJet().newJob(dag, config);
+        assertThatThrownBy(() -> instance2.getJet().newJob(dag, config))
+                .isInstanceOf(JobAlreadyExistsException. class);
     }
 
     @Test
@@ -128,8 +124,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         NoOutputSourceP.failure.set(ex);
 
         // Then
-        expectedException.expectMessage(Matchers.containsString(ex.getMessage()));
-        job.join();
+        assertThatThrownBy(job::join)
+                .hasMessageContaining(ex.getMessage());
     }
 
     @Test
@@ -163,8 +159,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         NoOutputSourceP.failure.set(ex);
 
         // Then
-        expectedException.expectMessage(Matchers.containsString(ex.getMessage()));
-        job.join();
+        assertThatThrownBy(job::join)
+                .hasMessageContaining(ex.getMessage());
     }
 
     @Test
@@ -189,7 +185,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
                 () -> job.get().getMetrics(),
                 () -> job.get().getConfig()
         );
-        List<Future> checkerFutures = new ArrayList<>();
+        List<Future<?>> checkerFutures = new ArrayList<>();
         for (Runnable action : actions) {
             checkerFutures.add(spawn(() -> {
                 while (!done.get()) {
@@ -216,7 +212,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         }
 
         done.set(true);
-        for (Future future : checkerFutures) {
+        for (Future<?> future : checkerFutures) {
             future.get();
         }
     }
@@ -224,8 +220,8 @@ public class Job_SeparateClusterTest extends JetTestSupport {
     @Test
     public void stressTest_clientSubmission() throws Throwable {
         /*
-        This test submits jobs from a client while concurrently starting and removing members.
-        Jobs have the prevent-shutdown flag.
+        This test submits jobs from the master while concurrently starting and removing members.
+        Jobs have the prevent-shutdown flag set.
          */
         AtomicReference<Throwable> error = new AtomicReference<>();
         AtomicBoolean terminated = new AtomicBoolean();
@@ -235,12 +231,14 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         List<Thread> threads = new ArrayList<>();
 
         // add threads submitting jobs
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 2; i++) {
             threads.add(new Thread(() -> {
                 try {
                     while (!terminated.get()) {
+                        logger.info("submitting and joining job");
                         instance1.getJet().newLightJob(batchDag(), new JobConfig().setPreventShutdown(true))
                                 .join();
+                        logger.info("job completed");
                         jobsExecuted.incrementAndGet();
                     }
                 } catch (Throwable e) {
@@ -254,8 +252,11 @@ public class Job_SeparateClusterTest extends JetTestSupport {
             threads.add(new Thread(() -> {
                 try {
                     while (!terminated.get()) {
-                        HazelcastInstance inst = createHazelcastInstance();
+                        logger.info("creating instance");
+                        HazelcastInstance inst = createHazelcastInstance(config);
+                        logger.info("instance created, shutting it down");
                         inst.shutdown();
+                        logger.info("instance shut down");
                         membersAddedRemoved.incrementAndGet();
                     }
                 } catch (Throwable e) {
@@ -269,7 +270,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
             t.start();
         }
 
-        sleepSeconds(10);
+        sleepSeconds(60);
         terminated.set(true);
 
         for (Thread t : threads) {
@@ -279,6 +280,7 @@ public class Job_SeparateClusterTest extends JetTestSupport {
         if (error.get() != null) {
             throw error.get();
         }
+        logger.info(jobsExecuted.get() + " jobs executed, " + membersAddedRemoved.get() + " members added/removed");
         assertThat(jobsExecuted.get()).as("jobs executed").isGreaterThan(10);
         assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
     }
