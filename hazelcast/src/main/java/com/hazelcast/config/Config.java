@@ -530,7 +530,10 @@ public class Config {
      * Hazelcast System Properties</a>
      */
     public Config setProperty(String name, String value) {
-        properties.put(name, value);
+        if (!isNullOrEmptyAfterTrim(name) && !isNullOrEmptyAfterTrim(value)) {
+            properties.put(name, value);
+        }
+
         return this;
     }
 
