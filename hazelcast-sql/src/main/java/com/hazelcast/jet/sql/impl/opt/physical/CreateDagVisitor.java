@@ -76,7 +76,7 @@ public class CreateDagVisitor {
 
     public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = nodeEngine;
-        this.localMemberAddress = nodeEngine.getLocalMember().getAddress();
+        this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
     }
 
@@ -330,7 +330,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
+                rootResultConsumerSink(localMemberAddress, fetch, offset)
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
