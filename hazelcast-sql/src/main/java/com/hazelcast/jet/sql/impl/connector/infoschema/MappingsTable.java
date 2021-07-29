@@ -37,9 +37,9 @@ public class MappingsTable extends InfoSchemaTable {
     private static final String NAME = "mappings";
 
     private static final List<TableField> FIELDS = asList(
-            new TableField("mapping_catalog", QueryDataType.VARCHAR, false),
-            new TableField("mapping_schema", QueryDataType.VARCHAR, false),
-            new TableField("mapping_name", QueryDataType.VARCHAR, false),
+            new TableField("table_catalog", QueryDataType.VARCHAR, false),
+            new TableField("table_schema", QueryDataType.VARCHAR, false),
+            new TableField("table_name", QueryDataType.VARCHAR, false),
             new TableField("mapping_external_name", QueryDataType.VARCHAR, false),
             new TableField("mapping_type", QueryDataType.VARCHAR, false),
             new TableField("mapping_options", QueryDataType.VARCHAR, false)
