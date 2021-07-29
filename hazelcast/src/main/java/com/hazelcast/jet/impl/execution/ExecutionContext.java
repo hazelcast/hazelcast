@@ -65,6 +65,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * Data pertaining to single job execution on all cluster members. There's one
@@ -159,8 +160,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         int numPrioritySsTasklets = plan.getStoreSnapshotTaskletCount() != 0 ? plan.getHigherPriorityVertexCount() : 0;
         snapshotContext.initTaskletCount(plan.getProcessorTaskletCount(), plan.getStoreSnapshotTaskletCount(),
                 numPrioritySsTasklets);
-        this.receiverMap = new HashMap<>();
-        Map<SenderReceiverKey, ReceiverTasklet> receiverMap = this.receiverMap;
+        Map<SenderReceiverKey, ReceiverTasklet> receiverMapTmp = new HashMap<>();
         for (Entry<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> vertexIdEntry : plan.getReceiverMap().entrySet()) {
             for (Entry<Integer, Map<Address, ReceiverTasklet>> ordinalEntry : vertexIdEntry.getValue().entrySet()) {
                 for (Entry<Address, ReceiverTasklet> addressEntry : ordinalEntry.getValue().entrySet()) {
@@ -170,20 +170,23 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     Queue<byte[]> queue = receiverQueuesMap.computeIfAbsent(key, CREATE_RECEIVER_QUEUE_FN);
                     ReceiverTasklet receiverTasklet = addressEntry.getValue();
                     receiverTasklet.initIncomingQueue(queue);
-                    receiverMap.put(new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
+                    receiverMapTmp.put(
+                            new SenderReceiverKey(vertexIdEntry.getKey(), ordinalEntry.getKey(), addressEntry.getKey()),
                             receiverTasklet);
                 }
             }
         }
+        this.receiverMap = unmodifiableMap(receiverMapTmp);
 
-        senderMap = new HashMap<>();
+        Map<SenderReceiverKey, SenderTasklet> senderMapTmp = new HashMap<>();
         for (Entry<Integer, Map<Integer, Map<Address, SenderTasklet>>> e1 : plan.getSenderMap().entrySet()) {
             for (Entry<Integer, Map<Address, SenderTasklet>> e2 : e1.getValue().entrySet()) {
                 for (Entry<Address, SenderTasklet> e3 : e2.getValue().entrySet()) {
-                    senderMap.put(new SenderReceiverKey(e1.getKey(), e2.getKey(), e3.getKey()), e3.getValue());
+                    senderMapTmp.put(new SenderReceiverKey(e1.getKey(), e2.getKey(), e3.getKey()), e3.getValue());
                 }
             }
         }
+        this.senderMap = unmodifiableMap(senderMapTmp);
 
         tasklets = plan.getTasklets();
         return this;
