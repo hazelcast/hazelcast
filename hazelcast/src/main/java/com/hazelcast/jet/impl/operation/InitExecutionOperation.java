@@ -30,7 +30,6 @@ import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
@@ -39,9 +38,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
-import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * Operation sent from master to members to initialize execution of a job.
@@ -100,11 +97,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
                     coordinatorMemberListVersion, participants, plan);
             return CompletableFuture.completedFuture(null);
         }
-    }
-
-    @Override
-    public ExceptionAction onInvocationException(Throwable throwable) {
-        return isTopologyException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override
