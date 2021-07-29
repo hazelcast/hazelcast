@@ -51,8 +51,14 @@ public final class PersistenceAndHotRestartPersistenceMerger {
      * if hot-restart-persistence: enabled="false" and persistence: enabled="false"
      * => we still do override hot-restart-persistence using persistence.
      * It is necessary to maintain equality consistency.
+     *
+     * @param hotRestartPersistenceConfig hotRestartPersistenceConfig to use in the merge
+     * @param persistenceConfig persistenceConfig to use in the merge
      */
     public static void merge(HotRestartPersistenceConfig hotRestartPersistenceConfig, PersistenceConfig persistenceConfig) {
+        if (equals(hotRestartPersistenceConfig, persistenceConfig)) {
+            return;
+        }
         if (hotRestartPersistenceConfig.isEnabled() && !persistenceConfig.isEnabled()) {
             persistenceConfig.setEnabled(true)
                     .setBaseDir(hotRestartPersistenceConfig.getBaseDir())
@@ -87,5 +93,17 @@ public final class PersistenceAndHotRestartPersistenceMerger {
                             + "and thus there is a conflict, the latter is used in persistence configuration."
             );
         }
+    }
+
+    private static boolean equals(HotRestartPersistenceConfig l, PersistenceConfig r) {
+        return l.isEnabled() == r.isEnabled() &&
+                l.getBaseDir().equals(r.getBaseDir()) &&
+                l.getBackupDir().equals(r.getBackupDir()) &&
+                l.isAutoRemoveStaleData() == r.isAutoRemoveStaleData() &&
+                l.getEncryptionAtRestConfig().equals(r.getEncryptionAtRestConfig()) &&
+                l.getDataLoadTimeoutSeconds() == r.getDataLoadTimeoutSeconds() &&
+                l.getParallelism() == r.getParallelism() &&
+                l.getValidationTimeoutSeconds() == r.getValidationTimeoutSeconds() &&
+                l.getClusterDataRecoveryPolicy().ordinal() == r.getClusterDataRecoveryPolicy().ordinal();
     }
 }
