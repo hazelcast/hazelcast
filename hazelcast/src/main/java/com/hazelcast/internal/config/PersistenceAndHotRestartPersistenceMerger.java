@@ -95,15 +95,28 @@ public final class PersistenceAndHotRestartPersistenceMerger {
         }
     }
 
-    private static boolean equals(HotRestartPersistenceConfig l, PersistenceConfig r) {
-        return l.isEnabled() == r.isEnabled() &&
-                l.getBaseDir().equals(r.getBaseDir()) &&
-                l.getBackupDir().equals(r.getBackupDir()) &&
-                l.isAutoRemoveStaleData() == r.isAutoRemoveStaleData() &&
-                l.getEncryptionAtRestConfig().equals(r.getEncryptionAtRestConfig()) &&
-                l.getDataLoadTimeoutSeconds() == r.getDataLoadTimeoutSeconds() &&
-                l.getParallelism() == r.getParallelism() &&
-                l.getValidationTimeoutSeconds() == r.getValidationTimeoutSeconds() &&
-                l.getClusterDataRecoveryPolicy().ordinal() == r.getClusterDataRecoveryPolicy().ordinal();
+    private static boolean equals(HotRestartPersistenceConfig hotRestartPersistenceConfig, PersistenceConfig persistenceConfig) {
+        if (hotRestartPersistenceConfig.isEnabled() != persistenceConfig.isEnabled()) {
+            return false;
+        }
+        if (! hotRestartPersistenceConfig.getBaseDir().equals(persistenceConfig.getBaseDir())) {
+            return false;
+        }
+        if (! hotRestartPersistenceConfig.getBackupDir().equals(persistenceConfig.getBackupDir())) {
+            return false;
+        }
+        if (hotRestartPersistenceConfig.isAutoRemoveStaleData() != persistenceConfig.isAutoRemoveStaleData()) {
+            return false;
+        }
+        if (! hotRestartPersistenceConfig.getEncryptionAtRestConfig().equals(persistenceConfig.getEncryptionAtRestConfig())) {
+            return false;
+        }
+        if (hotRestartPersistenceConfig.getClusterDataRecoveryPolicy().ordinal()
+                != persistenceConfig.getClusterDataRecoveryPolicy().ordinal()) {
+            return false;
+        }
+        return hotRestartPersistenceConfig.getDataLoadTimeoutSeconds() == persistenceConfig.getDataLoadTimeoutSeconds()
+                && hotRestartPersistenceConfig.getParallelism() == persistenceConfig.getParallelism()
+                && hotRestartPersistenceConfig.getValidationTimeoutSeconds() == persistenceConfig.getValidationTimeoutSeconds();
     }
 }

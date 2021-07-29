@@ -78,7 +78,7 @@ public final class DataPersistenceAndHotRestartMerger {
     }
 
     private static boolean equals(HotRestartConfig hotRestartConfig, DataPersistenceConfig dataPersistenceConfig) {
-        return hotRestartConfig.isEnabled() == dataPersistenceConfig.isEnabled() &&
-                hotRestartConfig.isFsync() == dataPersistenceConfig.isFsync();
+        return hotRestartConfig.isEnabled() == dataPersistenceConfig.isEnabled()
+                && hotRestartConfig.isFsync() == dataPersistenceConfig.isFsync();
     }
 }
