@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -116,10 +117,12 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
                                 .setCursorBufferSize(1);
                         // TODO [viliam] check that 2 client calls are made: execute & one fetch
                         while (!terminated.get()) {
-                            Iterator<SqlRow> iterator = client.getSql().execute(stmt).iterator();
-                            assertEquals(1, (int) iterator.next().getObject(0));
-                            assertEquals(2, (int) iterator.next().getObject(0));
-                            assertFalse(iterator.hasNext());
+                            try (SqlResult result = client.getSql().execute(stmt)) {
+                                Iterator<SqlRow> iterator = result.iterator();
+                                assertEquals(1, (int) iterator.next().getObject(0));
+                                assertEquals(2, (int) iterator.next().getObject(0));
+                                assertFalse(iterator.hasNext());
+                            }
 
                             queriesExecuted.incrementAndGet();
                         }

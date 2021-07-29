@@ -110,6 +110,7 @@ public class LightMasterContext {
             throw new JetException("No data member with version equal to the coordinator version found");
         }
         if (members.size() < membersView.size()) {
+            // TODO [viliam] this needs updating, it can also happen that members are shutting down
             logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
                     idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
@@ -127,6 +128,13 @@ public class LightMasterContext {
         try {
             executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
         } catch (Throwable e) {
+            boolean shutdownInitiated = coordinationService.getJetServiceBackend().isShutdownInitiated();
+            logger.info("aaa shutdownInitiated=" + shutdownInitiated + ", e=" + e); // TODO [viliam] remove
+            if (shutdownInitiated) {
+                // if there's any failure and we're shutting down, let's report that to the caller
+                logger.fine("ExecutionPlan initialization failed, but the local member is shutting down, ignoring it: " + e, e);
+                throw new MemberShuttingDownException();
+            }
             executionPlanMap = null;
             finalizeJob(e);
             return;

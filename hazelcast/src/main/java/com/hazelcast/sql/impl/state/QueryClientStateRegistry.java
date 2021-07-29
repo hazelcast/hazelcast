@@ -84,7 +84,7 @@ public class QueryClientStateRegistry {
             // Fetch the next page.
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, result.isInfiniteRows());
 
-            delete = page.isLast();
+//            delete = page.isLast();
 
             return page;
         } catch (Exception e) {
@@ -113,7 +113,7 @@ public class QueryClientStateRegistry {
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
             if (page.isLast()) {
-                deleteClientCursor(clientCursor.getQueryId());
+//                deleteClientCursor(clientCursor.getQueryId());
             }
 
             return page;

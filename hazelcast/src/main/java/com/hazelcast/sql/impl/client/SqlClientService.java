@@ -125,11 +125,11 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
-        ClientConnection connection,
+            ClientConnection connection,
             SqlStatement statement,
-        SqlClientResult res,
-        ClientMessage message,
-        Throwable error
+            SqlClientResult res,
+            ClientMessage message,
+            Throwable error
     ) {
         if (error != null) {
             res.onExecuteError(rethrow(error, connection));
@@ -282,6 +282,7 @@ public class SqlClientService implements SqlService {
 
     private RuntimeException rethrow(Throwable cause, Connection connection) {
         if (!connection.isAlive()) {
+            logger.info("Ignored error: " + cause, cause);
             return QueryUtils.toPublicException(
                 QueryException.memberConnection(connection.getRemoteAddress()),
                 getClientId()

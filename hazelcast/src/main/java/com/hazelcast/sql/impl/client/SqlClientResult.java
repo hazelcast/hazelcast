@@ -97,7 +97,7 @@ public class SqlClientResult implements SqlResult {
             } else {
                 state = new State(null, updateCount, null);
 
-                markClosed();
+//                markClosed();
             }
 
             mux.notifyAll();
@@ -359,7 +359,7 @@ public class SqlClientResult implements SqlResult {
             if (page.isLast()) {
                 this.last = true;
 
-                markClosed();
+//                markClosed();
             }
         }
 

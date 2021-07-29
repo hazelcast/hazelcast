@@ -336,14 +336,11 @@ public class JobCoordinationService {
             mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
             oldContext = lightMasterContexts.put(jobId, mc);
             assert oldContext instanceof UninitializedLightJobMarker;
-        } catch (Throwable e) {
-            lightMasterContexts.remove(jobId);
-            boolean shutdownInitiated = jetServiceBackend.isShutdownInitiated();
-            if (shutdownInitiated && !(e instanceof MemberShuttingDownException)) {
-                // if there's any failure and we're shutting down, let's report that to the caller
-                logger.fine("LightMasterContext initialization failed, but the local member is shutting down, ignoring it: " + e, e);
+            if (mc.getCompletionFuture().isCompletedExceptionally() && jetServiceBackend.isShutdownInitiated()) {
                 throw new MemberShuttingDownException();
             }
+        } catch (Throwable e) {
+            lightMasterContexts.remove(jobId);
             throw e;
         } finally {
             initializationFuture.complete(mc);

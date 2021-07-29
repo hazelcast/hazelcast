@@ -87,7 +87,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -508,7 +507,8 @@ public final class Util {
         try {
             return callable.call();
         } catch (Exception e) {
-            throw rethrow(e);
+            throw new RuntimeException(e);
+//            throw rethrow(e);
         } finally {
             currentThread.setContextClassLoader(previousCl);
         }
