@@ -225,15 +225,32 @@ public final class ClientProperty {
 
     /**
      * Use to enable the client statistics collection.
-     * <p>
      * The default is false.
+     *
+     * Setting this enables Metrics since 4.0.
+     * Deprecated since 4.0 use "hazelcast.client.metrics.enabled" {@link #METRICS_ENABLED} instead.
+     *
+     * If both {@link #STATISTICS_ENABLED} and {@link #METRICS_ENABLED} is configured,
+     * {@link #STATISTICS_ENABLED} is ignored.
+     *
+     * Note that when this is enabled the default value of {@link #METRICS_COLLECTION_FREQUENCY} (5 seconds)
+     * will be used instead of {@link #STATISTICS_PERIOD_SECONDS} (3 seconds), when not set explicitly.
      */
+    @Deprecated
     public static final HazelcastProperty STATISTICS_ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled",
             false);
 
     /**
      * The period in seconds the statistics run.
+     *
+     * Deprecated since 4.0 use "hazelcast.client.metrics.collection.frequency" {@link #METRICS_COLLECTION_FREQUENCY}
+     * instead.
+     *
+     * The values set here is used as "hazelcast.client.metrics.collection.frequency" as instead.
+     * If both {@link #STATISTICS_PERIOD_SECONDS} and {@link #METRICS_COLLECTION_FREQUENCY} is configured,
+     * {@link #STATISTICS_PERIOD_SECONDS} is ignored.
      */
+    @Deprecated
     public static final HazelcastProperty STATISTICS_PERIOD_SECONDS = new HazelcastProperty(
             "hazelcast.client.statistics.period.seconds", 3, SECONDS);
 
@@ -288,7 +305,7 @@ public final class ClientProperty {
      * potentially embedded into a signed artifact.
      */
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
-            = new HazelcastProperty("hazelcast.client.metrics.collection.frequency");
+            = new HazelcastProperty("hazelcast.client.metrics.collection.frequency", 5);
 
 
     private ClientProperty() {

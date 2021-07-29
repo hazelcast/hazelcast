@@ -53,8 +53,12 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * enabled, Hazelcast Management Center will be able to connect to this
      * member. It's enabled by default.
      * <p>
-     * May be overridden by {@link ClusterProperty#METRICS_ENABLED}
-     * system property.
+     * May be overridden by {@link ClusterProperty#METRICS_ENABLED} system property for the member
+     * May be overridden by following system properties for the client.
+     * {@link com.hazelcast.client.properties.ClientProperty#METRICS_ENABLED}
+     * {@link com.hazelcast.client.properties.ClientProperty#STATISTICS_ENABLED}
+     * When both of them configured for the client STATISTICS_ENABLED is ignored.
+     *
      */
     @Nonnull
     public T setEnabled(boolean enabled) {
@@ -86,6 +90,10 @@ public abstract class BaseMetricsConfig<T extends BaseMetricsConfig> {
      * metrics are collected every 5 seconds.
      * <p>
      * May be overridden by {@link ClusterProperty#METRICS_COLLECTION_FREQUENCY}
+     * May be overridden by followings for the client.
+     * {@link com.hazelcast.client.properties.ClientProperty#METRICS_COLLECTION_FREQUENCY}
+     * {@link com.hazelcast.client.properties.ClientProperty#STATISTICS_PERIOD_SECONDS}
+     * When both of them is configured for the client, STATISTICS_PERIOD_SECONDS is ignored.
      * system property.
      */
     @Nonnull

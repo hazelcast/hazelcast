@@ -93,10 +93,22 @@ public final class MetricsConfigHelper {
         ClientMetricsConfig metricsConfig = config.getMetricsConfig();
         MetricsJmxConfig jmxConfig = metricsConfig.getJmxConfig();
 
+        //Check old deprecated STATISTICS settings first.
+        // MetricsConfig.collectionFrequencySeconds
+        tryOverride(ClientProperty.STATISTICS_PERIOD_SECONDS, config::getProperty,
+                prop -> metricsConfig.setCollectionFrequencySeconds(Integer.parseInt(prop)),
+                () -> Integer.toString(metricsConfig.getCollectionFrequencySeconds()),
+                "ClientMetricsConfig.collectionFrequencySeconds", logger);
+        // MetricsConfig.enabled
+        tryOverride(ClientProperty.STATISTICS_ENABLED, config::getProperty,
+                prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
+                () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled", logger);
+
         // MetricsConfig.enabled
         tryOverride(ClientProperty.METRICS_ENABLED, config::getProperty,
             prop -> metricsConfig.setEnabled(Boolean.parseBoolean(prop)),
             () -> Boolean.toString(metricsConfig.isEnabled()), "ClientMetricsConfig.enabled", logger);
+
 
         // MetricsJmxConfig.enabled
         tryOverride(ClientProperty.METRICS_JMX_ENABLED, config::getProperty,
