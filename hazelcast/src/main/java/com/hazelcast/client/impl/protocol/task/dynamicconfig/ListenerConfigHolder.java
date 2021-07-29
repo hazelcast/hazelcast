@@ -71,6 +71,8 @@ public class ListenerConfigHolder {
          */
         MAP_PARTITION_LOST(5);
 
+        private static final ListenerConfigType[] CACHED_VALUES = values();
+
         private final int type;
 
         ListenerConfigType(int type) {
@@ -82,22 +84,13 @@ public class ListenerConfigHolder {
         }
 
         public static ListenerConfigType fromType(int type) {
-            switch (type) {
-                case 0:
-                    return GENERIC;
-                case 1:
-                    return ITEM;
-                case 2:
-                    return ENTRY;
-                case 3:
-                    return SPLIT_BRAIN_PROTECTION;
-                case 4:
-                    return CACHE_PARTITION_LOST;
-                case 5:
-                    return MAP_PARTITION_LOST;
-                default:
-                    throw new HazelcastSerializationException("Unrecognized listener type " + type);
+            for (ListenerConfigType configType : CACHED_VALUES) {
+                if (configType.type == type) {
+                    return configType;
+                }
             }
+
+            throw new HazelcastSerializationException("Unrecognized listener type " + type);
         }
     }
 
@@ -164,6 +157,10 @@ public class ListenerConfigHolder {
                 case MAP_PARTITION_LOST:
                     listenerConfig = new MapPartitionLostListenerConfig(className);
                     break;
+                default:
+                    // We shouldn't hit this line as the validity of the type ids are
+                    // performed while constructing the listenerType. It is added to
+                    // make checkstyle happy.
             }
         } else {
             EventListener eventListener = serializationService.toObject(listenerImplementation);
@@ -186,6 +183,10 @@ public class ListenerConfigHolder {
                 case MAP_PARTITION_LOST:
                     listenerConfig = new MapPartitionLostListenerConfig((MapPartitionLostListener) eventListener);
                     break;
+                default:
+                    // We shouldn't hit this line as the validity of the type ids are
+                    // performed while constructing the listenerType. It is added to make
+                    // checkstyle happy.
             }
         }
         return (T) listenerConfig;

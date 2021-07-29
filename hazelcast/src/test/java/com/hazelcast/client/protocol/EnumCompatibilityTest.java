@@ -461,16 +461,16 @@ public class EnumCompatibilityTest {
     }
 
     private <T, V> void verifyCompatibility(T[] values, Function<T, V> toId, Map<T, V> mappings) {
-        assertEquals("New values are added to the enum that is used in the client protocol. " +
-                        "Make sure it does not cause compatibility issues in any of the clients " +
-                        "and add the hardcoded value of the new enum member to mappings.",
+        assertEquals("New values are added to the enum that is used in the client protocol. "
+                        + "Make sure it does not cause compatibility issues in any of the clients "
+                        + "and add the hardcoded value of the new enum member to mappings.",
                 mappings.size(), values.length);
 
         for (T member : values) {
             V id = toId.apply(member);
-            assertEquals("The id of the " + member + " that is used in the protocol is changed. " +
-                            "Make sure it does not cause compatibility issues in any of the clients " +
-                            "and update the mappings.",
+            assertEquals("The id of the " + member + " that is used in the protocol is changed. "
+                            + "Make sure it does not cause compatibility issues in any of the clients "
+                            + "and update the mappings.",
                     mappings.get(member), id);
         }
     }
