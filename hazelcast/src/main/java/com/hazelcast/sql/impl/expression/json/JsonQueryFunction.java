@@ -1,5 +1,6 @@
 package com.hazelcast.sql.impl.expression.json;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
@@ -37,7 +38,10 @@ public class JsonQueryFunction extends VariExpression<String> implements Identif
 
     @Override
     public String eval(final Row row, final ExpressionEvalContext context) {
-        final String json = (String) operands[0].eval(row, context);
+        final Object operand0 = operands[0].eval(row, context);
+        final String json = operand0 instanceof HazelcastJsonValue
+                ? operand0.toString()
+                : (String) operand0;
         final String path = (String) operands[1].eval(row, context);
 
         if (isNullOrEmpty(json) || isNullOrEmpty(path)) {

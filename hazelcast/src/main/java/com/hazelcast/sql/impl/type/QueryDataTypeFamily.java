@@ -70,7 +70,9 @@ public enum QueryDataTypeFamily {
     OBJECT(TYPE_LEN_OBJECT, PRECEDENCE_OBJECT, SqlColumnType.OBJECT),
     INTERVAL_YEAR_MONTH(TYPE_LEN_INTERVAL_YEAR_MONTH, PRECEDENCE_INTERVAL_YEAR_MONTH, null),
     INTERVAL_DAY_SECOND(TYPE_LEN_INTERVAL_DAY_SECOND, PRECEDENCE_INTERVAL_DAY_SECOND, null),
-    MAP(TYPE_LEN_MAP, PRECEDENCE_MAP, null);
+    MAP(TYPE_LEN_MAP, PRECEDENCE_MAP, null),
+    // TODO: correct values for HazelcastJsonValue
+    JSON(TYPE_LEN_VARCHAR, PRECEDENCE_VARCHAR, SqlColumnType.JSON);
 
     private final int estimatedSize;
     private final int precedence;

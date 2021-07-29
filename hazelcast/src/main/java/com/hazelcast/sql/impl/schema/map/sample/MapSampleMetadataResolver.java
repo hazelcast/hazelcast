@@ -71,9 +71,6 @@ public final class MapSampleMetadataResolver {
 
                 if (data.isPortable()) {
                     return resolvePortable(ss.getPortableContext().lookupClassDefinition(data), key, jetMapMetadataResolver);
-                } else if (data.isJson()) {
-                    throw new UnsupportedOperationException("To query JSON objects, "
-                            + "you have to define the data model using CREATE MAPPING.");
                 } else {
                     return resolveClass(ss.toObject(data).getClass(), key, jetMapMetadataResolver);
                 }

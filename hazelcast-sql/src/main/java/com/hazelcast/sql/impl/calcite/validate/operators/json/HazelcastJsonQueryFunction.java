@@ -26,7 +26,8 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
-        return TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, 0);
+        // TODO correct checks
+        return TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, 1);
     }
 
     @Override
