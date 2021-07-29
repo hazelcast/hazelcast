@@ -23,6 +23,8 @@ import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.util.Objects;
+
 public final class PersistenceAndHotRestartPersistenceMerger {
 
     private static final ILogger LOGGER = Logger.getLogger(PersistenceAndHotRestartPersistenceMerger.class);
@@ -99,16 +101,17 @@ public final class PersistenceAndHotRestartPersistenceMerger {
         if (hotRestartPersistenceConfig.isEnabled() != persistenceConfig.isEnabled()) {
             return false;
         }
-        if (! hotRestartPersistenceConfig.getBaseDir().equals(persistenceConfig.getBaseDir())) {
+        if (! Objects.equals(hotRestartPersistenceConfig.getBaseDir(), persistenceConfig.getBaseDir())) {
             return false;
         }
-        if (! hotRestartPersistenceConfig.getBackupDir().equals(persistenceConfig.getBackupDir())) {
+        if (! Objects.equals(hotRestartPersistenceConfig.getBackupDir(), persistenceConfig.getBackupDir())) {
             return false;
         }
-        if (hotRestartPersistenceConfig.isAutoRemoveStaleData() != persistenceConfig.isAutoRemoveStaleData()) {
+        if (! Objects.equals(hotRestartPersistenceConfig.isAutoRemoveStaleData(), persistenceConfig.isAutoRemoveStaleData())) {
             return false;
         }
-        if (! hotRestartPersistenceConfig.getEncryptionAtRestConfig().equals(persistenceConfig.getEncryptionAtRestConfig())) {
+        if (! Objects.equals(hotRestartPersistenceConfig.getEncryptionAtRestConfig(),
+                persistenceConfig.getEncryptionAtRestConfig())) {
             return false;
         }
         if (hotRestartPersistenceConfig.getClusterDataRecoveryPolicy().ordinal()
