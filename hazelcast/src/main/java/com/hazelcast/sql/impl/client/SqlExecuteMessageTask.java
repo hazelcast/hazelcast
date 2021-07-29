@@ -99,7 +99,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
-        SqlError error = SqlClientUtils.exceptionToClientError(logger, (Exception) throwable, nodeEngine.getLocalMember().getUuid());
+        SqlError error =
+                SqlClientUtils.exceptionToClientError(logger, (Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
             null,
