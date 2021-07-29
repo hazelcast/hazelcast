@@ -186,13 +186,17 @@ public class SqlClientService implements SqlService {
 
     // public for testing only
     public ClientConnection getQueryConnection() {
-        ClientConnection connection = client.getConnectionManager().getConnectionForSql();
+        try {
+            ClientConnection connection = client.getConnectionManager().getConnectionForSql();
 
-        if (connection == null) {
-            throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            if (connection == null) {
+                throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            }
+
+            return connection;
+        } catch (Exception e) {
+            throw rethrow(e);
         }
-
-        return connection;
     }
 
     /**
