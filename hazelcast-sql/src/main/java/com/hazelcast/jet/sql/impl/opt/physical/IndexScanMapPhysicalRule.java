@@ -53,7 +53,8 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
             if (indexScan != null) {
                 call.transformTo(indexScan);
             }
-            // Jet engine also supports normal HD maps scan.
+            // Otherwise, normal HD scan will be generated at FullScanPhysicalRule,
+            // since Jet engine also supports normal HD maps scan.
         } else {
             for (RelNode indexScan : JetIndexResolver.createIndexScans(logicalScan, table.getIndexes())) {
                 call.transformTo(indexScan);
