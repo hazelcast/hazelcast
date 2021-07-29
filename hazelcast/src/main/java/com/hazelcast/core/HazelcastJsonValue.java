@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import java.io.Serializable;
+
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -35,7 +37,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Ill-formatted JSON strings may cause false positive or false negative
  * results in queries. {@code null} string is not allowed.
  */
-public final class HazelcastJsonValue {
+public final class HazelcastJsonValue implements Serializable {
 
     private final String string;
 

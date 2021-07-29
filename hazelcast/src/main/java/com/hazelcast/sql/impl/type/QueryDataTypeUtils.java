@@ -35,6 +35,7 @@ import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL;
 import static com.hazelcast.sql.impl.type.QueryDataType.DECIMAL_BIG_INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataType.DOUBLE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
+import static com.hazelcast.sql.impl.type.QueryDataType.JSON;
 import static com.hazelcast.sql.impl.type.QueryDataType.NULL;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
 import static com.hazelcast.sql.impl.type.QueryDataType.REAL;
@@ -247,6 +248,8 @@ public final class QueryDataTypeUtils {
 
             case NULL:
                 return NULL;
+            case JSON:
+                return JSON;
 
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
@@ -300,6 +303,8 @@ public final class QueryDataTypeUtils {
 
             case NULL:
                 return NULL;
+            case JSON:
+                return JSON;
 
             default:
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);

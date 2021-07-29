@@ -213,7 +213,7 @@ QueryDataType ObjectTypes() :
     }
 }
 
-QueryDataType ObjectTypes() :
+QueryDataType CustomTypes() :
 {
     QueryDataType type;
 }

@@ -124,6 +124,8 @@ public interface SqlConnector {
      */
     String JSON_FORMAT = "json";
 
+    String JSON_TYPE_FORMAT = "json_type";
+
     /**
      * Value for {@value #OPTION_FORMAT} for CSV (comma-separated values)
      * serialization.

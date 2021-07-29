@@ -1,20 +1,17 @@
 package com.hazelcast.sql.impl.expression.json;
 
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.jayway.jsonpath.JsonPath;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
-public class JsonQueryFunction extends VariExpression<String> implements IdentifiedDataSerializable {
+public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
 
     public JsonQueryFunction() {}
 
@@ -37,7 +34,7 @@ public class JsonQueryFunction extends VariExpression<String> implements Identif
     }
 
     @Override
-    public String eval(final Row row, final ExpressionEvalContext context) {
+    public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
         final Object operand0 = operands[0].eval(row, context);
         final String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
@@ -48,11 +45,12 @@ public class JsonQueryFunction extends VariExpression<String> implements Identif
             return null;
         }
 
-        return JsonPath.read(json, path).toString();
+        //return JsonPath.read(json, path).toString();
+        return new HazelcastJsonValue(json);
     }
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.VARCHAR;
+        return QueryDataType.JSON;
     }
 }

@@ -19,7 +19,8 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
                 "JSON_QUERY",
                 SqlKind.OTHER_FUNCTION,
                 ReturnTypes.ARG0,
-                new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
+                // TODO replace with concrete RelDataType
+                new ReplaceUnknownOperandTypeInference(SqlTypeName.OTHER),
                 SqlFunctionCategory.SYSTEM
         );
     }

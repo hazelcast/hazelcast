@@ -1507,11 +1507,6 @@
                 <artifactId>jsr305</artifactId>
                 <version>3.0.2</version>
             </dependency>
-            <dependency>
-                <groupId>com.jayway.jsonpath</groupId>
-                <artifactId>json-path</artifactId>
-                <version>2.6.0</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
