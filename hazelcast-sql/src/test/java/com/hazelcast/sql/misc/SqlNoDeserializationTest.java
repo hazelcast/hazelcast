@@ -157,7 +157,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
                 Long.MAX_VALUE,
                 pageSize,
                 null,
-                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
+                SqlExpectedResultType.ROWS.getId(),
                 queryId
 
         );

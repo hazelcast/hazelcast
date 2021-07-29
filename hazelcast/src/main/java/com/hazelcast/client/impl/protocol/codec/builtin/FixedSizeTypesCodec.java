@@ -82,8 +82,8 @@ public final class FixedSizeTypesCodec {
         encodeInt(buffer, pos, protocolType.getId());
     }
 
-    public static void encodeInt(byte[] buffer, int pos, FieldType protocolType) {
-        encodeInt(buffer, pos, protocolType.getId());
+    public static void encodeInt(byte[] buffer, int pos, FieldType fieldType) {
+        encodeInt(buffer, pos, fieldType.getId());
     }
 
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {

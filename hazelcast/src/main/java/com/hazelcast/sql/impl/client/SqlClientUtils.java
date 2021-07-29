@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.client;
 
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import java.util.UUID;
@@ -26,10 +25,6 @@ import java.util.UUID;
  * Static helpers for SQL client.
  */
 public final class SqlClientUtils {
-
-    private static final byte EXPECTED_RESULT_TYPE_ANY = 0;
-    private static final byte EXPECTED_RESULT_TYPE_ROWS = 1;
-    private static final byte EXPECTED_RESULT_TYPE_UPDATE_COUNT = 2;
 
     private SqlClientUtils() {
         // No-op.
@@ -43,35 +38,5 @@ public final class SqlClientUtils {
             sqlException.getMessage(),
             sqlException.getOriginatingMemberId()
         );
-    }
-
-    public static byte expectedResultTypeToByte(SqlExpectedResultType expectedResultType) {
-        switch (expectedResultType) {
-            case ANY:
-                return EXPECTED_RESULT_TYPE_ANY;
-
-            case ROWS:
-                return EXPECTED_RESULT_TYPE_ROWS;
-
-            default:
-                assert expectedResultType == SqlExpectedResultType.UPDATE_COUNT;
-
-                return EXPECTED_RESULT_TYPE_UPDATE_COUNT;
-        }
-    }
-
-    public static SqlExpectedResultType expectedResultTypeToEnum(byte expectedResultType) {
-        switch (expectedResultType) {
-            case EXPECTED_RESULT_TYPE_ANY:
-                return SqlExpectedResultType.ANY;
-
-            case EXPECTED_RESULT_TYPE_ROWS:
-                return SqlExpectedResultType.ROWS;
-
-            default:
-                assert expectedResultType == EXPECTED_RESULT_TYPE_UPDATE_COUNT;
-
-                return SqlExpectedResultType.UPDATE_COUNT;
-        }
     }
 }

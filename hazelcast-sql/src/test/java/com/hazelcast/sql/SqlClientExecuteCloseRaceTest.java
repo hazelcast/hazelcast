@@ -159,7 +159,7 @@ public class SqlClientExecuteCloseRaceTest {
                 0L,
                 1,
                 null,
-                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
+                SqlExpectedResultType.ANY.getId(),
                 queryId
         );
 

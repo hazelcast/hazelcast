@@ -36,28 +36,83 @@ import java.util.EventListener;
 @SuppressWarnings("checkstyle:cyclomaticcomplexity")
 public class ListenerConfigHolder {
 
-    public static final int TYPE_LISTENER_CONFIG = 0;
-    public static final int TYPE_ITEM_LISTENER_CONFIG = 1;
-    public static final int TYPE_ENTRY_LISTENER_CONFIG = 2;
-    public static final int TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG = 3;
-    public static final int TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG = 4;
-    public static final int TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG = 5;
+    /**
+     * Used to specify the type of the listener configuration.
+     */
+    public enum ListenerConfigType {
+
+        /**
+         * Not specific to any data structure or service.
+         */
+        GENERIC(0),
+
+        /**
+         * For {@link ItemListenerConfig}.
+         */
+        ITEM(1),
+
+        /**
+         * For {@link EntryListenerConfig}.
+         */
+        ENTRY(2),
+
+        /**
+         * For {@link SplitBrainProtectionListenerConfig}.
+         */
+        SPLIT_BRAIN_PROTECTION(3),
+
+        /**
+         * For {@link CachePartitionLostListenerConfig}.
+         */
+        CACHE_PARTITION_LOST(4),
+
+        /**
+         * For {@link MapPartitionLostListenerConfig}.
+         */
+        MAP_PARTITION_LOST(5);
+
+        private final int type;
+
+        ListenerConfigType(int type) {
+            this.type = type;
+        }
+
+        public int getType() {
+            return type;
+        }
+
+        public static ListenerConfigType fromType(int type) {
+            switch (type) {
+                case 0:
+                    return GENERIC;
+                case 1:
+                    return ITEM;
+                case 2:
+                    return ENTRY;
+                case 3:
+                    return SPLIT_BRAIN_PROTECTION;
+                case 4:
+                    return CACHE_PARTITION_LOST;
+                case 5:
+                    return MAP_PARTITION_LOST;
+                default:
+                    throw new HazelcastSerializationException("Unrecognized listener type " + type);
+            }
+        }
+    }
 
     private final String className;
     private final Data listenerImplementation;
     private final boolean includeValue;
     private final boolean local;
-    private final int listenerType;
-
-    public ListenerConfigHolder(int listenerType, String className) {
-        this(listenerType, null, className, true, false);
-    }
-
-    public ListenerConfigHolder(int listenerType, Data listenerImplementation) {
-        this(listenerType, listenerImplementation, null, true, false);
-    }
+    private final ListenerConfigType listenerType;
 
     public ListenerConfigHolder(int listenerType, Data listenerImplementation, String className,
+                                boolean includeValue, boolean local) {
+        this(ListenerConfigType.fromType(listenerType), listenerImplementation, className, includeValue, local);
+    }
+
+    public ListenerConfigHolder(ListenerConfigType listenerType, Data listenerImplementation, String className,
                                 boolean includeValue, boolean local) {
         this.listenerType = listenerType;
         this.className = className;
@@ -75,7 +130,7 @@ public class ListenerConfigHolder {
     }
 
     public int getListenerType() {
-        return listenerType;
+        return listenerType.getType();
     }
 
     public boolean isIncludeValue() {
@@ -91,50 +146,46 @@ public class ListenerConfigHolder {
         ListenerConfig listenerConfig = null;
         if (className != null) {
             switch (listenerType) {
-                case TYPE_LISTENER_CONFIG:
+                case GENERIC:
                     listenerConfig = new ListenerConfig(className);
                     break;
-                case TYPE_ITEM_LISTENER_CONFIG:
+                case ITEM:
                     listenerConfig = new ItemListenerConfig(className, includeValue);
                     break;
-                case TYPE_ENTRY_LISTENER_CONFIG:
+                case ENTRY:
                     listenerConfig = new EntryListenerConfig(className, local, includeValue);
                     break;
-                case TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG:
+                case SPLIT_BRAIN_PROTECTION:
                     listenerConfig = new SplitBrainProtectionListenerConfig(className);
                     break;
-                case TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG:
+                case CACHE_PARTITION_LOST:
                     listenerConfig = new CachePartitionLostListenerConfig(className);
                     break;
-                case TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG:
+                case MAP_PARTITION_LOST:
                     listenerConfig = new MapPartitionLostListenerConfig(className);
                     break;
-                default:
-                    throw new HazelcastSerializationException("Unrecognized listener type " + listenerConfig);
             }
         } else {
             EventListener eventListener = serializationService.toObject(listenerImplementation);
             switch (listenerType) {
-                case TYPE_LISTENER_CONFIG:
+                case GENERIC:
                     listenerConfig = new ListenerConfig(eventListener);
                     break;
-                case TYPE_ITEM_LISTENER_CONFIG:
+                case ITEM:
                     listenerConfig = new ItemListenerConfig((ItemListener) eventListener, includeValue);
                     break;
-                case TYPE_ENTRY_LISTENER_CONFIG:
+                case ENTRY:
                     listenerConfig = new EntryListenerConfig((MapListener) eventListener, local, includeValue);
                     break;
-                case TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG:
+                case SPLIT_BRAIN_PROTECTION:
                     listenerConfig = new SplitBrainProtectionListenerConfig((SplitBrainProtectionListener) eventListener);
                     break;
-                case TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG:
+                case CACHE_PARTITION_LOST:
                     listenerConfig = new CachePartitionLostListenerConfig((CachePartitionLostListener) eventListener);
                     break;
-                case TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG:
+                case MAP_PARTITION_LOST:
                     listenerConfig = new MapPartitionLostListenerConfig((MapPartitionLostListener) eventListener);
                     break;
-                default:
-                    throw new HazelcastSerializationException("Unrecognized listener type " + listenerConfig);
             }
         }
         return (T) listenerConfig;
@@ -147,7 +198,7 @@ public class ListenerConfigHolder {
     }
 
     public static ListenerConfigHolder of(ListenerConfig config, SerializationService serializationService) {
-        int listenerType = listenerTypeOf(config);
+        ListenerConfigType listenerType = listenerTypeOf(config);
         Data implementationData = null;
         if (config.getImplementation() != null) {
             implementationData = serializationService.toData(config.getImplementation());
@@ -156,19 +207,19 @@ public class ListenerConfigHolder {
                 config.isLocal());
     }
 
-    private static int listenerTypeOf(ListenerConfig config) {
+    private static ListenerConfigType listenerTypeOf(ListenerConfig config) {
         if (config instanceof ItemListenerConfig) {
-            return TYPE_ITEM_LISTENER_CONFIG;
+            return ListenerConfigType.ITEM;
         } else if (config instanceof CachePartitionLostListenerConfig) {
-            return TYPE_CACHE_PARTITION_LOST_LISTENER_CONFIG;
+            return ListenerConfigType.CACHE_PARTITION_LOST;
         } else if (config instanceof SplitBrainProtectionListenerConfig) {
-            return TYPE_SPLIT_BRAIN_PROTECTION_LISTENER_CONFIG;
+            return ListenerConfigType.SPLIT_BRAIN_PROTECTION;
         } else if (config instanceof EntryListenerConfig) {
-            return TYPE_ENTRY_LISTENER_CONFIG;
+            return ListenerConfigType.ENTRY;
         } else if (config instanceof MapPartitionLostListenerConfig) {
-            return TYPE_MAP_PARTITION_LOST_LISTENER_CONFIG;
+            return ListenerConfigType.MAP_PARTITION_LOST;
         } else {
-            return TYPE_LISTENER_CONFIG;
+            return ListenerConfigType.GENERIC;
         }
     }
 }
