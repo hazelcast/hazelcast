@@ -17,9 +17,12 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
@@ -58,7 +61,8 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
         // handle jobs locally
         futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
 
-        // handle SQL client cursors locally
+        // Handle SQL client cursors locally. This call also ensures that all members joining after this
+            // call get the shuttingDownMembers list when they join.
         futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
                 .completionFutureForCurrentCursors());
 
@@ -66,15 +70,20 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
         UUID localMemberUuid = getNodeEngine().getLocalMember().getUuid();
         for (Member member : getNodeEngine().getClusterService().getMembers()) {
             if (member.getUuid().equals(localMemberUuid)) {
+                // don't send to myself
                 continue;
             }
             NotifyShutdownToMembersOperation op = new NotifyShutdownToMembersOperation(singletonList(getCallerUuid()));
             CompletableFuture<Object> future = getNodeEngine().getOperationService().
                     invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress());
-            future = future.whenComplete((r, t) -> {
-                if (t != null) {
-                    getLogger().info("aaa returned from " + member.getAddress() + ", t=" + t, t);
+            future = future.exceptionally(e -> {
+                // we ignore the exceptions, but we log it if the failure isn't one of the specific causes
+                if (!(e instanceof MemberLeftException)
+                        && !(e instanceof TargetNotMemberException)
+                        && !(e instanceof HazelcastInstanceNotActiveException)) {
+                    getLogger().warning("NotifyShutdownToMembersOperation failed on " + member.getAddress() + ": " + e, e);
                 }
+                return null;
             });
             futures.add(future);
         }

@@ -478,7 +478,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 if (!addresses.contains(memberAddress)) {
-                    throw new JetException("Cluster does not contain the required member: " + memberAddress);
+                    throw new JetException("The required member isn't participant in the job: " + memberAddress);
                 }
                 return addr -> addr.equals(memberAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }

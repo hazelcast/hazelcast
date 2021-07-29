@@ -104,68 +104,77 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
         AtomicInteger membersAddedRemoved = new AtomicInteger();
         AtomicBoolean terminated = new AtomicBoolean();
 
-        // TODO [viliam] the test should include also master shutdown
-
         List<Thread> threads = new ArrayList<>();
+        try {
+            // TODO [viliam] the test should include also master shutdown
 
-        // add threads executing queries
-        for (int i = 0; i < 2; i++) {
-            threads.add(new Thread(() -> {
-                try {
-                    SqlStatement stmt = new SqlStatement("select * from table(generate_series(1, 2))")
-                            .setCursorBufferSize(1);
-                    // TODO [viliam] check that 2 client calls are made: execute & one fetch
-                    while (!terminated.get()) {
-                        Iterator<SqlRow> iterator = client.getSql().execute(stmt).iterator();
-                        assertEquals(1, (int) iterator.next().getObject(0));
-                        assertEquals(2, (int) iterator.next().getObject(0));
-                        assertFalse(iterator.hasNext());
+            // add threads executing queries
+            for (int i = 0; i < 2; i++) {
+                threads.add(new Thread(() -> {
+                    try {
+                        SqlStatement stmt = new SqlStatement("select * from table(generate_series(1, 2))")
+                                .setCursorBufferSize(1);
+                        // TODO [viliam] check that 2 client calls are made: execute & one fetch
+                        while (!terminated.get()) {
+                            Iterator<SqlRow> iterator = client.getSql().execute(stmt).iterator();
+                            assertEquals(1, (int) iterator.next().getObject(0));
+                            assertEquals(2, (int) iterator.next().getObject(0));
+                            assertFalse(iterator.hasNext());
 
-                        queriesExecuted.incrementAndGet();
+                            queriesExecuted.incrementAndGet();
+                        }
+                    } catch (Throwable e) {
+                        logger.info("", e);
+                        error.compareAndSet(null, e);
                     }
-                } catch (Throwable e) {
-                    logger.info("", e);
-                    error.compareAndSet(null, e);
-                }
-            }, "queryTread-" + i));
-        }
+                }, "queryTread-" + i));
+            }
 
-        // add a thread starting/stopping members
-        for (int i = 0; i < 2; i++) {
-            threads.add(new Thread(() -> {
-                try {
-                    while (!terminated.get()) {
-                        logger.info("creating instance");
-                        HazelcastInstance inst = createHazelcastInstance();
-                        logger.info("instance created, shutting it down");
-                        inst.shutdown();
-                        logger.info("instance shut down");
-                        membersAddedRemoved.incrementAndGet();
+            // add a thread starting/stopping members
+            for (int i = 0; i < 2; i++) {
+                threads.add(new Thread(() -> {
+                    try {
+                        while (!terminated.get()) {
+                            logger.info("creating instance");
+                            HazelcastInstance inst = createHazelcastInstance();
+                            logger.info("instance created, shutting it down");
+                            inst.shutdown();
+                            logger.info("instance shut down");
+                            membersAddedRemoved.incrementAndGet();
+                        }
+                    } catch (Throwable e) {
+                        logger.info("", e);
+                        error.compareAndSet(null, e);
                     }
-                } catch (Throwable e) {
-                    logger.info("", e);
-                    error.compareAndSet(null, e);
-                }
-            }, "memberAddRemoveThread-" + i));
+                }, "memberAddRemoveThread-" + i));
+            }
+
+            for (Thread t : threads) {
+                t.start();
+            }
+
+            for (int i = 0; i < 60; i++) {
+                checkError(error);
+                sleepSeconds(1);
+            }
+
+        } finally {
+            terminated.set(true);
+
+            for (Thread t : threads) {
+                t.join();
+            }
+
+            logger.info(queriesExecuted.get() + " queries executed, " + membersAddedRemoved.get() + " members added/removed");
         }
-
-
-        for (Thread t : threads) {
-            t.start();
-        }
-
-        sleepSeconds(10);
-        terminated.set(true);
-
-        for (Thread t : threads) {
-            t.join();
-        }
-
-        if (error.get() != null) {
-            throw error.get();
-        }
-        logger.info(queriesExecuted.get() + " queries executed, " + membersAddedRemoved.get() + " members added/removed");
+        checkError(error);
         assertThat(queriesExecuted.get()).as("queries executed").isGreaterThan(10);
         assertThat(membersAddedRemoved.get()).as("members added/removed").isGreaterThan(10);
+    }
+
+    private void checkError(AtomicReference<Throwable> error) {
+        if (error.get() != null) {
+            throw new RuntimeException(error.get());
+        }
     }
 }
