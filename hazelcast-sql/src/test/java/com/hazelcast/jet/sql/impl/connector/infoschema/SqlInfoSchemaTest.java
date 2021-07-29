@@ -121,13 +121,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                 "SELECT mapping_name FROM information_schema.mappings",
                 singletonList(new Row(mappingName))
         );
-        assertThat(planCache(instance()).size()).isEqualTo(1);
-
-        assertRowsAnyOrder(
-                "SELECT mapping_external_name FROM information_schema.mappings",
-                singletonList(new Row(mappingExternalName))
-        );
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     @Test
@@ -136,13 +130,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
                 "SELECT column_name FROM information_schema.columns WHERE ordinal_position = 2",
                 singletonList(new Row("__value"))
         );
-        assertThat(planCache(instance()).size()).isEqualTo(1);
-
-        assertRowsAnyOrder(
-                "SELECT column_external_name FROM information_schema.columns WHERE ordinal_position = 2",
-                singletonList(new Row("this.value"))
-        );
-        assertThat(planCache(instance()).size()).isEqualTo(2);
+        assertThat(planCache(instance()).size()).isZero();
     }
 
     public static final class Value {
