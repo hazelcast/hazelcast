@@ -40,9 +40,9 @@ public class MappingsTable extends InfoSchemaTable {
             new TableField("table_catalog", QueryDataType.VARCHAR, false),
             new TableField("table_schema", QueryDataType.VARCHAR, false),
             new TableField("table_name", QueryDataType.VARCHAR, false),
-            new TableField("table_external_name", QueryDataType.VARCHAR, false),
-            new TableField("table_type", QueryDataType.VARCHAR, false),
-            new TableField("table_options", QueryDataType.VARCHAR, false)
+            new TableField("mapping_external_name", QueryDataType.VARCHAR, false),
+            new TableField("mapping_type", QueryDataType.VARCHAR, false),
+            new TableField("mapping_options", QueryDataType.VARCHAR, false)
     );
 
     private final String mappingsSchema;

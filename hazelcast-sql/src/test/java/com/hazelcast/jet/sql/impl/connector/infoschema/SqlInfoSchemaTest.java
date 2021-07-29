@@ -124,7 +124,7 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
         assertRowsAnyOrder(
-                "SELECT table_external_name FROM information_schema.mappings",
+                "SELECT mapping_external_name FROM information_schema.mappings",
                 singletonList(new Row(mappingExternalName))
         );
         assertThat(planCache(instance()).size()).isEqualTo(2);
