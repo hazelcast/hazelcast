@@ -74,7 +74,7 @@ public class SqlClientService implements SqlService {
         client.getCluster().addMembershipListener(new MembershipListener() {
             @Override
             public void memberAdded(MembershipEvent event) {
-            }
+    }
 
             @Override
             public void memberRemoved(MembershipEvent event) {
@@ -125,11 +125,11 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
-            ClientConnection connection,
+        ClientConnection connection,
             SqlStatement statement,
-            SqlClientResult res,
-            ClientMessage message,
-            Throwable error
+        SqlClientResult res,
+        ClientMessage message,
+        Throwable error
     ) {
         if (error != null) {
             res.onExecuteError(rethrow(error, connection));
@@ -147,7 +147,7 @@ public class SqlClientService implements SqlService {
                 logger.fine("Client added a shutting-down member: " + connection.getRemoteUuid());
                 executeInt(res, statement);
             } else {
-                res.onExecuteError(responseError);
+            res.onExecuteError(responseError);
             }
             return;
         }
@@ -208,13 +208,17 @@ public class SqlClientService implements SqlService {
 
     // public for testing only
     public ClientConnection getQueryConnection() {
-        ClientConnection connection = client.getConnectionManager().getConnectionForSql(shuttingDownMembers);
+        try {
+            ClientConnection connection = client.getConnectionManager().getConnectionForSql(shuttingDownMembers);
 
-        if (connection == null) {
-            throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            if (connection == null) {
+                throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            }
+
+            return connection;
+        } catch (Exception e) {
+            throw rethrow(e);
         }
-
-        return connection;
     }
 
     /**
