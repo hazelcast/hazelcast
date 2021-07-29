@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.Level;
 
 import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_PORT_TRY_COUNT;
 import static com.hazelcast.test.mocknetwork.MockClusterProperty.MOCK_JOIN_SHOULD_ISOLATE_CLUSTERS;
@@ -158,7 +159,9 @@ class MockJoiner extends AbstractJoiner {
             }
 
             if (shouldIsolateClusters && isMemberOfIsolatedCluster(foundNode)) {
-                logger.fine("Node for " + address + " is outside of the join range and should not be joined.");
+                String message = "Node for " + address + " is outside of the join range and should not be joined.";
+                boolean suspicious = isSuspiciousIsolation(foundNode);
+                logger.log(suspicious ? Level.WARNING : Level.FINE, message);
                 continue;
             }
 
@@ -168,9 +171,15 @@ class MockJoiner extends AbstractJoiner {
         return null;
     }
 
-    private boolean isMemberOfIsolatedCluster(Node foundNode) {
-        int rangeStartPort = node.getConfig().getNetworkConfig().getPort();
-        int foundNodePort = foundNode.getThisAddress().getPort();
+    private boolean isSuspiciousIsolation(Node node) {
+        int thisPort = this.node.getConfig().getNetworkConfig().getPort();
+        int thatPort = node.getConfig().getNetworkConfig().getPort();
+        return thisPort == thatPort;
+    }
+
+    private boolean isMemberOfIsolatedCluster(Node node) {
+        int rangeStartPort = this.node.getConfig().getNetworkConfig().getPort();
+        int foundNodePort = node.getThisAddress().getPort();
         return rangeStartPort + maxTryCount < foundNodePort
                 || rangeStartPort > foundNodePort;
     }
