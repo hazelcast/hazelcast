@@ -99,7 +99,6 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         map.put(101, new Person(null));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testCompositeQueries() {
         check(null, 0, 0, 0, 0);
@@ -123,7 +122,6 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("name = '010' and age = 110", 0, 5, 7, 0);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testFirstComponentQuerying() {
         check(null, 0, 0, 0, 0);
@@ -175,7 +173,6 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
         check("height != null", 100, 0, 0, 0);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testNulls() {
         check(null, 0, 0, 0, 0);
@@ -328,7 +325,7 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
     private static class NoIndexPredicate implements IndexAwarePredicate, VisitablePredicate {
 
-        private Predicate delegate;
+        private volatile Predicate delegate;
 
         NoIndexPredicate(Predicate delegate) {
             this.delegate = delegate;
@@ -336,8 +333,9 @@ public class CompositeIndexQueriesTest extends HazelcastTestSupport {
 
         @Override
         public Predicate accept(Visitor visitor, Indexes indexes) {
+            Predicate delegate = this.delegate;
             if (delegate instanceof VisitablePredicate) {
-                delegate = ((VisitablePredicate) delegate).accept(visitor, indexes);
+                this.delegate = ((VisitablePredicate) delegate).accept(visitor, indexes);
             }
             return this;
         }

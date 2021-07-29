@@ -162,7 +162,7 @@ public class QueryEngineImpl implements QueryEngine {
     private Result doRunOnQueryThreads(Query query, PartitionIdSet partitionIds, TargetMode targetMode) {
         Result result = populateResult(query);
         List<Future<Result>> futures = dispatchOnQueryThreads(query, targetMode);
-        addResultsOfPredicate(futures, result, partitionIds, false);
+        addResultsOfPredicate(futures, result, partitionIds, disableMigrationFallback);
         return result;
     }
 
@@ -176,9 +176,11 @@ public class QueryEngineImpl implements QueryEngine {
             } else if (t.getCause() instanceof QueryResultSizeExceededException) {
                 throw rethrow(t);
             } else {
-                // log failure to invoke query on member at fine level
-                // the missing partition IDs will be queried anyway, so it's not a terminal failure
-                if (logger.isFineEnabled()) {
+                if (disableMigrationFallback) {
+                    throw rethrow(t);
+                } else if (logger.isFineEnabled()) {
+                    // log failure to invoke query on member at fine level
+                    // the missing partition IDs will be queried anyway, so it's not a terminal failure
                     logger.fine("Query invocation failed on member ", t);
                 }
             }

@@ -95,7 +95,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         SqlStatement statement = new SqlStatement(sql);
         statement.setParameters(arguments);
 
-        instance().getSql().execute(statement);
+        //noinspection EmptyTryBlock
+        try (@SuppressWarnings("unused") SqlResult result = instance().getSql().execute(statement)) {
+        }
 
         Map<K, V> map = instance().getMap(mapName);
         assertTrueEventually(() ->
@@ -178,7 +180,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         SqlService sqlService = instance().getSql();
         List<Row> actualRows = new ArrayList<>();
-        sqlService.execute(statement).iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
@@ -192,7 +196,9 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     public static void assertRowsOrdered(String sql, List<Row> expectedRows) {
         SqlService sqlService = instance().getSql();
         List<Row> actualRows = new ArrayList<>();
-        sqlService.execute(sql).iterator().forEachRemaining(r -> actualRows.add(new Row(r)));
+        try (SqlResult result = sqlService.execute(sql)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 
