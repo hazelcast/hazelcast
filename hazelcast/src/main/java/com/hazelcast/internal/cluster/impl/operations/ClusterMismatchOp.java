@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,7 +50,10 @@ public class ClusterMismatchOp extends AbstractClusterOperation {
 
         Set<Address> callerAddresses = new HashSet<>();
         callerAddresses.add(getCallerAddress());
-        callerAddresses.addAll(AddressUtil.getAliases(connection.getRemoteSocketAddress()));
+        InetSocketAddress remoteSocketAddress = connection.getRemoteSocketAddress();
+        if (remoteSocketAddress != null) {
+            callerAddresses.addAll(AddressUtil.getAliases(remoteSocketAddress));
+        }
 
         for (Address alias : callerAddresses) {
             node.getJoiner().blacklist(alias, true);
