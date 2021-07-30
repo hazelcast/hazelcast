@@ -138,9 +138,59 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         }
     }
 
+    protected void checkMapDestroy(boolean useClient, boolean firstMember) {
+        // Start two instances and fill them with data
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
+        client = newClient();
+
+        populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE * 64);
+
+        // Block query execution for a while
+        HazelcastInstance member = firstMember ? instance1 : instance2;
+
+        // Destroy map as soon as the blocking point is reached.
+        Thread mutator = new Thread(() -> {
+            try {
+                Thread.sleep(1000L);
+                member.getMap(MAP_NAME).destroy();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        // Start query
+        HazelcastSqlException error = assertSqlException(useClient ? client : instance1, query(), mutator);
+        try {
+            mutator.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertErrorCode(SqlErrorCode.MAP_DESTROYED, error);
+    }
+
     @Nonnull
     protected static HazelcastSqlException assertSqlException(HazelcastInstance instance, SqlStatement query) {
         try {
+            execute(instance, query);
+
+            fail("Exception is not thrown");
+
+            return null;
+        } catch (HazelcastSqlException e) {
+            System.out.println(">>> Caught expected SQL error: " + e);
+
+            return e;
+        }
+    }
+
+    @Nonnull
+    protected static HazelcastSqlException assertSqlException(
+            HazelcastInstance instance,
+            SqlStatement query,
+            Thread mutator) {
+        try {
+            mutator.start();
             execute(instance, query);
 
             fail("Exception is not thrown");

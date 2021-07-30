@@ -41,6 +41,16 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     }
 
     @Test
+    public void testMapDestroy_firstMember() {
+        checkMapDestroy(false, true);
+    }
+
+    @Test
+    public void testMapDestroy_secondMember() {
+        checkMapDestroy(false, false);
+    }
+
+    @Test
     public void testDataTypeMismatch() {
         checkDataTypeMismatch(false);
     }
