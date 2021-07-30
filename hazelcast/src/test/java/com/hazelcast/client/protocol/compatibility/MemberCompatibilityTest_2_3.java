@@ -7575,8 +7575,8 @@ public class MemberCompatibilityTest_2_3 {
         assertTrue(isEqual(aLong, parameters.jobId));
         assertTrue(isEqual(aData, parameters.dag));
         assertTrue(isEqual(aData, parameters.jobConfig));
-        assertTrue(parameters.isIsLightJobExists);
-        assertTrue(isEqual(aBoolean, parameters.isLightJob));
+        assertTrue(parameters.isLightJobCoordinatorExists);
+        assertTrue(isEqual(aUUID, parameters.lightJobCoordinator));
     }
 
     @Test

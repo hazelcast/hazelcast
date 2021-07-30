@@ -35,13 +35,13 @@ public class JetSubmitJobMessageTask extends AbstractJetMessageTask<JetSubmitJob
 
     @Override
     protected UUID getLightJobCoordinator() {
-        return parameters.isLightJob ? nodeEngine.getLocalMember().getUuid() : null;
+        return parameters.lightJobCoordinator;
     }
 
     @Override
     protected Operation prepareOperation() {
         return new SubmitJobOperation(
-                parameters.jobId, parameters.dag, parameters.jobConfig, parameters.isLightJob, endpoint.getSubject());
+                parameters.jobId, parameters.dag, parameters.jobConfig, parameters.lightJobCoordinator != null, endpoint.getSubject());
     }
 
     @Override

@@ -40,6 +40,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -98,6 +99,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
+        logger.info("aaa coordinator for " + idToString(jobId) + " is " + lightJobCoordinator);
         submittingInstance = true;
 
         try {
