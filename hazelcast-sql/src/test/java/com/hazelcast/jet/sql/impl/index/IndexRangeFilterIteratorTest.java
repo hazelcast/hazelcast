@@ -18,11 +18,11 @@ package com.hazelcast.jet.sql.impl.index;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.map.IMap;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

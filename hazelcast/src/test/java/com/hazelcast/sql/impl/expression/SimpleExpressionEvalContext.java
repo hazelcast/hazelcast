@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.expression;
+package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.util.Arrays;
 import java.util.List;
