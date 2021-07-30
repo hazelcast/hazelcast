@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet.sql.SqlTestSupport.awaitSingleRunningJob;
 import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for different error conditions.
@@ -96,6 +97,33 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         // Start query with immediate shutdown afterwards
         HazelcastSqlException error = assertSqlExceptionWithShutdown(instance1, streamingQuery);
         assertInstanceOf(HazelcastInstanceNotActiveException.class, findRootCause(error));
+    }
+
+    @Test
+    public void testMemberLeave() {
+        // Start two instances and fill them with data
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
+
+        populate(instance1, 250_000);
+
+        // Stop remote member when the blocking point is reached
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000L);
+                instance2.shutdown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        // Start query
+        HazelcastSqlException error = assertSqlException(instance1, query());
+        assertTrue(
+                "Error code: " + error.getCode(),
+                error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION
+        );
+        assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
     }
 
     @Test
