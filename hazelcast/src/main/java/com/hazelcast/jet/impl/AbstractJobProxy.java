@@ -99,7 +99,6 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         this.container = container;
         this.lightJobCoordinator = isLightJob ? findLightJobCoordinator() : null;
         this.logger = loggingService().getLogger(Job.class);
-        logger.info("aaa coordinator for " + idToString(jobId) + " is " + lightJobCoordinator);
         submittingInstance = true;
 
         try {
