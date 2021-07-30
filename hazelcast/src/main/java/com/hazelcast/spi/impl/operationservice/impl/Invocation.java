@@ -374,7 +374,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             this.pendingResponse = new ExceptionalResult(cause);
 
             if (backupsAcksReceived != expectedBackups) {
-                // we are done since not all backups have completed. Therefor we should not notify the future
+                // we are done since not all backups have completed. Therefore we should not notify the future
                 return;
             }
         }
