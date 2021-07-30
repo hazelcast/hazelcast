@@ -86,16 +86,6 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     }
 
     @Test
-    public void testMapDestroy_firstMember() {
-        checkMapDestroy(true, true);
-    }
-
-    @Test
-    public void testMapDestroy_secondMember() {
-        checkMapDestroy(true, false);
-    }
-
-    @Test
     public void testDataTypeMismatch() {
         checkDataTypeMismatch(true);
     }
@@ -128,12 +118,12 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        populate(instance1, 300_000);
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(100_000))");
 
         Thread thread = new Thread(() -> instance1.shutdown());
         thread.start();
 
-        HazelcastSqlException error = assertSqlException(client, query());
+        HazelcastSqlException error = assertSqlException(client, streamingQuery);
         assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
     }
 

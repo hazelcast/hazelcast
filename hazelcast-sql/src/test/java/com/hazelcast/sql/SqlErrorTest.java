@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,16 +42,6 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     }
 
     @Test
-    public void testMapDestroy_firstMember() {
-        checkMapDestroy(false, true);
-    }
-
-    @Test
-    public void testMapDestroy_secondMember() {
-        checkMapDestroy(false, false);
-    }
-
-    @Test
     public void testDataTypeMismatch() {
         checkDataTypeMismatch(false);
     }
@@ -68,6 +59,30 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         HazelcastSqlException error = assertSqlException(liteMember, query());
         assertErrorCode(SqlErrorCode.GENERIC, error);
         assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
+    }
+
+    @Test
+    public void testMemberLeave() {
+        // Start two instances and fill them with data
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
+
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(50000))");
+
+        // Stop remote member when the blocking point is reached
+        new Thread(() -> {
+            try {
+                Thread.sleep(2000L);
+                instance2.shutdown();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+
+        // Start query
+        HazelcastSqlException error = assertSqlException(instance1, streamingQuery);
+        assertInstanceOf(MemberLeftException.class, findRootCause(error));
     }
 
     @Test
