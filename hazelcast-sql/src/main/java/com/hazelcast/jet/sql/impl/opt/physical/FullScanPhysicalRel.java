@@ -23,7 +23,9 @@ import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -41,6 +43,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.sql.impl.calcite.opt.cost.CostUtils.HD_TABLE_SCAN_CPU_MULTIPLIER;
+import static com.hazelcast.sql.impl.calcite.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
 
@@ -94,12 +98,20 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
                 ? table.getTotalRowCount()
                 : getTable().getRowCount();
 
+        boolean isHd = false;
+
+        Table target = table.getTarget();
+        if (target instanceof PartitionedMapTable) {
+            isHd = ((PartitionedMapTable) target).isHd();
+        }
+
         return computeSelfCost(
                 planner,
                 totalRowCount,
                 table.getFilter() != null,
                 this.table.getRowCount(),
-                table.getProjects().size()
+                table.getProjects().size(),
+                isHd
         );
     }
 
@@ -108,10 +120,11 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
             double scanRowCount,
             boolean hasFilter,
             double filterRowCount,
-            int projectCount
+            int projectCount,
+            boolean isHd
     ) {
         // 1. Get cost of the scan itself.
-        double scanCpu = scanRowCount * CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
+        double scanCpu = scanRowCount * (isHd ? HD_TABLE_SCAN_CPU_MULTIPLIER : TABLE_SCAN_CPU_MULTIPLIER);
 
         // 2. Get cost of the filter, if any.
         double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;

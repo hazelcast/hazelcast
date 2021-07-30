@@ -49,7 +49,7 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
         PartitionedMapTable table = table(logicalScan);
 
         if (table.isHd()) {
-            RelNode indexScan = JetIndexResolver.createFullIndexScan(logicalScan, table.getIndexes());
+            RelNode indexScan = JetIndexResolver.createFullHDIndexScan(logicalScan, table.getIndexes());
             if (indexScan != null) {
                 call.transformTo(indexScan);
             }

@@ -910,19 +910,18 @@ public final class JetIndexResolver {
     }
 
     /**
-     * Create an index scan without any filter. Used by HD maps only.
+     * Create HD map index scan without any filter.
      *
      * @param scan    the original scan operator
      * @param indexes available indexes
      * @return index scan or {@code null}
      */
-    public static RelNode createFullIndexScan(FullScanLogicalRel scan, List<MapTableIndex> indexes) {
+    public static RelNode createFullHDIndexScan(FullScanLogicalRel scan, List<MapTableIndex> indexes) {
         MapTableIndex firstIndex = null;
 
         for (MapTableIndex index : indexes) {
             if (isIndexSupported(index)) {
                 firstIndex = index;
-
                 break;
             }
         }
