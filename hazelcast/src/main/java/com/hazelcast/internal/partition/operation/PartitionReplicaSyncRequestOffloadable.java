@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -28,14 +30,19 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequestOffloadable.PartitionNamespaceTuple.tupleOf;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
@@ -55,6 +62,7 @@ import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 public final class PartitionReplicaSyncRequestOffloadable
         extends PartitionReplicaSyncRequest {
 
+    private final transient ConcurrentMap<PartitionNamespaceTuple, long[]> replicaVersions = new ConcurrentHashMap<>();
     private volatile int partitionId;
 
     public PartitionReplicaSyncRequestOffloadable() {
@@ -83,10 +91,19 @@ public final class PartitionReplicaSyncRequestOffloadable
         try {
             PartitionReplicationEvent event = new PartitionReplicationEvent(getCallerAddress(), partitionId,
                     getReplicaIndex());
+            // It is only safe to read replica versions before preparing replication operations.
+            // Reasoning: even though partition is already marked as migrating,
+            // operations may be already queued in partition thread.
+            // If we read replica versions after replication operation
+            // is prepared, we may read updated replica versions but replication op
+            // may have stale data -> future backup sync checks will not detect the
+            // stale data.
+            readReplicaVersions();
+
             final Iterator<ServiceNamespace> iterator = namespaces.iterator();
             for (int i = 0; i < permits; i++) {
                 ServiceNamespace namespace = iterator.next();
-                Collection<Operation> operations = null;
+                Collection<Operation> operations;
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
@@ -104,6 +121,24 @@ public final class PartitionReplicaSyncRequestOffloadable
         }
     }
 
+    private void readReplicaVersions() {
+        InternalPartitionServiceImpl partitionService = getService();
+        OperationService operationService = getNodeEngine().getOperationService();
+        PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
+        UrgentPartitionRunnable<Void> gatherReplicaVersionsRunnable = new UrgentPartitionRunnable<>(partitionId(),
+                () -> {
+                    for (ServiceNamespace ns : namespaces) {
+                        // make a copy because getPartitionReplicaVersions returns references
+                        // to the internal replica versions data structures that may change under our feet
+                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
+                                IPartition.MAX_BACKUP_COUNT);
+                        replicaVersions.put(tupleOf(partitionId(), ns), versions);
+                    }
+                });
+        operationService.execute(gatherReplicaVersionsRunnable);
+        gatherReplicaVersionsRunnable.future.joinInternal();
+    }
+
     @Override
     protected int partitionId() {
         return this.partitionId;
@@ -118,6 +153,16 @@ public final class PartitionReplicaSyncRequestOffloadable
             getNodeEngine().getOperationService().execute(partitionRunnable);
             partitionRunnable.future.joinInternal();
         }
+    }
+
+    @Override
+    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
+        int partitionId = partitionId();
+        int replicaIndex = getReplicaIndex();
+        long[] versions = replicaVersions.get(tupleOf(partitionId, ns));
+        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
+        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        return syncResponse;
     }
 
     @Override
@@ -173,5 +218,36 @@ public final class PartitionReplicaSyncRequestOffloadable
         namespaces = Collections.newSetFromMap(new ConcurrentHashMap<>());
         namespaces.addAll(readCollection(in));
         partitionId = in.readInt();
+    }
+
+    static final class PartitionNamespaceTuple {
+        final int partitionId;
+        final ServiceNamespace ns;
+
+        private PartitionNamespaceTuple(int partitionId, ServiceNamespace ns) {
+            this.partitionId = partitionId;
+            this.ns = ns;
+        }
+
+        static PartitionNamespaceTuple tupleOf(int partitionId, ServiceNamespace ns) {
+            return new PartitionNamespaceTuple(partitionId, ns);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            PartitionNamespaceTuple that = (PartitionNamespaceTuple) o;
+            return partitionId == that.partitionId && Objects.equals(ns, that.ns);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(partitionId, ns);
+        }
     }
 }
