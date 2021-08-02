@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -184,8 +183,7 @@ public final class PartitionReplicaSyncRequestOffloadable
             // while preparing replication operations
             if (!partitionStateManager.trySetMigratingFlag(partitionId)
                     && !partitionStateManager.isMigrating(partitionId)) {
-                throw new RetryableHazelcastException("Cannot set migrating flag, "
-                        + "probably previous migration's finalization is not completed yet.");
+                sendRetryResponse();
             }
 
             try {
