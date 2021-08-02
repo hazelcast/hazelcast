@@ -211,7 +211,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
 
     public static final int EXPRESSION_CONCAT_WS = 78;
 
-
     public static final int LEN = EXPRESSION_CONCAT_WS + 1;
 
     @Override

@@ -91,7 +91,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         put("1");
 
         //Null on separator => returns null
-        checkFail(getConcatWsExpression("null", false, "3", "2"));
+        check(getConcatWsExpression("null", false, "3", "2"), null);
 
         //null on parameters => ignores null parameters
         check(getConcatWsExpression("-", "1", "null", "3"), "1-3");
@@ -106,7 +106,6 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
         //int on separator => returns error
         checkFail(getConcatWsExpression("5", false, "3", "2"));
-
     }
 
     @Test
@@ -185,8 +184,9 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql, SqlColumnType.VARCHAR, expectedResult, params);
     }
 
-    private void checkFail(String sql, Object... params) {
+    private void checkFail(String function, Object... params) {
         try {
+            String sql = "SELECT " + function + " FROM map";
             execute(member, sql, params);
             fail("Following query should have caused an error!  ===> " + sql);
         } catch (Exception e) {
