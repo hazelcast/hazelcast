@@ -117,11 +117,18 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         if (connection.getPlaneIndex() == -1) {
             // It could be the case that planeIndex of the connection may not
             // be set. In this case, we return only the remote address of
-            // connection. Since the plane index is set before the connection
+            // connection, if it is not null. We return an empty set if it's
+            // null.
+            // Since the plane index is set before the connection
             // registration (handshake processing), we don't expect this
             // connection exist in connectionMaps of the planes and don't
-            // search on them.
-            return Collections.singleton(connection.getRemoteAddress());
+            // search for it on them.
+            Address remoteAddress = connection.getRemoteAddress();
+            if (remoteAddress != null) {
+                return Collections.singleton(connection.getRemoteAddress());
+            } else {
+                return Collections.emptySet();
+            }
         } else {
             plane = planes[connection.getPlaneIndex()];
             return plane.getAddresses(connection);
