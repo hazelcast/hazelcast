@@ -6726,7 +6726,7 @@ public class ClientCompatibilityTest_2_3 {
     @Test
     public void test_JetSubmitJobCodec_encodeRequest() {
         int fileClientMessageIndex = 853;
-        ClientMessage encoded = JetSubmitJobCodec.encodeRequest(aLong, aData, aData, aBoolean);
+        ClientMessage encoded = JetSubmitJobCodec.encodeRequest(aLong, aData, aData, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

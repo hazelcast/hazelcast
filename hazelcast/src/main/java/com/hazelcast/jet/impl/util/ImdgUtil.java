@@ -57,12 +57,6 @@ public final class ImdgUtil {
     private ImdgUtil() {
     }
 
-    public static boolean existsDistributedObject(NodeEngine nodeEngine, String serviceName, String objectName) {
-        return nodeEngine.getProxyService()
-                         .getDistributedObjectNames(serviceName)
-                         .contains(objectName);
-    }
-
     public static <K, V> EntryProcessor<K, V, V> entryProcessor(
             BiFunctionEx<? super K, ? super V, ? extends V> remappingFunction
     ) {
