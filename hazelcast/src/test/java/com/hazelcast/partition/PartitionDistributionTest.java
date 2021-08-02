@@ -35,11 +35,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -161,8 +157,8 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         int nodeCount = dataNodeCount + liteNodeCount;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        final Integer[] partitionCounts = new Integer[nodeCount];
 
         for (int i = 0; i < dataNodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
@@ -175,53 +171,41 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
         }
 
         Thread[] threads = new Thread[dataNodeCount];
-        try {
-            for (int i = 0; i < dataNodeCount; i++) {
-                final int instanceIndex = i;
-                threads[i] = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        HazelcastInstance instance = instances[instanceIndex];
-                        counts.offer(getLocalPartitionsCount(instance));
-                    }
-                });
-                threads[i].start();
+        for (int i = 0; i < dataNodeCount; i++) {
+            final int instanceIndex = i;
+            threads[i] = new Thread(() -> partitionCounts[instanceIndex] = getLocalPartitionsCount(instances[instanceIndex]));
+            threads[i].start();
+        }
+
+        // this is needed for synchronizing accesses to partitionCounts array
+        assertJoinable(threads);
+
+        ILogger logger = instances[0].getLoggingService().getLogger(getClass());
+        String firstFailureMessage = null;
+        int average = (partitionCount / dataNodeCount);
+        logger.info(format("Partition count: %d, nodes: %d, average: %d", partitionCount, dataNodeCount, average));
+
+        int totalPartitions = 0;
+        for (int i = 0; i < dataNodeCount; i++) {
+            Integer localPartitionCount = partitionCounts[i];
+            assertNotNull(localPartitionCount);
+
+            String msg = format("Node: %d, local partition count: %d", i + 1, localPartitionCount);
+            if (firstFailureMessage == null && localPartitionCount < average) {
+                firstFailureMessage = msg;
             }
+            logger.info(msg);
+            totalPartitions += localPartitionCount;
+        }
+        assertEqualsStringFormat("Expected sum of local partitions to be %d, but was %d", partitionCount, totalPartitions);
 
-            ILogger logger = instances[0].getLoggingService().getLogger(getClass());
-            String firstFailureMessage = null;
+        if (firstFailureMessage != null) {
+            fail(format("%s, partition count: %d, nodes: %d, average: %d", firstFailureMessage, partitionCount, dataNodeCount,
+                    average));
+        }
 
-            int average = (partitionCount / dataNodeCount);
-            logger.info(format("Partition count: %d, nodes: %d, average: %d", partitionCount, dataNodeCount, average));
-
-            int totalPartitions = 0;
-            for (int i = 0; i < dataNodeCount; i++) {
-                Integer localPartitionCount = counts.poll(1, TimeUnit.MINUTES);
-                assertNotNull(localPartitionCount);
-
-                String msg = format("Node: %d, local partition count: %d", i + 1, localPartitionCount);
-                if (firstFailureMessage == null && localPartitionCount < average) {
-                    firstFailureMessage = msg;
-                }
-                logger.info(msg);
-
-                totalPartitions += localPartitionCount;
-            }
-            assertEqualsStringFormat("Expected sum of local partitions to be %d, but was %d", partitionCount, totalPartitions);
-
-            if (firstFailureMessage != null) {
-                fail(format("%s, partition count: %d, nodes: %d, average: %d", firstFailureMessage, partitionCount, dataNodeCount,
-                        average));
-            }
-
-            for (int i = dataNodeCount; i < nodeCount; i++) {
-                assertEquals(0, getLocalPartitionsCount(instances[i]));
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw rethrow(e);
-        } finally {
-            assertJoinable(threads);
+        for (int i = dataNodeCount; i < nodeCount; i++) {
+            assertEquals(0, getLocalPartitionsCount(instances[i]));
         }
     }
 
