@@ -270,11 +270,8 @@ public class TcpServerConnection implements ServerConnection {
     private List<Address> addressAliases() {
         List<Address> addressAliases = new ArrayList<>();
         addressAliases.add(remoteAddress);
-        InetSocketAddress remoteSocketAddress = getRemoteSocketAddress();
-        if (remoteSocketAddress != null) {
-            addressAliases.addAll(AddressUtil.getAliases(remoteSocketAddress)
-                    .stream().filter(a -> !a.equals(remoteAddress)).collect(Collectors.toSet()));
-        }
+        addressAliases.addAll(AddressUtil.getAliases(getRemoteSocketAddress())
+                .stream().filter(a -> !a.equals(remoteAddress)).collect(Collectors.toSet()));
         return addressAliases;
     }
 

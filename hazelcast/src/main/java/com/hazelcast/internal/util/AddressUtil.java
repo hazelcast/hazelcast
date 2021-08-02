@@ -18,7 +18,6 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Address;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -365,7 +364,10 @@ public final class AddressUtil {
         return selectedPorts;
     }
 
-    public static Collection<Address> getAliases(@Nonnull InetSocketAddress inetSocketAddress) {
+    public static Collection<Address> getAliases(InetSocketAddress inetSocketAddress) {
+        if (inetSocketAddress == null) {
+            return Collections.emptyList();
+        }
         String hostString = inetSocketAddress.getHostString();
         if (hostString != null) {
             try {
