@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.EmptyStatement;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -53,6 +57,16 @@ public class InstanceTrackingConfig {
 
     public InstanceTrackingConfig() {
         super();
+        try {
+            Class<?> helper = Class.forName("com.hazelcast.license.util.LicenseHelper");
+            Method getLicense = helper.getMethod("getBuiltInLicense");
+            // enabled for NLC build
+            enabled = getLicense.invoke(null) != null;
+        } catch (ClassNotFoundException | NoSuchMethodException
+                | IllegalAccessException | InvocationTargetException e) {
+            // running OS, instance tracking is disabled by default
+            EmptyStatement.ignore(e);
+        }
     }
 
     public InstanceTrackingConfig(InstanceTrackingConfig other) {
