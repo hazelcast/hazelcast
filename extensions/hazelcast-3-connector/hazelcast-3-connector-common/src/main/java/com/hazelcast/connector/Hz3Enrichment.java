@@ -22,6 +22,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -60,7 +61,7 @@ import java.util.concurrent.CompletableFuture;
  * config.addCustomClasspaths(name, jars);
  * } </pre>
  * The jars must exist in the directory specified by the
- * {@link com.hazelcast.spi.properties.ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
+ * {@link ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
  * directory. This is already set up for the regular zip distribution.
  */
 public final class Hz3Enrichment {
