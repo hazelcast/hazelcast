@@ -176,12 +176,9 @@ public final class PartitionReplicaSyncRequestOffloadable
 
         @Override
         public void start() throws Exception {
-            InternalPartitionServiceImpl partitionService = getService();
-            PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
             // set partition as migrating to disable mutating operations
             // while preparing replication operations
-            if (!partitionStateManager.trySetMigratingFlag(partitionId)
-                    && !partitionStateManager.isMigrating(partitionId)) {
+            if (!trySetMigratingFlag()) {
                 sendRetryResponse();
             }
 
@@ -199,7 +196,7 @@ public final class PartitionReplicaSyncRequestOffloadable
                     sendRetryResponse();
                 }
             } finally {
-                partitionStateManager.clearMigratingFlag(partitionId);
+                clearMigratingFlag();
             }
         }
     }
@@ -215,5 +212,23 @@ public final class PartitionReplicaSyncRequestOffloadable
         namespaces = Collections.newSetFromMap(new ConcurrentHashMap<>());
         namespaces.addAll(readCollection(in));
         partitionId = in.readInt();
+    }
+
+    private boolean trySetMigratingFlag() {
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        UrgentPartitionRunnable<Boolean> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
+                () -> partitionStateManager.trySetMigratingFlag(partitionId()));
+        getNodeEngine().getOperationService().execute(trySetMigrating);
+        return trySetMigrating.future.joinInternal();
+    }
+
+    private void clearMigratingFlag() {
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        UrgentPartitionRunnable<Void> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
+                () -> partitionStateManager.clearMigratingFlag(partitionId()));
+        getNodeEngine().getOperationService().execute(trySetMigrating);
+        trySetMigrating.future.joinInternal();
     }
 }
