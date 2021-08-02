@@ -293,10 +293,10 @@ public class ProxyServiceImpl
     }
 
     private static void checkServiceNameNotNull(@Nonnull String serviceName) {
-        checkNotNull(serviceName, "Service name is required!");
+        checkNotNull(serviceName, "Service name is required");
     }
 
     private static void checkObjectNameNotNull(@Nonnull String name) {
-        checkNotNull(name, "Object name is required!");
+        checkNotNull(name, "Object name is required");
     }
 }
