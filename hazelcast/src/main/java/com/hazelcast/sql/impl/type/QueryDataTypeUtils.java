@@ -142,6 +142,14 @@ public final class QueryDataTypeUtils {
      */
     public static final int TYPE_LEN_MAP = 48;
 
+    /**
+     * TODO: replace footprint with actual value?
+     *
+     * True VARCHAR footprint is 40, old values are kept for now, therefore new value is computed
+     * as VARCHAR footprint + 16 (reference/class footprint).
+     */
+    public static final int TYPE_LEN_JSON = TYPE_LEN_VARCHAR + 16;
+
     /** 12 (hdr) + 36 (arbitrary content). */
     public static final int TYPE_LEN_OBJECT = 12 + 36;
 
@@ -168,6 +176,7 @@ public final class QueryDataTypeUtils {
     public static final int PRECEDENCE_INTERVAL_YEAR_MONTH = 10;
     public static final int PRECEDENCE_INTERVAL_DAY_SECOND = 20;
     public static final int PRECEDENCE_MAP = 30;
+    public static final int PRECEDENCE_JSON = 40;
 
     private QueryDataTypeUtils() {
         // No-op.

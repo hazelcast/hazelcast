@@ -425,7 +425,6 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
-                    assert operands.length == 5;
                     return JsonQueryFunction.create(operands);
                 }
 
