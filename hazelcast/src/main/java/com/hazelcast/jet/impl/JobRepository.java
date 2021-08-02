@@ -483,6 +483,7 @@ public class JobRepository {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private void cleanupJobResults(NodeEngine nodeEngine) {
         int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
@@ -493,8 +494,8 @@ public class JobRepository {
                     .map(JobResult::getJobId)
                     .collect(toSet());
 
-            jobMetrics.get().submitToKeys(jobIds, ENTRY_REMOVING_PROCESSOR);
-            jobResults.get().submitToKeys(jobIds, ENTRY_REMOVING_PROCESSOR);
+            jobMetrics.get().submitToKeys(jobIds, (EntryProcessor) ENTRY_REMOVING_PROCESSOR);
+            jobResults.get().submitToKeys(jobIds, (EntryProcessor) ENTRY_REMOVING_PROCESSOR);
 
             jobIds.forEach(jobId -> {
                 String resourcesMapName = jobResourcesMapName(jobId);
