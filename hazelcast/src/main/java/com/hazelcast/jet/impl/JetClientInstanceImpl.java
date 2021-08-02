@@ -109,11 +109,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     @Override
     public Job newJobProxy(long jobId, UUID lightJobCoordinator) {
-        return new ClientJobProxy(this, jobId, lightJobCoordinator);
+        return new ClientJobProxy(client, jobId, lightJobCoordinator);
     }
 
     public Job newJobProxy(long jobId, boolean isLightJob, @Nonnull Object jobDefinition, @Nonnull JobConfig config) {
-        return new ClientJobProxy(this, jobId, isLightJob, jobDefinition, config);
+        return new ClientJobProxy(client, jobId, isLightJob, jobDefinition, config);
     }
 
     @Override

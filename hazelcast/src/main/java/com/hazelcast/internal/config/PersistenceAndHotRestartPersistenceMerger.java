@@ -23,6 +23,8 @@ import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.util.Objects;
+
 public final class PersistenceAndHotRestartPersistenceMerger {
 
     private static final ILogger LOGGER = Logger.getLogger(PersistenceAndHotRestartPersistenceMerger.class);
@@ -51,8 +53,14 @@ public final class PersistenceAndHotRestartPersistenceMerger {
      * if hot-restart-persistence: enabled="false" and persistence: enabled="false"
      * => we still do override hot-restart-persistence using persistence.
      * It is necessary to maintain equality consistency.
+     *
+     * @param hotRestartPersistenceConfig hotRestartPersistenceConfig to use in the merge
+     * @param persistenceConfig persistenceConfig to use in the merge
      */
     public static void merge(HotRestartPersistenceConfig hotRestartPersistenceConfig, PersistenceConfig persistenceConfig) {
+        if (equals(hotRestartPersistenceConfig, persistenceConfig)) {
+            return;
+        }
         if (hotRestartPersistenceConfig.isEnabled() && !persistenceConfig.isEnabled()) {
             persistenceConfig.setEnabled(true)
                     .setBaseDir(hotRestartPersistenceConfig.getBaseDir())
@@ -87,5 +95,31 @@ public final class PersistenceAndHotRestartPersistenceMerger {
                             + "and thus there is a conflict, the latter is used in persistence configuration."
             );
         }
+    }
+
+    private static boolean equals(HotRestartPersistenceConfig hotRestartPersistenceConfig, PersistenceConfig persistenceConfig) {
+        if (hotRestartPersistenceConfig.isEnabled() != persistenceConfig.isEnabled()) {
+            return false;
+        }
+        if (! Objects.equals(hotRestartPersistenceConfig.getBaseDir(), persistenceConfig.getBaseDir())) {
+            return false;
+        }
+        if (! Objects.equals(hotRestartPersistenceConfig.getBackupDir(), persistenceConfig.getBackupDir())) {
+            return false;
+        }
+        if (! Objects.equals(hotRestartPersistenceConfig.isAutoRemoveStaleData(), persistenceConfig.isAutoRemoveStaleData())) {
+            return false;
+        }
+        if (! Objects.equals(hotRestartPersistenceConfig.getEncryptionAtRestConfig(),
+                persistenceConfig.getEncryptionAtRestConfig())) {
+            return false;
+        }
+        if (hotRestartPersistenceConfig.getClusterDataRecoveryPolicy().ordinal()
+                != persistenceConfig.getClusterDataRecoveryPolicy().ordinal()) {
+            return false;
+        }
+        return hotRestartPersistenceConfig.getDataLoadTimeoutSeconds() == persistenceConfig.getDataLoadTimeoutSeconds()
+                && hotRestartPersistenceConfig.getParallelism() == persistenceConfig.getParallelism()
+                && hotRestartPersistenceConfig.getValidationTimeoutSeconds() == persistenceConfig.getValidationTimeoutSeconds();
     }
 }

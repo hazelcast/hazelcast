@@ -50,7 +50,6 @@ public abstract class InfoSchemaTable extends JetTable {
 
     @Override
     public final PlanObjectKey getObjectKey() {
-        // schema tables are always available and their field list does not change
-        return null;
+        return PlanObjectKey.NON_CACHEABLE_OBJECT_KEY;
     }
 }

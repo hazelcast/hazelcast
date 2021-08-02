@@ -81,4 +81,9 @@ public class YamlConfigSchemaValidatorTest {
     public void emptyObject() {
         new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/empty-object.yaml")).build();
     }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void witoutRootObject() {
+        new YamlConfigBuilder(getClass().getResourceAsStream("/com/hazelcast/config/without-root-object.yaml")).build();
+    }
 }

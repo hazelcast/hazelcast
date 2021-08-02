@@ -360,7 +360,7 @@ public class JetSqlBackend implements SqlBackend {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(fieldNames, physicalRel.schema(parameterMetadata).getTypes());
             return new SelectPlan(
                     planKey,

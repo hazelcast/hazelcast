@@ -49,8 +49,14 @@ public final class DataPersistenceAndHotRestartMerger {
      * if hot-restart: enabled="false" and data-persistence: enabled="false"
      * => we still do override hot-restart using data-persistence.
      * It is necessary to maintain equality consistency.
+     *
+     * @param hotRestartConfig hotRestartConfig to use in the merge
+     * @param dataPersistenceConfig dataPersistenceConfig to use in the merge
      */
     public static void merge(HotRestartConfig hotRestartConfig, DataPersistenceConfig dataPersistenceConfig) {
+        if (equals(hotRestartConfig, dataPersistenceConfig)) {
+            return;
+        }
 
         if (hotRestartConfig.isEnabled() && !dataPersistenceConfig.isEnabled()) {
             dataPersistenceConfig.setEnabled(true).setFsync(hotRestartConfig.isFsync());
@@ -69,5 +75,10 @@ public final class DataPersistenceAndHotRestartMerger {
                     + "and thus there is a conflict, the latter is used in persistence configuration."
             );
         }
+    }
+
+    private static boolean equals(HotRestartConfig hotRestartConfig, DataPersistenceConfig dataPersistenceConfig) {
+        return hotRestartConfig.isEnabled() == dataPersistenceConfig.isEnabled()
+                && hotRestartConfig.isFsync() == dataPersistenceConfig.isFsync();
     }
 }

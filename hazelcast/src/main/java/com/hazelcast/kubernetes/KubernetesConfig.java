@@ -43,13 +43,15 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PER_POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXTERNAL_ADDRESS;
 
 /**
  * Responsible for fetching, parsing, and validating Hazelcast Kubernetes Discovery Strategy input properties.
  */
-@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+@SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
@@ -68,6 +70,8 @@ final class KubernetesConfig {
     private final String podLabelValue;
     private final boolean resolveNotReadyAddresses;
     private final boolean useNodeNameAsExternalAddress;
+    private final String servicePerPodLabelName;
+    private final String servicePerPodLabelValue;
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
     private final String kubernetesApiToken;
@@ -88,6 +92,8 @@ final class KubernetesConfig {
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
+        this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
+        this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
         this.kubernetesApiRetries
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         this.kubernetesMasterUrl = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
@@ -295,6 +301,14 @@ final class KubernetesConfig {
         return podLabelValue;
     }
 
+    public String getServicePerPodLabelName() {
+        return servicePerPodLabelName;
+    }
+
+    public String getServicePerPodLabelValue() {
+        return servicePerPodLabelValue;
+    }
+
     boolean isResolveNotReadyAddresses() {
         return resolveNotReadyAddresses;
     }
@@ -337,6 +351,8 @@ final class KubernetesConfig {
                 + "pod-label-value: " + podLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
+                + "service-per-pod-label: " + servicePerPodLabelName + ", "
+                + "service-per-pod-label-value: " + servicePerPodLabelValue + ", "
                 + "kubernetes-api-retries: " + kubernetesApiRetries + ", "
                 + "kubernetes-master: " + kubernetesMasterUrl + "}";
     }
