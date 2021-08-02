@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
@@ -36,12 +37,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequestOffloadable.PartitionNamespaceTuple.tupleOf;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
@@ -61,7 +60,7 @@ import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 public final class PartitionReplicaSyncRequestOffloadable
         extends PartitionReplicaSyncRequest {
 
-    private final transient ConcurrentMap<PartitionNamespaceTuple, long[]> replicaVersions = new ConcurrentHashMap<>();
+    private final transient ConcurrentMap<BiTuple, long[]> replicaVersions = new ConcurrentHashMap<>();
     private volatile int partitionId;
 
     public PartitionReplicaSyncRequestOffloadable() {
@@ -131,7 +130,7 @@ public final class PartitionReplicaSyncRequestOffloadable
                         // to the internal replica versions data structures that may change under our feet
                         long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
                                 IPartition.MAX_BACKUP_COUNT);
-                        replicaVersions.put(tupleOf(partitionId(), ns), versions);
+                        replicaVersions.put(BiTuple.of(partitionId(), ns), versions);
                     }
                 });
         operationService.execute(gatherReplicaVersionsRunnable);
@@ -158,7 +157,7 @@ public final class PartitionReplicaSyncRequestOffloadable
     protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
         int partitionId = partitionId();
         int replicaIndex = getReplicaIndex();
-        long[] versions = replicaVersions.get(tupleOf(partitionId, ns));
+        long[] versions = replicaVersions.get(BiTuple.of(partitionId, ns));
         PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         return syncResponse;
@@ -216,36 +215,5 @@ public final class PartitionReplicaSyncRequestOffloadable
         namespaces = Collections.newSetFromMap(new ConcurrentHashMap<>());
         namespaces.addAll(readCollection(in));
         partitionId = in.readInt();
-    }
-
-    static final class PartitionNamespaceTuple {
-        final int partitionId;
-        final ServiceNamespace ns;
-
-        private PartitionNamespaceTuple(int partitionId, ServiceNamespace ns) {
-            this.partitionId = partitionId;
-            this.ns = ns;
-        }
-
-        static PartitionNamespaceTuple tupleOf(int partitionId, ServiceNamespace ns) {
-            return new PartitionNamespaceTuple(partitionId, ns);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            PartitionNamespaceTuple that = (PartitionNamespaceTuple) o;
-            return partitionId == that.partitionId && Objects.equals(ns, that.ns);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(partitionId, ns);
-        }
     }
 }
