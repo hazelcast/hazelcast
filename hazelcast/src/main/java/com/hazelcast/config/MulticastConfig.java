@@ -54,10 +54,11 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      */
     public static final int DEFAULT_MULTICAST_TTL = 32;
     /**
-     * Default flag that indicates if the loopback mode
-     * is turned on or off.
+     * Default flag that indicates if the loopback mode is turned on or off.
+     * <p>
+     * When changing this default value, update the default in {@code hazelcast-config-*.xsd} file too.
      */
-    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
+    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = false;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 

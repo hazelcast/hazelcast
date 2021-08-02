@@ -102,6 +102,22 @@ public class MulticastServiceTest {
         verify(multicastSocket).setInterface(address.getInetAddress());
     }
 
+    /**
+     * Verifes the {@link MulticastSocket#setInterface(InetAddress)} is called by default if non-loopback address is used.
+     * This is a regression test for the <a href="https://github.com/hazelcast/hazelcast/issues/19192">issue #19192</a>
+     * (hit on Mac OS).
+     */
+    @Test
+    public void testSetInterfaceDefaultWhenNonLoopbackAddrAndDefaultLoopbackMode() throws Exception {
+        Config config = createConfig(null);
+        MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
+        MulticastSocket multicastSocket = mock(MulticastSocket.class);
+        Address address = new Address("10.0.0.2",  5701);
+        HazelcastProperties hzProperties = new HazelcastProperties(config);
+        MulticastService.configureMulticastSocket(multicastSocket, address, hzProperties , multicastConfig, mock(ILogger.class));
+        verify(multicastSocket).setInterface(address.getInetAddress());
+    }
+
     @Test
     public void testMulticastParams() throws Exception {
         Config config = createConfig(null);
