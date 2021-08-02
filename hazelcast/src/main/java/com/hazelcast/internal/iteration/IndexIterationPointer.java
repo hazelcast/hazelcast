@@ -78,17 +78,25 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         );
     }
 
-    public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
+    public static IndexIterationPointer[] createFromIndexFilter(
+            IndexFilter indexFilter,
+            boolean descending,
+            ExpressionEvalContext evalContext
+    ) {
         ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, evalContext, result);
+        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
     private static void createFromIndexFilterInt(
             IndexFilter indexFilter,
+            boolean descending,
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
     ) {
+        if (indexFilter == null) {
+            result.add(create(null, true, null, true, descending, null));
+        }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
 
@@ -114,15 +122,15 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to = toValue;
             }
 
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false, null));
+            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, false, null));
+            result.add(create(value, true, value, true, descending, null));
         } else if (indexFilter instanceof IndexInFilter) {
             IndexInFilter inFilter = (IndexInFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, evalContext, result);
+                createFromIndexFilterInt(filter, descending, evalContext, result);
             }
         }
     }

@@ -16,10 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.config.IndexConfig;
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -30,6 +34,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTO
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
+import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlPlanCacheTest extends SqlTestSupport {
@@ -102,6 +107,24 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         instance().getMap("map").put(1, "1");
         sqlService.execute("DROP MAPPING map");
         assertThat(planCache(instance()).size()).isZero();
+    }
+
+    @Test
+    @Ignore // TODO: [sasha] enable after IMDG engine removal
+    public void test_index() {
+        IMap<Object, Object> map = instance().getMap("m");
+
+        createMapping("map", map.getName(), "id", PersonId.class, "varchar");
+        String indexName = randomName();
+
+        map.addIndex(new IndexConfig(IndexType.SORTED, "__key.id").setName(indexName));
+        sqlService.execute("SELECT * FROM map ORDER BY id");
+        assertThat(planCache(instance()).size()).isEqualTo(1);
+
+        getMapContainer(map).getIndexes().destroyIndexes();
+        map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
+
+        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 
     @Test

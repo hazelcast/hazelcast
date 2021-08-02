@@ -19,10 +19,13 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
@@ -60,7 +63,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
     private transient MapFetchIndexOperationResult response;
 
-    public MapFetchIndexOperation() { }
+    public MapFetchIndexOperation() {
+    }
 
     public MapFetchIndexOperation(
             String mapName,
@@ -182,18 +186,18 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
                         if (lastEntryKeyData != null) {
                             newPointers[0] = IndexIterationPointer.create(
                                     pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                    pointer.isDescending() ? pointer.isFromInclusive() : true,
+                                    !pointer.isDescending() || pointer.isFromInclusive(),
                                     pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                    pointer.isDescending() ? true : pointer.isToInclusive(),
+                                    pointer.isDescending() || pointer.isToInclusive(),
                                     pointer.isDescending(),
                                     lastEntryKeyData
                             );
                         } else {
                             newPointers[0] = IndexIterationPointer.create(
                                     pointer.isDescending() ? pointer.getFrom() : currentIndexKey,
-                                    pointer.isDescending() ? pointer.isFromInclusive() : false,
+                                    pointer.isDescending() && pointer.isFromInclusive(),
                                     pointer.isDescending() ? currentIndexKey : pointer.getTo(),
-                                    pointer.isDescending() ? false : pointer.isToInclusive(),
+                                    !pointer.isDescending() && pointer.isToInclusive(),
                                     pointer.isDescending(),
                                     null
                             );
@@ -328,8 +332,8 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         out.writeString(indexName);
         out.writeObject(partitionIdSet);
         out.writeInt(pointers.length);
-        for (int i = 0; i < pointers.length; i++) {
-            out.writeObject(pointers[i]);
+        for (IndexIterationPointer pointer : pointers) {
+            out.writeObject(pointer);
         }
         out.writeInt(sizeLimit);
     }
@@ -339,9 +343,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return MAP_FETCH_INDEX_OPERATION;
     }
 
-    public static final class MapFetchIndexOperationResult {
-        private final List<QueryableEntry<?, ?>> entries;
-        private final IndexIterationPointer[] pointers;
+    public static final class MapFetchIndexOperationResult implements IdentifiedDataSerializable {
+        private List<QueryableEntry<?, ?>> entries;
+        private IndexIterationPointer[] pointers;
+
+        public MapFetchIndexOperationResult() {
+        }
 
         public MapFetchIndexOperationResult(
                 List<QueryableEntry<?, ?>> entries,
@@ -361,6 +368,35 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
          */
         public IndexIterationPointer[] getPointers() {
             return pointers;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            SerializationUtil.writeList(entries, out);
+            out.writeInt(pointers.length);
+            for (IndexIterationPointer pointer : pointers) {
+                out.writeObject(pointer);
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            entries = SerializationUtil.readList(in);
+            int len = in.readInt();
+            pointers = new IndexIterationPointer[len];
+            for (int i = 0; i < len; ++i) {
+                pointers[i] = in.readObject();
+            }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return MapDataSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return MapDataSerializerHook.MAP_FETCH_INDEX_OPERATION_RESULT;
         }
     }
 

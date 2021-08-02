@@ -68,6 +68,7 @@ import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchIndexOperation;
+import com.hazelcast.map.impl.operation.MapFetchIndexOperation.MapFetchIndexOperationResult;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFetchWithQueryOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -320,9 +321,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int LOCAL_RECORD_STORE_STATS = 154;
     public static final int MAP_FETCH_INDEX_OPERATION = 155;
     public static final int INDEX_ITERATION_POINTER = 156;
+    public static final int MAP_FETCH_INDEX_OPERATION_RESULT = 157;
 
-
-    private static final int LEN = INDEX_ITERATION_POINTER + 1;
+    private static final int LEN = MAP_FETCH_INDEX_OPERATION_RESULT + 1;
 
     @Override
     public int getFactoryId() {
@@ -486,6 +487,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[LOCAL_RECORD_STORE_STATS] = arg -> new LocalRecordStoreStatsImpl();
         constructors[MAP_FETCH_INDEX_OPERATION] = arg -> new MapFetchIndexOperation();
         constructors[INDEX_ITERATION_POINTER] = arg -> new IndexIterationPointer();
+        constructors[MAP_FETCH_INDEX_OPERATION_RESULT] = arg -> new MapFetchIndexOperationResult();
 
         return new ArrayDataSerializableFactory(constructors);
     }
