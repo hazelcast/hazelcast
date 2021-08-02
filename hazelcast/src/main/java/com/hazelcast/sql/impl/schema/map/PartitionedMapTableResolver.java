@@ -103,7 +103,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         String name
     ) {
         try {
-            MapContainer mapContainer = context.getMapContainer(name);
+            MapContainer mapContainer = context.getExistingMapContainer(name);
 
             // Handle concurrent map destroy.
             if (mapContainer == null) {
