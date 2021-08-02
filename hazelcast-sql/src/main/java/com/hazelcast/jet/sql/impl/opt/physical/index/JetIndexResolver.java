@@ -910,31 +910,6 @@ public final class JetIndexResolver {
     }
 
     /**
-     * Create HD map index scan without any filter.
-     *
-     * @param scan    the original scan operator
-     * @param indexes available indexes
-     * @return index scan or {@code null}
-     */
-    public static RelNode createFullHDIndexScan(FullScanLogicalRel scan, List<MapTableIndex> indexes) {
-        MapTableIndex firstIndex = null;
-
-        for (MapTableIndex index : indexes) {
-            if (isIndexSupported(index)) {
-                firstIndex = index;
-                break;
-            }
-        }
-
-        if (firstIndex == null) {
-            return null;
-        }
-
-        List<Boolean> ascs = buildFieldDirections(firstIndex, true);
-        return createFullIndexScan(scan, firstIndex, ascs, false);
-    }
-
-    /**
      * This method selects the best expression to be used as index filter from the list of candidates.
      *
      * @param type          type of the index (SORTED, HASH)
