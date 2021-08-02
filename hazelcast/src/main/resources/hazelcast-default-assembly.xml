@@ -39,6 +39,18 @@
     -->
     <cluster-name>dev</cluster-name>
 
+    <properties>
+        <!--
+            We only allow bind to loopback network interface (127.0.0.1) in the configuration for ZIP and TGZ
+            distribution packages .
+            Therefore we set the property "hazelcast.socket.bind.any" to "false" and explicitly specify the
+            network/interfaces configuration. It helps to keep the configuration secure.
+            Changing the property value to "true" will cause Hazelcast binding sockets to the wildcard address
+            (i.e. all network interfaces).
+         -->
+        <property name="hazelcast.socket.bind.any">false</property>
+    </properties>
+
     <network>
         <!--
             The preferred port number where the Hazelcast instance will listen. The convention is
@@ -58,6 +70,15 @@
                 value as false.
         -->
         <port auto-increment="true" port-count="100">5701</port>
+        <!--
+            Specifies which network interfaces Hazelcast should use. You can define multiple
+            interfaces using its <interface> sub-element.
+            We enable binding to loopback interface only in ZIP and TGZ Hazelcast disribution packages
+            for security reasons. (See also the property "hazelcast.socket.bind.any" value.)
+        -->
+        <interfaces enabled="true">
+            <interface>127.0.0.1</interface>
+        </interfaces>
         <outbound-ports>
             <!--
             Allowed port range when connecting to other nodes.
@@ -144,61 +165,12 @@
             </discovery-strategies>
         </join>
         <!--
-            Specifies which network interfaces Hazelcast should use. You need to set its "enabled"
-            attribute to true to be able to use your defined interfaces. You can define multiple
-            interfaces using its <interface> sub-element. By default, it is disabled.
-        -->
-        <interfaces enabled="false">
-            <interface>10.10.1.*</interface>
-        </interfaces>
-        <!--
             Lets you configure SSL using the SSL context factory. This feature is available
             only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled
             and you should first implement your SSLContextFactory class. Its configuration contains
             the factory class and SSL properties. By default, it is disabled.
         -->
         <ssl enabled="false"/>
-        <!--
-            Lets you add custom hooks to join and perform connection procedures (like a custom
-            authentication negotiation protocol, etc.). This feature is available only in Hazelcast
-            Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor
-            (for members joining to a cluster) or SocketInterceptor (for clients connecting to a
-            member) class. Its configuration contains the class you implemented and socket
-            interceptor properties. By default, it is disabled. The following is an example:
-            <socket-interceptor enabled="true">
-                <class-name>
-                    com.hazelcast.examples.MySocketInterceptor
-                </class-name>
-                <properties>
-                    <property name="property1">value1</property>
-                    <property name="property2">value2</property>
-                </properties>
-            </socket-interceptor>
-        -->
-        <socket-interceptor enabled="false"/>
-        <!--
-            Lets you encrypt the entire socket level communication among all Hazelcast members.
-            This feature is available only in Hazelcast Enterprise. Its configuration contains
-            the encryption properties and the same configuration must be placed to all members.
-            By default, it is disabled.
-        -->
-        <symmetric-encryption enabled="false">
-            <!--
-               encryption algorithm such as
-               DES/ECB/PKCS5Padding,
-               PBEWithMD5AndDES,
-               AES/CBC/PKCS5Padding,
-               Blowfish,
-               DESede
-            -->
-            <algorithm>PBEWithMD5AndDES</algorithm>
-            <!-- salt value to use when generating the secret key -->
-            <salt>thesalt</salt>
-            <!-- pass phrase to use when generating the secret key -->
-            <password>thepass</password>
-            <!-- iteration count to use when generating the secret key -->
-            <iteration-count>19</iteration-count>
-        </symmetric-encryption>
         <failure-detector>
             <icmp enabled="false"/>
         </failure-detector>
@@ -487,7 +459,7 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <jet enabled="true" resource-upload-enabled="false">
+    <jet enabled="true" resource-upload-enabled="true">
         <instance>
             <!-- time spacing of flow-control (ack) packets -->
             <flow-control-period>100</flow-control-period>
