@@ -1000,6 +1000,19 @@ public class JobTest extends SimpleTestInClusterSupport {
         cancelAndJoin(job1ThroughClient2);
     }
 
+    @Test
+    public void test_nonSmartClient() {
+        HazelcastInstance client = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instance()));
+
+        // try multiple times - we test the case when the client randomly picks a member it's not connected to.
+        // It should not pick such a member.
+        for (int i = 0; i < 10; i++) {
+            Job job = client.getJet().newLightJob(streamingDag());
+            assertTrueEventually(() -> assertJobExecuting(job, instance()));
+            cancelAndJoin(job);
+        }
+    }
+
     private void joinAndExpectCancellation(Job job) {
         try {
             job.join();
