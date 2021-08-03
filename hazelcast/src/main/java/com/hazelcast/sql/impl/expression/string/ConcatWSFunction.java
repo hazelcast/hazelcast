@@ -24,8 +24,7 @@ import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.StringJoiner;
 
 import static com.hazelcast.sql.impl.expression.string.StringFunctionUtils.asVarchar;
 
@@ -49,11 +48,14 @@ public class ConcatWSFunction extends VariExpression<String> implements Identifi
             return null;
         }
 
-        return Arrays.stream(operands)
-                .skip(1)
-                .filter(expression -> expression.eval(row, context) != null)
-                .map(expression -> asVarchar(expression, row, context))
-                .collect(Collectors.joining(separator));
+        StringJoiner joiner = new StringJoiner(separator);
+        for (int i = 1; i < operands.length; i++) {
+            Object val = operands[i].eval(row, context);
+            if (val != null) {
+                joiner.add(operands[i].getType().getConverter().asVarchar(val));
+            }
+        }
+        return joiner.toString();
     }
 
     @Override
