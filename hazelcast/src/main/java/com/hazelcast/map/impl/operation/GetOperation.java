@@ -40,17 +40,32 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     protected void runInternal() {
         Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
         if (noCopyReadAllowed(currentValue)) {
-            // in case of a 'remote' call (e..g a client call) we prevent making an onheap copy of the offheap data
+            // in case of a 'remote' call (e.g a client call) we prevent making
+            // an on-heap copy of the off-heap data
             result = (Data) currentValue;
         } else {
-            // in case of a local call, we do make a copy so we can safely share it with e.g. near cache invalidation
+            // in case of a local call, we do make a copy, so we can safely share
+            // it with e.g. near cache invalidation
             result = mapService.getMapServiceContext().toData(currentValue);
         }
     }
 
     private boolean noCopyReadAllowed(Object currentValue) {
-        return currentValue instanceof Data
-                && (isOpSentByClient() || !super.executedLocally());
+        // Data instances are unmodifiable.
+        // No copy read can be allowed only for them.
+        if (!(currentValue instanceof Data)) {
+            return false;
+        }
+
+        // If operation has caller uuid(as in operations sent by client),
+        // locality check can be done based on it.
+        if (isCallerUuidSet()) {
+            return !getCallerUuid().equals(getNodeEngine().getLocalMember().getUuid());
+        }
+
+        // If operation has callerAddress(as in operations sent by member),
+        // locality check can be done based on it.
+        return !super.executedLocally();
     }
 
     @Override
