@@ -37,10 +37,14 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
+/**
+ * Test of merge-sort correctness on DAG level (ordered edge).
+ *
+ * @see com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor#onMapIndexScan
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapIndexScanIntegrationTest extends SimpleTestInClusterSupport {
+public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSupport {
     private static final int ITEM_COUNT = 150_000;
     private static final String MAP_NAME = "map";
 
@@ -55,7 +59,6 @@ public class MapIndexScanIntegrationTest extends SimpleTestInClusterSupport {
     public void before() {
         map = instance().getMap(MAP_NAME);
     }
-
 
     @Test
     @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
