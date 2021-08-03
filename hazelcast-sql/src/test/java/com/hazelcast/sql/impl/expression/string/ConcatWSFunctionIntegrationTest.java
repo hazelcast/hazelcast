@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
+import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -51,22 +52,17 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
                         type1.valueFrom() + "-" + type2.valueFrom()
                 );
-
-                checkColumns(
-                        ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
-                        type2.valueFrom().toString()
-                );
-
-                checkColumns(
-                        ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
-                        type1.valueFrom().toString()
-                );
-
-                checkColumns(
-                        ExpressionBiValue.createBiValue(clazz, 0, null, null),
-                        ""
-                );
             }
+        }
+    }
+
+    @Test
+    public void testColumnWithNull() {
+        for (ExpressionType<?> type : ExpressionTypes.all()) {
+            Class<? extends ExpressionBiValue> clazzNullLeft = ExpressionBiValue.createBiClass(OBJECT.typeName(), type.typeName());
+            Class<? extends ExpressionBiValue> clazzNullRight = ExpressionBiValue.createBiClass(type.typeName(), OBJECT.typeName());
+            checkColumns(ExpressionBiValue.createBiValue(clazzNullLeft, 0, type.valueFrom(), null), type.valueFrom().toString());
+            checkColumns(ExpressionBiValue.createBiValue(clazzNullRight, 0, null, type.valueFrom()), type.valueFrom().toString());
         }
     }
 
@@ -125,7 +121,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         check(getConcatWsExpression("-", "this", "?"), "1-2", 2);
         check(getConcatWsExpression("-", "this", "?"), "1-2", "2");
         check(getConcatWsExpression("-", "this", "?"), "1-2", '2');
-        check(getConcatWsExpression("-", "this", "?"), "1",  new Object[]{null});
+        check(getConcatWsExpression("-", "this", "?"), "1", new Object[]{null});
 
         check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_DATE_VAL, LOCAL_DATE_VAL);
         check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_TIME_VAL, LOCAL_TIME_VAL);
