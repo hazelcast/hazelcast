@@ -120,7 +120,8 @@ public class YamlConfigSchemaValidator {
             List<SchemaViolationConfigurationException> causes = misIndentedRootProps.stream()
                     .map(prop -> createExceptionForMisIndentedConfigProp(prop, false))
                     .collect(toList());
-            throw new SchemaViolationConfigurationException(withNote(causes.size() + " schema violations found"), "#", "#", causes);
+            throw new SchemaViolationConfigurationException(withNote(causes.size() + " schema violations found"),
+                    "#", "#", causes);
         }
     }
 
