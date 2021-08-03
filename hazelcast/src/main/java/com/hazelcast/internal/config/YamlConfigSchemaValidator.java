@@ -74,7 +74,7 @@ public class YamlConfigSchemaValidator {
             // this could be expressed in the schema as well, but that would make all the schema validation errors much harder
             // to read, so it is better to implement it here as a semantic check
             List<String> definedRootNodes = PERMITTED_ROOT_NODES.stream()
-                    .filter(rootNodeName -> rootNode.child(rootNodeName) != null)
+                    .filter(rootNodeName -> rootNode != null && rootNode.child(rootNodeName) != null)
                     .collect(toList());
             if (definedRootNodes.size() != 1) {
                 throw new SchemaViolationConfigurationException(

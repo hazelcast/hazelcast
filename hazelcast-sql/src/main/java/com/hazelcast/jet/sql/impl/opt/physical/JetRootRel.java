@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.AbstractRootRel;
@@ -26,16 +25,8 @@ import org.apache.calcite.rel.RelNode;
 
 public class JetRootRel extends AbstractRootRel implements PhysicalRel {
 
-    private final Address initiatorAddress;
-
-    public JetRootRel(RelNode input, Address initiatorAddress) {
+    public JetRootRel(RelNode input) {
         super(input.getCluster(), RelTraitSet.createEmpty(), input);
-
-        this.initiatorAddress = initiatorAddress;
-    }
-
-    public Address getInitiatorAddress() {
-        return initiatorAddress;
     }
 
     @Override

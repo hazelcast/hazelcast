@@ -1,6 +1,8 @@
 #!/bin/bash
 
 function findScriptDir() {
+  CURRENT=$PWD
+
   DIR=$(dirname "$0")
   cd "$DIR" || exit
   TARGET_FILE=$(basename "$0")
@@ -15,6 +17,8 @@ function findScriptDir() {
   done
 
   SCRIPT_DIR=$(pwd -P)
+  # Restore current directory
+  cd "$CURRENT" || exit
 }
 
 findScriptDir
