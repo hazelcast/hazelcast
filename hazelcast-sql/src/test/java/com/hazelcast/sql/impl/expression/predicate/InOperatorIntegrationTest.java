@@ -62,18 +62,20 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("NOT IN " + longList), SqlColumnType.INTEGER, new Integer[]{3});
     }
 
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/issues/18592">Linked issue.</a>
+     */
     @Test
     public void inPredicateWithRawNullTest() {
         putAll(0, 1, 2);
-        checkValues(sqlQuery("IN (NULL, 0, 1)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{2, 0});
-        checkValues(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{1});
-        checkValues(sqlQuery("NOT IN (NULL, 2, 1)"), SqlColumnType.INTEGER, new Integer[]{0});
+        checkFailure0(sqlQuery("IN (NULL, 0, 1)"), PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), PARSING, "Raw nulls are not supported for IN operator.");
 
-        checkValues("SELECT this FROM map WHERE NOT (this IN (2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE NOT (this IN (2, NULL, 1))", SqlColumnType.INTEGER, new Integer[]{0});
-        checkValues("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
+        checkFailure0(sqlQuery("NOT IN (NULL, 1)"), PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), PARSING, "Raw nulls are not supported for IN operator.");
+
+        checkFailure0("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1, 0))", PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1, 0))", PARSING, "Raw nulls are not supported for IN operator.");
     }
 
     @Test
@@ -205,8 +207,9 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+01:00"});
 
-        // this is a bug in Calcite that when an integer is followed by temporal type, it will try to coerce all right-hand values
-        // to temporal, and an assert inside Calcite code will fail later. ¯\_(ツ)_/¯
+        // this is a bug in Calcite that when an integer is followed by temporal type,
+        // it will try to coerce all right-hand values to temporal,
+        // and an assert inside Calcite code will fail later. ¯\_(ツ)_/¯
         assertThatThrownBy(() -> execute(member, sqlQuery("IN (3, CAST('1970-01-01' AS DATE))")))
                 .isInstanceOf(AssertionError.class)
                 .hasMessage(null);

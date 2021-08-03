@@ -277,17 +277,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
 
-                // Remove raw NULL from the right-hand operand if it's a list. We ignore raw NULL.
-                if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
-                    List<SqlNode> operandList = call.getOperandList();
-
-                    assert operandList.size() == 2;
-                    SqlNode rhs = operandList.get(1);
-                    if (rhs instanceof SqlNodeList) {
-                        call.setOperand(1, removeNullWithinInStatement((SqlNodeList) rhs));
-                    }
-                }
-
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 
                 validator.getOperatorTable().lookupOperatorOverloads(
