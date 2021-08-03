@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.expression.json;
+package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastJsonValue;
