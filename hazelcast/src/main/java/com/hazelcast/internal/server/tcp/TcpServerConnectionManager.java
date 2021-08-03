@@ -125,7 +125,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             // search for it on them.
             Address remoteAddress = connection.getRemoteAddress();
             if (remoteAddress != null) {
-                return Collections.singleton(connection.getRemoteAddress());
+                return Collections.singleton(remoteAddress);
             } else {
                 return Collections.emptySet();
             }
