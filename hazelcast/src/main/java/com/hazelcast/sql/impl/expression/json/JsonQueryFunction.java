@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.jayway.jsonpath.JsonPath;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
@@ -61,8 +62,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             return null;
         }
 
-        //return JsonPath.read(json, path).toString();
-        return new HazelcastJsonValue(json);
+        return new HazelcastJsonValue(JsonPath.read(json, path).toString());
     }
 
     @Override
