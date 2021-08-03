@@ -296,7 +296,8 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
         if (multicastTimeToLive != that.multicastTimeToLive) {
             return false;
         }
-        if (loopbackModeEnabled != that.loopbackModeEnabled) {
+        if (loopbackModeEnabled != null ? !loopbackModeEnabled.equals(that.loopbackModeEnabled)
+                : that.loopbackModeEnabled != null) {
             return false;
         }
         if (multicastGroup != null ? !multicastGroup.equals(that.multicastGroup) : that.multicastGroup != null) {

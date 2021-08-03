@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
-import static com.hazelcast.test.TestEnvironment.isSolaris;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -45,6 +44,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
@@ -121,10 +121,8 @@ public class MulticastDeserializationTest {
                 .setEnabled(true)
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
-                .setMulticastTimeToLive(MULTICAST_TTL);
-        if (isSolaris()) {
-            config.setProperty(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE.getName(), "false");
-        }
+                .setMulticastTimeToLive(MULTICAST_TTL)
+                ;
         return config;
     }
 
@@ -140,10 +138,10 @@ public class MulticastDeserializationTest {
         MulticastSocket multicastSocket = null;
         try {
             multicastSocket = new MulticastSocket(MULTICAST_PORT);
-            if (!isSolaris()) {
+            multicastSocket.setTimeToLive(MULTICAST_TTL);
+            if (OsHelper.isMac()) {
                 multicastSocket.setInterface(InetAddress.getByName("127.0.0.1"));
             }
-            multicastSocket.setTimeToLive(MULTICAST_TTL);
             InetAddress group = InetAddress.getByName(MULTICAST_GROUP);
             multicastSocket.joinGroup(group);
             int msgSize = data.length;
