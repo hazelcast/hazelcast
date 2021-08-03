@@ -53,7 +53,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.Edge.between;
@@ -63,9 +62,12 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -550,7 +552,7 @@ public class JobTest extends SimpleTestInClusterSupport {
             }
         } finally {
             executor.shutdownNow();
-            assertTrue(executor.awaitTermination(1, TimeUnit.MINUTES));
+            assertTrue(executor.awaitTermination(1, MINUTES));
         }
     }
 
@@ -782,6 +784,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertNotEquals(0, submissionTime);
         assertNotEquals(0, trackedJobSubmissionTime);
         assertEquals(submissionTime, trackedJobSubmissionTime);
+        assertBetween("submissionTime", submissionTime,
+                System.currentTimeMillis() - MINUTES.toMillis(10), System.currentTimeMillis() + SECONDS.toMillis(1));
         NoOutputSourceP.proceedLatch.countDown();
     }
 
@@ -979,6 +983,34 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThatThrownBy(job::resume).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> job.cancelAndExportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> job.exportSnapshot("foo")).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    public void test_smartClientConnectedToNonCoordinator() {
+        HazelcastInstance clientConnectedToI1 = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instances()[1]));
+
+        Job job1 = instances()[0].getJet().newLightJob(streamingDag());
+        assertTrueEventually(() -> assertJobExecuting(job1, instances()[0]));
+
+        Job job1ThroughClient2 = clientConnectedToI1.getJet().getJob(job1.getId());
+        assertNotNull("job1ThroughClient2 not found", job1ThroughClient2);
+        job1ThroughClient2.getSubmissionTime();
+        assertEquals(RUNNING, job1ThroughClient2.getStatus());
+        assertTrue(job1ThroughClient2.isLightJob());
+        cancelAndJoin(job1ThroughClient2);
+    }
+
+    @Test
+    public void test_nonSmartClient() {
+        HazelcastInstance client = factory().newHazelcastClient(configForNonSmartClientConnectingTo(instance()));
+
+        // try multiple times - we test the case when the client randomly picks a member it's not connected to.
+        // It should not pick such a member.
+        for (int i = 0; i < 10; i++) {
+            Job job = client.getJet().newLightJob(streamingDag());
+            assertTrueEventually(() -> assertJobExecuting(job, instance()));
+            cancelAndJoin(job);
+        }
     }
 
     private void joinAndExpectCancellation(Job job) {

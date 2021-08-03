@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
@@ -87,9 +88,14 @@ public class SqlPortableTest extends SqlTestSupport {
     private static final int ALL_TYPES_CLASS_ID = 8;
     private static final int ALL_TYPES_CLASS_VERSION = 9;
 
+    private static final int EMPTY_TYPES_FACTORY_ID = 10;
+    private static final int EMPTY_TYPES_CLASS_ID = 11;
+    private static final int EMPTY_TYPES_CLASS_VERSION = 12;
+
     private static InternalSerializationService serializationService;
     private static ClassDefinition personIdClassDefinition;
     private static ClassDefinition personClassDefinition;
+    private static ClassDefinition emptyClassDefinition;
 
     @BeforeClass
     // reusing ClassDefinitions as schema does not change
@@ -139,6 +145,11 @@ public class SqlPortableTest extends SqlTestSupport {
                         .addPortableField("object", personClassDefinition)
                         .build();
         serializationService.getPortableContext().registerClassDefinition(allTypesValueClassDefinition);
+
+        emptyClassDefinition =
+                new ClassDefinitionBuilder(EMPTY_TYPES_FACTORY_ID, EMPTY_TYPES_CLASS_ID, EMPTY_TYPES_CLASS_VERSION)
+                        .build();
+        serializationService.getPortableContext().registerClassDefinition(emptyClassDefinition);
     }
 
     @Test
@@ -624,6 +635,30 @@ public class SqlPortableTest extends SqlTestSupport {
                         OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC)
                 ))
         );
+    }
+
+    @Test
+    public void when_noFieldsResolved_then_wholeValueMapped() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + EMPTY_TYPES_FACTORY_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + EMPTY_TYPES_CLASS_ID + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + EMPTY_TYPES_CLASS_VERSION + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + EMPTY_TYPES_FACTORY_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + EMPTY_TYPES_CLASS_ID + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + EMPTY_TYPES_CLASS_VERSION + '\''
+                + ")"
+        );
+
+        GenericRecord record = new PortableGenericRecordBuilder(emptyClassDefinition).build();
+        instance().getMap(name).put(record, record);
+
+        assertRowsAnyOrder("SELECT __key, this FROM " + name,
+                singletonList(new Row(record, record)));
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

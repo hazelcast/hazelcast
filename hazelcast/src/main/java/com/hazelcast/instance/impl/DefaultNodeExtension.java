@@ -471,7 +471,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             listener.onClusterStateChange(newState);
         }
         if (jetExtension != null) {
-            jetExtension.onClusterStateChange(newState);
+            jetExtension.onClusterStateChange();
         }
     }
 
@@ -497,7 +497,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             systemLogger.info("Cluster version set to " + newVersion);
         }
         if (jetExtension != null) {
-            jetExtension.onClusterVersionChange(newVersion);
+            jetExtension.onClusterVersionChange();
         }
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);

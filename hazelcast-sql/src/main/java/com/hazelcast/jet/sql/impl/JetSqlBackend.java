@@ -365,7 +365,7 @@ public class JetSqlBackend implements SqlBackend {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel, nodeEngine.getThisAddress()), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new JetRootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -464,8 +464,10 @@ public class JetSqlBackend implements SqlBackend {
     private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
             List<QueryDataType> columnTypes,
-            List<RelDataTypeField> fields) {
+            List<RelDataTypeField> fields
+    ) {
         assert columnNames.size() == columnTypes.size();
+        assert columnTypes.size() == fields.size();
 
         List<SqlColumnMetadata> columns = new ArrayList<>(columnNames.size());
         for (int i = 0; i < columnNames.size(); i++) {
