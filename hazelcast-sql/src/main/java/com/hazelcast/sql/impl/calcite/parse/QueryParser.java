@@ -70,7 +70,7 @@ public class QueryParser {
                 return parse(sql, jetSqlBackend, jetConformance);
             } else {
                 // TODO: move this check to SqlServiceImpl.
-                throw new RuntimeException("Jet is not enabled.");
+                throw new RuntimeException("Jet is disabled, see JetConfig#setEnabled.");
             }
         } catch (Exception e) {
             String message;

@@ -229,8 +229,6 @@ final class MapIndexScanP extends AbstractProcessor {
      * <p>
      * It splits the partitions assigned to the split according to the new
      * partition owner into disjoint sets, one for each owner.
-     *
-     * @see MapIndexScanP#findSuitableRootException
      */
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
@@ -312,6 +310,27 @@ final class MapIndexScanP extends AbstractProcessor {
                     currentBatchPosition++;
                 }
             }
+        }
+
+        /**
+         * Find the suitable root exceptions.
+         * Method choose enumerated cluster-specific exceptions, because they
+         * also could be used as {@link MapIndexScanP#splitOnMigration} trigger.
+         * <p>
+         * TODO: enhance documentation.
+         */
+        private Throwable findSuitableRootException(Throwable t) {
+            while (t != null) {
+                if (t instanceof HazelcastInstanceNotActiveException
+                        || t instanceof MemberLeftException
+                        || t instanceof TargetDisconnectedException
+                        || t instanceof TargetNotMemberException
+                ) {
+                    return t;
+                }
+                t = t.getCause();
+            }
+            return null;
         }
 
         private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {
@@ -411,26 +430,5 @@ final class MapIndexScanP extends AbstractProcessor {
         public void readData(ObjectDataInput in) throws IOException {
             metadata = in.readObject();
         }
-    }
-
-    /**
-     * Find the suitable root exceptions.
-     * Method choose enumerated cluster-specific exceptions, because they
-     * also could be used as {@link MapIndexScanP#splitOnMigration} trigger.
-     * <p>
-     * TODO: enhance documentation.
-     */
-    private static Throwable findSuitableRootException(Throwable t) {
-        while (t != null) {
-            if (t instanceof HazelcastInstanceNotActiveException
-                    || t instanceof MemberLeftException
-                    || t instanceof TargetDisconnectedException
-                    || t instanceof TargetNotMemberException
-            ) {
-                return t;
-            }
-            t = t.getCause();
-        }
-        return null;
     }
 }

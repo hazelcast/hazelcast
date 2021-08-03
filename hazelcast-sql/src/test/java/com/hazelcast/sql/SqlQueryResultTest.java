@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -67,30 +68,29 @@ public class SqlQueryResultTest extends SqlTestSupport {
         // Check rows
         List<SqlRow> expectedRows = execute(member, SQL_READ);
         assertEquals(1, expectedRows.size());
-        checkSuccess(target, SQL_READ, SqlExpectedResultType.ROWS, expectedRows);
-        checkSuccess(target, SQL_READ, SqlExpectedResultType.ANY, expectedRows);
+        checkSuccess(target, SQL_READ, SqlExpectedResultType.ANY, expectedRows, -1);
+        checkSuccess(target, SQL_READ, SqlExpectedResultType.ROWS, expectedRows, -1);
         checkFailure(target, SQL_READ, SqlExpectedResultType.UPDATE_COUNT);
 
         // Check update count
-        checkFailure(target, SQL_UPDATE, SqlExpectedResultType.ROWS);
         // TODO: implement updateCount for DML and single key plans.
-        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.ANY, expectedRows);
-        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.UPDATE_COUNT, expectedRows);
+        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.ANY, emptyList(), 0);
+        checkFailure(target, SQL_UPDATE, SqlExpectedResultType.ROWS);
+        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.UPDATE_COUNT, emptyList(), 0);
     }
 
-    private void checkSuccess(HazelcastInstance target, String sql, SqlExpectedResultType type, List<SqlRow> expectedRows) {
+    private void checkSuccess(
+            HazelcastInstance target,
+            String sql,
+            SqlExpectedResultType type,
+            List<SqlRow> expectedRows,
+            int expectedUpdateCount
+    ) {
         SqlResult result = target.getSql().execute(new SqlStatement(sql).setExpectedResultType(type));
-        if (type == SqlExpectedResultType.UPDATE_COUNT) {
-            // TODO: update after updateCount for DML and single key plans implementation.
-            assertGreaterOrEquals("updateCount", result.updateCount(), 0);
-            return;
-        }
+        assertEquals(expectedUpdateCount, result.updateCount());
 
-        if (type == SqlExpectedResultType.ANY) {
-            if (sql.equals(SQL_UPDATE)) {
-                assertGreaterOrEquals("updateCount", result.updateCount(), 0);
-                return;
-            }
+        if (expectedUpdateCount >= 0) {
+            return;
         }
 
         List<SqlRow> rows = new ArrayList<>();
@@ -118,9 +118,7 @@ public class SqlQueryResultTest extends SqlTestSupport {
         assert type == SqlExpectedResultType.ROWS || type == SqlExpectedResultType.UPDATE_COUNT : type;
 
         try (SqlResult result = target.getSql().execute(new SqlStatement(sql).setExpectedResultType(type))) {
-            for (SqlRow ignore : result) {
-                // No-op.
-            }
+            result.iterator().forEachRemaining(row -> { });
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {

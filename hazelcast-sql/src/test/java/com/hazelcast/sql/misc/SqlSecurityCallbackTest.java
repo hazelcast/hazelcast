@@ -44,16 +44,12 @@ import org.junit.runner.RunWith;
 
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test that ensures that a security callback is invoked as expected.
@@ -91,26 +87,12 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
         for (int i = 0; i < 2; i++) {
             TestSqlSecurityContext securityContext = new TestSqlSecurityContext();
 
-            try (SqlResult result = ((SqlServiceImpl) instance().getSql()).execute(new SqlStatement(sql), securityContext)) {
+            try (SqlResult ignored = ((SqlServiceImpl) instance().getSql()).execute(new SqlStatement(sql), securityContext)) {
                 // Check whether the index is used as expected.
                 checkIndexUsage(sql, useIndex);
 
                 // Check permissions.
-                Set<Permission> permissions = new HashSet<>(securityContext.getPermissions());
-                assertFalse(permissions.isEmpty());
-
-                MapPermission expectedMapPermission = new MapPermission(MAP_NAME, ActionConstants.ACTION_READ);
-                assertContains(permissions, expectedMapPermission);
-
-                Permission mapPermission = null;
-                for (Permission f : permissions) {
-                    if (f.equals(expectedMapPermission)) {
-                        mapPermission = f;
-                    }
-                }
-                assertNotNull(mapPermission);
-                assertEquals(expectedMapPermission.getName(), mapPermission.getName());
-                assertEquals(expectedMapPermission.getActions(), mapPermission.getActions());
+                assertThat(securityContext.getPermissions()).contains(new MapPermission(MAP_NAME, ActionConstants.ACTION_READ));
             }
         }
     }

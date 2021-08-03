@@ -218,8 +218,7 @@ public class JetPlanExecutor {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);
-                    queryResultProducer.onError(
-                            QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
+                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {

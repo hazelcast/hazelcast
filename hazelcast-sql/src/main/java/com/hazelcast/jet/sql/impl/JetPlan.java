@@ -575,7 +575,7 @@ abstract class JetPlan extends SqlPlan {
             return isStreaming;
         }
 
-        public SqlRowMetadata getRowMetadata() {
+        SqlRowMetadata getRowMetadata() {
             return rowMetadata;
         }
 

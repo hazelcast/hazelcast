@@ -253,10 +253,6 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
             this.node = node;
         }
 
-        protected String getNode() {
-            return node;
-        }
-
         protected static PlanRow parse(String input) {
             // level
             int level = 0;

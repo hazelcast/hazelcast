@@ -30,6 +30,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class SqlNullableColumnTest extends SimpleTestInClusterSupport {
+
     @BeforeClass
     public static void beforeClass() {
         initialize(1, smallInstanceConfig());
