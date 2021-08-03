@@ -799,7 +799,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertFalse(networkConfig.getJoin().getMulticastConfig().isEnabled());
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds(), 8);
         assertEquals(networkConfig.getJoin().getMulticastConfig().getMulticastTimeToLive(), 16);
-        assertFalse(networkConfig.getJoin().getMulticastConfig().isLoopbackModeEnabled());
+        assertEquals(Boolean.FALSE, networkConfig.getJoin().getMulticastConfig().getLoopbackModeEnabled());
         Set<String> tis = networkConfig.getJoin().getMulticastConfig().getTrustedInterfaces();
         assertEquals(1, tis.size());
         assertEquals("10.10.10.*", tis.iterator().next());

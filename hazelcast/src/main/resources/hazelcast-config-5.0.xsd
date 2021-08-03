@@ -1495,7 +1495,17 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="loopbackModeEnabled" type="xs:boolean" default="false"/>
+        <xs:attribute name="loopbackModeEnabled" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    Allows explicitly specifying the loopbackMode on multicast sockets.
+                    It enables or disables local loopback of multicast datagrams.
+                    The option is used by the platform's networking code as a "hint" for setting whether
+                    multicast data will be looped back to the local socket.
+                    As it's a hint, the underlying platform code doesn't need to respect the setting.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="trusted-interfaces">
         <xs:sequence>

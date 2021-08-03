@@ -46,4 +46,13 @@ public final class OsHelper {
     public static boolean isUnixFamily() {
         return (OS.contains("nix") || OS.contains("nux") || OS.contains("aix"));
     }
+
+    /**
+     * Returns {@code true} if the system is a Mac OS.
+     *
+     * @return {@code true} if the current system is Mac.
+     */
+    public static boolean isMac() {
+        return (OS.contains("mac") || OS.contains("darwin"));
+    }
 }
