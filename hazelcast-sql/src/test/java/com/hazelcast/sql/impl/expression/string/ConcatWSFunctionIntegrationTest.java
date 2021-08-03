@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.OBJECT;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -43,26 +42,32 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testColumn() {
-        for (ExpressionType<?> type1 : ExpressionTypes.all()) {
-            // Test supported types
-            for (ExpressionType<?> type2 : ExpressionTypes.all()) {
-                Class<? extends ExpressionBiValue> clazz = ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+        ExpressionType<?>[] allTypes = ExpressionTypes.all();
 
-                checkColumns(
+        for (int i = 0; i < allTypes.length; i++) {
+            for (int j = i; j < allTypes.length; j++) {
+                ExpressionType<?> type1 = allTypes[i];
+                ExpressionType<?> type2 = allTypes[j];
+
+                Class<? extends ExpressionBiValue> clazz =
+                        ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+
+                ExpressionBiValue[] values = new ExpressionBiValue[]{
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                        type1.valueFrom() + "-" + type2.valueFrom()
-                );
-            }
-        }
-    }
+                        ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
+                        ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
+                        ExpressionBiValue.createBiValue(clazz, 0, null, null)
+                };
 
-    @Test
-    public void testColumnWithNull() {
-        for (ExpressionType<?> type : ExpressionTypes.all()) {
-            Class<? extends ExpressionBiValue> clazzNullLeft = ExpressionBiValue.createBiClass(OBJECT.typeName(), type.typeName());
-            Class<? extends ExpressionBiValue> clazzNullRight = ExpressionBiValue.createBiClass(type.typeName(), OBJECT.typeName());
-            checkColumns(ExpressionBiValue.createBiValue(clazzNullLeft, 0, type.valueFrom(), null), type.valueFrom().toString());
-            checkColumns(ExpressionBiValue.createBiValue(clazzNullRight, 0, null, type.valueFrom()), type.valueFrom().toString());
+                String[] expectedResults = new String[]{
+                        type1.valueFrom() + "-" + type2.valueFrom(),
+                        type2.valueFrom().toString(),
+                        type1.valueFrom().toString(),
+                        ""
+                };
+
+                checkColumns(values, expectedResults);
+            }
         }
     }
 
@@ -177,10 +182,10 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(corrupted4, restored, false);
     }
 
-    private void checkColumns(ExpressionBiValue value, String expectedResult) {
-        put(value);
+    private void checkColumns(Object[] values, Object[] expectedResults) {
+        putAll(values);
 
-        check("Concat_WS('-', field1, field2)", expectedResult);
+        checkValue0("SELECT Concat_WS('-', field1, field2) FROM map", SqlColumnType.VARCHAR, expectedResults);
     }
 
     private void check(String operands, String expectedResult, Object... params) {
