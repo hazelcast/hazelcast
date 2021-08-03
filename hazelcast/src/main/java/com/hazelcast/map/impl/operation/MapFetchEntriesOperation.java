@@ -60,6 +60,11 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
         return response;
     }
 
+    // HD scan via operation supposed to be thread-safe, no need to control concurrency.
+    @Override
+    protected void assertNativeMapOnPartitionThread() {
+    }
+
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
