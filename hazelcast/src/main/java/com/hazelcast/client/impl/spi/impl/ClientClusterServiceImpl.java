@@ -152,7 +152,7 @@ public class ClientClusterServiceImpl
     @Override
     public Client getLocalClient() {
         final ClientConnectionManager cm = client.getConnectionManager();
-        final TcpClientConnection connection = (TcpClientConnection) cm.getRandomConnection();
+        final TcpClientConnection connection = (TcpClientConnection) cm.getRandomConnection(null);
         InetSocketAddress inetSocketAddress = connection != null ? connection.getLocalSocketAddress() : null;
         UUID clientUuid = cm.getClientUuid();
         return new ClientImpl(clientUuid, inetSocketAddress, client.getName(), labels);

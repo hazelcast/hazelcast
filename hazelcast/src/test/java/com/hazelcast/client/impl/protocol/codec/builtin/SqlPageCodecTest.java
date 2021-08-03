@@ -26,6 +26,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.client.SqlPage.PageState;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -162,11 +163,12 @@ public class SqlPageCodecTest {
     }
 
     private void check(SqlColumnType type, List<Object> values) {
-        check(type, values, true);
-        check(type, values, false);
+        check(type, values, PageState.NOT_LAST);
+        check(type, values, PageState.LAST_NOT_CLOSED);
+        check(type, values, PageState.LAST_CLOSED);
     }
 
-    private void check(SqlColumnType type, List<Object> values, boolean last) {
+    private void check(SqlColumnType type, List<Object> values, PageState pageState) {
         SqlRowMetadata rowMetadata = new SqlRowMetadata(Collections.singletonList(new SqlColumnMetadata("a", type, true)));
 
         List<SqlRow> rows = new ArrayList<>();
@@ -182,7 +184,7 @@ public class SqlPageCodecTest {
         SqlPage originalPage = SqlPage.fromRows(
             Collections.singletonList(type),
             rows,
-            last,
+            pageState,
             serializationService
         );
 
@@ -192,7 +194,7 @@ public class SqlPageCodecTest {
 
         assertEquals(1, restoredPage.getColumnCount());
         assertEquals(values.size(), restoredPage.getRowCount());
-        assertEquals(last, restoredPage.isLast());
+        assertEquals(pageState, restoredPage.getPageState());
 
         assertEquals(1, restoredPage.getColumnTypes().size());
         assertEquals(type, restoredPage.getColumnTypes().get(0));

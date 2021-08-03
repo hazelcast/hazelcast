@@ -111,7 +111,7 @@ public class ClientClusterViewListenerService implements ConnectionListener {
             //somebody else already trying to rereigster
             return;
         }
-        Connection newConnection = connectionManager.getRandomConnection();
+        Connection newConnection = connectionManager.getRandomConnection(null);
         if (newConnection != null) {
             tryRegister(newConnection);
         }

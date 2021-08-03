@@ -72,6 +72,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -816,20 +817,24 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection() {
+    @Nullable
+    public ClientConnection getRandomConnection(@Nullable Set<UUID> ignoredMembers) {
         // Try getting the connection from the load balancer, if smart routing is enabled
         if (isSmartRoutingEnabled) {
             Member member = loadBalancer.next();
 
             // Failed to get a member
             ClientConnection connection = member != null ? activeConnections.get(member.getUuid()) : null;
-            if (connection != null) {
+            if (connection != null && (ignoredMembers == null || !ignoredMembers.contains(connection.getRemoteUuid()))) {
                 return connection;
             }
         }
 
         // Otherwise iterate over connections and return the first one
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
+            if (ignoredMembers != null && ignoredMembers.contains(connectionEntry.getKey())) {
+                continue;
+            }
             return connectionEntry.getValue();
         }
 

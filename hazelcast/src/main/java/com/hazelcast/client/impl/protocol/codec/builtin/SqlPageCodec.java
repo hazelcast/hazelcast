@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.client.SqlPage.PageState;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -43,7 +44,7 @@ public final class SqlPageCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         // Write the "last" flag.
-        byte[] content = new byte[]{(byte) (sqlPage.isLast() ? 1 : 0)};
+        byte[] content = new byte[]{(byte) (sqlPage.getPageState().ordinal())};
         clientMessage.add(new ClientMessage.Frame(content));
 
         // Write column types.
@@ -161,7 +162,7 @@ public final class SqlPageCodec {
         iterator.next();
 
         // Read the "last" flag.
-        boolean isLast = iterator.next().content[0] == 1;
+        PageState pageState = PageState.values()[iterator.next().content[0]];
 
         // Read column types.
         List<Integer> columnTypeIds = ListIntegerCodec.decode(iterator);
@@ -271,6 +272,6 @@ public final class SqlPageCodec {
 
         fastForwardToEndFrame(iterator);
 
-        return SqlPage.fromColumns(columnTypes, columns, isLast);
+        return SqlPage.fromColumns(columnTypes, columns, pageState);
     }
 }

@@ -121,7 +121,7 @@ public class ClientStatisticsService {
      * @return the cluster listening connection to the server
      */
     private TcpClientConnection getConnection() {
-        return (TcpClientConnection) client.getConnectionManager().getRandomConnection();
+        return (TcpClientConnection) client.getConnectionManager().getRandomConnection(null);
     }
 
     /**

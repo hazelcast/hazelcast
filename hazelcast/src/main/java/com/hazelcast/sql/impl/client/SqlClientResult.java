@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlRowImpl;
+import com.hazelcast.sql.impl.client.SqlPage.PageState;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.row.Row;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -97,7 +98,7 @@ public class SqlClientResult implements SqlResult {
             } else {
                 state = new State(null, updateCount, null);
 
-//                markClosed();
+                markClosed();
             }
 
             mux.notifyAll();
@@ -356,10 +357,12 @@ public class SqlClientResult implements SqlResult {
             currentRowCount = page.getRowCount();
             currentPosition = 0;
 
-            if (page.isLast()) {
+            if (page.getPageState().isLast()) {
                 this.last = true;
 
-//                markClosed();
+                if (page.getPageState() == PageState.LAST_CLOSED) {
+                    markClosed();
+                }
             }
         }
 

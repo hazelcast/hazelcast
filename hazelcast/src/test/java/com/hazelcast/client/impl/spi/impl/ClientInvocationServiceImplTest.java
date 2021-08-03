@@ -72,7 +72,7 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
     @Test
     public void testInvocation_willNotBeNotifiedForDeadConnection_afterResponse() {
-        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(null);
         ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue
@@ -91,7 +91,7 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
     @Test
     public void testInvocation_willNotBeNotified_afterAConnectionIsNotifiedForDead() {
-        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(null);
         ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue
@@ -111,7 +111,7 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
 
     @Test
     public void testInvocation_willNotBeNotifiedForOldStalledResponse_afterARetry() {
-        ClientConnection connection = client.getConnectionManager().getRandomConnection();
+        ClientConnection connection = client.getConnectionManager().getRandomConnection(null);
         ClientInvocation invocation = new ClientInvocation(client, ClientPingCodec.encodeRequest(), null, connection);
 
         //Do all the steps necessary to invoke a connection but do not put it in the write queue

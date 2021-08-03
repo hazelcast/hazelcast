@@ -28,6 +28,7 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
 import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.client.SqlPage.PageState;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,7 +85,7 @@ public class QueryClientStateRegistry {
             // Fetch the next page.
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, result.isInfiniteRows());
 
-//            delete = page.isLast();
+            delete = page.getPageState() == PageState.LAST_CLOSED;
 
             return page;
         } catch (Exception e) {
@@ -112,8 +113,8 @@ public class QueryClientStateRegistry {
         try {
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
-            if (page.isLast()) {
-//                deleteClientCursor(clientCursor.getQueryId());
+            if (page.getPageState() == PageState.LAST_CLOSED) {
+                deleteClientCursor(clientCursor.getQueryId());
             }
 
             return page;
@@ -139,16 +140,16 @@ public class QueryClientStateRegistry {
         }
 
         if (respondImmediately) {
-            return SqlPage.fromRows(columnTypes, Collections.emptyList(), false, serializationService);
+            return SqlPage.fromRows(columnTypes, Collections.emptyList(), PageState.NOT_LAST, serializationService);
         }
 
         ResultIterator<SqlRow> iterator = clientCursor.getIterator();
 
         try {
             List<SqlRow> rows = new ArrayList<>(cursorBufferSize);
-            boolean last = fetchPage(iterator, rows, cursorBufferSize);
+            PageState pageState = fetchPage(iterator, rows, cursorBufferSize);
 
-            return SqlPage.fromRows(columnTypes, rows, last, serializationService);
+            return SqlPage.fromRows(columnTypes, rows, pageState, serializationService);
         } catch (HazelcastSqlException e) {
             // We use public API to extract results from the cursor. The cursor may throw HazelcastSqlException only. When
             // it happens, the cursor is already closed with the error, so we just re-throw.
@@ -166,7 +167,7 @@ public class QueryClientStateRegistry {
         }
     }
 
-    private static boolean fetchPage(
+    private static PageState fetchPage(
         ResultIterator<SqlRow> iterator,
         List<SqlRow> rows,
         int cursorBufferSize
@@ -174,7 +175,7 @@ public class QueryClientStateRegistry {
         assert cursorBufferSize > 0;
 
         if (!iterator.hasNext()) {
-            return true;
+            return doneState();
         }
 
         HasNextResult hasNextResult;
@@ -184,7 +185,14 @@ public class QueryClientStateRegistry {
             hasNextResult = iterator.hasNext(0, SECONDS);
         } while (hasNextResult == YES && rows.size() < cursorBufferSize);
 
-        return hasNextResult == DONE;
+        if (hasNextResult == DONE) {
+            return doneState();
+        }
+        return PageState.NOT_LAST;
+    }
+
+    private static PageState doneState() {
+        return PageState.LAST_NOT_CLOSED; // TODO [viliam] fix this
     }
 
     public void close(UUID clientId, QueryId queryId) {

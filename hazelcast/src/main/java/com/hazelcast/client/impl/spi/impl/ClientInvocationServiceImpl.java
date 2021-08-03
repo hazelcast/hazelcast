@@ -180,7 +180,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
 
     @Override
     public boolean invoke(ClientInvocation invocation) {
-        ClientConnection connection = connectionManager.getRandomConnection();
+        ClientConnection connection = connectionManager.getRandomConnection(null);
         if (connection == null) {
             if (invocationLogger.isFinestEnabled()) {
                 invocationLogger.finest("No connection found to invoke");

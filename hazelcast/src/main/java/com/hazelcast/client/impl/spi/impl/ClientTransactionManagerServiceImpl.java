@@ -115,7 +115,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
 
         while (client.getLifecycleService().isRunning()) {
             try {
-                ClientConnection connection = client.getConnectionManager().getRandomConnection();
+                ClientConnection connection = client.getConnectionManager().getRandomConnection(null);
                 if (connection == null) {
                     throw throwException(smartRouting);
                 }

@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 /**
  * A finite set of rows returned to the client.
@@ -33,29 +34,29 @@ public final class SqlPage {
 
     private final List<SqlColumnType> columnTypes;
     private final DataHolder data;
-    private final boolean last;
+    private final PageState pageState;
 
     private SqlPage(
         List<SqlColumnType> columnTypes,
         DataHolder data,
-        boolean last
+        PageState pageState
     ) {
         this.columnTypes = columnTypes;
         this.data = data;
-        this.last = last;
+        this.pageState = pageState;
     }
 
     public static SqlPage fromRows(
         List<SqlColumnType> columnTypes,
         List<SqlRow> rows,
-        boolean last,
+        PageState pageState,
         InternalSerializationService serializationService
     ) {
-        return new SqlPage(columnTypes, new RowsetDataHolder(rows, serializationService), last);
+        return new SqlPage(columnTypes, new RowsetDataHolder(rows, serializationService), pageState);
     }
 
-    public static SqlPage fromColumns(List<SqlColumnType> columnTypes, List<List<?>> columns, boolean last) {
-        return new SqlPage(columnTypes, new ColumnarDataHolder(columns), last);
+    public static SqlPage fromColumns(List<SqlColumnType> columnTypes, List<List<?>> columns, PageState pageState) {
+        return new SqlPage(columnTypes, new ColumnarDataHolder(columns), pageState);
     }
 
     public int getRowCount() {
@@ -85,8 +86,8 @@ public final class SqlPage {
         return data.getColumnValuesForServer(columnIndex, columnType);
     }
 
-    public boolean isLast() {
-        return last;
+    public PageState getPageState() {
+        return pageState;
     }
 
     @Override
@@ -101,15 +102,12 @@ public final class SqlPage {
 
         SqlPage page = (SqlPage) o;
 
-        return last == page.last && columnTypes.equals(page.columnTypes) && data.equals(page.data);
+        return pageState == page.pageState && columnTypes.equals(page.columnTypes) && data.equals(page.data);
     }
 
     @Override
     public int hashCode() {
-        int result = columnTypes.hashCode();
-        result = 31 * result + data.hashCode();
-        result = 31 * result + (last ? 1 : 0);
-        return result;
+        return Objects.hash(columnTypes, data, pageState);
     }
 
     private interface DataHolder {
@@ -314,5 +312,24 @@ public final class SqlPage {
 
     public static boolean convertToData(SqlColumnType type) {
         return type == SqlColumnType.OBJECT;
+    }
+
+    public enum PageState {
+        /** There are more pages to fetch after this page. */
+        NOT_LAST(false),
+        /** There are no more pages to fetch, the query should be closed on the cluster. A `close` operation should follow. */
+        LAST_NOT_CLOSED(true),
+        /** There are no more pages to fetch, the query is closed on the cluster. */
+        LAST_CLOSED(true);
+
+        private final boolean isLast;
+
+        PageState(boolean isLast) {
+            this.isLast = isLast;
+        }
+
+        public boolean isLast() {
+            return isLast;
+        }
     }
 }

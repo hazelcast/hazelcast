@@ -20,8 +20,10 @@ import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -63,8 +65,10 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * For a unisocket client the only ClientConnection will be returned.
      *
      * @return random ClientConnection if available, null otherwise
+     * @param ignoredMembers members to ignore when choosing the random connection
      */
-    ClientConnection getRandomConnection();
+    @Nullable
+    ClientConnection getRandomConnection(@Nullable Set<UUID> ignoredMembers);
 
     /**
      * Return:<ol>
