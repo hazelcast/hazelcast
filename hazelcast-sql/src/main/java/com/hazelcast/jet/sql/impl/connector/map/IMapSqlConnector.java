@@ -124,7 +124,7 @@ public class IMapSqlConnector implements SqlConnector {
 
         MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = service.getMapServiceContext();
-        MapContainer container = context.getMapContainer(externalName);
+        MapContainer container = context.getExistingMapContainer(externalName);
 
         long estimatedRowCount = estimatePartitionedMapRowCount(nodeEngine, context, externalName);
         boolean hd = container != null && container.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;

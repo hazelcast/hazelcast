@@ -80,6 +80,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     MapContainer getMapContainer(String mapName);
 
+    MapContainer getExistingMapContainer(String mapName);
+
     Map<String, MapContainer> getMapContainers();
 
     PartitionContainer getPartitionContainer(int partitionId);

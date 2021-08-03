@@ -50,8 +50,46 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  */
 public final class PartitionServiceProxy implements PartitionService {
 
-    public static final int MIGRATION_STARTED = 0;
-    public static final int MIGRATION_FINISHED = 1;
+    /**
+     * Used for specifying the state of the migration process.
+     */
+    public enum MigrationProcessState {
+
+        /**
+         * Migration process started.
+         */
+        STARTED(0),
+
+        /**
+         * Migration process finished.
+         */
+        FINISHED(1);
+
+        private final int id;
+
+        MigrationProcessState(int id) {
+            this.id = id;
+        }
+
+        @Nullable
+        public static MigrationProcessState fromId(int id) {
+            switch (id) {
+                case 0:
+                    return STARTED;
+                case 1:
+                    return FINISHED;
+                default:
+                    // For the possibility of future extension
+                    // allow old readers to not throw exception
+                    // for unknown values.
+                    return null;
+            }
+        }
+
+        public int getId() {
+            return id;
+        }
+    }
 
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
@@ -204,15 +242,22 @@ public final class PartitionServiceProxy implements PartitionService {
 
         @Override
         public void handleMigrationEvent(MigrationState migrationState, int type) {
-            switch (type) {
-                case MIGRATION_STARTED:
+            MigrationProcessState migrationProcessState = MigrationProcessState.fromId(type);
+            if (migrationProcessState == null) {
+                // Do not throw exception for future extensions of the state type.
+                return;
+            }
+            switch (migrationProcessState) {
+                case STARTED:
                     listener.migrationStarted(migrationState);
                     break;
-                case MIGRATION_FINISHED:
+                case FINISHED:
                     listener.migrationFinished(migrationState);
                     break;
                 default:
-                    // left empty for future type extensions instead of throwing an exception
+                    // We shouldn't hit this line as the future extensions
+                    // should return early from the above check. Defining
+                    // default clause to make checkstyle happy.
             }
         }
 
