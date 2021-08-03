@@ -101,6 +101,16 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testEmpty() {
+        put("1");
+        // Empty separator => just concat, ignoring nulls
+        check(getConcatWsExpression("", "3", "2"), "32");
+        check(getConcatWsExpression("", "3", "null", "2"), "32");
+        // Empty element => not ignored
+        check(getConcatWsExpression("-", "3", "''", "2"), "3--2");
+    }
+
+    @Test
     public void testNonStringSeparator() {
         put("1");
 
@@ -130,7 +140,6 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         check(getConcatWsExpression("?", false, "?", "?"), "", "-", null, null);
         checkFail(getConcatWsExpression("?", false, "?", "?"), 1, null, null);
         check(getConcatWsExpression("?", false, "?", "?"), null, null, null, null);
-
     }
 
     @Test
@@ -184,9 +193,9 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkValue0(sql, SqlColumnType.VARCHAR, expectedResult, params);
     }
 
-    private void checkFail(String function, Object... params) {
+    private void checkFail(String expression, Object... params) {
         try {
-            String sql = "SELECT " + function + " FROM map";
+            String sql = "SELECT " + expression + " FROM map";
             execute(member, sql, params);
             fail("Following query should have caused an error!  ===> " + sql);
         } catch (Exception e) {
@@ -198,15 +207,13 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         return getConcatWsExpression(separator, true, operands);
     }
 
-    private String getConcatWsExpression(String separator, boolean wrapSeparatorWithQuotation, String... operands) {
-        if (wrapSeparatorWithQuotation) {
+    private String getConcatWsExpression(String separator, boolean quoteSeparator, String... operands) {
+        if (quoteSeparator) {
             separator = "'" + separator + "'";
         }
         StringBuilder expression = new StringBuilder("Concat_WS(" + separator);
-        if (operands != null) {
-            for (String operand: operands) {
-                expression.append(", ").append(operand);
-            }
+        for (String operand : operands) {
+            expression.append(", ").append(operand);
         }
         expression.append(")");
         return expression.toString();

@@ -43,7 +43,6 @@ public class ConcatWSFunction extends VariExpression<String> implements Identifi
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-
         String separator = asVarchar(operands[0], row, context);
 
         if (separator == null) {

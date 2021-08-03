@@ -60,7 +60,6 @@ public final class HazelcastConcatWSOperator extends HazelcastFunction {
     public boolean checkOperandTypes(HazelcastCallBinding binding, boolean throwOnFailure) {
         HazelcastSqlValidator validator = binding.getValidator();
 
-
         if (binding.getOperandType(0).getSqlTypeName() != VARCHAR) {
             if (throwOnFailure) {
                 throw binding.newValidationSignatureError();
