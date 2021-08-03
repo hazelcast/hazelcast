@@ -287,6 +287,11 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public MapContainer getExistingMapContainer(String mapName) {
+        return mapContainers.get(mapName);
+    }
+
+    @Override
     public Map<String, MapContainer> getMapContainers() {
         return mapContainers;
     }
