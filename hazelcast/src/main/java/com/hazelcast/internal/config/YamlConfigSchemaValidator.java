@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
+import com.hazelcast.spi.properties.HazelcastProperty;
 import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.PrimitiveValidationStrategy;
 import org.everit.json.schema.Schema;
@@ -38,6 +39,9 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 
 public class YamlConfigSchemaValidator {
+
+    private static final HazelcastProperty ROOT_LEVEL_INDENTATION_CHECK_ENABLED
+            = new HazelcastProperty("hazelcast.yaml.config.indentation.check.enabled", "true");
 
     private static final List<String> PERMITTED_ROOT_NODES = unmodifiableList(
             asList("hazelcast", "hazelcast-client", "hazelcast-client-failover"));
@@ -81,7 +85,7 @@ public class YamlConfigSchemaValidator {
                         "exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
                                 + " root schema document, " + definedRootNodes.size() + " are present",
                         "#", "#", emptyList());
-            } else {
+            } else if (!"false".equals(ROOT_LEVEL_INDENTATION_CHECK_ENABLED.getSystemProperty())) {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
             Validator.builder()
@@ -111,17 +115,25 @@ public class YamlConfigSchemaValidator {
         }
         if (misIndentedRootProps.size() == 1) {
             String propName = misIndentedRootProps.get(0);
-            throw createExceptionForMisIndentedConfigProp(propName);
+            throw createExceptionForMisIndentedConfigProp(propName, true);
         } else {
             List<SchemaViolationConfigurationException> causes = misIndentedRootProps.stream()
-                    .map(this::createExceptionForMisIndentedConfigProp)
+                    .map(prop -> createExceptionForMisIndentedConfigProp(prop, false))
                     .collect(toList());
-            throw new SchemaViolationConfigurationException(causes.size() + " schema violations found", "#", "#", causes);
+            throw new SchemaViolationConfigurationException(withNote(causes.size() + " schema violations found"), "#", "#", causes);
         }
     }
 
-    private SchemaViolationConfigurationException createExceptionForMisIndentedConfigProp(String propName) {
-        return new SchemaViolationConfigurationException("Mis-indented hazelcast configuration property found: ["
-                + propName + "]", "#", "#", emptyList());
+    private static String withNote(String originalMessage) {
+        return originalMessage + System.getProperty("line.separator") + "Note: you can disable this validation by passing the "
+                + "-Dhazelcast.yaml.config.indentation.check.enabled=false system property";
+    }
+
+    private SchemaViolationConfigurationException createExceptionForMisIndentedConfigProp(String propName, boolean addNote) {
+        String message = "Mis-indented hazelcast configuration property found: [" + propName + "]";
+        if (addNote) {
+            message = withNote(message);
+        }
+        return new SchemaViolationConfigurationException(message, "#", "#", emptyList());
     }
 }

@@ -18,11 +18,14 @@ package com.hazelcast.config;
 
 import com.hazelcast.client.config.YamlClientConfigBuilderTest;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
+import com.hazelcast.test.OverridePropertyRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import static com.hazelcast.config.YamlConfigBuilderTest.buildConfig;
+import static com.hazelcast.test.OverridePropertyRule.clear;
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -33,14 +36,27 @@ public class YamlRootAdditionalPropertiesTest {
     @Rule
     public ExpectedException expExc = ExpectedException.none();
 
+    @Rule
+    public OverridePropertyRule indentationCheckEnabled = clear("hazelcast.yaml.config.indentation.check.enabled");
+
     @Test
     public void testMisIndentedMemberConfigProperty_failsValidation() {
         SchemaViolationConfigurationException actual = assertThrows(SchemaViolationConfigurationException.class,
                 () -> buildConfig("hazelcast:\n"
                         + "  instance-name: 'my-instance'\n"
                         + "cluster-name: 'my-cluster'\n")
-                );
-        assertEquals("Mis-indented hazelcast configuration property found: [cluster-name]", actual.getMessage());
+        );
+        assertEquals(format("Mis-indented hazelcast configuration property found: [cluster-name]%n"
+                + "Note: you can disable this validation by passing the "
+                + "-Dhazelcast.yaml.config.indentation.check.enabled=false system property"), actual.getMessage());
+    }
+
+    @Test
+    public void misIndentedRootProperty_validationDisabled() {
+        indentationCheckEnabled.setOrClearProperty("false");
+        buildConfig("hazelcast:\n"
+                + "  instance-name: 'my-instance'\n"
+                + "cluster-name: 'my-cluster'\n");
     }
 
     @Test
@@ -57,7 +73,9 @@ public class YamlRootAdditionalPropertiesTest {
                         + "  instance-name: 'my-instance'\n"
                         + "client-labels: 'my-lbl'\n")
         );
-        assertEquals("Mis-indented hazelcast configuration property found: [client-labels]", actual.getMessage());
+        assertEquals(format("Mis-indented hazelcast configuration property found: [client-labels]%n"
+                + "Note: you can disable this validation by passing the "
+                + "-Dhazelcast.yaml.config.indentation.check.enabled=false system property"), actual.getMessage());
     }
 
     @Test
@@ -67,7 +85,9 @@ public class YamlRootAdditionalPropertiesTest {
                         + "instance-name: 'my-instance'\n"
                         + "client-labels: 'my-lbl'\n")
         );
-        assertEquals(new SchemaViolationConfigurationException("2 schema violations found", "#", "#", asList(
+        assertEquals(new SchemaViolationConfigurationException(format("2 schema violations found%n"
+                + "Note: you can disable this validation by passing the "
+                + "-Dhazelcast.yaml.config.indentation.check.enabled=false system property"), "#", "#", asList(
                 new SchemaViolationConfigurationException("Mis-indented hazelcast configuration property found: [instance-name]",
                         "#", "#", emptyList()),
                 new SchemaViolationConfigurationException("Mis-indented hazelcast configuration property found: [client-labels]",

@@ -95,12 +95,14 @@ public class SchemaViolationConfigurationException
             return false;
         }
         SchemaViolationConfigurationException that = (SchemaViolationConfigurationException) o;
-        return keywordLocation.equals(that.keywordLocation) && instanceLocation.equals(that.instanceLocation) && errors.equals(
-                that.errors);
+        return getMessage().equals(that.getMessage())
+                && keywordLocation.equals(that.keywordLocation)
+                && instanceLocation.equals(that.instanceLocation)
+                && errors.equals(that.errors);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(keywordLocation, instanceLocation, errors);
+        return Objects.hash(getMessage(), keywordLocation, instanceLocation, errors);
     }
 }
