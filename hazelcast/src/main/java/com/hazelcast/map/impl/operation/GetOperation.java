@@ -51,21 +51,9 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     private boolean noCopyReadAllowed(Object currentValue) {
-        // Data instances are unmodifiable.
-        // No copy read can be allowed only for them.
-        if (!(currentValue instanceof Data)) {
-            return false;
-        }
-
-        // If operation has caller uuid(as in operations sent by client),
-        // locality check can be done based on it.
-        if (isCallerUuidSet()) {
-            return !getCallerUuid().equals(getNodeEngine().getLocalMember().getUuid());
-        }
-
-        // If operation has callerAddress(as in operations sent by member),
-        // locality check can be done based on it.
-        return !super.executedLocally();
+        return currentValue instanceof Data
+                && (!getNodeEngine().getLocalMember().getUuid().equals(getCallerUuid())
+                || !super.executedLocally());
     }
 
     @Override
