@@ -42,30 +42,31 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testColumn() {
-        for (ExpressionType<?> type1 : ExpressionTypes.all()) {
-            // Test supported types
-            for (ExpressionType<?> type2 : ExpressionTypes.all()) {
-                Class<? extends ExpressionBiValue> clazz = ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+        ExpressionType<?>[] allTypes = ExpressionTypes.all();
 
-                checkColumns(
+        for (int i = 0; i < allTypes.length; i++) {
+            for (int j = i; j < allTypes.length; j++) {
+                ExpressionType<?> type1 = allTypes[i];
+                ExpressionType<?> type2 = allTypes[j];
+
+                Class<? extends ExpressionBiValue> clazz =
+                        ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+
+                ExpressionBiValue[] values = new ExpressionBiValue[]{
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom()),
-                        type1.valueFrom() + "-" + type2.valueFrom()
-                );
-
-                checkColumns(
                         ExpressionBiValue.createBiValue(clazz, 0, null, type2.valueFrom()),
-                        type2.valueFrom().toString()
-                );
-
-                checkColumns(
                         ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), null),
-                        type1.valueFrom().toString()
-                );
+                        ExpressionBiValue.createBiValue(clazz, 0, null, null)
+                };
 
-                checkColumns(
-                        ExpressionBiValue.createBiValue(clazz, 0, null, null),
+                String[] expectedResults = new String[]{
+                        type1.valueFrom() + "-" + type2.valueFrom(),
+                        type2.valueFrom().toString(),
+                        type1.valueFrom().toString(),
                         ""
-                );
+                };
+
+                checkColumns(values, expectedResults);
             }
         }
     }
@@ -125,7 +126,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         check(getConcatWsExpression("-", "this", "?"), "1-2", 2);
         check(getConcatWsExpression("-", "this", "?"), "1-2", "2");
         check(getConcatWsExpression("-", "this", "?"), "1-2", '2');
-        check(getConcatWsExpression("-", "this", "?"), "1",  new Object[]{null});
+        check(getConcatWsExpression("-", "this", "?"), "1", new Object[]{null});
 
         check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_DATE_VAL, LOCAL_DATE_VAL);
         check(getConcatWsExpression("-", "this", "?"), "1-" + LOCAL_TIME_VAL, LOCAL_TIME_VAL);
@@ -181,10 +182,10 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(corrupted4, restored, false);
     }
 
-    private void checkColumns(ExpressionBiValue value, String expectedResult) {
-        put(value);
+    private void checkColumns(Object[] values, Object[] expectedResults) {
+        putAll(values);
 
-        check("Concat_WS('-', field1, field2)", expectedResult);
+        checkValue0("SELECT Concat_WS('-', field1, field2) FROM map", SqlColumnType.VARCHAR, expectedResults);
     }
 
     private void check(String operands, String expectedResult, Object... params) {
