@@ -368,7 +368,6 @@ abstract class MapProxySupport<K, V>
         }
         MapOperation operation = operationProvider.createGetOperation(name, keyData);
         operation.setThreadId(getThreadId());
-        operation.setCallerUuid(getNodeEngine().getLocalMember().getUuid());
         return invokeOperation(keyData, operation);
     }
 
