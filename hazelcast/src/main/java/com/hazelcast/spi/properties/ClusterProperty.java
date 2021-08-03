@@ -1640,7 +1640,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_SCAN_PERIOD
-            = new HazelcastProperty("jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS);
+            = new HazelcastProperty("hazelcast.jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS)
+            .setDeprecatedName("jet.job.scan.period");
 
     /**
      * Maximum number of time in seconds the job results will be kept in
@@ -1652,7 +1653,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
-            = new HazelcastProperty("jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS);
+            = new HazelcastProperty("hazelcast.jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS)
+            .setDeprecatedName("jet.job.results.ttl.seconds");
 
     /**
      * Maximum number of job results to keep in the cluster, the oldest
@@ -1663,7 +1665,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JOB_RESULTS_MAX_SIZE
-            = new HazelcastProperty("jet.job.results.max.size", 1_000);
+            = new HazelcastProperty("hazelcast.jet.job.results.max.size", 1_000)
+            .setDeprecatedName("jet.job.results.max.size");
 
     /**
      * The minimum time in microseconds the cooperative worker threads will
@@ -1685,7 +1688,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MIN_MICROSECONDS
-            = new HazelcastProperty("jet.idle.cooperative.min.microseconds", 25, MICROSECONDS);
+            = new HazelcastProperty("hazelcast.jet.idle.cooperative.min.microseconds", 25, MICROSECONDS)
+            .setDeprecatedName("jet.idle.cooperative.min.microseconds");
 
     /**
      * The maximum time in microseconds the cooperative worker threads will
@@ -1707,7 +1711,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("jet.idle.cooperative.max.microseconds", 500, MICROSECONDS);
+        = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
+            .setDeprecatedName("jet.idle.cooperative.max.microseconds");
 
     /**
      * The minimum time in microseconds the non-cooperative worker threads will
@@ -1729,7 +1734,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS
-        = new HazelcastProperty("jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS);
+        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
+            .setDeprecatedName("jet.idle.noncooperative.min.microseconds");
 
     /**
      * The maximum time in microseconds the non-cooperative worker threads will
@@ -1751,7 +1757,8 @@ public final class ClusterProperty {
      * @since Jet 3.2
      */
     public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
-        = new HazelcastProperty("jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS);
+        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
+            .setDeprecatedName("jet.idle.noncooperative.max.microseconds");
 
     /**
      * The directory containing jars, that can be used to specify custom classpath for
@@ -1761,7 +1768,8 @@ public final class ClusterProperty {
      * @since 5.0
      */
     public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
-            = new HazelcastProperty("jet.custom.lib.dir", "custom-lib");
+            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib")
+            .setDeprecatedName("jet.custom.lib.dir");
 
     private ClusterProperty() {
     }

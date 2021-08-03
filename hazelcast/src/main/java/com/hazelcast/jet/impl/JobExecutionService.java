@@ -218,7 +218,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        String customLibDir = nodeEngine.getConfig().getProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName());
+        String customLibDir = nodeEngine.getProperties().getString(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR);
         Map<String, ClassLoader> classLoaderMap = new HashMap<>();
         ClassLoader parent = getClassLoader(jobConfig, jobId);
         for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {
