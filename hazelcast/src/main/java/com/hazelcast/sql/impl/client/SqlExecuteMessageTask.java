@@ -22,6 +22,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.SqlInternalService;
@@ -53,7 +54,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         query.setSchema(parameters.schema);
         query.setTimeoutMillis(parameters.timeoutMillis);
         query.setCursorBufferSize(parameters.cursorBufferSize);
-        query.setExpectedResultType(SqlClientUtils.expectedResultTypeToEnum(parameters.expectedResultType));
+        query.setExpectedResultType(SqlExpectedResultType.fromId(parameters.expectedResultType));
 
         SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
