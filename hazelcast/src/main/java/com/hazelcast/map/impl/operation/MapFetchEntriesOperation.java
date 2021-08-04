@@ -63,6 +63,8 @@ public class MapFetchEntriesOperation extends MapOperation implements ReadonlyOp
     // HD scan via operation supposed to be thread-safe, no need to control concurrency.
     @Override
     protected void assertNativeMapOnPartitionThread() {
+        assert getPartitionId() != GENERIC_PARTITION_ID
+            : "Native memory backed map operations are not allowed to run on GENERIC_PARTITION_ID";
     }
 
     @Override
