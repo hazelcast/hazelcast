@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSupport {
-    private static final int ITEM_COUNT = 150_000;
+    private static final int ITEM_COUNT = 10_000;
     private static final String MAP_NAME = "map";
 
     private IMap<Integer, Integer> map;
@@ -62,7 +62,7 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
 
     @Test
     @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
-    public void test_sorted() throws InterruptedException {
+    public void test_sorted() {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
             map.put(i, i);
@@ -72,17 +72,19 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+        // we'd try to break order correctness couple of time.
+        for (int i = 0; i < 5; i++) {
+            assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
+        }
     }
 
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows) {
         List<Row> actualRows = new ArrayList<>();
         instance().getSql()
-                .execute(sql)
-                .iterator()
-                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
+            .execute(sql)
+            .iterator()
+            .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
 
-        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 }

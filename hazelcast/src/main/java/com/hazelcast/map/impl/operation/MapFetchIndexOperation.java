@@ -313,7 +313,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return response;
     }
 
-    // Index scan via operation supposed to be thread-safe, no need to control concurrency.
+    // Index scan via operation is thread-safe, no need to run from partition thread.
     @Override
     protected void assertNativeMapOnPartitionThread() {
     }

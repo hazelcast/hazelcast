@@ -143,13 +143,11 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     private void assertRowsAnyOrder(String sql, Collection<Row> expectedRows, Thread mutator) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
-        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
     }
 
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows, Thread mutator) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
-        assertThat(actualRows.size()).isEqualTo(expectedRows.size());
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 
