@@ -18,10 +18,14 @@ package com.hazelcast.config;
 
 import com.hazelcast.client.config.YamlClientConfigBuilderTest;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.YamlConfigBuilderTest.buildConfig;
 import static com.hazelcast.test.OverridePropertyRule.clear;
@@ -31,6 +35,8 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class YamlRootAdditionalPropertiesTest {
 
     @Rule

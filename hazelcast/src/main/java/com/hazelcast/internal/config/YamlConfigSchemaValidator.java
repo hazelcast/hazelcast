@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import org.everit.json.schema.ObjectSchema;
 import org.everit.json.schema.PrimitiveValidationStrategy;
@@ -85,7 +86,7 @@ public class YamlConfigSchemaValidator {
                         "exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
                                 + " root schema document, " + definedRootNodes.size() + " are present",
                         "#", "#", emptyList());
-            } else if (!"false".equals(ROOT_LEVEL_INDENTATION_CHECK_ENABLED.getSystemProperty())) {
+            } else if (new HazelcastProperties(System.getProperties()).getBoolean(ROOT_LEVEL_INDENTATION_CHECK_ENABLED)) {
                 validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
             Validator.builder()
@@ -127,7 +128,7 @@ public class YamlConfigSchemaValidator {
 
     private static String withNote(String originalMessage) {
         return originalMessage + System.getProperty("line.separator") + "Note: you can disable this validation by passing the "
-                + "-Dhazelcast.yaml.config.indentation.check.enabled=false system property";
+                + "-D" + ROOT_LEVEL_INDENTATION_CHECK_ENABLED.getName() + "=false system property";
     }
 
     private SchemaViolationConfigurationException createExceptionForMisIndentedConfigProp(String propName, boolean addNote) {
