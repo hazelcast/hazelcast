@@ -103,7 +103,7 @@ public final class Util {
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
             "To enable the Jet engine, please do one of the following:\n" +
             "  - Change member config using Java API: config.getJetConfig().setEnabled(true);\n" +
-            "  - Change xml/yaml configuration property: set hazelcast.jet.enabled to true\n" +
+            "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
             "  - Add system property or environment variable: -Dhz.jet.enabled=true or HZ_JET_ENABLED=true";
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
