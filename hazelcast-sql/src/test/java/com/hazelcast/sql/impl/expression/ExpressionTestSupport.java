@@ -200,7 +200,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     /**
-     * Execute a query, assert that it returns only 1 column and the values matches the expectedResults array
+     * Execute a query, assert that it returns only 1 column and the values match the expectedResults array
      * in any order. Assert the type and count of the results.
      *
      * @param sql            the input query
@@ -211,7 +211,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      *
      * @return the result values
      */
-    protected Object[] checkValue0(
+    protected Object[] checkValues0(
             String sql,
             SqlColumnType expectedType,
             Object[] expectedResults,

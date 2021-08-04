@@ -185,7 +185,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     private void checkColumns(Object[] values, Object[] expectedResults) {
         putAll(values);
 
-        checkValue0("SELECT Concat_WS('-', field1, field2) FROM map", SqlColumnType.VARCHAR, expectedResults);
+        checkValues0("SELECT Concat_WS('-', field1, field2) FROM map", SqlColumnType.VARCHAR, expectedResults);
     }
 
     private void check(String operands, String expectedResult, Object... params) {
