@@ -42,9 +42,12 @@ import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 
 import static java.lang.Math.max;
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -1625,6 +1628,147 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty MOBY_NAMING_ENABLED
             = new HazelcastProperty("hazelcast.member.naming.moby.enabled", true);
+
+    /*
+     * JET PROPERTIES
+     */
+    /**
+     * Jet will periodically check for new jobs to start and perform cleanup of
+     * unused resources. This property configures how often this check and
+     * cleanup will be done. Value is in milliseconds.
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JOB_SCAN_PERIOD
+            = new HazelcastProperty("hazelcast.jet.job.scan.period", SECONDS.toMillis(5), MILLISECONDS)
+            .setDeprecatedName("jet.job.scan.period");
+
+    /**
+     * Maximum number of time in seconds the job results will be kept in
+     * the cluster. They will be automatically deleted after this period
+     * is reached.
+     * <p>
+     * Default value is 7 days.
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JOB_RESULTS_TTL_SECONDS
+            = new HazelcastProperty("hazelcast.jet.job.results.ttl.seconds", DAYS.toSeconds(7), SECONDS)
+            .setDeprecatedName("jet.job.results.ttl.seconds");
+
+    /**
+     * Maximum number of job results to keep in the cluster, the oldest
+     * results will be automatically deleted after this size is reached.
+     * <p>
+     * Default value is 1,000 jobs.
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JOB_RESULTS_MAX_SIZE
+            = new HazelcastProperty("hazelcast.jet.job.results.max.size", 1_000)
+            .setDeprecatedName("jet.job.results.max.size");
+
+    /**
+     * The minimum time in microseconds the cooperative worker threads will
+     * sleep if none of the tasklets made any progress. Lower values increase
+     * idle CPU usage but may result in decreased latency. Higher values will
+     * increase latency and very high values (>10000µs) will also limit the
+     * throughput.
+     * <p>
+     * The default is value is {@code 25µs}.
+     * <p>
+     * Note: the underlying {@link LockSupport#parkNanos(long)} call may
+     * actually sleep longer depending on the operating system (up to 15000µs
+     * on Windows). See the <a
+     * href="https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/">
+     * Hazelcast blog post about this subject</a> for more details.
+     * <p>
+     * See also: {@link #JET_IDLE_COOPERATIVE_MAX_MICROSECONDS}
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JET_IDLE_COOPERATIVE_MIN_MICROSECONDS
+            = new HazelcastProperty("hazelcast.jet.idle.cooperative.min.microseconds", 25, MICROSECONDS)
+            .setDeprecatedName("jet.idle.cooperative.min.microseconds");
+
+    /**
+     * The maximum time in microseconds the cooperative worker threads will
+     * sleep if none of the tasklets made any progress. Lower values increase
+     * idle CPU usage but may result in decreased latency. Higher values will
+     * increase latency and very high values (>10000µs) will also limit the
+     * throughput.
+     * <p>
+     * The default is value is {@code 500µs}.
+     * <p>
+     * Note: the underlying {@link LockSupport#parkNanos(long)} call may
+     * actually sleep longer depending on the operating system (up to 15000µs on
+     * Windows). See the <a
+     * href="https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/">
+     * Hazelcast blog post about this subject</a> for more details.
+     * <p>
+     * See also: {@link #JET_IDLE_COOPERATIVE_MIN_MICROSECONDS}
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JET_IDLE_COOPERATIVE_MAX_MICROSECONDS
+        = new HazelcastProperty("hazelcast.jet.idle.cooperative.max.microseconds", 500, MICROSECONDS)
+            .setDeprecatedName("jet.idle.cooperative.max.microseconds");
+
+    /**
+     * The minimum time in microseconds the non-cooperative worker threads will
+     * sleep if none of the tasklets made any progress. Lower values increase
+     * idle CPU usage but may result in decreased latency. Higher values will
+     * increase latency and very high values (>10000µs) will also limit the
+     * throughput.
+     * <p>
+     * The default is value is {@code 25µs}.
+     * <p>
+     * Note: the underlying {@link LockSupport#parkNanos(long)} call may actually
+     * sleep longer depending on the operating system (up to 15000µs on Windows).
+     * See the <a
+     * href="https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/">
+     * Hazelcast blog post about this subject</a> for more details.
+     * <p>
+     * See also: {@link #JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS}
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS
+        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.min.microseconds", 25, MICROSECONDS)
+            .setDeprecatedName("jet.idle.noncooperative.min.microseconds");
+
+    /**
+     * The maximum time in microseconds the non-cooperative worker threads will
+     * sleep if none of the tasklets made any progress. Lower values increase
+     * idle CPU usage but may result in decreased latency. Higher values will
+     * increase latency and very high values (>10000µs) will also limit the
+     * throughput.
+     * <p>
+     * The default is value is {@code 5000µs}.
+     * <p>
+     * Note: the underlying {@link LockSupport#parkNanos(long)} call may actually
+     * sleep longer depending on the operating system (up to 15000µs on Windows).
+     * See the <a
+     * href="https://hazelcast.com/blog/locksupport-parknanos-under-the-hood-and-the-curious-case-of-parking/">
+     * Hazelcast blog post about this subject</a> for more details.
+     * <p>
+     * See also: {@link #JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS}
+     *
+     * @since Jet 3.2
+     */
+    public static final HazelcastProperty JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS
+        = new HazelcastProperty("hazelcast.jet.idle.noncooperative.max.microseconds", 5000, MICROSECONDS)
+            .setDeprecatedName("jet.idle.noncooperative.max.microseconds");
+
+    /**
+     * The directory containing jars, that can be used to specify custom classpath for
+     * a stage in a pipeline.
+     * The default value is `custom-lib`, relative to the current directory.
+     *
+     * @since 5.0
+     */
+    public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
+            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
 
     private ClusterProperty() {
     }
