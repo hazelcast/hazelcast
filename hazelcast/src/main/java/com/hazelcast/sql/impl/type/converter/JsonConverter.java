@@ -33,6 +33,6 @@ public class JsonConverter extends Converter {
 
     @Override
     public Object convertToSelf(final Converter converter, final Object val) {
-        return null;
+        return converter.asJson(val);
     }
 }

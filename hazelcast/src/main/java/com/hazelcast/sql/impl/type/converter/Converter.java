@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.type.converter;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -83,6 +84,7 @@ public abstract class Converter implements Serializable {
     private final boolean convertToTimestamp;
     private final boolean convertToTimestampWithTimezone;
     private final boolean convertToObject;
+    private final boolean convertToJson;
 
     protected Converter(int id, QueryDataTypeFamily typeFamily) {
         this.id = id;
@@ -105,6 +107,7 @@ public abstract class Converter implements Serializable {
             convertToTimestamp = canConvert(clazz.getMethod("asTimestamp", Object.class));
             convertToTimestampWithTimezone = canConvert(clazz.getMethod("asTimestampWithTimezone", Object.class));
             convertToObject = canConvert(clazz.getMethod("asObject", Object.class));
+            convertToJson = canConvert(clazz.getMethod("asJson", Object.class));
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to initialize converter: " + getClass().getName(), e);
         }
@@ -195,6 +198,11 @@ public abstract class Converter implements Serializable {
         throw cannotConvertError(QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE);
     }
 
+    @NotConvertible
+    public HazelcastJsonValue asJson(Object val) {
+        throw cannotConvertError(QueryDataTypeFamily.JSON);
+    }
+
     public Object asObject(Object val) {
         return val;
     }
@@ -255,6 +263,10 @@ public abstract class Converter implements Serializable {
         return convertToObject;
     }
 
+    public final boolean canConvertToJson() {
+        return convertToJson;
+    }
+
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ReturnCount"})
     public final boolean canConvertTo(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
@@ -299,6 +311,8 @@ public abstract class Converter implements Serializable {
 
             case OBJECT:
                 return canConvertToObject();
+            case JSON:
+                return canConvertToJson();
 
             default:
                 return getTypeFamily() == typeFamily;

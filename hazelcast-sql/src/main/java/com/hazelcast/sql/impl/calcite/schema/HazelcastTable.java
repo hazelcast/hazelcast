@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.calcite.schema;
 import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -226,11 +227,20 @@ public class HazelcastTable extends AbstractTable {
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
 
         if (sqlTypeName == null) {
-            throw new IllegalStateException("Unexpected type family: " + fieldType.getTypeFamily());
+            return convertCustomType(fieldType, typeFactory);
+        } else {
+            RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+            return typeFactory.createTypeWithNullability(relType, true);
         }
+    }
 
-        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
-        return typeFactory.createTypeWithNullability(relType, true);
+    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+        switch (fieldType.getTypeFamily()) {
+            case JSON:
+                return HazelcastJsonType.INSTANCE;
+            default:
+                throw new IllegalStateException("Unexpected type family: " + fieldType.getTypeFamily());
+        }
     }
 
     /**

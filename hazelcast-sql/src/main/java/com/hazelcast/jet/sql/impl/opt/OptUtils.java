@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
@@ -252,11 +253,20 @@ public final class OptUtils {
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
 
         if (sqlTypeName == null) {
-            throw new IllegalStateException("Unexpected type family: " + fieldType);
+            return convertCustomType(fieldType, typeFactory);
+        } else {
+            RelDataType relType = typeFactory.createSqlType(sqlTypeName);
+            return typeFactory.createTypeWithNullability(relType, true);
         }
+    }
 
-        RelDataType relType = typeFactory.createSqlType(sqlTypeName);
-        return typeFactory.createTypeWithNullability(relType, true);
+    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+        switch (fieldType.getTypeFamily()) {
+            case JSON:
+                return HazelcastJsonType.INSTANCE;
+            default:
+                throw new IllegalStateException("Unexpected type family: " + fieldType);
+        }
     }
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {

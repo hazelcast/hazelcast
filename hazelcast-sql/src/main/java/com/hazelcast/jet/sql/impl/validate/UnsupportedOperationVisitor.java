@@ -242,6 +242,10 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
             }
         }
 
+        if (HazelcastTypeUtils.isJsonIdentifier(type.getTypeName())) {
+            return null;
+        }
+
         if (!(type.getTypeNameSpec() instanceof SqlBasicTypeNameSpec)) {
             throw error(type, RESOURCE.error("Complex type specifications are not supported"));
         }

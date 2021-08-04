@@ -168,8 +168,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RelDataType from = validator.getValidatedNodeType(operand);
         RelDataType to = validator.getValidatedNodeType(call);
 
-        QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from.getSqlTypeName());
-        QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to.getSqlTypeName());
+        QueryDataType fromType = HazelcastTypeUtils.toHazelcastType(from);
+        QueryDataType toType = HazelcastTypeUtils.toHazelcastType(to);
 
         Literal literal = LiteralUtils.literal(convertedOperand);
 

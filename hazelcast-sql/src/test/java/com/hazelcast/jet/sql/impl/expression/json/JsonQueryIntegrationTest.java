@@ -30,8 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -100,61 +98,27 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
         }
     }
 
-    public static class ComplexObject implements Serializable {
-        private Long id;
-        private HazelcastJsonValue jsonValue;
+    @Test
+    public void when_mappedComplexObjectIsPassed_queryWorks() {
+        final IMap<Long, ComplexObject> test = instance().getMap("test");
+        test.put(1L, new ComplexObject(1L, new HazelcastJsonValue("[1,2,3]")));
 
-        public ComplexObject() {
-        }
+        instance().getSql()
+                .execute("CREATE MAPPING test (__key BIGINT, id BIGINT, JsonValue JSON) " +
+                        "TYPE IMap " +
+                        "OPTIONS ('keyFormat'='bigint', " +
+                        "'valueFormat'='java', " +
+                        "'valueJavaClass'='com.hazelcast.jet.sql.impl.expression.json.ComplexObject')")
+                .updateCount();
 
-        public ComplexObject(final Long id, final HazelcastJsonValue jsonValue) {
-            this.id = id;
-            this.jsonValue = jsonValue;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public void setId(final Long id) {
-            this.id = id;
-        }
-
-        public HazelcastJsonValue getJsonValue() {
-            return jsonValue;
-        }
-
-        public void setJsonValue(final HazelcastJsonValue jsonValue) {
-            this.jsonValue = jsonValue;
+        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(JsonValue, '$'), id FROM test")) {
+            System.out.println(row);
+            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
+            assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
+            assertEquals(SqlColumnType.BIGINT, row.getMetadata().getColumn(1).getType());
+            assertEquals((Long) 1L, row.getObject(1));
         }
     }
 
-    public static class ComplexMappedObject implements Serializable {
-        private Long id;
-        private String jsonValue;
 
-        public ComplexMappedObject() {
-        }
-
-        public ComplexMappedObject(final Long id, final String jsonValue) {
-            this.id = id;
-            this.jsonValue = jsonValue;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public void setId(final Long id) {
-            this.id = id;
-        }
-
-        public String getJsonValue() {
-            return jsonValue;
-        }
-
-        public void setJsonValue(final String jsonValue) {
-            this.jsonValue = jsonValue;
-        }
-    }
 }

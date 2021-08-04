@@ -176,7 +176,7 @@ public final class RexToExpression {
             "checkstyle:NPathComplexity"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
-        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType().getSqlTypeName());
+        QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType());
 
         switch (operator.getKind()) {
             case DEFAULT:

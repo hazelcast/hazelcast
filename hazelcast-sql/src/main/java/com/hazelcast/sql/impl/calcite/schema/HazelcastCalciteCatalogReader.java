@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
@@ -70,6 +71,10 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
     public RelDataType getNamedType(SqlIdentifier typeName) {
         if (HazelcastTypeUtils.isObjectIdentifier(typeName)) {
             return typeFactory.createSqlType(SqlTypeName.ANY);
+        }
+
+        if (HazelcastTypeUtils.isJsonIdentifier(typeName)) {
+            return HazelcastJsonType.INSTANCE; // TODO construct?
         }
 
         return super.getNamedType(typeName);

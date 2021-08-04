@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -95,8 +96,7 @@ public final class HazelcastTypeUtils {
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
         // TODO: symbol type?
         CALCITE_TO_HZ.put(SqlTypeName.SYMBOL, QueryDataType.NULL);
-        // TODO: remove?
-        HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, SqlTypeName.ANY);
+        //HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, SqlTypeName.ANY); // TODO: remove
     }
 
     private HazelcastTypeUtils() {
@@ -109,6 +109,19 @@ public final class HazelcastTypeUtils {
 
     public static SqlTypeName toCalciteType(QueryDataTypeFamily typeFamily) {
         return HZ_TO_CALCITE.get(typeFamily);
+    }
+
+    public static QueryDataType toHazelcastType(RelDataType relDataType) {
+        if (relDataType.getSqlTypeName() != null) {
+            return toHazelcastType(relDataType.getSqlTypeName());
+        }
+        final RelDataTypeFamily typeFamily = relDataType.getFamily();
+
+        if (typeFamily instanceof HazelcastJsonType) {
+            return QueryDataType.JSON;
+        }
+
+        throw new IllegalArgumentException("unexpected SQL type: " + relDataType);
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
@@ -145,6 +158,10 @@ public final class HazelcastTypeUtils {
 
     public static boolean isObjectIdentifier(SqlIdentifier identifier) {
         return identifier.isSimple() && equalsIgnoreCase(SqlColumnType.OBJECT.name(), identifier.getSimple());
+    }
+
+    public static boolean isJsonIdentifier(SqlIdentifier identifier) {
+        return identifier.isSimple() && equalsIgnoreCase(SqlColumnType.JSON.name(), identifier.getSimple());
     }
 
     /**
@@ -330,8 +347,8 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
-        QueryDataType queryFrom = toHazelcastType(sourceType.getSqlTypeName());
-        QueryDataType queryTo = toHazelcastType(targetType.getSqlTypeName());
+        QueryDataType queryFrom = toHazelcastType(sourceType);
+        QueryDataType queryTo = toHazelcastType(targetType);
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
     }

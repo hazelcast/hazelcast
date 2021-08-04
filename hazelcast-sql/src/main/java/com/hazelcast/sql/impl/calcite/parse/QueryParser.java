@@ -75,7 +75,7 @@ public class QueryParser {
     public QueryParseResult parse(String sql) {
         try {
             try {
-                return parse(sql, sqlBackend, conformance);
+                return parse(sql, jetSqlBackend, jetConformance);
             } catch (Exception e) {
                 // TODO: once IMDG engine is removed, move the check (and fail fast) to SqlServiceImpl?
                 if (jetSqlBackend != null) {
