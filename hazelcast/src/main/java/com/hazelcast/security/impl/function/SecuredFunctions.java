@@ -32,6 +32,7 @@ import com.hazelcast.jet.impl.connector.StreamSocketP;
 import com.hazelcast.jet.impl.connector.UpdateMapP;
 import com.hazelcast.jet.impl.connector.UpdateMapWithEntryProcessorP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
@@ -53,6 +54,7 @@ import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.Map;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
@@ -200,6 +202,39 @@ public final class SecuredFunctions {
                 String fileName = path.getFileName().toString();
                 return Files.lines(path, Charset.forName(charsetName))
                         .map(l -> mapOutputFn.apply(fileName, l));
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(directory, ACTION_READ);
+            }
+        };
+    }
+
+    public static <T> FunctionEx<? super Path, ? extends Stream<T>> jsonReadFileFn(
+            String directory,
+            Class<T> type
+    ) {
+        return new FunctionEx<Path, Stream<T>>() {
+            @Override
+            public Stream<T> applyEx(Path path) throws Exception {
+                return JsonUtil.beanSequenceFrom(path, type);
+            }
+
+            @Override
+            public Permission permission() {
+                return ConnectorPermission.file(directory, ACTION_READ);
+            }
+        };
+    }
+
+    public static <T> FunctionEx<? super Path, ? extends Stream<Map<String, Object>>> jsonReadFileFn(
+            String directory
+    ) {
+        return new FunctionEx<Path, Stream<Map<String, Object>>>() {
+            @Override
+            public Stream<Map<String, Object>> applyEx(Path path) throws Exception {
+                return JsonUtil.mapSequenceFrom(path);
             }
 
             @Override
