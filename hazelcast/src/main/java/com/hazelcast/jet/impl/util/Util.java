@@ -101,7 +101,7 @@ import static java.util.stream.IntStream.range;
 public final class Util {
 
     public static final String JET_IS_DISABLED_MESSAGE = "Jet is disabled.\n" +
-            "To enable jet please do one of the following:\n" +
+            "To enable the Jet engine, please do one of the following:\n" +
             "  - Change member config using java API: config.getJetConfig().setEnabled(true);\n" +
             "  - Change xml/yaml configuration property: set hazelcast.jet.enabled to true\n" +
             "  - Add system property or environment variable: -Dhz.jet.enabled=true or HZ_JET_ENABLED=true";
