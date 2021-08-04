@@ -28,4 +28,8 @@ public class JetDisabledException extends JetException {
         super(message);
     }
 
+    public JetDisabledException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
