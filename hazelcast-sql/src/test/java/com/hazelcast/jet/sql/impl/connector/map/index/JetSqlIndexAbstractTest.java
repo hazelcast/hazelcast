@@ -474,7 +474,6 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
                 mapName,
                 mapTableFields,
                 getPartitionedMapIndexes(getMapContainer(map), mapTableFields),
-                isHd(),
                 map.size()
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
@@ -487,9 +486,6 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
                 plan(planRow(0, withIndex ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
         );
     }
-
-    // Utilities
-    protected abstract boolean isHd();
 
     protected MapConfig getMapConfig() {
         return new MapConfig().setName(mapName).setBackupCount(0).addIndexConfig(getIndexConfig());
