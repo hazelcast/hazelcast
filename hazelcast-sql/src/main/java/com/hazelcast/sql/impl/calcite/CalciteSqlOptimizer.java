@@ -30,6 +30,8 @@ import org.apache.calcite.plan.volcano.VolcanoPlanner;
 
 import javax.annotation.Nullable;
 
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+
 /**
  * SQL optimizer based on Apache Calcite.
  * <p>
@@ -113,7 +115,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
-
+        checkJetIsEnabled(nodeEngine);
         OptimizerContext context = OptimizerContext.create(
                 task.getSchema(),
                 task.getSearchPaths(),
