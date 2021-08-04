@@ -174,7 +174,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initDag(jobSerializationService);
 
         this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
-        HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
