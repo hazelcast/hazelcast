@@ -708,7 +708,7 @@ public class MasterJobContext {
         if (failure instanceof JetDisabledException) {
             logger.severe(formatExecutionSummary("failed. This is probably " +
                     "because the Jet engine is not enabled on all cluster members. " +
-                    "Please enable jet for ALL members in the cluster.", completionTime), failure);
+                    "Please enable the Jet engine for ALL members in the cluster.", completionTime), failure);
             return false;
         }
         logger.severe(formatExecutionSummary("failed", completionTime), failure);
