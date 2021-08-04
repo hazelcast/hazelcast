@@ -127,6 +127,7 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
@@ -628,7 +629,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     @Override
     public JetService getJet() {
         if (jetExtension == null) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
+            checkJetIsEnabled(node.nodeEngine);
         }
         return jetExtension.getJet();
     }

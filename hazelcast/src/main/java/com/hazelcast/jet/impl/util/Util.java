@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -741,5 +742,11 @@ public final class Util {
     public static MembersView getMembersView(NodeEngine nodeEngine) {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         return clusterService.getMembershipManager().getMembersView();
+    }
+
+    public static void checkJetIsEnabled(NodeEngine nodeEngine) {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            throw new JetDisabledException("Jet is disabled, see JetConfig#setEnabled.");
+        }
     }
 }

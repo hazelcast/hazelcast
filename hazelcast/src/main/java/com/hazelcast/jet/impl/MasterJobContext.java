@@ -35,6 +35,7 @@ import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -699,6 +700,13 @@ public class MasterJobContext {
         }
         if (failure instanceof CancellationException || failure instanceof JobTerminateRequestedException) {
             logger.info(formatExecutionSummary("got terminated, reason=" + failure, completionTime));
+            return false;
+        }
+        if (failure instanceof JetDisabledException) {
+            logger.severe(formatExecutionSummary("failed. This is probably " +
+                    "because some other members in the cluster jet is disabled. " +
+                    "Please enable jet for all members in the cluster(see " +
+                    "JetConfig#setEnabled).", completionTime), failure);
             return false;
         }
         logger.severe(formatExecutionSummary("failed", completionTime), failure);

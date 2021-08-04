@@ -25,6 +25,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+
 /**
  * An operation sent from members to light job coordinator with a list of
  * executionIds to check if the coordinator still knows about those
@@ -53,9 +55,7 @@ public class CheckLightJobsOperation extends Operation implements IdentifiedData
     }
 
     protected JetServiceBackend getJetServiceBackend() {
-        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
-        }
+        checkJetIsEnabled(getNodeEngine());
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not JetServiceBackend";
         return getService();
     }
