@@ -67,8 +67,8 @@ public class SqlTestSupport extends HazelcastTestSupport {
     /**
      * Check object equality with additional hash code check.
      *
-     * @param first First object.
-     * @param second Second object.
+     * @param first    First object.
+     * @param second   Second object.
      * @param expected Expected result.
      */
     public static void checkEquals(Object first, Object second, boolean expected) {
@@ -245,6 +245,13 @@ public class SqlTestSupport extends HazelcastTestSupport {
         }
 
         return res;
+    }
+
+    public static <K> K getLocalKey(
+        HazelcastInstance member,
+        IntFunction<K> keyProducer
+    ) {
+        return getLocalKeys(member, 1, keyProducer).get(0);
     }
 
     public static <K> List<K> getLocalKeys(
