@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -39,8 +38,6 @@ import org.apache.calcite.sql.validate.SqlConformance;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
-
-import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -84,7 +81,7 @@ public class QueryParser {
                 if (jetSqlBackend != null) {
                     return parse(sql, jetSqlBackend, jetConformance);
                 } else {
-                    throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
+                    throw e;
                 }
             }
         } catch (Exception e) {
