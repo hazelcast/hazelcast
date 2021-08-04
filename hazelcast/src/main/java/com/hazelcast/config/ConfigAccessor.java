@@ -41,4 +41,8 @@ public final class ConfigAccessor {
     public static ServicesConfig getServicesConfig(Config config) {
         return config.getServicesConfig();
     }
+
+    public static boolean isInstanceTrackingEnabledSet(Config config) {
+        return config.getInstanceTrackingConfig().isEnabledSet;
+    }
 }
