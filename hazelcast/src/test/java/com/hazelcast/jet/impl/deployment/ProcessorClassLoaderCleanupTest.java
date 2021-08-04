@@ -23,7 +23,6 @@ import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -33,6 +32,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.SimpleEvent;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -63,7 +63,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
         jarFile = File.createTempFile("resources_", ".jar");
         JarUtil.createResourcesJarFile(jarFile);
 
-        System.setProperty(JetProperties.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
+        System.setProperty(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR.getName(), System.getProperty("java.io.tmpdir"));
     }
 
     @AfterClass
