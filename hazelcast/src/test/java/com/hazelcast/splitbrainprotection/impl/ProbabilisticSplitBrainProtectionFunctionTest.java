@@ -18,9 +18,7 @@ package com.hazelcast.splitbrainprotection.impl;
 
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
@@ -31,7 +29,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ProbabilisticSplitBrainProtectionFunctionTest extends AbstractSplitBrainProtectionFunctionTest {
 
     @Test

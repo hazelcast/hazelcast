@@ -23,7 +23,6 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +34,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class InPredicateNullsTest extends HazelcastTestSupport {
 
     private IMap<Integer, Value> map;

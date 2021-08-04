@@ -33,7 +33,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionalMap;
 import org.junit.After;
 import org.junit.Before;
@@ -61,7 +60,7 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter

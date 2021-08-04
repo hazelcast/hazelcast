@@ -26,7 +26,6 @@ import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -54,7 +53,7 @@ import static java.util.Collections.singletonList;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ScheduledExecutorSplitBrainProtectionWriteTest extends AbstractSplitBrainProtectionTest {
 
     @ClassRule

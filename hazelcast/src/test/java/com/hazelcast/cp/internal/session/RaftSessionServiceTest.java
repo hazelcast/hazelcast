@@ -34,7 +34,6 @@ import com.hazelcast.cp.session.CPSession;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,7 +63,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class RaftSessionServiceTest extends HazelcastRaftTestSupport {
 
     private static final String RAFT_GROUP_NAME = "sessions";

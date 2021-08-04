@@ -25,7 +25,6 @@ import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,7 +35,7 @@ import org.junit.runner.RunWith;
  * Actually, it tests {@link ObjectRecord#getValue()} and {@link ObjectRecord#setValue(Object)}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ObjectRecordTest extends HazelcastTestSupport {
 
     private IMap<Integer, Object> map;

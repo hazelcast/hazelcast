@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * Tests the creation of a transactional map proxy.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class TransactionalMapProxyTest extends HazelcastTestSupport {
 
     private String mapName = randomMapName();

@@ -31,7 +31,6 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable.PartitionedMapPlanO
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +43,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class PartitionedMapPlanObjectKeyTest extends SqlTestSupport {
     @Test
     public void test_partitioned() {

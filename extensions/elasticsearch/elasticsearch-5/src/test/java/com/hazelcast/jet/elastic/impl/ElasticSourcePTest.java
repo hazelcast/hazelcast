@@ -20,7 +20,6 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.elastic.impl.Shard.Prirep;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -57,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ElasticSourcePTest {
 
     public static final String HIT_SOURCE = "{\"name\": \"Frantisek\"}";

@@ -17,11 +17,9 @@
 package com.hazelcast.cache.jsr;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
@@ -32,7 +30,6 @@ import static com.hazelcast.cache.jsr.JsrTestUtil.assertNoMBeanLeftovers;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class CacheManagerManagementTest extends org.jsr107.tck.management.CacheManagerManagementTest {
 
     @BeforeClass

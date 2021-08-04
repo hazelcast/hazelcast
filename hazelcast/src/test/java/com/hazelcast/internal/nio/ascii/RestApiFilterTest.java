@@ -22,20 +22,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Tests enabling HTTP REST API by {@link RestApiConfig}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class RestApiFilterTest extends RestApiConfigTestBase {
 
     /**

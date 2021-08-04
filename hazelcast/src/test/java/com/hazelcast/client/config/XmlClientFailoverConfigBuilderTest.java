@@ -18,10 +18,8 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -31,7 +29,6 @@ import java.util.Properties;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class XmlClientFailoverConfigBuilderTest extends AbstractClientFailoverConfigBuilderTest {
     public static final String HAZELCAST_CLIENT_FAILOVER_START_TAG =
             "<hazelcast-client-failover xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";

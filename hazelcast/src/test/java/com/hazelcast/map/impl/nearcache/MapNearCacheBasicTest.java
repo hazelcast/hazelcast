@@ -34,7 +34,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -53,7 +52,7 @@ import static com.hazelcast.test.Accessors.getSerializationService;
  * Basic Near Cache tests for {@link IMap} on Hazelcast members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category(ParallelJVMTest.class)
 public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);

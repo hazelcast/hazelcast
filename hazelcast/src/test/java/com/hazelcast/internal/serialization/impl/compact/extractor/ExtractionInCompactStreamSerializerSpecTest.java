@@ -19,7 +19,6 @@ package com.hazelcast.internal.serialization.impl.compact.extractor;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,7 +50,7 @@ import static java.util.Arrays.asList;
  * - indexing
  */
 @RunWith(Parameterized.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ExtractionInCompactStreamSerializerSpecTest extends AbstractExtractionTest {
 
     private static final Person BOND = person("Bond",

@@ -28,7 +28,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -65,8 +64,7 @@ public class LiteMemberJoinTest {
     }
 
     @Test
-    @Category(QuickTest.class)
-    public void test_liteMemberIsCreated() {
+        public void test_liteMemberIsCreated() {
         final Config liteConfig = new Config().setLiteMember(true);
         final HazelcastInstance liteInstance = Hazelcast.newHazelcastInstance(liteConfig);
 

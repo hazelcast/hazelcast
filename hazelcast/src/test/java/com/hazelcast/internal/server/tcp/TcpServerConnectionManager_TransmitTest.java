@@ -19,10 +19,8 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -35,7 +33,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class TcpServerConnectionManager_TransmitTest
         extends TcpServerConnection_AbstractTest {
     private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<>());

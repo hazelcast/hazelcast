@@ -20,7 +20,6 @@ import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +28,7 @@ import org.junit.runner.RunWith;
  * Test for project/filter optimizations.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class PhysicalProjectFilterTest extends OptimizerTestSupport {
     @Test
     public void testTrivialProject() {

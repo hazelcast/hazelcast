@@ -34,7 +34,6 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,8 +86,7 @@ public class AdvancedNetworkClientIntegrationTest {
     }
 
     @Test
-    @Category(QuickTest.class)
-    public void clientSmokeTest() {
+        public void clientSmokeTest() {
         client = HazelcastClient.newHazelcastClient(getClientConfig());
         IMap<Integer, Integer> map = client.getMap("test");
         for (int i = 0; i < 1000; i++) {

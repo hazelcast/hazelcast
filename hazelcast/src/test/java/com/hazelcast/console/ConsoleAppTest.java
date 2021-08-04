@@ -20,12 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayOutputStream;
@@ -42,7 +40,6 @@ import static org.junit.Assert.assertTrue;
  * Tests for demo console application.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ConsoleAppTest extends HazelcastTestSupport {
 
     private static ByteArrayOutputStream baos;

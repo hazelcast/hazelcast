@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.calcite.opt.OptimizerTestSupport;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +34,7 @@ import java.util.Map;
  * Tests for SELECT * expansion.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class LogicalSelectStarTest extends OptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {

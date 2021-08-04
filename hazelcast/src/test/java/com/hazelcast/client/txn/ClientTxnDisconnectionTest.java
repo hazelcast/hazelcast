@@ -24,7 +24,6 @@ import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionalQueue;
 import org.junit.After;
@@ -43,7 +42,7 @@ import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientTxnDisconnectionTest {
 
     private static final String BOUNDED_QUEUE_PREFIX = "bounded-queue-*";

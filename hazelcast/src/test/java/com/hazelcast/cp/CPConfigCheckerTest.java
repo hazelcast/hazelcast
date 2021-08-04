@@ -21,7 +21,6 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,7 +28,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.config.ConfigValidator.checkCPSubsystemConfig;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class CPConfigCheckerTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)

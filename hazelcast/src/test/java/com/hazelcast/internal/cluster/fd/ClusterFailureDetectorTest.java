@@ -23,7 +23,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
@@ -50,7 +49,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClusterFailureDetectorTest {
 
     private static final long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);

@@ -35,7 +35,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
@@ -64,8 +63,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class)
-    public void testClientPortConnection() {
+        public void testClientPortConnection() {
         Config config1 = new Config();
         config1.setClusterName("foo");
         config1.getNetworkConfig().setPort(5701);

@@ -47,7 +47,6 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Test;
@@ -68,7 +67,7 @@ import static org.junit.Assert.assertEquals;
  * values are unchanged.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class EnumCompatibilityTest {
 
     @Test

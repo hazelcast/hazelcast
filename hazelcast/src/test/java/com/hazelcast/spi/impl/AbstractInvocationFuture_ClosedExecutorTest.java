@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 // with RejectedExecutionException. This is wrong. Maybe client shutdown relies on this behaviour.
 @Ignore
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class AbstractInvocationFuture_ClosedExecutorTest extends AbstractInvocationFuture_AbstractTest {
 
     @Test

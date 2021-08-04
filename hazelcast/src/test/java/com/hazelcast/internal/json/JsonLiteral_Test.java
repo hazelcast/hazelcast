@@ -29,14 +29,11 @@ import static org.mockito.Mockito.*;
 import java.io.IOException;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.test.annotation.QuickTest;
 
-@Category(QuickTest.class)
 public class JsonLiteral_Test {
 
   @Test

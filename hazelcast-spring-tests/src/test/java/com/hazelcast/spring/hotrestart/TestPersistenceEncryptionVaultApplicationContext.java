@@ -24,11 +24,9 @@ import com.hazelcast.config.VaultSecureStoreConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -43,7 +41,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"persistence-encryption-vault-applicationContext-hazelcast.xml"})
-@Category(QuickTest.class)
 public class TestPersistenceEncryptionVaultApplicationContext {
 
     @Resource(name = "theConfig")

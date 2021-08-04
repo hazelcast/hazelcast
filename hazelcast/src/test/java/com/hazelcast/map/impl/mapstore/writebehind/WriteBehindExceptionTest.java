@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
 import com.hazelcast.map.impl.mapstore.MapStoreTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class WriteBehindExceptionTest extends AbstractMapStoreTest {
 
     private final CountDownLatch latch1 = new CountDownLatch(1);

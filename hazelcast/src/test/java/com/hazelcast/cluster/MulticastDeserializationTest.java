@@ -36,7 +36,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
@@ -48,7 +47,6 @@ import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 
 import example.serialization.TestDeserialized;
 
@@ -56,7 +54,6 @@ import example.serialization.TestDeserialized;
  * Tests if deserialization blacklisting works for MulticastService.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class MulticastDeserializationTest {
 
     private static final int MULTICAST_PORT = 53535;

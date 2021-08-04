@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -28,7 +27,7 @@ import java.util.Map;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public abstract class AbstractMapIterableTest extends AbstractMapIteratorTest {
 
     protected abstract <K, V> Iterable<Map.Entry<K, V>> getIterable(IMap<K, V> map);

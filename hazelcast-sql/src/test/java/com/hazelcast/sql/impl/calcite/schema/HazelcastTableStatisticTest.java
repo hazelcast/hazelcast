@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.calcite.schema;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelDistributionTraitDef;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.junit.Test;
@@ -30,7 +29,7 @@ import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class HazelcastTableStatisticTest {
     @Test
     public void testStatistic() {

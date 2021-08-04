@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.test.AssertionSinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -81,7 +80,7 @@ public class PythonServiceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    @Category({QuickTest.class, ParallelJVMTest.class})
+    @Category(ParallelJVMTest.class)
     public void batchStage_mapUsingPython() {
         // Given
         PythonServiceConfig cfg = new PythonServiceConfig()

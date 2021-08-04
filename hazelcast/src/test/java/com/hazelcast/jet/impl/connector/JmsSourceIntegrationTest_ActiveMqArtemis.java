@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 import org.apache.activemq.artemis.junit.EmbeddedActiveMQResource;
 import org.junit.ClassRule;
@@ -28,7 +27,7 @@ import org.junit.experimental.categories.Category;
 import javax.jms.ConnectionFactory;
 
 @Ignore // ignored due to https://issues.apache.org/jira/browse/ARTEMIS-2735
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class JmsSourceIntegrationTest_ActiveMqArtemis extends JmsSourceIntegrationTestBase {
 
     @ClassRule

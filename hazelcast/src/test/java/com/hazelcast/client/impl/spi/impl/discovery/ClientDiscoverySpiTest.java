@@ -51,7 +51,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -111,8 +110,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class)
-    public void testParsing() {
+        public void testParsing() {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         ClientConfig clientConfig = new XmlClientConfigBuilder(xmlResource).build();

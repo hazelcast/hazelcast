@@ -30,7 +30,6 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 
@@ -58,7 +57,7 @@ import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     private static final ILogger SUPPORT_LOGGER = Logger.getLogger(SqlTestSupport.class);

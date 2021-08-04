@@ -21,11 +21,9 @@ import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.MemoryInfoAccessor;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.verification.VerificationMode;
 
@@ -38,7 +36,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class OutOfMemoryErrorDispatcherTest extends HazelcastTestSupport {
 
     @Before

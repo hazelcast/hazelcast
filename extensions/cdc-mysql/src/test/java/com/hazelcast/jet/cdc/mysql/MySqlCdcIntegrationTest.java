@@ -33,7 +33,6 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -52,8 +51,7 @@ import static com.hazelcast.jet.Util.entry;
 public class MySqlCdcIntegrationTest extends AbstractMySqlCdcIntegrationTest {
 
     @Test
-    @Category(QuickTest.class)
-    public void customers() throws Exception {
+        public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
                 "1001/0:INSERT:Customer {id=1001, firstName=Sally, lastName=Thomas, email=sally.thomas@acme.com}",

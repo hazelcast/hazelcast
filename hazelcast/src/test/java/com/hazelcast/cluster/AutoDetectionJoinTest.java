@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +37,6 @@ public class AutoDetectionJoinTest extends AbstractJoinTest {
     }
 
     @Test
-    @Category(QuickTest.class)
     public void defaultConfig() throws Exception {
         testJoinEventually(new Config());
     }

@@ -37,7 +37,6 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanStringVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,7 +54,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionBiValue.BooleanInt
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class AndOrPredicateIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameter
     public Mode mode;

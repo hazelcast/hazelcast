@@ -35,7 +35,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class RaftInvocationFailureTest extends HazelcastRaftTestSupport {
 
     private static final AtomicInteger COMMIT_COUNT = new AtomicInteger();

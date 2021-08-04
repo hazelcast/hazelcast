@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,7 +29,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertUtilityConstructor;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ToHeapDataConverterTest {
 
     @Test

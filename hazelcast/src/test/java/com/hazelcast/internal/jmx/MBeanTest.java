@@ -26,7 +26,6 @@ import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ITopic;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +39,7 @@ import java.io.Serializable;
  * a specific test in this package. See LockMBeanTest for a specific test.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class MBeanTest extends HazelcastTestSupport {
 
     private MBeanDataHolder holder;

@@ -20,7 +20,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.AbstractReliableTopicNullTest;
 import org.junit.After;
 import org.junit.Before;
@@ -31,7 +30,7 @@ import org.junit.runner.RunWith;
  * Member implementation for basic queue methods nullability tests
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientReliableTopicNullTest extends AbstractReliableTopicNullTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

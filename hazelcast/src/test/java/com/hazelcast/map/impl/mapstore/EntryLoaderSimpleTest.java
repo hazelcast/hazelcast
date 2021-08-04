@@ -40,7 +40,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,7 +69,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category(ParallelJVMTest.class)
 public class EntryLoaderSimpleTest extends HazelcastTestSupport {
 
     @Parameters(name = "inMemoryFormat: {0}")

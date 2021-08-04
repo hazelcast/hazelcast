@@ -23,7 +23,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +38,7 @@ import static org.mockito.Mockito.mock;
  * Reproduces issue: https://github.com/hazelcast/hazelcast/issues/5490
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ExecutionCallbackAdapterRaceTest extends HazelcastTestSupport {
 
     private ILogger logger = Logger.getLogger(ExecutionCallbackAdapterFactory.class);

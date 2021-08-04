@@ -26,12 +26,10 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.UUID;
@@ -45,7 +43,6 @@ import static org.junit.Assert.assertNull;
  * the list/set/queue require it, but others do not.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class TransactionContextImpl_backupLogsTest extends HazelcastTestSupport {
 
     private TransactionManagerServiceImpl localTxManager;

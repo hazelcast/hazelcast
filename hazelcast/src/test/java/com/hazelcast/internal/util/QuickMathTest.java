@@ -17,9 +17,7 @@
 package com.hazelcast.internal.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertTrue;
  * Unit tests for {@link QuickMath} class.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class QuickMathTest {
 
     @Test

@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,7 +29,7 @@ import org.junit.runner.RunWith;
 import java.lang.reflect.Constructor;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class TargetTest {
 
     @Rule

@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.calcite.validate.types;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -31,7 +30,7 @@ import static org.junit.Assert.assertSame;
  * Tests for type mapping between Hazelcast and Apache Calcite.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class HazelcastTypeUtilsTest {
     @Test
     public void testHazelcastToCalcite() {

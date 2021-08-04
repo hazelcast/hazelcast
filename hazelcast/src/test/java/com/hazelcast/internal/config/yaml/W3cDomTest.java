@@ -21,9 +21,7 @@ import com.hazelcast.internal.yaml.YamlNode;
 import com.hazelcast.internal.yaml.YamlTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -47,7 +45,6 @@ import static org.junit.Assert.assertTrue;
  * can access the mapping via getAttributes().
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class W3cDomTest extends HazelcastTestSupport {
     private static final int NOT_EXISTING = 42;
 

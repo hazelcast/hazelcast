@@ -22,7 +22,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,7 +31,7 @@ import javax.cache.spi.CachingProvider;
 import static com.hazelcast.cache.CacheTestSupport.createClientCachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientCacheHazelcastInstanceAwareTest extends CacheHazelcastInstanceAwareTest {
 
     private TestHazelcastFactory instanceFactory;

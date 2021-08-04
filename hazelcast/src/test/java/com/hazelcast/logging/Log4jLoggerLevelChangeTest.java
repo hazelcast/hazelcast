@@ -21,14 +21,12 @@ import com.hazelcast.logging.impl.LoggingServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.logging.Level;
@@ -37,7 +35,6 @@ import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_LOG4J;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class Log4jLoggerLevelChangeTest extends HazelcastTestSupport {
 
     @Rule

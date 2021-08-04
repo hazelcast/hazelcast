@@ -28,7 +28,6 @@ import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
@@ -49,7 +48,7 @@ import static org.junit.Assert.assertEquals;
  * Tests possibility to disable scripting on members.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({ QuickTest.class, ParallelJVMTest.class })
+@Category(ParallelJVMTest.class)
 public class ScriptingProtectionTest extends HazelcastTestSupport {
 
     private static final String SCRIPT_RETURN_VAL = "John";

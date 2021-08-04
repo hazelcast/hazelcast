@@ -25,12 +25,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -46,7 +44,6 @@ import static org.mockito.Mockito.when;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class MemberAddressProviderTest {
 
     @Rule

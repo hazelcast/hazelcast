@@ -26,7 +26,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -61,7 +60,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 // See https://github.com/powermock/powermock/wiki/Mock-System
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DefaultAddressPicker.class})
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class DefaultAddressPickerHostnameTest {
 
     @Rule

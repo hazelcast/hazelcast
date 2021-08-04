@@ -27,10 +27,8 @@ import com.hazelcast.internal.serialization.impl.SerializationConcurrencyTest;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -53,7 +51,6 @@ import static org.junit.Assert.assertTrue;
  * again into a packet.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class PacketIOHelperTest extends HazelcastTestSupport {
 
     private PacketIOHelper packetWriter;

@@ -25,11 +25,9 @@ import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.EventListener;
@@ -43,7 +41,6 @@ import static org.junit.Assert.assertTrue;
  * Keep this test serial. It relays on static shared variables.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class EntryListenerConfigTest extends HazelcastTestSupport {
 
     private String mapName = randomMapName();

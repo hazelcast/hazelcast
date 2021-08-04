@@ -25,7 +25,6 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -102,7 +101,6 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsActive() throws IOException {
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.0");
         client.connectTo(node);
@@ -127,7 +125,6 @@ public class PhoneHomeClientsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Category(QuickTest.class) //marked quick to form a small subset that also runs in the PR builder
     public void testSingleClient_withSingleMember_whenTheClientIsShutdown() throws IOException {
         addClientListener(node);
         TestUtil.DummyClient client = clientFactory.newClient(getClientType(), "4.2-BETA");

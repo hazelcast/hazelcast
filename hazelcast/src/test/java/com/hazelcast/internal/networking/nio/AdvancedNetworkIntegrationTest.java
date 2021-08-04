@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,8 +47,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     public ExpectedException expect = ExpectedException.none();
 
     @Test
-    @Category(QuickTest.class)
-    public void testCompleteMultisocketConfig() {
+        public void testCompleteMultisocketConfig() {
         Config config = createCompleteMultiSocketConfig();
         newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);

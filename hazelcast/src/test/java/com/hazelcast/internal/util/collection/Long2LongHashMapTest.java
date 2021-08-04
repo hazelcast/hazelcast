@@ -19,7 +19,6 @@ package com.hazelcast.internal.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.collection.Long2LongHashMap.LongLongCursor;
 import com.hazelcast.internal.util.function.LongLongConsumer;
 import org.junit.Test;
@@ -43,7 +42,7 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class Long2LongHashMapTest {
     public static final long MISSING_VALUE = -1L;
 

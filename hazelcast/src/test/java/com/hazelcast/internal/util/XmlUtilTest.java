@@ -29,16 +29,13 @@ import javax.xml.validation.SchemaFactory;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.xml.sax.SAXException;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
 public class XmlUtilTest {
 
     @Rule

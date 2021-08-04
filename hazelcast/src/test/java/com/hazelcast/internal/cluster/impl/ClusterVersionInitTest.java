@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Test;
@@ -33,7 +32,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.test.Accessors.getNode;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClusterVersionInitTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;

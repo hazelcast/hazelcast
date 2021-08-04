@@ -19,9 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.channels.Selector;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class SelectorOptimizerTest {
     private ILogger logger = Logger.getLogger(SelectionKeysSetTest.class);
 

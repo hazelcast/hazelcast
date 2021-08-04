@@ -40,9 +40,7 @@ import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.operation.QueryExecuteFragmentOperation;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -77,7 +75,6 @@ import static org.junit.Assert.fail;
  * their `getClassId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
 public class DataSerializableConventionsTest {
 
     private static final String JET_PACKAGE = "com.hazelcast.jet";

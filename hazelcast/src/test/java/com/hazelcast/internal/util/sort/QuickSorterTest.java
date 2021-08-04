@@ -21,7 +21,6 @@ import com.hazelcast.internal.memory.MemoryManager;
 import com.hazelcast.internal.memory.impl.HeapMemoryManager;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +35,7 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class QuickSorterTest {
 
     private static final int ARRAY_LENGTH = 10000;

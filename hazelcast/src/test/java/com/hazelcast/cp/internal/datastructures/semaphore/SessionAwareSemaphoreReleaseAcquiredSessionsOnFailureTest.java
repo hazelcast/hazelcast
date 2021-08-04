@@ -28,7 +28,6 @@ import com.hazelcast.cp.internal.session.SessionAwareProxy;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,7 +50,7 @@ import static org.junit.Assert.fail;
  * other than SessionExpiredException and WaitKeyCancelledException.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends HazelcastRaftTestSupport {
 
     private HazelcastInstance proxyInstance;

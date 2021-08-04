@@ -23,7 +23,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,7 +40,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  * because it restarted. All tests check that it fails as it should.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class Job_StaleInstanceTest extends JetTestSupport {
 
     private static TestHazelcastFactory instanceFactory;

@@ -18,7 +18,6 @@ package com.hazelcast.internal.yaml;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,7 +31,7 @@ import java.util.Map;
  * The positive cases are tested in {@link YamlTest}
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class YamlDomBuilderNegativeTest {
     private static final Object NOT_A_MAP = new Object();
 

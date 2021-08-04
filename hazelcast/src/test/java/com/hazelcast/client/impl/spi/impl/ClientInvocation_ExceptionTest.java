@@ -27,7 +27,6 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matcher;
 import org.hamcrest.core.IsNull;
 import org.junit.After;
@@ -47,7 +46,7 @@ import java.util.concurrent.ExecutionException;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientInvocation_ExceptionTest extends HazelcastTestSupport {
 
     private static final int GET = 0;

@@ -28,7 +28,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -40,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * Client implementation for testing behaviour of {@link ConsistencyLostException}
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientPNCounterConsistencyLostTest extends AbstractPNCounterConsistencyLostTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

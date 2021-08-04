@@ -18,7 +18,6 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,7 +26,7 @@ import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class WatermarkPolicy_withFixedLagTest {
 
     private static final long LAG = 10;

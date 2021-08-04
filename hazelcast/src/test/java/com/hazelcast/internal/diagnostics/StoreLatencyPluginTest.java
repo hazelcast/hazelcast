@@ -21,10 +21,8 @@ import com.hazelcast.internal.diagnostics.StoreLatencyPlugin.LatencyProbeImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Properties;
@@ -35,7 +33,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class StoreLatencyPluginTest extends AbstractDiagnosticsPluginTest {
 
     private StoreLatencyPlugin plugin;

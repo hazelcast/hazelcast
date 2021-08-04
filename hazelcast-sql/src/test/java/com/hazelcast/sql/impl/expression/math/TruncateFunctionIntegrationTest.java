@@ -33,7 +33,6 @@ import com.hazelcast.sql.support.expressions.ExpressionValue.LongVal;
 import com.hazelcast.sql.support.expressions.ExpressionValue.ShortVal;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,7 +61,7 @@ import static com.hazelcast.sql.support.expressions.ExpressionValue.DoubleVal;
 import static com.hazelcast.sql.support.expressions.ExpressionValue.FloatVal;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class TruncateFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test_byte() {

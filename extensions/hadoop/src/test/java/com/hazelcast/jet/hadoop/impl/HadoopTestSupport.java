@@ -19,11 +19,10 @@ package com.hazelcast.jet.hadoop.impl;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 
-@Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
+@Category({ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public abstract class HadoopTestSupport extends SimpleTestInClusterSupport {
 
     @Before

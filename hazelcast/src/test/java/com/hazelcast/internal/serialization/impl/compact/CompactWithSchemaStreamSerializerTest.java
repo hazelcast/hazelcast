@@ -25,7 +25,6 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import example.serialization.EmployeeDTO;
 import example.serialization.NodeDTO;
 import org.junit.Test;
@@ -38,7 +37,7 @@ import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class CompactWithSchemaStreamSerializerTest {
 
     @Test

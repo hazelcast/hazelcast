@@ -31,7 +31,6 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.protobuf.Messages.Animal;
 import com.hazelcast.jet.protobuf.Messages.Person;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,7 +45,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class JobSerializerTest extends SimpleTestInClusterSupport {
 
     private static final int PERSON_TYPE_ID = 1;

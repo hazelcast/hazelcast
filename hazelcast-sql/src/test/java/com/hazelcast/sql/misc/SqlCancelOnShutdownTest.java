@@ -27,7 +27,6 @@ import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +43,7 @@ import static junit.framework.TestCase.fail;
  * Test that ensures that queries are cancelled properly in the case of member shutdown.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class SqlCancelOnShutdownTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";

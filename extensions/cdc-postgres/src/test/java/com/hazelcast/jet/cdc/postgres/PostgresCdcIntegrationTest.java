@@ -36,7 +36,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -63,8 +62,7 @@ import static org.junit.Assert.fail;
 public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     @Test
-    @Category(QuickTest.class)
-    public void customers() throws Exception {
+        public void customers() throws Exception {
         // given
         List<String> expectedRecords = Arrays.asList(
                 "1001/00000:SYNC:" + new Customer(1001, "Sally", "Thomas", "sally.thomas@acme.com"),
@@ -224,8 +222,7 @@ public class PostgresCdcIntegrationTest extends AbstractPostgresCdcIntegrationTe
     }
 
     @Test
-    @Category(QuickTest.class)
-    public void restart_noProcessingGuarantee() throws Exception {
+        public void restart_noProcessingGuarantee() throws Exception {
         Pipeline pipeline = customersPipeline(250L);
 
         // when

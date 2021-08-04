@@ -30,12 +30,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.TestUtil.RunnableEx;
-import com.hazelcast.test.annotation.QuickTest;
 
-@Category(QuickTest.class)
 public class JsonValue_Test {
 
   @Test

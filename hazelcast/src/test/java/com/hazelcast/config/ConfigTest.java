@@ -20,10 +20,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.BufferedInputStream;
@@ -46,7 +44,6 @@ import static org.junit.Assert.assertNull;
 
 @SuppressWarnings("checkstyle:Indentation")
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
     static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";

@@ -26,7 +26,6 @@ import com.hazelcast.topic.Message;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.ReliableMessageListener;
 import org.junit.After;
 import org.junit.Before;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertEquals;
  * sequence outside head-tail sequence range, which results in a {@link com.hazelcast.ringbuffer.StaleSequenceException}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class Issue7317Test extends HazelcastTestSupport {
 
     static final String smallRB = "foo";

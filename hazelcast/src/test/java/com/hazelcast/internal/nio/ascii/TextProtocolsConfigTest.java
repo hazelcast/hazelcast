@@ -22,9 +22,7 @@ import com.hazelcast.config.RestApiConfig;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.RestEndpointGroup.DATA;
@@ -38,7 +36,6 @@ import static org.junit.Assert.assertTrue;
  * Tests enabling text protocols by {@link RestApiConfig}, {@link MemcacheProtocolConfig} and legacy system properties.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class TextProtocolsConfigTest extends RestApiConfigTestBase {
 
     private static final TestUrl TEST_URL_HEALTH_CHECK =

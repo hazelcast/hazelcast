@@ -18,9 +18,7 @@ package com.hazelcast.osgi.impl;
 
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.script.Bindings;
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HazelcastOSGiScriptEngineManagerTest extends HazelcastOSGiScriptingTest {
 
     @Test

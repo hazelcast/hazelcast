@@ -18,15 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.EvictionConfigReadOnly;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class EvictionConfigReadOnlyTest {
 
     private EvictionConfig getReadOnlyConfig() {

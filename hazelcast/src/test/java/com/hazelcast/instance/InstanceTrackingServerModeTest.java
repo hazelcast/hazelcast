@@ -23,11 +23,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -43,7 +41,6 @@ import static org.junit.Assert.assertEquals;
  * tracking tests.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class InstanceTrackingServerModeTest extends HazelcastTestSupport {
 
     @Rule

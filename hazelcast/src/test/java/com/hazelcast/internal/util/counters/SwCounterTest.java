@@ -17,10 +17,8 @@
 package com.hazelcast.internal.util.counters;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
@@ -31,7 +29,6 @@ import static org.junit.Assert.assertEquals;
  * the {@link SwCounter.SafeSwCounter} is tested.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class SwCounterTest {
 
     private SwCounter counter;

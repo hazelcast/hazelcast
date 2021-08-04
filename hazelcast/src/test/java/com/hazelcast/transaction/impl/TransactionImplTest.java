@@ -23,11 +23,9 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.UUID;
@@ -43,7 +41,6 @@ import static org.mockito.Mockito.when;
  * Tests some basic behavior that doesn't rely too much on the type of transaction
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class TransactionImplTest extends HazelcastTestSupport {
 
     private OperationServiceImpl operationService;

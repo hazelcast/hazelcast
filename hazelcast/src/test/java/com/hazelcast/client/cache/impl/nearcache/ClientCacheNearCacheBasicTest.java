@@ -40,7 +40,6 @@ import com.hazelcast.internal.nearcache.impl.NearCacheTestUtils;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assume;
@@ -69,7 +68,7 @@ import static org.junit.Assert.assertEquals;
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

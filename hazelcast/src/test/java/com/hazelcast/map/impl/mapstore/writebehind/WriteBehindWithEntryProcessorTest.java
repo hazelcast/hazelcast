@@ -28,10 +28,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.CollectionUtil;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -50,7 +48,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     @Test

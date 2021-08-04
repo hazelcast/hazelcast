@@ -22,14 +22,13 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class UnsafeCountDownLatchAdvancedTest extends AbstractCountDownLatchAdvancedTest {
 
     private HazelcastInstance primaryInstance;

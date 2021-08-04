@@ -25,10 +25,8 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -40,7 +38,6 @@ import java.util.concurrent.Future;
  * Tests in this class intentionally use real network.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ClientTimeoutTest {
 
     @After

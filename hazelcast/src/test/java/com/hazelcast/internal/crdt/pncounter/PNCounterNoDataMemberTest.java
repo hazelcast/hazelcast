@@ -22,7 +22,6 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,7 +30,7 @@ import org.junit.runner.RunWith;
  * Test behaviour of PN counter when there are no data members in the cluster
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class PNCounterNoDataMemberTest extends AbstractPNCounterNoDataMemberTest {
 
     private HazelcastInstance liteMember;

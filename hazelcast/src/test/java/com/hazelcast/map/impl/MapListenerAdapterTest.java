@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.ConstructorFunction;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +31,7 @@ import static com.hazelcast.map.impl.MapListenerAdaptors.getConstructors;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 @SuppressWarnings("ConstantConditions")
 public class MapListenerAdapterTest {
 

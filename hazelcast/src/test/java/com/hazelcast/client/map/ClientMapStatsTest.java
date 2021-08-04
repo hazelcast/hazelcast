@@ -23,7 +23,6 @@ import com.hazelcast.map.LocalMapStatsTest;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -31,7 +30,7 @@ import org.junit.runner.RunWith;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientMapStatsTest extends LocalMapStatsTest {
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 

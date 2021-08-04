@@ -24,10 +24,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
@@ -43,7 +41,6 @@ import static com.hazelcast.cache.jsr.JsrTestUtil.clearSystemProperties;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class ClientCachingProviderTest extends CachingProviderTest {
 
     private static final String CONFIG_CLASSPATH_LOCATION = "test-hazelcast-client-jcache.xml";

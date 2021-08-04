@@ -32,7 +32,6 @@ import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.util.IterationType;
 import org.junit.After;
 import org.junit.Before;
@@ -56,7 +55,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class PagingPredicateTest extends HazelcastTestSupport {
 
     protected static final int size = 50;

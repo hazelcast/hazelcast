@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSeri
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class StreamSerializerAdapterTest {
 
     private StreamSerializerAdapter adapter;

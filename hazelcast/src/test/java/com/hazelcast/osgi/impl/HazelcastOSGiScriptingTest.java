@@ -20,18 +20,15 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.osgi.TestBundle;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public abstract class HazelcastOSGiScriptingTest extends HazelcastTestSupport {
 
     protected TestBundle bundle;

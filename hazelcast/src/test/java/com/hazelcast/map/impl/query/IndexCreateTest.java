@@ -33,7 +33,6 @@ import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,7 +52,7 @@ import static org.mockito.ArgumentMatchers.startsWith;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class IndexCreateTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "map";

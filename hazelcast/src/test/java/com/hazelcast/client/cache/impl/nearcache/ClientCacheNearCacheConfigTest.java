@@ -22,7 +22,6 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +37,7 @@ import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static java.lang.Integer.MAX_VALUE;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientCacheNearCacheConfigTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();

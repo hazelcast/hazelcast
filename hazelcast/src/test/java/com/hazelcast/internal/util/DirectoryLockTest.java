@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
@@ -39,7 +38,7 @@ import java.io.FileNotFoundException;
 import static com.hazelcast.internal.util.DirectoryLock.lockForDirectory;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class DirectoryLockTest {
 
     private static final ILogger logger = Logger.getLogger(DirectoryLockTest.class);

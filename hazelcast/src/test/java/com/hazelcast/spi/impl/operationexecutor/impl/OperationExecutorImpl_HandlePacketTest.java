@@ -22,9 +22,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nio.Packet.FLAG_OP_RESPONSE;
@@ -34,7 +32,6 @@ import static org.junit.Assert.assertTrue;
  * Tests {@link OperationExecutorImpl#handle(Packet)}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImpl_AbstractTest {
 
     @Test(expected = NullPointerException.class)

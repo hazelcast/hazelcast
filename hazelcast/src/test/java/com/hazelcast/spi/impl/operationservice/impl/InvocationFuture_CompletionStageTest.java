@@ -25,7 +25,6 @@ import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -39,7 +38,7 @@ import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
  * Tests the {@link CompletionStage} implementation of {@link InvocationFuture}.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class InvocationFuture_CompletionStageTest extends CompletableFutureAbstractTest {
 
     private TestHazelcastInstanceFactory factory;

@@ -30,7 +30,6 @@ import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientCacheNearCacheCacheOnUpdateTest extends ClientNearCacheTestSupport {
 
     private static final int NUM_OF_KEYS = 100;

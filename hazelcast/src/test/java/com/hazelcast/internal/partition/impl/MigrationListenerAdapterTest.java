@@ -22,7 +22,6 @@ import com.hazelcast.partition.MigrationState;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.ReplicaMigrationEvent;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +36,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class MigrationListenerAdapterTest {
 
     @Mock

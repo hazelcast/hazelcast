@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -48,7 +47,7 @@ import static org.junit.Assert.assertNull;
 
 // asserts contents of AbstractCacheService.configs
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class CacheConfigPropagationTest extends HazelcastTestSupport {
 
     private static final String DYNAMIC_CACHE_NAME = "dynamic-cache";

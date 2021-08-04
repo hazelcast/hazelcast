@@ -21,16 +21,13 @@ import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
 import com.hazelcast.internal.memory.impl.AlignmentUtil;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class GlobalMemoryAccessorRegistryTest extends AbstractUnsafeDependentMemoryAccessorTest {
 
     @Test

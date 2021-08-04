@@ -18,9 +18,7 @@ package com.hazelcast.internal.config.override;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.AbstractMap;
@@ -30,7 +28,6 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class EnvVariablesMemberConfigParserTest extends HazelcastTestSupport {
 
     private final EnvVariablesConfigParser envVariablesConfigParser = EnvVariablesConfigParser.member();

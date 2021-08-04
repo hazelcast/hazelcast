@@ -23,7 +23,6 @@ import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysical
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.schema.Table;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,7 +36,7 @@ import java.util.Map;
  * Tests for root node planning.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class PhysicalRootTest extends OptimizerTestSupport {
     @Override
     protected HazelcastSchema createDefaultSchema() {

@@ -18,14 +18,11 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.jsr.JsrTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HazelcastServerCachingProviderTest
         extends org.jsr107.tck.spi.CachingProviderTest {
 

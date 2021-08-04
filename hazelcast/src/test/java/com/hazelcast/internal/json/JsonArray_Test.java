@@ -21,10 +21,8 @@
  ******************************************************************************/
 package com.hazelcast.internal.json;
 
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.mockito.InOrder;
 
 import java.io.IOException;
@@ -41,7 +39,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
-@Category(QuickTest.class)
 public class JsonArray_Test {
 
   private JsonArray array;

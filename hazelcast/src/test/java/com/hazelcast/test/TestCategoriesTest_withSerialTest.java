@@ -16,26 +16,21 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
 
     @Test
     public void testGetTestCategories() {
         HashSet<Class<?>> testCategories = getTestCategories();
-        assertEquals("Expected a single test category", 1, testCategories.size());
-        assertTrue("Expected to find a QuickTest category", testCategories.contains(QuickTest.class));
+        assertEquals("Expected a single test category", 0, testCategories.size());
     }
 
     @Test

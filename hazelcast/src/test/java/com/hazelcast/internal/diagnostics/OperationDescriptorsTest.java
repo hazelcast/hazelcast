@@ -28,7 +28,6 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratin
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +44,7 @@ import static org.junit.Assert.assertEquals;
  * employees map would be slow. Currently you would see just 'Get operation'
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class OperationDescriptorsTest extends HazelcastTestSupport {
 
     @Test

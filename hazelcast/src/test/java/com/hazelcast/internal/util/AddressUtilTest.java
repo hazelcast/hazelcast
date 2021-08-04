@@ -22,10 +22,8 @@ import com.hazelcast.internal.util.AddressUtil.Ip4AddressMatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.JmxLeakHelper;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -60,7 +58,6 @@ import static org.mockito.Mockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(HazelcastSerialClassRunner.class)
 @PrepareForTest({Inet6Address.class, AddressUtil.class, NetworkInterface.class})
-@Category(QuickTest.class)
 public class AddressUtilTest extends HazelcastTestSupport {
     @AfterClass
     public static void afterClass() {

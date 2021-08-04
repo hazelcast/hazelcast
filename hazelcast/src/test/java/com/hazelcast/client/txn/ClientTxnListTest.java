@@ -22,7 +22,6 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.transaction.TransactionalList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +38,7 @@ import static org.junit.Assert.assertTrue;
  * @author ali 6/11/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientTxnListTest {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 

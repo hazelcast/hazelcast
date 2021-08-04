@@ -30,13 +30,10 @@ import java.io.StringWriter;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import com.hazelcast.internal.json.JsonString;
 import com.hazelcast.internal.json.JsonWriter;
-import com.hazelcast.test.annotation.QuickTest;
 
-@Category(QuickTest.class)
 public class JsonString_Test {
 
   private StringWriter stringWriter;

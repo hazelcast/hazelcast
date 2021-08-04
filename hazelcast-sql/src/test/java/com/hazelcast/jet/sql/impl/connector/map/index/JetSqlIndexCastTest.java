@@ -35,7 +35,6 @@ import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -55,7 +54,7 @@ import static java.util.Arrays.asList;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class JetSqlIndexCastTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";

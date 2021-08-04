@@ -26,10 +26,8 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.PipelineTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
@@ -43,7 +41,6 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-@Category(QuickTest.class)
 public class CdcSinksTest extends PipelineTestSupport {
 
     private static final String MAP = "map";

@@ -29,13 +29,11 @@ import com.hazelcast.jet.pipeline.test.GeneratorFunction;
 import com.hazelcast.jet.pipeline.test.ParallelStreamP;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.annotation.Nonnull;
@@ -53,7 +51,6 @@ import static com.hazelcast.jet.core.test.JetAssert.fail;
 import static java.util.stream.Collectors.toList;
 
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(QuickTest.class)
 public class OrderedProcessingMergingStagesTest extends JetTestSupport implements Serializable {
 
     private static final int ITEM_COUNT = 250;

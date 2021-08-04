@@ -25,11 +25,9 @@ import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.IsolatedLoggingRule;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_JDK;
@@ -38,7 +36,6 @@ import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_PROPERTY;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
 public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
 
     @Rule

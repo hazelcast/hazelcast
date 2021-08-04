@@ -24,7 +24,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +39,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class ClientDurableExecutorServiceExecuteTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

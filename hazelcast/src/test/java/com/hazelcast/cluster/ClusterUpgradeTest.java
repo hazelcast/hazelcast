@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
@@ -41,7 +40,7 @@ import static com.hazelcast.test.TestClusterUpgradeUtils.upgradeClusterMembers;
  * Create a cluster, then change cluster version. This test uses artificial version numbers, to avoid relying on current version.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class, SerializationSamplesExcluded.class})
+@Category({ParallelJVMTest.class, SerializationSamplesExcluded.class})
 public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     static final MemberVersion VERSION_2_0_5 = MemberVersion.of(2, 0, 5);

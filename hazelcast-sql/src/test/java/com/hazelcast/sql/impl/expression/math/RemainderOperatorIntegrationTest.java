@@ -21,7 +21,6 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,7 +48,7 @@ import static com.hazelcast.sql.impl.expression.ConstantExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class RemainderOperatorIntegrationTest extends ArithmeticOperatorIntegrationTest {
     @Override
     protected String operator() {

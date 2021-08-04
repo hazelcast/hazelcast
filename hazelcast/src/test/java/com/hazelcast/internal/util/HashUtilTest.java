@@ -20,9 +20,7 @@ import com.hazelcast.internal.memory.impl.EndiannessUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
@@ -34,7 +32,6 @@ import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class HashUtilTest extends HazelcastTestSupport {
 
     @Test

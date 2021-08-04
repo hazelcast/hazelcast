@@ -32,7 +32,6 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
@@ -55,7 +54,7 @@ import static java.util.Arrays.asList;
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({ParallelJVMTest.class, QuickTest.class})
+@Category(ParallelJVMTest.class)
 public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String> {
 
     @Parameter

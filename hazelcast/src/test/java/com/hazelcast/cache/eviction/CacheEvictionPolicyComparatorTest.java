@@ -23,7 +23,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +35,7 @@ import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionCheck
 import static com.hazelcast.config.EvictionConfig.DEFAULT_MAX_ENTRY_COUNT;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class CacheEvictionPolicyComparatorTest extends AbstractCacheEvictionPolicyComparatorTest {
 
     @Override

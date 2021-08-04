@@ -38,7 +38,6 @@ import java.util.concurrent.Executors;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
@@ -48,13 +47,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * End-to-end test(s) for {@link ClientConsoleApp}. The tests use real network.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
 public class ClientConsoleTest {
 
     @Rule

@@ -22,7 +22,6 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,7 +31,7 @@ import java.net.URLClassLoader;
 
 import static java.util.Objects.requireNonNull;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(ParallelJVMTest.class)
 public class HzSerializableProcessorSuppliersTest extends SimpleTestInClusterSupport {
 
     private final DAG dag = new DAG();

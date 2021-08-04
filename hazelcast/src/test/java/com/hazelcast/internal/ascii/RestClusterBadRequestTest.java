@@ -26,11 +26,9 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -63,7 +61,6 @@ import static com.hazelcast.internal.ascii.HTTPCommunicator.URI_WAN_SYNC_MAP;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
 public class RestClusterBadRequestTest extends HazelcastTestSupport {
 
     private static final List<String> POST_AUTHENTICATED_URIS = Arrays.asList(
