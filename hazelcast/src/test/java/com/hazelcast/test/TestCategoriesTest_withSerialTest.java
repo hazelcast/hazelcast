@@ -19,19 +19,10 @@ package com.hazelcast.test;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class TestCategoriesTest_withSerialTest extends HazelcastTestSupport {
-
-    @Test
-    public void testGetTestCategories() {
-        HashSet<Class<?>> testCategories = getTestCategories();
-        assertEquals("Expected a single test category", 0, testCategories.size());
-    }
 
     @Test
     public void testAssertThatNotMultithreadedTest() {
