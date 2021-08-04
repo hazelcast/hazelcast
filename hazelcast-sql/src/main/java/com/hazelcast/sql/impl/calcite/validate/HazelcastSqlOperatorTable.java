@@ -41,6 +41,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOp
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatWSOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastPositionFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastReplaceFunction;
@@ -173,6 +174,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     //#region String functions
 
     public static final SqlBinaryOperator CONCAT = HazelcastConcatOperator.INSTANCE;
+    public static final SqlFunction CONCAT_WS = HazelcastConcatWSOperator.INSTANCE;
 
     public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.LIKE;
     public static final SqlSpecialOperator NOT_LIKE = HazelcastLikeOperator.NOT_LIKE;
