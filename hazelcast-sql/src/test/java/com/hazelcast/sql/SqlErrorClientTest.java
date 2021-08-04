@@ -118,9 +118,16 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(100_000))");
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(100000))");
 
-        Thread thread = new Thread(() -> instance1.shutdown());
+        Thread thread = new Thread(() -> {
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            instance1.shutdown();
+        });
         thread.start();
 
         HazelcastSqlException error = assertSqlException(client, streamingQuery);
@@ -274,10 +281,10 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
         try {
             ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
-                    "SELECT * FROM table",
-                    Collections.emptyList(),
-                    100L,
-                    100
+                "SELECT * FROM table",
+                Collections.emptyList(),
+                100L,
+                100
             );
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
@@ -288,7 +295,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             fail("Must fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
-                    + "(please ensure that the client and the member have the same version)"));
+                + "(please ensure that the client and the member have the same version)"));
         }
     }
 
