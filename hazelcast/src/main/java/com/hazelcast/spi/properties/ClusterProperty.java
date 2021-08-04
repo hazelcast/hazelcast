@@ -1768,8 +1768,7 @@ public final class ClusterProperty {
      * @since 5.0
      */
     public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
-            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib")
-            .setDeprecatedName("jet.custom.lib.dir");
+            = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
 
     private ClusterProperty() {
     }
