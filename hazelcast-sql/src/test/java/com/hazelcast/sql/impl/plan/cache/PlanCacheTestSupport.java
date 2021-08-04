@@ -32,7 +32,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-public class PlanCacheTestSupport extends SqlTestSupport {
+public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
     protected static final Map<UUID, PartitionIdSet> PART_MAP_1;
     protected static final Map<UUID, PartitionIdSet> PART_MAP_2;
