@@ -200,8 +200,8 @@ public class SqlLimitTest extends SqlTestSupport {
     @Test
     public void limitWithProjection() {
         final String sql = "SELECT ABS(v) "
-                + "FROM TABLE (generate_series(1, 10)) "
-                + "ORDER BY v DESC "
+                + "FROM TABLE (generate_series(-10, -1)) "
+                + "ORDER BY v ASC "
                 + "LIMIT 5";
         assertRowsOrdered(sql, rows(10L, 9L, 8L, 7L, 6L));
     }
@@ -209,8 +209,8 @@ public class SqlLimitTest extends SqlTestSupport {
     @Test
     public void limitAndOffsetWithProjection() {
         final String sql = "SELECT ABS(v) "
-                + "FROM TABLE (generate_series(1, 10)) "
-                + "ORDER BY v DESC "
+                + "FROM TABLE (generate_series(-10, -1)) "
+                + "ORDER BY v ASC "
                 + "LIMIT 5 "
                 + "OFFSET 2";
         assertRowsOrdered(sql, rows(8L, 7L, 6L, 5L, 4L));
