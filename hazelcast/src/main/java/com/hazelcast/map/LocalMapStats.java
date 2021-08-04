@@ -229,7 +229,7 @@ public interface LocalMapStats extends LocalInstanceStats {
     /**
      * Cost of map &amp; Near Cache &amp; backup &amp; Merkle trees in bytes
      * <p>
-     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heapcost is zero.
+     * When {@link com.hazelcast.config.InMemoryFormat#OBJECT} is used, the heap cost is zero.
      *
      * @return heap cost
      */
@@ -274,11 +274,9 @@ public interface LocalMapStats extends LocalInstanceStats {
      */
     Map<String, LocalIndexStats> getIndexStats();
 
-    // todo reconsider exposure of replication stats, probably better encapsulated in separate "LocalReplicationStats"?
-    // these stats reflect full/diff partition replication stats with local map partitions as the migration source
-    long getDifferentialPartitionReplicationCount();
-    long getFullPartitionReplicationCount();
-    long getDifferentialReplicationRecordCount();
-    long getFullReplicationRecordCount();
-
+    /**
+     * @return replication statistics.
+     * @since 5.0
+     */
+    LocalReplicationStats getReplicationStats();
 }
