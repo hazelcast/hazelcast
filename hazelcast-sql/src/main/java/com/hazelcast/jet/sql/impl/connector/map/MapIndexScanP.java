@@ -229,6 +229,9 @@ final class MapIndexScanP extends AbstractProcessor {
      * <p>
      * It splits the partitions assigned to the split according to the new
      * partition owner into disjoint sets, one for each owner.
+     *
+     * @param split the split to split
+     * @return collection of new split units
      */
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
@@ -284,10 +287,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     result = reader.toBatchResult(future);
                 } catch (ExecutionException e) {
                     // unwrap the MissingPartitionException, throw other exceptions as is
-                    if (e.getCause() instanceof MissingPartitionException) {
-                        throw (MissingPartitionException) e.getCause();
-                    }
-                    Throwable t = findSuitableRootException(e);
+                    Throwable t = findTopologyExceptionInCauses(e);
                     if (t != null) {
                         throw new MissingPartitionException(t.getMessage());
                     }
@@ -313,15 +313,14 @@ final class MapIndexScanP extends AbstractProcessor {
         }
 
         /**
-         * Find the suitable root exceptions.
-         * Method choose enumerated cluster-specific exceptions, because they
-         * also could be used as {@link MapIndexScanP#splitOnMigration} trigger.
-         * <p>
-         * TODO: enhance documentation.
+         * Returns a topology exception from the given Throwable or its causes.
+         * Topology exception are those related to a member leaving the cluster.
+         * We handle them the same as {@link MissingPartitionException} trigger.
          */
-        private Throwable findSuitableRootException(Throwable t) {
+        private Throwable findTopologyExceptionInCauses(Throwable t) {
             while (t != null) {
-                if (t instanceof HazelcastInstanceNotActiveException
+                if (t instanceof MissingPartitionException
+                        || t instanceof HazelcastInstanceNotActiveException
                         || t instanceof MemberLeftException
                         || t instanceof TargetDisconnectedException
                         || t instanceof TargetNotMemberException
