@@ -2,7 +2,7 @@
   "instance": {
     "hazelcast": {
       "jet": {
-        "instance": {
+        "jet-engine": {
           "cooperative-thread-count": 2,
           "flow-control-period": 3,
           "backup-count": 4,
