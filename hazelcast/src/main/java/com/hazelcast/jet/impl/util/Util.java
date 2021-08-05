@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -98,6 +99,12 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+
+    public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
+            "To enable the Jet engine, please do one of the following:\n" +
+            "  - Change member config using Java API: config.getJetConfig().setEnabled(true);\n" +
+            "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
+            "  - Add system property or environment variable: -Dhz.jet.enabled=true or HZ_JET_ENABLED=true";
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -741,5 +748,11 @@ public final class Util {
     public static MembersView getMembersView(NodeEngine nodeEngine) {
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         return clusterService.getMembershipManager().getMembersView();
+    }
+
+    public static void checkJetIsEnabled(NodeEngine nodeEngine) {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
+        }
     }
 }
