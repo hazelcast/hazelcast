@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 
-    private boolean closed;
+    private volatile boolean closed;
 
     public ChildFirstClassLoader(@Nonnull URL[] urls, @Nonnull ClassLoader parent) {
         super(urls, parent);
