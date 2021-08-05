@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -62,17 +63,17 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     }
 
     @Test
-    public void testMemberLeave() {
-        // Start two instances and fill them with data
+    public void testMemberLeaveDuringQueryAfterTimeoutShutdown() {
+        // Start two instances
         instance1 = newHazelcastInstance(false);
         instance2 = newHazelcastInstance(true);
 
-        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(50000))");
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(10000))");
 
         // Stop remote member when the blocking point is reached
         new Thread(() -> {
             try {
-                Thread.sleep(2000L);
+                Thread.sleep(500L);
                 instance2.shutdown();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -83,6 +84,19 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         // Start query
         HazelcastSqlException error = assertSqlException(instance1, streamingQuery);
         assertInstanceOf(MemberLeftException.class, findRootCause(error));
+    }
+
+    @Test
+    public void testMemberLeaveDuringQueryAfterImmediateShutdown() {
+        // Start two instances
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
+
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(1000))");
+
+        // Start query with immediate shutdown afterwards
+        HazelcastSqlException error = assertSqlExceptionWithShutdown(instance1, streamingQuery);
+        assertInstanceOf(HazelcastInstanceNotActiveException.class, findRootCause(error));
     }
 
     @Test

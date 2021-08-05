@@ -86,6 +86,11 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
     }
 
     @Test
+    public void testTimeout_fetch() {
+        checkTimeout(true, DEFAULT_CURSOR_BUFFER_SIZE * 4);
+    }
+
+    @Test
     public void testDataTypeMismatch() {
         checkDataTypeMismatch(true);
     }
@@ -118,19 +123,9 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(100000))");
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(5000))");
 
-        Thread thread = new Thread(() -> {
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            instance1.shutdown();
-        });
-        thread.start();
-
-        HazelcastSqlException error = assertSqlException(client, streamingQuery);
+        HazelcastSqlException error = assertSqlExceptionWithShutdown(client, streamingQuery);
         assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
     }
 

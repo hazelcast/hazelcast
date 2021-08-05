@@ -141,7 +141,22 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     @Nonnull
     protected static HazelcastSqlException assertSqlException(HazelcastInstance instance, SqlStatement query) {
         try {
-            execute(instance, query);
+            execute(instance, query, false);
+
+            fail("Exception is not thrown");
+
+            return null;
+        } catch (HazelcastSqlException e) {
+            System.out.println(">>> Caught expected SQL error: " + e);
+
+            return e;
+        }
+    }
+
+    @Nonnull
+    protected static HazelcastSqlException assertSqlExceptionWithShutdown(HazelcastInstance instance, SqlStatement query) {
+        try {
+            execute(instance, query, true);
 
             fail("Exception is not thrown");
 
@@ -154,9 +169,12 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    protected static int execute(HazelcastInstance instance, SqlStatement query) {
+    protected static int execute(HazelcastInstance instance, SqlStatement query, boolean immediateShutdown) {
         try (SqlResult res = instance.getSql().execute(query)) {
             int count = 0;
+            if (immediateShutdown) {
+                instance.shutdown();
+            }
 
             for (SqlRow ignore : res) {
                 count++;
