@@ -126,6 +126,7 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
 
                             queriesExecuted.incrementAndGet();
                         }
+                        sleepMillis(10);
                     } catch (Throwable e) {
                         logger.info("", e);
                         error.compareAndSet(null, e);
