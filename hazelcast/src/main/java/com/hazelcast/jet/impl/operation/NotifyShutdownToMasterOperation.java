@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
 import static java.util.Collections.singletonList;
 
 /**
@@ -89,8 +90,7 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
         }
 
         // done when all are done
-        // TODO [viliam] handle the timeout
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        return loggedAllOf(getLogger(), "NotifyShutdownToMasterOperation-" + getCallerAddress(), futures.toArray(new CompletableFuture[0]));
     }
 
     @Override

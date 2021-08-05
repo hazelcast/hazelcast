@@ -187,6 +187,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             notifyMasterWeAreShuttingDown(shutdownFuture.get());
         }
         try {
+            // TODO [viliam] handle the timeout
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get();
             // Note that at this point there can still be executions running - those for light jobs

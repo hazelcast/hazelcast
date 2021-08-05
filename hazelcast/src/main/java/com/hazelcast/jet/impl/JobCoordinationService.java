@@ -115,6 +115,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -791,7 +792,7 @@ public class JobCoordinationService {
             futures.add(f);
         }
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+        loggedAllOf(logger, "JCS.addShuttingDownMember", futures.toArray(new CompletableFuture[0]))
                          .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }

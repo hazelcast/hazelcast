@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
+
 /**
  * The operation is sent from the master to all members informing them
  * about a member that wants to gracefully shut down. Secondly, it's sent
@@ -68,7 +70,7 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
             futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
                     .onMemberGracefulShutdown(uuid));
         }
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        return loggedAllOf(getLogger(), "NotifyShutdownToMembersOperation-" + shuttingDownMemberIds, futures.toArray(new CompletableFuture[0]));
     }
 
     @Override

@@ -16,7 +16,13 @@
 
 package com.hazelcast.jet.impl.util;
 
+import com.hazelcast.logging.ILogger;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * Extended {@link CompletableFuture} that has a name. Useful for debugging
@@ -34,5 +40,32 @@ public class NamedCompletableFuture<T> extends CompletableFuture<T> {
     @Override
     public String toString() {
         return super.toString() + " (" + name + ')';
+    }
+
+    public static CompletableFuture<Void> loggedAllOf(ILogger logger, String setName, CompletableFuture<?>... futures) {
+        if (logger.isFineEnabled()) {
+            Map<CompletableFuture<?>, String> remainingFutures = new HashMap<>();
+            for (CompletableFuture<?> future : futures) {
+                remainingFutures.put(future, getName(future));
+            }
+            Object lock = new Object();
+            for (int i = 0; i < futures.length; i++) {
+                CompletableFuture<?> future = futures[i];
+                futures[i] = future.whenComplete((r, t) -> {
+                    synchronized (lock) {
+                        String removedName = remainingFutures.remove(future);
+                        logFine(logger, "Future %s in set %s completed with %s, remaining=%s",
+                                removedName, setName, t != null ? t : r, remainingFutures.values());
+                    }
+                });
+            }
+        }
+        return allOf(futures);
+    }
+
+    private static String getName(CompletableFuture<?> f) {
+        return f instanceof NamedCompletableFuture
+                ? ((NamedCompletableFuture<?>) f).name
+                : f.toString();
     }
 }
