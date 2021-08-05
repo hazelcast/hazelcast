@@ -82,15 +82,13 @@ public class JetClassLoaderTest extends JetTestSupport {
     }
 
     @Test
-    public void when_processorCalled_then_contextClassLoaderSet() throws InterruptedException {
+    public void when_processorCalled_then_contextClassLoaderSet() {
         DAG dag = new DAG();
         Vertex v1 = dag.newVertex("v1", SourceP::new).localParallelism(1);
         Vertex v2 = dag.newVertex("v2", TargetP::new).localParallelism(1);
         dag.edge(Edge.between(v1, v2));
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
-        HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(smallInstanceWithResourceUploadConfig());
 
         JobConfig jobConfig = new JobConfig()
                 .setProcessingGuarantee(ProcessingGuarantee.AT_LEAST_ONCE)
