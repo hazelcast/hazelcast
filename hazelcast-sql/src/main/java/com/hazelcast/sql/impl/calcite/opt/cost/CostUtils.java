@@ -31,6 +31,7 @@ public final class CostUtils {
     /** CPU multiplier applied to normal scan. */
     public static final double TABLE_SCAN_CPU_MULTIPLIER = 1.0d;
 
+
     /** CPU multiplier applied to index scan (sorted). */
     public static final double INDEX_SCAN_CPU_MULTIPLIER_SORTED = 1.2d;
 

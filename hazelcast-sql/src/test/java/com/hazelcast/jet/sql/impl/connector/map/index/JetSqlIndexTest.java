@@ -33,9 +33,4 @@ public class JetSqlIndexTest extends JetSqlIndexAbstractTest {
     public static Collection<Object[]> parameters() {
         return parametersQuick();
     }
-
-    @Override
-    protected boolean isHd() {
-        return false;
-    }
 }
