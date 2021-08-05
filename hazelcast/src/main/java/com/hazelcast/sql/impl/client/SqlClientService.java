@@ -86,7 +86,7 @@ public class SqlClientService implements SqlService {
                 statement.getTimeoutMillis(),
                 statement.getCursorBufferSize(),
                 statement.getSchema(),
-                SqlClientUtils.expectedResultTypeToByte(statement.getExpectedResultType()),
+                statement.getExpectedResultType().getId(),
                 id
             );
 

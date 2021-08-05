@@ -75,7 +75,7 @@ public class PartitionTableViewTest {
         assertEquals(partitions.length, table.length());
         for (int i = 0; i < partitions.length; i++) {
             PartitionReplica[] replicas = table.getReplicas(i);
-            assertNotSame(partitions[i], replicas);
+            assertNotSame(partitions[i].getReplicasCopy(), replicas);
             for (int j = 0; j < MAX_REPLICA_COUNT; j++) {
                 assertEquals(partitions[i].getReplica(j), replicas[j]);
             }
@@ -111,6 +111,49 @@ public class PartitionTableViewTest {
         PartitionTableView table2 = new PartitionTableView(partitions);
 
         assertNotEquals(table1, table2);
+    }
+
+    @Test
+    public void testDistanceIsZero_whenSame() throws Exception {
+        // distanceOf([A, B, C], [A, B, C]) == 0
+        PartitionTableView table1 = createRandomPartitionTable();
+
+        InternalPartition[] partitions = extractPartitions(table1);
+        PartitionTableView table2 = new PartitionTableView(partitions);
+
+        assertEquals(0, table2.distanceOf(table1));
+    }
+
+    @Test
+    public void testDistance_whenReplicasExchanged() throws Exception {
+        // distanceOf([A, B, C], [B, A, C]) == 2
+        PartitionTableView table1 = createRandomPartitionTable();
+
+        InternalPartition[] partitions = extractPartitions(table1);
+        PartitionReplica[] replicas = partitions[0].getReplicasCopy();
+        PartitionReplica temp = replicas[0];
+        replicas[0] = replicas[1];
+        replicas[1] = temp;
+        partitions[0] = new ReadonlyInternalPartition(replicas, 0, partitions[0].version());
+        PartitionTableView table2 = new PartitionTableView(partitions);
+
+        assertEquals(2, table2.distanceOf(table1));
+    }
+
+    @Test
+    public void testDistance_whenSomeReplicasNull() throws Exception {
+        // distanceOf([A, B, C, D...], [A, B, null...]) == count(null) * MAX_REPLICA_COUNT
+        PartitionTableView table1 = createRandomPartitionTable();
+
+        InternalPartition[] partitions = extractPartitions(table1);
+        PartitionReplica[] replicas = partitions[0].getReplicasCopy();
+        for (int i = 3; i < MAX_REPLICA_COUNT; i++) {
+            replicas[i] = null;
+        }
+        partitions[0] = new ReadonlyInternalPartition(replicas, 0, partitions[0].version());
+        PartitionTableView table2 = new PartitionTableView(partitions);
+
+        assertEquals((MAX_REPLICA_COUNT - 3) * MAX_REPLICA_COUNT, table2.distanceOf(table1));
     }
 
     private static PartitionTableView createRandomPartitionTable() throws UnknownHostException {

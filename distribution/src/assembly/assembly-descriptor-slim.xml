@@ -134,5 +134,11 @@
             <outputDirectory>bin</outputDirectory>
             <filtered>true</filtered>
         </fileSet>
+        <fileSet> <!-- Create empty directory -->
+            <outputDirectory>bin/user-lib</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 </assembly>

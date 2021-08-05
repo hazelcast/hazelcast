@@ -16,24 +16,29 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.IPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
+import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
@@ -55,6 +60,7 @@ import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
 public final class PartitionReplicaSyncRequestOffloadable
         extends PartitionReplicaSyncRequest {
 
+    private final transient ConcurrentMap<BiTuple, long[]> replicaVersions = new ConcurrentHashMap<>();
     private volatile int partitionId;
 
     public PartitionReplicaSyncRequestOffloadable() {
@@ -83,10 +89,19 @@ public final class PartitionReplicaSyncRequestOffloadable
         try {
             PartitionReplicationEvent event = new PartitionReplicationEvent(getCallerAddress(), partitionId,
                     getReplicaIndex());
+            // It is only safe to read replica versions before preparing replication operations.
+            // Reasoning: even though partition is already marked as migrating,
+            // operations may be already queued in partition thread.
+            // If we read replica versions after replication operation
+            // is prepared, we may read updated replica versions but replication op
+            // may have stale data -> future backup sync checks will not detect the
+            // stale data.
+            readReplicaVersions();
+
             final Iterator<ServiceNamespace> iterator = namespaces.iterator();
             for (int i = 0; i < permits; i++) {
                 ServiceNamespace namespace = iterator.next();
-                Collection<Operation> operations = null;
+                Collection<Operation> operations;
                 if (NonFragmentedServiceNamespace.INSTANCE.equals(namespace)) {
                     operations = createNonFragmentedReplicationOperations(event);
                 } else {
@@ -102,6 +117,24 @@ public final class PartitionReplicaSyncRequestOffloadable
         } finally {
             partitionService.getReplicaManager().releaseReplicaSyncPermits(permits);
         }
+    }
+
+    private void readReplicaVersions() {
+        InternalPartitionServiceImpl partitionService = getService();
+        OperationService operationService = getNodeEngine().getOperationService();
+        PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
+        UrgentPartitionRunnable<Void> gatherReplicaVersionsRunnable = new UrgentPartitionRunnable<>(partitionId(),
+                () -> {
+                    for (ServiceNamespace ns : namespaces) {
+                        // make a copy because getPartitionReplicaVersions returns references
+                        // to the internal replica versions data structures that may change under our feet
+                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
+                                IPartition.MAX_BACKUP_COUNT);
+                        replicaVersions.put(BiTuple.of(partitionId(), ns), versions);
+                    }
+                });
+        operationService.execute(gatherReplicaVersionsRunnable);
+        gatherReplicaVersionsRunnable.future.joinInternal();
     }
 
     @Override
@@ -121,6 +154,16 @@ public final class PartitionReplicaSyncRequestOffloadable
     }
 
     @Override
+    protected PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
+        int partitionId = partitionId();
+        int replicaIndex = getReplicaIndex();
+        long[] versions = replicaVersions.get(BiTuple.of(partitionId, ns));
+        PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations, ns, versions);
+        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        return syncResponse;
+    }
+
+    @Override
     public int getClassId() {
         return PartitionDataSerializerHook.REPLICA_SYNC_REQUEST_OFFLOADABLE;
     }
@@ -133,14 +176,10 @@ public final class PartitionReplicaSyncRequestOffloadable
 
         @Override
         public void start() throws Exception {
-            InternalPartitionServiceImpl partitionService = getService();
-            PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
             // set partition as migrating to disable mutating operations
             // while preparing replication operations
-            if (!partitionStateManager.trySetMigratingFlag(partitionId)
-                    && !partitionStateManager.isMigrating(partitionId)) {
-                throw new RetryableHazelcastException("Cannot set migrating flag, "
-                        + "probably previous migration's finalization is not completed yet.");
+            if (!trySetMigratingFlag()) {
+                sendRetryResponse();
             }
 
             try {
@@ -157,7 +196,7 @@ public final class PartitionReplicaSyncRequestOffloadable
                     sendRetryResponse();
                 }
             } finally {
-                partitionStateManager.clearMigratingFlag(partitionId);
+                clearMigratingFlag();
             }
         }
     }
@@ -173,5 +212,23 @@ public final class PartitionReplicaSyncRequestOffloadable
         namespaces = Collections.newSetFromMap(new ConcurrentHashMap<>());
         namespaces.addAll(readCollection(in));
         partitionId = in.readInt();
+    }
+
+    private boolean trySetMigratingFlag() {
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        UrgentPartitionRunnable<Boolean> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
+                () -> partitionStateManager.trySetMigratingFlag(partitionId()));
+        getNodeEngine().getOperationService().execute(trySetMigrating);
+        return trySetMigrating.future.joinInternal();
+    }
+
+    private void clearMigratingFlag() {
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        UrgentPartitionRunnable<Void> trySetMigrating = new UrgentPartitionRunnable<>(partitionId(),
+                () -> partitionStateManager.clearMigratingFlag(partitionId()));
+        getNodeEngine().getOperationService().execute(trySetMigrating);
+        trySetMigrating.future.joinInternal();
     }
 }

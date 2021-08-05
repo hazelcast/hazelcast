@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -93,7 +93,7 @@ public class NearCacheConfigTest {
         config.setInMemoryFormat("UNKNOWN");
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testSetInMemoryFormat_withString_whenNull() {
         config.setInMemoryFormat((String) null);
     }
@@ -171,4 +171,17 @@ public class NearCacheConfigTest {
         assertEquals(config.getLocalUpdatePolicy(), deserialized.getLocalUpdatePolicy());
         assertEquals(config.toString(), deserialized.toString());
     }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_null_name_throws_exception() {
+        config.setName(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_constructor_with_null_name_throws_exception() {
+        String nullName = null;
+        new NearCacheConfig(nullName);
+    }
+
 }

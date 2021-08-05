@@ -35,7 +35,6 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.sql.impl.client.SqlClientUtils;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -139,7 +138,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
                 Long.MAX_VALUE,
                 KEY_COUNT,
                 null,
-                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ROWS),
+                SqlExpectedResultType.ROWS.getId(),
                 queryId
 
         );

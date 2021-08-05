@@ -31,6 +31,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
@@ -96,9 +97,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
     }
 
     protected JetServiceBackend getJetServiceBackend() {
-        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
-        }
+        checkJetIsEnabled(getNodeEngine());
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
         return getService();
     }

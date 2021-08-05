@@ -14,29 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.client;
+package com.hazelcast.jet.impl.exception;
 
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.impl.QueryUtils;
-
-import java.util.UUID;
+import com.hazelcast.jet.JetException;
 
 /**
- * Static helpers for SQL client.
+ * JetDisabledException is thrown when Jet tried to be used even though it's
+ * disabled in the configuration files.
  */
-public final class SqlClientUtils {
+public class JetDisabledException extends JetException {
 
-    private SqlClientUtils() {
-        // No-op.
+    public JetDisabledException(String message) {
+        super(message);
     }
 
-    public static SqlError exceptionToClientError(Exception exception, UUID localMemberId) {
-        HazelcastSqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
-
-        return new SqlError(
-            sqlException.getCode(),
-            sqlException.getMessage(),
-            sqlException.getOriginatingMemberId()
-        );
+    public JetDisabledException(String message, Throwable cause) {
+        super(message, cause);
     }
+
 }
