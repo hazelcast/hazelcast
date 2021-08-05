@@ -305,8 +305,10 @@ public class CreateDagVisitor {
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel) {
-            SortPhysicalRel sortRel = (SortPhysicalRel) input;
+        if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
+            SortPhysicalRel sortRel = input instanceof ProjectPhysicalRel
+                    ? (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput()
+                    : (SortPhysicalRel) input;
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -398,5 +400,10 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private boolean isProjectionWithSort(RelNode input) {
+        return input instanceof ProjectPhysicalRel &&
+                ((ProjectPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }
