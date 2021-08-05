@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import org.junit.Test;
 
+import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlTest extends JetTestSupport {
@@ -36,6 +37,6 @@ public class SqlTest extends JetTestSupport {
 
         assertThatThrownBy(() -> client.getSql().execute("SELECT * FROM TABLE(GENERATE_SERIES(1, 1))").iterator().next())
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Jet is disabled, see JetConfig#setEnabled.");
+                .hasMessageContaining(JET_IS_DISABLED_MESSAGE);
     }
 }
