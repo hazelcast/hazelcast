@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
