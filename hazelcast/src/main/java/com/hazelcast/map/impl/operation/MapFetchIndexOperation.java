@@ -404,5 +404,9 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         public MissingPartitionException(String message) {
             super(message);
         }
+
+        public MissingPartitionException(String message, Throwable t) {
+            super(message, t);
+        }
     }
 }

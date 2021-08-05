@@ -286,10 +286,10 @@ final class MapIndexScanP extends AbstractProcessor {
                 try {
                     result = reader.toBatchResult(future);
                 } catch (ExecutionException e) {
-                    // unwrap the MissingPartitionException, throw other exceptions as is
+                    // unwrap the MissingPartitionException, and wrap other exceptions as MPE
                     Throwable t = findTopologyExceptionInCauses(e);
                     if (t != null) {
-                        throw new MissingPartitionException(t.getMessage());
+                        throw new MissingPartitionException(t.toString(), e);
                     }
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
