@@ -241,10 +241,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
         if (!executionCompleted.compareAndSet(false, true)) {
             return;
         }
-        ClassLoader jobClassLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
         for (Tasklet tasklet : tasklets) {
             try {
-                doWithClassLoader(jobClassLoader, tasklet::close);
+                tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
                         + " encountered an exception in Processor.close(), ignoring it", e);
