@@ -82,25 +82,25 @@ public abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
 
     static List<ExpressionType<?>> baseTypes() {
         return Arrays.asList(
-            BOOLEAN,
-            INTEGER,
-            STRING
+                BOOLEAN,
+                INTEGER,
+                STRING
         );
     }
 
     static List<ExpressionType<?>> allTypes() {
         return Arrays.asList(
-            BOOLEAN,
-            BYTE,
-            SHORT,
-            INTEGER,
-            LONG,
-            BIG_DECIMAL,
-            BIG_INTEGER,
-            FLOAT,
-            DOUBLE,
-            STRING,
-            CHARACTER
+                BOOLEAN,
+                BYTE,
+                SHORT,
+                INTEGER,
+                LONG,
+                BIG_DECIMAL,
+                BIG_INTEGER,
+                FLOAT,
+                DOUBLE,
+                STRING,
+                CHARACTER
         );
     }
 }

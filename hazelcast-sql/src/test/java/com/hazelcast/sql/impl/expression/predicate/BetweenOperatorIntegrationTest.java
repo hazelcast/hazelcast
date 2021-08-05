@@ -63,12 +63,12 @@ import static org.junit.Assert.assertNull;
  * possible arguments type combination.
  * <p>
  * The BETWEEN operator has two possible modes:<ul>
- * <li>ASYMMETRIC, which is default mode. SQL engine converts "a BETWEEN b
- * AND c" to "a <= b AND a >= c"
+ *     <li>ASYMMETRIC, which is default mode. SQL engine converts "a BETWEEN b
+ *     AND c" to "a <= b AND a >= c"
  *
- * <li>SYMMETRIC. It it can be used in cases where the user is not sure
- * that c >= b. SQL engine converts "a SYMMETRIC BETWEEN b AND c" to "(a <=
- * b AND a >= c) OR (a >= b AND a <= c)"
+ *     <li>SYMMETRIC. It it can be used in cases where the user is not sure
+ *     that c >= b. SQL engine converts "a SYMMETRIC BETWEEN b AND c" to "(a <=
+ *     b AND a >= c) OR (a >= b AND a <= c)"
  * </ul>
  *
  * <p>

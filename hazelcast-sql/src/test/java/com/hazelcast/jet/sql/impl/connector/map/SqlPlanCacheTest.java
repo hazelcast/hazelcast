@@ -153,13 +153,13 @@ public class SqlPlanCacheTest extends SqlTestSupport {
             String valueFormat
     ) {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + " EXTERNAL NAME " + mapName + " ("
-            + keyFieldName + " INT EXTERNAL NAME \"__key.id\""
-            + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-            + "OPTIONS ("
-            + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
-            + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + '\''
-            + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
-            + ")"
+                + keyFieldName + " INT EXTERNAL NAME \"__key.id\""
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
+                + ")"
         );
     }
 
@@ -173,14 +173,14 @@ public class SqlPlanCacheTest extends SqlTestSupport {
             String valueFormat
     ) {
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + " EXTERNAL NAME " + mapName + "("
-            + keyFieldName + " INT EXTERNAL NAME \"__key.id\""
-            + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-            + "OPTIONS ( "
-            + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
-            + ", '" + OPTION_KEY_FACTORY_ID + "'='" + keyFactoryId + '\''
-            + ", '" + OPTION_KEY_CLASS_ID + "'='" + keyClassId + '\''
-            + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
-            + ")"
+                + keyFieldName + " INT EXTERNAL NAME \"__key.id\""
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + keyFactoryId + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + keyClassId + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + valueFormat + '\''
+                + ")"
         );
     }
 }

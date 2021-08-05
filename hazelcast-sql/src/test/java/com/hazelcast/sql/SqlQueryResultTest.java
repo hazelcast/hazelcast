@@ -40,7 +40,7 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String SQL_READ = "SELECT * FROM " + MAP_NAME;
-    private static final String SQL_UPDATE = "DELETE FROM " + MAP_NAME + " WHERE __key = 1";
+    private static final String SQL_DELETE = "DELETE FROM " + MAP_NAME + " WHERE __key = 1";
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -74,9 +74,9 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
         // Check update count
         // TODO: implement updateCount for DML and single key plans.
-        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.ANY, emptyList(), 0);
-        checkFailure(target, SQL_UPDATE, SqlExpectedResultType.ROWS);
-        checkSuccess(target, SQL_UPDATE, SqlExpectedResultType.UPDATE_COUNT, emptyList(), 0);
+        checkSuccess(target, SQL_DELETE, SqlExpectedResultType.ANY, emptyList(), 0);
+        checkFailure(target, SQL_DELETE, SqlExpectedResultType.ROWS);
+        checkSuccess(target, SQL_DELETE, SqlExpectedResultType.UPDATE_COUNT, emptyList(), 0);
     }
 
     private void checkSuccess(
@@ -118,7 +118,8 @@ public class SqlQueryResultTest extends SqlTestSupport {
         assert type == SqlExpectedResultType.ROWS || type == SqlExpectedResultType.UPDATE_COUNT : type;
 
         try (SqlResult result = target.getSql().execute(new SqlStatement(sql).setExpectedResultType(type))) {
-            result.iterator().forEachRemaining(row -> { });
+            result.iterator().forEachRemaining(row -> {
+            });
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
