@@ -402,7 +402,8 @@ public class ProcessorTasklet implements Tasklet {
             case CLOSE:
                 if (isCooperative() && !processor.closeIsCooperative()) {
                     if (closeFuture == null) {
-                        closeFuture = executionService.submit(this::closeProcessor);
+                        ClassLoader contextCl = Thread.currentThread().getContextClassLoader();
+                        closeFuture = executionService.submit(() -> doWithClassLoader(contextCl, this::closeProcessor));
                         progTracker.madeProgress();
                     }
                     if (!closeFuture.isDone()) {
@@ -618,7 +619,7 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public boolean isCooperative() {
-        return doWithClassLoader(processor.getClass().getClassLoader(), () -> processor.isCooperative());
+        return doWithClassLoader(context.classLoader(), () -> processor.isCooperative());
     }
 
     @Override
