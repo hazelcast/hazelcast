@@ -57,6 +57,7 @@ import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatWSFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
@@ -420,6 +421,8 @@ public final class RexToExpression {
                     return ToTimestampTzFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.TO_EPOCH_MILLIS) {
                     return ToEpochMillisFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
+                    return ConcatWSFunction.create(operands);
                 }
 
                 break;

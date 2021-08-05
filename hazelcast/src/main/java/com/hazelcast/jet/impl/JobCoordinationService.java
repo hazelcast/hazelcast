@@ -102,7 +102,7 @@ import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.core.JetProperties.JOB_SCAN_PERIOD;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;

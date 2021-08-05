@@ -61,6 +61,7 @@ import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+import com.hazelcast.sql.impl.expression.string.ConcatWSFunction;
 import com.hazelcast.sql.impl.expression.string.InitcapFunction;
 import com.hazelcast.sql.impl.expression.string.LikeFunction;
 import com.hazelcast.sql.impl.expression.string.LowerFunction;
@@ -208,7 +209,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int MAPPING_FIELD = 76;
     public static final int MAP_INDEX_SCAN_METADATA = 77;
 
-    public static final int LEN = MAP_INDEX_SCAN_METADATA + 1;
+    public static final int EXPRESSION_CONCAT_WS = 78;
+
+    public static final int LEN = EXPRESSION_CONCAT_WS + 1;
 
     @Override
     public int getFactoryId() {
@@ -320,6 +323,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
         constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
+
+        constructors[EXPRESSION_CONCAT_WS] = arg -> new ConcatWSFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

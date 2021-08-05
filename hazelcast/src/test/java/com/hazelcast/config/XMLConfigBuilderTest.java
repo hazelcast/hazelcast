@@ -1712,7 +1712,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
 
         assertFalse(multicastConfig.isEnabled());
-        assertTrue(multicastConfig.isLoopbackModeEnabled());
+        assertEquals(Boolean.TRUE, multicastConfig.getLoopbackModeEnabled());
         assertEquals("224.2.2.4", multicastConfig.getMulticastGroup());
         assertEquals(65438, multicastConfig.getMulticastPort());
         assertEquals(4, multicastConfig.getMulticastTimeoutSeconds());

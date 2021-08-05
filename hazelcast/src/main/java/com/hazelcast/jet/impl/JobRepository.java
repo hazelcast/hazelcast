@@ -26,7 +26,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
-import com.hazelcast.jet.core.JetProperties;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.metrics.JobMetrics;
 import com.hazelcast.jet.impl.deployment.IMapOutputStream;
@@ -44,6 +43,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.properties.ClusterProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -485,7 +485,7 @@ public class JobRepository {
 
     @SuppressWarnings("unchecked")
     private void cleanupJobResults(NodeEngine nodeEngine) {
-        int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(JetProperties.JOB_RESULTS_MAX_SIZE));
+        int maxNoResults = Math.max(1, nodeEngine.getProperties().getInteger(ClusterProperty.JOB_RESULTS_MAX_SIZE));
         // delete oldest job results
         Map<Long, JobResult> jobResultsMap = jobResultsMap();
         if (jobResultsMap.size() > Util.addClamped(maxNoResults, maxNoResults / MAX_NO_RESULTS_OVERHEAD)) {

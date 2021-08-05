@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 
 public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageTask<Void> {
@@ -52,9 +53,7 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
 
     @Override
     public Collection<Member> getTargets() {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
-        }
+        checkJetIsEnabled(nodeEngine);
         return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
     }
 
