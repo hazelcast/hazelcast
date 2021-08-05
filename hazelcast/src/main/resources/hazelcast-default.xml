@@ -487,7 +487,7 @@
     </sql>
 
     <jet enabled="false" resource-upload-enabled="false">
-        <instance>
+        <jet-engine>
             <!-- time spacing of flow-control (ack) packets -->
             <flow-control-period>100</flow-control-period>
             <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
@@ -525,7 +525,7 @@
                  Note: the limit does not apply to streaming aggregations.
              -->
             <max-processor-accumulated-records>9223372036854775807</max-processor-accumulated-records>
-        </instance>
+        </jet-engine>
         <edge-defaults>
             <!-- capacity of the concurrent SPSC queue between each two processors -->
             <queue-size>1024</queue-size>

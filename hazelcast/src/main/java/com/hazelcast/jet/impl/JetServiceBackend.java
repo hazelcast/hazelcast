@@ -121,7 +121,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         this.hazelcastInstance = engine.getHazelcastInstance();
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
-                nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
+                nodeEngine, jetConfig.getJetEngineConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
         );
         jobRepository = new JobRepository(hazelcastInstance);
 
@@ -132,7 +132,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
                 nodeEngine.getLocalMember()));
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
-        networking = new Networking(engine, jobExecutionService, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
+        networking = new Networking(engine, jobExecutionService, jetConfig.getJetEngineConfig().getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
@@ -143,7 +143,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + jetConfig.getInstanceConfig().getCooperativeThreadCount());
+                + jetConfig.getJetEngineConfig().getCooperativeThreadCount());
         if (sqlCoreBackend != null) {
             try {
                 Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", HazelcastInstance.class);
@@ -157,7 +157,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
         JetConfig jetConfig = config.getJetConfig();
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                .setBackupCount(jetConfig.getJetEngineConfig().getBackupCount())
                 // we query creationTime of resources maps
                 .setStatisticsEnabled(true);
 

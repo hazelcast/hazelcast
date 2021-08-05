@@ -66,8 +66,8 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
 
     @Override
     protected void onConfigCreated(Config config) {
-        config.getJetConfig().getInstanceConfig().setBackupCount(MAX_BACKUP_COUNT);
-        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(3000);
+        config.getJetConfig().getJetEngineConfig().setBackupCount(MAX_BACKUP_COUNT);
+        config.getJetConfig().getJetEngineConfig().setScaleUpDelayMillis(3000);
     }
 
     @Test

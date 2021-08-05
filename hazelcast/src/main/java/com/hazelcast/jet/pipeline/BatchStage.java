@@ -28,7 +28,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.aggregate.AggregateOperations;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -78,7 +78,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @return the newly attached stage
@@ -100,7 +100,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param comparator the user-provided comparator that will be used for
@@ -225,7 +225,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * There is no guarantee which one of equal items it will emit.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @return the newly attached stage

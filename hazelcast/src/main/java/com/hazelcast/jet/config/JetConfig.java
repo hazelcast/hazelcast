@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
  */
 public class JetConfig {
 
-    private InstanceConfig instanceConfig = new InstanceConfig();
+    private JetEngineConfig jetEngineConfig = new JetEngineConfig();
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private boolean enabled;
     private boolean resourceUploadEnabled;
@@ -73,17 +73,17 @@ public class JetConfig {
      * Returns the Jet instance config.
      */
     @Nonnull
-    public InstanceConfig getInstanceConfig() {
-        return instanceConfig;
+    public JetEngineConfig getJetEngineConfig() {
+        return jetEngineConfig;
     }
 
     /**
      * Sets the Jet instance config.
      */
     @Nonnull
-    public JetConfig setInstanceConfig(@Nonnull InstanceConfig instanceConfig) {
-        Preconditions.checkNotNull(instanceConfig, "instanceConfig");
-        this.instanceConfig = instanceConfig;
+    public JetConfig setJetEngineConfig(@Nonnull JetEngineConfig jetEngineConfig) {
+        Preconditions.checkNotNull(jetEngineConfig, "jetEngineConfig");
+        this.jetEngineConfig = jetEngineConfig;
         return this;
     }
 
@@ -123,7 +123,7 @@ public class JetConfig {
         if (resourceUploadEnabled != jetConfig.resourceUploadEnabled) {
             return false;
         }
-        if (!instanceConfig.equals(jetConfig.instanceConfig)) {
+        if (!jetEngineConfig.equals(jetConfig.jetEngineConfig)) {
             return false;
         }
         return defaultEdgeConfig.equals(jetConfig.defaultEdgeConfig);
@@ -131,7 +131,7 @@ public class JetConfig {
 
     @Override
     public int hashCode() {
-        int result = instanceConfig.hashCode();
+        int result = jetEngineConfig.hashCode();
         result = 31 * result + defaultEdgeConfig.hashCode();
         result = 31 * result + (enabled ? 1 : 0);
         result = 31 * result + (resourceUploadEnabled ? 1 : 0);

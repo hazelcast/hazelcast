@@ -138,7 +138,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -2992,34 +2992,34 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("instance", nodeName)) {
-                handleInstance(jetConfig, child);
+            if (matches("jet-engine", nodeName)) {
+                handleJetEngine(jetConfig, child);
             } else if (matches("edge-defaults", nodeName)) {
                 handleEdgeDefaults(jetConfig, child);
             }
         }
     }
 
-    private void handleInstance(JetConfig jetConfig, Node node) {
-        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+    private void handleJetEngine(JetConfig jetConfig, Node node) {
+        JetEngineConfig jetEngineConfig = jetConfig.getJetEngineConfig();
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("cooperative-thread-count", nodeName)) {
-                instanceConfig.setCooperativeThreadCount(
+                jetEngineConfig.setCooperativeThreadCount(
                         getIntegerValue("cooperative-thread-count", getTextContent(child)));
             } else if (matches("flow-control-period", nodeName)) {
-                instanceConfig.setFlowControlPeriodMs(
+                jetEngineConfig.setFlowControlPeriodMs(
                         getIntegerValue("flow-control-period", getTextContent(child)));
             } else if (matches("backup-count", nodeName)) {
-                instanceConfig.setBackupCount(
+                jetEngineConfig.setBackupCount(
                         getIntegerValue("backup-count", getTextContent(child)));
             } else if (matches("scale-up-delay-millis", nodeName)) {
-                instanceConfig.setScaleUpDelayMillis(
+                jetEngineConfig.setScaleUpDelayMillis(
                         getLongValue("scale-up-delay-millis", getTextContent(child)));
             } else if (matches("lossless-restart-enabled", nodeName)) {
-                instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+                jetEngineConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
             } else if (matches("max-processor-accumulated-records", nodeName)) {
-                instanceConfig.setMaxProcessorAccumulatedRecords(
+                jetEngineConfig.setMaxProcessorAccumulatedRecords(
                         getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }

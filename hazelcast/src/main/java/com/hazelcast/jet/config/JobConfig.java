@@ -173,7 +173,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * </pre>
      *
      * @return {@code this} instance for fluent API
-     * @see InstanceConfig#setScaleUpDelayMillis Configuring the scale-up delay
+     * @see JetEngineConfig#setScaleUpDelayMillis Configuring the scale-up delay
      * @see #setProcessingGuarantee Enabling/disabling snapshots
      */
     public JobConfig setAutoScaling(boolean enabled) {
@@ -1322,11 +1322,11 @@ public class JobConfig implements IdentifiedDataSerializable {
      * Sets the maximum number of records that can be accumulated by any single
      * {@link Processor} instance in the context of the job.
      * <p>
-     * For more info see {@link InstanceConfig#setMaxProcessorAccumulatedRecords(long)}.
+     * For more info see {@link JetEngineConfig#setMaxProcessorAccumulatedRecords(long)}.
      * <p>
-     * If set, it has precedence over {@link InstanceConfig}'s one.
+     * If set, it has precedence over {@link JetEngineConfig}'s one.
      * <p>
-     * The default value is {@code -1} - in that case {@link InstanceConfig}'s value
+     * The default value is {@code -1} - in that case {@link JetEngineConfig}'s value
      * is used.
      *
      * @since 5.0

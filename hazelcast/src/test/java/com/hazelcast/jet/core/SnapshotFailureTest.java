@@ -63,7 +63,7 @@ public class SnapshotFailureTest extends JetTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().setEnabled(true).getJetEngineConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
         // force snapshots to fail by adding a failing map store configuration for snapshot data maps
         MapConfig mapConfig = new MapConfig(JobRepository.SNAPSHOT_DATA_MAP_PREFIX + '*');

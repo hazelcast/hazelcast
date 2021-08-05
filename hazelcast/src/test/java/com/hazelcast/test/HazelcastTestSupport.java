@@ -194,7 +194,7 @@ public abstract class HazelcastTestSupport {
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(2);
+        config.getJetConfig().setEnabled(true).getJetEngineConfig().setCooperativeThreadCount(2);
 
         config.getSqlConfig().setExecutorPoolSize(2);
 

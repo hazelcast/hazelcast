@@ -27,7 +27,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.RestartableException;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
@@ -199,7 +199,7 @@ public class ReceiverTasklet implements Tasklet {
      *         measured in compressed seq units (see {@link #COMPRESSED_SEQ_UNIT_LOG2})
      *     </li><li>
      *         {@code seqsPerAckPeriod = (seqDelta / timeDelta) * }
-     *         {@link InstanceConfig#setFlowControlPeriodMs(int)
+     *         {@link JetEngineConfig#setFlowControlPeriodMs(int)
      *         flowControlPeriodMs}, projected amount of data processed by the receiver
      *         in one standard flow control period (called "ack period" for short)
      *     </li></ol>

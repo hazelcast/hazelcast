@@ -70,7 +70,7 @@ Allow configuring `maxProcessorAccumulatedRecords` for the member:
 <!--Java-->
 
 ```java
-public class InstanceConfig {
+public class JetEngineConfig {
 
       public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
@@ -83,7 +83,7 @@ public class InstanceConfig {
 
 ```yaml
   jet:
-    instance:
+    jet-engine:
       max-processor-accumulated-records: 1000000000
 ```
 
@@ -91,9 +91,9 @@ public class InstanceConfig {
 
 ```xml
   <jet>
-    <instance>
+    <jet-engine>
       <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
-    </instance>
+    </jet-engine>
   </jet>
 ```
 
@@ -115,8 +115,8 @@ public class JobConfig implements IdentifiedDataSerializable {
 
 To not break backward compatibility the default value of
 `maxProcessorAccumulatedRecords` for `JobConfig` is `-1` and for
-`InstanceConfig` it is `Long.MAX_VALUE`. `JobConfig`'s value, if set,
-has precedence over `InstanceConfig`'s one.
+`JetEngineConfig` it is `Long.MAX_VALUE`. `JobConfig`'s value, if set,
+has precedence over `JetEngineConfig`'s one.
 
 `maxProcessorAccumulatedRecords` is accessible for `Processor`s via
 `ProcessorMetaSupplier.Context.maxProcessorAccumulatedRecords()`.

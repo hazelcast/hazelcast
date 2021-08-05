@@ -36,7 +36,7 @@ public class SqlMemoryManagement extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig()
+        config.getJetConfig().getJetEngineConfig()
                 .setCooperativeThreadCount(1)
                 .setMaxProcessorAccumulatedRecords(MAX_PROCESSOR_ACCUMULATED_RECORDS);
 

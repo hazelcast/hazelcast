@@ -65,7 +65,7 @@ public final class ExecutionPlanBuilder {
             NodeEngineImpl nodeEngine, List<MemberInfo> memberInfos, DAG dag, long jobId, long executionId,
             JobConfig jobConfig, long lastSnapshotId, boolean isLightJob, Subject subject
     ) {
-        final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
+        final int defaultParallelism = nodeEngine.getConfig().getJetConfig().getJetEngineConfig().getCooperativeThreadCount();
         final Map<MemberInfo, int[]> partitionsByMember = getPartitionAssignment(nodeEngine, memberInfos);
         final Map<Address, int[]> partitionsByAddress =
                 partitionsByMember.entrySet().stream().collect(toMap(en -> en.getKey().getAddress(), Entry::getValue));

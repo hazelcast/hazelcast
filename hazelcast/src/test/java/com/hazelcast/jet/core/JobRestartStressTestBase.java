@@ -42,7 +42,7 @@ public class JobRestartStressTestBase extends JetTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.getJetConfig().setEnabled(true).getInstanceConfig().setCooperativeThreadCount(4);
+        config.getJetConfig().setEnabled(true).getJetEngineConfig().setCooperativeThreadCount(4);
 
         instance1 = createHazelcastInstance(config);
         createHazelcastInstance(config);

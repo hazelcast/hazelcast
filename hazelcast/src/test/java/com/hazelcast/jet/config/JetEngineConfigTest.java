@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class InstanceConfigTest {
+public class JetEngineConfigTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -38,56 +38,56 @@ public class InstanceConfigTest {
     @Test
     public void when_NegativeBackupCount_thenThrowsException() {
         // When
-        InstanceConfig instanceConfig = new InstanceConfig();
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
-        instanceConfig.setBackupCount(-1);
+        jetEngineConfig.setBackupCount(-1);
     }
 
     @Test
     public void when_TooBigBackupCount_thenThrowsException() {
         // When
-        InstanceConfig instanceConfig = new InstanceConfig();
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
-        instanceConfig.setBackupCount(10);
+        jetEngineConfig.setBackupCount(10);
     }
 
     @Test
     public void when_setBackupCount_thenReturnsBackupCount() {
         // When
-        InstanceConfig instanceConfig = new InstanceConfig();
-        instanceConfig.setBackupCount(3);
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
+        jetEngineConfig.setBackupCount(3);
 
         // Then
-        assertEquals(3, instanceConfig.getBackupCount());
+        assertEquals(3, jetEngineConfig.getBackupCount());
     }
 
     @Test
     public void when_setThreadCount_thenReturnsThreadCount() {
         // When
-        InstanceConfig instanceConfig = new InstanceConfig();
-        instanceConfig.setCooperativeThreadCount(5);
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
+        jetEngineConfig.setCooperativeThreadCount(5);
 
         // Then
-        assertEquals(5, instanceConfig.getCooperativeThreadCount());
+        assertEquals(5, jetEngineConfig.getCooperativeThreadCount());
     }
     @Test
     public void when_setFlowControlMs_thenReturnsFlowControlMs() {
         // When
-        InstanceConfig instanceConfig = new InstanceConfig();
-        instanceConfig.setFlowControlPeriodMs(500);
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
+        jetEngineConfig.setFlowControlPeriodMs(500);
 
         // Then
-        assertEquals(500, instanceConfig.getFlowControlPeriodMs());
+        assertEquals(500, jetEngineConfig.getFlowControlPeriodMs());
     }
 
     @Test
     public void when_scaleUpDelay_then_returnsDelay() {
         // When
-        InstanceConfig config = new InstanceConfig();
+        JetEngineConfig config = new JetEngineConfig();
         config.setScaleUpDelayMillis(123);
 
         // Then
@@ -97,7 +97,7 @@ public class InstanceConfigTest {
     @Test
     public void when_losslessRestartEnabled_then_returnsEnabled() {
         // When
-        InstanceConfig config = new InstanceConfig();
+        JetEngineConfig config = new JetEngineConfig();
         config.setLosslessRestartEnabled(true);
 
         // Then

@@ -38,7 +38,7 @@ import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -1662,16 +1662,16 @@ public class ConfigXmlGenerator {
 
     private static void jetConfig(XmlGenerator gen, Config config) {
         JetConfig jetConfig = config.getJetConfig();
-        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        JetEngineConfig jetEngineConfig = jetConfig.getJetEngineConfig();
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         gen.open("jet", "enabled", jetConfig.isEnabled(), "resource-upload-enabled", jetConfig.isResourceUploadEnabled())
-                .open("instance")
-                    .node("cooperative-thread-count", instanceConfig.getCooperativeThreadCount())
-                    .node("flow-control-period", instanceConfig.getFlowControlPeriodMs())
-                    .node("backup-count", instanceConfig.getBackupCount())
-                    .node("scale-up-delay-millis", instanceConfig.getScaleUpDelayMillis())
-                    .node("lossless-restart-enabled", instanceConfig.isLosslessRestartEnabled())
-                    .node("max-processor-accumulated-records", instanceConfig.getMaxProcessorAccumulatedRecords())
+                .open("jet-engine")
+                    .node("cooperative-thread-count", jetEngineConfig.getCooperativeThreadCount())
+                    .node("flow-control-period", jetEngineConfig.getFlowControlPeriodMs())
+                    .node("backup-count", jetEngineConfig.getBackupCount())
+                    .node("scale-up-delay-millis", jetEngineConfig.getScaleUpDelayMillis())
+                    .node("lossless-restart-enabled", jetEngineConfig.isLosslessRestartEnabled())
+                    .node("max-processor-accumulated-records", jetEngineConfig.getMaxProcessorAccumulatedRecords())
                 .close()
                 .open("edge-defaults")
                     .node("queue-size", edgeConfig.getQueueSize())

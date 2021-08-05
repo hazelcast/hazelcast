@@ -23,7 +23,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -89,7 +89,7 @@ public interface GeneralStageWithKey<T, K> {
      * latencies.groupingKey(Entry::getKey).rollingAggregate(summing())}.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param createFn function that returns the state object
@@ -131,7 +131,7 @@ public interface GeneralStageWithKey<T, K> {
      * Processor#isCooperative() cooperative}.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param createFn function that returns the state object
@@ -174,7 +174,7 @@ public interface GeneralStageWithKey<T, K> {
      * Processor#isCooperative() cooperative}.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param createFn  function that returns the state object
@@ -210,7 +210,7 @@ public interface GeneralStageWithKey<T, K> {
      * This stage is fault-tolerant and saves its state to the snapshot.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param aggrOp the aggregate operation to perform

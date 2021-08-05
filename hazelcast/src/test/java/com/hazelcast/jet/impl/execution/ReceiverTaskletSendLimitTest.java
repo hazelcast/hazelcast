@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
+import static com.hazelcast.jet.config.JetEngineConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.COMPRESSED_SEQ_UNIT_LOG2;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.INITIAL_RECEIVE_WINDOW_COMPRESSED;
 import static java.lang.Math.abs;

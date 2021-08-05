@@ -5412,7 +5412,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="instance" minOccurs="0">
+            <xs:element name="jet-engine" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         General configuration options pertaining to a Jet instance.
@@ -5555,7 +5555,7 @@
                                     the data one `receive window` further than the last acknowledged byte and
                                     the receive window is sized in proportion to the rate of processing at
                                     the receiver.
-                                    Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs)
+                                    Ack packets are sent in regular intervals (JetEngineConfig#setFlowControlPeriodMs)
                                     and the `receive window multiplier` sets the factor of the linear
                                     relationship between the amount of data processed within one such
                                     interval and the size of the receive window.

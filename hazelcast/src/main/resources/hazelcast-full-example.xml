@@ -3622,7 +3622,7 @@
 
         It has the following sub-elements:
 
-        * <instance>:
+        * <jet-engine>:
             General configuration options pertaining to a Jet instance.
 
             It has the following sub-elements:
@@ -3713,7 +3713,7 @@
                 the data one `receive window` further than the last acknowledged byte and
                 the receive window is sized in proportion to the rate of processing at
                 the receiver.
-                Ack packets are sent in regular intervals (InstanceConfig#setFlowControlPeriodMs)
+                Ack packets are sent in regular intervals (JetEngineConfig#setFlowControlPeriodMs)
                 and the `receive window multiplier` sets the factor of the linear
                 relationship between the amount of data processed within one such
                 interval and the size of the receive window.
@@ -3724,7 +3724,7 @@
                 This setting has no effect on a non-distributed edge.
     -->
     <jet enabled="true" resource-upload-enabled="true">
-        <instance>
+        <jet-engine>
             <!-- number of threads in the cooperative thread pool -->
             <cooperative-thread-count>8</cooperative-thread-count>
             <!-- period between flow control packets in milliseconds -->
@@ -3740,7 +3740,7 @@
                  Restart feature of Hazelcast IMDG which persists the data to disk. -->
             <lossless-restart-enabled>false</lossless-restart-enabled>
             <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
-        </instance>
+        </jet-engine>
         <edge-defaults>
             <!-- capacity of the concurrent SPSC queue between each two processors -->
             <queue-size>1024</queue-size>

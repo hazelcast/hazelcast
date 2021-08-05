@@ -25,7 +25,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -767,7 +767,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the stage to hash-join with this one
@@ -814,7 +814,7 @@ public interface GeneralStage<T> extends Stage {
      * before reaching {@code #mapToOutputFn}.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the stage to hash-join with this one
@@ -860,7 +860,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @param stage1        the first stage to join
@@ -911,7 +911,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * <p>
@@ -972,7 +972,7 @@ public interface GeneralStage<T> extends Stage {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @return the newly attached stage

@@ -23,7 +23,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -62,7 +62,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * key it will emit.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @return the newly attached stage
@@ -174,7 +174,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -212,7 +212,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * the input streams into the same accumulator.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -248,7 +248,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -302,7 +302,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * operation must combine the input streams into the same accumulator.
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -344,7 +344,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
@@ -414,7 +414,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      *}</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      */
     @Nonnull
@@ -475,7 +475,7 @@ public interface BatchStageWithKey<T, K> extends GeneralStageWithKey<T, K> {
      * }</pre>
      * <p>
      * This operation is subject to memory limits. See {@link
-     * InstanceConfig#setMaxProcessorAccumulatedRecords(long)} for more
+     * JetEngineConfig#setMaxProcessorAccumulatedRecords(long)} for more
      * information.
      */
     @Nonnull

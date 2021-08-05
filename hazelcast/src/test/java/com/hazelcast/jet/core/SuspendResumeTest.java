@@ -66,7 +66,7 @@ public class SuspendResumeTest extends JetTestSupport {
         TestProcessors.reset(NODE_COUNT * PARALLELISM);
         instances = new HazelcastInstance[NODE_COUNT];
         config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.getJetConfig().getJetEngineConfig().setCooperativeThreadCount(PARALLELISM);
         for (int i = 0; i < NODE_COUNT; i++) {
             instances[i] = createHazelcastInstance(config);
         }

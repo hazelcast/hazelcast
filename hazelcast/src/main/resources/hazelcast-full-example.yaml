@@ -3518,7 +3518,7 @@ hazelcast:
   #
   #    It has the following sub-elements:
   #
-  #  * "instance":
+  #  * "jet-engine":
   #      General configuration options pertaining to the Jet Service.
   #
   #        It has the following sub-elements:
@@ -3621,7 +3621,7 @@ hazelcast:
   jet:
     enabled: true
     resource-upload-enabled: true
-    instance:
+    jet-engine:
       # number of threads in the cooperative thread pool
       cooperative-thread-count: 8
       # period between flow control packets in milliseconds

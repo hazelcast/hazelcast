@@ -50,7 +50,7 @@ public class ScaleUpTest extends JetTestSupport {
 
         dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
         config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(scaleUpDelay);
+        config.getJetConfig().getJetEngineConfig().setScaleUpDelayMillis(scaleUpDelay);
         instances = createHazelcastInstances(config, NODE_COUNT);
     }
 

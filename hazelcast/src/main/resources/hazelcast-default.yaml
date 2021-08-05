@@ -801,7 +801,7 @@ hazelcast:
     enabled: false
     # Specifies whether uploading resources when submitting the job is enabled or not
     resource-upload-enabled: false
-    instance:
+    jet-engine:
       # period between flow control packets in milliseconds
       flow-control-period: 100
       # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job

@@ -30,10 +30,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * General configuration options pertaining to a Jet instance.
- *
- * @since Jet 3.0
  */
-public class InstanceConfig {
+public class JetEngineConfig {
 
     /**
      * The default value of the {@link #setFlowControlPeriodMs(int) flow-control period}.
@@ -68,7 +66,7 @@ public class InstanceConfig {
      * processors; each <em>blocking</em> processor is assigned its own thread.
      */
     @Nonnull
-    public InstanceConfig setCooperativeThreadCount(int size) {
+    public JetEngineConfig setCooperativeThreadCount(int size) {
         checkPositive(size, "cooperativeThreadCount should be a positive number");
         this.cooperativeThreadCount = size;
         return this;
@@ -89,7 +87,7 @@ public class InstanceConfig {
      * (in milliseconds) of the interval between flow-control ("ack") packets.
      */
     @Nonnull
-    public InstanceConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
+    public JetEngineConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
         checkPositive(flowControlPeriodMs, "flowControlPeriodMs should be a positive number");
         this.flowControlPeriodMs = flowControlPeriodMs;
         return this;
@@ -116,7 +114,7 @@ public class InstanceConfig {
      * and continue executing the job on the remaining members without loss.
      */
     @Nonnull
-    public InstanceConfig setBackupCount(int newBackupCount) {
+    public JetEngineConfig setBackupCount(int newBackupCount) {
         checkBackupCount(newBackupCount, 0);
         this.backupCount = newBackupCount;
         return this;
@@ -139,7 +137,7 @@ public class InstanceConfig {
      * @param millis the delay, in milliseconds
      * @return this instance for fluent API
      */
-    public InstanceConfig setScaleUpDelayMillis(long millis) {
+    public JetEngineConfig setScaleUpDelayMillis(long millis) {
         checkNotNegative(millis, "The delay must be >=0");
         this.scaleUpDelayMillis = millis;
         return this;
@@ -169,7 +167,7 @@ public class InstanceConfig {
      * If enabled, you have to also configure Hot Restart:
      * <pre>{@code
      *    JetConfig jetConfig = new JetConfig();
-     *    jetConfig.getInstanceConfig().setLosslessRestartEnabled(true);
+     *    jetConfig.getJetEngineConfig().setLosslessRestartEnabled(true);
      *    jetConfig.getHazelcastConfig().getHotRestartPersistenceConfig()
      *        .setEnabled(true)
      *        .setBaseDir(new File("/mnt/hot-restart"))
@@ -183,7 +181,7 @@ public class InstanceConfig {
      * Hazelcast Jet, the member will fail to start, you need Jet Enterprise to
      * run it and obtain a license from Hazelcast.
      */
-    public InstanceConfig setLosslessRestartEnabled(boolean enabled) {
+    public JetEngineConfig setLosslessRestartEnabled(boolean enabled) {
         this.losslessRestartEnabled = enabled;
         return this;
     }
@@ -243,7 +241,7 @@ public class InstanceConfig {
             return false;
         }
 
-        InstanceConfig that = (InstanceConfig) o;
+        JetEngineConfig that = (JetEngineConfig) o;
 
         if (cooperativeThreadCount != that.cooperativeThreadCount) {
             return false;

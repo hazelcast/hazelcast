@@ -37,14 +37,14 @@ public class JetConfigTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void when_setInstanceConfig_thenReturnsInstanceConfig() {
+    public void when_setJetEngineConfig_thenReturnsJetEngineConfig() {
         // When
         JetConfig config = new JetConfig();
-        InstanceConfig instanceConfig = new InstanceConfig();
-        config.setInstanceConfig(instanceConfig);
+        JetEngineConfig jetEngineConfig = new JetEngineConfig();
+        config.setJetEngineConfig(jetEngineConfig);
 
         // Then
-        assertEquals(instanceConfig, config.getInstanceConfig());
+        assertEquals(jetEngineConfig, config.getJetEngineConfig());
     }
 
     @Test

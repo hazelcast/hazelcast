@@ -96,7 +96,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .build();
 
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
+        config.getJetConfig().getJetEngineConfig().setScaleUpDelayMillis(1000); // restart sooner after member add
         HazelcastInstance hz = createHazelcastInstance(config);
         HazelcastInstance possibleSecondNode = secondMemberSupplier.get();
 

@@ -416,7 +416,7 @@ public class MetricsTest extends JetTestSupport {
 
         String instanceName = instance.getName();
         long sum = 0;
-        int availableProcessors = config.getJetConfig().getInstanceConfig().getCooperativeThreadCount();
+        int availableProcessors = config.getJetConfig().getJetEngineConfig().getCooperativeThreadCount();
         for (int i = 0; i < availableProcessors; i++) {
             JmxMetricsChecker jmxMetricsChecker = new JmxMetricsChecker(instanceName, job,
                     "vertex=fused(filter, map)", "procType=TransformP", "proc=" + i, "user=true");

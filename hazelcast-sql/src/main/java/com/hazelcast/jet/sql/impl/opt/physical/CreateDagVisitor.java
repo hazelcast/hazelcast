@@ -386,7 +386,7 @@ public class CreateDagVisitor {
 
         if (preserveCollation) {
             int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig()
-                    .getInstanceConfig().getCooperativeThreadCount();
+                    .getJetEngineConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
             // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
             // vertices indeed have the same LP

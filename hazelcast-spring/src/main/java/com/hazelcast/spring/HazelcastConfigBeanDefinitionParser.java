@@ -131,7 +131,7 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetEngineConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spring.config.ConfigFactory;
@@ -2193,11 +2193,11 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, jetConfigBuilder);
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("instance".equals(nodeName)) {
-                    BeanDefinitionBuilder instanceConfigBuilder = createBeanBuilder(InstanceConfig.class);
-                    fillValues(child, instanceConfigBuilder);
-                    jetConfigBuilder.addPropertyValue("instanceConfig",
-                            instanceConfigBuilder.getBeanDefinition());
+                if ("jet-engine".equals(nodeName)) {
+                    BeanDefinitionBuilder jetEngineConfigBuilder = createBeanBuilder(JetEngineConfig.class);
+                    fillValues(child, jetEngineConfigBuilder);
+                    jetConfigBuilder.addPropertyValue("jetEngineConfig",
+                            jetEngineConfigBuilder.getBeanDefinition());
                 } else if ("edge-defaults".equals(nodeName)) {
                     BeanDefinitionBuilder edgeConfigBuilder = createBeanBuilder(EdgeConfig.class);
                     fillValues(child, edgeConfigBuilder);
