@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
@@ -61,4 +62,9 @@ public interface NodeServiceProvider extends ClockProvider, LocalMemberIdProvide
      * @return Logger.
      */
     ILogger getLogger(Class<?> clazz);
+
+    /**
+     * Adds a lifecycle listener.
+     */
+    void addLifecycleListener(LifecycleListener listener);
 }

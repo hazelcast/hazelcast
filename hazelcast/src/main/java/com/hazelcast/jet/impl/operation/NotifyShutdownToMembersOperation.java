@@ -64,10 +64,10 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
         // add shutting-down members
         for (UUID uuid : shuttingDownMemberIds) {
             futures.add(getJobCoordinationService().addShuttingDownMember(uuid));
+            // handle SQL client cursors
+            futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
+                    .onMemberGracefulShutdown(uuid));
         }
-        // handle SQL client cursors
-        futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
-                .completionFutureForCurrentCursors());
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 

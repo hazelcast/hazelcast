@@ -45,6 +45,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.LoggingUtil;
+import com.hazelcast.jet.impl.util.NamedCompletableFuture;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -300,7 +301,7 @@ public class MasterJobContext {
             dag.iterator().forEachRemaining(vertices::add);
             mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
-            executionCompletionFuture = new CompletableFuture<>();
+            executionCompletionFuture = new NamedCompletableFuture<>("job " + idToString(mc.jobId()));
             return tuple2(dag, classLoader);
         } finally {
             mc.unlock();
@@ -795,12 +796,13 @@ public class MasterJobContext {
      * initiate terminal snapshot and when it's done, it will complete the
      * returned future.
      *
-     * @return a future to wait for, which may be already completed
+     * @return a future to wait for or {@code null} if the job isn't a
+     * participant
      */
-    @Nonnull
+    @Nullable
     CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
         if (!hasParticipant(uuid)) {
-            return completedFuture(null);
+            return null;
         }
         if (mc.jobConfig().isPreventShutdown() && mc.jobConfig().getProcessingGuarantee() == NONE) {
             mc.lock();

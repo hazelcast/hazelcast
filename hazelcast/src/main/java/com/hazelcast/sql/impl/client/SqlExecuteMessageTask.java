@@ -44,6 +44,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     @Override
     protected Object call() throws Exception {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
+        nodeEngine.getSqlService().getInternalService().getClientStateRegistry()
+                .register(endpoint.getUuid(), parameters.queryId);
 
         SqlStatement query = new SqlStatement(parameters.sql);
 
@@ -75,8 +77,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-            SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
-                endpoint.getUuid(),
+            SqlPage page = sqlService.getInternalService().getClientStateRegistry().initResultAndFetch(
                 result,
                 parameters.cursorBufferSize,
                 serializationService

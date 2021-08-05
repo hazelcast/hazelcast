@@ -250,17 +250,26 @@ NotifyShutdownToMasterOperation to the master
 all future joining members.
   
 - a member, after receiving the notify-to-master or notify-to-members
-operation, adds the member to the `shuttingDownMembers` collection
+operation, adds the member to the `shuttingDownMembers` collection. This
+ensures that no further normal jobs are started, and that further light
+jobs will exclude the shutting-down member from participants.
   
 - after adding to the collection, the member calls
 `onParticipantGracefulShutdown()` for all jobs it coordinates. This
 method is present in both `MasterJobContext` and `LightMasterContext`.
-It starts the terminal snapshot for fault-tolerant jobs, terminates
-executions for jobs without prevent-shutdown flag and does nothing to
-jobs with the prevent-shutdown flag. It also ignores the jobs where the
-shutting-down member isn't a participant (those can be normal jobs
-started before that member joined, or light jobs started after the
+The method starts the terminal snapshot for fault-tolerant jobs,
+terminates executions for jobs without prevent-shutdown flag and does
+nothing to jobs with the prevent-shutdown flag. It also ignores the jobs
+where the shutting-down member isn't a participant (those can be normal
+jobs started before that member joined, or light jobs started after the
 member entered the shutdown process).
+
+- the member responds to the notify-to-members operation after:
+
+  - all jobs that have the shutting-down members as a participant
+  actually terminate
+
+  - all active SQL queries complete 
 
 ## Retrying of client operations
   
@@ -282,3 +291,39 @@ https://github.com/hazelcast/hazelcast/issues/19171.
 ### Jobs/SQL submitted locally
 
 If a light job or SQL query is submitted locally on a shutting-down
+
+
+
+THOUGHT DUMP
+
+- when a client submits a query (any, including DDL, DML), we create a
+stub entry in client state registry
+  
+- a shutdown can request graceful shutdown through the registry. The
+request returns a future. The shutdown procedure waits for all active
+futures
+
+- the member parses the query. If error or update count, complete the
+stub with error. If a rowset, add info to the stub, along with the list
+of participants.
+  
+- if the stub receives a shutdown request, it will return a new future.
+That future will be completed:
+  
+  - in case of error or update: immediately when sending the response to
+  the client
+
+  - in case of rowset: it will call onParticipantShutdown on the
+  associated jet job, when that future completes
+    
+- a stub can receive multiple shutdown requests while waiting for the
+result information - it has to store them and do the action for each of
+them. Each of the requests can have a different memberUuid
+  
+- there is a race that we complete the future when sending the response
+to the client, but the member might shut down before the client actually
+receives the response. For normal queries (which can take the longest to
+complete), we implement a mandatory `close` operation. There will be a
+flag sent to the client whether `close` is required after the last page
+or not. For queries having update count or an error, we'll add a grace
+period of 2 seconds before the member shuts down.

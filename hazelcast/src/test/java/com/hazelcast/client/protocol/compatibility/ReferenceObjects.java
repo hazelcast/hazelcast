@@ -69,6 +69,7 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
+import com.hazelcast.sql.impl.client.SqlPage.PageState;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
 
@@ -822,5 +823,5 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID);
-    public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), PageState.LAST_CLOSED);
 }

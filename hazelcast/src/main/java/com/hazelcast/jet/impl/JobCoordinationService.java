@@ -768,7 +768,10 @@ public class JobCoordinationService {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         // handle normal jobs
         for (MasterContext mc : masterContexts.values()) {
-            futures.add(mc.jobContext().onParticipantGracefulShutdown(uuid));
+            CompletableFuture<Void> fut = mc.jobContext().onParticipantGracefulShutdown(uuid);
+            if (fut != null) {
+                futures.add(fut);
+            }
         }
         // handle light jobs
         for (Entry<Long, Object> en : lightMasterContexts.entrySet()) {
@@ -779,7 +782,8 @@ public class JobCoordinationService {
                             if (mc == null) {
                                 return completedFuture(null);
                             }
-                            return mc.onParticipantGracefulShutdown(uuid);
+                            CompletableFuture<Void> fut = mc.onParticipantGracefulShutdown(uuid);
+                            return fut != null ? fut : completedFuture(null);
                         });
             } else {
                 f = ((LightMasterContext) en.getValue()).onParticipantGracefulShutdown(uuid);
@@ -805,6 +809,15 @@ public class JobCoordinationService {
     // only for testing
     public MasterContext getMasterContext(long jobId) {
         return masterContexts.get(jobId);
+    }
+
+    // not only for testing
+    public LightMasterContext getLightMasterContext(long jobId) {
+        Object lmc = lightMasterContexts.get(jobId);
+        if (lmc != null && !(lmc instanceof LightMasterContext)) {
+            throw new RuntimeException("context not yet initialized");
+        }
+        return (LightMasterContext) lmc;
     }
 
     JetServiceBackend getJetServiceBackend() {

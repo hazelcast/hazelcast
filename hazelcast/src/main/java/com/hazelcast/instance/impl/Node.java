@@ -495,6 +495,12 @@ public class Node {
             waitIfAlreadyShuttingDown();
             return;
         }
+        try {
+            // TODO [viliam] create a parameter for this
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
         if (nodeExtension != null) {
             nodeExtension.shutdown();
         }

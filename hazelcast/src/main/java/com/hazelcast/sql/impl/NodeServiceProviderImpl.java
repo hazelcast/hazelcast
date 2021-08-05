@@ -20,6 +20,7 @@ import com.hazelcast.client.Client;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.logging.ILogger;
@@ -99,5 +100,10 @@ public class NodeServiceProviderImpl implements NodeServiceProvider {
     @Override
     public ILogger getLogger(Class<?> clazz) {
         return nodeEngine.getLogger(clazz);
+    }
+
+    @Override
+    public void addLifecycleListener(LifecycleListener listener) {
+        nodeEngine.getNode().hazelcastInstance.getLifecycleService().addLifecycleListener(listener);
     }
 }

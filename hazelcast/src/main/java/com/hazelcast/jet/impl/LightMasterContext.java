@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
+import com.hazelcast.jet.impl.util.NamedCompletableFuture;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -37,7 +38,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.version.Version;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.util.Collection;
@@ -62,7 +62,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class LightMasterContext {
 
@@ -83,7 +82,7 @@ public class LightMasterContext {
 
     private final Map<MemberInfo, ExecutionPlan> executionPlanMap;
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
-    private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
+    private final CompletableFuture<Void> jobCompletionFuture;
     private final Set<Vertex> vertices;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -95,6 +94,7 @@ public class LightMasterContext {
         this.jobId = jobId;
         this.config = config;
 
+        jobCompletionFuture = new NamedCompletableFuture<>("light job " + idToString(jobId));
         logger = nodeEngine.getLogger(LightMasterContext.class);
         jobIdString = idToString(jobId);
 
@@ -102,17 +102,22 @@ public class LightMasterContext {
         MembersView membersView = Util.getMembersView(nodeEngine);
         Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
-                .filter(m -> m.getVersion().asVersion().equals(coordinatorVersion)
-                        && !m.isLiteMember()
-                        && !coordinationService.isMemberShuttingDown(m.getUuid()))
+                .filter(m -> {
+                    if (!m.getVersion().asVersion().equals(coordinatorVersion)) {
+                        logFine(logger, "Light job %s will not use member %s: its version is different from coordinator's",
+                                idToString(jobId), m.getAddress());
+                        return false;
+                    }
+                    if (coordinationService.isMemberShuttingDown(m.getUuid())) {
+                        logFine(logger, "Light job %s will not use member %s: it's shutting down",
+                                idToString(jobId), m.getAddress());
+                        return false;
+                    }
+                    return !m.isLiteMember();
+                })
                 .collect(Collectors.toList());
         if (members.isEmpty()) {
             throw new JetException("No data member with version equal to the coordinator version found");
-        }
-        if (members.size() < membersView.size()) {
-            // TODO [viliam] this needs updating, it can also happen that members are shutting down
-            logFine(logger, "Light job %s will run on a subset of members: %d out of %d members with version %s",
-                    idToString(jobId), members.size(), membersView.size(), coordinatorVersion);
         }
         if (logger.isFineEnabled()) {
             String dotRepresentation = dag.toDotString();
@@ -201,12 +206,13 @@ public class LightMasterContext {
      * initiate terminal snapshot and when it's done, it will complete the
      * returned future.
      *
-     * @return a future to wait for, which may be already completed
+     * @return a future to wait for or {@code null} if the job isn't a
+     * participant
      */
-    @Nonnull
-    CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
+    @Nullable
+    public CompletableFuture<Void> onParticipantGracefulShutdown(UUID uuid) {
         if (!hasParticipant(uuid)) {
-            return completedFuture(null);
+            return null;
         }
         if (!config.isPreventShutdown()) {
             requestTermination();

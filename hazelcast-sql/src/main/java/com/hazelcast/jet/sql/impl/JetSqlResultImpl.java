@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.impl.LightMasterContext;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
@@ -30,25 +31,30 @@ import com.hazelcast.sql.impl.row.Row;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-class JetSqlResultImpl extends AbstractSqlResult {
+public class JetSqlResultImpl extends AbstractSqlResult {
 
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
+    private final LightMasterContext jobMasterContext;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
 
     private ResultIterator<SqlRow> iterator;
 
     JetSqlResultImpl(
-            QueryId queryId,
-            QueryResultProducer rootResultConsumer,
-            SqlRowMetadata rowMetadata,
+            @Nonnull QueryId queryId,
+            @Nonnull QueryResultProducer rootResultConsumer,
+            @Nullable LightMasterContext jobMasterContext,
+            @Nonnull SqlRowMetadata rowMetadata,
             boolean isInfiniteRows
     ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
+        this.jobMasterContext = jobMasterContext;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
     }
@@ -90,6 +96,15 @@ class JetSqlResultImpl extends AbstractSqlResult {
             exception = QueryException.cancelledByUser();
         }
         rootResultConsumer.onError(exception);
+    }
+
+    @Override @Nullable
+    public CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId) {
+        if (jobMasterContext != null) {
+            return jobMasterContext.onParticipantGracefulShutdown(memberId);
+        } else {
+            return null;
+        }
     }
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {

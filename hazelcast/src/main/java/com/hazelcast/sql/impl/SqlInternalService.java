@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
@@ -47,10 +48,8 @@ public class SqlInternalService {
     /** Memory assigned to a single edge mailbox. Will be reworked to dynamic mode when memory manager is implemented. */
     private static final long MEMORY_PER_EDGE_MAILBOX = 512 * 1024;
 
-    /** Default flow control factory. */
     private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
 
-    /** Node service provider. */
     private final NodeServiceProvider nodeServiceProvider;
 
     /** Registry for running queries. */
@@ -59,10 +58,8 @@ public class SqlInternalService {
     /** Registry for client queries. */
     private final QueryClientStateRegistry clientStateRegistry;
 
-    /** Operation manager. */
     private final QueryOperationHandlerImpl operationHandler;
 
-    /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(
@@ -101,6 +98,12 @@ public class SqlInternalService {
             planCacheChecker,
             stateCheckFrequency
         );
+
+        nodeServiceProvider.addLifecycleListener(event -> {
+            if (event.getState() == LifecycleState.SHUTTING_DOWN) {
+                clientStateRegistry.markShuttingDown();
+            }
+        });
     }
 
     public void start() {

@@ -24,6 +24,7 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.LightMasterContext;
 import com.hazelcast.jet.impl.MemberShuttingDownException;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
@@ -80,6 +81,7 @@ public class JetPlanExecutor {
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
     private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
+    private final JetServiceBackend jetService;
 
     public JetPlanExecutor(
             MappingCatalog catalog,
@@ -89,6 +91,7 @@ public class JetPlanExecutor {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
         this.resultConsumerRegistry = resultConsumerRegistry;
+        jetService = getNodeEngine(hazelcastInstance).getService(JetServiceBackend.SERVICE_NAME);
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -199,6 +202,7 @@ public class JetPlanExecutor {
         return new JetSqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
+                null,
                 metadata,
                 false);
     }
@@ -225,8 +229,10 @@ public class JetPlanExecutor {
         }
         Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
+        LightMasterContext lmc;
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
+            lmc = jetService.getJobCoordinationService().getLightMasterContext(job.getId());
             job.getFuture().whenComplete((r, t) -> {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
@@ -239,7 +245,7 @@ public class JetPlanExecutor {
             throw e;
         }
 
-        return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
+        return new JetSqlResultImpl(queryId, queryResultProducer, lmc, plan.getRowMetadata(), plan.isStreaming());
     }
 
     SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
@@ -266,7 +272,7 @@ public class JetPlanExecutor {
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
         Object[] row = await(future, timeout);
-        return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), plan.rowMetadata(), false);
+        return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), null, plan.rowMetadata(), false);
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {

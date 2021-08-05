@@ -58,13 +58,13 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
     protected CompletableFuture<Void> doRun() {
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
-        // handle jobs locally
+        // handle jobs locally. This call also ensures that all members joining after this
+        // call get the shuttingDownMembers list when they join.
         futures.add(getJobCoordinationService().addShuttingDownMember(getCallerUuid()));
 
-        // Handle SQL client cursors locally. This call also ensures that all members joining after this
-            // call get the shuttingDownMembers list when they join.
+        // Handle SQL client cursors locally.
         futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
-                .completionFutureForCurrentCursors());
+                .onMemberGracefulShutdown(getCallerUuid()));
 
         // forward to the rest of the cluster
         UUID localMemberUuid = getNodeEngine().getLocalMember().getUuid();

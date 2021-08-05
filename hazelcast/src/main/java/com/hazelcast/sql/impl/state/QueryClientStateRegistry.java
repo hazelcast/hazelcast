@@ -20,7 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -30,9 +29,11 @@ import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.sql.impl.client.SqlPage.PageState;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -53,44 +54,39 @@ public class QueryClientStateRegistry {
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
     private volatile long closedCursorCleanupTimeoutNs = DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS;
 
-    public SqlPage registerAndFetch(
-        UUID clientId,
+    private volatile boolean isShuttingDown;
+
+    public void register(UUID clientId, QueryId queryId) {
+        QueryClientState state = new QueryClientState(clientId, queryId, false);
+        if (clientCursors.putIfAbsent(queryId, state) != null) {
+            throw new IllegalStateException("Duplicate query ID");
+        }
+    }
+
+    public SqlPage initResultAndFetch(
         AbstractSqlResult result,
         int cursorBufferSize,
         InternalSerializationService serializationService
     ) {
         QueryId queryId = result.getQueryId();
-
-        QueryClientState clientCursor = new QueryClientState(clientId, queryId, result, false);
-
+        QueryClientState clientCursor = clientCursors.get(queryId);
         boolean delete = false;
-
         try {
-            // Register the cursor.
-            QueryClientState previousClientCursor = clientCursors.putIfAbsent(queryId, clientCursor);
-
-            // Check if the cursor is already closed.
-            if (previousClientCursor != null) {
-                assert previousClientCursor.isClosed();
-
+            // Initialize the result.
+            if (!clientCursor.initResult(result)) {
+                assert clientCursor.isClosed();
                 delete = true;
-
                 QueryException error = QueryException.cancelledByUser();
-
                 result.close(error);
-
                 throw error;
             }
 
             // Fetch the next page.
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, result.isInfiniteRows());
-
             delete = page.getPageState() == PageState.LAST_CLOSED;
-
             return page;
         } catch (Exception e) {
             delete = true;
-
             throw e;
         } finally {
             if (delete) {
@@ -106,7 +102,7 @@ public class QueryClientStateRegistry {
     ) {
         QueryClientState clientCursor = clientCursors.get(queryId);
 
-        if (clientCursor == null) {
+        if (clientCursor == null || clientCursor.isClosed()) {
             throw QueryException.error("Query cursor is not found (closed?): " + queryId);
         }
 
@@ -167,7 +163,7 @@ public class QueryClientStateRegistry {
         }
     }
 
-    private static PageState fetchPage(
+    private PageState fetchPage(
         ResultIterator<SqlRow> iterator,
         List<SqlRow> rows,
         int cursorBufferSize
@@ -191,20 +187,19 @@ public class QueryClientStateRegistry {
         return PageState.NOT_LAST;
     }
 
-    private static PageState doneState() {
-        return PageState.LAST_NOT_CLOSED; // TODO [viliam] fix this
+    private PageState doneState() {
+        return isShuttingDown ? PageState.LAST_NOT_CLOSED : PageState.LAST_CLOSED;
     }
 
     public void close(UUID clientId, QueryId queryId) {
         QueryClientState clientCursor =
-            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, null, true));
+            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, true));
 
         if (clientCursor.isClosed()) {
-            // Received the "close" request before the "execute" request, do nothing.
+            // Duplicate "close" request, do nothing.
             return;
         }
 
-        // Received the "close" request after the "execute" request, close.
         close0(clientCursor);
     }
 
@@ -217,12 +212,7 @@ public class QueryClientStateRegistry {
     }
 
     private void close0(QueryClientState clientCursor) {
-        SqlResult result = clientCursor.getSqlResult();
-
-        if (result != null) {
-            result.close();
-        }
-
+        clientCursor.close(null);
         deleteClientCursor(clientCursor.getQueryId());
     }
 
@@ -250,27 +240,20 @@ public class QueryClientStateRegistry {
 
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
-
-            AbstractSqlResult result = victim.getSqlResult();
-
-            if (result != null) {
-                result.close(error);
-            }
-
+            victim.close(error);
             deleteClientCursor(victim.getQueryId());
         }
     }
 
     private void deleteClientCursor(QueryId queryId) {
-        QueryClientState cursor = clientCursors.remove(queryId);
-        if (cursor != null) {
-            cursor.getCompletionFuture().complete(null);
-        }
+        clientCursors.remove(queryId);
     }
 
-    public CompletableFuture<Void> completionFutureForCurrentCursors() {
+    @Nonnull
+    public CompletableFuture<Void> onMemberGracefulShutdown(UUID memberId) {
         return CompletableFuture.allOf(clientCursors.values().stream()
-                .map(QueryClientState::getCompletionFuture)
+                .map(cursor -> cursor.onGracefulParticipantShutdown(memberId))
+                .filter(Objects::nonNull)
                 .toArray(CompletableFuture[]::new));
     }
 
@@ -283,5 +266,9 @@ public class QueryClientStateRegistry {
      */
     public void setClosedCursorCleanupTimeoutSeconds(long closedCursorCleanupTimeout) {
         closedCursorCleanupTimeoutNs = NANOSECONDS.convert(closedCursorCleanupTimeout, SECONDS);
+    }
+
+    public void markShuttingDown() {
+        isShuttingDown = true;
     }
 }

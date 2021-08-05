@@ -21,6 +21,8 @@ import com.hazelcast.sql.SqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractSqlResult implements SqlResult {
 
@@ -48,4 +50,6 @@ public abstract class AbstractSqlResult implements SqlResult {
     public void close() {
         close(null);
     }
+
+    public abstract CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId);
 }
