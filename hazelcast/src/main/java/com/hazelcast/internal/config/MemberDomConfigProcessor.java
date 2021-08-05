@@ -29,6 +29,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConsistencyCheckStrategy;
 import com.hazelcast.config.CredentialsFactoryConfig;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -77,7 +78,6 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
-import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.PersistenceClusterDataRecoveryPolicy;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.PredicateConfig;
@@ -1845,6 +1845,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
     private NearCacheConfig handleNearCacheConfig(Node node, NearCacheConfig existingNearCacheConfig) {
         String name = getAttribute(node, "name");
+        name = name == null ? NearCacheConfig.DEFAULT_NAME : name;
         NearCacheConfig nearCacheConfig = existingNearCacheConfig != null
                 ? existingNearCacheConfig
                 : new NearCacheConfig(name);

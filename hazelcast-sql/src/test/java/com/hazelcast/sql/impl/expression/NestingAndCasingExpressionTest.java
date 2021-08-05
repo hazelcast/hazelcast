@@ -345,6 +345,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_CONCAT_WS() {
+        check(sql("CONCAT_WS(?, ?, ?) || CONCAT_WS(?, ?, ?)"), SEPARATOR_VAL, "1", "2", SEPARATOR_VAL, "3", "4");
+    }
+
+    @Test
     public void test_LIKE() {
         check(sql("(? LIKE ?) || (? LIKE ?)"), "a", "a", "b", "b");
     }

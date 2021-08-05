@@ -59,10 +59,10 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
-import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
-import static com.hazelcast.jet.core.JetProperties.JET_IDLE_COOPERATIVE_MIN_MICROSECONDS;
-import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS;
-import static com.hazelcast.jet.core.JetProperties.JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.JET_IDLE_COOPERATIVE_MAX_MICROSECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.JET_IDLE_COOPERATIVE_MIN_MICROSECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.JET_IDLE_NONCOOPERATIVE_MAX_MICROSECONDS;
+import static com.hazelcast.spi.properties.ClusterProperty.JET_IDLE_NONCOOPERATIVE_MIN_MICROSECONDS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
