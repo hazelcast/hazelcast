@@ -195,7 +195,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
                 MAP_NAME,
                 mapTableFields,
                 getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-                false,
                 1
         );
         Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
