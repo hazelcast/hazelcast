@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.internal.util.ByteArrayProcessor;
+import com.hazelcast.internal.util.OsHelper;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -133,9 +134,12 @@ public final class MulticastService implements Runnable {
         multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
         try {
             boolean loopbackBind = bindAddress.getInetAddress().isLoopbackAddress();
-            // setting loopbackmode is just a hint - and the argument means "disable"!
-            // to check the real value value we call getLoopbackMode() (and again - return value means "disabled")
-            multicastSocket.setLoopbackMode(!multicastConfig.isLoopbackModeEnabled());
+            Boolean loopbackModeEnabled = multicastConfig.getLoopbackModeEnabled();
+            if (loopbackModeEnabled != null) {
+                // setting loopbackmode is just a hint - and the argument means "disable"!
+                // to check the real value value we call getLoopbackMode() (and again - return value means "disabled")
+                multicastSocket.setLoopbackMode(!loopbackModeEnabled);
+            }
             // If LoopBack mode is not enabled (i.e. getLoopbackMode return true) and bind address is a loopback one,
             // then print a warning
             if (loopbackBind && multicastSocket.getLoopbackMode()) {
@@ -148,7 +152,8 @@ public final class MulticastService implements Runnable {
             // warning: before modifying lines below, take a look at these links:
             // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
             // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
-            boolean callSetInterface = loopbackBind || !multicastConfig.isLoopbackModeEnabled();
+            // https://github.com/hazelcast/hazelcast/pull/19251#issuecomment-891375270
+            boolean callSetInterface = OsHelper.isMac() || !loopbackBind;
             String propSetInterface = hzProperties.getString(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE);
             if (propSetInterface != null) {
                 callSetInterface = Boolean.parseBoolean(propSetInterface);
