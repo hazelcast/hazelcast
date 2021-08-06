@@ -499,25 +499,33 @@ public final class Util {
     public static void doWithClassLoader(ClassLoader cl, RunnableEx action) {
         Thread currentThread = Thread.currentThread();
         ClassLoader previousCl = currentThread.getContextClassLoader();
-        currentThread.setContextClassLoader(cl);
+        if (cl != null) {
+            currentThread.setContextClassLoader(cl);
+        }
         try {
             action.run();
         } finally {
-            currentThread.setContextClassLoader(previousCl);
+            if (cl != null) {
+                currentThread.setContextClassLoader(previousCl);
+            }
         }
     }
 
     public static <T> T doWithClassLoader(ClassLoader cl, Callable<T> callable) {
         Thread currentThread = Thread.currentThread();
         ClassLoader previousCl = currentThread.getContextClassLoader();
-        currentThread.setContextClassLoader(cl);
+        if (cl != null) {
+            currentThread.setContextClassLoader(cl);
+        }
         try {
             return callable.call();
         } catch (Exception e) {
             throw new RuntimeException(e);
 //            throw rethrow(e);
         } finally {
-            currentThread.setContextClassLoader(previousCl);
+            if (cl != null) {
+                currentThread.setContextClassLoader(previousCl);
+            }
         }
     }
 

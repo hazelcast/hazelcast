@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.partition.IPartitionService;
@@ -174,7 +173,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initDag(jobSerializationService);
 
         this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
-        HazelcastInstance hazelcastInstance = nodeEngine.getHazelcastInstance();
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
             memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));

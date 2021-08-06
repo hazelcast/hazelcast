@@ -133,14 +133,13 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     protected static HazelcastTable partitionedTable(String name, List<TableField> fields, long rowCount) {
-        return partitionedTable(name, fields, emptyList(), false, rowCount);
+        return partitionedTable(name, fields, emptyList(), rowCount);
     }
 
     protected static HazelcastTable partitionedTable(
             String name,
             List<TableField> fields,
             List<MapTableIndex> indexes,
-            boolean isHd,
             long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
@@ -154,7 +153,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 null,
                 null,
                 indexes,
-                isHd
+                false
         );
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
