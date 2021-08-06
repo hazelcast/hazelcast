@@ -40,8 +40,8 @@ public enum MetricTarget {
     DIAGNOSTICS,
     JET_JOB;
 
-    private static final MetricTarget[] VALUES = values();
 
+    public static final MetricTarget[] VALUES = values();
     public static final List<MetricTarget> ALL_TARGETS = unmodifiableList(asList(VALUES));
     public static final Collection<MetricTarget> NONE_OF = EnumSet.noneOf(MetricTarget.class);
     public static final Collection<MetricTarget> ALL_TARGETS_BUT_DIAGNOSTICS;
