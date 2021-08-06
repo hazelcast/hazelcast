@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -107,6 +108,8 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
                 fillGlobalSerializer(child, serializationConfig);
             } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
+            } else if (matches("compact-serialization", name)) {
+                handleCompactSerialization(child, serializationConfig);
             }
         }
         return serializationConfig;
@@ -115,6 +118,30 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
     @Override
     protected String parseCustomLoadBalancerClassName(Node node) {
         return getAttribute(node, "class-name");
+    }
+
+    @Override
+    protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("enabled", name)) {
+                boolean enabled = getBooleanValue(getTextContent(child));
+                compactSerializationConfig.setEnabled(enabled);
+            } else if (matches("registered-classes", name)) {
+                fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    @Override
+    protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String className = getAttribute(child, "class");
+            String typeName = getAttribute(child, "type-name");
+            String serializerClassName = getAttribute(child, "serializer");
+            registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+        }
     }
 
     private void fillGlobalSerializer(Node child, SerializationConfig serializationConfig) {
