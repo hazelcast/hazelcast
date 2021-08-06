@@ -117,6 +117,7 @@ public class MetricsMBean implements DynamicMBean {
     public enum Type {
         LONG("long"),
         DOUBLE("double");
+        private static final Type[] VALUES = values();
 
         private final String type;
 
@@ -125,7 +126,7 @@ public class MetricsMBean implements DynamicMBean {
         }
 
         static Type of(String strType) {
-            for (Type value : values()) {
+            for (Type value : VALUES) {
                 if (strType.equals(value.type)) {
                     return value;
                 }
