@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -23,6 +24,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.Plan;
+import org.junit.After;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.junit.Assert.assertEquals;
 
 public abstract class PlanCacheTestSupport extends SqlTestSupport {
@@ -50,6 +53,11 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
         PART_MAP_1 = Collections.singletonMap(memberId, partitions1);
         PART_MAP_2 = Collections.singletonMap(memberId, partitions2);
+    }
+
+    @After
+    public void after() {
+        getPlanCache(instance()).getPlans().clear();
     }
 
     public static PlanKey createKey(String sql) {
@@ -87,6 +95,10 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
     public static PlanObjectKey createObjectId(int value) {
         return new TestPlanObjectKey(value);
+    }
+
+    protected PlanCache getPlanCache(HazelcastInstance instance) {
+        return nodeEngine(instance).getSqlService().getPlanCache();
     }
 
     @SuppressWarnings("BusyWait")

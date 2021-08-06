@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
@@ -31,7 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
@@ -43,7 +41,7 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        initialize(1, smallInstanceConfig());
+        initialize(2, smallInstanceConfig());
     }
 
     @Before
@@ -126,9 +124,5 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
             SqlPlan actualPlan = planCache.get(planCache.getPlans().keys().nextElement());
             assertNotSame(prevPlan, actualPlan);
         });
-    }
-
-    private PlanCache getPlanCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
     }
 }
