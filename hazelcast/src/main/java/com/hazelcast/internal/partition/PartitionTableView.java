@@ -74,10 +74,11 @@ public class PartitionTableView {
     /**
      * @param replicas
      * @param excludedReplicas
-     * @return                  {@code true} when this {@code PartitionTableView}
-     *                          references the given {@code replicas UUID}s
-     *                          and not any of the {@code excludedReplicas UUID}s, otherwise
-     *                          {@code false}.
+     *
+     * @return {@code true} when this {@code PartitionTableView}
+     * references the given {@code replicas UUID}s
+     * and not any of the {@code excludedReplicas UUID}s, otherwise
+     * {@code false}.
      */
     public boolean composedOf(Set<UUID> replicas, Set<UUID> excludedReplicas) {
         for (InternalPartition partition : partitions) {
@@ -94,8 +95,9 @@ public class PartitionTableView {
 
     /**
      * @param partitionTableView
-     * @return                   a measure of the difference of this
-     *                           versus given {@code partitionTableView}.
+     *
+     * @return a measure of the difference of this
+     * versus given {@code partitionTableView}.
      */
     public int distanceOf(PartitionTableView partitionTableView) {
         int distance = 0;
