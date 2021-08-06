@@ -47,19 +47,6 @@ public class JobSummary implements IdentifiedDataSerializable {
      * Constructor for a running job
      */
     public JobSummary(
-            long jobId,
-            long executionId,
-            @Nonnull String nameOrId,
-            @Nonnull JobStatus status,
-            long submissionTime
-    ) {
-        this(false, jobId, executionId, nameOrId, status, submissionTime);
-    }
-
-    /**
-     * Constructor for a light job
-     */
-    public JobSummary(
             boolean isLightJob,
             long jobId,
             long executionId,
