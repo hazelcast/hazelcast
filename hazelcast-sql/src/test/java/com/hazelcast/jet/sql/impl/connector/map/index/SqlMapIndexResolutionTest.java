@@ -39,6 +39,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -55,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
@@ -64,14 +66,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        initialize(1, smallInstanceConfig());
+        initialize(2, smallInstanceConfig());
     }
 
     private static final AtomicInteger mapName_GEN = new AtomicInteger();
@@ -167,7 +170,7 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
     private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngineImpl(instance()), JetMapMetadataResolver.NO_OP);
+        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(instance()), JetMapMetadataResolver.NO_OP);
 
         for (Table table : resolver.getTables()) {
             if (((AbstractMapTable) table).getMapName().equals(mapName)) {
