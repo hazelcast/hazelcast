@@ -152,7 +152,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
     }
 
     interface HazelcastInOperatorResource extends CalciteResource {
-        @Resources.BaseMessage("Sub-queries are not allowed for IN operator.")
+        @Resources.BaseMessage("Sub-queries are not supported for IN operator.")
         Resources.ExInst<SqlValidatorException> noSubQueryAllowed();
 
         @Resources.BaseMessage("Raw nulls are not supported for IN operator.")
