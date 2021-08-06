@@ -17,6 +17,7 @@
 package com.hazelcast.sql.misc;
 
 import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -33,18 +34,19 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
@@ -54,32 +56,42 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test that ensures that a security callback is invoked as expected.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class SqlSecurityCallbackTest extends OptimizerTestSupport {
+    private static int MAP_SIZE = 1000;
 
-    private static final String MAP_NAME = "map";
+    @Parameterized.Parameter
+    public boolean useIndex;
+
+    private String mapName;
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(2, smallInstanceConfig());
+    }
+
+    @Parameterized.Parameters(name = "useIndex:{0}")
+    public static Collection<Object[]> parameters() {
+        List<Object[]> res = new ArrayList<>();
+        res.add(new Boolean[]{false});
+        res.add(new Boolean[]{true});
+        return res;
     }
 
     @Before
     public void before() {
-        IMap<Integer, Integer> map = instance().getMap(MAP_NAME);
-        map.addIndex(IndexType.HASH, "this");
-        map.put(1, 1);
+        mapName = SqlTestSupport.randomName();
+        IMap<Integer, Integer> map = instance().getMap(mapName);
+        if (useIndex) {
+            map.addIndex(IndexType.HASH, "this");
+        }
+        populate(mapName, MAP_SIZE);
     }
 
     @Test
-    public void testScan() {
-        check("SELECT * FROM " + MAP_NAME, false);
-    }
-
-    @Test
-    public void testIndexScan() {
-        check("SELECT * FROM " + MAP_NAME + " WHERE this = 1", true);
+    public void test() {
+        check("SELECT * FROM " + mapName + " WHERE this = 500", useIndex);
     }
 
     private void check(String sql, boolean useIndex) {
@@ -92,7 +104,7 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
                 checkIndexUsage(sql, useIndex);
 
                 // Check permissions.
-                assertThat(securityContext.getPermissions()).contains(new MapPermission(MAP_NAME, ActionConstants.ACTION_READ));
+                assertThat(securityContext.getPermissions()).contains(new MapPermission(mapName, ActionConstants.ACTION_READ));
             }
         }
     }
@@ -104,10 +116,10 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
                 new MapTableField("this", QueryDataType.INT, false, QueryPath.VALUE_PATH)
         );
         HazelcastTable table = partitionedTable(
-                MAP_NAME,
+                mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-                1
+                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
+                MAP_SIZE
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
         assertPlan(
@@ -118,6 +130,16 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
                 optimizationResult.getPhysical(),
                 plan(planRow(0, expectedIndexUsage ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class))
         );
+    }
+
+    protected void populate(String mapName, int size) {
+        Map<Integer, Integer> map = new HashMap<>();
+
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        instance().getMap(mapName).putAll(map);
     }
 
     private static class TestSqlSecurityContext implements SqlSecurityContext {
