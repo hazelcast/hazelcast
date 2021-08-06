@@ -37,7 +37,6 @@ import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -119,7 +118,6 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         fill();
     }
 
-    @Ignore // TODO: [sasha] in-ignore after IMDG disabling.
     @Test
     public void test() {
         checkFirstColumn();

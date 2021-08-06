@@ -107,7 +107,6 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
                 MAP_NAME,
                 mapTableFields,
                 getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-                false,
                 1
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);

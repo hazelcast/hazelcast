@@ -26,7 +26,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,7 +60,6 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_sorted() {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -81,9 +79,9 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows) {
         List<Row> actualRows = new ArrayList<>();
         instance().getSql()
-            .execute(sql)
-            .iterator()
-            .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
+                .execute(sql)
+                .iterator()
+                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
 
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }

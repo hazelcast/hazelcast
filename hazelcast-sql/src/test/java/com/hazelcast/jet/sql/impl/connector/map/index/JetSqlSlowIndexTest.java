@@ -33,9 +33,4 @@ public class JetSqlSlowIndexTest extends JetSqlIndexAbstractTest {
     public static Collection<Object[]> parameters() {
         return parametersSlow();
     }
-
-    @Override
-    protected boolean isHd() {
-        return false;
-    }
 }

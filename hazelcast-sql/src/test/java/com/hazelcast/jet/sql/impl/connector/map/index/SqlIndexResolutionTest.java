@@ -266,7 +266,6 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
             MAP_NAME,
             mapTableFields,
             getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-            false,
             100 // we can place random number, doesn't matter in current case.
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);

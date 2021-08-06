@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -127,17 +126,5 @@ public class PlanCacheTest extends PlanCacheTestSupport {
         cache.get(key);
         long timestamp3 = plan.getPlanLastUsed();
         assertTrue(timestamp3 > timestamp2);
-    }
-
-    @Test
-    public void testSchemaChanged() {
-        instance().getMap("map").put("1", "1");
-        instance().getSql().execute("SELECT * FROM map");
-        assertThat(planCache(instance()).size()).isEqualTo(1);
-
-        instance().getMap("map").clear();
-        instance().getMap("map").put(1, 1);
-        instance().getSql().execute("SELECT * FROM map");
-        assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());
     }
 }

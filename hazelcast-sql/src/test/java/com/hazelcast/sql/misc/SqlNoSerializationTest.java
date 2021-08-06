@@ -148,7 +148,6 @@ public class SqlNoSerializationTest extends OptimizerTestSupport {
                 MAP_NAME,
                 mapTableFields,
                 getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-                false,
                 KEY_COUNT
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
