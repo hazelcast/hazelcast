@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
@@ -46,8 +47,10 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
@@ -56,7 +59,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
@@ -246,6 +251,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         return StringUtil.lowerCaseInternal(System.getProperty("os.name")).contains("windows")
                 ? "c:\\non\\existing\\path"
                 : "/non/existing/path";
+    }
+
+    public static Job awaitSingleRunningJob(HazelcastInstance hz) {
+        AtomicReference<Job> job = new AtomicReference<>();
+        assertTrueEventually(() -> {
+            List<Job> jobs = hz.getJet().getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
+            assertEquals(1, jobs.size());
+            job.set(jobs.get(0));
+        });
+        return job.get();
     }
 
     public static PlanCache planCache(HazelcastInstance instance) {

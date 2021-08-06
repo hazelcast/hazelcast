@@ -27,8 +27,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.jet.sql.SqlTestSupport.awaitSingleRunningJob;
 import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for different error conditions.
@@ -62,27 +67,25 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
 
+    @SuppressWarnings({"unused"})
     @Test
-    public void testMemberLeaveDuringQueryAfterTimeoutShutdown() {
+    public void testMemberLeave() throws InterruptedException {
         // Start two instances
         instance1 = newHazelcastInstance(false);
         instance2 = newHazelcastInstance(true);
 
-        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(10000))");
+        Thread shutdownThread = new Thread(() -> {
+            awaitSingleRunningJob(instance1);
+            instance2.shutdown();
+        });
 
-        // Stop remote member when the blocking point is reached
-        new Thread(() -> {
-            try {
-                Thread.sleep(500L);
-                instance2.shutdown();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+        shutdownThread.start();
 
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(1000))");
 
         // Start query
         HazelcastSqlException error = assertSqlException(instance1, streamingQuery);
+        shutdownThread.join();
         assertInstanceOf(MemberLeftException.class, findRootCause(error));
     }
 

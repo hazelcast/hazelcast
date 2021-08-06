@@ -112,14 +112,4 @@ public class SqlClientTest extends SqlTestSupport {
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, FAILED);
     }
-
-    private static Job awaitSingleRunningJob(HazelcastInstance hz) {
-        AtomicReference<Job> job = new AtomicReference<>();
-        assertTrueEventually(() -> {
-            List<Job> jobs = hz.getJet().getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
-            assertEquals(1, jobs.size());
-            job.set(jobs.get(0));
-        });
-        return job.get();
-    }
 }
