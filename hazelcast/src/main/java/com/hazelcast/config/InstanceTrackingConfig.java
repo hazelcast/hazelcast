@@ -57,11 +57,12 @@ public class InstanceTrackingConfig {
      */
     public static final String PLACEHOLDER_NAMESPACE = "HZ_INSTANCE_TRACKING";
 
+    boolean isEnabledSet;
+
     private boolean enabled = DEFAULT_ENABLED;
     private String fileName;
     private String formatPattern;
 
-    boolean isEnabledSet;
 
     public InstanceTrackingConfig() {
         super();
