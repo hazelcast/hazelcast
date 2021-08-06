@@ -119,6 +119,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
     private Object pendingItem;
 
+//    private final static HashMap<Integer, Long> times = new HashMap<>();
+
     private ReadMapOrCacheP(@Nonnull Reader<F, B, R> reader, @Nonnull int[] partitionIds) {
         this.reader = reader;
         this.partitionIds = partitionIds;
@@ -145,6 +147,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     private void initialRead() {
         readFutures = (F[]) new CompletableFuture[partitionIds.length];
         for (int i = 0; i < maxParallelRead; i++) {
+//            times.put(partitionIds[i], System.nanoTime());
             readFutures[i] = reader.readBatch(partitionIds[i], readPointers[i]);
         }
         nextPartitionReadIndex = maxParallelRead;
@@ -189,7 +192,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             if (!future.isDone()) {  // data for partition not yet available
                 continue;
             }
-
+//            System.out.println("pppp  Partition "+partitionIds[currentPartitionIndex]+" is completed in "
+//                    + (System.nanoTime() - times.get(partitionIds[currentPartitionIndex])));
             B result = toBatchResult(future);
             readFutures[currentPartitionIndex] = null;
             partitionReadCount--;
@@ -228,6 +232,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 nextPartitionReadIndex++;
                 continue;
             }
+//            times.put(partitionIds[nextPartitionReadIndex],System.nanoTime());
+//            System.out.println("pppp Reading partition "+ partitionIds[nextPartitionReadIndex]);
             readFutures[nextPartitionReadIndex] = reader.readBatch(partitionIds[nextPartitionReadIndex], pointers);
             nextPartitionReadIndex++;
             partitionReadCount++;

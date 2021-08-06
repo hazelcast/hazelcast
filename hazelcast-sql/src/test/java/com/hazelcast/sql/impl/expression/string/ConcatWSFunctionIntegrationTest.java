@@ -43,9 +43,11 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         ExpressionType<?>[] allTypes = ExpressionTypes.all();
-
+        System.out.println("ddddd = > length == " + allTypes.length);
         for (int i = 0; i < allTypes.length; i++) {
             for (int j = i; j < allTypes.length; j++) {
+                System.out.println("bbb = a query started!");
+                System.out.println("cccccc "+i+"="+j);
                 ExpressionType<?> type1 = allTypes[i];
                 ExpressionType<?> type2 = allTypes[j];
 
@@ -66,12 +68,41 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
                         ""
                 };
 
+                long prev = System.currentTimeMillis();
                 checkColumns(values, expectedResults);
+                System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev));
+
             }
         }
     }
 
     @Test
+    public void testSample() {
+        ExpressionType<?> type1 = ExpressionTypes.STRING;
+        ExpressionType<?> type2 = ExpressionTypes.STRING;
+
+        Class<? extends ExpressionBiValue> clazz =
+                ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
+
+        ExpressionBiValue[] values = new ExpressionBiValue[]{
+                ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom())
+        };
+
+        String[] expectedResults = new String[]{
+                type1.valueFrom() + "-" + type2.valueFrom()
+        };
+        long prev = System.currentTimeMillis();
+
+        checkColumns(values, expectedResults);
+        System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev));
+
+        long prev2 = System.currentTimeMillis();
+
+        checkColumns(values, expectedResults);
+        System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev2));
+    }
+
+        @Test
     public void testLiteral() {
         put("1");
 
@@ -181,6 +212,11 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(corrupted3, restored, false);
         checkEquals(corrupted4, restored, false);
     }
+
+//    @Test
+//    public void testSample(){
+//        put();
+//    }
 
     private void checkColumns(Object[] values, Object[] expectedResults) {
         putAll(values);
