@@ -80,7 +80,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void inPredicateWithSubQueryTest() {
-        String expectedExMessage = "Sub-queries are not allowed for IN operator.";
+        String expectedExMessage = "Sub-queries are not supported for IN operator.";
 
         putAll(1, 2);
         checkFailure0(sqlQuery("IN (SELECT __key FROM map)"), PARSING, expectedExMessage);

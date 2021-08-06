@@ -98,12 +98,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
-        RelOptTable.ViewExpander viewExpander,
-        SqlValidator validator,
-        Prepare.CatalogReader catalogReader,
-        RelOptCluster cluster,
-        SqlRexConvertletTable convertletTable,
-        Config config
+            RelOptTable.ViewExpander viewExpander,
+            SqlValidator validator,
+            Prepare.CatalogReader catalogReader,
+            RelOptCluster cluster,
+            SqlRexConvertletTable convertletTable,
+            Config config
     ) {
         super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
     }
@@ -254,14 +254,14 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         if (rhs instanceof SqlNodeList) {
             SqlNodeList valueList = (SqlNodeList) rhs;
             return convertInToOr(
-                blackboard,
-                leftKeys,
-                valueList,
-                (SqlInOperator) call.getOperator()
+                    blackboard,
+                    leftKeys,
+                    valueList,
+                    (SqlInOperator) call.getOperator()
             );
         }
         throw QueryException.error(SqlErrorCode.GENERIC,
-            "Sub-queries are not supported for IN operator.");
+                "Sub-queries are not supported for IN operator.");
     }
 
     /**
@@ -277,7 +277,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         final RexBuilder rexBuilder = getRexBuilder();
         final HazelcastBetweenOperator betweenOp = (HazelcastBetweenOperator) currentOperator;
         final List<RexNode> list = convertExpressionList(
-            rexBuilder, blackboard, call.getOperandList(), betweenOp.getOperandTypeChecker().getConsistency()
+                rexBuilder, blackboard, call.getOperandList(), betweenOp.getOperandTypeChecker().getConsistency()
         );
         final RexNode valueOperand = list.get(SqlBetweenOperator.VALUE_OPERAND);
         final RexNode lowerOperand = list.get(SqlBetweenOperator.LOWER_OPERAND);
@@ -393,8 +393,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         switch (consistency) {
             case COMPARE:
                 final List<RelDataType> nonCharacterTypes = types.stream()
-                    .filter(type -> type.getFamily() != SqlTypeFamily.CHARACTER)
-                    .collect(Collectors.toList());
+                        .filter(type -> type.getFamily() != SqlTypeFamily.CHARACTER)
+                        .collect(Collectors.toList());
 
                 if (!nonCharacterTypes.isEmpty()) {
                     types = enlargeNumericTypes(bb, types.size(), nonCharacterTypes);
@@ -428,11 +428,11 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     }
 
     private static QueryException literalConversionException(
-        SqlValidator validator,
-        SqlCall call,
-        Literal literal,
-        QueryDataType toType,
-        Exception e
+            SqlValidator validator,
+            SqlCall call,
+            Literal literal,
+            QueryDataType toType,
+            Exception e
     ) {
         String literalValue = literal.getStringValue();
 
@@ -441,9 +441,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         Resources.ExInst<SqlValidatorException> contextError = HazelcastResources.RESOURCES.cannotCastLiteralValue(
-            literalValue,
-            toType.getTypeFamily().getPublicType().toString(),
-            e.getMessage()
+                literalValue,
+                toType.getTypeFamily().getPublicType().toString(),
+                e.getMessage()
         );
 
         CalciteContextException calciteContextError = validator.newValidationError(call, contextError);
@@ -453,10 +453,10 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     // Copied from SqlToRelConverter.
     private RexNode convertInToOr(
-        final Blackboard bb,
-        final List<RexNode> leftKeys,
-        SqlNodeList valuesList,
-        SqlInOperator op
+            final Blackboard bb,
+            final List<RexNode> leftKeys,
+            SqlNodeList valuesList,
+            SqlInOperator op
     ) {
         final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList);
 
@@ -465,7 +465,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 return RexUtil.composeConjunction(rexBuilder, comparisons, true);
             case NOT_IN:
                 return rexBuilder.makeCall(SqlStdOperatorTable.NOT,
-                    RexUtil.composeDisjunction(rexBuilder, comparisons, true));
+                        RexUtil.composeDisjunction(rexBuilder, comparisons, true));
             case IN:
             case SOME:
                 return RexUtil.composeDisjunction(rexBuilder, comparisons, true);
@@ -479,9 +479,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * left-hand operand (as a rule, SqlIdentifier) and right-hand list.
      */
     private List<RexNode> constructComparisons(
-        Blackboard bb,
-        List<RexNode> leftKeys,
-        SqlNodeList valuesList
+            Blackboard bb,
+            List<RexNode> leftKeys,
+            SqlNodeList valuesList
     ) {
         final List<RexNode> comparisons = new ArrayList<>();
 
@@ -490,26 +490,26 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             final SqlOperator comparisonOp = SqlStdOperatorTable.EQUALS;
             if (leftKeys.size() == 1) {
                 rexComparison = rexBuilder.makeCall(
-                    comparisonOp,
-                    leftKeys.get(0),
-                    ensureSqlType(
-                        leftKeys.get(0).getType(),
-                        bb.convertExpression(rightValues)
-                    )
+                        comparisonOp,
+                        leftKeys.get(0),
+                        ensureSqlType(
+                                leftKeys.get(0).getType(),
+                                bb.convertExpression(rightValues)
+                        )
                 );
             } else {
                 assert rightValues instanceof SqlCall;
                 final SqlBasicCall basicCall = (SqlBasicCall) rightValues;
                 assert basicCall.getOperator() instanceof SqlRowOperator && basicCall.operandCount() == leftKeys.size();
                 rexComparison = RexUtil.composeConjunction(rexBuilder,
-                    Pair.zip(leftKeys, basicCall.getOperandList()).stream().map(pair ->
-                        rexBuilder.makeCall(
-                            comparisonOp, pair.left, ensureSqlType(
-                                pair.left.getType(),
-                                bb.convertExpression(pair.right)
-                            )
-                        )
-                    ).collect(Collectors.toList()));
+                        Pair.zip(leftKeys, basicCall.getOperandList()).stream().map(pair ->
+                                rexBuilder.makeCall(
+                                        comparisonOp, pair.left, ensureSqlType(
+                                                pair.left.getType(),
+                                                bb.convertExpression(pair.right)
+                                        )
+                                )
+                        ).collect(Collectors.toList()));
             }
             comparisons.add(rexComparison);
         }
@@ -518,8 +518,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private RexNode ensureSqlType(RelDataType type, RexNode node) {
         if (type.getSqlTypeName() == node.getType().getSqlTypeName()
-            || (type.getSqlTypeName() == SqlTypeName.VARCHAR
-            && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
+                || (type.getSqlTypeName() == SqlTypeName.VARCHAR
+                && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
             return node;
         }
         return rexBuilder.ensureType(type, node, true);
