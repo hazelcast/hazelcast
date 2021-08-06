@@ -92,9 +92,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
 
-    /**
-     * See {@link #convertCall(SqlNode, Blackboard)} for more information.
-     */
+    /** See {@link #convertCall(SqlNode, Blackboard)} for more information. */
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
@@ -254,14 +252,14 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
         if (rhs instanceof SqlNodeList) {
             SqlNodeList valueList = (SqlNodeList) rhs;
             return convertInToOr(
-                    blackboard,
-                    leftKeys,
-                    valueList,
-                    (SqlInOperator) call.getOperator()
+                blackboard,
+                leftKeys,
+                valueList,
+                (SqlInOperator) call.getOperator()
             );
         }
-        throw QueryException.error(SqlErrorCode.PARSING,
-                "Sub-queries are not supported for IN operator.");
+        throw QueryException.error(SqlErrorCode.GENERIC,
+                "Hazelcast SQL engine doesn't support subqueries for IN operator.");
     }
 
     /**
@@ -453,10 +451,10 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     // Copied from SqlToRelConverter.
     private RexNode convertInToOr(
-            final Blackboard bb,
-            final List<RexNode> leftKeys,
-            SqlNodeList valuesList,
-            SqlInOperator op
+        final Blackboard bb,
+        final List<RexNode> leftKeys,
+        SqlNodeList valuesList,
+        SqlInOperator op
     ) {
         final List<RexNode> comparisons = constructComparisons(bb, leftKeys, valuesList);
 
@@ -465,7 +463,7 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 return RexUtil.composeConjunction(rexBuilder, comparisons, true);
             case NOT_IN:
                 return rexBuilder.makeCall(SqlStdOperatorTable.NOT,
-                        RexUtil.composeDisjunction(rexBuilder, comparisons, true));
+                    RexUtil.composeDisjunction(rexBuilder, comparisons, true));
             case IN:
             case SOME:
                 return RexUtil.composeDisjunction(rexBuilder, comparisons, true);
@@ -479,9 +477,9 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * left-hand operand (as a rule, SqlIdentifier) and right-hand list.
      */
     private List<RexNode> constructComparisons(
-            Blackboard bb,
-            List<RexNode> leftKeys,
-            SqlNodeList valuesList
+        Blackboard bb,
+        List<RexNode> leftKeys,
+        SqlNodeList valuesList
     ) {
         final List<RexNode> comparisons = new ArrayList<>();
 
@@ -490,26 +488,26 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             final SqlOperator comparisonOp = SqlStdOperatorTable.EQUALS;
             if (leftKeys.size() == 1) {
                 rexComparison = rexBuilder.makeCall(
-                        comparisonOp,
-                        leftKeys.get(0),
-                        ensureSqlType(
-                                leftKeys.get(0).getType(),
-                                bb.convertExpression(rightValues)
-                        )
+                    comparisonOp,
+                    leftKeys.get(0),
+                    ensureSqlType(
+                        leftKeys.get(0).getType(),
+                        bb.convertExpression(rightValues)
+                    )
                 );
             } else {
                 assert rightValues instanceof SqlCall;
                 final SqlBasicCall basicCall = (SqlBasicCall) rightValues;
                 assert basicCall.getOperator() instanceof SqlRowOperator && basicCall.operandCount() == leftKeys.size();
                 rexComparison = RexUtil.composeConjunction(rexBuilder,
-                        Pair.zip(leftKeys, basicCall.getOperandList()).stream().map(pair ->
-                                rexBuilder.makeCall(
-                                        comparisonOp, pair.left, ensureSqlType(
-                                                pair.left.getType(),
-                                                bb.convertExpression(pair.right)
-                                        )
-                                )
-                        ).collect(Collectors.toList()));
+                    Pair.zip(leftKeys, basicCall.getOperandList()).stream().map(pair ->
+                        rexBuilder.makeCall(
+                            comparisonOp, pair.left, ensureSqlType(
+                                pair.left.getType(),
+                                bb.convertExpression(pair.right)
+                            )
+                        )
+                    ).collect(Collectors.toList()));
             }
             comparisons.add(rexComparison);
         }
@@ -518,8 +516,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
     private RexNode ensureSqlType(RelDataType type, RexNode node) {
         if (type.getSqlTypeName() == node.getType().getSqlTypeName()
-                || (type.getSqlTypeName() == SqlTypeName.VARCHAR
-                && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
+            || (type.getSqlTypeName() == SqlTypeName.VARCHAR
+            && node.getType().getSqlTypeName() == SqlTypeName.CHAR)) {
             return node;
         }
         return rexBuilder.ensureType(type, node, true);
