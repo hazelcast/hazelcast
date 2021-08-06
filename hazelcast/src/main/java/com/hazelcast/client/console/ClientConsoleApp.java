@@ -938,8 +938,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("m.")) {
             println(getMap().getLocalMapStats());
-        } else if (iteratorStr.startsWith("mm.")) {
-            println(getMultiMap().getLocalMultiMapStats());
         } else if (iteratorStr.startsWith("q.")) {
             println(getQueue().getLocalQueueStats());
         } else if (iteratorStr.startsWith("l.")) {
