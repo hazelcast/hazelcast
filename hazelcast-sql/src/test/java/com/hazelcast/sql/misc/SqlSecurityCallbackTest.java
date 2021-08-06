@@ -59,7 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class SqlSecurityCallbackTest extends OptimizerTestSupport {
-    private static int MAP_SIZE = 1000;
+    private static final int mapSize = 1000;
 
     @Parameterized.Parameter
     public boolean useIndex;
@@ -86,7 +86,7 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
         if (useIndex) {
             map.addIndex(IndexType.HASH, "this");
         }
-        populate(mapName, MAP_SIZE);
+        populate(mapName, mapSize);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
                 mapName,
                 mapTableFields,
                 getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
-                MAP_SIZE
+                mapSize
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);
         assertPlan(
