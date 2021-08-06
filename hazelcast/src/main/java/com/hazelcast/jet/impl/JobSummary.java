@@ -81,6 +81,10 @@ public class JobSummary implements IdentifiedDataSerializable {
         this.failureText = failureText;
     }
 
+    public boolean isLightJob() {
+        return isLightJob;
+    }
+
     public long getJobId() {
         return jobId;
     }
@@ -132,10 +136,6 @@ public class JobSummary implements IdentifiedDataSerializable {
     @Nullable
     public String getFailureText() {
         return failureText;
-    }
-
-    public boolean isLightJob() {
-        return isLightJob;
     }
 
     @Override
