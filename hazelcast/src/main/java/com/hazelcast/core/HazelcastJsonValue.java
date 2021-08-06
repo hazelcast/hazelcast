@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -37,7 +39,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Ill-formatted JSON strings may cause false positive or false negative
  * results in queries. {@code null} string is not allowed.
  */
-public final class HazelcastJsonValue implements Serializable {
+public final class HazelcastJsonValue implements Serializable, Comparable<HazelcastJsonValue> {
 
     private final String string;
 
@@ -75,5 +77,10 @@ public final class HazelcastJsonValue implements Serializable {
     @Override
     public int hashCode() {
         return string.hashCode();
+    }
+
+    @Override
+    public int compareTo(@NotNull final HazelcastJsonValue o) {
+        return o.string.compareTo(this.string);
     }
 }

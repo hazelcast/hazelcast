@@ -271,7 +271,7 @@ public final class OptUtils {
 
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
         return Util.toList(rowType.getFieldList(),
-                f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
+                f -> HazelcastTypeUtils.toHazelcastType(f.getType()));
     }
 
     public static boolean requiresJob(RelNode rel) {

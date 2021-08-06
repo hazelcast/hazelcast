@@ -202,6 +202,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
         // JSON
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_QUERY);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARSE_JSON);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);

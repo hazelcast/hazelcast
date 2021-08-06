@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2021 Hazelcast Inc.
  *
@@ -17,6 +18,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical.visitor;
 
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.ParseJsonFunction;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
@@ -426,6 +428,8 @@ public final class RexToExpression {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
                     return JsonQueryFunction.create(operands);
+                } else if (function == HazelcastSqlOperatorTable.PARSE_JSON) {
+                    return ParseJsonFunction.create(operands[0]);
                 }
 
                 break;

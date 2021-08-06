@@ -37,6 +37,7 @@ import static org.apache.calcite.sql.type.SqlTypeFamily.INTERVAL_DAY_TIME;
 import static org.apache.calcite.sql.type.SqlTypeName.DAY_INTERVAL_TYPES;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
+import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
 import static org.apache.calcite.sql.type.SqlTypeName.YEAR_INTERVAL_TYPES;
 
 /**
@@ -112,7 +113,7 @@ public final class HazelcastTypeUtils {
     }
 
     public static QueryDataType toHazelcastType(RelDataType relDataType) {
-        if (relDataType.getSqlTypeName() != null) {
+        if (relDataType.getSqlTypeName() != OTHER) {
             return toHazelcastType(relDataType.getSqlTypeName());
         }
         final RelDataTypeFamily typeFamily = relDataType.getFamily();

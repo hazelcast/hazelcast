@@ -149,7 +149,7 @@ public final class HazelcastTypeFactory extends SqlTypeFactoryImpl {
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public RelDataType createTypeWithNullability(RelDataType type, boolean nullable) {
-        if (type.getSqlTypeName() == null) {
+        if (type.getSqlTypeName() == SqlTypeName.OTHER) {
             // TODO: nullability
             return type;
         } else if (HazelcastTypeUtils.isNumericIntegerType(type.getSqlTypeName())) {

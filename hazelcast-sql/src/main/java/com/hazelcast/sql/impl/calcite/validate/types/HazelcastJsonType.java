@@ -20,6 +20,6 @@ public class HazelcastJsonType extends RelDataTypeImpl {
         // TODO: investigate alternatives?
         // spec for this method allows us to return NULL,
         // however a lot of code within Calcite assumes that its never NULL
-        return null;
+        return SqlTypeName.OTHER;
     }
 }
