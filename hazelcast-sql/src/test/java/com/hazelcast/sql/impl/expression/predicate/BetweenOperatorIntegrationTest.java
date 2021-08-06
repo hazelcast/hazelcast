@@ -88,7 +88,7 @@ import static org.junit.Assert.assertNull;
  * @see #betweenAsymmetricPredicateTypeCheckTest()
  * @see #betweenSymmetricPredicateTypeCheckTest()
  */
-@RunWith(value = HazelcastSerialClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 

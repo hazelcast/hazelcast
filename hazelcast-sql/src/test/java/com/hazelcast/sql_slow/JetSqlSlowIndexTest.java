@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.connector.map.index;
+package com.hazelcast.sql_slow;
 
+import com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexAbstractTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;

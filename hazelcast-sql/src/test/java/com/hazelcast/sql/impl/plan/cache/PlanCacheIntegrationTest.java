@@ -18,10 +18,12 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -29,17 +31,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
-    private final AtomicInteger mapNumber = new AtomicInteger(0);
     private String mapName;
 
     @BeforeClass
@@ -49,7 +48,7 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
 
     @Before
     public void before() {
-        mapName = "map" + mapNumber.incrementAndGet();
+        mapName = SqlTestSupport.randomName();
     }
 
     @Test

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
@@ -37,9 +38,9 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,12 +58,14 @@ import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
     @BeforeClass
@@ -70,8 +73,8 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         initialize(2, smallInstanceConfig());
     }
 
-    private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
-    private String MAP_NAME = "map";
+    private static final AtomicInteger mapName_GEN = new AtomicInteger();
+    private String mapName;
     private static final String INDEX_NAME = "index";
 
     @Parameterized.Parameter
@@ -91,6 +94,11 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         }
 
         return res;
+    }
+
+    @Before
+    public void before() {
+        mapName = SqlTestSupport.randomName();
     }
 
     @Test
@@ -137,10 +145,10 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     }
 
     private IMap<Integer, ExpressionBiValue> nextMap() {
-        MAP_NAME = "map" + MAP_NAME_GEN.incrementAndGet();
+        mapName = "map" + mapName_GEN.incrementAndGet();
 
-        instance().getMap(MAP_NAME).addIndex(getIndexConfig());
-        return instance().getMap(MAP_NAME);
+        instance().getMap(mapName).addIndex(getIndexConfig());
+        return instance().getMap(mapName);
     }
 
     protected IndexConfig getIndexConfig() {
@@ -183,7 +191,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
                 // Check resolved field converter types. We do not test more than two components.
                 List<QueryDataType> expectedFieldConverterTypes0 = expectedFieldConverterTypes == null
-                    ? Collections.emptyList() : Arrays.asList(expectedFieldConverterTypes);
+                        ? Collections.emptyList() : Arrays.asList(expectedFieldConverterTypes);
 
                 assertTrue(expectedFieldConverterTypes0.size() <= 2);
 
@@ -220,70 +228,79 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     }
 
     private void checkIndexUsage(
-        IMap<?, ?> map,
-        ExpressionType<?> f1,
-        ExpressionType<?> f2,
-        boolean firstResolved,
-        boolean secondResolved
+            IMap<?, ?> map,
+            ExpressionType<?> f1,
+            ExpressionType<?> f2,
+            boolean firstResolved,
+            boolean secondResolved
     ) {
         String field1Literal = toLiteral(f1, f1.valueFrom());
         String field2Literal = toLiteral(f2, f2.valueFrom());
 
         // The second component could be used if both components are resolved.
-        boolean expectedUsage;
+        Usage expectedUsage;
 
         if (firstResolved) {
             if (secondResolved) {
                 // Both components were resolved
-                expectedUsage = true;
+                expectedUsage = Usage.BOTH;
             } else {
                 // Only one component is resolved
-                // Composite HASH index with the first component only cannot be used, because it requires range requests
-                // Otherwise, used the first component
-                expectedUsage = !composite || indexType != IndexType.HASH;
+                if (composite && indexType == IndexType.HASH) {
+                    // Composite HASH index with the first component only cannot be used, because it requires range requests
+                    expectedUsage = Usage.NONE;
+                } else {
+                    // Otherwise, used the first component
+                    expectedUsage = Usage.ONE;
+                }
             }
         } else {
             // No components were resolved
-            expectedUsage = false;
+            expectedUsage = Usage.NONE;
         }
 
-        checkIndexUsage(
-            new SqlStatement("SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal),
-            f1,
-            f2,
-            expectedUsage
-        );
+        SqlStatement sql = new SqlStatement("SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal);
+
+        checkIndexUsage(sql, f1, f2, expectedUsage);
     }
 
-    private void checkIndexUsage(SqlStatement statement, ExpressionType<?> f1, ExpressionType<?> f2, boolean expectedIndexUsage) {
+    private void checkIndexUsage(SqlStatement statement, ExpressionType<?> f1, ExpressionType<?> f2, Usage expectedIndexUsage) {
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.OBJECT, QueryDataType.INT);
         List<TableField> mapTableFields = asList(
-            new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
-            new MapTableField("field1", f1.getFieldConverterType(), false, new QueryPath("field1", false)),
-            new MapTableField("field2", f2.getFieldConverterType(), false, new QueryPath("field2", false))
+                new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
+                new MapTableField("field1", f1.getFieldConverterType(), false, new QueryPath("field1", false)),
+                new MapTableField("field2", f2.getFieldConverterType(), false, new QueryPath("field2", false))
         );
         HazelcastTable table = partitionedTable(
-            MAP_NAME,
-            mapTableFields,
-            getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-            100 // we can place random number, doesn't matter in current case.
+                mapName,
+                mapTableFields,
+                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
+                100 // we can place random number, doesn't matter in current case.
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
+
         assertPlan(
-            optimizationResult.getLogical(),
-            plan(planRow(0, FullScanLogicalRel.class))
+                optimizationResult.getLogical(),
+                plan(planRow(0, FullScanLogicalRel.class))
         );
-        if (expectedIndexUsage) {
-            assertPlan(
-                optimizationResult.getPhysical(),
-                plan(planRow(0, IndexScanMapPhysicalRel.class))
-            );
-        } else {
-            assertPlan(
-                optimizationResult.getPhysical(),
-                plan(planRow(0, FullScanPhysicalRel.class))
-            );
+        switch (expectedIndexUsage) {
+            case BOTH:
+                assertPlan(
+                        optimizationResult.getPhysical(),
+                        plan(planRow(0, IndexScanMapPhysicalRel.class))
+                );
+                assertNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getIndexFilter());
+            case ONE:
+                assertPlan(
+                        optimizationResult.getPhysical(),
+                        plan(planRow(0, IndexScanMapPhysicalRel.class))
+                );
+                assertNotNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getIndexFilter());
+            case NONE:
+                assertPlan(
+                        optimizationResult.getPhysical(),
+                        plan(planRow(0, FullScanPhysicalRel.class))
+                );
         }
     }
-
 }
