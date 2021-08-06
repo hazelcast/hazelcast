@@ -27,12 +27,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

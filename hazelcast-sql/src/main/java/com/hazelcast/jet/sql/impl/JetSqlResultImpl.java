@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-public class JetSqlResultImpl extends AbstractSqlResult {
+class JetSqlResultImpl extends AbstractSqlResult {
 
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
