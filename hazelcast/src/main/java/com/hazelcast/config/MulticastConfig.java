@@ -53,11 +53,6 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * Default value of time to live of multicast.
      */
     public static final int DEFAULT_MULTICAST_TTL = 32;
-    /**
-     * Default flag that indicates if the loopback mode
-     * is turned on or off.
-     */
-    public static final boolean DEFAULT_LOOPBACK_MODE_ENABLED = true;
 
     private static final int MULTICAST_TTL_UPPER_BOUND = 255;
 
@@ -73,7 +68,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
 
     private final Set<String> trustedInterfaces = new HashSet<String>();
 
-    private boolean loopbackModeEnabled = DEFAULT_LOOPBACK_MODE_ENABLED;
+    private Boolean loopbackModeEnabled;
 
     /**
      * Check if the multicast discovery mechanism has been enabled.
@@ -249,18 +244,30 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      * Check if the loopback mode is enabled in the multicast discovery mechanism.
      *
      * @return {@code true} if the the loopback mode is enabled, {@code false} otherwise
+     * @deprecated Use the {@link #getLoopbackModeEnabled()}.
      */
+    @Deprecated
     public boolean isLoopbackModeEnabled() {
+        return loopbackModeEnabled == null || loopbackModeEnabled;
+    }
+
+    /**
+     * Returns if explicit loopback mode configuration was requested (by {@link #setLoopbackModeEnabled(Boolean)}).
+     *
+     * @return {@code TRUE} if the the loopback mode should be enabled, {@code FALSE} disabled, {@code null} when
+     * it's left up to platform to decide.
+     */
+    public Boolean getLoopbackModeEnabled() {
         return loopbackModeEnabled;
     }
 
     /**
-     * Enables or disables the loopback mode in the multicast discovery mechanism.
+     * Explicitly enables or disables the loopback mode in the multicast discovery mechanism.
      *
      * @param enabled {@code true} to enable the loopback mode, {@code false} to disable
      * @return the updated MulticastConfig
      */
-    public MulticastConfig setLoopbackModeEnabled(boolean enabled) {
+    public MulticastConfig setLoopbackModeEnabled(Boolean enabled) {
         this.loopbackModeEnabled = enabled;
         return this;
     }
@@ -289,7 +296,8 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
         if (multicastTimeToLive != that.multicastTimeToLive) {
             return false;
         }
-        if (loopbackModeEnabled != that.loopbackModeEnabled) {
+        if (loopbackModeEnabled != null ? !loopbackModeEnabled.equals(that.loopbackModeEnabled)
+                : that.loopbackModeEnabled != null) {
             return false;
         }
         if (multicastGroup != null ? !multicastGroup.equals(that.multicastGroup) : that.multicastGroup != null) {

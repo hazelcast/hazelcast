@@ -313,6 +313,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return response;
     }
 
+    // Index scan via operation is thread-safe, no need to run from partition thread.
+    @Override
+    protected void assertNativeMapOnPartitionThread() {
+    }
+
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);

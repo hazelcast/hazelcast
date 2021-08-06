@@ -64,7 +64,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
     @After
     public void after() {
-        factory.terminateAll();
+        factory.shutdownAll();
     }
 
     @Test
@@ -107,16 +107,16 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         assertThat(mutatorException.get()).isNull();
     }
 
-    private final class MutatorThread extends Thread {
+    private class MutatorThread extends Thread {
         private boolean firstLaunch = true;
-        private volatile boolean active = true;
+        private boolean active = true;
         private final long delay;
 
         private MutatorThread(long delay) {
             this.delay = delay;
         }
 
-        private void terminate() {
+        private synchronized void terminate() {
             active = false;
         }
 
