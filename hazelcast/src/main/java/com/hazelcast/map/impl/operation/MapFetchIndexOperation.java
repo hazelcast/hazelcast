@@ -36,6 +36,7 @@ import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,10 +86,11 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     protected void runInternal() {
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            throw new QueryException("Cannot use the index \"" + indexName
-                    + "\" of the IMap \"" + name + "\" because it is not global "
-                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
-                    + "\" is set to \"true\")");
+            throw com.hazelcast.sql.impl.QueryException.error(
+                    SqlErrorCode.INDEX_INVALID,
+                    "Cannot use the index \"" + indexName + "\" of the IMap \"" + name + "\" because it is not global "
+                            + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
+            ).markInvalidate();
         }
 
         InternalIndex index = indexes.getIndex(indexName);
