@@ -1,8 +1,8 @@
 ---
-name: test-failure report
-about: template for test failures in testsuite
+name: Test failure report
+about: Template for test failures in testsuite
 title: ''
-labels: test-failure
+labels: Type: Test-Failure
 assignees: ''
 
 ---
