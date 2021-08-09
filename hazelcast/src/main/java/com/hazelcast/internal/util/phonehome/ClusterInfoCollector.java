@@ -37,7 +37,7 @@ class ClusterInfoCollector implements MetricsCollector {
 
         metricsConsumer.accept(PhoneHomeMetrics.UUID_OF_CLUSTER, node.getThisUuid().toString());
         metricsConsumer.accept(PhoneHomeMetrics.CLUSTER_ID, clusterService.getClusterId().toString());
-        metricsConsumer.accept(PhoneHomeMetrics.CLUSTER_SIZE, MetricsCollector.convertToLetter(clusterSize));
+        metricsConsumer.accept(PhoneHomeMetrics.CLUSTER_SIZE, String.valueOf(clusterSize));
         metricsConsumer.accept(PhoneHomeMetrics.TIME_TAKEN_TO_CLUSTER_UP, Long.toString(clusterUpTime));
         metricsConsumer.accept(PhoneHomeMetrics.UPTIME_OF_RUNTIME_MXBEAN, Long.toString(rt.getUptime()));
         metricsConsumer.accept(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME, rt.getVmName());

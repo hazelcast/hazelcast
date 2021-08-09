@@ -91,7 +91,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertNull(parameters.get("l"));
         assertNull(parameters.get("hdgb"));
         assertEquals(parameters.get(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID.getRequestParameterName()), "source");
-        assertEquals(parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()), "A");
+        assertEquals(parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()), "1");
         assertEquals(parameters.get(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT.getRequestParameterName()), "A");
 
         assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT.getRequestParameterName()), "0");
