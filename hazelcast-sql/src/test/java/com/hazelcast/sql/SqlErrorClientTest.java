@@ -296,11 +296,14 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             try (SqlResult result = client.getSql().execute("SELECT this FROM " + MAP_NAME)) {
                 boolean first = true;
 
-                for (SqlRow ignore : result) {
+                for (SqlRow row : result) {
                     if (first) {
                         BadValue.READ_ERROR.set(true);
 
                         first = false;
+                    } else {
+                        // row values are deserialized lazily, on access
+                        row.getObject("this");
                     }
                 }
 
