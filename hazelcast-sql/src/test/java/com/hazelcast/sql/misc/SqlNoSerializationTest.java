@@ -108,7 +108,6 @@ public class SqlNoSerializationTest extends OptimizerTestSupport {
 
     @After
     public void after() {
-        instance().getMap(MAP_NAME).clear();
         failOnSerialization = false;
     }
 

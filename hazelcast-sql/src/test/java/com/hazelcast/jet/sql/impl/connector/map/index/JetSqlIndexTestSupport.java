@@ -34,25 +34,10 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 
-public abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
-    protected enum Usage {
-        /**
-         * Index is not used
-         */
-        NONE,
+abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
 
-        /**
-         * Only one component is used
-         */
-        ONE,
-
-        /**
-         * Both components are used
-         */
-        BOTH
-    }
-
-    static String toLiteral(ExpressionType type, Object value) {
+    @SuppressWarnings("rawtypes")
+    protected static String toLiteral(ExpressionType type, Object value) {
         if (type == BOOLEAN) {
             return Boolean.toString((Boolean) value);
         } else if (type == BYTE) {
@@ -80,7 +65,7 @@ public abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
         throw new UnsupportedOperationException("Unsupported type: " + type);
     }
 
-    static List<ExpressionType<?>> baseTypes() {
+    protected static List<ExpressionType<?>> baseTypes() {
         return Arrays.asList(
                 BOOLEAN,
                 INTEGER,
@@ -88,7 +73,7 @@ public abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
         );
     }
 
-    static List<ExpressionType<?>> allTypes() {
+    protected static List<ExpressionType<?>> allTypes() {
         return Arrays.asList(
                 BOOLEAN,
                 BYTE,

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
@@ -55,11 +56,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexTestSupport.allTypes;
-import static com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexTestSupport.toLiteral;
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
@@ -80,13 +78,11 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
+public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
     private HazelcastInstance member;
 
-    private static final AtomicInteger mapName_GEN = new AtomicInteger();
-    private String mapName;
     private static final String INDEX_NAME = "index";
 
     @Parameterized.Parameter
@@ -109,14 +105,13 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
     }
 
     @BeforeClass
-    public static void setUp() {
+    public static void beforeClass() {
         initialize(1, null);
     }
 
     @Before
     public void before() {
         member = factory.newHazelcastInstance();
-        mapName = SqlTestSupport.randomName();
     }
 
     @Test
@@ -163,9 +158,13 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
     }
 
     private IMap<Integer, ExpressionBiValue> nextMap() {
-        mapName = "map" + mapName_GEN.incrementAndGet();
+        String mapName = SqlTestSupport.randomName();
 
-        member.getMap(mapName).addIndex(getIndexConfig());
+        MapConfig mapConfig = new MapConfig(mapName);
+        mapConfig.addIndexConfig(getIndexConfig());
+
+        member.getConfig().addMapConfig(mapConfig);
+
         return member.getMap(mapName);
     }
 
@@ -279,10 +278,10 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
 
         SqlStatement sql = new SqlStatement("SELECT * FROM " + map.getName() + " WHERE field1=" + field1Literal + " AND field2=" + field2Literal);
 
-        checkIndexUsage(sql, f1, f2, expectedUsage);
+        checkIndexUsage(sql, f1, f2, map.getName(), expectedUsage);
     }
 
-    private void checkIndexUsage(SqlStatement statement, ExpressionType<?> f1, ExpressionType<?> f2, Usage expectedIndexUsage) {
+    private void checkIndexUsage(SqlStatement statement, ExpressionType<?> f1, ExpressionType<?> f2, String mapName, Usage expectedIndexUsage) {
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.OBJECT, QueryDataType.INT);
         List<TableField> mapTableFields = asList(
                 new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
@@ -302,12 +301,11 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
                 plan(planRow(0, FullScanLogicalRel.class))
         );
         switch (expectedIndexUsage) {
-            case BOTH:
+            case NONE:
                 assertPlan(
                         optimizationResult.getPhysical(),
-                        plan(planRow(0, IndexScanMapPhysicalRel.class))
+                        plan(planRow(0, FullScanPhysicalRel.class))
                 );
-                assertNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getRemainderExp());
                 break;
             case ONE:
                 assertPlan(
@@ -316,12 +314,24 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
                 );
                 assertNotNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getRemainderExp());
                 break;
-            case NONE:
+            case BOTH:
                 assertPlan(
                         optimizationResult.getPhysical(),
-                        plan(planRow(0, FullScanPhysicalRel.class))
+                        plan(planRow(0, IndexScanMapPhysicalRel.class))
                 );
+                assertNull(((IndexScanMapPhysicalRel) optimizationResult.getPhysical()).getRemainderExp());
                 break;
         }
+    }
+
+    private enum Usage {
+        /** Index is not used */
+        NONE,
+
+        /** Only one component is used */
+        ONE,
+
+        /** Both components are used */
+        BOTH
     }
 }

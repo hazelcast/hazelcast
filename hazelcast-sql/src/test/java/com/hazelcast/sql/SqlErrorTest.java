@@ -44,27 +44,6 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
     }
 
     @Test
-    public void testDataTypeMismatch() {
-        checkDataTypeMismatch(false);
-    }
-
-    @Test
-    public void testExecuteOnLiteMember() {
-        // Start one normal member and one local member.
-        newHazelcastInstance(true);
-        HazelcastInstance liteMember = factory.newHazelcastInstance(getConfig().setLiteMember(true));
-
-        // Insert data
-        populate(liteMember);
-
-        // Try query from the lite member.
-        HazelcastSqlException error = assertSqlException(liteMember, query());
-        assertErrorCode(SqlErrorCode.GENERIC, error);
-        assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
-    }
-
-    @SuppressWarnings({"unused"})
-    @Test
     public void testMemberLeave() throws InterruptedException {
         // Start two instances
         instance1 = newHazelcastInstance(false);
@@ -96,6 +75,26 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         // Start query with immediate shutdown afterwards
         HazelcastSqlException error = assertSqlExceptionWithShutdown(instance1, streamingQuery);
         assertInstanceOf(HazelcastInstanceNotActiveException.class, findRootCause(error));
+    }
+
+    @Test
+    public void testDataTypeMismatch() {
+        checkDataTypeMismatch(false);
+    }
+
+    @Test
+    public void testExecuteOnLiteMember() {
+        // Start one normal member and one local member.
+        newHazelcastInstance(true);
+        HazelcastInstance liteMember = factory.newHazelcastInstance(getConfig().setLiteMember(true));
+
+        // Insert data
+        populate(liteMember);
+
+        // Try query from the lite member.
+        HazelcastSqlException error = assertSqlException(liteMember, query());
+        assertErrorCode(SqlErrorCode.GENERIC, error);
+        assertEquals("SQL queries cannot be executed on lite members", error.getMessage());
     }
 
     @Test
