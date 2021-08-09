@@ -76,7 +76,7 @@ public class SqlRowImpl implements SqlRow {
             LazyTarget res0 = (LazyTarget) res;
 
             if (deserialize) {
-                res = lazyDeserializer.deserialize((LazyTarget) res);
+                res = lazyDeserializer.deserialize(res0);
             } else {
                 res = res0.getSerialized();
 
