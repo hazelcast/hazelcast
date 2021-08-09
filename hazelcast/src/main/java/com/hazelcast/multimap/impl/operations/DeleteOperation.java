@@ -16,15 +16,18 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 
 public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
 
     private transient boolean shouldBackup;
+    private transient long startTimeNanos;
 
     public DeleteOperation() {
     }
@@ -34,12 +37,29 @@ public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
     }
 
     @Override
+    public void beforeRun() {
+        if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
+    }
+
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         if (container.delete(dataKey)) {
             container.update();
         }
         shouldBackup = true;
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (Boolean.TRUE.equals(response)) {
+            if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
+                ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name)
+                        .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+            }
+        }
     }
 
     @Override

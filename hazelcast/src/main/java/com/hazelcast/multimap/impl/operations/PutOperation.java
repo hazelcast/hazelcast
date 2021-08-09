@@ -18,9 +18,11 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -36,6 +38,7 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
     private Data value;
     private int index = -1;
     private long recordId;
+    private transient long startTimeNanos;
 
     public PutOperation() {
     }
@@ -44,6 +47,13 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
         super(name, dataKey, threadId);
         this.value = value;
         this.index = index;
+    }
+
+    @Override
+    public void beforeRun() {
+        if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
     }
 
     @Override
@@ -67,8 +77,13 @@ public class PutOperation extends AbstractBackupAwareMultiMapOperation implement
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getOrCreateContainer().update();
+            MultiMapContainer container = getOrCreateContainer();
+            container.update();
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
+            if (container.getConfig().isStatisticsEnabled()) {
+                ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name)
+                        .incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+            }
         }
     }
 

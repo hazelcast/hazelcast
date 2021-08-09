@@ -18,6 +18,7 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -33,11 +34,20 @@ import java.util.Collection;
 
 public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
+    private transient long startTimeNanos;
+
     public GetAllOperation() {
     }
 
     public GetAllOperation(String name, Data dataKey) {
         super(name, dataKey);
+    }
+
+    @Override
+    public void beforeRun() {
+        if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
     }
 
     @Override
@@ -50,6 +60,16 @@ public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implement
             coll = multiMapValue.getCollection(executedLocally());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (response != null) {
+            if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
+                ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name)
+                        .incrementGetLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+            }
+        }
     }
 
     @Override
