@@ -38,7 +38,8 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -66,13 +67,13 @@ import static org.junit.Assert.fail;
 
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        initialize(2, smallInstanceConfig());
+        initialize(1, smallInstanceConfig());
     }
 
     private static final AtomicInteger mapName_GEN = new AtomicInteger();
