@@ -66,6 +66,6 @@ public class ExternalizableEmployeeDTO implements Externalizable {
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        usedExternalizableSerialization = false;
+        usedExternalizableSerialization = true;
     }
 }
