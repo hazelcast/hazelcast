@@ -25,6 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
@@ -123,12 +124,24 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
             fail("Must fail!");
         } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
-            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"field1\" of type VARCHAR, but INTEGER was expected", e.getMessage());
+            Throwable ex = findRootQueryException(e);
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"field1\" of type VARCHAR, but INTEGER was expected", ex.getMessage());
         }
     }
 
     @After
     public void after() {
         factory.shutdownAll();
+    }
+
+    private Throwable findRootQueryException(Throwable t) {
+        while (t != null) {
+            // we need exactly root exception for this particular case
+            if (t instanceof QueryException && t.getCause() == null) {
+                return t;
+            }
+            t = t.getCause();
+        }
+        return null;
     }
 }

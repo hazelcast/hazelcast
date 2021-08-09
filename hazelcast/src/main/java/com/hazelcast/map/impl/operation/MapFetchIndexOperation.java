@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
@@ -36,6 +35,7 @@ import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.io.IOException;
@@ -86,16 +86,15 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     protected void runInternal() {
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            throw com.hazelcast.sql.impl.QueryException.error(
-                    SqlErrorCode.INDEX_INVALID,
-                    "Cannot use the index \"" + indexName + "\" of the IMap \"" + name + "\" because it is not global "
-                            + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED + "\" is set to \"true\")"
-            ).markInvalidate();
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
+                    + "\" of the IMap \"" + name + "\" because it is not global "
+                    + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
+                    + "\" is set to \"true\")");
         }
 
         InternalIndex index = indexes.getIndex(indexName);
         if (index == null) {
-            throw new QueryException("Index \"" + indexName + "\" does not exist");
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
         }
 
         PartitionStamp indexStamp = index.getPartitionStamp();
