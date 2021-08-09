@@ -775,9 +775,6 @@ hazelcast:
     # 'hazelcast.metrics.collection.frequency' system property.
     collection-frequency-seconds: 5
 
-  instance-tracking:
-    enabled: false
-
   sql:
     # Sets the number of threads responsible for execution of SQL statements.
     # The default value -1 sets the pool size equal to the number of CPU cores,
