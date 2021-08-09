@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.util.EmptyStatement;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -42,14 +46,23 @@ public class InstanceTrackingConfig {
     public static final Path DEFAULT_FILE = Paths.get(System.getProperty("java.io.tmpdir"), "Hazelcast.process");
 
     /**
+     * Default setting whether instance tracking should be enabled or not.
+     * It depends on whether the instance is an OEM/NLC build or not.
+     */
+    public static final boolean DEFAULT_ENABLED = isOEMBuild();
+
+    /**
      * Namespace for the placeholders in the file name and format pattern to
      * distinguish between different types of placeholders.
      */
     public static final String PLACEHOLDER_NAMESPACE = "HZ_INSTANCE_TRACKING";
 
-    private boolean enabled;
+    boolean isEnabledSet;
+
+    private boolean enabled = DEFAULT_ENABLED;
     private String fileName;
     private String formatPattern;
+
 
     public InstanceTrackingConfig() {
         super();
@@ -76,6 +89,7 @@ public class InstanceTrackingConfig {
      */
     public InstanceTrackingConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        this.isEnabledSet = true;
         return this;
     }
 
@@ -310,5 +324,22 @@ public class InstanceTrackingConfig {
         public String getModeName() {
             return modeName;
         }
+    }
+
+    /**
+     * Returns whether this build is an OEM/NLC build or not.
+     */
+    private static boolean isOEMBuild() {
+        try {
+            Class<?> helper = Class.forName("com.hazelcast.license.util.LicenseHelper");
+            Method getLicense = helper.getMethod("getBuiltInLicense");
+            // enabled for OEM/NLC build
+            return getLicense.invoke(null) != null;
+        } catch (ClassNotFoundException | NoSuchMethodException
+                | IllegalAccessException | InvocationTargetException e) {
+            // running OS, instance tracking is disabled by default
+            EmptyStatement.ignore(e);
+        }
+        return false;
     }
 }

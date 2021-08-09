@@ -48,6 +48,7 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 
 /**
@@ -404,8 +405,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected void handleInstanceTracking(Node node, InstanceTrackingConfig trackingConfig) {
         Node attrEnabled = getNamedItemNode(node, "enabled");
-        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
-        trackingConfig.setEnabled(enabled);
+        String textContent = getTextContent(attrEnabled);
+        if (!isNullOrEmptyAfterTrim(textContent)) {
+            trackingConfig.setEnabled(getBooleanValue(textContent));
+        }
 
         for (Node n : childElements(node)) {
             final String name = cleanNodeName(n);
