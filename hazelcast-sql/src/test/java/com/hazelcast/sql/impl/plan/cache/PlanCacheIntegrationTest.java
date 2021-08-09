@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl.plan.cache;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
