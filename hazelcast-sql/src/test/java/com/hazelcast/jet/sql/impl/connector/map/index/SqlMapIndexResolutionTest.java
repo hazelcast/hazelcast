@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -39,6 +40,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -56,6 +58,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexTestSupport.allTypes;
+import static com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexTestSupport.toLiteral;
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
@@ -65,16 +69,21 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
+/**
+ * Note:
+ * Test class requires to have {@link OptimizerTestSupport} as ancestor
+ * to assert plans according to test logic,
+ * and requite not to share cluster member.
+ * <p>
+ * It's a reason why we have separate HZ factory and member.
+ */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
 
-    @BeforeClass
-    public static void setUp() {
-        initialize(1, smallInstanceConfig());
-    }
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
+    private HazelcastInstance member;
 
     private static final AtomicInteger mapName_GEN = new AtomicInteger();
     private String mapName;
@@ -99,8 +108,14 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
         return res;
     }
 
+    @BeforeClass
+    public static void setUp() {
+        initialize(1, null);
+    }
+
     @Before
     public void before() {
+        member = factory.newHazelcastInstance();
         mapName = SqlTestSupport.randomName();
     }
 
@@ -150,8 +165,8 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
     private IMap<Integer, ExpressionBiValue> nextMap() {
         mapName = "map" + mapName_GEN.incrementAndGet();
 
-        instance().getMap(mapName).addIndex(getIndexConfig());
-        return instance().getMap(mapName);
+        member.getMap(mapName).addIndex(getIndexConfig());
+        return member.getMap(mapName);
     }
 
     protected IndexConfig getIndexConfig() {
@@ -169,7 +184,7 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
     private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(instance()), JetMapMetadataResolver.NO_OP);
+        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(member), JetMapMetadataResolver.NO_OP);
 
         for (Table table : resolver.getTables()) {
             if (((AbstractMapTable) table).getMapName().equals(mapName)) {
@@ -277,7 +292,7 @@ public class SqlMapIndexResolutionTest extends JetSqlIndexTestSupport {
         HazelcastTable table = partitionedTable(
                 mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
+                getPartitionedMapIndexes(getMapContainer(member.getMap(mapName)), mapTableFields),
                 1 // we can place random number, doesn't matter in current case.
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
