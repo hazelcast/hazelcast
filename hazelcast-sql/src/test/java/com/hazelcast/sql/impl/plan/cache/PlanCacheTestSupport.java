@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.Plan;
-import org.junit.After;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,11 +52,6 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
         PART_MAP_1 = Collections.singletonMap(memberId, partitions1);
         PART_MAP_2 = Collections.singletonMap(memberId, partitions2);
-    }
-
-    @After
-    public void after() {
-        getPlanCache(instance()).getPlans().clear();
     }
 
     public static PlanKey createKey(String sql) {
