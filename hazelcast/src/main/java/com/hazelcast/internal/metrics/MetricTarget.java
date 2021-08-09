@@ -40,20 +40,18 @@ public enum MetricTarget {
     DIAGNOSTICS,
     JET_JOB;
 
-    private static final MetricTarget[] VALUES = values();
-
-    public static final List<MetricTarget> ALL_TARGETS = unmodifiableList(asList(VALUES));
+    public static final List<MetricTarget> ALL_TARGETS = unmodifiableList(asList(values()));
     public static final Collection<MetricTarget> NONE_OF = EnumSet.noneOf(MetricTarget.class);
     public static final Collection<MetricTarget> ALL_TARGETS_BUT_DIAGNOSTICS;
 
     static final Int2ObjectHashMap<Set<MetricTarget>> BITSET_TO_SET_CACHE = new Int2ObjectHashMap<>();
 
-    private static final int MASK_ALL_TARGETS = bitset(VALUES);
+    private static final int MASK_ALL_TARGETS = bitset(values());
 
     static {
         // building BITSET_TO_SET_CACHE using a recursive algorithm for generating all combinations
-        for (int i = 0; i <= VALUES.length; i++) {
-            generateCombinations(new int[i], 0, VALUES.length - 1, 0);
+        for (int i = 0; i <= values().length; i++) {
+            generateCombinations(new int[i], 0, values().length - 1, 0);
         }
 
         ALL_TARGETS_BUT_DIAGNOSTICS = asSetWithout(ALL_TARGETS, DIAGNOSTICS);
@@ -61,7 +59,7 @@ public enum MetricTarget {
 
     private static void generateCombinations(int[] ordinals, int start, int end, int index) {
         if (index == ordinals.length) {
-            MetricTarget[] allTargets = VALUES;
+            MetricTarget[] allTargets = values();
             MetricTarget[] combination = new MetricTarget[ordinals.length];
             for (int i = 0; i < ordinals.length; i++) {
                 combination[i] = allTargets[ordinals[i]];
@@ -78,8 +76,8 @@ public enum MetricTarget {
      * Returns set based on the given array of {@link MetricTarget}.
      * Set objects are returned from a preliminary warmed up cache, so this method has no memory overhead.
      *
-     * @param targets input array
-     * @return set containing all items from the input array
+     * @param targets   input array
+     * @return          set containing all items from the input array
      */
     public static Set<MetricTarget> asSet(MetricTarget... targets) {
         if (targets.length == 0) {
