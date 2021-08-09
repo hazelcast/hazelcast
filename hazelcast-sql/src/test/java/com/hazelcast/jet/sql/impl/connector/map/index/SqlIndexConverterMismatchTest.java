@@ -99,7 +99,7 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
      * @see MapIndexScanExecIterator#getIndexEntries
      */
     @SuppressWarnings("StatementWithEmptyBody")
-    @Ignore // TODO: implement this check in operation, see the comment above.
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19287")
     @Test
     public void testMismatch() {
         ExpressionBiValue value1 = new ExpressionBiValue.IntegerIntegerVal();

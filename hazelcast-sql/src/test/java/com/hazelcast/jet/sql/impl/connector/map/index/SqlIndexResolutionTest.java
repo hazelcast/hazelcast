@@ -68,6 +68,7 @@ import static org.junit.Assert.fail;
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
+
     private static final String INDEX_NAME = "index";
 
     @Parameterized.Parameter
@@ -91,6 +92,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
+        // TODO: https://github.com/hazelcast/hazelcast/issues/19285
         initialize(1, null);
     }
 

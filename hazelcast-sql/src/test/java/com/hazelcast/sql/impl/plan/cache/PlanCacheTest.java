@@ -35,6 +35,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheTest extends PlanCacheTestSupport {
+
     @BeforeClass
     public static void setUp() {
         initialize(1, smallInstanceConfig());

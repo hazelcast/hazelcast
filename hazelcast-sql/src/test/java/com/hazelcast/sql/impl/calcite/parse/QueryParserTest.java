@@ -75,7 +75,7 @@ public class QueryParserTest {
     @Test
     public void unsupportedKeywordTest() {
         try {
-            QueryParseResult result = parser.parse("show tables");
+            parser.parse("show tables");
             fail("\"show tables\" did not throw parsing exception");
         } catch (Exception e) {
             String message = e.getMessage();

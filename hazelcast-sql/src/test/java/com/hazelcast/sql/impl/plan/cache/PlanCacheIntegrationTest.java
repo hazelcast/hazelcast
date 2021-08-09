@@ -51,19 +51,18 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
 
     @Test
     public void testPlanIsCached() {
-        IMap<Integer, Integer> map = instance().getMap(mapName);
-        map.put(1, 1);
-        instance().getSql().execute("SELECT * FROM " + mapName);
+        instance().getMap(mapName).put(1, 1);
 
-        PlanCache planCache = getPlanCache(instance());
-
-        assertEquals(1, planCache.size());
-        SqlPlan prevPlan = planCache.get(planCache.getPlans().keys().nextElement());
+        PlanCache planCache = planCache(instance());
 
         instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        SqlPlan actualPlan = planCache.get(planCache.getPlans().keys().nextElement());
-        assertSame(prevPlan, actualPlan);
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
+
+        instance().getSql().execute("SELECT * FROM " + mapName);
+        assertEquals(1, planCache.size());
+        SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+        assertSame(plan1, plan2);
     }
 
     @Test
@@ -71,20 +70,19 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
         IMap<Integer, Integer> map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(instance());
+        PlanCache planCache = planCache(instance());
 
         instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
         assertEquals(1, planCache.size());
-        PlanKey planKey = planCache.getPlans().keys().nextElement();
-        SqlPlan prevPlan = planCache.get(planKey);
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
 
         map.addIndex(IndexType.HASH, "this");
 
         assertTrueEventually(() -> {
             instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
             assertEquals(1, planCache.size());
-            SqlPlan actualPlan = planCache.get(planCache.getPlans().keys().nextElement());
-            assertNotSame(prevPlan, actualPlan);
+            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+            assertNotSame(plan1, plan2);
         });
     }
 
@@ -93,7 +91,7 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
         IMap<Integer, Integer> map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(instance());
+        PlanCache planCache = planCache(instance());
 
         instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
@@ -108,21 +106,20 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
         IMap map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(instance());
+        PlanCache planCache = planCache(instance());
 
         instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        PlanKey planKey = planCache.getPlans().keys().nextElement();
-        SqlPlan prevPlan = planCache.get(planKey);
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
 
         map.clear();
+        map.put("1", "1");
 
         assertTrueEventually(() -> {
-            map.put("1", "1");
             instance().getSql().execute("SELECT * FROM " + mapName);
             assertEquals(1, planCache.size());
-            SqlPlan actualPlan = planCache.get(planCache.getPlans().keys().nextElement());
-            assertNotSame(prevPlan, actualPlan);
+            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+            assertNotSame(plan1, plan2);
         });
     }
 }

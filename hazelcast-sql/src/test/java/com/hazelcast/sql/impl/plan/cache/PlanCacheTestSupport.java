@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -31,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
 import static org.junit.Assert.assertEquals;
 
 public abstract class PlanCacheTestSupport extends SqlTestSupport {
@@ -89,10 +87,6 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
     public static PlanObjectKey createObjectId(int value) {
         return new TestPlanObjectKey(value);
-    }
-
-    protected PlanCache getPlanCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
     }
 
     @SuppressWarnings("BusyWait")

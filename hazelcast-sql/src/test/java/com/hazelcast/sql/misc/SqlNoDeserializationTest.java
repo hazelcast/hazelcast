@@ -113,8 +113,8 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         };
     }
 
-    @Ignore(value = "Doesn't work as expected for Jet engine.")
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testMember() {
         try (SqlResult res = instance().getSql().execute(SQL)) {
             for (SqlRow row : res) {
@@ -129,9 +129,11 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
     }
 
-    @Ignore(value = "Doesn't work as expected for Jet engine.")
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testClient() {
+        int pageSize = KEY_COUNT / 2;
+
         SqlClientService clientService = (SqlClientService) client().getSql();
 
         ClientConnection connection = clientService.getQueryConnection();
@@ -143,7 +145,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
                 SQL,
                 Collections.emptyList(),
                 Long.MAX_VALUE,
-                KEY_COUNT,
+                pageSize,
                 null,
                 SqlExpectedResultType.ROWS.getId(),
                 queryId
@@ -159,10 +161,13 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         assertNotNull(executeResponse.rowPage);
-        assertEquals(KEY_COUNT, executeResponse.rowPage.getRowCount());
+        assertEquals(pageSize, executeResponse.rowPage.getRowCount());
 
         // Get the second page through the "execute" request
-        ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(queryId, KEY_COUNT);
+        ClientMessage fetchRequest = SqlFetchCodec.encodeRequest(
+                queryId,
+                pageSize
+        );
 
         SqlFetchCodec.ResponseParameters fetchResponse = SqlFetchCodec.decodeResponse(
                 clientService.invokeOnConnection(connection, fetchRequest)
@@ -173,7 +178,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
         }
 
         assertNotNull(fetchResponse.rowPage);
-        assertEquals(KEY_COUNT, fetchResponse.rowPage.getRowCount());
+        assertEquals(pageSize, fetchResponse.rowPage.getRowCount());
     }
 
     private void checkFailure(SqlRow row, boolean key) {
