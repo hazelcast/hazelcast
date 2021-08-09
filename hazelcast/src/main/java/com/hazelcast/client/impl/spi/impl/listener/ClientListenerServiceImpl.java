@@ -339,7 +339,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                             + " has failed for address " + subscriber.getRemoteAddress(), throwable);
                 }
                 return null;
-            });
+            }).joinInternal();
         }
         return true;
     }
