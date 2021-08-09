@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -41,10 +40,8 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -67,22 +64,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * Note:
- * Test class requires to have {@link OptimizerTestSupport} as ancestor
- * to assert plans according to test logic,
- * and requite not to share cluster member.
- * <p>
- * It's a reason why we have separate HZ factory and member.
- */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
-
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
-    private HazelcastInstance member;
-
     private static final String INDEX_NAME = "index";
 
     @Parameterized.Parameter
@@ -107,11 +92,6 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(1, null);
-    }
-
-    @Before
-    public void before() {
-        member = factory.newHazelcastInstance();
     }
 
     @Test
@@ -163,9 +143,9 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         MapConfig mapConfig = new MapConfig(mapName);
         mapConfig.addIndexConfig(getIndexConfig());
 
-        member.getConfig().addMapConfig(mapConfig);
+        instance().getConfig().addMapConfig(mapConfig);
 
-        return member.getMap(mapName);
+        return instance().getMap(mapName);
     }
 
     protected IndexConfig getIndexConfig() {
@@ -183,7 +163,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(member), JetMapMetadataResolver.NO_OP);
+        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(instance()), JetMapMetadataResolver.NO_OP);
 
         for (Table table : resolver.getTables()) {
             if (((AbstractMapTable) table).getMapName().equals(mapName)) {
@@ -291,7 +271,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         HazelcastTable table = partitionedTable(
                 mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(member.getMap(mapName)), mapTableFields),
+                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
                 1 // we can place random number, doesn't matter in current case.
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
@@ -325,13 +305,19 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     }
 
     private enum Usage {
-        /** Index is not used */
+        /**
+         * Index is not used
+         */
         NONE,
 
-        /** Only one component is used */
+        /**
+         * Only one component is used
+         */
         ONE,
 
-        /** Both components are used */
+        /**
+         * Both components are used
+         */
         BOTH
     }
 }
