@@ -5,11 +5,11 @@
     <parent>
         <artifactId>hazelcast-3-connector-root</artifactId>
         <groupId>com.hazelcast</groupId>
-        <version>5.0-BETA-2-SNAPSHOT</version>
+        <version>5.0-BETA-2</version>
     </parent>
 
     <artifactId>hazelcast-3-connector-common</artifactId>
-    <version>5.0-BETA-2-SNAPSHOT</version>
+    <version>5.0-BETA-2</version>
 
     <name>hazelcast-3-connector-common</name>
 
@@ -17,20 +17,20 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>5.0-BETA-2-SNAPSHOT</version>
+            <version>5.0-BETA-2</version>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
-            <version>5.0-BETA-2-SNAPSHOT</version>
+            <version>5.0-BETA-2</version>
             <type>test-jar</type>
         </dependency>
 
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-3-connector-interface</artifactId>
-            <version>5.0-BETA-2-SNAPSHOT</version>
+            <version>5.0-BETA-2</version>
         </dependency>
     </dependencies>
 
@@ -45,7 +45,7 @@
                     <dependency>
                         <groupId>com.hazelcast</groupId>
                         <artifactId>hazelcast-3-connector-impl</artifactId>
-                        <version>5.0-BETA-2-SNAPSHOT</version>
+                        <version>5.0-BETA-2</version>
                     </dependency>
                 </dependencies>
             </plugin>

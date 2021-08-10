@@ -29,7 +29,7 @@
     <parent>
         <artifactId>hazelcast-jet-hadoop-dist</artifactId>
         <groupId>com.hazelcast.jet</groupId>
-        <version>5.0-BETA-2-SNAPSHOT</version>
+        <version>5.0-BETA-2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

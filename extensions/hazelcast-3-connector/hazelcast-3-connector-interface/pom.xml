@@ -5,11 +5,11 @@
     <parent>
         <artifactId>hazelcast-3-connector-root</artifactId>
         <groupId>com.hazelcast</groupId>
-        <version>5.0-BETA-2-SNAPSHOT</version>
+        <version>5.0-BETA-2</version>
     </parent>
 
     <artifactId>hazelcast-3-connector-interface</artifactId>
-    <version>5.0-BETA-2-SNAPSHOT</version>
+    <version>5.0-BETA-2</version>
     <name>hazelcast-3-connector-interface</name>
 
 </project>
