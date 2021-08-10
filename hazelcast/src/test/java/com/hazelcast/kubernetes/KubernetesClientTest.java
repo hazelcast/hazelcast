@@ -19,6 +19,7 @@ package com.hazelcast.kubernetes;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
+import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Rule;
@@ -918,7 +919,7 @@ public class KubernetesClientTest {
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, ExposeExternallyMode.AUTO, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
     }
 
     private static List<String> format(List<Endpoint> addresses) {

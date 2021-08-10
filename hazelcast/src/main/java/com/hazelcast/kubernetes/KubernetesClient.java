@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.exception.RestClientException;
@@ -59,6 +60,7 @@ class KubernetesClient {
     private final String apiToken;
     private final String caCertificate;
     private final int retries;
+    private ExposeExternallyMode exposeExternallyMode;
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
@@ -67,12 +69,14 @@ class KubernetesClient {
     private boolean isKnownExceptionAlreadyLogged;
 
     KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
+                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
+                     String servicePerPodLabelName, String servicePerPodLabelValue) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.apiToken = apiToken;
         this.caCertificate = caCertificate;
         this.retries = retries;
+        this.exposeExternallyMode = exposeExternallyMode;
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
@@ -330,6 +334,9 @@ class KubernetesClient {
      * </ol>
      */
     private List<Endpoint> enrichWithPublicAddresses(List<Endpoint> endpoints) {
+        if (exposeExternallyMode == ExposeExternallyMode.DISABLED) {
+            return endpoints;
+        }
         try {
             String endpointsUrl = String.format("%s/api/v1/namespaces/%s/endpoints", kubernetesMaster, namespace);
             if (!StringUtil.isNullOrEmptyAfterTrim(servicePerPodLabelName)
@@ -374,6 +381,10 @@ class KubernetesClient {
 
             return createEndpoints(endpoints, publicIps, publicPorts);
         } catch (Exception e) {
+            if (exposeExternallyMode == ExposeExternallyMode.ENABLED) {
+                throw e;
+            }
+            // If expose-externally not set (exposeExternallyMode == ExposeExternallyMode.AUTO), silently ignore any exception
             LOGGER.finest(e);
             // Log warning only once.
             if (!isNoPublicIpAlreadyLogged) {
