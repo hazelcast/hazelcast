@@ -199,6 +199,7 @@ public class EnumCompatibilityTest {
         mappings.put(SqlColumnType.TIMESTAMP_WITH_TIME_ZONE, 12);
         mappings.put(SqlColumnType.OBJECT, 13);
         mappings.put(SqlColumnType.NULL, 14);
+        mappings.put(SqlColumnType.JSON, 15);
         verifyCompatibility(SqlColumnType.values(), SqlColumnType::getId, mappings);
     }
 

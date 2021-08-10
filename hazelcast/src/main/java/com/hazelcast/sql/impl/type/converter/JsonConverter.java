@@ -41,4 +41,9 @@ public class JsonConverter extends Converter {
         final HazelcastJsonValue jsonValue = (HazelcastJsonValue) val;
         return jsonValue.toString();
     }
+
+    @Override
+    public HazelcastJsonValue asJson(final Object val) {
+        return (HazelcastJsonValue) val;
+    }
 }
