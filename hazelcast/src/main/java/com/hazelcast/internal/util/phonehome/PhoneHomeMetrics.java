@@ -62,7 +62,13 @@ public enum PhoneHomeMetrics {
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),
     CLUSTER_ID("c"),
+    /**
+     * Maintained for backward-compatibility (in PhoneHome reports), but otherwise deprecated, please use
+     * {@link #EXACT_CLUSTER_SIZE} instead.
+     */
+    @Deprecated
     CLUSTER_SIZE("crsz"),
+    EXACT_CLUSTER_SIZE("ecrsz"),
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),

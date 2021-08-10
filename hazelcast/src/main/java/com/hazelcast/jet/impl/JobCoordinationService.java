@@ -102,7 +102,6 @@ import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -116,6 +115,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -704,7 +704,8 @@ public class JobCoordinationService {
                     .filter(lmc -> !(lmc instanceof UninitializedLightJobMarker))
                     .map(LightMasterContext.class::cast)
                     .map(lmc -> new JobSummary(
-                            lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
+                            true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
+                            RUNNING, lmc.getStartTime()))
                     .forEach(s -> jobs.put(s.getJobId(), s));
 
             return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
@@ -1228,7 +1229,7 @@ public class JobCoordinationService {
         } else {
             status = ctx.jobStatus();
         }
-        return new JobSummary(record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
+        return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
