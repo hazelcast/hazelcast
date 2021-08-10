@@ -43,10 +43,11 @@ public class TextChannelInitializer
         SingleProtocolEncoder encoder = new SingleProtocolEncoder(new TextEncoder(connection));
 
         InboundHandler decoder = rest
-                ? new RestApiTextDecoder(connection, (TextEncoder) encoder.outboundHandlers[0], true)
-                : new MemcacheTextDecoder(connection, (TextEncoder) encoder.outboundHandlers[0], true);
+                ? new RestApiTextDecoder(connection, (TextEncoder) encoder.getFirstOutboundHandler(), true)
+                : new MemcacheTextDecoder(connection, (TextEncoder) encoder.getFirstOutboundHandler(), true);
 
-        TextHandshakeDecoder handshaker = new TextHandshakeDecoder(rest ? ProtocolType.REST : ProtocolType.MEMCACHE, decoder, encoder);
+        TextHandshakeDecoder handshaker = new TextHandshakeDecoder(rest ? ProtocolType.REST : ProtocolType.MEMCACHE,
+                decoder, encoder);
         channel.outboundPipeline().addLast(encoder);
         channel.inboundPipeline().addLast(handshaker);
     }

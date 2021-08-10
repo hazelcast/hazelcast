@@ -55,7 +55,8 @@ public class SingleProtocolDecoder
      *                          bytes have been received
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next, SingleProtocolEncoder encoder, boolean shouldSignalMemberProtocolEncoder) {
+    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next,
+                                 SingleProtocolEncoder encoder, boolean shouldSignalMemberProtocolEncoder) {
         this.supportedProtocol = supportedProtocol;
         this.inboundHandlers = next;
         this.encoder = encoder;
@@ -84,7 +85,7 @@ public class SingleProtocolDecoder
             setupNextDecoder();
 
             if (shouldSignalProtocolLoaded()) {
-                ((MemberProtocolEncoder) encoder.outboundHandlers[0]).signalProtocolLoaded();
+                ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalProtocolLoaded();
             }
 
             return CLEAN;

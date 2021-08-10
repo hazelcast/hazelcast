@@ -1,6 +1,21 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.server.tcp;
 
-import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundHandler;
 
@@ -13,11 +28,11 @@ import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
-    public final OutboundHandler[] outboundHandlers;
+    private final OutboundHandler[] outboundHandlers;
 
-    private boolean isDecoderReceivedProtocol = false;
     private boolean isDecoderVerifiedProtocol = true;
-    private boolean clusterProtocolBuffered = false;
+    private boolean isDecoderReceivedProtocol;
+    private boolean clusterProtocolBuffered;
 
     public SingleProtocolEncoder(OutboundHandler next) {
         this(new OutboundHandler[]{next});
@@ -85,5 +100,9 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;
         channel.outboundPipeline().wakeup();
+    }
+
+    public OutboundHandler getFirstOutboundHandler() {
+        return outboundHandlers[0];
     }
 }
