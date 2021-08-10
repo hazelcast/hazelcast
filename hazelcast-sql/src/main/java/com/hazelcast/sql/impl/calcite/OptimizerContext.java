@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.calcite;
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.calcite.opt.QueryPlanner;
-import com.hazelcast.sql.impl.calcite.opt.cost.CostFactory;
+import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
