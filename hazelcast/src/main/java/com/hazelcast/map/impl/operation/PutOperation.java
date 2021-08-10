@@ -32,8 +32,32 @@ public class PutOperation extends BasePutOperation implements MutatingOperation 
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        recordStore.beforeOperation();
+        super.innerBeforeRun();
+    }
+
+    @Override
     protected void runInternal() {
         oldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, getTtl(), getMaxIdle()));
+    }
+
+    @Override
+    protected void afterRunInternal() {
+        try {
+            super.afterRunInternal();
+        } finally {
+            recordStore.afterOperation();
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        try {
+            super.onExecutionFailure(e);
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     // overridden in extension classes

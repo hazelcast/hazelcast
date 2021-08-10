@@ -31,6 +31,12 @@ public class RemoveOperation extends BaseRemoveOperation {
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        recordStore.beforeOperation();
+        super.innerBeforeRun();
+    }
+
+    @Override
     protected void runInternal() {
         dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
         successful = dataOldValue != null;
@@ -38,8 +44,21 @@ public class RemoveOperation extends BaseRemoveOperation {
 
     @Override
     protected void afterRunInternal() {
-        if (successful) {
-            super.afterRunInternal();
+        try {
+            if (successful) {
+                super.afterRunInternal();
+            }
+        } finally {
+            recordStore.afterOperation();
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        try {
+            super.onExecutionFailure(e);
+        } finally {
+            recordStore.afterOperation();
         }
     }
 

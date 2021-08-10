@@ -37,6 +37,12 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        recordStore.beforeOperation();
+        super.innerBeforeRun();
+    }
+
+    @Override
     protected void runInternal() {
         Object currentValue = recordStore.get(dataKey, false, getCallerAddress());
         if (noCopyReadAllowed(currentValue)) {
@@ -58,7 +64,20 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     protected void afterRunInternal() {
-        mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
+        try {
+            mapServiceContext.interceptAfterGet(mapContainer.getInterceptorRegistry(), result);
+        } finally {
+            recordStore.afterOperation();
+        }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        try {
+            super.onExecutionFailure(e);
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     @Override
