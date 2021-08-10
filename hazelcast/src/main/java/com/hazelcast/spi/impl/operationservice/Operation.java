@@ -437,8 +437,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
             TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
             TcpServerConnectionManager tcpServerConnectionManager = tcpServerConnection.getConnectionManager();
             Set<Address> aliases = tcpServerConnectionManager.getKnownAliases(tcpServerConnection);
-            if (aliases.size() == 1) {
-                assert aliases.iterator().next().equals(caller);
+            if (aliases.size() == 1 && aliases.iterator().next().equals(caller)) {
                 //optimization to avoid full blown array list creation
                 return Collections.singletonList(caller);
             }
