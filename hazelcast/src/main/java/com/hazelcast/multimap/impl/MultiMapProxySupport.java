@@ -21,11 +21,13 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.ThreadUtil;
+import com.hazelcast.internal.util.Timer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.multimap.impl.operations.CountOperation;
 import com.hazelcast.multimap.impl.operations.DeleteOperation;
@@ -60,6 +62,7 @@ import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.toIntSize;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.multimap.impl.MultiMapProxyImpl.NULL_KEY_IS_NOT_ALLOWED;
 import static com.hazelcast.multimap.impl.MultiMapProxyImpl.NULL_VALUE_IS_NOT_ALLOWED;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
@@ -407,14 +410,37 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            Future future;
             Object result;
-            future = nodeEngine.getOperationService()
-                    .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-            result = future.get();
+            if (config.isStatisticsEnabled()) {
+                long startTimeNanos = Timer.nanos();
+                Future future;
+                future = nodeEngine.getOperationService()
+                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                result = future.get();
+                incrementOperationStats(startTimeNanos, name, operation);
+            } else {
+                Future future = operationService
+                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                        .setResultDeserialized(false)
+                        .invoke();
+                result = future.get();
+            }
             return nodeEngine.toObject(result);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    private void incrementOperationStats(long startTimeNanos, String name, Operation operation) {
+        LocalMultiMapStatsImpl localMultiMapStatsImpl = getService().getLocalMultiMapStatsImpl(name);
+        final long durationNanos = Timer.nanosElapsed(startTimeNanos);
+        if (operation instanceof PutOperation) {
+            localMultiMapStatsImpl.incrementPutLatencyNanos(durationNanos);
+        } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
+                || operation instanceof DeleteOperation) {
+            localMultiMapStatsImpl.incrementRemoveLatencyNanos(durationNanos);
+        } else if (operation instanceof GetAllOperation) {
+            localMultiMapStatsImpl.incrementGetLatencyNanos(durationNanos);
         }
     }
 
