@@ -226,7 +226,7 @@ public class HazelcastTable extends AbstractTable {
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
 
-        if (sqlTypeName == null) {
+        if (sqlTypeName == SqlTypeName.OTHER) {
             return convertCustomType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
@@ -237,7 +237,7 @@ public class HazelcastTable extends AbstractTable {
     private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
-                return HazelcastJsonType.INSTANCE;
+                return HazelcastJsonType.create(true);
             default:
                 throw new IllegalStateException("Unexpected type family: " + fieldType.getTypeFamily());
         }

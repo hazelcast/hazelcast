@@ -74,7 +74,7 @@ public class HazelcastCalciteCatalogReader extends CalciteCatalogReader {
         }
 
         if (HazelcastTypeUtils.isJsonIdentifier(typeName)) {
-            return HazelcastJsonType.INSTANCE; // TODO construct?
+            return HazelcastJsonType.create(true);
         }
 
         return super.getNamedType(typeName);

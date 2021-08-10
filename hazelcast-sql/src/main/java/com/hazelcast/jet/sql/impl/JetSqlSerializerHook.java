@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.ParseJsonFunction;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -49,6 +50,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
         constructors[JSON_QUERY] = arg -> new JsonQueryFunction();
+        constructors[PARSE_JSON] = arg -> new ParseJsonFunction();
         return new ArrayDataSerializableFactory(constructors);
     }
 }

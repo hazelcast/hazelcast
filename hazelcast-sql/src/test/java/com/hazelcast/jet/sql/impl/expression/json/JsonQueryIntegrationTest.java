@@ -119,6 +119,4 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
             assertEquals((Long) 1L, row.getObject(1));
         }
     }
-
-
 }

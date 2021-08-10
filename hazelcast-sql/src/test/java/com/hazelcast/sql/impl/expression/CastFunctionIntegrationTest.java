@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression;
 
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -43,6 +44,7 @@ import static com.hazelcast.sql.SqlColumnType.DATE;
 import static com.hazelcast.sql.SqlColumnType.DECIMAL;
 import static com.hazelcast.sql.SqlColumnType.DOUBLE;
 import static com.hazelcast.sql.SqlColumnType.INTEGER;
+import static com.hazelcast.sql.SqlColumnType.JSON;
 import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static com.hazelcast.sql.SqlColumnType.REAL;
 import static com.hazelcast.sql.SqlColumnType.SMALLINT;
@@ -173,6 +175,9 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         // Object
         putAndCheckValue(new ExpressionValue.StringVal(), sql("field1", OBJECT), OBJECT, null);
         putAndCheckValue("foo", sql("this", OBJECT), OBJECT, "foo");
+
+        // JSON
+        putAndCheckValue("[1,2,3]", sql("this", JSON), JSON, new HazelcastJsonValue("[1,2,3]"));
     }
 
     @Test
@@ -302,6 +307,9 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         // VARCHAR -> OBJECT
         checkValue0(sql(stringLiteral("foo"), OBJECT), OBJECT, "foo");
+
+        // VARCHAR -> JSON
+        checkValue0(sql(stringLiteral("[1,2,3]"), JSON), JSON, new HazelcastJsonValue("[1,2,3]"));
     }
 
     @Test
@@ -1070,6 +1078,11 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
         putAndCheckValue(object(LOCAL_DATE_TIME_VAL), sql("field1", TIMESTAMP), TIMESTAMP, LOCAL_DATE_TIME_VAL);
         putAndCheckValue(object(OFFSET_DATE_TIME_VAL), sql("field1", TIMESTAMP_WITH_TIME_ZONE), TIMESTAMP_WITH_TIME_ZONE, OFFSET_DATE_TIME_VAL);
         putAndCheckValue(object(STRING_VAL), sql("this", OBJECT), OBJECT, object(STRING_VAL));
+    }
+
+    @Test
+    public void testJson() {
+        putAndCheckValue(new HazelcastJsonValue("[1,2,3]"), sql("this", VARCHAR), VARCHAR, "[1,2,3]");
     }
 
     @Test

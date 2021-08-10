@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastParseJsonFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
@@ -227,7 +228,8 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             }
         }
 
-        if (to.getSqlTypeName().equals(SqlTypeName.OTHER)) {
+        if (literal != null && SqlTypeName.OTHER.equals(to.getSqlTypeName())
+                && HazelcastJsonType.FAMILY.equals(to.getFamily())) {
             return getRexBuilder().makeCall(HazelcastParseJsonFunction.INSTANCE, convertedOperand);
         }
 

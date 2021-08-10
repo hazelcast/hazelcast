@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.Serializable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -80,7 +78,7 @@ public final class HazelcastJsonValue implements Serializable, Comparable<Hazelc
     }
 
     @Override
-    public int compareTo(@NotNull final HazelcastJsonValue o) {
+    public int compareTo(final HazelcastJsonValue o) {
         return o.string.compareTo(this.string);
     }
 }

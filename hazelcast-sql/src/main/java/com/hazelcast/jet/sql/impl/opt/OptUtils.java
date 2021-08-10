@@ -252,18 +252,18 @@ public final class OptUtils {
 
         SqlTypeName sqlTypeName = HazelcastTypeUtils.toCalciteType(fieldType);
 
-        if (sqlTypeName == null) {
-            return convertCustomType(fieldType, typeFactory);
+        if (sqlTypeName == SqlTypeName.OTHER) {
+            return convertCustomType(fieldType);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
     }
 
-    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+    private static RelDataType convertCustomType(QueryDataType fieldType) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
-                return HazelcastJsonType.INSTANCE;
+                return HazelcastJsonType.create(true);
             default:
                 throw new IllegalStateException("Unexpected type family: " + fieldType);
         }

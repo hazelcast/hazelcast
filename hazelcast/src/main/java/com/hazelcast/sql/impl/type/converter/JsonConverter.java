@@ -35,4 +35,10 @@ public class JsonConverter extends Converter {
     public Object convertToSelf(final Converter converter, final Object val) {
         return converter.asJson(val);
     }
+
+    @Override
+    public String asVarchar(final Object val) {
+        final HazelcastJsonValue jsonValue = (HazelcastJsonValue) val;
+        return jsonValue.toString();
+    }
 }
