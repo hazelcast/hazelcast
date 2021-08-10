@@ -20,6 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.util.Timer;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.GetAllOperation;
@@ -42,8 +44,26 @@ import java.util.List;
 public class MultiMapGetMessageTask
         extends AbstractPartitionMessageTask<MultiMapGetCodec.RequestParameters> {
 
+    private transient long startTimeNanos;
+
     public MultiMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected void beforeProcess() {
+        if (getContainer().getConfig().isStatisticsEnabled()) {
+            startTimeNanos = Timer.nanos();
+        }
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        if (getContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
+                    .incrementGetLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+        }
+        return response;
     }
 
     @Override
@@ -93,5 +113,10 @@ public class MultiMapGetMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key};
+    }
+
+    private MultiMapContainer getContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(getPartitionId(), parameters.name);
     }
 }
