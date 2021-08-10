@@ -37,10 +37,11 @@ public class SingleProtocolDecoder
     protected final InboundHandler[] inboundHandlers;
     protected final ProtocolType supportedProtocol;
 
-    private final MemberProtocolEncoder encoder;
+    private final SingleProtocolEncoder encoder;
+    private final boolean shouldSignalMemberProtocolEncoder;
 
-    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next) {
-        this(supportedProtocol, new InboundHandler[]{next}, null);
+    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
+        this(supportedProtocol, new InboundHandler[]{next}, encoder, false);
     }
 
     /**
@@ -54,10 +55,11 @@ public class SingleProtocolDecoder
      *                          bytes have been received
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next, MemberProtocolEncoder encoder) {
+    public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next, SingleProtocolEncoder encoder, boolean shouldSignalMemberProtocolEncoder) {
         this.supportedProtocol = supportedProtocol;
         this.inboundHandlers = next;
         this.encoder = encoder;
+        this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
     }
 
     @Override
@@ -76,12 +78,13 @@ public class SingleProtocolDecoder
             }
 
             verifyProtocol(loadProtocol());
+            encoder.signalProtocolVerified();
             // initialize the connection
             initConnection();
             setupNextDecoder();
 
             if (shouldSignalProtocolLoaded()) {
-                encoder.signalProtocolLoaded();
+                ((MemberProtocolEncoder) encoder.outboundHandlers[0]).signalProtocolLoaded();
             }
 
             return CLEAN;
@@ -97,8 +100,9 @@ public class SingleProtocolDecoder
 
     protected void verifyProtocol(String incomingProtocol) {
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
-            throw new IllegalStateException("Unsupported protocol exchange detected, "
-                    + "expected protocol: " + supportedProtocol.name());
+            encoder.signalWrongProtocol();
+            throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: "
+                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol);
         }
     }
 
@@ -116,6 +120,6 @@ public class SingleProtocolDecoder
     }
 
     private boolean shouldSignalProtocolLoaded() {
-        return !channel.isClientMode() && (encoder != null);
+        return !channel.isClientMode() && shouldSignalMemberProtocolEncoder;
     }
 }

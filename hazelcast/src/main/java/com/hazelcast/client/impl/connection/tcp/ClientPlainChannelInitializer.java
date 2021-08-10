@@ -66,12 +66,7 @@ public class ClientPlainChannelInitializer implements ChannelInitializer {
 
         final TcpClientConnection connection = (TcpClientConnection) channel.attributeMap().get(TcpClientConnection.class);
 
-        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, new Consumer<ClientMessage>() {
-            @Override
-            public void accept(ClientMessage message) {
-                connection.handleClientMessage(message);
-            }
-        }, null);
+        ClientMessageDecoder decoder = new ClientMessageDecoder(connection, connection::handleClientMessage, null);
         channel.inboundPipeline().addLast(decoder);
 
         channel.outboundPipeline().addLast(new ClientMessageEncoder());
