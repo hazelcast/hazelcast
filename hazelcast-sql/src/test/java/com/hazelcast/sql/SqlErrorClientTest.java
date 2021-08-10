@@ -42,9 +42,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -293,22 +295,24 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
             map.putAll(localMap);
 
-            try (SqlResult result = client.getSql().execute("SELECT this FROM " + MAP_NAME)) {
-                boolean first = true;
+            try (SqlResult result = client.getSql().execute("SELECT __key, this FROM " + MAP_NAME)) {
+                Iterator<SqlRow> iterator = result.iterator();
 
-                for (SqlRow ignore : result) {
-                    if (first) {
-                        BadValue.READ_ERROR.set(true);
+                SqlRow firstRow = iterator.next();
+                firstRow.getObject("__key");
+                firstRow.getObject("this");
 
-                        first = false;
-                    }
-                }
-
-                fail("Should fail");
-            } catch (HazelcastSqlException e) {
-                assertErrorCode(SqlErrorCode.GENERIC, e);
-                assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
-                assertTrue(e.getMessage().contains("Failed to deserialize query result value"));
+                BadValue.READ_ERROR.set(true);
+                SqlRow secondRow = iterator.next();
+                secondRow.getObject("__key");
+                assertThatThrownBy(() -> secondRow.getObject("this"))
+                        .isInstanceOf(HazelcastSqlException.class)
+                        .hasMessageContaining("Failed to deserialize query result value")
+                        .extracting(e -> ((HazelcastSqlException) e))
+                        .satisfies(e -> {
+                            assertErrorCode(SqlErrorCode.GENERIC, e);
+                            assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
+                        });
             }
         } finally {
             BadValue.READ_ERROR.set(false);
