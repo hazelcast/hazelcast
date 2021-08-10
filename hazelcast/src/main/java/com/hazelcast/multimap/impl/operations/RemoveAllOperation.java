@@ -18,12 +18,10 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.util.Timer;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
@@ -32,20 +30,12 @@ import java.util.Collection;
 public class RemoveAllOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Collection<MultiMapRecord> coll;
-    private transient long startTimeNanos;
 
     public RemoveAllOperation() {
     }
 
     public RemoveAllOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
-    }
-
-    @Override
-    public void beforeRun() {
-        if (getOrCreateContainer().getConfig().isStatisticsEnabled()) {
-            startTimeNanos = Timer.nanos();
-        }
     }
 
     @Override
@@ -58,14 +48,9 @@ public class RemoveAllOperation extends AbstractBackupAwareMultiMapOperation imp
     @Override
     public void afterRun() throws Exception {
         if (coll != null) {
-            MultiMapContainer container = getOrCreateContainer();
-            container.update();
+            getOrCreateContainer().update();
             for (MultiMapRecord record : coll) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
-            }
-            if (container.getConfig().isStatisticsEnabled()) {
-                ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name)
-                        .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
             }
         }
     }
