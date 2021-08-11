@@ -24,6 +24,8 @@ import com.hazelcast.internal.util.HashUtil;
  */
 public final class PartitionStamp {
 
+    private static ThreadLocal<byte[]> BYTE_ARRAY = new ThreadLocal<>();
+
     private PartitionStamp() {
     }
 
@@ -36,7 +38,12 @@ public final class PartitionStamp {
      * @return stamp value
      */
     public static long calculateStamp(InternalPartition[] partitions) {
-        byte[] bb = new byte[Integer.BYTES * partitions.length];
+        byte[] bb = BYTE_ARRAY.get();
+        if (bb == null) {
+            bb = new byte[Integer.BYTES * partitions.length];
+            BYTE_ARRAY.set(bb);
+        }
+
         for (InternalPartition partition : partitions) {
             Bits.writeIntB(bb, partition.getPartitionId() * Integer.BYTES, partition.version());
         }

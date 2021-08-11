@@ -39,7 +39,6 @@ public final class NearCacheConfigAccessor {
             return nearCacheConfig;
         }
 
-
         // create copy of eviction config
         EvictionConfig copyEvictionConfig = new EvictionConfig(evictionConfig)
                 .setSize(MapConfig.DEFAULT_MAX_SIZE);
