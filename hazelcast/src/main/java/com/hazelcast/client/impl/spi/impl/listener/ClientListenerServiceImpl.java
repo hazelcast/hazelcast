@@ -47,10 +47,12 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -317,6 +319,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
+        ArrayList<CompletableFuture> list = new ArrayList<>(registrations.size());
         for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
             ClientConnection subscriber = (ClientConnection) entry.getKey();
@@ -331,7 +334,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
             }
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
             clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
-            clientInvocation.invokeUrgent().exceptionally(throwable -> {
+            list.add(clientInvocation.invokeUrgent().exceptionally(throwable -> {
                 if (!(throwable instanceof HazelcastClientNotActiveException
                         || throwable instanceof IOException
                         || throwable instanceof TargetDisconnectedException)) {
@@ -339,8 +342,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                             + " has failed for address " + subscriber.getRemoteAddress(), throwable);
                 }
                 return null;
-            }).joinInternal();
+            }));
         }
+        CompletableFuture.allOf(list.toArray(new CompletableFuture[registrations.size()])).join();
         return true;
     }
 
