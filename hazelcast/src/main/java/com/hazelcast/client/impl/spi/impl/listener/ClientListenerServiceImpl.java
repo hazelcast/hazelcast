@@ -47,7 +47,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -319,7 +318,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
-        ArrayList<CompletableFuture> list = new ArrayList<>(registrations.size());
+        CompletableFuture[] futures = new CompletableFuture[registrations.size()];
+        int i = 0;
         for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
             ClientConnection subscriber = (ClientConnection) entry.getKey();
@@ -330,11 +330,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
             UUID serverRegistrationId = registration.getServerRegistrationId();
             ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
             if (request == null) {
+                futures[i++] = CompletableFuture.completedFuture(null);
                 continue;
             }
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
             clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
-            list.add(clientInvocation.invokeUrgent().exceptionally(throwable -> {
+            futures[i++] = clientInvocation.invokeUrgent().exceptionally(throwable -> {
                 if (!(throwable instanceof HazelcastClientNotActiveException
                         || throwable instanceof IOException
                         || throwable instanceof TargetDisconnectedException)) {
@@ -342,9 +343,9 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                             + " has failed for address " + subscriber.getRemoteAddress(), throwable);
                 }
                 return null;
-            }));
+            });
         }
-        CompletableFuture.allOf(list.toArray(new CompletableFuture[registrations.size()])).join();
+        CompletableFuture.allOf(futures).join();
         return true;
     }
 
