@@ -47,7 +47,7 @@ public final class HazelcastJsonValue implements IdentifiedDataSerializable, Ser
 
     private String string;
 
-    public HazelcastJsonValue() {}
+    public HazelcastJsonValue() { }
 
     /**
      * Creates a HazelcastJsonValue from the given string.
