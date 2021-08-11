@@ -1487,9 +1487,7 @@ public class MigrationManager {
             }
         }
 
-        /**
-         * Waits for some time and rerun the {@link ControlTask}.
-         */
+        /** Waits for some time and rerun the {@link ControlTask}. */
         private void triggerRepartitioningAfterMigrationFailure() {
             // Migration failed.
             // Pause migration process for a small amount of time, if a migration attempt is failed.
