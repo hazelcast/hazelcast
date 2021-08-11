@@ -46,7 +46,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ParameterConverter;
@@ -71,6 +70,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
 public class JetPlanExecutor {
@@ -180,8 +180,6 @@ public class JetPlanExecutor {
     }
 
     SqlResult execute(ShowStatementPlan plan) {
-        SqlRowMetadata metadata = new SqlRowMetadata(
-                singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
         Stream<String> rows;
         if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
             rows = catalog.getMappingNames().stream();
@@ -193,16 +191,21 @@ public class JetPlanExecutor {
                     .map(record -> record.getConfig().getName())
                     .filter(Objects::nonNull);
         }
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new JetSqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
                 metadata,
-                false);
+                false,
+                serializationService
+        );
     }
 
     SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
         JobConfig jobConfig = new JobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setTimeoutMillis(timeout);
@@ -226,7 +229,13 @@ public class JetPlanExecutor {
             throw e;
         }
 
-        return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
+        return new JetSqlResultImpl(
+                queryId,
+                queryResultProducer,
+                plan.getRowMetadata(),
+                plan.isStreaming(),
+                serializationService
+        );
     }
 
     SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
@@ -253,7 +262,13 @@ public class JetPlanExecutor {
                         .get(evalContext, Extractors.newBuilder(serializationService).build())
                         .project(key, value));
         Object[] row = await(future, timeout);
-        return new JetSqlResultImpl(queryId, new JetStaticQueryResultProducer(row), plan.rowMetadata(), false);
+        return new JetSqlResultImpl(
+                queryId,
+                new JetStaticQueryResultProducer(row),
+                plan.rowMetadata(),
+                false,
+                serializationService
+        );
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {

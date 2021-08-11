@@ -25,6 +25,7 @@ import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionTypes;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,9 +47,11 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
 @SuppressWarnings("rawtypes")
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
 

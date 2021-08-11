@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -53,7 +54,10 @@ public class ToTimestampTzIntegrationTest extends ExpressionTestSupport {
     private static final Long MILLISECONDS = SECONDS * 1000L;
     private static final Long MICROSECONDS = MILLISECONDS * 1000L;
     private static final Long NANOSECONDS = MICROSECONDS * 1000L;
-    private static final Long MIN_NEGATIVE_SECONDS = -31557014135596800L;
+    private static final Long MIN_NEGATIVE_SECONDS = LocalDateTime
+            .of(-999999999, 1, 1, 0, 0)
+            .atZone(ZoneOffset.systemDefault())
+            .toEpochSecond();
 
     @Test
     public void testColumn() {

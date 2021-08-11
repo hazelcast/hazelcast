@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,7 +57,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test that ensures that a security callback is invoked as expected.
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class SqlSecurityCallbackTest extends OptimizerTestSupport {
     private static final int mapSize = 1000;

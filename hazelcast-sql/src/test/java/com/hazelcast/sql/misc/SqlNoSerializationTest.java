@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -58,13 +59,14 @@ import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapI
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Test that ensures that there are no unexpected serializations when executing a query on an IMap with the
  * default {@link InMemoryFormat#BINARY} format.
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoSerializationTest extends OptimizerTestSupport {
 

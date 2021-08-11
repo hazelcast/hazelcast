@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cursor implementation.
  */
-public final class SqlResultImpl extends AbstractSqlResult implements LazyTargetDeserializer {
+public final class SqlResultImpl extends AbstractSqlResult {
 
     private final QueryState state;
     private final SqlRowMetadata rowMetadata;
@@ -110,6 +110,15 @@ public final class SqlResultImpl extends AbstractSqlResult implements LazyTarget
     public QueryId getQueryId() {
         checkIsRowsResult();
         return getQueryInitiatorState().getQueryId();
+    }
+
+    @Override
+    public Object deserialize(Object value) {
+        try {
+            return serializationService.toObject(value);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, state.getLocalMemberId());
+        }
     }
 
     @Override

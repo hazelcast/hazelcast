@@ -1266,15 +1266,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
             return false;
         }
         Address master = latestMaster;
+
         ClusterServiceImpl clusterService = node.getClusterService();
 
-        // If this is the only node, we can rely on ClusterService only.
-        if (master == null && clusterService.getSize() == 1) {
-            master = clusterService.getMasterAddress();
-        }
-
         // address should be the known master by both PartitionService and ClusterService.
-        return address.equals(master) && address.equals(clusterService.getMasterAddress());
+        // If this is the only node, we can rely on ClusterService only.
+        return node.isMaster(address)
+                && ((master == null && clusterService.getSize() == 1) || node.isMaster(master));
     }
 
     @SuppressWarnings("checkstyle:npathcomplexity")

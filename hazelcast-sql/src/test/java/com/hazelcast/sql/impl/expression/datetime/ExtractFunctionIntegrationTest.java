@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -52,7 +53,7 @@ import static org.junit.Assume.assumeTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractFunctionIntegrationTest {
 
-    @RunWith(Parameterized.class)
+    @RunWith(HazelcastParametrizedRunner.class)
     public static class ParameterizedTests extends ExpressionTestSupport {
         @Parameterized.Parameter
         public String field;
