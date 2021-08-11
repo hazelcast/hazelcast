@@ -19,6 +19,7 @@ package com.hazelcast.sql;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,9 +38,10 @@ import java.time.OffsetDateTime;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlParameterTest {
 
@@ -109,7 +111,7 @@ public class SqlParameterTest {
                 + "CAST(? as DATE), "
                 + "CAST(? as TIME), "
                 + "CAST(? as TIMESTAMP), "
-                + "CAST(? as TIMESTAMP WITH LOCAL TIME ZONE), "
+                + "CAST(? as TIMESTAMP WITH TIME ZONE), "
                 + "CAST(? as OBJECT), "
                 + "CAST(? as OBJECT) "
                 + "FROM " + MAP_NAME);

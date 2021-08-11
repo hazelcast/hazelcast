@@ -1143,10 +1143,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private static String sql(String source, SqlColumnType targetType) {
-        // TODO: reduce to else branch once engines are merged and custom date-time parsing is used
-        return targetType == TIMESTAMP_WITH_TIME_ZONE
-                ? "SELECT CAST(" + source + " AS TIMESTAMP WITH TIME ZONE) FROM (VALUES(1)) JOIN map ON 1 = 1"
-                : "SELECT CAST(" + source + " AS " + targetType + ") FROM map";
+        return "SELECT CAST(" + source + " AS " + targetType + ") FROM map";
     }
 
     protected String castError(SqlColumnType type1, SqlColumnType type2) {

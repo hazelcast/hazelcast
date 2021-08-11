@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.index;
+package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
@@ -25,15 +25,19 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,14 +49,15 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Simple test to verify the behavior in case of the converter type mismatch.
  * <p>
  * We put entries of different types to different members and observe that index lookup cannot be used due to mismatch.
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexConverterMismatchTest extends SqlTestSupport {
 
@@ -78,7 +83,7 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        IndexConfig indexConfig = new IndexConfig().setName("index").setType(IndexType.SORTED).addAttribute("field1");
+        IndexConfig indexConfig = new IndexConfig().setName("index").setType(IndexType.HASH).addAttribute("field1");
 
         if (composite) {
             indexConfig.addAttribute("field2");
@@ -93,7 +98,11 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
         map = member1.getMap(MAP_NAME);
     }
 
+    /**
+     * @see MapIndexScanExecIterator#getIndexEntries
+     */
     @SuppressWarnings("StatementWithEmptyBody")
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19287")
     @Test
     public void testMismatch() {
         ExpressionBiValue value1 = new ExpressionBiValue.IntegerIntegerVal();
@@ -117,12 +126,24 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
             fail("Must fail!");
         } catch (HazelcastSqlException e) {
             assertEquals(SqlErrorCode.INDEX_INVALID, e.getCode());
-            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"field1\" of type VARCHAR, but INTEGER was expected", e.getMessage());
+            Throwable ex = findRootQueryException(e);
+            assertEquals("Cannot use the index \"index\" of the IMap \"map\" because it has component \"field1\" of type VARCHAR, but INTEGER was expected", ex.getMessage());
         }
     }
 
     @After
     public void after() {
         factory.shutdownAll();
+    }
+
+    private Throwable findRootQueryException(Throwable t) {
+        while (t != null) {
+            // we need exactly root exception for this particular case
+            if (t instanceof QueryException && t.getCause() == null) {
+                return t;
+            }
+            t = t.getCause();
+        }
+        return null;
     }
 }

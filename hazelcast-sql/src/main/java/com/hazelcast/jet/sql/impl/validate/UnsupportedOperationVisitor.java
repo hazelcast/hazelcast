@@ -370,6 +370,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
             case OTHER:
             case OTHER_FUNCTION:
+            case EXTRACT:
+            case POSITION:
                 processOther(call);
                 break;
 

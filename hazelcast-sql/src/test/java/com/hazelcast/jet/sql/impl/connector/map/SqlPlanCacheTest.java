@@ -23,7 +23,6 @@ import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -110,7 +109,6 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] enable after IMDG engine removal
     public void test_index() {
         IMap<Object, Object> map = instance().getMap("m");
 

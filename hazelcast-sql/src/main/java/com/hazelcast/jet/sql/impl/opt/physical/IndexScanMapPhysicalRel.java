@@ -88,6 +88,10 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
         return indexFilter;
     }
 
+    public RexNode getRemainderExp() {
+        return remainderExp;
+    }
+
     public ComparatorEx<Object[]> getComparator() {
         if (index.getType() == IndexType.SORTED) {
             RelCollation relCollation = getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);

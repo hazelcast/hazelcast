@@ -22,7 +22,7 @@ import com.hazelcast.sql.SqlRow;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public abstract class AbstractSqlResult implements SqlResult {
+public abstract class AbstractSqlResult implements SqlResult, LazyDeserializer {
 
     public abstract QueryId getQueryId();
 
@@ -34,15 +34,15 @@ public abstract class AbstractSqlResult implements SqlResult {
      */
     public abstract boolean isInfiniteRows();
 
+    @Nonnull @Override
+    public abstract ResultIterator<SqlRow> iterator();
+
     /**
      * Closes the result, releasing all the resources.
      *
      * @param exception exception that caused the close operation or {@code null} if the query is closed due to user request
      */
     public abstract void close(@Nullable QueryException exception);
-
-    @Nonnull @Override
-    public abstract ResultIterator<SqlRow> iterator();
 
     @Override
     public void close() {

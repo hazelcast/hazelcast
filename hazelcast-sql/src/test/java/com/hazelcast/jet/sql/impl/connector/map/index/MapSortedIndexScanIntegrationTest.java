@@ -21,15 +21,12 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.sql.SqlTestSupport.Row;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,7 +39,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @see com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor#onMapIndexScan
  */
-@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSupport {
     private static final int ITEM_COUNT = 10_000;
@@ -61,7 +57,6 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_sorted() {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
@@ -81,9 +76,9 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
     private void assertRowsOrdered(String sql, Collection<Row> expectedRows) {
         List<Row> actualRows = new ArrayList<>();
         instance().getSql()
-            .execute(sql)
-            .iterator()
-            .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
+                .execute(sql)
+                .iterator()
+                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
 
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }

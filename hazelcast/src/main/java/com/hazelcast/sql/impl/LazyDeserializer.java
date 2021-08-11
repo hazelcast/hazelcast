@@ -17,9 +17,16 @@
 package com.hazelcast.sql.impl;
 
 /**
- * Helper interface to deserialize the laze target. Reduces coupling between the row and the SQL service.
+ * Helper interface to deserialize row values lazily. Reduces coupling between the row and the SQL service.
  */
-public interface LazyTargetDeserializer {
+public interface LazyDeserializer {
+
+    /**
+     * @param value to deserialize
+     * @return deserialized object
+     */
+    Object deserialize(Object value);
+
     /**
      * @param value target to deserialize
      * @return deserialized object

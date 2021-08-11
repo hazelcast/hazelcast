@@ -49,7 +49,6 @@ import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.tools.RuleSet;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
@@ -96,13 +95,12 @@ public final class OptimizerContext {
             List<List<String>> searchPaths,
             List<Object> arguments,
             int memberCount,
-            @Nonnull SqlBackend sqlBackend,
             @Nullable SqlBackend jetSqlBackend
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount, sqlBackend, jetSqlBackend);
+        return create(rootSchema, searchPaths, arguments, memberCount, jetSqlBackend);
     }
 
     public static OptimizerContext create(
@@ -110,20 +108,17 @@ public final class OptimizerContext {
             List<List<String>> schemaPaths,
             List<Object> arguments,
             int memberCount,
-            @Nonnull SqlBackend sqlBackend,
             @Nullable SqlBackend jetSqlBackend
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        HazelcastSqlConformance conformance = HazelcastSqlConformance.INSTANCE;
         HazelcastSqlConformance jetConformance = HazelcastJetSqlConformance.INSTANCE;
         HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, typeFactory, distributionTraitDef);
 
-        QueryParser parser = new QueryParser(typeFactory, catalogReader, conformance, jetConformance, arguments,
-                sqlBackend, jetSqlBackend);
+        QueryParser parser = new QueryParser(typeFactory, catalogReader, jetConformance, arguments, jetSqlBackend);
         QueryConverter converter = new QueryConverter(catalogReader, cluster);
         QueryPlanner planner = new QueryPlanner(volcanoPlanner);
 
