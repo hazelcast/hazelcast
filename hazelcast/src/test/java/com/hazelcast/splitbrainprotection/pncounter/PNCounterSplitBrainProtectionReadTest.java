@@ -20,6 +20,7 @@ import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.splitbrainprotection.AbstractSplitBrainProtectionTest;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -34,10 +35,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.Arrays.asList;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PNCounterSplitBrainProtectionReadTest extends AbstractSplitBrainProtectionTest {

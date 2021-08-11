@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.LightMasterContext;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -42,6 +44,7 @@ public class JetSqlResultImpl extends AbstractSqlResult {
     private final LightMasterContext jobMasterContext;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
+    private final InternalSerializationService serializationService;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -50,13 +53,15 @@ public class JetSqlResultImpl extends AbstractSqlResult {
             @Nonnull QueryResultProducer rootResultConsumer,
             @Nullable LightMasterContext jobMasterContext,
             @Nonnull SqlRowMetadata rowMetadata,
-            boolean isInfiniteRows
+            boolean isInfiniteRows,
+            InternalSerializationService serializationService
     ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.jobMasterContext = jobMasterContext;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -98,6 +103,24 @@ public class JetSqlResultImpl extends AbstractSqlResult {
         rootResultConsumer.onError(exception);
     }
 
+    @Override
+    public Object deserialize(Object value) {
+        try {
+            return serializationService.toObject(value);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, queryId.getMemberId());
+        }
+    }
+
+    @Override
+    public Object deserialize(LazyTarget value) {
+        try {
+            return value.deserialize(serializationService);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, queryId.getMemberId());
+        }
+    }
+
     @Override @Nullable
     public CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId) {
         if (jobMasterContext != null) {
@@ -136,7 +159,7 @@ public class JetSqlResultImpl extends AbstractSqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(getRowMetadata(), delegate.next());
+                return new SqlRowImpl(getRowMetadata(), delegate.next(), JetSqlResultImpl.this);
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

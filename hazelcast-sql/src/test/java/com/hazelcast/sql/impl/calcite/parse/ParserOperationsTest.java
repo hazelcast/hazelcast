@@ -22,7 +22,6 @@ import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
@@ -61,7 +60,7 @@ public class ParserOperationsTest extends SqlTestSupport {
         initialize(1, smallInstanceConfig());
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
         JetSqlCoreBackend jetSqlService = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
-        context = createContext(new HazelcastSqlBackend(nodeEngine), (SqlBackend) jetSqlService.sqlBackend());
+        context = createContext((SqlBackend) jetSqlService.sqlBackend());
     }
 
     @Test
@@ -170,7 +169,7 @@ public class ParserOperationsTest extends SqlTestSupport {
         }
     }
 
-    private static OptimizerContext createContext(SqlBackend hzBackend, SqlBackend jetBackend) {
+    private static OptimizerContext createContext(SqlBackend jetBackend) {
         PartitionedMapTable partitionedMapTable = new PartitionedMapTable(
                 "public",
                 "t",
@@ -197,7 +196,6 @@ public class ParserOperationsTest extends SqlTestSupport {
                 searchPaths,
                 emptyList(),
                 1,
-                hzBackend,
                 jetBackend
         );
     }

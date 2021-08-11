@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.index;
+package com.hazelcast.jet.sql.impl.connector.map.index;
 
-import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionType;
 
 import java.util.Arrays;
@@ -34,8 +34,9 @@ import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 
-@SuppressWarnings("rawtypes")
-public class SqlIndexTestSupport extends SqlTestSupport {
+abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
+
+    @SuppressWarnings("rawtypes")
     protected static String toLiteral(ExpressionType type, Object value) {
         if (type == BOOLEAN) {
             return Boolean.toString((Boolean) value);

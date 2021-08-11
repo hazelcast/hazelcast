@@ -178,7 +178,7 @@ public class SqlPageCodecTest {
                 value = serializationService.toData(value);
             }
 
-            rows.add(new SqlRowImpl(rowMetadata, HeapRow.of(value)));
+            rows.add(new SqlRowImpl(rowMetadata, HeapRow.of(value), null));
         }
 
         SqlPage originalPage = SqlPage.fromRows(

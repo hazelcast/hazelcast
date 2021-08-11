@@ -16,93 +16,84 @@
 
 package com.hazelcast.sql.impl.plan.cache;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlResultImpl;
-import com.hazelcast.sql.impl.exec.FaultyExec;
-import com.hazelcast.sql.impl.exec.scan.MapScanExec;
-import com.hazelcast.sql.impl.plan.Plan;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
+    private String mapName;
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    @BeforeClass
+    public static void setUp() {
+        initialize(2, smallInstanceConfig());
+    }
 
-    @After
-    public void after() {
-        factory.shutdownAll();
+    @Before
+    public void before() {
+        mapName = SqlTestSupport.randomName();
     }
 
     @Test
     public void testPlanIsCached() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<Integer, Integer> map = member.getMap("map");
-        map.put(1, 1);
+        instance().getMap(mapName).put(1, 1);
 
-        PlanCache planCache = getPlanCache(member);
+        PlanCache planCache = planCache(instance());
 
-        Plan plan = getPlan(member, "SELECT * FROM map");
+        instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
 
-        Plan plan2 = getPlan(member, "SELECT * FROM map");
+        instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
-        assertSame(plan, plan2);
+        SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+        assertSame(plan1, plan2);
     }
 
     @Test
     public void testPlanInvalidatedOnIndexAdd() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<Integer, Integer> map = member.getMap("map");
+        IMap<Integer, Integer> map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(member);
+        PlanCache planCache = planCache(instance());
 
-        Plan plan = getPlan(member, "SELECT * FROM map");
+        instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
         assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
 
-        map.addIndex(IndexType.SORTED, "this");
+        map.addIndex(IndexType.HASH, "this");
 
         assertTrueEventually(() -> {
-            Plan plan2 = getPlan(member, "SELECT * FROM map");
+            instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
             assertEquals(1, planCache.size());
-            assertSame(plan2, planCache.get(plan2.getPlanKey()));
-            assertNotSame(plan, plan2);
+            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+            assertNotSame(plan1, plan2);
         });
     }
 
     @Test
     public void testPlanInvalidatedOnMapDestroy() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<Integer, Integer> map = member.getMap("map");
+        IMap<Integer, Integer> map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(member);
+        PlanCache planCache = planCache(instance());
 
-        Plan plan = getPlan(member, "SELECT * FROM map");
+        instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
 
         map.destroy();
         assertTrueEventually(() -> assertEquals(0, planCache.size()));
@@ -111,108 +102,23 @@ public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Test
     public void testPlanInvalidatedOnMapSchemaChange() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap map = member.getMap("map");
+        IMap map = instance().getMap(mapName);
         map.put(1, 1);
 
-        PlanCache planCache = getPlanCache(member);
+        PlanCache planCache = planCache(instance());
 
-        Plan plan = getPlan(member, "SELECT * FROM map");
+        instance().getSql().execute("SELECT * FROM " + mapName);
         assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
+        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
 
         map.clear();
         map.put("1", "1");
 
         assertTrueEventually(() -> {
-            Plan plan2 = getPlan(member, "SELECT * FROM map");
+            instance().getSql().execute("SELECT * FROM " + mapName);
             assertEquals(1, planCache.size());
-            assertSame(plan2, planCache.get(plan2.getPlanKey()));
-            assertNotSame(plan, plan2);
+            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
+            assertNotSame(plan1, plan2);
         });
-    }
-
-    @Test
-    public void testPlanInvalidatedOnPartitionMigration() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<Integer, Integer> map = member.getMap("map");
-        map.put(1, 1);
-
-        PlanCache planCache = getPlanCache(member);
-
-        Plan plan = getPlan(member, "SELECT * FROM map");
-        assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
-
-        factory.newHazelcastInstance();
-
-        assertTrueEventually(() -> {
-            Plan plan2 = getPlan(member, "SELECT * FROM map");
-            assertEquals(1, planCache.size());
-            assertSame(plan2, planCache.get(plan2.getPlanKey()));
-            assertNotSame(plan, plan2);
-        });
-    }
-
-    @Test
-    public void testPlanInvalidationOnExceptionWithInvalidationFlag() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        IMap<Integer, Integer> map = member.getMap("map");
-        map.put(1, 1);
-
-        PlanCache planCache = getPlanCache(member);
-
-        Plan plan = getPlan(member, "SELECT * FROM map");
-        assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
-
-        // Error without invalidation
-        setExecHook(member, exec -> {
-            if (exec instanceof MapScanExec) {
-                exec = new FaultyExec(exec, QueryException.error("Failed"));
-            }
-
-            return exec;
-        });
-        executeWithException(member, "SELECT * FROM map");
-        assertEquals(1, planCache.size());
-        assertSame(plan, planCache.get(plan.getPlanKey()));
-
-        // Error with invalidation
-        setExecHook(member, exec -> {
-            if (exec instanceof MapScanExec) {
-                exec = new FaultyExec(exec, QueryException.error("Failed").markInvalidate());
-            }
-
-            return exec;
-        });
-        executeWithException(member, "SELECT * FROM map");
-        assertEquals(0, planCache.size());
-        assertNull(planCache.get(plan.getPlanKey()));
-    }
-
-    private PlanCache getPlanCache(HazelcastInstance instance) {
-        return nodeEngine(instance).getSqlService().getPlanCache();
-    }
-
-    private Plan getPlan(HazelcastInstance instance, String sql) {
-        try (SqlResult result = instance.getSql().execute(sql)) {
-            SqlResultImpl result0 = (SqlResultImpl) result;
-
-            return result0.getPlan();
-        }
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    private void executeWithException(HazelcastInstance instance, String sql) {
-        try (SqlResult result = instance.getSql().execute(sql)) {
-            for (SqlRow ignore : result) {
-                // No-op.
-            }
-
-            fail("Must fail");
-        } catch (Exception e) {
-            // No-op.
-        }
     }
 }

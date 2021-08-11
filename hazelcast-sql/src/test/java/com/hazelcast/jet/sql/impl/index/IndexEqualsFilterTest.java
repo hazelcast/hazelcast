@@ -1,23 +1,25 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2021 Hazelcast Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * http://hazelcast.com/hazelcast-community-license
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.exec.scan.index;
+package com.hazelcast.jet.sql.impl.index;
 
 import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
+import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -72,24 +74,24 @@ public class IndexEqualsFilterTest extends IndexFilterTestSupport {
 
         // Composite, not null
         assertEquals(
-            composite(1, 2),
-            new IndexEqualsFilter(intValues(1, true, 2, true)).getComparable(evalContext)
+                composite(1, 2),
+                new IndexEqualsFilter(intValues(1, true, 2, true)).getComparable(evalContext)
         );
 
         // Composite, null
         assertEquals(
-            composite(1, AbstractIndex.NULL),
-            new IndexEqualsFilter(intValues(1, true, null, true)).getComparable(evalContext)
+                composite(1, AbstractIndex.NULL),
+                new IndexEqualsFilter(intValues(1, true, null, true)).getComparable(evalContext)
         );
 
         assertEquals(
-            composite(AbstractIndex.NULL, 2),
-            new IndexEqualsFilter(intValues(null, true, 2, true)).getComparable(evalContext)
+                composite(AbstractIndex.NULL, 2),
+                new IndexEqualsFilter(intValues(null, true, 2, true)).getComparable(evalContext)
         );
 
         assertEquals(
-            composite(AbstractIndex.NULL, AbstractIndex.NULL),
-            new IndexEqualsFilter(intValues(null, true, null, true)).getComparable(evalContext)
+                composite(AbstractIndex.NULL, AbstractIndex.NULL),
+                new IndexEqualsFilter(intValues(null, true, null, true)).getComparable(evalContext)
         );
 
         assertNull(new IndexEqualsFilter(intValues(1, true, null, false)).getComparable(evalContext));

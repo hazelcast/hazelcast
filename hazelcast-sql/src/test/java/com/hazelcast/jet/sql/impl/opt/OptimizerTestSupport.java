@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
@@ -119,7 +118,6 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
                 1,
-                new HazelcastSqlBackend(nodeEngine),
                 new JetSqlBackend(nodeEngine, planExecutor)
         );
 
@@ -252,10 +250,6 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
         protected PlanRow(int level, String node) {
             this.level = level;
             this.node = node;
-        }
-
-        protected String getNode() {
-            return node;
         }
 
         protected static PlanRow parse(String input) {

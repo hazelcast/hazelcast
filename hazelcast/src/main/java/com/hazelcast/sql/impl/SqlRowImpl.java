@@ -35,16 +35,12 @@ public class SqlRowImpl implements SqlRow {
 
     private final SqlRowMetadata rowMetadata;
     private final Row row;
-    private final LazyTargetDeserializer lazyTargetDeserializer;
+    private final LazyDeserializer lazyDeserializer;
 
-    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row) {
-        this(rowMetadata, row, null);
-    }
-
-    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row, LazyTargetDeserializer lazyTargetDeserializer) {
+    public SqlRowImpl(SqlRowMetadata rowMetadata, Row row, LazyDeserializer lazyDeserializer) {
         this.rowMetadata = rowMetadata;
         this.row = row;
-        this.lazyTargetDeserializer = lazyTargetDeserializer;
+        this.lazyDeserializer = lazyDeserializer;
     }
 
     @Nullable
@@ -80,9 +76,7 @@ public class SqlRowImpl implements SqlRow {
             LazyTarget res0 = (LazyTarget) res;
 
             if (deserialize) {
-                assert lazyTargetDeserializer != null;
-
-                res = lazyTargetDeserializer.deserialize((LazyTarget) res);
+                res = lazyDeserializer.deserialize(res0);
             } else {
                 res = res0.getSerialized();
 
@@ -90,6 +84,8 @@ public class SqlRowImpl implements SqlRow {
                     res = res0.getDeserialized();
                 }
             }
+        } else if (deserialize) {
+            res = lazyDeserializer.deserialize(res);
         }
 
         return (T) res;

@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.iteration.IndexIterationPointer;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -39,6 +41,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -218,7 +222,8 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     /**
-     * Perform splitting of a {@link Split} after receiving {@link MissingPartitionException}.
+     * Perform splitting of a {@link Split} after receiving {@link MissingPartitionException}
+     * or various cluster state exceptions like {@link MemberLeftException}.
      * <p>
      * Method gets current partition table and proceeds with following procedure:
      * <p>
@@ -281,9 +286,10 @@ final class MapIndexScanP extends AbstractProcessor {
                 try {
                     result = reader.toBatchResult(future);
                 } catch (ExecutionException e) {
-                    // unwrap the MissingPartitionException, throw other exceptions as is
-                    if (e.getCause() instanceof MissingPartitionException) {
-                        throw (MissingPartitionException) e.getCause();
+                    // unwrap the MissingPartitionException, and wrap other exceptions as MPE
+                    Throwable t = findTopologyExceptionInCauses(e);
+                    if (t != null) {
+                        throw new MissingPartitionException(t.toString(), e);
                     }
                     throw new RuntimeException(e);
                 } catch (InterruptedException e) {
@@ -304,6 +310,26 @@ final class MapIndexScanP extends AbstractProcessor {
                     currentBatchPosition++;
                 }
             }
+        }
+
+        /**
+         * Returns a topology exception from the given Throwable or its causes.
+         * Topology exception are those related to a member leaving the cluster.
+         * We handle them the same as {@link MissingPartitionException} trigger.
+         */
+        private Throwable findTopologyExceptionInCauses(Throwable t) {
+            while (t != null) {
+                if (t instanceof MissingPartitionException
+                        || t instanceof HazelcastInstanceNotActiveException
+                        || t instanceof MemberLeftException
+                        || t instanceof TargetDisconnectedException
+                        || t instanceof TargetNotMemberException
+                ) {
+                    return t;
+                }
+                t = t.getCause();
+            }
+            return null;
         }
 
         private Object[] projectAndFilter(@Nonnull QueryableEntry<?, ?> entry) {

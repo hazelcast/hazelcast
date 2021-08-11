@@ -16,7 +16,8 @@
 
 package com.hazelcast.sql_slow;
 
-import com.hazelcast.sql.index.SqlIndexTest;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.jet.sql.impl.connector.map.index.JetSqlIndexAbstractTest;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -26,10 +27,12 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
+
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class SqlIndexSlowTest extends SqlIndexTest {
+public class JetSqlSlowIndexTest extends JetSqlIndexAbstractTest {
     @Parameterized.Parameters(name = "indexType:{0}, composite:{1}, field1:{2}, field2:{3}")
     public static Collection<Object[]> parameters() {
         return parametersSlow();
