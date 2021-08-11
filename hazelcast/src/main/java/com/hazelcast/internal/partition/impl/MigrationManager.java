@@ -1087,8 +1087,8 @@ public class MigrationManager {
          * Set of currently migrating partition IDs.
          * It's illegal to have concurrent migrations on the same partition.
          */
-        private final IntHashSet migratingPartitions
-                = new IntHashSet(partitionService.getPartitionCount(), -1);
+        private final IntHashSet migratingPartitions;
+
         /**
          * Map of endpoint -> migration-count.
          * Only {@link #maxParallelMigrations} number of migrations are allowed on a single member.
@@ -1101,6 +1101,8 @@ public class MigrationManager {
         MigrationPlanTask(List<Queue<MigrationInfo>> migrationQs) {
             this.migrationQs = migrationQs;
             this.completed = new ArrayBlockingQueue<>(migrationQs.size());
+            this.migratingPartitions
+                    = new IntHashSet(migrationQs.stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override

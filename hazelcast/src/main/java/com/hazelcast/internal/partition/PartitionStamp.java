@@ -19,12 +19,14 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.HashUtil;
 
+import java.util.Arrays;
+
 /**
  * PartitionStamp is a utility class to generate stamp for the partition table.
  */
 public final class PartitionStamp {
 
-    private static ThreadLocal<byte[]> BYTE_ARRAY = new ThreadLocal<>();
+    private static final ThreadLocal<byte[]> CACHED_STAMP = new ThreadLocal<>();
 
     private PartitionStamp() {
     }
@@ -38,11 +40,14 @@ public final class PartitionStamp {
      * @return stamp value
      */
     public static long calculateStamp(InternalPartition[] partitions) {
-        byte[] bb = BYTE_ARRAY.get();
-        if (bb == null) {
-            bb = new byte[Integer.BYTES * partitions.length];
-            BYTE_ARRAY.set(bb);
+        byte[] bb = CACHED_STAMP.get();
+        int partitionVersionArraySize = Integer.BYTES * partitions.length;
+        if (bb == null || bb.length != partitionVersionArraySize) {
+            bb = new byte[partitionVersionArraySize];
+            CACHED_STAMP.set(bb);
         }
+        // defensive zero-out
+        Arrays.fill(bb, (byte) 0);
 
         for (InternalPartition partition : partitions) {
             Bits.writeIntB(bb, partition.getPartitionId() * Integer.BYTES, partition.version());
