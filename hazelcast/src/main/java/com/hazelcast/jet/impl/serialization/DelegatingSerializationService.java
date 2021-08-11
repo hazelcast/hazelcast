@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.partition.PartitioningStrategy;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -105,8 +106,8 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public InternalGenericRecord readAsInternalGenericRecord(Data data) {
-        throw new UnsupportedOperationException();
+    public InternalGenericRecord readAsInternalGenericRecord(Data data) throws IOException {
+        return delegate.readAsInternalGenericRecord(data);
     }
 
     @Override

@@ -31,7 +31,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -263,7 +262,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true, true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByAscDesc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
@@ -278,7 +276,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true, true, true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByDescDescAsc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
@@ -299,7 +296,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByAndProject2() {
         // SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"

@@ -37,7 +37,6 @@ import com.hazelcast.sql.support.expressions.ExpressionType;
 import com.hazelcast.sql.support.expressions.ExpressionValue;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
@@ -74,23 +73,12 @@ import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lte_2;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.neq;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.neq_2;
 import static com.hazelcast.sql.support.expressions.ExpressionPredicates.or;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_DECIMAL;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BOOLEAN;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BYTE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes", "unused"})
-public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
+public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
     protected static final int DEFAULT_MEMBERS_COUNT = 2;
     private static final AtomicInteger MAP_NAME_GEN = new AtomicInteger();
     private static final String INDEX_NAME = "index";
@@ -130,7 +118,6 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
         fill();
     }
 
-    @Ignore // TODO: [sasha] in-ignore after IMDG disabling.
     @Test
     public void test() {
         checkFirstColumn();
@@ -633,57 +620,5 @@ public abstract class JetSqlIndexAbstractTest extends OptimizerTestSupport {
             this.sql = sql;
             this.parameters = parameters;
         }
-    }
-
-    private static String toLiteral(ExpressionType type, Object value) {
-        if (type == BOOLEAN) {
-            return Boolean.toString((Boolean) value);
-        } else if (type == BYTE) {
-            return Byte.toString((Byte) value);
-        } else if (type == SHORT) {
-            return Short.toString((Short) value);
-        } else if (type == INTEGER) {
-            return Integer.toString((Integer) value);
-        } else if (type == LONG) {
-            return Long.toString((Long) value);
-        } else if (type == BIG_DECIMAL) {
-            return value.toString();
-        } else if (type == BIG_INTEGER) {
-            return value.toString();
-        } else if (type == FLOAT) {
-            return Float.toString((Float) value);
-        } else if (type == DOUBLE) {
-            return Double.toString((Double) value);
-        } else if (type == STRING) {
-            return "'" + value + "'";
-        } else if (type == CHARACTER) {
-            return "'" + value + "'";
-        }
-
-        throw new UnsupportedOperationException("Unsupported type: " + type);
-    }
-
-    private static List<ExpressionType<?>> baseTypes() {
-        return Arrays.asList(
-                BOOLEAN,
-                INTEGER,
-                STRING
-        );
-    }
-
-    private static List<ExpressionType<?>> allTypes() {
-        return Arrays.asList(
-                BOOLEAN,
-                BYTE,
-                SHORT,
-                INTEGER,
-                LONG,
-                BIG_DECIMAL,
-                BIG_INTEGER,
-                FLOAT,
-                DOUBLE,
-                STRING,
-                CHARACTER
-        );
     }
 }

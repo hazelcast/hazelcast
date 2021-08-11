@@ -220,8 +220,8 @@ public class JetPlanExecutor {
             job.getFuture().whenComplete((r, t) -> {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
-                    queryResultProducer.onError(
-                            QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
+                    String errorMessage = findQueryExceptionMessage(t);
+                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {
@@ -360,6 +360,16 @@ public class JetPlanExecutor {
             t = t.getCause();
         }
         return SqlErrorCode.GENERIC;
+    }
+
+    private static String findQueryExceptionMessage(Throwable t) {
+        while (t != null) {
+            if (t.getMessage() != null) {
+                return t.getMessage();
+            }
+            t = t.getCause();
+        }
+        return "";
     }
 
     private <T> T await(CompletableFuture<T> future, long timeout) {
