@@ -77,12 +77,6 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
             assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
             assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
         }
-
-        for (final SqlRow row : instance().getSql().execute("SELECT this FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
-        }
     }
 
     @Test

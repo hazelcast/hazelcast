@@ -1120,6 +1120,7 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
 
         checkValue0(sql("?", VARCHAR), VARCHAR, "1", 1);
         checkValue0(sql("?", INTEGER), INTEGER, 1, "1");
+        checkValue0(sql("?", JSON), JSON, new HazelcastJsonValue("[1]"), "[1]");
     }
 
     @Test
