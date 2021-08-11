@@ -318,10 +318,18 @@
 
         <!-- Check for usage of UuidUtil instead of UUID -->
         <module name="RegexpSinglelineJava">
+            <property name="id" value="no-uuid-randomUUID"/>
             <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
             <property name="ignoreComments" value="true"/>
             <property name="message"
                       value="Please use UuidUtil.newUnsecureUUID() or UuidUtil.newSecureUUID() instead of UUID.randomUUID()"/>
+        </module>
+        <module name="RegexpSinglelineJava">
+            <property name="id" value="no-parameterized-runner"/>
+            <property name="format" value="RunWith\(Parameterized\.class\)"/>
+            <property name="ignoreComments" value="true"/>
+            <property name="message"
+                      value="Please use com.hazelcast.test.HazelcastParametrizedRunner that correctly checks running member and client instances"/>
         </module>
     </module>
 </module>

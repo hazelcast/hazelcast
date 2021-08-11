@@ -52,6 +52,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionException;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -63,7 +64,6 @@ import com.hazelcast.wan.WanQueueFullException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -94,7 +94,7 @@ import java.util.concurrent.TimeoutException;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientExceptionFactoryTest extends HazelcastTestSupport {

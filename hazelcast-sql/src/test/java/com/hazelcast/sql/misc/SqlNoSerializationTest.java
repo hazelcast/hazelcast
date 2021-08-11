@@ -25,6 +25,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -46,13 +47,14 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Test that ensures that there are no unexpected serializations when executing a query on an IMap with the
  * default {@link InMemoryFormat#BINARY} format.
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlNoSerializationTest extends SqlTestSupport {
 

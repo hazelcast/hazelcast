@@ -22,13 +22,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.util.RandomPicker;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * https://github.com/hazelcast/hazelcast/issues/5444
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({SlowTest.class})
 @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9828")

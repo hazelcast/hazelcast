@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,9 +36,10 @@ import static java.lang.Math.abs;
 import static java.lang.Math.max;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PersistenceAndHotRestartPersistenceMergerTest {
 

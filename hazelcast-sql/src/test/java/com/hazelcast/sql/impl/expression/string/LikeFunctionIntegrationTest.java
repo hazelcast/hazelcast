@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,9 +42,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
 

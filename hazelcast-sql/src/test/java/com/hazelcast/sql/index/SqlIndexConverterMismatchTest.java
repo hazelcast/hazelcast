@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,14 +46,15 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Simple test to verify the behavior in case of the converter type mismatch.
  * <p>
  * We put entries of different types to different members and observe that index lookup cannot be used due to mismatch.
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlIndexConverterMismatchTest extends SqlTestSupport {
 

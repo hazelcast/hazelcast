@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -32,13 +33,14 @@ import org.mockito.ArgumentMatchers;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 // Tests configuration of write-through and selection key wake-up optimizations
 // with different selector modes.
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class NioNetworkingConfigurationTest {
 

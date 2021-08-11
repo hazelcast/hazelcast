@@ -378,7 +378,12 @@
             checks="Javadoc|MagicNumber|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck|IllegalImport|IllegalType"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
-            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity|RegexpSinglelineJava"
+            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <!-- Suppress only UUID.randomUUID() rule, not all RegexpSinglelineJava rules -->
+    <suppress
+            checks="RegexpSinglelineJava"
+            id="no-uuid-randomUUID"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
             checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"
