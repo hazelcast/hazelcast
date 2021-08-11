@@ -28,7 +28,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -100,23 +99,4 @@ public class ClientMultiMapStatsTest extends LocalMultiMapStatsTest {
         return client.getMultiMap(multiMapName);
     }
 
-    @Override
-    @Test
-    public void testDelete() {
-    }
-
-    @Override
-    @Test
-    public void testGetAndHitsGenerated() {
-    }
-
-    @Override
-    @Test
-    public void testPutAndHitsGenerated() {
-    }
-
-    @Override
-    @Test
-    public void testRemove() {
-    }
 }

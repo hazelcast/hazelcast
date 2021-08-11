@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
@@ -54,6 +55,10 @@ public class MultiMapContainsValueMessageTask
             if (Boolean.TRUE.equals(obj)) {
                 found = true;
             }
+        }
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
+                    .incrementOtherOperations();
         }
         return found;
     }
@@ -91,5 +96,10 @@ public class MultiMapContainsValueMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.value};
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters.name);
     }
 }

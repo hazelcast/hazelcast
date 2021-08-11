@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
 import com.hazelcast.internal.nio.Connection;
@@ -38,6 +39,15 @@ public class MultiMapContainsKeyMessageTask
 
     public MultiMapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected Object processResponseBeforeSending(Object response) {
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
+                    .incrementOtherOperations();
+        }
+        return response;
     }
 
     @Override
@@ -80,5 +90,10 @@ public class MultiMapContainsKeyMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.key};
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters.name);
     }
 }

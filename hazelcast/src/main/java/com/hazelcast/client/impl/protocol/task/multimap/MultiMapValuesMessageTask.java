@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
@@ -54,7 +55,7 @@ public class MultiMapValuesMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> list = new ArrayList<Data>();
+        List<Data> list = new ArrayList<>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -67,6 +68,10 @@ public class MultiMapValuesMessageTask
             for (MultiMapRecord record : coll) {
                 list.add(serializationService.toData(record.getObject()));
             }
+        }
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters)
+                    .incrementOtherOperations();
         }
         return list;
     }
@@ -104,5 +109,10 @@ public class MultiMapValuesMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters);
     }
 }

@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.EntrySetResponse;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
@@ -60,6 +61,10 @@ public class MultiMapEntrySetMessageTask
             EntrySetResponse response = (EntrySetResponse) obj;
             entries.addAll(response.getDataEntrySet());
         }
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters)
+                    .incrementOtherOperations();
+        }
         return entries;
     }
 
@@ -96,5 +101,10 @@ public class MultiMapEntrySetMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters);
     }
 }

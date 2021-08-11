@@ -279,7 +279,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET)
                     );
-            Set<Data> keySet = new HashSet<Data>();
+            Set<Data> keySet = new HashSet<>();
             for (Object result : results.values()) {
                 if (result == null) {
                     continue;
@@ -303,6 +303,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.VALUES)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -317,6 +320,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.ENTRY_SET)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -332,6 +338,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             new MultiMapOperationFactory(name, OperationFactoryType.CONTAINS,
                                     key, value, ThreadUtil.getThreadId())
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -355,6 +364,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.SIZE)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             long size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -375,7 +387,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             Map<Integer, Object> resultMap = nodeEngine.getOperationService().invokeOnAllPartitions(
                     MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
             );
-
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             int numberOfAffectedEntries = 0;
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;

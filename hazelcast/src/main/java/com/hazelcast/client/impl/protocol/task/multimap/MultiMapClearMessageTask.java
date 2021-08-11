@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
@@ -53,6 +54,10 @@ public class MultiMapClearMessageTask
             totalAffectedEntries += (Integer) affectedEntries;
         }
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            service.getLocalMultiMapStatsImpl(parameters)
+                    .incrementOtherOperations();
+        }
         service.publishMultiMapEvent(parameters, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         return null;
     }
@@ -91,5 +96,10 @@ public class MultiMapClearMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters);
     }
 }
