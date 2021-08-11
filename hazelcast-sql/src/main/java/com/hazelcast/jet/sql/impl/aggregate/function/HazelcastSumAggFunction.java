@@ -64,9 +64,9 @@ public class HazelcastSumAggFunction extends HazelcastAggFunction {
             case TINYINT:
             case SMALLINT:
             case INTEGER:
+            case BIGINT:
                 resultTypeName = BIGINT;
                 break;
-            case BIGINT:
             case DECIMAL:
                 resultTypeName = DECIMAL;
                 break;
