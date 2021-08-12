@@ -106,7 +106,7 @@ public class HazelcastTypeSystemTest {
         assertEquals(bigint_64, HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(TINYINT)));
         assertEquals(bigint_64, HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(SMALLINT)));
         assertEquals(bigint_64, HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(INTEGER)));
-        assertEquals(bigint_64, HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(BIGINT)));
+        assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(BIGINT)));
         assertEquals(type(DECIMAL), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(DECIMAL)));
         assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(REAL)));
         assertEquals(type(DOUBLE), HazelcastTypeSystem.INSTANCE.deriveSumType(TYPE_FACTORY, type(DOUBLE)));
