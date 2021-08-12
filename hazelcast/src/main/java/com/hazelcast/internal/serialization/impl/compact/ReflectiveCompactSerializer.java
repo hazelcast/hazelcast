@@ -69,6 +69,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -91,6 +92,10 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     @Override
     public void write(@Nonnull CompactWriter writer, @Nonnull Object object) throws IOException {
         Class<?> clazz = object.getClass();
+        if (clazz.isEnum()) {
+            writer.writeString("name", ((Enum) object).name());
+            return;
+        }
         if (writeFast(clazz, writer, object)) {
             return;
         }
@@ -134,7 +139,13 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     public Object read(@Nonnull CompactReader reader) throws IOException {
         // We always fed DefaultCompactReader to this serializer.
         DefaultCompactReader compactReader = (DefaultCompactReader) reader;
-        Class associatedClass = compactReader.getAssociatedClass();
+        Class associatedClass = requireNonNull(compactReader.getAssociatedClass(),
+                "AssociatedClass is required for ReflectiveCompactSerializer");
+        if (associatedClass.isEnum()) {
+            String enumConstantName = compactReader.readString("name");
+            return Enum.valueOf(associatedClass, enumConstantName);
+        }
+
         Object object;
         object = createObject(associatedClass);
         try {
@@ -176,7 +187,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
     private void createFastReadWriteCaches(Class clazz) throws IOException {
         //Create object to test if it is empty constructable to fail-fast on the write path
-        createObject(clazz);
+       if (!clazz.isEnum()) {
+           createObject(clazz);
+       }
 
         //get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
