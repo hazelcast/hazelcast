@@ -22,7 +22,6 @@ import com.hazelcast.sql.SqlRow;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractSqlResult implements SqlResult, LazyDeserializer {
 
@@ -51,5 +50,11 @@ public abstract class AbstractSqlResult implements SqlResult, LazyDeserializer {
         close(null);
     }
 
-    public abstract CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId);
+    /**
+     * Initiates the termination of the underlying job. Returns {@code true},
+     * if the shutdown needs to wait for this query to complete. Returns {@code
+     * false}, if the {@code memberId} isn't a participant and there's no need
+     * to wait for the job to terminate.
+     */
+    public abstract boolean onParticipantGracefulShutdown(UUID memberId);
 }

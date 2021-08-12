@@ -38,7 +38,7 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
-import com.hazelcast.jet.impl.operation.NotifyShutdownToMembersOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMemberOperation;
 import com.hazelcast.jet.impl.serialization.DelegatingSerializationService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
@@ -180,7 +180,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     /**
      * Tells coordinators to gracefully terminate jobs and SQL queries on this
-     * member. Blocks until all are down.
+     * member. Blocks until all are down - this happens when we receive reply
+     * to the operation.
      */
     public void shutDownJobs() {
         if (shutdownFuture.compareAndSet(null, new CompletableFuture<>())) {
@@ -188,8 +189,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         try {
             // TODO [viliam] handle the timeout
+            logger.info("aaa shutDownJobs waiting for future"); // TODO [viliam] remove
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get();
+            logger.info("aaa shutDownJobs future done"); // TODO [viliam] remove
             // Note that at this point there can still be executions running - those for light jobs
             // or those created automatically after a packet was received.
             // They are all non-fault-tolerant or contain only the packets, that will be dropped
@@ -362,7 +365,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         if (shuttingDownMemberIds.isEmpty()) {
             return null;
         }
-        return new NotifyShutdownToMembersOperation(shuttingDownMemberIds);
+        return new NotifyShutdownToMemberOperation(shuttingDownMemberIds);
     }
 
     public boolean isShutdownInitiated() {

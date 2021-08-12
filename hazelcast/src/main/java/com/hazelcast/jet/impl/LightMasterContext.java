@@ -133,9 +133,7 @@ public class LightMasterContext {
         try {
             executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
         } catch (Throwable e) {
-            boolean shutdownInitiated = coordinationService.getJetServiceBackend().isShutdownInitiated();
-            logger.info("aaa shutdownInitiated=" + shutdownInitiated + ", e=" + e); // TODO [viliam] remove
-            if (shutdownInitiated) {
+            if (coordinationService.getJetServiceBackend().isShutdownInitiated()) {
                 // if there's any failure and we're shutting down, let's report that to the caller
                 logger.fine("ExecutionPlan initialization failed, but the local member is shutting down, ignoring it: " + e, e);
                 throw new MemberShuttingDownException();

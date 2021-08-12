@@ -48,15 +48,15 @@ import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
  * <p>
  * This operation doesn't deal at all with normal jobs.
  */
-public class NotifyShutdownToMembersOperation extends AsyncOperation implements UrgentSystemOperation,
+public class NotifyShutdownToMemberOperation extends AsyncOperation implements UrgentSystemOperation,
         AllowedDuringPassiveState, JoinOperation {
 
     private Collection<UUID> shuttingDownMemberIds;
 
-    public NotifyShutdownToMembersOperation() {
+    public NotifyShutdownToMemberOperation() {
     }
 
-    public NotifyShutdownToMembersOperation(Collection<UUID> shuttingDownMemberIds) {
+    public NotifyShutdownToMemberOperation(Collection<UUID> shuttingDownMemberIds) {
         this.shuttingDownMemberIds = shuttingDownMemberIds;
     }
 
@@ -70,7 +70,8 @@ public class NotifyShutdownToMembersOperation extends AsyncOperation implements 
             futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
                     .onMemberGracefulShutdown(uuid));
         }
-        return loggedAllOf(getLogger(), "NotifyShutdownToMembersOperation-" + shuttingDownMemberIds, futures.toArray(new CompletableFuture[0]));
+        return loggedAllOf(getLogger(), "NotifyShutdownToMemberOperation-" + shuttingDownMemberIds, futures.toArray(new CompletableFuture[0]))
+                .whenComplete((r, t) -> getLogger().info("aaa NotifyShutdownToMemberOperation-" + shuttingDownMemberIds + " completed")); // TODO [viliam] remove logging
     }
 
     @Override

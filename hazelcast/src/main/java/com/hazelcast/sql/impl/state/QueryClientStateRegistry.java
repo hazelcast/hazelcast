@@ -17,11 +17,13 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.ResultIterator;
@@ -39,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.jet.impl.util.NamedCompletableFuture.loggedAllOf;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
@@ -51,16 +54,24 @@ public class QueryClientStateRegistry {
 
     private static final long DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS = NANOSECONDS.convert(30, SECONDS);
 
+    private final ILogger logger;
+    private final ILogger clientStateLogger;
     private final ConcurrentHashMap<QueryId, QueryClientState> clientCursors = new ConcurrentHashMap<>();
     private volatile long closedCursorCleanupTimeoutNs = DEFAULT_CLOSED_CURSOR_CLEANUP_TIMEOUT_NS;
 
     private volatile boolean isShuttingDown;
 
+    public QueryClientStateRegistry(NodeServiceProvider nodeServiceProvider) {
+        this.logger = nodeServiceProvider.getLogger(QueryClientStateRegistry.class);
+        clientStateLogger = nodeServiceProvider.getLogger(QueryClientState.class);
+    }
+
     public void register(UUID clientId, QueryId queryId) {
-        QueryClientState state = new QueryClientState(clientId, queryId, false);
+        QueryClientState state = new QueryClientState(clientId, queryId, false, clientStateLogger);
         if (clientCursors.putIfAbsent(queryId, state) != null) {
             throw new IllegalStateException("Duplicate query ID");
         }
+        logger.info("aaa created cursor for " + queryId); // TODO [viliam] remove
     }
 
     public SqlPage initResultAndFetch(
@@ -69,6 +80,7 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService
     ) {
         QueryId queryId = result.getQueryId();
+        logger.info("aaa initResultAndFetch for " + queryId); // TODO [viliam] remove
         QueryClientState clientCursor = clientCursors.get(queryId);
         boolean delete = false;
         try {
@@ -90,7 +102,7 @@ public class QueryClientStateRegistry {
             throw e;
         } finally {
             if (delete) {
-                deleteClientCursor(queryId);
+                deleteClientCursor(queryId, null);
             }
         }
     }
@@ -110,13 +122,13 @@ public class QueryClientStateRegistry {
             SqlPage page = fetchInternal(clientCursor, cursorBufferSize, serializationService, false);
 
             if (page.getPageState() == PageState.LAST_CLOSED) {
-                deleteClientCursor(clientCursor.getQueryId());
+                deleteClientCursor(clientCursor.getQueryId(), null);
             }
 
             return page;
         } catch (Exception e) {
             // Clear the cursor in the case of exception.
-            deleteClientCursor(clientCursor.getQueryId());
+            deleteClientCursor(clientCursor.getQueryId(), null);
 
             throw e;
         }
@@ -193,7 +205,7 @@ public class QueryClientStateRegistry {
 
     public void close(UUID clientId, QueryId queryId) {
         QueryClientState clientCursor =
-            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, true));
+            clientCursors.computeIfAbsent(queryId, (ignore) -> new QueryClientState(clientId, queryId, true, clientStateLogger));
 
         if (clientCursor.isClosed()) {
             // Duplicate "close" request, do nothing.
@@ -212,8 +224,8 @@ public class QueryClientStateRegistry {
     }
 
     private void close0(QueryClientState clientCursor) {
-        clientCursor.close(null);
-        deleteClientCursor(clientCursor.getQueryId());
+        logger.info("aaa closing for " + clientCursor.getQueryId()); // TODO [viliam] remove
+        deleteClientCursor(clientCursor.getQueryId(), null);
     }
 
     public void shutdown() {
@@ -240,21 +252,23 @@ public class QueryClientStateRegistry {
 
         for (QueryClientState victim : victims) {
             QueryException error = QueryException.clientMemberConnection(victim.getClientId());
-            victim.close(error);
-            deleteClientCursor(victim.getQueryId());
+            deleteClientCursor(victim.getQueryId(), error);
         }
     }
 
-    private void deleteClientCursor(QueryId queryId) {
-        clientCursors.remove(queryId);
+    private void deleteClientCursor(QueryId queryId, QueryException error) {
+        logger.info("aaa deleteClientCursor for " + queryId); // TODO [viliam] remove
+        QueryClientState cursor = clientCursors.remove(queryId);
+        cursor.close(error);
     }
 
     @Nonnull
     public CompletableFuture<Void> onMemberGracefulShutdown(UUID memberId) {
-        return CompletableFuture.allOf(clientCursors.values().stream()
+        CompletableFuture[] futures = clientCursors.values().stream()
                 .map(cursor -> cursor.onGracefulParticipantShutdown(memberId))
                 .filter(Objects::nonNull)
-                .toArray(CompletableFuture[]::new));
+                .toArray(CompletableFuture[]::new);
+        return loggedAllOf(logger, "SQL-onMemberGracefulShutdown-" + memberId, futures);
     }
 
     public int getCursorCount() {

@@ -29,7 +29,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,9 +101,9 @@ public final class SqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId) {
-        // not implemented for IMDG engine - will be removed
-        return CompletableFuture.completedFuture(null);
+    public boolean onParticipantGracefulShutdown(UUID memberId) {
+        // not implemented for IMDG engine
+        return false;
     }
 
     /**

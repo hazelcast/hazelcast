@@ -1368,9 +1368,10 @@ public class JobConfig implements IdentifiedDataSerializable {
      * <p>
      * This option is useful for non-fault-tolerant, short-running jobs to
      * avoid failure in case of a graceful member shutdown. If it's enabled for
-     * a streaming job, the member will never shutdown unless the job is
-     * cancelled. It's ignored for fault-tolerant jobs - they are always
-     * suspended with a treminal snapshot during a graceful shutdown.
+     * a streaming job, the member will not be shutdown at all (a time limit
+     * can be configured to shutdown anyway). It's ignored for fault-tolerant
+     * jobs - they are always suspended with a terminal snapshot during a
+     * graceful shutdown.
      *
      * @since 5.0
      */

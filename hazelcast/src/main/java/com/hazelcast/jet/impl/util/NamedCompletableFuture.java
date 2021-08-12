@@ -18,7 +18,10 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.logging.ILogger;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -43,7 +46,9 @@ public class NamedCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     public static CompletableFuture<Void> loggedAllOf(ILogger logger, String setName, CompletableFuture<?>... futures) {
+        List<CompletableFuture<?>> originalFutures = null;
         if (logger.isFineEnabled()) {
+            originalFutures = new ArrayList<>(Arrays.asList(futures));
             Map<CompletableFuture<?>, String> remainingFutures = new HashMap<>();
             for (CompletableFuture<?> future : futures) {
                 remainingFutures.put(future, getName(future));
@@ -60,7 +65,9 @@ public class NamedCompletableFuture<T> extends CompletableFuture<T> {
                 });
             }
         }
-        return allOf(futures);
+        CompletableFuture<Void> compositeFuture = allOf(futures);
+        logFine(logger, "Created loggedAllOf future %s with: %s", setName, originalFutures);
+        return compositeFuture;
     }
 
     private static String getName(CompletableFuture<?> f) {

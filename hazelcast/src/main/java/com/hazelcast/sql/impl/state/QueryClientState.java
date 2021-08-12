@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.impl.util.NamedCompletableFuture;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
@@ -51,6 +52,7 @@ public class QueryClientState {
     private final Object lock = new Object();
     private final UUID clientId;
     private final QueryId queryId;
+    private final ILogger logger;
     private final long createdAt;
 
     private volatile boolean closed;
@@ -59,10 +61,11 @@ public class QueryClientState {
 
     private volatile ResultIterator<SqlRow> iterator;
 
-    public QueryClientState(@Nonnull UUID clientId, @Nonnull QueryId queryId, boolean closed) {
+    public QueryClientState(@Nonnull UUID clientId, @Nonnull QueryId queryId, boolean closed, ILogger logger) {
         this.clientId = clientId;
         this.queryId = queryId;
         this.closed = closed;
+        this.logger = logger;
 
         createdAt = System.nanoTime();
     }
@@ -87,6 +90,11 @@ public class QueryClientState {
         return sqlResult;
     }
 
+    /**
+     * Adds the result reference to this query client state.
+     *
+     * @return true if success, false if it was closed.
+     */
     public boolean initResult(@Nonnull AbstractSqlResult sqlResult) {
         synchronized (lock) {
             if (closed) {
@@ -97,8 +105,10 @@ public class QueryClientState {
 
             // Invoke `onParticipantGracefulShutdown()` on the actual job
             for (Entry<UUID, CompletableFuture<Void>> en : shutdownFutures.entrySet()) {
-                CompletableFuture<Void> jobFuture = sqlResult.onParticipantGracefulShutdown(en.getKey());
-                if (jobFuture == null) {
+                boolean isParticipant = sqlResult.onParticipantGracefulShutdown(en.getKey());
+                if (!isParticipant) {
+                    logger.info("aaa completing shutdown future for query " + queryId + " for member " + en.getKey()
+                            + " after the result was init because it is not a participant'"); // TODO [viliam] remove
                     en.getValue().complete(null);
                 }
             }
@@ -123,12 +133,23 @@ public class QueryClientState {
     @Nullable
     public CompletableFuture<Void> onGracefulParticipantShutdown(UUID memberId) {
         synchronized (lock) {
+            if (closed) {
+                return null;
+            }
             if (sqlResult != null) {
-                CompletableFuture<Void> jobFuture = sqlResult.onParticipantGracefulShutdown(memberId);
-                if (jobFuture == null) {
+                if (!sqlResult.onParticipantGracefulShutdown(memberId)) {
+                    // if there is a result and the memberId isn't a participant, we don't have to wait for the completion.
+                    logger.info("aaa onGracefulParticipantShutdown(" + memberId + ") ignored for " + queryId
+                            + " because it has a result and the job doesn't have the member as a participant"); // TODO [viliam] remove
                     return null;
                 }
+            } else {
+                // If there is no result, we don't know. We have to wait. There can be a result later (see
+                // initResult()). Or if there won't be a result for this query (e.g. a DDL query), we have no other
+                // option - but these queries complete quickly anyway.
             }
+
+            logger.info("aaa onGracefulParticipantShutdown(" + memberId + ") created a future for " + queryId); // TODO [viliam] remove
             return shutdownFutures.computeIfAbsent(memberId, x -> new NamedCompletableFuture<>("sql " + queryId));
         }
     }
@@ -138,6 +159,7 @@ public class QueryClientState {
             closed = true;
             // note that if the result was already initialized, this collection is empty
             for (CompletableFuture<Void> future : shutdownFutures.values()) {
+                logger.info("aaa completing future " + future + " after cursor is closed, query=" + queryId); // TODO [viliam] remove
                 future.complete(null);
             }
             if (sqlResult != null) {

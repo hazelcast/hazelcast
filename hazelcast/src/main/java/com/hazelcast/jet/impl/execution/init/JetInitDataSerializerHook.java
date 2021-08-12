@@ -41,7 +41,7 @@ import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
-import com.hazelcast.jet.impl.operation.NotifyShutdownToMembersOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMemberOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
@@ -209,7 +209,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                 case CHECK_LIGHT_JOBS_OP:
                     return new CheckLightJobsOperation();
                 case NOTIFY_MEMBER_SHUTDOWN_TO_MEMBERS_OP:
-                    return new NotifyShutdownToMembersOperation();
+                    return new NotifyShutdownToMemberOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

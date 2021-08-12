@@ -53,10 +53,12 @@ import com.hazelcast.jet.impl.observer.WrappedThrowable;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.NotifyShutdownToMasterOperation;
+import com.hazelcast.jet.impl.operation.NotifyShutdownToMemberOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
+import com.hazelcast.jet.impl.util.NamedCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -155,7 +157,8 @@ public class JobCoordinationService {
      * Map of {memberUuid; removeTime}.
      *
      * A collection of UUIDs of members which left the cluster and for which we
-     * didn't receive {@link NotifyShutdownToMasterOperation}.
+     * didn't receive {@link NotifyShutdownToMasterOperation} or {@link
+     * NotifyShutdownToMemberOperation}.
      */
     private final Map<UUID, Long> removedMembers = new ConcurrentHashMap<>();
     private final Object lock = new Object();
@@ -310,8 +313,7 @@ public class JobCoordinationService {
         } else {
             int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
             dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
-                @Override
-                public int defaultLocalParallelism() {
+                @Override public int defaultLocalParallelism() {
                     return coopThreadCount;
                 }
             });
@@ -319,7 +321,7 @@ public class JobCoordinationService {
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
-        CompletableFuture<LightMasterContext> initializationFuture = new CompletableFuture<>();
+        CompletableFuture<LightMasterContext> initializationFuture = new NamedCompletableFuture<>("initializationFuture for " + idToString(jobId));
         Object oldContext = lightMasterContexts.putIfAbsent(jobId, new UninitializedLightJobMarker(initializationFuture));
         if (oldContext != null) {
             throw new JetException("duplicate jobId " + idToString(jobId));
@@ -338,6 +340,19 @@ public class JobCoordinationService {
             oldContext = lightMasterContexts.put(jobId, mc);
             assert oldContext instanceof UninitializedLightJobMarker;
             if (mc.getCompletionFuture().isCompletedExceptionally() && jetServiceBackend.isShutdownInitiated()) {
+                // If the initialization failed and we're shutting down, it's possible that the failure is caused by the
+                // shutdown. We don't know for sure, but nevertheless, we'll inform the caller that we're shutting down
+                // so that it can try with another member.
+                Throwable jobException = null;
+                try {
+                    mc.getCompletionFuture().get();
+                    assert false : "future completed exceptionally, but future.get() didn't throw";
+                } catch (ExecutionException e) {
+                    jobException = e.getCause();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                logger.info("Job initialization failed, but this member is shutting down. We're ignoring the job failure: " + jobException, jobException);
                 throw new MemberShuttingDownException();
             }
         } catch (Throwable e) {
@@ -728,8 +743,8 @@ public class JobCoordinationService {
      *     <li>this member will be excluded from the participant list for light
      *     jobs. Light jobs can still execute on the remaining members. This means
      *     that if the local member is the coordinator and some other member is
-     *     shutting down, it will be excluded. But if this member is the
-     *     coordinator and is also shutting down, it will throw {@link
+     *     shutting down, the other member will be excluded. But if this member is
+     *     the coordinator and is also shutting down, it will throw {@link
      *     MemberShuttingDownException} to the caller and reject to start the job.
      *
      * </ul>
@@ -756,7 +771,7 @@ public class JobCoordinationService {
     @Nonnull
     public CompletableFuture<Void> addShuttingDownMember(UUID uuid) {
         // TODO [viliam] print list of jobs we're waiting for
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        CompletableFuture<Void> future = new NamedCompletableFuture<>("JobCoordinationService.addShuttingDownMember(" + uuid + ")");
         CompletableFuture<Void> oldFuture = membersShuttingDown.putIfAbsent(uuid, future);
         if (oldFuture != null) {
             return oldFuture;
@@ -764,7 +779,8 @@ public class JobCoordinationService {
         if (removedMembers.containsKey(uuid)) {
             logFine(logger, "NotifyMemberShutdownOperation received for a member that was already " +
                     "removed from the cluster: %s", uuid);
-            return completedFuture(null);
+            future.complete(null);
+            return future;
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         List<CompletableFuture<?>> futures = new ArrayList<>();
@@ -813,11 +829,15 @@ public class JobCoordinationService {
         return masterContexts.get(jobId);
     }
 
-    // not only for testing
+    /**
+     * Returns the master context for the given job ID or null if it doesn't
+     * exist or isn't initialized yet.
+     */
+    @Nullable
     public LightMasterContext getLightMasterContext(long jobId) {
         Object lmc = lightMasterContexts.get(jobId);
-        if (lmc != null && !(lmc instanceof LightMasterContext)) {
-            throw new RuntimeException("context not yet initialized");
+        if (lmc instanceof UninitializedLightJobMarker) {
+            return null;
         }
         return (LightMasterContext) lmc;
     }

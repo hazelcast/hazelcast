@@ -164,6 +164,18 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     @Test
+    public void when_preventShutdownSet_then_preventShutdownIsReturned() {
+        // Given
+        JobConfig config = new JobConfig();
+
+        // When
+        config.setPreventShutdown(true);
+
+        // Then
+        assertThat(config.isPreventShutdown()).isEqualTo(TRUE);
+    }
+
+    @Test
     public void addCustomClasspath() {
         JobConfig jobConfig = new JobConfig();
         jobConfig.addCustomClasspath("test", "url1");

@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.util.NamedCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
@@ -41,10 +42,10 @@ import static java.util.Collections.singletonList;
  * The operation calls {@link
  * JobCoordinationService#addShuttingDownMember(UUID)} with the caller
  * UUID. It also forwards the information to all members using {@link
- * NotifyShutdownToMembersOperation}.
+ * NotifyShutdownToMemberOperation}.
  * <p>
  * It responds to the caller when all executions have terminated and when
- * all responses for {@link NotifyShutdownToMembersOperation} are received.
+ * all responses for {@link NotifyShutdownToMemberOperation} are received.
  * <p>
  * If the operation fails, the caller will retry it indefinitely with the
  * new master. The operation has to be idempotent.
@@ -74,7 +75,7 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
                 // don't send to myself
                 continue;
             }
-            NotifyShutdownToMembersOperation op = new NotifyShutdownToMembersOperation(singletonList(getCallerUuid()));
+            NotifyShutdownToMemberOperation op = new NotifyShutdownToMemberOperation(singletonList(getCallerUuid()));
             CompletableFuture<Object> future = getNodeEngine().getOperationService().
                     invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, member.getAddress());
             future = future.exceptionally(e -> {
@@ -82,11 +83,14 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
                 if (!(e instanceof MemberLeftException)
                         && !(e instanceof TargetNotMemberException)
                         && !(e instanceof HazelcastInstanceNotActiveException)) {
-                    getLogger().warning("NotifyShutdownToMembersOperation failed on " + member.getAddress() + ": " + e, e);
+                    getLogger().warning("NotifyShutdownToMemberOperation failed on " + member.getAddress() + ": " + e, e);
                 }
                 return null;
             });
-            futures.add(future);
+            // TODO [viliam] remove this future - it's just for debugging
+            NamedCompletableFuture<Void> future2 = new NamedCompletableFuture<>("NotifyShutdownToMemberOp-" + member.getAddress());
+            future.whenComplete((r, t) -> future2.complete(null));
+            futures.add(future2);
         }
 
         // done when all are done

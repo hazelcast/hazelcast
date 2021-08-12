@@ -34,7 +34,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class JetSqlResultImpl extends AbstractSqlResult {
@@ -121,13 +120,12 @@ public class JetSqlResultImpl extends AbstractSqlResult {
         }
     }
 
-    @Override @Nullable
-    public CompletableFuture<Void> onParticipantGracefulShutdown(UUID memberId) {
+    @Override
+    public boolean onParticipantGracefulShutdown(UUID memberId) {
         if (jobMasterContext != null) {
-            return jobMasterContext.onParticipantGracefulShutdown(memberId);
-        } else {
-            return null;
+            return jobMasterContext.onParticipantGracefulShutdown(memberId) != null;
         }
+        return true;
     }
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {

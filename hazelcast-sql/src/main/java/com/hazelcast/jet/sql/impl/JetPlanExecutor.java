@@ -44,6 +44,8 @@ import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -77,6 +79,8 @@ import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
 public class JetPlanExecutor {
+
+    private static final ILogger LOG = Logger.getLogger(JetPlanExecutor.class);
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
@@ -232,11 +236,15 @@ public class JetPlanExecutor {
         }
         Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
-        LightMasterContext lmc;
+        LightMasterContext lightMasterContext;
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
-            lmc = jetService.getJobCoordinationService().getLightMasterContext(job.getId());
+            lightMasterContext = jetService.getJobCoordinationService().getLightMasterContext(job.getId());
+            // We're sure the LightMasterContext exists at this point if the job started successfully -
+            // the SubmitJobOperation is executed directly in this thread - but we check it in the `whenComplete`
+            // because the job future might not be terminated yet
             job.getFuture().whenComplete((r, t) -> {
+                assert lightMasterContext != null || t != null : "null context && job not failed";
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
                     String errorMessage = findQueryExceptionMessage(t);
@@ -251,6 +259,7 @@ public class JetPlanExecutor {
         return new JetSqlResultImpl(
                 queryId,
                 queryResultProducer,
+                lightMasterContext,
                 plan.getRowMetadata(),
                 plan.isStreaming(),
                 serializationService
@@ -284,6 +293,7 @@ public class JetPlanExecutor {
         return new JetSqlResultImpl(
                 queryId,
                 new JetStaticQueryResultProducer(row),
+                null,
                 plan.rowMetadata(),
                 false,
                 serializationService

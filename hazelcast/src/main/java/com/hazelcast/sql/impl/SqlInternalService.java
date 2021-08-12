@@ -75,7 +75,7 @@ public class SqlInternalService {
 
         // Create state registries since they do not depend on anything.
         stateRegistry = new QueryStateRegistry(nodeServiceProvider);
-        clientStateRegistry = new QueryClientStateRegistry();
+        clientStateRegistry = new QueryClientStateRegistry(nodeServiceProvider);
 
         // Operation handler depends on state registry.
         operationHandler = new QueryOperationHandlerImpl(

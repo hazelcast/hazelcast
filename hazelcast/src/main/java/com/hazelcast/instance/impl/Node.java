@@ -141,7 +141,6 @@ public class Node {
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
-    private static final int SHUTDOWN_GRACE_PERIOD = 2000;
 
     public final HazelcastInstanceImpl hazelcastInstance;
     public final DynamicConfigurationAwareConfig config;
@@ -495,12 +494,6 @@ public class Node {
         if (!setShuttingDown()) {
             waitIfAlreadyShuttingDown();
             return;
-        }
-        try {
-            // TODO [viliam] create a parameter for this
-            Thread.sleep(SHUTDOWN_GRACE_PERIOD);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
         if (nodeExtension != null) {
             nodeExtension.shutdown();

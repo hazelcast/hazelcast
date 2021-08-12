@@ -65,7 +65,7 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * For a unisocket client the only ClientConnection will be returned.
      *
      * @return random ClientConnection if available, null otherwise
-     * @param ignoredMembers members to ignore when choosing the random connection
+     * @param ignoredMembers Members in the given collection will not be considered.
      */
     @Nullable
     ClientConnection getRandomConnection(@Nullable Set<UUID> ignoredMembers);

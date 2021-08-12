@@ -21,8 +21,8 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.LazyDeserializer;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -170,6 +170,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
         synchronized (mux) {
             try {
                 // Do nothing if the result is already closed.
+                System.out.println("aaa close for query " + queryId + ", closed=" + closed); // TODO [viliam] remove
                 if (closed) {
                     return;
                 }
@@ -211,6 +212,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
      */
     private void markClosed() {
         synchronized (mux) {
+            System.out.println("aaa markClosed for query " + queryId); // TODO [viliam] remove
             closed = true;
         }
     }
@@ -309,6 +311,10 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
         throw QueryUtils.toPublicException(error, service.getClientId());
     }
 
+    public QueryId getQueryId() {
+        return queryId;
+    }
+
     private static final class State {
 
         private final ClientIterator iterator;
@@ -375,6 +381,7 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
                 if (page.getPageState() == PageState.LAST_CLOSED) {
                     markClosed();
                 }
+
             }
         }
 
