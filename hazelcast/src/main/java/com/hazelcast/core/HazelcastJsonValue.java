@@ -16,14 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-
-import java.io.IOException;
-import java.io.Serializable;
-
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -43,7 +35,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Ill-formatted JSON strings may cause false positive or false negative
  * results in queries. {@code null} string is not allowed.
  */
-public final class HazelcastJsonValue implements IdentifiedDataSerializable, Serializable {
+public final class HazelcastJsonValue {
 
     private String string;
 
@@ -83,25 +75,5 @@ public final class HazelcastJsonValue implements IdentifiedDataSerializable, Ser
     @Override
     public int hashCode() {
         return string.hashCode();
-    }
-
-    @Override
-    public void writeData(final ObjectDataOutput out) throws IOException {
-        out.writeString(this.string);
-    }
-
-    @Override
-    public void readData(final ObjectDataInput in) throws IOException {
-        this.string = in.readString();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SqlDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return SqlDataSerializerHook.HAZELCAST_JSON_VALUE;
     }
 }

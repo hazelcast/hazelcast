@@ -82,30 +82,8 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
     @Test
     public void when_complexObjectIsPassed_queryWorks() {
         final IMap<Long, ComplexObject> test = instance().getMap("test");
-        test.put(1L, new ComplexObject(1L, new HazelcastJsonValue("[1,2,3]")));
+        test.put(1L, new ComplexObject(1L, "[1,2,3]"));
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(jsonValue, '$'), id FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
-            assertEquals(SqlColumnType.BIGINT, row.getMetadata().getColumn(1).getType());
-            assertEquals((Long) 1L, row.getObject(1));
-        }
-    }
-
-    @Test
-    public void when_mappedComplexObjectIsPassed_queryWorks() {
-        final IMap<Long, ComplexObject> test = instance().getMap("test");
-        test.put(1L, new ComplexObject(1L, new HazelcastJsonValue("[1,2,3]")));
-
-        instance().getSql()
-                .execute("CREATE MAPPING test (__key BIGINT, id BIGINT, JsonValue JSON) " +
-                        "TYPE IMap " +
-                        "OPTIONS ('keyFormat'='bigint', " +
-                        "'valueFormat'='java', " +
-                        "'valueJavaClass'='com.hazelcast.jet.sql.impl.expression.json.ComplexObject')")
-                .updateCount();
-
-        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(JsonValue, '$'), id FROM test")) {
             System.out.println(row);
             assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
             assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));

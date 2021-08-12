@@ -744,7 +744,8 @@ public class ConvertersTest {
             DATE,
             TIMESTAMP,
             TIMESTAMP_WITH_TIME_ZONE,
-            VARCHAR
+            VARCHAR,
+            JSON
         );
 
         checkObjectConverter(c);
