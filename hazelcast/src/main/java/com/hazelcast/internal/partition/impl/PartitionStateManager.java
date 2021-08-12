@@ -74,6 +74,11 @@ public class PartitionStateManager {
     private final PartitionStateGenerator partitionStateGenerator;
     private final MemberGroupFactory memberGroupFactory;
 
+    // we keep a cached buffer because stamp calculation can happen many times
+    // during repartitioning and this introduces GC pressure, especially at high
+    // partition counts
+    private final byte[] stampCalculationBuffer;
+
     // updates will be done under lock, but reads will be multithreaded.
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
@@ -93,6 +98,7 @@ public class PartitionStateManager {
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
+        this.stampCalculationBuffer = new byte[partitionCount * Integer.BYTES];
 
         PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
@@ -369,7 +375,7 @@ public class PartitionStateManager {
     }
 
     public void updateStamp() {
-        stateStamp = calculateStamp(partitions);
+        stateStamp = calculateStamp(partitions, () -> stampCalculationBuffer);
         if (logger.isFinestEnabled()) {
             logger.finest("New calculated partition state stamp is: " + stateStamp);
         }
