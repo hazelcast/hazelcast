@@ -86,7 +86,7 @@ public class SqlAggregateTest_TypeCoercion extends SqlTestSupport {
                         127L,
                         32767L,
                         2147483647L,
-                        9223372036854775807L,
+                        new BigDecimal(9223372036854775807L),
                         1234567890.1f,
                         123451234567890.1,
                         new BigDecimal("9223372036854775.123"),
