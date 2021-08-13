@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical.calcite.index;
+package com.hazelcast.jet.sql.impl.opt.physical.index;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.calcite.index.IndexComponentCandidate;
+import com.hazelcast.jet.sql.impl.opt.physical.calcite.index.IndexComponentFilter;
+import com.hazelcast.jet.sql.impl.opt.physical.calcite.index.IndexRexVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.calcite.index.RelCollationComparator;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
