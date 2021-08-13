@@ -31,6 +31,7 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -171,11 +172,15 @@ public final class ExecutionPlanBuilder {
             partitionOwners[partitionId] = member;
         }
 
-        return IntStream.range(0, partitionOwners.length)
+        Map<MemberInfo, int[]> result = IntStream.range(0, partitionOwners.length)
                 .mapToObj(i -> tuple2(partitionOwners[i], i))
                 .collect(Collectors.groupingBy(Tuple2::f0,
                         Collectors.mapping(Tuple2::f1,
                                 Collectors.collectingAndThen(Collectors.<Integer>toList(),
                                         intList -> intList.stream().mapToInt(Integer::intValue).toArray()))));
+        if (result.keySet().size() != memberList.size()) {
+            throw new RetryableHazelcastException("some participants don't own any partitions");
+        }
+        return result;
     }
 }

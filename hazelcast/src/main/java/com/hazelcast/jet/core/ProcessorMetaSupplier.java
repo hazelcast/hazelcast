@@ -49,6 +49,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
+import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static java.util.Collections.singletonList;
 
@@ -455,6 +456,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             private ProcessorSupplier supplier;
             private Address memberAddress;
+            private transient long jobId;
 
             @SuppressWarnings("unused")
             private SpecificMemberPms() {
@@ -467,6 +469,7 @@ public interface ProcessorMetaSupplier extends Serializable {
 
             @Override
             public void init(@Nonnull Context context) throws Exception {
+                jobId = context.jobId();
                 PermissionsUtil.checkPermission(supplier, context);
                 if (context.localParallelism() != 1) {
                     throw new IllegalArgumentException(
@@ -478,7 +481,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             @Nonnull @Override
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 if (!addresses.contains(memberAddress)) {
-                    throw new JetException("The required member isn't participant in the job: " + memberAddress);
+                    throw new JetException("The required member isn't participant in the job: " + memberAddress + ", jobId=" + idToString(jobId));
                 }
                 return addr -> addr.equals(memberAddress) ? supplier : count -> singletonList(new ExpectNothingP());
             }

@@ -100,10 +100,10 @@ public class LightMasterContext {
 
         // find a subset of members with version equal to the coordinator version.
         MembersView membersView = Util.getMembersView(nodeEngine);
-        Version coordinatorVersion = nodeEngine.getLocalMember().getVersion().asVersion();
+        Version localMemberVersion = nodeEngine.getLocalMember().getVersion().asVersion();
         List<MemberInfo> members = membersView.getMembers().stream()
                 .filter(m -> {
-                    if (!m.getVersion().asVersion().equals(coordinatorVersion)) {
+                    if (!m.getVersion().asVersion().equals(localMemberVersion)) {
                         logFine(logger, "Light job %s will not use member %s: its version is different from coordinator's",
                                 idToString(jobId), m.getAddress());
                         return false;
@@ -119,7 +119,10 @@ public class LightMasterContext {
         if (members.isEmpty()) {
             throw new JetException("No data member with version equal to the coordinator version found");
         }
+        assert members.stream().filter(m -> m.getUuid().equals(nodeEngine.getLocalMember().getUuid())).count() == 1
+                : "schizophrenia: local member not a member";
         if (logger.isFineEnabled()) {
+            logger.info("aaa job " + jobIdString + " will use members: " + members); // TODO [viliam] remove
             String dotRepresentation = dag.toDotString();
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
@@ -133,7 +136,9 @@ public class LightMasterContext {
         try {
             executionPlanMapTmp = createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject);
         } catch (Throwable e) {
-            if (coordinationService.getJetServiceBackend().isShutdownInitiated()) {
+            boolean shutdownInitiated = coordinationService.getJetServiceBackend().isShutdownInitiated();
+            logger.info("aaa after createExecutionPlans() error, shutdownInitiated=" + shutdownInitiated);
+            if (shutdownInitiated) {
                 // if there's any failure and we're shutting down, let's report that to the caller
                 logger.fine("ExecutionPlan initialization failed, but the local member is shutting down, ignoring it: " + e, e);
                 throw new MemberShuttingDownException();
@@ -147,7 +152,7 @@ public class LightMasterContext {
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan -> {
             Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
+            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), localMemberVersion, participants,
                     serializedPlan, true);
         };
         invokeOnParticipants(operationCtor,

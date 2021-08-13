@@ -306,6 +306,11 @@ public class JobCoordinationService {
             JobConfig jobConfig,
             Subject subject
     ) {
+        if (!shouldStartLightJobs()) {
+            logger.info("aaa "); // TODO [viliam] remove
+            throw new RetryableHazelcastException("Member not in a state to safely start a light job");
+        }
+
         Object jobDefinition = nodeEngine().getSerializationService().toObject(serializedJobDefinition);
         DAG dag;
         if (jobDefinition instanceof DAG) {
@@ -869,6 +874,30 @@ public class JobCoordinationService {
                 logger.fine("Not starting non-light jobs because rolling upgrade is in progress");
                 return false;
             }
+        }
+
+        PartitionServiceState state =
+                getInternalPartitionService().getPartitionReplicaStateChecker().getPartitionServiceState();
+        if (state != PartitionServiceState.SAFE) {
+            logger.fine("Not starting jobs because partition replication is not in safe state, but in " + state);
+            return false;
+        }
+        if (!getInternalPartitionService().getPartitionStateManager().isInitialized()) {
+            logger.fine("Not starting jobs because partitions are not yet initialized.");
+            return false;
+        }
+        return true;
+    }
+
+    boolean shouldStartLightJobs() {
+        if (!nodeEngine.isRunning()) {
+            return false;
+        }
+
+        ClusterState clusterState = nodeEngine.getClusterService().getClusterState();
+        if (isClusterEnteringPassiveState || clusterState == PASSIVE || clusterState == IN_TRANSITION) {
+            logger.fine("Not starting jobs because cluster is in passive state or in transition.");
+            return false;
         }
 
         PartitionServiceState state =
