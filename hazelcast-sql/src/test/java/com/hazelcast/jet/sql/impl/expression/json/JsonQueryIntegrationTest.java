@@ -20,8 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +32,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -69,7 +77,9 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue("[1,2,3]"));
         instance().getSql()
-                .execute("CREATE MAPPING test (__key BIGINT, this JSON) TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json_type')")
+                .execute("CREATE MAPPING test (__key BIGINT, this JSON) " +
+                        "TYPE IMap " +
+                        "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json_type')")
                 .updateCount();
 
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$') FROM test")) {
@@ -90,5 +100,112 @@ public class JsonQueryIntegrationTest extends SqlTestSupport {
             assertEquals(SqlColumnType.BIGINT, row.getMetadata().getColumn(1).getType());
             assertEquals((Long) 1L, row.getObject(1));
         }
+    }
+
+    @Test
+    public void when_extendedSyntaxSpecified_queryWorks() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, new HazelcastJsonValue(""));
+        test.put(2L, new HazelcastJsonValue("[1,2,"));
+
+        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
+                .execute("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertNull(querySingle("SELECT JSON_QUERY(this, '$' NULL ON EMPTY) AS c1 FROM test WHERE __key = 1")
+                        .get("c1"));
+        assertEquals(new HazelcastJsonValue("[]"),
+                querySingle("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON EMPTY) AS c1 FROM test WHERE __key = 1")
+                        .get("c1"));
+        assertEquals(new HazelcastJsonValue("{}"),
+                querySingle("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON EMPTY) AS c1 FROM test WHERE __key = 1")
+                        .get("c1"));
+
+        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
+                .execute("SELECT JSON_QUERY(this, '$' ERROR ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertNull(querySingle("SELECT JSON_QUERY(this, '$' NULL ON ERROR) AS c1 FROM test WHERE __key = 2")
+                .get("c1"));
+        assertEquals(new HazelcastJsonValue("[]"),
+                querySingle("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON ERROR) AS c1 FROM test WHERE __key = 2")
+                        .get("c1"));
+        assertEquals(new HazelcastJsonValue("{}"),
+                querySingle("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON ERROR) AS c1 FROM test WHERE __key = 2")
+                        .get("c1"));
+    }
+
+    @Test
+    public void when_defaultWrapperBehaviorIsSpecified_queryWorks() {
+        initComplexObject();
+        assertEquals("[1,\"2\",3,{\"t\":1}]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]') FROM test"));
+        assertEquals("{\"t\":1}",
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]') FROM test"));
+        assertThrows(HazelcastSqlException.class,
+                () -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' ERROR ON ERROR) FROM test"));
+    }
+
+    @Test
+    public void when_noArrayWrapperSpecified_queryWorks() {
+        initComplexObject();
+        assertEquals("[1,\"2\",3,{\"t\":1}]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITHOUT ARRAY WRAPPER) FROM test"));
+        assertEquals("{\"t\":1}",
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITHOUT ARRAY WRAPPER) FROM test"));
+        assertThrows(HazelcastSqlException.class,
+                () -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) FROM test"));
+    }
+
+    @Test
+    public void when_conditionalArrayWrapperSpecified_queryWorks() {
+        initComplexObject();
+        assertEquals("[1,\"2\",3,{\"t\":1}]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH CONDITIONAL ARRAY WRAPPER) FROM test"));
+        assertEquals("{\"t\":1}",
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITH CONDITIONAL ARRAY WRAPPER) FROM test"));
+        assertEquals("[3]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITH CONDITIONAL ARRAY WRAPPER ERROR ON ERROR) FROM test"));
+    }
+
+    @Test
+    public void when_unconditionalArrayWrapperSpecified_queryWorks() {
+        initComplexObject();
+        assertEquals("[[1,\"2\",3,{\"t\":1}]]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH UNCONDITIONAL ARRAY WRAPPER) FROM test"));
+        assertEquals("[{\"t\":1}]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITH UNCONDITIONAL ARRAY WRAPPER) FROM test"));
+        assertEquals("[3]",
+                querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITH UNCONDITIONAL ARRAY WRAPPER ERROR ON ERROR) FROM test"));
+    }
+
+    private void initComplexObject() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, new HazelcastJsonValue("["
+                + "[1,\"2\",3,{\"t\":1}],"
+                + "{\"t\":1},"
+                + "3"
+                + "]"));
+    }
+
+    private String querySingleValue(final String sql) {
+        final Map<String, Object> result = querySingle(sql);
+        return result.values().iterator().next().toString();
+    }
+
+    private Map<String, Object> querySingle(final String sql) {
+        return query(sql).get(0);
+    }
+
+    private List<Map<String, Object>> query(final String sql) {
+        final List<Map<String, Object>> results = new ArrayList<>();
+
+        for (final SqlRow row : instance().getSql().execute(sql)) {
+            final Map<String, Object> result = new HashMap<>();
+            final SqlRowMetadata rowMetadata = row.getMetadata();
+            for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
+                result.put(rowMetadata.getColumn(i).getName(), row.getObject(i));
+            }
+
+            results.add(result);
+        }
+
+        return results;
     }
 }
