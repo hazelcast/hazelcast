@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.pipeline.file.AvroFileFormat;
 import com.hazelcast.jet.pipeline.file.CsvFileFormat;
-import com.hazelcast.jet.pipeline.file.JsonFileFormat;
 import com.hazelcast.jet.pipeline.file.ParquetFileFormat;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
