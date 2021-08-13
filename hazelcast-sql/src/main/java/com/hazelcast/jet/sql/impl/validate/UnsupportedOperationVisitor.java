@@ -206,7 +206,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_STREAM);
 
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.CSV_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FILE);
+        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FLAT_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
     }

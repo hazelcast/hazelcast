@@ -24,6 +24,7 @@ import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
@@ -69,7 +70,7 @@ public final class JetSqlOperatorTable extends ReflectiveSqlOperatorTable {
     public static final SqlFunction GENERATE_STREAM = new StreamGeneratorTableFunction();
 
     public static final SqlFunction CSV_FILE = new FileTableFunction("CSV_FILE", CsvFileFormat.FORMAT_CSV);
-    public static final SqlFunction JSON_FILE = new FileTableFunction("JSON_FILE", JsonFileFormat.FORMAT_JSON);
+    public static final SqlFunction JSON_FLAT_FILE = new FileTableFunction("JSON_FLAT_FILE", SqlConnector.JSON_FLAT_FORMAT);
     public static final SqlFunction AVRO_FILE = new FileTableFunction("AVRO_FILE", AvroFileFormat.FORMAT_AVRO);
     public static final SqlFunction PARQUET_FILE = new FileTableFunction("PARQUET_FILE", ParquetFileFormat.FORMAT_PARQUET);
 
