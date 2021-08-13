@@ -53,6 +53,17 @@ public class ExternalMemberConfigurationOverrideSystemPropertiesTest extends Haz
     }
 
     @Test
+    public void shouldExtractJetConfigFromSysProperties() {
+        runWithSystemProperties(() -> {
+              Config config = new Config();
+              new ExternalConfigurationOverride().overwriteMemberConfig(config);
+
+              assertTrue(config.getJetConfig().isEnabled());
+          },
+          entry("hz.jet.enabled", "true"));
+    }
+
+    @Test
     public void shouldHandleRestApiConfigFromSysProperties() {
         runWithSystemProperties(() -> {
               Config config = new Config();

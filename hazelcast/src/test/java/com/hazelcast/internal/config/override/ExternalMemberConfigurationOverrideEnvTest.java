@@ -73,6 +73,16 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
     }
 
     @Test
+    public void shouldHandleJetConfig() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_JET_ENABLED", "true")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertTrue(config.getJetConfig().isEnabled());
+    }
+
+    @Test
     public void shouldHandleCustomPropertiesConfig() throws Exception {
         Config config = new Config();
 
