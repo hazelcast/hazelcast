@@ -22,7 +22,6 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.util.NamedCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
@@ -87,10 +86,7 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
                 }
                 return null;
             });
-            // TODO [viliam] remove this future - it's just for debugging
-            NamedCompletableFuture<Void> future2 = new NamedCompletableFuture<>("NotifyShutdownToMemberOp-" + member.getAddress());
-            future.whenComplete((r, t) -> future2.complete(null));
-            futures.add(future2);
+            futures.add(future);
         }
 
         // done when all are done

@@ -189,10 +189,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         try {
             // TODO [viliam] handle the timeout
-            logger.info("aaa shutDownJobs waiting for future"); // TODO [viliam] remove
             CompletableFuture<Void> future = shutdownFuture.get();
             future.get();
-            logger.info("aaa shutDownJobs future done"); // TODO [viliam] remove
             // Note that at this point there can still be executions running - those for light jobs
             // or those created automatically after a packet was received.
             // They are all non-fault-tolerant or contain only the packets, that will be dropped

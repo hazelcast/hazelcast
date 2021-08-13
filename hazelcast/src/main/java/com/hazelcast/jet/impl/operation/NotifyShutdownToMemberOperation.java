@@ -70,8 +70,7 @@ public class NotifyShutdownToMemberOperation extends AsyncOperation implements U
             futures.add(getNodeEngine().getSqlService().getInternalService().getClientStateRegistry()
                     .onMemberGracefulShutdown(uuid));
         }
-        return loggedAllOf(getLogger(), "NotifyShutdownToMemberOperation-" + shuttingDownMemberIds, futures.toArray(new CompletableFuture[0]))
-                .whenComplete((r, t) -> getLogger().info("aaa NotifyShutdownToMemberOperation-" + shuttingDownMemberIds + " completed")); // TODO [viliam] remove logging
+        return loggedAllOf(getLogger(), "NotifyShutdownToMemberOperation-" + shuttingDownMemberIds, futures.toArray(new CompletableFuture[0]));
     }
 
     @Override

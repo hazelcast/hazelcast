@@ -71,7 +71,6 @@ public class QueryClientStateRegistry {
         if (clientCursors.putIfAbsent(queryId, state) != null) {
             throw new IllegalStateException("Duplicate query ID");
         }
-        logger.info("aaa created cursor for " + queryId); // TODO [viliam] remove
     }
 
     public SqlPage initResultAndFetch(
@@ -80,7 +79,6 @@ public class QueryClientStateRegistry {
         InternalSerializationService serializationService
     ) {
         QueryId queryId = result.getQueryId();
-        logger.info("aaa initResultAndFetch for " + queryId); // TODO [viliam] remove
         QueryClientState clientCursor = clientCursors.get(queryId);
         boolean delete = false;
         try {
@@ -224,7 +222,6 @@ public class QueryClientStateRegistry {
     }
 
     private void close0(QueryClientState clientCursor) {
-        logger.info("aaa closing for " + clientCursor.getQueryId()); // TODO [viliam] remove
         deleteClientCursor(clientCursor.getQueryId(), null);
     }
 
@@ -257,7 +254,6 @@ public class QueryClientStateRegistry {
     }
 
     private void deleteClientCursor(QueryId queryId, QueryException error) {
-        logger.info("aaa deleteClientCursor for " + queryId); // TODO [viliam] remove
         QueryClientState cursor = clientCursors.remove(queryId);
         cursor.close(error);
     }

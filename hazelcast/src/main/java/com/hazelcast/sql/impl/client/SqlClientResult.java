@@ -170,7 +170,6 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
         synchronized (mux) {
             try {
                 // Do nothing if the result is already closed.
-                System.out.println("aaa close for query " + queryId + ", closed=" + closed); // TODO [viliam] remove
                 if (closed) {
                     return;
                 }
@@ -212,7 +211,6 @@ public class SqlClientResult implements SqlResult, LazyDeserializer {
      */
     private void markClosed() {
         synchronized (mux) {
-            System.out.println("aaa markClosed for query " + queryId); // TODO [viliam] remove
             closed = true;
         }
     }

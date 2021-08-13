@@ -107,8 +107,6 @@ public class QueryClientState {
             for (Entry<UUID, CompletableFuture<Void>> en : shutdownFutures.entrySet()) {
                 boolean isParticipant = sqlResult.onParticipantGracefulShutdown(en.getKey());
                 if (!isParticipant) {
-                    logger.info("aaa completing shutdown future for query " + queryId + " for member " + en.getKey()
-                            + " after the result was init because it is not a participant'"); // TODO [viliam] remove
                     en.getValue().complete(null);
                 }
             }
@@ -139,8 +137,6 @@ public class QueryClientState {
             if (sqlResult != null) {
                 if (!sqlResult.onParticipantGracefulShutdown(memberId)) {
                     // if there is a result and the memberId isn't a participant, we don't have to wait for the completion.
-                    logger.info("aaa onGracefulParticipantShutdown(" + memberId + ") ignored for " + queryId
-                            + " because it has a result and the job doesn't have the member as a participant"); // TODO [viliam] remove
                     return null;
                 }
             } else {
@@ -149,7 +145,6 @@ public class QueryClientState {
                 // option - but these queries complete quickly anyway.
             }
 
-            logger.info("aaa onGracefulParticipantShutdown(" + memberId + ") created a future for " + queryId); // TODO [viliam] remove
             return shutdownFutures.computeIfAbsent(memberId, x -> new NamedCompletableFuture<>("sql " + queryId));
         }
     }
@@ -159,7 +154,6 @@ public class QueryClientState {
             closed = true;
             // note that if the result was already initialized, this collection is empty
             for (CompletableFuture<Void> future : shutdownFutures.values()) {
-                logger.info("aaa completing future " + future + " after cursor is closed, query=" + queryId); // TODO [viliam] remove
                 future.complete(null);
             }
             if (sqlResult != null) {

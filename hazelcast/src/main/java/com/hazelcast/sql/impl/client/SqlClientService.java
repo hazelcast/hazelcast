@@ -133,7 +133,6 @@ public class SqlClientService implements SqlService {
             Throwable error
     ) {
         if (error != null) {
-            logger.info("aaa SqlClientService.handleExecuteResponse, error=" + error + " for query " + res.getQueryId()); // TODO [viliam] remove
             res.onExecuteError(rethrow(error, connection));
 
             return;
