@@ -143,6 +143,8 @@ public class QueryClientState {
                 // If there is no result, we don't know. We have to wait. There can be a result later (see
                 // initResult()). Or if there won't be a result for this query (e.g. a DDL query), we have no other
                 // option - but these queries complete quickly anyway.
+                // dummy statement to make checkstyle happy
+                assert true;
             }
 
             return shutdownFutures.computeIfAbsent(memberId, x -> new NamedCompletableFuture<>("sql " + queryId));

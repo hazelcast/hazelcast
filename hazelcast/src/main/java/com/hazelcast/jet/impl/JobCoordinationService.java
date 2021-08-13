@@ -326,7 +326,8 @@ public class JobCoordinationService {
 
         // First insert just a marker into the map. This is to prevent initializing the light job if the jobId
         // was submitted twice. This can happen e.g. if the client retries.
-        CompletableFuture<LightMasterContext> initializationFuture = new NamedCompletableFuture<>("initializationFuture for " + idToString(jobId));
+        CompletableFuture<LightMasterContext> initializationFuture =
+                new NamedCompletableFuture<>("initializationFuture for " + idToString(jobId));
         Object oldContext = lightMasterContexts.putIfAbsent(jobId, new UninitializedLightJobMarker(initializationFuture));
         if (oldContext != null) {
             throw new JetException("duplicate jobId " + idToString(jobId));
@@ -357,7 +358,8 @@ public class JobCoordinationService {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                logger.info("Job initialization failed, but this member is shutting down. We're ignoring the job failure: " + jobException, jobException);
+                logger.info("Job initialization failed, but this member is shutting down. We're ignoring the job failure: "
+                        + jobException, jobException);
                 throw new MemberShuttingDownException();
             }
         } catch (Throwable e) {
@@ -776,7 +778,8 @@ public class JobCoordinationService {
     @Nonnull
     public CompletableFuture<Void> addShuttingDownMember(UUID uuid) {
         // TODO [viliam] print list of jobs we're waiting for
-        CompletableFuture<Void> future = new NamedCompletableFuture<>("JobCoordinationService.addShuttingDownMember(" + uuid + ")");
+        CompletableFuture<Void> future =
+                new NamedCompletableFuture<>("JobCoordinationService.addShuttingDownMember(" + uuid + ")");
         CompletableFuture<Void> oldFuture = membersShuttingDown.putIfAbsent(uuid, future);
         if (oldFuture != null) {
             return oldFuture;

@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
-// TODO [viliam] change to SlowTeste
+// TODO [viliam] change to SlowTest
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlGracefulShutdownTest extends JetTestSupport {
 
@@ -129,8 +129,10 @@ public class SqlGracefulShutdownTest extends JetTestSupport {
                                 // this error is possible now because even though we wait until the query completes and require the client
                                 // to call closeOp, there are race conditions possible where this can happen.
                                 if (e.getMessage() == null
-                                        || !e.getMessage().contains("Cluster topology changed while a query was executed: Member cannot be reached"))
+                                        || !e.getMessage().contains("Cluster topology changed while a query was executed: "
+                                                + "Member cannot be reached")) {
                                     throw e;
+                                }
                                 logger.info("ignoring query failure: " + e, e);
                             }
 

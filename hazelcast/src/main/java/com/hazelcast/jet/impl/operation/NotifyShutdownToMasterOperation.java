@@ -90,7 +90,8 @@ public class NotifyShutdownToMasterOperation extends AsyncOperation implements U
         }
 
         // done when all are done
-        return loggedAllOf(getLogger(), "NotifyShutdownToMasterOperation-" + getCallerAddress(), futures.toArray(new CompletableFuture[0]));
+        return loggedAllOf(getLogger(), "NotifyShutdownToMasterOperation-" + getCallerAddress(),
+                futures.toArray(new CompletableFuture[0]));
     }
 
     @Override

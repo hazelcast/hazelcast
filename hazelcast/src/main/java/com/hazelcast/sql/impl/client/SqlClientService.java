@@ -145,7 +145,8 @@ public class SqlClientService implements SqlService {
         if (responseError != null) {
             if (responseError.getCode() == SqlErrorCode.MEMBER_SHUTTING_DOWN) {
                 shuttingDownMembers.add(connection.getRemoteUuid());
-                logger.fine("Client added a shutting-down member: " + connection.getRemoteUuid() + " for query " + res.getQueryId());
+                logger.fine("Client added a shutting-down member: " + connection.getRemoteUuid()
+                        + " for query " + res.getQueryId());
                 executeInt(res, statement);
             } else {
                 res.onExecuteError(responseError);
