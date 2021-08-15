@@ -17,9 +17,9 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.exec.BlockingExec;
-import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,8 +27,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.awaitSingleRunningJob;
+import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
 
 /**
  * Test for different error conditions.
@@ -36,73 +37,44 @@ import static junit.framework.TestCase.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorTest extends SqlErrorAbstractTest {
+
     @Test
     public void testTimeout() {
-        checkTimeout(false);
+        checkTimeout(false, DEFAULT_CURSOR_BUFFER_SIZE);
     }
 
     @Test
-    public void testExecutionError_fromFirstMember() {
-        checkExecutionError(false, true);
-    }
-
-    @Test
-    public void testExecutionError_fromSecondMember() {
-        checkExecutionError(false, false);
-    }
-
-    @Test
-    public void testMapMigration() {
-        checkMapMigration(false);
-    }
-
-    @Test
-    public void testMapDestroy_firstMember() {
-        checkMapDestroy(false, true);
-    }
-
-    @Test
-    public void testMapDestroy_secondMember() {
-        checkMapDestroy(false, false);
-    }
-
-    @Test
-    public void testMemberLeave() {
-        // Start two instances and fill them with data
+    public void testMemberLeave() throws InterruptedException {
+        // Start two instances
         instance1 = newHazelcastInstance(false);
         instance2 = newHazelcastInstance(true);
 
-        populate(instance1);
-
-        // Block query execution on a remote member
-        BlockingExec.Blocker blocker = new BlockingExec.Blocker();
-
-        setExecHook(instance2, exec -> {
-            if (exec instanceof MapScanExec) {
-                return new BlockingExec(exec, blocker);
-            }
-
-            return exec;
+        Thread shutdownThread = new Thread(() -> {
+            awaitSingleRunningJob(instance1);
+            instance2.shutdown();
         });
 
-        // Stop remote member when the blocking point is reached
-        new Thread(() -> {
-            try {
-                blocker.awaitReached();
+        shutdownThread.start();
 
-                instance2.shutdown();
-            } finally {
-                blocker.unblockAfter(2000);
-            }
-        }).start();
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(1000))");
 
         // Start query
-        HazelcastSqlException error = assertSqlException(instance1, query());
-        assertTrue(
-                "Error code: " + error.getCode(),
-                error.getCode() == SqlErrorCode.CONNECTION_PROBLEM || error.getCode() == SqlErrorCode.PARTITION_DISTRIBUTION
-        );
-        assertEquals(instance1.getLocalEndpoint().getUuid(), error.getOriginatingMemberId());
+        HazelcastSqlException error = assertSqlException(instance1, streamingQuery);
+        shutdownThread.join();
+        assertInstanceOf(MemberLeftException.class, findRootCause(error));
+    }
+
+    @Test
+    public void testMemberLeaveDuringQueryAfterImmediateShutdown() {
+        // Start two instances
+        instance1 = newHazelcastInstance(false);
+        instance2 = newHazelcastInstance(true);
+
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(1000))");
+
+        // Start query with immediate shutdown afterwards
+        HazelcastSqlException error = assertSqlExceptionWithShutdown(instance1, streamingQuery);
+        assertInstanceOf(HazelcastInstanceNotActiveException.class, findRootCause(error));
     }
 
     @Test

@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -37,7 +38,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -59,10 +59,11 @@ import static java.util.Collections.shuffle;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class SlidingWindowPTest {
 
     private static final Long KEY = 77L;

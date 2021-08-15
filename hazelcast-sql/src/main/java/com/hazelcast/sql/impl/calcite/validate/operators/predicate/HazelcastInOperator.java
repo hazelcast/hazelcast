@@ -28,6 +28,7 @@ import org.apache.calcite.sql.ExplicitOperatorBinding;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.fun.SqlInOperator;
@@ -77,27 +78,32 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
             SqlNodeList nodeList = (SqlNodeList) right;
             for (int i = 0; i < nodeList.size(); i++) {
                 SqlNode node = nodeList.get(i);
+                if (node instanceof SqlLiteral) {
+                    SqlLiteral lit = (SqlLiteral) node;
+                    // We are not supporting raw NULL literals within IN right-hand side list.
+                    if (lit.getValue() == null) {
+                        throw validator.newValidationError(right, HZRESOURCE.noRawNullsAllowed());
+                    }
+                }
                 RelDataType nodeType = validator.deriveType(scope, node);
                 rightTypeList.add(nodeType);
             }
             rightType = typeFactory.leastRestrictive(rightTypeList);
 
-            // First check that the expressions in the IN list are compatible
-            // with each other. Same rules as the VALUES operator (per
-            // SQL:2003 Part 2 Section 8.4, <in predicate>).
+            // First check that the expressions in the IN list are compatible with each other.
+            // Same rules as the VALUES operator (per SQL:2003 Part 2 Section 8.4, <in predicate>).
             if (null == rightType && validator.config().typeCoercionEnabled()) {
                 // Do implicit type cast if it is allowed to.
                 rightType = validator.getTypeCoercion().getWiderTypeFor(rightTypeList, false);
             }
             if (null == rightType) {
-                throw validator.newValidationError(right,
-                        RESOURCE.incompatibleTypesInList());
+                throw validator.newValidationError(right, RESOURCE.incompatibleTypesInList());
             }
 
             // Record the RHS type for use by SqlToRelConverter.
             ((SqlValidatorImpl) validator).setValidatedNodeType(nodeList, rightType);
         } else {
-            // We do not support subquerying for IN operator.
+            // We do not support sub-querying for IN operator.
             throw validator.newValidationError(call, HZRESOURCE.noSubQueryAllowed());
         }
         HazelcastCallBinding hazelcastCallBinding = prepareBinding(new SqlCallBinding(validator, scope, call));
@@ -126,8 +132,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
                 new ExplicitOperatorBinding(
                         hazelcastCallBinding,
                         ImmutableList.of(leftRowType, rightRowType)), hazelcastCallBinding)) {
-            throw validator.newValidationError(call,
-                    RESOURCE.incompatibleValueType(SqlStdOperatorTable.IN.getName()));
+            throw validator.newValidationError(call, RESOURCE.incompatibleValueType(SqlStdOperatorTable.IN.getName()));
         }
 
         return typeFactory.createTypeWithNullability(
@@ -147,7 +152,10 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
     }
 
     interface HazelcastInOperatorResource extends CalciteResource {
-        @Resources.BaseMessage("Sub-queries are not allowed for IN operator.")
+        @Resources.BaseMessage("Sub-queries are not supported for IN operator.")
         Resources.ExInst<SqlValidatorException> noSubQueryAllowed();
+
+        @Resources.BaseMessage("Raw nulls are not supported for IN operator.")
+        Resources.ExInst<SqlValidatorException> noRawNullsAllowed();
     }
 }

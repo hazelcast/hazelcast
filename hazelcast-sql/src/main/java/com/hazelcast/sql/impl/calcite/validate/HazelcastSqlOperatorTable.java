@@ -41,6 +41,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastInOp
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastIsTrueFalseNullPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastNotPredicate;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatOperator;
+import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastConcatWSOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastPositionFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastReplaceFunction;
@@ -173,6 +174,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     //#region String functions
 
     public static final SqlBinaryOperator CONCAT = HazelcastConcatOperator.INSTANCE;
+    public static final SqlFunction CONCAT_WS = HazelcastConcatWSOperator.INSTANCE;
 
     public static final SqlSpecialOperator LIKE = HazelcastLikeOperator.LIKE;
     public static final SqlSpecialOperator NOT_LIKE = HazelcastLikeOperator.NOT_LIKE;
@@ -276,17 +278,6 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
                 SqlBasicCall basicCall = (SqlBasicCall) call;
                 SqlOperator operator = basicCall.getOperator();
-
-                // Remove raw NULL from the right-hand operand if it's a list. We ignore raw NULL.
-                if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
-                    List<SqlNode> operandList = call.getOperandList();
-
-                    assert operandList.size() == 2;
-                    SqlNode rhs = operandList.get(1);
-                    if (rhs instanceof SqlNodeList) {
-                        call.setOperand(1, removeNullWithinInStatement((SqlNodeList) rhs));
-                    }
-                }
 
                 List<SqlOperator> resolvedOperators = new ArrayList<>(1);
 

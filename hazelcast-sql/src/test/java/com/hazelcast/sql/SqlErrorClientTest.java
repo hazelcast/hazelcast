@@ -26,25 +26,26 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.sql.impl.exec.BlockingExec;
-import com.hazelcast.sql.impl.exec.scan.MapScanExec;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -55,7 +56,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 /**
  * Test for different error conditions (client).
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlErrorClientTest extends SqlErrorAbstractTest {
@@ -83,37 +84,12 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
     @Test
     public void testTimeout_execute() {
-        checkTimeout(true);
+        checkTimeout(true, DEFAULT_CURSOR_BUFFER_SIZE);
     }
 
     @Test
     public void testTimeout_fetch() {
-        checkTimeout(true, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE * 4);
-    }
-
-    @Test
-    public void testExecutionError_fromFirstMember() {
-        checkExecutionError(true, true);
-    }
-
-    @Test
-    public void testExecutionError_fromSecondMember() {
-        checkExecutionError(true, false);
-    }
-
-    @Test
-    public void testMapMigration() {
-        checkMapMigration(true);
-    }
-
-    @Test
-    public void testMapDestroy_firstMember() {
-        checkMapDestroy(true, true);
-    }
-
-    @Test
-    public void testMapDestroy_secondMember() {
-        checkMapDestroy(true, false);
+        checkTimeout(true, DEFAULT_CURSOR_BUFFER_SIZE * 4);
     }
 
     @Test
@@ -149,29 +125,9 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        populate(instance1);
+        SqlStatement streamingQuery = new SqlStatement("SELECT * FROM TABLE(GENERATE_STREAM(5000))");
 
-        BlockingExec.Blocker blocker = new BlockingExec.Blocker();
-
-        setExecHook(instance1, exec -> {
-            if (exec instanceof MapScanExec) {
-                return new BlockingExec(exec, blocker);
-            } else {
-                return exec;
-            }
-        });
-
-        new Thread(() -> {
-            try {
-                blocker.awaitReached();
-
-                instance1.shutdown();
-            } finally {
-                blocker.unblockAfter(1000);
-            }
-        }).start();
-
-        HazelcastSqlException error = assertSqlException(client, query());
+        HazelcastSqlException error = assertSqlExceptionWithShutdown(client, streamingQuery);
         assertErrorCode(SqlErrorCode.CONNECTION_PROBLEM, error);
     }
 
@@ -180,7 +136,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
+        populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         // Get the first row.
         boolean shutdown = true;
@@ -206,7 +162,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
-        populate(instance1, SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1);
+        populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         try {
             SqlResult result = client.getSql().execute(query());
@@ -236,7 +192,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         Map<Integer, Integer> localMap = new HashMap<>();
         Map<Integer, Integer> map = instance1.getMap(MAP_NAME);
 
-        for (int i = 0; i < SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
+        for (int i = 0; i < DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
             localMap.put(i, i);
         }
 
@@ -287,28 +243,30 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             Map<Integer, BadValue> localMap = new HashMap<>();
             IMap<Integer, BadValue> map = instance1.getMap(MAP_NAME);
 
-            for (int i = 0; i < SqlStatement.DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
+            for (int i = 0; i < DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
                 localMap.put(i, new BadValue());
             }
 
             map.putAll(localMap);
 
-            try (SqlResult result = client.getSql().execute("SELECT this FROM " + MAP_NAME)) {
-                boolean first = true;
+            try (SqlResult result = client.getSql().execute("SELECT __key, this FROM " + MAP_NAME)) {
+                Iterator<SqlRow> iterator = result.iterator();
 
-                for (SqlRow ignore : result) {
-                    if (first) {
-                        BadValue.READ_ERROR.set(true);
+                SqlRow firstRow = iterator.next();
+                firstRow.getObject("__key");
+                firstRow.getObject("this");
 
-                        first = false;
-                    }
-                }
-
-                fail("Should fail");
-            } catch (HazelcastSqlException e) {
-                assertErrorCode(SqlErrorCode.GENERIC, e);
-                assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
-                assertTrue(e.getMessage().contains("Failed to deserialize query result value"));
+                BadValue.READ_ERROR.set(true);
+                SqlRow secondRow = iterator.next();
+                secondRow.getObject("__key");
+                assertThatThrownBy(() -> secondRow.getObject("this"))
+                        .isInstanceOf(HazelcastSqlException.class)
+                        .hasMessageContaining("Failed to deserialize query result value")
+                        .extracting(e -> ((HazelcastSqlException) e))
+                        .satisfies(e -> {
+                            assertErrorCode(SqlErrorCode.GENERIC, e);
+                            assertEquals(client.getLocalEndpoint().getUuid(), e.getOriginatingMemberId());
+                        });
             }
         } finally {
             BadValue.READ_ERROR.set(false);
@@ -322,10 +280,10 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
 
         try {
             ClientMessage message = SqlExecute_reservedCodec.encodeRequest(
-                    "SELECT * FROM table",
-                    Collections.emptyList(),
-                    100L,
-                    100
+                "SELECT * FROM table",
+                Collections.emptyList(),
+                100L,
+                100
             );
 
             SqlClientService clientService = ((SqlClientService) client.getSql());
@@ -336,7 +294,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             fail("Must fail");
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("Cannot process SQL client operation due to version mismatch "
-                    + "(please ensure that the client and the member have the same version)"));
+                + "(please ensure that the client and the member have the same version)"));
         }
     }
 

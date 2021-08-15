@@ -255,6 +255,16 @@ public class ConfigTest extends HazelcastTestSupport {
         assertNull(config.getConfigurationFile());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetConfigPropertyNameNull(){
+        config.setProperty(null, "test");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetConfigPropertyValueNull(){
+        config.setProperty("test", null);
+    }
+
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("provide one or more tag and value pairs");

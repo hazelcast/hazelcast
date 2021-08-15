@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.MultiResult;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
@@ -31,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
@@ -76,7 +76,7 @@ import static org.junit.Assert.assertThat;
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
 public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
 

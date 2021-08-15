@@ -26,7 +26,6 @@ import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.client.SqlClientService;
-import com.hazelcast.sql.impl.client.SqlClientUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -159,7 +158,7 @@ public class SqlClientExecuteCloseRaceTest {
                 0L,
                 1,
                 null,
-                SqlClientUtils.expectedResultTypeToByte(SqlExpectedResultType.ANY),
+                SqlExpectedResultType.ANY.getId(),
                 queryId
         );
 

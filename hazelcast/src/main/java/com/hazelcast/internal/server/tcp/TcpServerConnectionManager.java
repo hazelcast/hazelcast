@@ -37,6 +37,7 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,8 +113,26 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
     }
 
     public Set<Address> getKnownAliases(TcpServerConnection connection) {
-        Plane plane = planes[connection.getPlaneIndex()];
-        return plane.getAddresses(connection);
+        Plane plane;
+        if (connection.getPlaneIndex() == -1) {
+            // It could be the case that planeIndex of the connection may not
+            // be set. In this case, we return only the remote address of
+            // connection, if it is not null. We return an empty set if it's
+            // null.
+            // Since the plane index is set before the connection
+            // registration (handshake processing), we don't expect this
+            // connection exist in connectionMaps of the planes and don't
+            // search for it on them.
+            Address remoteAddress = connection.getRemoteAddress();
+            if (remoteAddress != null) {
+                return Collections.singleton(remoteAddress);
+            } else {
+                return Collections.emptySet();
+            }
+        } else {
+            plane = planes[connection.getPlaneIndex()];
+            return plane.getAddresses(connection);
+        }
     }
 
     @Override
@@ -349,4 +368,24 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             context.collect(rootDescriptor.copy(), TCP_METRIC_TEXT_COUNT, MANDATORY, COUNT, textCount);
         }
     }
+
+    @Override
+    public boolean doAddressesMatch(Address expandAndCheckAddress, Address expectedAdddress) {
+        if (expandAndCheckAddress == null || expectedAdddress == null) {
+            return false;
+        }
+        TcpServerConnection connection = null;
+        for (Plane plane : planes) {
+            connection = plane.getConnection(expandAndCheckAddress);
+            if (connection != null) {
+                break;
+            }
+        }
+        if (connection == null) {
+            return super.doAddressesMatch(expandAndCheckAddress, expectedAdddress);
+        }
+        Set<Address> expandedAddresses = getKnownAliases(connection);
+        return expandedAddresses.stream().anyMatch(a -> a.equals(expectedAdddress));
+    }
+
 }

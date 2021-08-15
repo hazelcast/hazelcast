@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression.predicate;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.support.expressions.ExpressionBiValue;
@@ -36,6 +37,7 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -165,14 +167,14 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
                             // the queries have extra spaces so that the errors are on the same positions
-                            "SELECT this FROM map WHERE this >=      ? AND this <= ?",
+                            "SELECT this FROM map WHERE this >=      ? AND this <= ?  ORDER BY this",
                             fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2()
                     );
 
                     try {
-                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN ? AND         ?",
+                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN ? AND         ?  ORDER BY this",
                                 comparisonEquivalentResult, biValue.field1(), biValue.field2());
                     } catch (Throwable e) {
                         throw new AssertionError("For [" + fieldType + ", " + lowerBoundType + ", " + upperBoundType + "]: " + e, e);
@@ -197,7 +199,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
                             // the queries have extra spaces so that the errors are on the same positions
-                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?)",
+                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?) ORDER BY this",
                             fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2(),
@@ -206,7 +208,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
                     );
 
                     try {
-                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN SYMMETRIC ? AND         ?",
+                        checkSuccessOrFailure("SELECT this FROM map WHERE this BETWEEN SYMMETRIC ? AND         ?  ORDER BY this",
                                 comparisonEquivalentResult, biValue.field1(), biValue.field2());
                     } catch (Throwable e) {
                         throw new AssertionError("For [" + fieldType + ", " + lowerBoundType + ", " + upperBoundType + "]: " + e, e);
@@ -218,7 +220,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    @Ignore(value = "Un-ignore after engines merge")
+    @Ignore(value = "Un-ignore after ROW() function implementation")
     public void rowNumericBetweenPredicateTest() {
         putAll(0, 1, 5, 10, 15, 25, 30);
         checkValues("SELECT * FROM map WHERE this BETWEEN ROW(0, 0) AND ROW(3, 10)", INTEGER, new Integer[][]{
@@ -261,14 +263,15 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             assertNull(expectedOutcome.f1());
             assertEquals(expectedOutcome.f0().size(), rows.size());
             List<SqlRow> expectedResultsList = expectedOutcome.f0();
-            for (int i = 0; i < rows.size(); i++) {
-                Object actualObject = rows.get(i).getObject(0);
-                Object expectedObject = expectedResultsList.get(i).getObject(0);
-                assertEquals(expectedObject, actualObject);
 
+            for (int i = 0; i < rows.size(); i++) {
                 SqlColumnType expectedType = expectedResultsList.get(i).getMetadata().getColumn(0).getType();
                 SqlColumnType actualType = rows.get(i).getMetadata().getColumn(0).getType();
                 assertEquals(expectedType, actualType);
+
+                Object actualObject = rows.get(i).getObject(0);
+                Object expectedObject = expectedResultsList.get(i).getObject(0);
+                assertEquals(expectedObject, actualObject);
             }
         } catch (HazelcastSqlException e) {
             assertNotNull(expectedOutcome.f1());
@@ -294,9 +297,11 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             Object... params
     ) {
         try {
-            List<SqlRow> rows = execute(member, sql, params);
-            for (SqlRow row : rows) {
+            SqlResult result = member.getSql().execute(sql, params);
+            List<SqlRow> rows = new ArrayList<>();
+            for (SqlRow row : result) {
                 assertEquals(firstColumnExpectedType, row.getMetadata().getColumn(0).getType());
+                rows.add(row);
             }
             return tuple2(rows, null);
         } catch (HazelcastSqlException e) {

@@ -25,16 +25,15 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
@@ -74,12 +73,13 @@ import static com.hazelcast.sql.SqlBasicTest.serializationConfig;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Test that covers basic column read operations through SQL.
  */
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlOrderByTest extends SqlTestSupport {
@@ -262,7 +262,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true, true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByAscDesc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
@@ -277,7 +276,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true, true, true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByDescDescAsc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
@@ -298,7 +296,6 @@ public class SqlOrderByTest extends SqlTestSupport {
                 Arrays.asList(true));
     }
 
-    @Ignore // TODO: [sasha] Such behaviour is supported by Jet SQL engine. Un-ignore after IMDG engine removal.
     @Test
     public void testSelectWithOrderByAndProject2() {
         // SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"

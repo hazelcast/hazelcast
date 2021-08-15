@@ -20,8 +20,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 
 public class JetExistsDistributedObjectMessageTask
         extends AbstractJetMessageTask<JetExistsDistributedObjectCodec.RequestParameters, Boolean> {
@@ -34,7 +34,8 @@ public class JetExistsDistributedObjectMessageTask
 
     @Override
     protected void processMessage() {
-        sendResponse(ImdgUtil.existsDistributedObject(nodeEngine, parameters.serviceName, parameters.objectName));
+        InternalProxyService proxyService = nodeEngine.getProxyService();
+        sendResponse(proxyService.existsDistributedObject(parameters.serviceName, parameters.objectName));
     }
 
     @Override

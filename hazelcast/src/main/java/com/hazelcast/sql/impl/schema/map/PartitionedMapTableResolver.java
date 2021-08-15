@@ -103,7 +103,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         String name
     ) {
         try {
-            MapContainer mapContainer = context.getMapContainer(name);
+            MapContainer mapContainer = context.getExistingMapContainer(name);
 
             // Handle concurrent map destroy.
             if (mapContainer == null) {
@@ -212,7 +212,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static PartitionedMapTable emptyError(String mapName) {
         QueryException error = QueryException.error(
-            "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
+                "Couldn't resolve IMap schema automatically because " + mapName + " doesn't contain enough entries. "
+                        + " Create an explicit mapping using 'CREATE MAPPING'"
         );
 
         return new PartitionedMapTable(mapName, error);

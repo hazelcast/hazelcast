@@ -365,6 +365,9 @@ public final class AddressUtil {
     }
 
     public static Collection<Address> getAliases(InetSocketAddress inetSocketAddress) {
+        if (inetSocketAddress == null) {
+            return Collections.emptyList();
+        }
         String hostString = inetSocketAddress.getHostString();
         if (hostString != null) {
             try {

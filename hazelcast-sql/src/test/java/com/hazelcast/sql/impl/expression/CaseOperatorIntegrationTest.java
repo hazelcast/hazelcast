@@ -156,7 +156,7 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
                 "select case this \n"
                         + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) \n"
                         + "when 2 then CAST('2021-01-01' AS DATE) \n"
-                        + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH LOCAL TIME ZONE) \n"
+                        + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH TIME ZONE) \n"
                         + "end from map",
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                 OffsetDateTime.of(dateTime, ZoneId.systemDefault().getRules().getOffset(dateTime)));

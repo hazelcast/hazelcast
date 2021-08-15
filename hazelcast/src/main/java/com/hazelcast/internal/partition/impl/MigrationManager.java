@@ -35,6 +35,7 @@ import com.hazelcast.internal.partition.MigrationStateImpl;
 import com.hazelcast.internal.partition.PartitionReplica;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
+import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
@@ -49,6 +50,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.collection.IntHashSet;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
@@ -69,6 +71,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -79,6 +82,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -838,7 +842,7 @@ public class MigrationManager {
      * this task has been scheduled, schedules migrations and syncs the partition state.
      * Also schedules a {@link ProcessShutdownRequestsTask}. Acquires partition service lock.
      */
-    private class RepartitioningTask implements MigrationRunnable {
+    class RepartitioningTask implements MigrationRunnable {
         @Override
         public void run() {
             if (!partitionService.isLocalMemberMaster()) {
@@ -879,7 +883,16 @@ public class MigrationManager {
                 return null;
             }
 
-            PartitionReplica[][] newState = partitionStateManager.repartition(shutdownRequestedMembers, null);
+            PartitionReplica[][] newState = null;
+            if (node.getNodeExtension().getInternalHotRestartService().isEnabled()) {
+                // check partition table snapshots when persistence is enabled
+                newState = checkSnapshots();
+            }
+            if (newState != null) {
+                logger.info("Identified a snapshot of left member for repartition");
+            } else {
+                newState = partitionStateManager.repartition(shutdownRequestedMembers, null);
+            }
             if (newState == null) {
                 migrationQueue.add(new ProcessShutdownRequestsTask());
                 return null;
@@ -889,6 +902,31 @@ public class MigrationManager {
                 return null;
             }
             return newState;
+        }
+
+        PartitionReplica[][] checkSnapshots() {
+            Set<UUID> shutdownRequestedReplicas = new HashSet<>();
+            Set<UUID> currentReplicas = new HashSet<>();
+            Map<UUID, Address> currentAddressMapping = new HashMap<>();
+            shutdownRequestedMembers.forEach(member -> shutdownRequestedReplicas.add(member.getUuid()));
+
+            Collection<Member> currentMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+            currentMembers.forEach(member -> currentReplicas.add(member.getUuid()));
+            currentMembers.forEach(member -> currentAddressMapping.put(member.getUuid(), member.getAddress()));
+
+            Set<PartitionTableView> candidates = new TreeSet<>(new
+                    PartitionTableViewDistanceComparator(partitionStateManager.getPartitionTable()));
+
+            for (PartitionTableView partitionTableView : partitionStateManager.snapshots()) {
+                if (partitionTableView.composedOf(currentReplicas, shutdownRequestedReplicas)) {
+                    candidates.add(partitionTableView);
+                }
+            }
+            if (candidates.isEmpty()) {
+                return null;
+            }
+            // find least distant
+            return candidates.iterator().next().toArray(currentAddressMapping);
         }
 
         /**
@@ -1114,7 +1152,8 @@ public class MigrationManager {
          * Set of currently migrating partition IDs.
          * It's illegal to have concurrent migrations on the same partition.
          */
-        private final Set<Integer> migratingPartitions = new HashSet<>();
+        private final IntHashSet migratingPartitions;
+
         /**
          * Map of endpoint -> migration-count.
          * Only {@link #maxParallelMigrations} number of migrations are allowed on a single member.
@@ -1127,6 +1166,8 @@ public class MigrationManager {
         MigrationPlanTask(List<Queue<MigrationInfo>> migrationQs) {
             this.migrationQs = migrationQs;
             this.completed = new ArrayBlockingQueue<>(migrationQs.size());
+            this.migratingPartitions
+                    = new IntHashSet(migrationQs.stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override
@@ -1971,6 +2012,38 @@ public class MigrationManager {
         public void run() {
             partitionService.getPartitionEventManager().sendMigrationProcessCompletedEvent(stats.toMigrationState());
             publishCompletedMigrations();
+        }
+    }
+
+    /**
+     * Comparator that compares distance of two {@link PartitionTableView}s against a base
+     * {@link PartitionTableView} that is provided at construction time.
+     * Distance of two {@link PartitionTableView}s is the sum of distances of their
+     * respective {link InternalPartition} distances. The distance between two
+     * {@link InternalPartition}s is calculated as follows:
+     * <ul>
+     *     <li>If a {@link PartitionReplica} occurs in both {@link InternalPartition}s, then
+     *     their distance is the absolute difference of their respective replica indices.</li>
+     *     <li>If {@code null} {@link PartitionReplica}s occur at the same replica index, then
+     *     their distance is 0.</li>
+     *     <li>If a non-{@code null} {@link PartitionReplica} is present in one {@link InternalPartition}
+     *     and not the other, then its distance is {@link InternalPartition#MAX_REPLICA_COUNT}.</li>
+     * </ul>
+     */
+    static class PartitionTableViewDistanceComparator implements Comparator<PartitionTableView> {
+        final PartitionTableView basePartitionTableView;
+
+        PartitionTableViewDistanceComparator(PartitionTableView basePartitionTableView) {
+            this.basePartitionTableView = basePartitionTableView;
+        }
+
+        @Override
+        public int compare(PartitionTableView o1, PartitionTableView o2) {
+            return distanceFromBase(o1) - distanceFromBase(o2);
+        }
+
+        int distanceFromBase(PartitionTableView partitionTableView) {
+            return partitionTableView.distanceOf(basePartitionTableView);
         }
     }
 }

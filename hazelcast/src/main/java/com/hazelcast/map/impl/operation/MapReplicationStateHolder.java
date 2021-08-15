@@ -21,8 +21,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
+import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
@@ -76,7 +76,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
 
-    protected transient Map<String, LocalMapStatsImpl> statsByMapName = new ConcurrentHashMap<>();
+    protected transient Map<String, LocalReplicationStatsImpl> statsByMapName = new ConcurrentHashMap<>();
 
     // data for each map
     protected transient Map<String, List> data;
@@ -136,7 +136,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
             statsByMapName.put(mapName,
-                    mapContainer.getMapServiceContext().getLocalMapStatsProvider().getLocalMapStatsImpl(mapName));
+                    mapContainer.getMapServiceContext().getLocalMapStatsProvider()
+                                .getLocalMapStatsImpl(mapName).getReplicationStats());
 
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {

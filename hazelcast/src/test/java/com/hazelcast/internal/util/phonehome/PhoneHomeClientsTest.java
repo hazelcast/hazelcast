@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
@@ -51,9 +52,10 @@ import static com.hazelcast.internal.util.phonehome.TestUtil.getParameters;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 public class PhoneHomeClientsTest extends HazelcastTestSupport {
 
     private static final Map<TestUtil.ClientPrefix, String> PREFIX_TO_CLIENT_TYPE = new HashMap<>(6);

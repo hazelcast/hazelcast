@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.Plan;
@@ -32,7 +32,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 
-public class PlanCacheTestSupport extends SqlTestSupport {
+public abstract class PlanCacheTestSupport extends SqlTestSupport {
 
     protected static final Map<UUID, PartitionIdSet> PART_MAP_1;
     protected static final Map<UUID, PartitionIdSet> PART_MAP_2;

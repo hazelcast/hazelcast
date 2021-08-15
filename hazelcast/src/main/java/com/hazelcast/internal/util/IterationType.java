@@ -34,6 +34,8 @@ public enum IterationType {
      */
     ENTRY((byte) 2);
 
+    private static final IterationType[] VALUES = values();
+
     private final byte id;
 
     IterationType(byte id) {
@@ -59,7 +61,7 @@ public enum IterationType {
      * @throws IllegalArgumentException if no IterationType was found
      */
     public static IterationType getById(byte id) {
-        for (IterationType type : values()) {
+        for (IterationType type : VALUES) {
             if (type.id == id) {
                 return type;
             }

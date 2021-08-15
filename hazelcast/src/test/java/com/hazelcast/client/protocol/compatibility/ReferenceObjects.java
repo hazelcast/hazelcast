@@ -748,7 +748,7 @@ public class ReferenceObjects {
     }
 
 
-    public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(anInt, aData, aString, aBoolean, aBoolean);
+    public static ListenerConfigHolder aListenerConfigHolder = new ListenerConfigHolder(ListenerConfigHolder.ListenerConfigType.ITEM, aData, aString, aBoolean, aBoolean);
     public static AttributeConfig anAttributeConfig = new AttributeConfig(aString, aString);
     public static BitmapIndexOptions aBitmapIndexOptions;
 

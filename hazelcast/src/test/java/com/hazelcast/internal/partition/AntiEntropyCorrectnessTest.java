@@ -21,22 +21,22 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.FirewallingServer;
 import com.hazelcast.internal.server.OperationPacketFilter;
 import com.hazelcast.internal.server.PacketFilter;
-import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -46,7 +46,7 @@ import java.util.Collection;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport {

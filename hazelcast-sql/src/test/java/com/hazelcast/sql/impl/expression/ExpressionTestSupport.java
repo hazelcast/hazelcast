@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JetTestSupport.ditchJob;
 import static java.util.stream.Collectors.joining;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -62,6 +63,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     public static final Character CHAR_VAL = 'f';
     public static final String STRING_VAL = "foo";
+    public static final String SEPARATOR_VAL = "-";
     public static final boolean BOOLEAN_VAL = true;
     public static final byte BYTE_VAL = (byte) 1;
     public static final short SHORT_VAL = (short) 1;
@@ -195,6 +197,43 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
 
         return value;
+    }
+
+    /**
+     * Execute a query, assert that it returns only 1 column and the values match the expectedResults array
+     * in any order. Assert the type and count of the results.
+     *
+     * @param sql            the input query
+     * @param expectedType   type of the returned value
+     * @param expectedResults expected result value. If it's {@link #SKIP_VALUE_CHECK},
+     *                       don't assert the value
+     * @param params         query parameters
+     *
+     * @return the result values
+     */
+    protected Object[] checkValues0(
+            String sql,
+            SqlColumnType expectedType,
+            Object[] expectedResults,
+            Object... params
+    ) {
+        List<SqlRow> rows = execute(member, sql, params);
+        int expectedResultCount = expectedResults.length;
+        assertEquals(expectedResultCount, rows.size());
+
+        Object[] values = new Object[expectedResultCount];
+        for (int i = 0; i < expectedResultCount; i++) {
+            SqlRow row = rows.get(i);
+
+            assertEquals(1, row.getMetadata().getColumnCount());
+            assertEquals(expectedType, row.getMetadata().getColumn(0).getType());
+
+            Object value = row.getObject(0);
+            values[i] = value;
+        }
+        assertThat(values).containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedResults));
+
+        return values;
     }
 
     protected void putAndCheckFailure(

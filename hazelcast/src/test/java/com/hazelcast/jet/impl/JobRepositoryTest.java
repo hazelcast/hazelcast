@@ -46,7 +46,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_MAX_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -198,7 +198,7 @@ public class JobRepositoryTest extends JetTestSupport {
         }
 
         jobRepository.cleanup(getNodeEngineImpl(instance));
-        assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size());
+        assertTrueEventually(() -> assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size()));
     }
 
     private void cleanup() {
