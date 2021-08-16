@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -29,7 +28,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -54,13 +52,14 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static final List<List<String>> SEARCH_PATHS =
-        Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_PARTITIONED));
+            Collections.singletonList(Arrays.asList(QueryUtils.CATALOG, SCHEMA_NAME_PARTITIONED));
 
     public PartitionedMapTableResolver(NodeEngine nodeEngine, JetMapMetadataResolver jetMapMetadataResolver) {
         super(nodeEngine, jetMapMetadataResolver, SEARCH_PATHS);
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public List<Table> getTables() {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = mapService.getMapServiceContext();
@@ -98,9 +97,9 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
     }
 
     private PartitionedMapTable createTable(
-        NodeEngine nodeEngine,
-        MapServiceContext context,
-        String name
+            NodeEngine nodeEngine,
+            MapServiceContext context,
+            String name
     ) {
         try {
             MapContainer mapContainer = context.getExistingMapContainer(name);
@@ -110,20 +109,20 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 return null;
             }
 
-            boolean hd = mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
+            boolean hd = nodeEngine.getProperties().getBoolean(GLOBAL_HD_INDEX_ENABLED);
 
-            FieldsMetadata fieldsMetadata;
+            FieldsMetadata fieldsMetadata = null;
 
             if (hd) {
                 fieldsMetadata = getHdMapFields(mapContainer);
-            } else {
+            }
+
+            if (fieldsMetadata == null || fieldsMetadata.emptyError) {
                 fieldsMetadata = getHeapMapFields(context, name);
             }
 
             if (fieldsMetadata.emptyError) {
                 return emptyError(name);
-            } else if (fieldsMetadata.hdError) {
-                return hdError(name);
             }
 
             MapSampleMetadata keyMetadata = fieldsMetadata.keyMetadata;
@@ -185,16 +184,10 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     @SuppressWarnings("rawtypes")
     private FieldsMetadata getHdMapFields(MapContainer mapContainer) {
-        if (!nodeEngine.getProperties().getBoolean(GLOBAL_HD_INDEX_ENABLED)) {
-            // Cannot resolve fields when concurrent indexes are disabled
-            return FieldsMetadata.HD_ERROR;
-        }
-
         InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
-            // Cannot resolve fields when the map doesn't have concurrent indexes
-            return FieldsMetadata.HD_ERROR;
+            return FieldsMetadata.EMPTY_ERROR;
         }
 
         InternalIndex index = indexes[0];
@@ -212,18 +205,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static PartitionedMapTable emptyError(String mapName) {
         QueryException error = QueryException.error(
-            "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
-        );
-
-        return new PartitionedMapTable(mapName, error);
-    }
-
-    private static PartitionedMapTable hdError(String mapName) {
-        QueryException error = QueryException.error("Cannot query the IMap \"" + mapName
-            + "\" with InMemoryFormat.NATIVE because it does not have global indexes "
-            + "(please make sure that the IMap has at least one index "
-            + "and the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED.getName()
-            + "\" is set to \"true\")"
+                "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
         );
 
         return new PartitionedMapTable(mapName, error);
@@ -233,17 +215,17 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
         MapSampleMetadata keyMetadata = MapSampleMetadataResolver.resolve(
-            ss,
-            jetMapMetadataResolver,
-            key,
-            true
+                ss,
+                jetMapMetadataResolver,
+                key,
+                true
         );
 
         MapSampleMetadata valueMetadata = MapSampleMetadataResolver.resolve(
-            ss,
-            jetMapMetadataResolver,
-            value,
-            false
+                ss,
+                jetMapMetadataResolver,
+                value,
+                false
         );
 
         return new FieldsMetadata(keyMetadata, valueMetadata);
@@ -251,28 +233,24 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static final class FieldsMetadata {
 
-        private static final FieldsMetadata EMPTY_ERROR = new FieldsMetadata(null, null, true, false);
-        private static final FieldsMetadata HD_ERROR = new FieldsMetadata(null, null, false, true);
+        private static final FieldsMetadata EMPTY_ERROR = new FieldsMetadata(null, null, true);
 
         private final MapSampleMetadata keyMetadata;
         private final MapSampleMetadata valueMetadata;
         private final boolean emptyError;
-        private final boolean hdError;
 
         private FieldsMetadata(MapSampleMetadata keyMetadata, MapSampleMetadata valueMetadata) {
-            this(keyMetadata, valueMetadata, false, false);
+            this(keyMetadata, valueMetadata, false);
         }
 
         private FieldsMetadata(
-            MapSampleMetadata keyMetadata,
-            MapSampleMetadata valueMetadata,
-            boolean emptyError,
-            boolean hdError
+                MapSampleMetadata keyMetadata,
+                MapSampleMetadata valueMetadata,
+                boolean emptyError
         ) {
             this.keyMetadata = keyMetadata;
             this.valueMetadata = valueMetadata;
             this.emptyError = emptyError;
-            this.hdError = hdError;
         }
     }
 
