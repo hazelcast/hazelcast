@@ -427,7 +427,8 @@ class KubernetesClient {
         }
         if (!left.isEmpty()) {
             // At least one Hazelcast Member POD does not have a corresponding service.
-            throw new KubernetesClientException(String.format("Cannot fetch services dedicated to the following PODs: %s", left));
+            throw new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
+                    + " member pods do not have corresponding Kubernetes services: %s", left));
         }
         return result;
     }
@@ -458,7 +459,8 @@ class KubernetesClient {
         }
         if (!left.isEmpty()) {
             // At least one Hazelcast Member POD does not have 'nodeName' assigned.
-            throw new KubernetesClientException(String.format("Cannot fetch nodeName from the following PODs: %s", left));
+            throw new KubernetesClientException(String.format("Cannot expose externally, the following Hazelcast"
+                    + " member pods do not have corresponding Endpoint.nodeName value assigned: %s", left));
         }
         return result;
     }
@@ -491,7 +493,8 @@ class KubernetesClient {
         JsonArray ports = toJsonArray(serviceJson.get("spec").asObject().get("ports"));
         // Service must have one and only one Node Port assigned.
         if (ports.size() != 1) {
-            throw new KubernetesClientException("Cannot fetch nodePort from the service");
+            throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
+                    + "exactly one port defined", serviceJson.get("metadata").asObject().get("name")));
         }
         return ports.get(0).asObject().get("port").asInt();
     }
@@ -500,7 +503,8 @@ class KubernetesClient {
         JsonArray ports = toJsonArray(serviceJson.get("spec").asObject().get("ports"));
         // Service must have one and only one Node Port assigned.
         if (ports.size() != 1) {
-            throw new KubernetesClientException("Cannot fetch nodePort from the service");
+            throw new KubernetesClientException(String.format("Cannot expose externally, service %s needs to have "
+                    + "exactly one nodePort defined", serviceJson.get("metadata").asObject().get("name")));
         }
         return ports.get(0).asObject().get("nodePort").asInt();
     }
@@ -523,7 +527,8 @@ class KubernetesClient {
                 return address.asObject().get("address").asString();
             }
         }
-        throw new KubernetesClientException("Node does not have ExternalIP assigned");
+        throw new KubernetesClientException(String.format("Cannot expose externally, node %s does not have ExternalIP"
+                + " assigned", nodeJson.get("metadata").asObject().get("name")));
     }
 
     private static List<Endpoint> createEndpoints(List<Endpoint> endpoints, Map<EndpointAddress, String> publicIps,
