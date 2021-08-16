@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.AbstractFilterRel;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
 
-public class FilterPhysicalRel extends AbstractFilterRel implements PhysicalRel {
-
-    FilterPhysicalRel(
+/**
+ * Base class for filters.
+ */
+public abstract class AbstractFilterRel extends Filter implements HazelcastRelNode {
+    public AbstractFilterRel(
             RelOptCluster cluster,
             RelTraitSet traits,
             RelNode input,
@@ -38,22 +40,18 @@ public class FilterPhysicalRel extends AbstractFilterRel implements PhysicalRel 
         super(cluster, traits, input, condition);
     }
 
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        return filter(schema(parameterMetadata), condition, parameterMetadata);
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
     }
 
     @Override
-    public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
-        return ((PhysicalRel) getInput()).schema(parameterMetadata);
-    }
+    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double inputRows = mq.getRowCount(getInput());
 
-    @Override
-    public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onFilter(this);
-    }
+        double rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
+        double cpu = inputRows;
 
-    @Override
-    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
-        return new FilterPhysicalRel(getCluster(), traitSet, input, condition);
+        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 }

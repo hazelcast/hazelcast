@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
@@ -44,7 +43,6 @@ import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
-import com.hazelcast.sql.impl.state.QueryState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -70,10 +68,14 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
-    /** Outbox batch size in bytes. */
+    /**
+     * Outbox batch size in bytes.
+     */
     private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
 
-    /** Default state check frequency. */
+    /**
+     * Default state check frequency.
+     */
     private static final long STATE_CHECK_FREQUENCY = 1_000L;
 
     private static final int PLAN_CACHE_SIZE = 10_000;
@@ -128,18 +130,18 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         String instanceName = nodeEngine.getHazelcastInstance().getName();
         InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
-            nodeEngine,
-            planCache,
-            tableResolvers
+                nodeEngine,
+                planCache,
+                tableResolvers
         );
         internalService = new SqlInternalService(
-            instanceName,
-            nodeServiceProvider,
-            serializationService,
-            poolSize,
-            OUTBOX_BATCH_SIZE,
-            STATE_CHECK_FREQUENCY,
-            planCacheChecker
+                instanceName,
+                nodeServiceProvider,
+                serializationService,
+                poolSize,
+                OUTBOX_BATCH_SIZE,
+                STATE_CHECK_FREQUENCY,
+                planCacheChecker
         );
         internalService.start();
     }
@@ -223,14 +225,14 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             }
 
             return query0(
-                queryId,
-                statement.getSchema(),
-                statement.getSql(),
-                statement.getParameters(),
-                timeout,
-                statement.getCursorBufferSize(),
-                statement.getExpectedResultType(),
-                securityContext
+                    queryId,
+                    statement.getSchema(),
+                    statement.getSql(),
+                    statement.getParameters(),
+                    timeout,
+                    statement.getCursorBufferSize(),
+                    statement.getExpectedResultType(),
+                    securityContext
             );
         } catch (AccessControlException e) {
             throw e;
@@ -245,14 +247,14 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult query0(
-        QueryId queryId,
-        String schema,
-        String sql,
-        List<Object> args,
-        long timeout,
-        int pageSize,
-        SqlExpectedResultType expectedResultType,
-        SqlSecurityContext securityContext
+            QueryId queryId,
+            String schema,
+            String sql,
+            List<Object> args,
+            long timeout,
+            int pageSize,
+            SqlExpectedResultType expectedResultType,
+            SqlSecurityContext securityContext
     ) {
         // Validate and normalize
         if (sql == null || sql.isEmpty()) {
@@ -330,20 +332,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        if (plan instanceof Plan) {
-            return executeImdg(queryId, (Plan) plan, params, timeout, pageSize);
-        } else {
-            return executeJet(queryId, plan, params, timeout, pageSize);
-        }
-    }
-
-    private SqlResult executeImdg(QueryId queryId, Plan plan, List<Object> params, long timeout, int pageSize) {
-        QueryState state = internalService.execute(queryId, plan, params, timeout, pageSize, planCache);
-
-        return SqlResultImpl.createRowsResult(state, (InternalSerializationService) nodeEngine.getSerializationService());
-    }
-
-    private SqlResult executeJet(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
         return jetSqlCoreBackend.execute(queryId, plan, params, timeout, pageSize);
     }
 
@@ -365,7 +353,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             clazz = Class.forName(className);
         } catch (ClassNotFoundException e) {
             logger.log(SQL_MODULE_OPTIMIZER_CLASS.equals(className) ? Level.FINE : Level.WARNING,
-                "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
+                    "Optimizer class \"" + className + "\" not found, falling back to " + DisabledSqlOptimizer.class.getName());
 
             return new DisabledSqlOptimizer();
         } catch (Exception e) {
@@ -377,12 +365,12 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         try {
             constructor = clazz.getConstructor(
-                NodeEngine.class,
-                JetSqlCoreBackend.class
+                    NodeEngine.class,
+                    JetSqlCoreBackend.class
             );
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to get the constructor for the optimizer class "
-                + className + ": " + e.getMessage(), e);
+                    + className + ": " + e.getMessage(), e);
         }
 
         // 4. Finally, get the instance.
@@ -394,8 +382,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     }
 
     private static List<TableResolver> createTableResolvers(
-        NodeEngine nodeEngine,
-        @Nullable JetSqlCoreBackend jetSqlCoreBackend
+            NodeEngine nodeEngine,
+            @Nullable JetSqlCoreBackend jetSqlCoreBackend
     ) {
         List<TableResolver> res = new ArrayList<>();
 

@@ -22,7 +22,9 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
@@ -159,6 +161,41 @@ public final class OptUtils {
         return new HazelcastRelOptTable(relTable);
     }
 
+    public static HazelcastRelOptTable createRelTable(
+            HazelcastRelOptTable originalRelTable,
+            HazelcastTable newHazelcastTable,
+            RelDataTypeFactory typeFactory
+    ) {
+        RelOptTableImpl newTable = RelOptTableImpl.create(
+                originalRelTable.getRelOptSchema(),
+                newHazelcastTable.getRowType(typeFactory),
+                originalRelTable.getDelegate().getQualifiedName(),
+                newHazelcastTable,
+                null
+        );
+
+        return new HazelcastRelOptTable(newTable);
+    }
+
+    public static LogicalTableScan createLogicalScanWithNewTable(
+            TableScan originalScan,
+            HazelcastTable newHazelcastTable
+    ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
+        HazelcastRelOptTable newTable = createRelTable(
+                originalRelTable,
+                newHazelcastTable,
+                originalScan.getCluster().getTypeFactory()
+        );
+
+        return LogicalTableScan.create(
+                originalScan.getCluster(),
+                newTable,
+                originalScan.getHints()
+        );
+    }
+
     /**
      * Get possible physical rels from the given subset.
      * Every returned input is guaranteed to have a unique trait set.
@@ -186,6 +223,34 @@ public final class OptUtils {
 
     private static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(JetConventions.PHYSICAL);
+    }
+
+    public static boolean isHazelcastTable(TableScan scan) {
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        return table != null;
+    }
+
+    public static HazelcastTable getHazelcastTable(TableScan scan) {
+        HazelcastTable table = scan.getTable().unwrap(HazelcastTable.class);
+
+        assert table != null;
+
+        return table;
+    }
+
+    public static HazelcastRelOptCluster getCluster(RelNode rel) {
+        assert rel.getCluster() instanceof HazelcastRelOptCluster;
+
+        return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTraitDef getDistributionDef(RelNode rel) {
+        return getCluster(rel).getDistributionTraitDef();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getDistributionDef(rel));
     }
 
     /**
