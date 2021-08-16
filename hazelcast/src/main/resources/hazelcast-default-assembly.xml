@@ -98,7 +98,7 @@
                 walk through all available discovery strategies and detect the correct one for the
                 current runtime environment.
             -->
-            <auto-detection enabled="true"/>
+            <auto-detection enabled="false"/>
             <!-- Enables/disables the multicast discovery mechanism. The default value is disabled. -->
             <multicast enabled="false">
                 <!--
@@ -114,8 +114,7 @@
             </multicast>
 
             <!-- Specifies whether the TCP/IP discovery is enabled or not. Default value is false. -->
-            <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+            <tcp-ip enabled="true">
                 <member-list>
                     <member>127.0.0.1</member>
                 </member-list>
