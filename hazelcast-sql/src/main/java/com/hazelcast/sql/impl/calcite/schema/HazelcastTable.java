@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
