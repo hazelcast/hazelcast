@@ -73,7 +73,7 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
 /**
  * Hazelcast-specific SQL validator.
  */
-public final class HazelcastSqlValidator extends SqlValidatorImplBridge {
+public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
 
