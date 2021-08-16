@@ -205,7 +205,8 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     private static PartitionedMapTable emptyError(String mapName) {
         QueryException error = QueryException.error(
-                "Cannot resolve IMap schema because it doesn't have entries on the local member: " + mapName
+                "Couldn't resolve IMap schema automatically because " + mapName + " doesn't contain enough entries. "
+                        + " Create an explicit mapping using 'CREATE MAPPING'"
         );
 
         return new PartitionedMapTable(mapName, error);
