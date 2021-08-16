@@ -82,6 +82,20 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testDefaultAssemblyConfig() {
+        Config xmlConfig = new ClasspathXmlConfig("hazelcast-default-assembly.xml");
+        Config yamlConfig = new ClasspathYamlConfig("hazelcast-default-assembly.yaml");
+
+        sortClientPermissionConfigs(xmlConfig);
+        sortClientPermissionConfigs(yamlConfig);
+
+        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
+        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    }
+
+    @Test
     public void testFullExample() throws IOException {
         String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
         String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");
