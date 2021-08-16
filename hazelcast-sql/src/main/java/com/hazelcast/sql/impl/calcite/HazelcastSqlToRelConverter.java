@@ -94,7 +94,8 @@ import static org.apache.calcite.avatica.util.TimeUnit.YEAR;
  * the default Calcite sql-to-rel converter and to facilitate generation of
  * literals and casts with more precise types assigned during the validation.
  */
-public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
+
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
 
