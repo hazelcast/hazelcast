@@ -63,7 +63,7 @@ public class HazelcastSqlConformance extends SqlDelegatingConformance {
     @Override
     public boolean isFromRequired() {
         // FROM keyword is required as per SQL'2003 standard.
-        return true;
+        return false;
     }
 
     @Override

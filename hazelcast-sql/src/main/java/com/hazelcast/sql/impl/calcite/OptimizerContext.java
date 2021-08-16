@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.calcite.parse.QueryParser;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastJetSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
@@ -112,7 +111,7 @@ public final class OptimizerContext {
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
-        HazelcastSqlConformance jetConformance = HazelcastJetSqlConformance.INSTANCE;
+        HazelcastSqlConformance jetConformance = HazelcastSqlConformance.INSTANCE;
         HazelcastTypeFactory typeFactory = HazelcastTypeFactory.INSTANCE;
         Prepare.CatalogReader catalogReader = createCatalogReader(typeFactory, CONNECTION_CONFIG, rootSchema, schemaPaths);
         VolcanoPlanner volcanoPlanner = createPlanner(CONNECTION_CONFIG, distributionTraitDef);

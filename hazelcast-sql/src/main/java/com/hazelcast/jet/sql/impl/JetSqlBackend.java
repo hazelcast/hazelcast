@@ -52,7 +52,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.validate.JetSqlValidator;
+import com.hazelcast.jet.sql.impl.validate.JetSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
@@ -62,11 +62,13 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
+import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
@@ -127,7 +129,7 @@ public class JetSqlBackend implements SqlBackend {
             SqlConformance sqlConformance,
             List<Object> arguments
     ) {
-        return new JetSqlValidator(catalogReader, typeFactory, sqlConformance, arguments);
+        return new HazelcastSqlValidator(JetSqlOperatorTable.instance(), catalogReader, typeFactory, sqlConformance, arguments);
     }
 
     @Override
@@ -144,7 +146,7 @@ public class JetSqlBackend implements SqlBackend {
             SqlRexConvertletTable sqlRexConvertletTable,
             Config config
     ) {
-        return new JetSqlToRelConverter(
+        return new HazelcastSqlToRelConverter(
                 viewExpander,
                 sqlValidator,
                 catalogReader,
