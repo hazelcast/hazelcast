@@ -362,7 +362,8 @@ public final class HazelcastSqlValidator extends SqlValidatorImplBridge {
             @Override
             public Void visit(SqlIdentifier id) {
                 SqlValidatorTable table = getCatalogReader().getTable(id.names);
-                if (table != null) { // not every identifier is a table
+                // not every identifier is a table
+                if (table != null) {
                     HazelcastTable hazelcastTable = table.unwrap(HazelcastTable.class);
                     SqlConnector connector = getJetSqlConnector(hazelcastTable.getTarget());
                     if (connector.isStream()) {
