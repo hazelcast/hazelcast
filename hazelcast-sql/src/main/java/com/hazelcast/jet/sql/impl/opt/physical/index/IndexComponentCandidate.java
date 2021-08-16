@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical.calcite.index;
+package com.hazelcast.jet.sql.impl.opt.physical.index;
 
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import org.apache.calcite.rex.RexNode;
