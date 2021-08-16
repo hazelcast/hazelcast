@@ -572,19 +572,19 @@ public abstract class AbstractSerializationService implements InternalSerializat
             }
         }
 
-        //4-Compact serializer
-        if (serializer == null && compactStreamSerializer.isEnabled()) {
-            serializer = getCompactSerializer(includeSchema);
-        }
-
-        //5-JDK serialization ( Serializable and Externalizable )
+        //4-JDK serialization ( Serializable and Externalizable )
         if (serializer == null && !overrideJavaSerialization) {
             serializer = lookupJavaSerializer(type);
         }
 
-        //6-Global serializer if registered by user
+        //5-Global serializer if registered by user
         if (serializer == null) {
             serializer = lookupGlobalSerializer(type);
+        }
+
+        //6-Compact serializer
+        if (serializer == null && compactStreamSerializer.isEnabled()) {
+            serializer = getCompactSerializer(includeSchema);
         }
 
         if (serializer == null) {
