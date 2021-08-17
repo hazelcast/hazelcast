@@ -22,16 +22,19 @@ import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL_INJECTOR;
 
 @NotThreadSafe
 class HazelcastJsonUpsertTarget implements UpsertTarget {
 
     private JsonObject json;
+    private HazelcastJsonValue value;
 
     HazelcastJsonUpsertTarget() {
     }
@@ -39,6 +42,10 @@ class HazelcastJsonUpsertTarget implements UpsertTarget {
     @Override
     @SuppressWarnings("checkstyle:ReturnCount")
     public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
+        if (QueryDataTypeFamily.JSON.equals(type.getTypeFamily()) && isNullOrEmpty(path)) {
+            return value -> this.value = (HazelcastJsonValue) value;
+        }
+
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
@@ -143,10 +150,15 @@ class HazelcastJsonUpsertTarget implements UpsertTarget {
     @Override
     public void init() {
         json = Json.object();
+        value = null;
     }
 
     @Override
     public Object conclude() {
+        if (value != null) {
+            return value;
+        }
+
         JsonObject json = this.json;
         this.json = null;
         return new HazelcastJsonValue(json.toString());

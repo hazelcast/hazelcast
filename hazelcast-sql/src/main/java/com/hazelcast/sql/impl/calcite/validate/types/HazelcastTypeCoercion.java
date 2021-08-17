@@ -189,8 +189,8 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
         }
         RelDataType sourceType = validator.deriveType(scope, rowElement);
 
-        QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType.getSqlTypeName());
-        QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType.getSqlTypeName());
+        QueryDataType sourceHzType = HazelcastTypeUtils.toHazelcastType(sourceType);
+        QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType);
 
         if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily() || targetHzType == OBJECT) {
             // Do nothing.
