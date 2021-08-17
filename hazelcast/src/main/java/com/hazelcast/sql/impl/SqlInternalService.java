@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactor
 import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 
@@ -42,6 +43,9 @@ public class SqlInternalService {
     /** Registry for client queries. */
     private final QueryClientStateRegistry clientStateRegistry;
 
+    /** Registry for query results. */
+    private final QueryResultRegistry resultRegistry;
+
     /** Operation manager. */
     private final QueryOperationHandlerImpl operationHandler;
 
@@ -49,6 +53,7 @@ public class SqlInternalService {
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(
+        QueryResultRegistry resultRegistry,
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
         InternalSerializationService serializationService,
@@ -57,12 +62,14 @@ public class SqlInternalService {
         long stateCheckFrequency,
         PlanCacheChecker planCacheChecker
     ) {
+        this.resultRegistry = resultRegistry;
+
         // Create state registries since they do not depend on anything.
-        stateRegistry = new QueryStateRegistry(nodeServiceProvider);
-        clientStateRegistry = new QueryClientStateRegistry();
+        this.stateRegistry = new QueryStateRegistry(nodeServiceProvider);
+        this.clientStateRegistry = new QueryClientStateRegistry();
 
         // Operation handler depends on state registry.
-        operationHandler = new QueryOperationHandlerImpl(
+        this.operationHandler = new QueryOperationHandlerImpl(
             instanceName,
             nodeServiceProvider,
             serializationService,
@@ -73,7 +80,7 @@ public class SqlInternalService {
         );
 
         // State checker depends on state registries and operation handler.
-        stateRegistryUpdater = new QueryStateRegistryUpdater(
+        this.stateRegistryUpdater = new QueryStateRegistryUpdater(
             instanceName,
             nodeServiceProvider,
             stateRegistry,
@@ -104,12 +111,16 @@ public class SqlInternalService {
         return stateRegistry;
     }
 
-    public QueryOperationHandlerImpl getOperationHandler() {
-        return operationHandler;
-    }
-
     public QueryClientStateRegistry getClientStateRegistry() {
         return clientStateRegistry;
+    }
+
+    public QueryResultRegistry getResultRegistry() {
+        return resultRegistry;
+    }
+
+    public QueryOperationHandlerImpl getOperationHandler() {
+        return operationHandler;
     }
 
     /**
