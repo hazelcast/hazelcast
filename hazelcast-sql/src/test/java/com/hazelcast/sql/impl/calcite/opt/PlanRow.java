@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.Cost;
+import com.hazelcast.jet.sql.impl.opt.cost.Cost;
 import org.apache.calcite.rel.RelNode;
 
 import java.text.DecimalFormat;

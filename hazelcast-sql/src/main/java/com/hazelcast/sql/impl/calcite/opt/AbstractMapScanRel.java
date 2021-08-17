@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import org.apache.calcite.plan.RelOptCluster;

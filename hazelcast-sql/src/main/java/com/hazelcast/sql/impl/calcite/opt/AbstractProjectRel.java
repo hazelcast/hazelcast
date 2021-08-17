@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt;
 
 import com.google.common.collect.ImmutableList;
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;

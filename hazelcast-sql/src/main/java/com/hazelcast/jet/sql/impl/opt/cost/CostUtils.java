@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.cost;
+package com.hazelcast.jet.sql.impl.opt.cost;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;

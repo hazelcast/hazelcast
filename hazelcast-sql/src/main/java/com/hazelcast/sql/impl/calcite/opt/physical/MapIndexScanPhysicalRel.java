@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite.opt.physical;
 
 import com.hazelcast.sql.impl.calcite.opt.AbstractMapScanRel;
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
