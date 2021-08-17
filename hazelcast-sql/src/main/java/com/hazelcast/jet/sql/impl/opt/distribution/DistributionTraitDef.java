@@ -18,12 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.distribution;
 
 import com.hazelcast.jet.sql.impl.opt.JetConventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.physical.exchange.RootExchangePhysicalRel;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
-import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 
 import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ANY;
@@ -125,35 +121,12 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             case ANY:
                 return rel;
 
+            // ROOT target type also was supposed to be supported for root node exchange.
+            // Can be reusable if we'd like to support ReplicatedMap (and use DistributionTrait).
             case ROOT:
-                return convertToRoot(planner, rel, currentTrait);
-
             default:
                 return null;
         }
-    }
-
-    /**
-     * Convert to singleton node by adding {@link RootExchangePhysicalRel}.
-     * Collation is lost as a result of this transform.
-     *
-     * @param planner      Planner.
-     * @param rel          Node.
-     * @param currentTrait Current distribution trait.
-     * @return Converted node.
-     */
-    private RelNode convertToRoot(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
-        // ANY already handled before, ROOT and REPLICATED do not require further conversions.
-        assert currentTrait.getType() == PARTITIONED;
-
-        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot(), collation);
-
-        return new RootExchangePhysicalRel(
-                rel.getCluster(),
-                OptUtils.toPhysicalConvention(traitSet),
-                rel
-        );
     }
 
     @Override
