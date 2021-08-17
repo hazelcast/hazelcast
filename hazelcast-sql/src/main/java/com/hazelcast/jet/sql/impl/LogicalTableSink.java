@@ -28,7 +28,7 @@ import java.util.List;
 
 public class LogicalTableSink extends TableModify {
 
-    LogicalTableSink(TableModify modify) {
+    public LogicalTableSink(TableModify modify) {
         this(
                 modify.getCluster(),
                 modify.getTraitSet(),

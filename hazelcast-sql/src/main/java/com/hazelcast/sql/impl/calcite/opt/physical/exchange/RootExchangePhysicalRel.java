@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.opt.physical.exchange;
 
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType;
 import com.hazelcast.sql.impl.calcite.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.calcite.opt.physical.visitor.PhysicalRelVisitor;
