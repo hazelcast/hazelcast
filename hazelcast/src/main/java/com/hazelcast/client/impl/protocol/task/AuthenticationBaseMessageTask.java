@@ -127,6 +127,11 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     }
 
     private AuthenticationStatus authenticate(SecurityContext securityContext) {
+        String nodeClusterName = nodeEngine.getConfig().getClusterName();
+        if (! nodeClusterName.equals(clusterName)) {
+            return CREDENTIALS_FAILED;
+        }
+
         Connection connection = endpoint.getConnection();
         Boolean passed = Boolean.FALSE;
         try {
