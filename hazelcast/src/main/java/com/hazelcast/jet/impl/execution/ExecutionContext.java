@@ -257,7 +257,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
             for (Tuple2<ProcessorSupplier, String> s : procSuppliers) {
                 try {
-                    ClassLoader processorCl = jobExecutionService.getProcessorClassLoader(jobId, s.f1());
+                    ClassLoader processorCl = isLightJob ?
+                            null : jobExecutionService.getProcessorClassLoader(jobId, s.f1());
                     doWithClassLoader(processorCl, () -> s.f0().close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()
