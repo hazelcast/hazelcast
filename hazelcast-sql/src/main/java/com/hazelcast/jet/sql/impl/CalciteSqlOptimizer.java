@@ -216,6 +216,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return createPlan(task, parseResult, context);
     }
 
+    @SuppressWarnings("checkstyle:returncount")
     private SqlPlan createPlan(
             OptimizationTask task,
             QueryParseResult parseResult,
