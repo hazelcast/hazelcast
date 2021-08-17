@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
-import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
@@ -36,10 +35,7 @@ import org.apache.calcite.sql.parser.impl.ParseException;
 import org.apache.calcite.sql.util.SqlVisitor;
 import org.apache.calcite.sql.validate.SqlConformance;
 
-import javax.annotation.Nullable;
 import java.util.List;
-
-import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 
 /**
  * Performs syntactic and semantic validation of the query.
@@ -48,33 +44,27 @@ public class QueryParser {
 
     private final HazelcastTypeFactory typeFactory;
     private final CatalogReader catalogReader;
-    private final SqlConformance jetConformance;
+    private final SqlConformance conformance;
     private final List<Object> arguments;
-
-    private final SqlBackend jetSqlBackend;
+    private final SqlBackend sqlBackend;
 
     public QueryParser(
             HazelcastTypeFactory typeFactory,
             CatalogReader catalogReader,
-            SqlConformance jetConformance,
+            SqlConformance conformance,
             List<Object> arguments,
-            @Nullable SqlBackend jetSqlBackend
+            SqlBackend sqlBackend
     ) {
-        this.typeFactory = typeFactory;
         this.catalogReader = catalogReader;
-        this.jetConformance = jetConformance;
+        this.typeFactory = typeFactory;
+        this.conformance = conformance;
         this.arguments = arguments;
-        this.jetSqlBackend = jetSqlBackend;
+        this.sqlBackend = sqlBackend;
     }
 
     public QueryParseResult parse(String sql) {
         try {
-            if (jetSqlBackend != null) {
-                return parse(sql, jetSqlBackend, jetConformance);
-            } else {
-                // TODO: move this check to SqlServiceImpl.
-                throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
-            }
+            return parse0(sql);
         } catch (Exception e) {
             String message;
             // Check particular type of exception which causes typical long multiline error messages.
@@ -87,7 +77,7 @@ public class QueryParser {
         }
     }
 
-    private QueryParseResult parse(String sql, SqlBackend sqlBackend, SqlConformance conformance) throws SqlParseException {
+    private QueryParseResult parse0(String sql) throws SqlParseException {
         Config config = createConfig(sqlBackend.parserFactory());
         SqlParser parser = SqlParser.create(sql, config);
         SqlNodeList statements = parser.parseStmtList();
