@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.physical;
+package com.hazelcast.jet.sql.impl.opt.physical.exchange;
 
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionType;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -27,23 +29,27 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.core.Filter;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexNode;
 
-public class FilterPhysicalRel extends Filter implements PhysicalRel {
+import java.util.List;
 
-    FilterPhysicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traits,
-            RelNode input,
-            RexNode condition
-    ) {
-        super(cluster, traits, input, condition);
+/**
+ * Exchange for root node. Collects results from the input on a single node.
+ * <p>
+ * Traits:
+ * <ul>
+ *     <li><b>Collation</b>: none, since the order of receive from input is undefined</li>
+ *     <li><b>Distribution</b>: always {@link DistributionType#ROOT}, since there is only one node consuming the input</li>
+ * </ul>
+ */
+public class RootExchangePhysicalRel extends AbstractExchangePhysicalRel {
+    public RootExchangePhysicalRel(RelOptCluster cluster, RelTraitSet traits, RelNode input) {
+        super(cluster, traits, input);
     }
 
-    public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
-        return filter(schema(parameterMetadata), condition, parameterMetadata);
+    @Override
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
+        return new RootExchangePhysicalRel(getCluster(), traitSet, sole(inputs));
     }
 
     @Override
@@ -53,7 +59,7 @@ public class FilterPhysicalRel extends Filter implements PhysicalRel {
 
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
-        return visitor.onFilter(this);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -62,17 +68,11 @@ public class FilterPhysicalRel extends Filter implements PhysicalRel {
     }
 
     @Override
-    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        double inputRows = mq.getRowCount(getInput());
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rows = mq.getRowCount(getInput());
+        double cpu = rows;
+        double network = rows * CostUtils.getEstimatedRowWidth(getInput());
 
-        double rows = CostUtils.adjustFilteredRowCount(inputRows, mq.getSelectivity(this, condition));
-        double cpu = inputRows;
-
-        return planner.getCostFactory().makeCost(rows, cpu, 0);
-    }
-
-    @Override
-    public final Filter copy(RelTraitSet traitSet, RelNode input, RexNode condition) {
-        return new FilterPhysicalRel(getCluster(), traitSet, input, condition);
+        return planner.getCostFactory().makeCost(rows, cpu, network);
     }
 }

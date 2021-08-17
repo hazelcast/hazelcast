@@ -17,13 +17,17 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.opt.AbstractRootRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.SingleRel;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 
-public class JetRootRel extends AbstractRootRel implements PhysicalRel {
+public class JetRootRel extends SingleRel implements PhysicalRel {
 
     public JetRootRel(RelNode input) {
         super(input.getCluster(), RelTraitSet.createEmpty(), input);
@@ -37,5 +41,18 @@ public class JetRootRel extends AbstractRootRel implements PhysicalRel {
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onRoot(this);
+    }
+
+    @Override
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw);
+    }
+
+    @Override
+    public final RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        double rows = mq.getRowCount(getInput());
+        double cpu = rows;
+
+        return planner.getCostFactory().makeCost(rows, cpu, 0);
     }
 }

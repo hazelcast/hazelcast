@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Filter;
@@ -54,7 +55,12 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
     private FilterIntoScanLogicalRule() {
         super(
                 operand(LogicalFilter.class,
-                        operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
+                        operandJ(LogicalTableScan.class,
+                                null,
+                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                                none()
+                        )
+                ),
                 RelFactories.LOGICAL_BUILDER,
                 FilterIntoScanLogicalRule.class.getSimpleName()
         );
@@ -65,7 +71,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         Filter filter = call.rel(0);
         TableScan scan = call.rel(1);
 
-        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalTable = OptUtils.extractHazelcastTable(scan);
 
         // Remap the condition to the original TableScan columns.
         RexNode newCondition = remapCondition(originalTable, filter.getCondition());
@@ -82,7 +88,7 @@ public final class FilterIntoScanLogicalRule extends RelOptRule {
         }
 
         // Create a scan with a new filter.
-        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+        LogicalTableScan newScan = OptUtils.createLogicalScan(
                 scan,
                 originalTable.withFilter(newCondition)
         );
