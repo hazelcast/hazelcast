@@ -20,11 +20,10 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
@@ -243,12 +242,8 @@ public final class OptUtils {
         return (HazelcastRelOptCluster) rel.getCluster();
     }
 
-    public static DistributionTraitDef getDistributionDef(RelNode rel) {
-        return getCluster(rel).getDistributionTraitDef();
-    }
-
     public static DistributionTrait getDistribution(RelNode rel) {
-        return rel.getTraitSet().getTrait(getDistributionDef(rel));
+        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
     }
 
     /**
