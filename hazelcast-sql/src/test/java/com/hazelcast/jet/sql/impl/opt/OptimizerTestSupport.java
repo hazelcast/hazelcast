@@ -16,18 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.sql.impl.JetPlanExecutor;
-import com.hazelcast.jet.sql.impl.JetSqlBackend;
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
-import com.hazelcast.jet.sql.impl.schema.MappingStorage;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -59,7 +52,6 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -88,7 +80,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
         QueryParseResult parseResult = context.parse(sql);
-        RelNode rel = context.convert(parseResult).getRel();
+        RelNode rel = context.convert(parseResult.getNode()).getRel();
 
         return (LogicalRel) context
                 .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
@@ -106,19 +98,11 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     private static OptimizerContext context(HazelcastSchema schema, QueryDataType... parameterTypes) {
-        HazelcastInstance instance = instance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-        MappingStorage mappingStorage = new MappingStorage(nodeEngine);
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        MappingCatalog mappingCatalog = new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
-        JetPlanExecutor planExecutor = new JetPlanExecutor(mappingCatalog, instance, emptyMap());
-
         OptimizerContext context = OptimizerContext.create(
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1,
-                new JetSqlBackend(nodeEngine, planExecutor)
+                1
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)

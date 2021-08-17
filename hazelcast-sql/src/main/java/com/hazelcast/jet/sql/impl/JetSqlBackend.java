@@ -31,7 +31,6 @@ import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
-import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
@@ -52,8 +51,6 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.validate.JetSqlOperatorTable;
-import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -62,14 +59,11 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
@@ -77,11 +71,8 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
-import org.apache.calcite.plan.RelOptTable.ViewExpander;
 import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
@@ -89,13 +80,6 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserImplFactory;
-import org.apache.calcite.sql.util.SqlVisitor;
-import org.apache.calcite.sql.validate.SqlConformance;
-import org.apache.calcite.sql.validate.SqlValidator;
-import org.apache.calcite.sql2rel.SqlRexConvertletTable;
-import org.apache.calcite.sql2rel.SqlToRelConverter;
-import org.apache.calcite.sql2rel.SqlToRelConverter.Config;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -115,45 +99,6 @@ public class JetSqlBackend implements SqlBackend {
         this.planExecutor = planExecutor;
 
         this.logger = nodeEngine.getLogger(getClass());
-    }
-
-    @Override
-    public SqlParserImplFactory parserFactory() {
-        return JetSqlParser.FACTORY;
-    }
-
-    @Override
-    public SqlValidator validator(
-            CatalogReader catalogReader,
-            HazelcastTypeFactory typeFactory,
-            SqlConformance sqlConformance,
-            List<Object> arguments
-    ) {
-        return new HazelcastSqlValidator(JetSqlOperatorTable.instance(), catalogReader, typeFactory, sqlConformance, arguments);
-    }
-
-    @Override
-    public SqlVisitor<Void> unsupportedOperationVisitor(CatalogReader catalogReader) {
-        return new UnsupportedOperationVisitor();
-    }
-
-    @Override
-    public SqlToRelConverter converter(
-            ViewExpander viewExpander,
-            SqlValidator sqlValidator,
-            CatalogReader catalogReader,
-            RelOptCluster relOptCluster,
-            SqlRexConvertletTable sqlRexConvertletTable,
-            Config config
-    ) {
-        return new HazelcastSqlToRelConverter(
-                viewExpander,
-                sqlValidator,
-                catalogReader,
-                relOptCluster,
-                sqlRexConvertletTable,
-                config
-        );
     }
 
     @Override
@@ -183,7 +128,7 @@ public class JetSqlBackend implements SqlBackend {
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else {
-            QueryConvertResult convertResult = context.convert(parseResult);
+            QueryConvertResult convertResult = context.convert(parseResult.getNode());
             return toPlan(
                     planKey,
                     parseResult.getParameterMetadata(),
@@ -225,9 +170,8 @@ public class JetSqlBackend implements SqlBackend {
         SqlCreateJob sqlCreateJob = (SqlCreateJob) parseResult.getNode();
         SqlNode source = sqlCreateJob.dmlStatement();
 
-        QueryParseResult dmlParseResult =
-                new QueryParseResult(source, parseResult.getParameterMetadata(), parseResult.getValidator(), this, false);
-        QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult);
+        QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata(), false);
+        QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
         JetPlan dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),

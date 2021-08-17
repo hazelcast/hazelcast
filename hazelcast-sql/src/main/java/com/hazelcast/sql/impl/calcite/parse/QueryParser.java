@@ -16,50 +16,40 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
+import com.hazelcast.jet.sql.impl.validate.UnsupportedOperationVisitor;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.CalciteConfiguration;
-import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlConformance;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.parser.SqlParser.Config;
-import org.apache.calcite.sql.parser.SqlParserImplFactory;
 import org.apache.calcite.sql.parser.impl.ParseException;
 import org.apache.calcite.sql.util.SqlVisitor;
-import org.apache.calcite.sql.validate.SqlConformance;
-
-import java.util.List;
 
 /**
  * Performs syntactic and semantic validation of the query.
  */
 public class QueryParser {
 
-    private final HazelcastTypeFactory typeFactory;
-    private final CatalogReader catalogReader;
-    private final SqlConformance conformance;
-    private final List<Object> arguments;
-    private final SqlBackend sqlBackend;
+    private static final SqlParser.Config CONFIG;
 
-    public QueryParser(
-            HazelcastTypeFactory typeFactory,
-            CatalogReader catalogReader,
-            SqlConformance conformance,
-            List<Object> arguments,
-            SqlBackend sqlBackend
-    ) {
-        this.catalogReader = catalogReader;
-        this.typeFactory = typeFactory;
-        this.conformance = conformance;
-        this.arguments = arguments;
-        this.sqlBackend = sqlBackend;
+    static {
+        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
+        CalciteConfiguration.DEFAULT.toParserConfig(configBuilder);
+        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
+        configBuilder.setParserFactory(JetSqlParser.FACTORY);
+        CONFIG = configBuilder.build();
+    }
+
+    private final HazelcastSqlValidator validator;
+
+    public QueryParser(HazelcastSqlValidator validator) {
+        this.validator = validator;
     }
 
     public QueryParseResult parse(String sql) {
@@ -78,38 +68,23 @@ public class QueryParser {
     }
 
     private QueryParseResult parse0(String sql) throws SqlParseException {
-        Config config = createConfig(sqlBackend.parserFactory());
-        SqlParser parser = SqlParser.create(sql, config);
+        SqlParser parser = SqlParser.create(sql, CONFIG);
         SqlNodeList statements = parser.parseStmtList();
         if (statements.size() != 1) {
             throw QueryException.error(SqlErrorCode.PARSING, "The command must contain a single statement");
         }
         SqlNode topNode = statements.get(0);
 
-        HazelcastSqlValidator validator =
-                (HazelcastSqlValidator) sqlBackend.validator(catalogReader, typeFactory, conformance, arguments);
         SqlNode node = validator.validate(topNode);
 
-        SqlVisitor<Void> visitor = sqlBackend.unsupportedOperationVisitor(catalogReader);
+        SqlVisitor<Void> visitor = new UnsupportedOperationVisitor();
         node.accept(visitor);
 
         return new QueryParseResult(
                 node,
                 new QueryParameterMetadata(validator.getParameterConverters(node)),
-                validator,
-                sqlBackend,
                 validator.isInfiniteRows()
         );
-    }
-
-    private static Config createConfig(SqlParserImplFactory parserImplFactory) {
-        SqlParser.ConfigBuilder configBuilder = SqlParser.configBuilder();
-        CalciteConfiguration.DEFAULT.toParserConfig(configBuilder);
-        configBuilder.setConformance(HazelcastSqlConformance.INSTANCE);
-        if (parserImplFactory != null) {
-            configBuilder.setParserFactory(parserImplFactory);
-        }
-        return configBuilder.build();
     }
 
     private static String trimMessage(String message) {

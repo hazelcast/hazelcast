@@ -118,14 +118,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
-                memberCount,
-                jetSqlBackend
+                memberCount
         );
 
         // 2. Parse SQL string and validate it.
         QueryParseResult parseResult = context.parse(task.getSql());
 
         // 3. Create plan.
-        return parseResult.getSqlBackend().createPlan(task, parseResult, context);
+        return jetSqlBackend.createPlan(task, parseResult, context);
     }
 }
