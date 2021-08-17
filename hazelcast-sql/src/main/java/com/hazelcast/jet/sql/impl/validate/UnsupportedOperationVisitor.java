@@ -199,13 +199,13 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
 
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_SERIES);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_STREAM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
 
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.CSV_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.AVRO_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CSV_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
     }
 
     // The top level select is used to filter out nested selects with FETCH/OFFSET
