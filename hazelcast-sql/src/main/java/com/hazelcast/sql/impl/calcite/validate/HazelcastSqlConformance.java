@@ -22,11 +22,12 @@ import org.apache.calcite.sql.validate.SqlDelegatingConformance;
 /**
  * The class that defines conformance level for Hazelcast SQL dialect.
  */
-public class HazelcastSqlConformance extends SqlDelegatingConformance {
+public final class HazelcastSqlConformance extends SqlDelegatingConformance {
+
     /** Singleton. */
     public static final HazelcastSqlConformance INSTANCE = new HazelcastSqlConformance();
 
-    protected HazelcastSqlConformance() {
+    private HazelcastSqlConformance() {
         super(SqlConformanceEnum.DEFAULT);
     }
 
@@ -63,7 +64,7 @@ public class HazelcastSqlConformance extends SqlDelegatingConformance {
     @Override
     public boolean isFromRequired() {
         // FROM keyword is required as per SQL'2003 standard.
-        return true;
+        return false;
     }
 
     @Override

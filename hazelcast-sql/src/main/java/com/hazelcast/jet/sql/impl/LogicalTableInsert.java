@@ -28,7 +28,7 @@ import java.util.List;
 
 public class LogicalTableInsert extends TableModify {
 
-    LogicalTableInsert(TableModify modify) {
+    public LogicalTableInsert(TableModify modify) {
         this(
                 modify.getCluster(),
                 modify.getTraitSet(),

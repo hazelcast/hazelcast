@@ -18,6 +18,9 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.hazelcast.jet.sql.impl.LogicalTableInsert;
+import com.hazelcast.jet.sql.impl.LogicalTableSink;
+import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
@@ -32,6 +35,8 @@ import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
@@ -43,6 +48,7 @@ import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
+import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
@@ -88,7 +94,9 @@ import static org.apache.calcite.avatica.util.TimeUnit.YEAR;
  * the default Calcite sql-to-rel converter and to facilitate generation of
  * literals and casts with more precise types assigned during the validation.
  */
-public class HazelcastSqlToRelConverter extends SqlToRelConverter {
+@SuppressWarnings({"checkstyle:classfanoutcomplexity"})
+public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
+
     private static final SqlIntervalQualifier INTERVAL_YEAR_MONTH = new SqlIntervalQualifier(YEAR, MONTH, SqlParserPos.ZERO);
     private static final SqlIntervalQualifier INTERVAL_DAY_SECOND = new SqlIntervalQualifier(DAY, SECOND, SqlParserPos.ZERO);
 
@@ -523,5 +531,12 @@ public class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return node;
         }
         return rexBuilder.ensureType(type, node, true);
+    }
+
+    @Override
+    protected RelNode convertInsert(SqlInsert insert0) {
+        SqlExtendedInsert insert = (SqlExtendedInsert) insert0;
+        TableModify modify = (TableModify) super.convertInsert(insert);
+        return insert.isInsert() ? new LogicalTableInsert(modify) : new LogicalTableSink(modify);
     }
 }
