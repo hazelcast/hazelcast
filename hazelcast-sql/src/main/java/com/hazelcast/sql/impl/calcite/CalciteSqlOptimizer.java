@@ -109,6 +109,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     @Override
     public SqlPlan prepare(OptimizationTask task) {
+        assert jetSqlBackend != null;
+
         // 1. Prepare context.
         int memberCount = nodeEngine.getClusterService().getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
 

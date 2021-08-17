@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -65,7 +66,7 @@ import static java.util.Arrays.asList;
  */
 public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
-    static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
+    private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.sql.impl.calcite.CalciteSqlOptimizer";
 
     /**
@@ -214,6 +215,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
 
+            Util.checkJetIsEnabled(nodeEngine);
+
             long timeout = statement.getTimeoutMillis();
 
             if (timeout == SqlStatement.TIMEOUT_NOT_SET) {
@@ -278,7 +281,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             plan.checkPermissions(securityContext);
         }
 
-        return execute(queryId, plan, args0, timeout, pageSize);
+        return jetSqlCoreBackend.execute(queryId, plan, args0, timeout, pageSize);
     }
 
     private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
@@ -329,10 +332,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         }
 
         return QueryUtils.prepareSearchPaths(currentSearchPaths, tableResolvers);
-    }
-
-    private SqlResult execute(QueryId queryId, SqlPlan plan, List<Object> params, long timeout, int pageSize) {
-        return jetSqlCoreBackend.execute(queryId, plan, params, timeout, pageSize);
     }
 
     /**
