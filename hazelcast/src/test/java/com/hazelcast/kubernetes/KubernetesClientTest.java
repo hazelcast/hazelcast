@@ -880,23 +880,23 @@ public class KubernetesClientTest {
     private String nodePortServiceIncorrectResponseException() {
         //language=JSON
         return "{\n"
-                + "  \"kind\": \"Service\",\n" +
-                "  \"metadata\": {\n" +
-                "    \"name\": \"incorrect-service\"\n" +
-                "  " +
-                "},\n" +
-                "  \"spec\": {\n"
+                + "  \"kind\": \"Service\",\n"
+                + "  \"metadata\": {\n"
+                + "    \"name\": \"incorrect-service\"\n"
+                + "  "
+                + "},\n"
+                + "  \"spec\": {\n"
                 + "    \"ports\": [\n"
                 + "      {\n"
                 + "        \"port\": 0,\n"
                 + "        \"targetPort\": 0,\n"
                 + "        \"nodePort\": 0\n"
-                + "      },\n" +
-                "      {\n" +
-                "        \"port\": 1,\n" +
-                "        \"targetPort\": 1,\n" +
-                "        \"nodePort\": 2\n" +
-                "      }\n"
+                + "      },\n"
+                + "      {\n"
+                + "        \"port\": 1,\n"
+                + "        \"targetPort\": 1,\n"
+                + "        \"nodePort\": 2\n"
+                + "      }\n"
                 + "    ]\n"
                 + "  }\n"
                 + "}";
