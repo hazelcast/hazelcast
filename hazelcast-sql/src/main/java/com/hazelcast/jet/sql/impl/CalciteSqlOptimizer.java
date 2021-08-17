@@ -182,14 +182,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static TableResolver partitionedMapTableResolver(NodeEngine nodeEngine) {
-        return new PartitionedMapTableResolver(nodeEngine, JetMapMetadataResolverImpl.INSTANCE);
-    }
-
     private static MappingCatalog mappingCatalog(NodeEngine nodeEngine) {
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         return new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
+    }
+
+    private static TableResolver partitionedMapTableResolver(NodeEngine nodeEngine) {
+        return new PartitionedMapTableResolver(nodeEngine, JetMapMetadataResolverImpl.INSTANCE);
     }
 
     @Override

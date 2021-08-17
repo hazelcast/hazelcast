@@ -247,7 +247,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             plan.checkPermissions(securityContext);
         }
 
-        return plan.execute(queryId, args0, timeout); // TODO: pageSize ?
+        // TODO: pageSize ?
+        return plan.execute(queryId, args0, timeout);
     }
 
     private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
