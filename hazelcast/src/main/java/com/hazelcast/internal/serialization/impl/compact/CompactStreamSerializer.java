@@ -196,7 +196,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     //========================== READ =============================//
     @Override
     public Object read(@Nonnull ObjectDataInput in) throws IOException {
-        enabledCheck();
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return read(input, false);
     }
@@ -270,26 +269,17 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public GenericRecord readGenericRecord(ObjectDataInput in, boolean schemaIncludedInBinary) throws IOException {
-        enabledCheck();
         Schema schema = getOrReadSchema(in, schemaIncludedInBinary);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return new DefaultCompactReader(this, input, schema, null, schemaIncludedInBinary);
     }
 
     public InternalGenericRecord readAsInternalGenericRecord(ObjectDataInput input) throws IOException {
-        enabledCheck();
         return (InternalGenericRecord) readGenericRecord(input, false);
     }
 
     //Should be deleted with removing Beta tags
     public boolean isEnabled() {
         return isEnabled;
-    }
-
-    //Should be deleted with removing Beta tags
-    private void enabledCheck() {
-        if (!isEnabled) {
-            throw new HazelcastSerializationException("CompactSerializer(BETA feature) is not enabled");
-        }
     }
 }
