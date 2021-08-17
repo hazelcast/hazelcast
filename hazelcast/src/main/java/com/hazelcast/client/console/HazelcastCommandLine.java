@@ -93,7 +93,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 @Command(
         name = "hazelcast",
         description = "Utility to perform operations on a Hazelcast cluster.%n"
-                + "By default it uses the file config/hazelcast-client.yaml to configure the client connection."
+                + "By default it uses the file config/hazelcast-client.xml to configure the client connection."
                 + "%n%n"
                 + "Global options are:%n",
         versionProvider = HazelcastVersionProvider.class,
@@ -112,7 +112,7 @@ public class HazelcastCommandLine implements Runnable {
 
     @Option(names = {"-f", "--config"},
             description = "Optional path to a client config XML/YAML file."
-                    + " The default is to use config/hazelcast-client.yaml.",
+                    + " The default is to use config/hazelcast-client.xml.",
             order = 0
     )
     private File config;
