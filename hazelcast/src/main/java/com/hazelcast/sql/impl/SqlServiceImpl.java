@@ -75,6 +75,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     /** Default state check frequency. */
     private static final long STATE_CHECK_FREQUENCY = 1_000L;
 
+    /** Default plan cache size. */
     private static final int PLAN_CACHE_SIZE = 10_000;
 
     private final ILogger logger;

@@ -24,10 +24,10 @@ import com.hazelcast.jet.sql.impl.parse.SqlDataType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlMappingColumn;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -83,7 +83,7 @@ public class JetSqlBackendTest {
                 ifNotExists,
                 SqlParserPos.ZERO
         );
-        QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
+        QueryParseResult parseResult = new QueryParseResult(node, null, false);
 
         // when
         CreateMappingPlan plan = (CreateMappingPlan) sqlBackend.createPlan(task(), parseResult, null);
@@ -111,7 +111,7 @@ public class JetSqlBackendTest {
                 ifExists,
                 SqlParserPos.ZERO
         );
-        QueryParseResult parseResult = new QueryParseResult(node, null, null, null, false);
+        QueryParseResult parseResult = new QueryParseResult(node, null, false);
 
         // when
         DropMappingPlan plan = (DropMappingPlan) sqlBackend.createPlan(task(), parseResult, null);
