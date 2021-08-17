@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
@@ -28,8 +29,12 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,11 +43,16 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -56,8 +66,7 @@ public class JetClassLoaderTest extends JetTestSupport {
         DAG dag = new DAG();
         dag.newVertex("v", LeakClassLoaderP::new).localParallelism(1);
 
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setResourceUploadEnabled(true);
+        Config config = smallInstanceWithResourceUploadConfig();
         HazelcastInstance instance = createHazelcastInstance(config);
 
         // When
@@ -102,23 +111,9 @@ public class JetClassLoaderTest extends JetTestSupport {
         job.resume();
         job.join();
 
-        for (Map.Entry<String, List<ClassLoader>> entry : TargetP.classLoaders.entrySet()) {
-            List<ClassLoader> cls = entry.getValue();
-            for (ClassLoader cl : cls) {
-                assertThat(cl)
-                        .describedAs("expecting JetClassLoader for method " + entry.getKey())
-                        .isInstanceOf(JetClassLoader.class);
-            }
-        }
+        assertClassLoaders(TargetP.classLoaders);
 
-        // Future-proof against Processor API additions
-        Method[] methods = Processor.class.getMethods();
-        for (Method method : methods) {
-            String name = method.getName();
-            assertThat(TargetP.classLoaders)
-                    .describedAs("method " + name + " not called")
-                    .containsKey(name);
-        }
+        assertClassLoaderForAllMethodsChecked(Processor.class, TargetP.classLoaders);
     }
 
     /**
@@ -257,4 +252,118 @@ public class JetClassLoaderTest extends JetTestSupport {
         }
     }
 
+    @Test
+    public void when_processorSupplierCalled_then_contextClassLoaderSet() {
+        DAG dag = new DAG();
+        dag.newVertex("v", new LeakClassLoaderPS()).localParallelism(1);
+
+        Config config = smallInstanceWithResourceUploadConfig();
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        // When
+        instance.getJet().newJob(dag).join();
+
+        assertClassLoaders(LeakClassLoaderPS.classLoaders);
+        assertThat(LeakClassLoaderPS.classLoaders)
+                .containsKeys("init", "get", "close");
+    }
+
+    private static class LeakClassLoaderPS implements ProcessorSupplier {
+
+        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            putClassLoader("init");
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Processor> get(int count) {
+            putClassLoader("get");
+            return Collections.singleton(new NoopP());
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) throws Exception {
+            putClassLoader("close");
+        }
+
+        private void putClassLoader(String methodName) {
+            List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
+            cls.add(Thread.currentThread().getContextClassLoader());
+        }
+    }
+
+    @Test
+    public void when_processorMetaSupplierCalled_then_contextClassLoaderSet() {
+        DAG dag = new DAG();
+        dag.newVertex("v", new LeakClassLoaderPMS()).localParallelism(1);
+
+        Config config = smallInstanceWithResourceUploadConfig();
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        // When
+        instance.getJet().newJob(dag).join();
+
+        assertClassLoaders(LeakClassLoaderPMS.classLoaders);
+        assertThat(LeakClassLoaderPMS.classLoaders)
+                .containsKeys("init", "get", "close");
+    }
+
+    private static class LeakClassLoaderPMS implements ProcessorMetaSupplier {
+
+        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            putClassLoader("init");
+        }
+
+        @Nonnull
+        @Override
+        public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            putClassLoader("get");
+            return address -> ProcessorSupplier.of(NoopP::new);
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) throws Exception {
+            putClassLoader("close");
+        }
+
+        private void putClassLoader(String methodName) {
+            List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
+            cls.add(Thread.currentThread().getContextClassLoader());
+        }
+    }
+
+    private void assertClassLoaderForAllMethodsChecked(
+            Class<?> clazz,
+            Map<String, List<ClassLoader>> classLoaders) {
+
+        // Future-proof against Processor API additions
+        Method[] methods = clazz.getMethods();
+        for (Method method : methods) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+
+            String name = method.getName();
+            assertThat(classLoaders)
+                    .describedAs("method " + name + " not called")
+                    .containsKey(name);
+        }
+    }
+
+    private void assertClassLoaders(Map<String, List<ClassLoader>> classLoaders) {
+        for (Map.Entry<String, List<ClassLoader>> entry : classLoaders.entrySet()) {
+            List<ClassLoader> cls = entry.getValue();
+            for (ClassLoader cl : cls) {
+                assertThat(cl)
+                        .describedAs("expecting JetClassLoader for method " + entry.getKey())
+                        .isInstanceOf(JetClassLoader.class);
+            }
+        }
+    }
 }

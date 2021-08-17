@@ -30,7 +30,9 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
@@ -99,7 +101,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile Map<SenderReceiverKey, SenderTasklet> senderMap;
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
 
-    private List<ProcessorSupplier> procSuppliers = emptyList();
+    private List<Tuple2<ProcessorSupplier, String>> procSuppliers = emptyList();
     private List<Tasklet> tasklets = emptyList();
 
     // future which is completed only after all tasklets are completed and contains execution result
@@ -150,7 +152,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
-        procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
+        procSuppliers = plan.getProcessorSuppliers();
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
@@ -246,18 +248,24 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
-                        + " encountered an exception in Processor.close(), ignoring it", e);
+                              + " encountered an exception in Processor.close(), ignoring it", e);
             }
         }
 
-        for (ProcessorSupplier s : procSuppliers) {
-            try {
-                doWithClassLoader(s.getClass().getClassLoader(), () -> s.close(error));
-            } catch (Throwable e) {
-                logger.severe(jobNameAndExecutionId()
-                        + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+        JobExecutionService jobExecutionService = jetServiceBackend.getJobExecutionService();
+        ClassLoader jobCL = jobExecutionService.getClassLoader(jobConfig, jobId);
+        doWithClassLoader(jobCL, () -> {
+
+            for (Tuple2<ProcessorSupplier, String> s : procSuppliers) {
+                try {
+                    ClassLoader processorCl = jobExecutionService.getProcessorClassLoader(jobId, s.f1());
+                    doWithClassLoader(processorCl, () -> s.f0().close(error));
+                } catch (Throwable e) {
+                    logger.severe(jobNameAndExecutionId()
+                                  + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                }
             }
-        }
+        });
 
         tempDirectories.forEach((k, dir) -> {
             try {
