@@ -25,6 +25,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
+import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
@@ -71,7 +72,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private boolean sendProtocol() {
         if (!clusterProtocolBuffered) {
             clusterProtocolBuffered = true;
-            dst.put(stringToBytes("HZX"));
+            dst.put(stringToBytes(UNEXPECTED_PROTOCOL));
             return false;
         }
 

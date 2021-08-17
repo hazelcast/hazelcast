@@ -102,7 +102,7 @@ public class SingleProtocolDecoder
     protected void verifyProtocol(String incomingProtocol) {
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
             encoder.signalWrongProtocol();
-            throw new IllegalStateException("Unsupported protocol exchange detected, " + "expected protocol: "
+            throw new ProtocolException("Unsupported protocol exchange detected, " + "expected protocol: "
                     + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol);
         }
     }
