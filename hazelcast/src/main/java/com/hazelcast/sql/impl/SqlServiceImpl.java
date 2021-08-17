@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -209,6 +210,8 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
             if (nodeEngine.getLocalMember().isLiteMember()) {
                 throw QueryException.error("SQL queries cannot be executed on lite members");
             }
+
+            Util.checkJetIsEnabled(nodeEngine);
 
             long timeout = statement.getTimeoutMillis();
 
