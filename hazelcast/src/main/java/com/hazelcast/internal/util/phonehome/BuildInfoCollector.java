@@ -18,11 +18,14 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static java.lang.Math.min;
@@ -34,6 +37,15 @@ class BuildInfoCollector implements MetricsCollector {
 
     static final int CLASSPATH_MAX_LENGTH = 100_000;
 
+    static String formatClassPath(String classpath) {
+        String[] classPathEntries = classpath.split(System.getProperty("path.separator"));
+        String shortenedEntries = Arrays.stream(classPathEntries)
+                .filter(cpEntry -> cpEntry.endsWith(".jar"))
+                .map(cpEntry -> cpEntry.substring(cpEntry.lastIndexOf(System.getProperty("file.separator")) + 1))
+                .collect(Collectors.joining(":"));
+        return shortenedEntries.substring(0, min(CLASSPATH_MAX_LENGTH, shortenedEntries.length()));
+    }
+
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         BuildInfo imdgInfo = node.getBuildInfo();
@@ -43,7 +55,7 @@ class BuildInfoCollector implements MetricsCollector {
         String classpath = System.getProperty("java.class.path");
         if (classpath != null) {
             metricsConsumer.accept(PhoneHomeMetrics.JAVA_CLASSPATH,
-                    classpath.substring(0, min(CLASSPATH_MAX_LENGTH, classpath.length())));
+                    formatClassPath(classpath));
         }
     }
 
