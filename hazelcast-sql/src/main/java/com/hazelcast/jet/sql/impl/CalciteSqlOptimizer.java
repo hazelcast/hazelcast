@@ -88,6 +88,7 @@ import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
 import org.apache.calcite.rel.core.TableModify;
+import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -293,7 +294,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 dmlParseResult.isInfiniteRows(),
                 true
         );
-        assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == TableModify.Operation.INSERT;
+        assert dmlPlan instanceof DmlPlan && ((DmlPlan) dmlPlan).getOperation() == Operation.INSERT;
 
         return new CreateJobPlan(
                 planKey,
@@ -411,7 +412,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else if (physicalRel instanceof TableModify) {
-            TableModify.Operation operation = ((TableModify) physicalRel).getOperation();
+            Operation operation = ((TableModify) physicalRel).getOperation();
             CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
             return new DmlPlan(
                     operation,
