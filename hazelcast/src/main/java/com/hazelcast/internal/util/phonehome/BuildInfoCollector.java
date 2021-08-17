@@ -18,7 +18,6 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
