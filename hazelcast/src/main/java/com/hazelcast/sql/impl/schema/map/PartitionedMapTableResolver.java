@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -46,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.properties.ClusterProperty.GLOBAL_HD_INDEX_ENABLED;
 import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
 public class PartitionedMapTableResolver extends AbstractMapTableResolver {
@@ -109,7 +109,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 return null;
             }
 
-            boolean hd = nodeEngine.getProperties().getBoolean(GLOBAL_HD_INDEX_ENABLED);
+            boolean hd = mapContainer.getMapConfig().getInMemoryFormat() == InMemoryFormat.NATIVE;
 
             FieldsMetadata fieldsMetadata = null;
 
@@ -117,7 +117,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
                 fieldsMetadata = getHdMapFields(mapContainer);
             }
 
-            if (fieldsMetadata == null || fieldsMetadata.emptyError) {
+            if (fieldsMetadata == null) {
                 fieldsMetadata = getHeapMapFields(context, name);
             }
 
@@ -187,7 +187,7 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
         InternalIndex[] indexes = mapContainer.getIndexes().getIndexes();
 
         if (indexes == null || indexes.length == 0) {
-            return FieldsMetadata.EMPTY_ERROR;
+            return null;
         }
 
         InternalIndex index = indexes[0];
