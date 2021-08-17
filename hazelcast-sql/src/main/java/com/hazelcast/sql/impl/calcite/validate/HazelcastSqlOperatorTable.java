@@ -236,8 +236,8 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#region Aggregation functions.
 
-    public static final SqlFunction SUM = new HazelcastSumAggFunction();
     public static final SqlFunction COUNT = new HazelcastCountAggFunction();
+    public static final SqlFunction SUM = new HazelcastSumAggFunction();
     public static final SqlFunction AVG = new HazelcastAvgAggFunction();
     public static final SqlFunction MIN = new HazelcastMinMaxAggFunction(SqlKind.MIN);
     public static final SqlFunction MAX = new HazelcastMinMaxAggFunction(SqlKind.MAX);
