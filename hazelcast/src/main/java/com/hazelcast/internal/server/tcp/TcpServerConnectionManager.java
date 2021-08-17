@@ -264,7 +264,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
 
     void failedConnection(Address address, int planeIndex, Throwable t, boolean silent) {
         planes[planeIndex].removeConnectionInProgress(address);
-        serverContext.onFailedConnection(address);
+        serverContext.onFailedConnection(address, t);
         if (!silent) {
             getErrorHandler(address, planeIndex).onError(t);
         }

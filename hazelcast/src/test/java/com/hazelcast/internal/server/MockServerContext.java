@@ -156,7 +156,7 @@ public class MockServerContext implements ServerContext {
     }
 
     @Override
-    public void onFailedConnection(Address address) {
+    public void onFailedConnection(Address address, Throwable cause) {
         logger.info("Failed connection: " + address);
     }
 

@@ -99,7 +99,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         otherJoinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1:" + firstClientPort);
         other.setProperty(ClusterProperty.MAX_JOIN_SECONDS.getName(), "1");
 
-        expect.expect(ProtocolException.class);
+        expect.expect(IllegalStateException.class);
+        expect.expectMessage("Node failed to start!");
 
         HazelcastInstance hz2 = newHazelcastInstance(other);
     }

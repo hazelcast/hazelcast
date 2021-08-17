@@ -52,7 +52,7 @@ public class ClusterMismatchOp extends AbstractClusterOperation {
         callerAddresses.addAll(AddressUtil.getAliases(connection.getRemoteSocketAddress()));
 
         for (Address alias : callerAddresses) {
-            node.getJoiner().blacklist(alias, true);
+            node.getJoiner().blacklist(alias, true, null);
         }
     }
 

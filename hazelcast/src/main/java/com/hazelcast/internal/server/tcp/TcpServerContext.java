@@ -201,7 +201,7 @@ public class TcpServerContext implements ServerContext {
     }
 
     @Override
-    public void onFailedConnection(final Address address) {
+    public void onFailedConnection(final Address address, Throwable cause) {
         ClusterService clusterService = node.clusterService;
         if (clusterService.isJoined()) {
             if (clusterService.getMember(address) != null) {
@@ -209,7 +209,7 @@ public class TcpServerContext implements ServerContext {
                         getConnectionMonitorInterval(), TimeUnit.MILLISECONDS);
             }
         } else {
-            node.getJoiner().blacklist(address, false);
+            node.getJoiner().blacklist(address, cause instanceof ProtocolException, cause);
         }
     }
 

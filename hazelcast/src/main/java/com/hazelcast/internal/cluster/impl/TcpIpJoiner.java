@@ -26,6 +26,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.server.tcp.ProtocolException;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
@@ -39,6 +40,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -139,6 +141,7 @@ public class TcpIpJoiner extends AbstractJoiner {
 
             while (shouldRetry() && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
                 tryJoinAddresses(possibleAddresses);
+                rethrowProtocolException(possibleAddresses);
 
                 if (clusterService.isJoined()) {
                     return;
@@ -260,6 +263,14 @@ public class TcpIpJoiner extends AbstractJoiner {
 
             if (!clusterService.isJoined()) {
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
+            }
+        }
+    }
+
+    private void rethrowProtocolException(Collection<Address> addresses) throws Throwable {
+        for (Address address: addresses) {
+            if (isBlacklisted(address) && blacklistedAddresses.get(address).f1() instanceof ProtocolException) {
+                throw Objects.requireNonNull(blacklistedAddresses.get(address).f1());
             }
         }
     }
