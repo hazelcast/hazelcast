@@ -34,7 +34,7 @@ public class DistributionTrait implements RelTrait {
     /** Distribution type. */
     private final DistributionType type;
 
-    DistributionTrait(DistributionTraitDef traitDef, DistributionType type) {
+    public DistributionTrait(DistributionTraitDef traitDef, DistributionType type) {
         this.traitDef = traitDef;
         this.type = type;
     }
