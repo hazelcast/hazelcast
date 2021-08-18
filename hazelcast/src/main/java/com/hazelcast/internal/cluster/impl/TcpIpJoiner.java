@@ -127,8 +127,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
             }
-        } catch (final Exception e) {
-            logger.warning(e);
+            rethrowProtocolException(Collections.singleton(targetAddress));
+        } catch (Throwable t) {
+            logger.severe(t);
         }
     }
 
