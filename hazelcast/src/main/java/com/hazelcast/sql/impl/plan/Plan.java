@@ -17,7 +17,9 @@
 package com.hazelcast.sql.impl.plan;
 
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
@@ -116,6 +118,11 @@ public class Plan extends SqlPlan {
     @Override
     public boolean producesRows() {
         return true;
+    }
+
+    @Override
+    public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+        throw new UnsupportedOperationException();
     }
 
     public Map<UUID, PartitionIdSet> getPartitionMap() {
