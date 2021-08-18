@@ -184,8 +184,7 @@ public final class Contexts {
             long jobMaxProcessorAccumulatedRecords = jobConfig.getMaxProcessorAccumulatedRecords();
             return jobMaxProcessorAccumulatedRecords > -1
                     ? jobMaxProcessorAccumulatedRecords
-                    : hazelcastInstance().getConfig().getJetConfig().getInstanceConfig()
-                    .getMaxProcessorAccumulatedRecords();
+                    : hazelcastInstance().getConfig().getJetConfig().getMaxProcessorAccumulatedRecords();
         }
 
         @Override

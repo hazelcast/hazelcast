@@ -94,7 +94,7 @@ public class WordCountTest extends JetTestSupport implements Serializable {
     @Before
     public void before() {
         Config config = defaultInstanceConfigWithJetEnabled();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
         config.setClusterName(randomName());
         final JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);

@@ -128,7 +128,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        parallelism = instance().getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
+        parallelism = instance().getConfig().getJetConfig().getCooperativeThreadCount();
         TestProcessors.reset(MEMBER_COUNT * parallelism);
     }
 

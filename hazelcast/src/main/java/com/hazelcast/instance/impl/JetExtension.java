@@ -56,7 +56,7 @@ public class JetExtension {
     private void checkLosslessRestartAllowed() {
         Config config = node.config.getStaticConfig();
         JetConfig jetConfig = config.getJetConfig();
-        if (jetConfig.getInstanceConfig().isLosslessRestartEnabled()) {
+        if (jetConfig.isLosslessRestartEnabled()) {
             if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
                 throw new IllegalStateException("Lossless Restart requires Hazelcast Enterprise Edition");
             }

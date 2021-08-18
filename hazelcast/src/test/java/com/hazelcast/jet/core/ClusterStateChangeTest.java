@@ -59,7 +59,7 @@ public class ClusterStateChangeTest extends JetTestSupport {
     public void before() {
         TestProcessors.reset(TOTAL_PARALLELISM);
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         members = createHazelcastInstances(config, NODE_COUNT);
 
         assertTrueEventually(() -> {

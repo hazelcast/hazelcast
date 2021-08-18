@@ -124,14 +124,14 @@ public class TopologyChangeTest extends JetTestSupport {
         TestProcessors.reset(nodeCount * PARALLELISM);
 
         config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
 
         instances = new HazelcastInstance[NODE_COUNT];
 
         for (int i = 0; i < NODE_COUNT; i++) {
             Config config = smallInstanceConfig();
             config.setLiteMember(liteMemberFlags[i]);
-            config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
+            config.getJetConfig().setCooperativeThreadCount(PARALLELISM);
 
             instances[i] = createHazelcastInstance(config);
         }
