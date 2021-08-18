@@ -17,11 +17,11 @@
 package com.hazelcast.jet.sql.impl.opt.distribution;
 
 import com.hazelcast.jet.sql.impl.opt.JetConventions;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
 import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ANY;
 import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.PARTITIONED;
 import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.REPLICATED;
@@ -69,6 +69,18 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
         return memberCount;
     }
 
+    public DistributionTrait getTraitPartitionedUnknown() {
+        return traitPartitionedUnknown;
+    }
+
+    public DistributionTrait getTraitReplicated() {
+        return traitReplicated;
+    }
+
+    public DistributionTrait getTraitRoot() {
+        return traitRoot;
+    }
+
     @Override
     public Class<DistributionTrait> getTraitClass() {
         return DistributionTrait.class;
@@ -86,12 +98,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             DistributionTrait targetTrait,
             boolean allowInfiniteCostConverters
     ) {
-        if (rel.getConvention() != JetConventions.PHYSICAL) {
-            // Only physical nodes could be converted.
-            return null;
-        }
-
-        DistributionTrait currentTrait = rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
+        DistributionTrait currentTrait = OptUtils.getDistribution(rel);
 
         if (currentTrait.satisfies(targetTrait)) {
             return rel;
@@ -102,6 +109,11 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
 
         if (currentType == ANY) {
             // Abstract ANY distribution cannot be converted to anything.
+            return null;
+        }
+
+        if (rel.getConvention() != JetConventions.PHYSICAL) {
+            // Only physical nodes could be converted.
             return null;
         }
 

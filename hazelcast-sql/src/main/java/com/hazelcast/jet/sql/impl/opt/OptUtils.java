@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -227,6 +228,10 @@ public final class OptUtils {
         assert rel.getCluster() instanceof HazelcastRelOptCluster;
 
         return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
     }
 
     /**
