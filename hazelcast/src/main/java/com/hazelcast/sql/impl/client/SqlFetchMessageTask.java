@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 
 import java.security.AccessControlException;
@@ -59,7 +60,9 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     protected ClientMessage encodeException(Throwable throwable) {
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        // exception can be thrown before parameters are decoded
+        QueryId queryId = parameters != null ? parameters.queryId : decodeClientMessage(clientMessage).queryId;
+        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
