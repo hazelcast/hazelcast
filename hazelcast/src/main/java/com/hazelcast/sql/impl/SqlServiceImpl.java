@@ -89,7 +89,7 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private final long queryTimeout;
 
     private SqlOptimizer optimizer;
-    private volatile SqlInternalService internalService;
+    private SqlInternalService internalService;
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
