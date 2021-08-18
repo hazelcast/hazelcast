@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.phonehome;
 
 import org.junit.Test;
 
+import java.io.File;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -26,17 +27,13 @@ import static org.junit.Assert.assertEquals;
 
 public class ClassPathFormattingTest {
 
-    public static final String PATH_SEPARATOR = System.getProperty("path.separator");
-
-    public static final String FILE_SEPARATOR = System.getProperty("file.separator");
-
     private static String path(String ...fileNames) {
-        return FILE_SEPARATOR + join(FILE_SEPARATOR, fileNames);
+        return File.separator + join(File.separator, fileNames);
     }
 
     @Test
     public void testJarPathRemovals() {
-        String classpath = join(PATH_SEPARATOR,
+        String classpath = join(File.pathSeparator,
                 path("home", "log4j.jar"),
                 path("home", "user", "target"),
                 path("home", "user", "targetjar"),
@@ -44,7 +41,7 @@ public class ClassPathFormattingTest {
                 path("var", "lib", "jackson-databind.jar")
         );
         String actual = BuildInfoCollector.formatClassPath(classpath);
-        assertEquals("log4j.jar:hibernate-validator.jar:jackson-databind.jar", actual);
+        assertEquals("log4j.jar,hibernate-validator.jar,jackson-databind.jar", actual);
     }
 
     @Test

@@ -19,6 +19,7 @@ package com.hazelcast.internal.util.phonehome;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -37,11 +38,11 @@ class BuildInfoCollector implements MetricsCollector {
     static final int CLASSPATH_MAX_LENGTH = 100_000;
 
     static String formatClassPath(String classpath) {
-        String[] classPathEntries = classpath.split(System.getProperty("path.separator"));
+        String[] classPathEntries = classpath.split(File.pathSeparator);
         String shortenedEntries = Arrays.stream(classPathEntries)
                 .filter(cpEntry -> cpEntry.endsWith(".jar"))
-                .map(cpEntry -> cpEntry.substring(cpEntry.lastIndexOf(System.getProperty("file.separator")) + 1))
-                .collect(Collectors.joining(":"));
+                .map(cpEntry -> cpEntry.substring(cpEntry.lastIndexOf(File.separator) + 1))
+                .collect(Collectors.joining(","));
         return shortenedEntries.substring(0, min(CLASSPATH_MAX_LENGTH, shortenedEntries.length()));
     }
 
