@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
  * This class is used to delegate the deprecated {@link InstanceConfig} method
  * calls to {@link JetConfig}.
  */
-final class InstanceConfigDelegate extends InstanceConfig {
+public final class InstanceConfigDelegate extends InstanceConfig {
 
     private final JetConfig jetConfig;
 

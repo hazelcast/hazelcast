@@ -2190,15 +2190,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleJet(Node node) {
             BeanDefinitionBuilder jetConfigBuilder = createBeanBuilder(JetConfig.class);
-            fillAttributeValues(node, jetConfigBuilder);
+            fillValues(node, jetConfigBuilder, "edgeDefaults");
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
-                if ("instance".equals(nodeName)) {
-                    BeanDefinitionBuilder instanceConfigBuilder = createBeanBuilder(InstanceConfig.class);
-                    fillValues(child, instanceConfigBuilder);
-                    jetConfigBuilder.addPropertyValue("instanceConfig",
-                            instanceConfigBuilder.getBeanDefinition());
-                } else if ("edge-defaults".equals(nodeName)) {
+                if ("edge-defaults".equals(nodeName)) {
                     BeanDefinitionBuilder edgeConfigBuilder = createBeanBuilder(EdgeConfig.class);
                     fillValues(child, edgeConfigBuilder);
                     jetConfigBuilder.addPropertyValue("defaultEdgeConfig",

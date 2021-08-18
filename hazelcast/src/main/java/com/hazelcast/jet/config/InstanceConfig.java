@@ -241,7 +241,7 @@ public class InstanceConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof InstanceConfig)) {
             return false;
         }
 
