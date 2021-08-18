@@ -14,40 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.distribution;
+package com.hazelcast.jet.sql.impl.opt.distribution;
 
-import com.hazelcast.sql.impl.calcite.opt.HazelcastConventions;
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.opt.physical.exchange.RootExchangePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.JetConventions;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitDef;
-import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.PARTITIONED;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ANY;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.PARTITIONED;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.REPLICATED;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ROOT;
 
 /**
  * Distribution trait definition.
  */
 public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
-    /** Partitioned trait with unknown partitioning columns. */
+    /**
+     * Partitioned trait with unknown partitioning columns.
+     */
     private final DistributionTrait traitPartitionedUnknown;
 
-    /** Every node has the same data set locally. */
+    /**
+     * Every node has the same data set locally.
+     */
     private final DistributionTrait traitReplicated;
 
-    /** Consume the whole stream on a single node. */
+    /**
+     * Consume the whole stream on a single node.
+     */
     private final DistributionTrait traitRoot;
 
-    /** Distribution without any restriction. */
+    /**
+     * Distribution without any restriction.
+     */
     private final DistributionTrait traitAny;
 
-    /** Number of members. */
+    /**
+     * Number of members.
+     */
     private final int memberCount;
 
     public DistributionTraitDef(int memberCount) {
@@ -106,7 +112,7 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             return null;
         }
 
-        if (rel.getConvention() != HazelcastConventions.PHYSICAL) {
+        if (rel.getConvention() != JetConventions.PHYSICAL) {
             // Only physical nodes could be converted.
             return null;
         }
@@ -115,35 +121,12 @@ public class DistributionTraitDef extends RelTraitDef<DistributionTrait> {
             case ANY:
                 return rel;
 
+            // ROOT target type also was supposed to be supported for root node exchange.
+            // Can be reusable if we'd like to support ReplicatedMap (and use DistributionTrait).
             case ROOT:
-                return convertToRoot(planner, rel, currentTrait);
-
             default:
                 return null;
         }
-    }
-
-    /**
-     * Convert to singleton node by adding {@link RootExchangePhysicalRel}.
-     * Collation is lost as a result of this transform.
-     *
-     * @param planner      Planner.
-     * @param rel          Node.
-     * @param currentTrait Current distribution trait.
-     * @return Converted node.
-     */
-    private RelNode convertToRoot(RelOptPlanner planner, RelNode rel, DistributionTrait currentTrait) {
-        // ANY already handled before, ROOT and REPLICATED do not require further conversions.
-        assert currentTrait.getType() == PARTITIONED;
-
-        RelCollation collation = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
-        RelTraitSet traitSet = OptUtils.traitPlus(planner.emptyTraitSet(), getTraitRoot(), collation);
-
-        return new RootExchangePhysicalRel(
-                rel.getCluster(),
-                OptUtils.toPhysicalConvention(traitSet),
-                rel
-        );
     }
 
     @Override

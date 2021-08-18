@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.sql.impl.calcite.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.core.Project;
@@ -75,7 +76,12 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
     private ProjectIntoScanLogicalRule() {
         super(
                 operand(LogicalProject.class,
-                        operandJ(LogicalTableScan.class, null, OptUtils::isHazelcastTable, none())),
+                        operandJ(LogicalTableScan.class,
+                                null,
+                                scan -> OptUtils.hasTableType(scan, PartitionedMapTable.class),
+                                none()
+                        )
+                ),
                 RelFactories.LOGICAL_BUILDER,
                 ProjectIntoScanLogicalRule.class.getSimpleName()
         );
@@ -103,7 +109,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      */
     private static void processSimple(RelOptRuleCall call, Mappings.TargetMapping mapping, TableScan scan) {
         // Get columns defined in the original TableScan.
-        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalTable = OptUtils.extractHazelcastTable(scan);
 
         List<Integer> originalProjects = originalTable.getProjects();
 
@@ -114,7 +120,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         List<Integer> newProjects = Mappings.apply((Mapping) mapping, originalProjects);
 
         // Construct the new TableScan with adjusted columns.
-        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+        LogicalTableScan newScan = OptUtils.createLogicalScan(
                 scan,
                 originalTable.withProject(newProjects)
         );
@@ -130,7 +136,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * @param scan    Scan.
      */
     private void processComplex(RelOptRuleCall call, Project project, TableScan scan) {
-        HazelcastTable originalTable = OptUtils.getHazelcastTable(scan);
+        HazelcastTable originalTable = OptUtils.extractHazelcastTable(scan);
 
         // Map projected field references to real scan fields.
         ProjectFieldVisitor projectFieldVisitor = new ProjectFieldVisitor(originalTable.getProjects());
@@ -150,7 +156,7 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
         }
 
         // Create the new TableScan that do not return unused columns.
-        LogicalTableScan newScan = OptUtils.createLogicalScanWithNewTable(
+        LogicalTableScan newScan = OptUtils.createLogicalScan(
                 scan,
                 originalTable.withProject(newScanProjects)
         );
@@ -180,10 +186,14 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * Visitor which collects fields from project expressions and map them to respective scan fields.
      */
     private static final class ProjectFieldVisitor extends RexVisitorImpl<Void> {
-        /** Fields from the original TableScan operator. */
+        /**
+         * Fields from the original TableScan operator.
+         */
         private final List<Integer> originalScanFields;
 
-        /** Map from original scan fields to input expressions that must be remapped during the pushdown. */
+        /**
+         * Map from original scan fields to input expressions that must be remapped during the pushdown.
+         */
         private final Map<Integer, List<RexInputRef>> scanFieldIndexToProjectInputs = new LinkedHashMap<>();
 
         private ProjectFieldVisitor(List<Integer> originalScanFields) {
@@ -249,7 +259,9 @@ public final class ProjectIntoScanLogicalRule extends RelOptRule {
      * Visitor which converts old column expressions (before pushdown) to new column expressions (after pushdown).
      */
     public static final class ProjectConverter extends RexShuttle {
-        /** Map from old project expression to relevant field in the new scan operator. */
+        /**
+         * Map from old project expression to relevant field in the new scan operator.
+         */
         private final Map<RexNode, Integer> projectExpToScanFieldMap;
 
         private ProjectConverter(Map<RexNode, Integer> projectExpToScanFieldMap) {
