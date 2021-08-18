@@ -47,7 +47,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.MapTableUtils;
@@ -107,7 +107,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Table createTable(
+    public TableMetadata createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -151,7 +151,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull Table table0,
+            @Nonnull TableMetadata table0,
             @Nullable Expression<Boolean> filter,
             @Nonnull List<Expression<?>> projection
     ) {
@@ -183,7 +183,7 @@ public class IMapSqlConnector implements SqlConnector {
     public Vertex indexScanReader(
             @Nonnull DAG dag,
             @Nonnull Address localMemberAddress,
-            @Nonnull Table table0,
+            @Nonnull TableMetadata table0,
             @Nonnull MapTableIndex tableIndex,
             @Nullable Expression<Boolean> remainingFilter,
             @Nonnull List<Expression<?>> projection,
@@ -238,7 +238,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
-            @Nonnull Table table0,
+            @Nonnull TableMetadata table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
             @Nonnull JetJoinInfo joinInfo
@@ -261,7 +261,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public VertexWithInputConfig insertProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table0
+            @Nonnull TableMetadata table0
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
@@ -284,7 +284,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public Vertex sinkProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table0
+            @Nonnull TableMetadata table0
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
@@ -311,7 +311,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public Vertex updateProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table0,
+            @Nonnull TableMetadata table0,
             @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
@@ -327,7 +327,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
+    public Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         return dag.newUniqueVertex(
@@ -341,7 +341,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public List<String> getPrimaryKey(Table table0) {
+    public List<String> getPrimaryKey(TableMetadata table0) {
         return PRIMARY_KEY_LIST;
     }
 

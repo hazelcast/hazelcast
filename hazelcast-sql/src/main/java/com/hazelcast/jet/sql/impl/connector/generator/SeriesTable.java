@@ -22,7 +22,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-class SeriesTable extends JetTable {
+class SeriesTable extends JetTableMetadata {
 
     private final List<Expression<?>> argumentExpressions;
 

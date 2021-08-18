@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.index.JetIndexResolver;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -53,7 +53,7 @@ final class IndexScanMapPhysicalRule extends RelOptRule {
         }
     }
 
-    private static <T extends Table> T table(FullScanLogicalRel scan) {
+    private static <T extends TableMetadata> T table(FullScanLogicalRel scan) {
         return OptUtils.extractHazelcastTable(scan).getTarget();
     }
 }

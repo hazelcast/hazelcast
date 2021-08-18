@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
@@ -27,11 +27,11 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-public abstract class JetTable extends Table {
+public abstract class JetTableMetadata extends TableMetadata {
 
     private final SqlConnector sqlConnector;
 
-    public JetTable(
+    public JetTableMetadata(
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
             @Nonnull String schemaName,

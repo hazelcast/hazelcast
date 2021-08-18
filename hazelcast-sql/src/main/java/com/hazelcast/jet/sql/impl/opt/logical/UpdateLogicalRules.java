@@ -18,9 +18,9 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -88,7 +88,7 @@ final class UpdateLogicalRules {
                     );
                 }
 
-                private List<Integer> keyProjects(Table table) {
+                private List<Integer> keyProjects(TableMetadata table) {
                     List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
                     return IntStream.range(0, table.getFieldCount())
                             .filter(i -> primaryKey.contains(table.getField(i).getName()))

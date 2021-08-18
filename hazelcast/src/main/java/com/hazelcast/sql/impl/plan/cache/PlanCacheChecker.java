@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 
 import java.util.HashSet;
@@ -57,8 +57,8 @@ public class PlanCacheChecker {
 
         Set<PlanObjectKey> objectKeys = new HashSet<>();
 
-        for (Map<String, Table> tableMap : catalog.getSchemas().values()) {
-            for (Table table : tableMap.values()) {
+        for (Map<String, TableMetadata> tableMap : catalog.getSchemas().values()) {
+            for (TableMetadata table : tableMap.values()) {
                 PlanObjectKey objectKey = table.getObjectKey();
 
                 if (objectKey != null) {

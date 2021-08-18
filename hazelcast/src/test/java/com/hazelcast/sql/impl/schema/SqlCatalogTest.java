@@ -41,9 +41,9 @@ public class SqlCatalogTest {
     @Test
     public void when_sameNameInTwoSchemas_then_conflict() {
         // When
-        Table s1t1 = new MockTable("s1", "t1");
-        Table s1t2 = new MockTable("s1", "t2");
-        Table s2t2 = new MockTable("s2", "t2");
+        TableMetadata s1t1 = new MockTable("s1", "t1");
+        TableMetadata s1t2 = new MockTable("s1", "t2");
+        TableMetadata s2t2 = new MockTable("s2", "t2");
 
         TableResolver tr1 = new MockTableResolver(s1t1, s1t2, s2t2);
         new SqlCatalog(singletonList(tr1));
@@ -56,8 +56,8 @@ public class SqlCatalogTest {
 
     @Test
     public void when_sameFqn_then_noConflict() {
-        Table s1t1_1 = new MockTable("s1", "t1");
-        Table s1t1_2 = new MockTable("s1", "t1");
+        TableMetadata s1t1_1 = new MockTable("s1", "t1");
+        TableMetadata s1t1_2 = new MockTable("s1", "t1");
 
         // When
         TableResolver tr1 = new MockTableResolver(s1t1_1, s1t1_2);
@@ -70,9 +70,9 @@ public class SqlCatalogTest {
 
     @Test
     public void when_sameFqnAndConflict_then_conflict() {
-        Table s1t1_1 = new MockTable("s1", "t1");
-        Table s1t1_2 = new MockTable("s1", "t1");
-        Table s2t1 = new MockTable("s2", "t1");
+        TableMetadata s1t1_1 = new MockTable("s1", "t1");
+        TableMetadata s1t1_2 = new MockTable("s1", "t1");
+        TableMetadata s2t1 = new MockTable("s2", "t1");
 
         // When
         TableResolver tr1 = new MockTableResolver(s1t1_1);
@@ -88,9 +88,9 @@ public class SqlCatalogTest {
     }
 
     private static class MockTableResolver implements TableResolver {
-        private final List<Table> tables;
+        private final List<TableMetadata> tables;
 
-        private MockTableResolver(Table ... tables) {
+        private MockTableResolver(TableMetadata... tables) {
             this.tables = asList(tables);
         }
 
@@ -102,7 +102,7 @@ public class SqlCatalogTest {
 
         @Nonnull
         @Override
-        public List<Table> getTables() {
+        public List<TableMetadata> getTables() {
             return tables;
         }
 
@@ -111,7 +111,7 @@ public class SqlCatalogTest {
         }
     }
 
-    private static class MockTable extends Table {
+    private static class MockTable extends TableMetadata {
         MockTable(String schema, String tableName) {
             super(schema, tableName, emptyList(), null);
         }

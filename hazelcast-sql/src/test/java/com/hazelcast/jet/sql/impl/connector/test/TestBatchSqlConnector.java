@@ -25,7 +25,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -34,7 +34,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
@@ -152,7 +152,7 @@ public class TestBatchSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Table createTable(
+    public TableMetadata createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -200,7 +200,7 @@ public class TestBatchSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull Table table,
+            @Nonnull TableMetadata table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
@@ -217,7 +217,7 @@ public class TestBatchSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(table.toString(), pms);
     }
 
-    private static final class TestBatchTable extends JetTable {
+    private static final class TestBatchTable extends JetTableMetadata {
 
         private final List<Object[]> rows;
 

@@ -25,7 +25,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableResolver;
 
 import javax.annotation.Nonnull;
@@ -139,9 +139,9 @@ public class MappingCatalog implements TableResolver {
 
     @Nonnull
     @Override
-    public List<Table> getTables() {
+    public List<TableMetadata> getTables() {
         Collection<Mapping> mappings = storage.values();
-        List<Table> tables = new ArrayList<>(mappings.size() + 2);
+        List<TableMetadata> tables = new ArrayList<>(mappings.size() + 2);
         for (Mapping mapping : mappings) {
             tables.add(toTable(mapping));
         }
@@ -150,7 +150,7 @@ public class MappingCatalog implements TableResolver {
         return tables;
     }
 
-    private Table toTable(Mapping mapping) {
+    private TableMetadata toTable(Mapping mapping) {
         SqlConnector connector = connectorCache.forType(mapping.type());
         return connector.createTable(
                 nodeEngine,

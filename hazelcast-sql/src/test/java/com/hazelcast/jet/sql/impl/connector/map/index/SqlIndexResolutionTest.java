@@ -26,9 +26,9 @@ import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
@@ -169,7 +169,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
         PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(instance()), JetMapMetadataResolver.NO_OP);
 
-        for (Table table : resolver.getTables()) {
+        for (TableMetadata table : resolver.getTables()) {
             if (((AbstractMapTable) table).getMapName().equals(mapName)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 

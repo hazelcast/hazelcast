@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
 public final class SqlConnectorUtil {
@@ -28,10 +28,10 @@ public final class SqlConnectorUtil {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends SqlConnector> T getJetSqlConnector(Table table) {
+    public static <T extends SqlConnector> T getJetSqlConnector(TableMetadata table) {
         SqlConnector connector;
-        if (table instanceof JetTable) {
-            connector = ((JetTable) table).getSqlConnector();
+        if (table instanceof JetTableMetadata) {
+            connector = ((JetTableMetadata) table).getSqlConnector();
         } else if (table instanceof PartitionedMapTable) {
             connector = IMapSqlConnector.INSTANCE;
         } else {

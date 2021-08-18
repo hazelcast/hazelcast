@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema;
+package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelCollation;
@@ -50,7 +50,7 @@ import java.util.StringJoiner;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Base class for all tables in the Calcite integration:
+ * Base class for all IMap tables in the Calcite integration:
  * <ul>
  *     <li>Maps field types defined in the {@code core} module to Calcite types</li>
  *     <li>Provides access to the underlying table and statistics</li>
@@ -84,7 +84,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class HazelcastTable extends AbstractTable {
 
-    private final Table target;
+    private final TableMetadata target;
     private final Statistic statistic;
     private final List<Integer> projects;
     private final RexNode filter;
@@ -92,11 +92,11 @@ public class HazelcastTable extends AbstractTable {
     private RelDataType rowType;
     private Set<String> hiddenFieldNames;
 
-    public HazelcastTable(Table target, Statistic statistic) {
+    public HazelcastTable(TableMetadata target, Statistic statistic) {
         this(target, statistic, null, null);
     }
 
-    private HazelcastTable(Table target, Statistic statistic, List<Integer> projects, RexNode filter) {
+    private HazelcastTable(TableMetadata target, Statistic statistic, List<Integer> projects, RexNode filter) {
         this.target = target;
         this.statistic = statistic;
         this.projects = projects;
@@ -133,7 +133,7 @@ public class HazelcastTable extends AbstractTable {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Table> T getTarget() {
+    public <T extends TableMetadata> T getTarget() {
         return (T) target;
     }
 

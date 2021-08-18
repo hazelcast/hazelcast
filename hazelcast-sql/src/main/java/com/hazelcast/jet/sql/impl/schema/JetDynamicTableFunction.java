@@ -19,9 +19,8 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
@@ -61,7 +60,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     protected JetDynamicTableFunction(
             String name,
             List<JetTableFunctionParameter> parameters,
-            Function<List<Object>, Table> tableFn,
+            Function<List<Object>, TableMetadata> tableFn,
             SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
@@ -85,7 +84,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     private static RelDataType inferReturnType(
             String name,
             List<JetTableFunctionParameter> parameters,
-            Function<List<Object>, Table> tableFn,
+            Function<List<Object>, TableMetadata> tableFn,
             SqlOperatorBinding callBinding
     ) {
         List<Object> arguments = toArguments(name, parameters, callBinding);

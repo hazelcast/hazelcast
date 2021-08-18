@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.kafka;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
-class KafkaTable extends JetTable {
+class KafkaTable extends JetTableMetadata {
 
     private final QueryTargetDescriptor keyQueryDescriptor;
     private final UpsertTargetDescriptor keyUpsertDescriptor;

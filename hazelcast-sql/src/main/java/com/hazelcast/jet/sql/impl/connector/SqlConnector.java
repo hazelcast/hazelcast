@@ -24,7 +24,7 @@ import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -179,7 +179,7 @@ public interface SqlConnector {
     );
 
     /**
-     * Creates a {@link Table} object with the given fields. Should return
+     * Creates a {@link TableMetadata} object with the given fields. Should return
      * quickly; specifically it should not attempt to connect to the remote
      * service.
      * <p>
@@ -191,7 +191,7 @@ public interface SqlConnector {
      *                       #resolveAndValidateFields}
      */
     @Nonnull
-    Table createTable(
+    TableMetadata createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -222,7 +222,7 @@ public interface SqlConnector {
     @Nonnull
     default Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull Table table,
+            @Nonnull TableMetadata table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
@@ -274,7 +274,7 @@ public interface SqlConnector {
     @Nonnull
     default VertexWithInputConfig nestedLoopReader(
             @Nonnull DAG dag,
-            @Nonnull Table table,
+            @Nonnull TableMetadata table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nonnull JetJoinInfo joinInfo
@@ -286,7 +286,7 @@ public interface SqlConnector {
      * Returns the supplier for the insert processor.
      */
     @Nonnull
-    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table) {
         throw new UnsupportedOperationException("INSERT INTO not supported for " + typeName());
     }
 
@@ -294,19 +294,19 @@ public interface SqlConnector {
      * Returns the supplier for the sink processor.
      */
     @Nonnull
-    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table) {
         throw new UnsupportedOperationException("SINK INTO not supported for " + typeName());
     }
 
     /**
      * Returns the supplier for the update processor that will update given
      * {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * returned by {@link #getPrimaryKey(TableMetadata)}.
      */
     @Nonnull
     default Vertex updateProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table,
+            @Nonnull TableMetadata table,
             @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
@@ -315,10 +315,10 @@ public interface SqlConnector {
     /**
      * Returns the supplier for the delete processor that will delete from the
      * given {@code table}. The input to the processor will be the fields
-     * returned by {@link #getPrimaryKey(Table)}.
+     * returned by {@link #getPrimaryKey(TableMetadata)}.
      */
     @Nonnull
-    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    default Vertex deleteProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table) {
         throw new UnsupportedOperationException("DELETE not supported for " + typeName());
     }
 
@@ -333,7 +333,7 @@ public interface SqlConnector {
      * will be thrown.
      */
     @Nonnull
-    default List<String> getPrimaryKey(Table table) {
+    default List<String> getPrimaryKey(TableMetadata table) {
         throw new UnsupportedOperationException("PRIMARY KEY not supported by connector: " + typeName());
     }
 

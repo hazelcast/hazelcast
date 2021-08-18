@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
-import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * A table in the {@code information_schema}.
  */
-public abstract class InfoSchemaTable extends JetTable {
+public abstract class InfoSchemaTable extends JetTableMetadata {
 
     private final String catalog;
 

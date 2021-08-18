@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.schema.map;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 
@@ -32,7 +32,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Table backed by IMap or ReplicatedMap.
  */
-public abstract class AbstractMapTable extends Table {
+public abstract class AbstractMapTable extends TableMetadata {
 
     private final String mapName;
     private final QueryTargetDescriptor keyDescriptor;

@@ -35,7 +35,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import javax.annotation.Nonnull;
@@ -86,7 +86,7 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Table createTable(
+    public TableMetadata createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -117,7 +117,7 @@ public class KafkaSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull Table table0,
+            @Nonnull TableMetadata table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections
     ) {
@@ -143,17 +143,17 @@ public class KafkaSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table) {
         return new VertexWithInputConfig(writeProcessor(dag, table));
     }
 
     @Nonnull @Override
-    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull TableMetadata table) {
         return writeProcessor(dag, table);
     }
 
     @Nonnull
-    private Vertex writeProcessor(DAG dag, Table table0) {
+    private Vertex writeProcessor(DAG dag, TableMetadata table0) {
         KafkaTable table = (KafkaTable) table0;
 
         Vertex vStart = dag.newUniqueVertex(

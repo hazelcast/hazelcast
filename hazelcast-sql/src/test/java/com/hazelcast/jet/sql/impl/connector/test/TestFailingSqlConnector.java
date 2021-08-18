@@ -20,14 +20,14 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.schema.TableMetadata;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -72,7 +72,7 @@ public class TestFailingSqlConnector implements SqlConnector {
     }
 
     @Nonnull @Override
-    public Table createTable(
+    public TableMetadata createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -91,7 +91,7 @@ public class TestFailingSqlConnector implements SqlConnector {
     @Nonnull @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull Table table,
+            @Nonnull TableMetadata table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection
     ) {
@@ -108,7 +108,7 @@ public class TestFailingSqlConnector implements SqlConnector {
         }
     }
 
-    private static final class TestFailingTable extends JetTable {
+    private static final class TestFailingTable extends JetTableMetadata {
 
         private TestFailingTable(
                 @Nonnull SqlConnector sqlConnector,

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
