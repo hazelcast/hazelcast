@@ -131,7 +131,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spring.config.ConfigFactory;
