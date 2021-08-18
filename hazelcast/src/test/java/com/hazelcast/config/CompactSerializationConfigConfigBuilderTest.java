@@ -53,6 +53,9 @@ import static org.junit.Assert.assertTrue;
  * schema validation. The tests should be run serially to not
  * interfere with the other tests, as the schema validation
  * is disabled through a system property.
+ *
+ * TODO: Move these tests to appropriate classes once the
+ *  compact serialization is promoted to the stable status.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -384,7 +387,6 @@ public class CompactSerializationConfigConfigBuilderTest extends HazelcastTestSu
         EmployeeDTO deserializedObject = serializationService.toObject(data);
         assertEquals(object, deserializedObject);
     }
-
 
     private ClientConfig buildXmlClientConfig(String xml) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
