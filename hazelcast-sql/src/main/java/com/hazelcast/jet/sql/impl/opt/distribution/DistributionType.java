@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.distribution;
+package com.hazelcast.jet.sql.impl.opt.distribution;
 
 /**
  * Type of physical data distribution.

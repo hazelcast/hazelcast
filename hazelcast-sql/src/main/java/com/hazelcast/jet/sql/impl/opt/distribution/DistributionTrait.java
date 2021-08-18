@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.opt.distribution;
+package com.hazelcast.jet.sql.impl.opt.distribution;
 
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitDef;
 
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ANY;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.REPLICATED;
-import static com.hazelcast.sql.impl.calcite.opt.distribution.DistributionType.ROOT;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ANY;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.REPLICATED;
+import static com.hazelcast.jet.sql.impl.opt.distribution.DistributionType.ROOT;
 
 /**
  * Defines how the given relation is distributed in the cluster.
@@ -34,7 +34,7 @@ public class DistributionTrait implements RelTrait {
     /** Distribution type. */
     private final DistributionType type;
 
-    DistributionTrait(DistributionTraitDef traitDef, DistributionType type) {
+    public DistributionTrait(DistributionTraitDef traitDef, DistributionType type) {
         this.traitDef = traitDef;
         this.type = type;
     }
