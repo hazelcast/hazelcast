@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
+import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
 import static com.hazelcast.internal.util.StringUtil.bytesToString;
 
 public class SingleProtocolDecoder
@@ -102,8 +103,13 @@ public class SingleProtocolDecoder
     protected void verifyProtocol(String incomingProtocol) {
         if (!incomingProtocol.equals(supportedProtocol.getDescriptor())) {
             encoder.signalWrongProtocol();
-            throw new ProtocolException("Unsupported protocol exchange detected, " + "expected protocol: "
-                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol);
+            String message = "Unsupported protocol exchange detected, " + "expected protocol: "
+                    + supportedProtocol.name() + ", actual protocol or first three bytes are: " + incomingProtocol;
+            if (incomingProtocol.equals(UNEXPECTED_PROTOCOL)) {
+                message = "Instance to be connected replied with HZX. "
+                        + "This means a different protocol than expected sent to target instance";
+            }
+            throw new ProtocolException(message);
         }
     }
 
