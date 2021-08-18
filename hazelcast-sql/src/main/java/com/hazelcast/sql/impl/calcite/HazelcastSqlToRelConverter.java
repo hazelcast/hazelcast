@@ -236,6 +236,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             }
         }
 
+        // TODO: replace with correct function instance based on nullability of the original expression type?
         if (literal != null && SqlTypeName.OTHER.equals(to.getSqlTypeName())
                 && HazelcastJsonType.FAMILY.equals(to.getFamily())) {
             return getRexBuilder().makeCall(HazelcastParseJsonFunction.INSTANCE, convertedOperand);

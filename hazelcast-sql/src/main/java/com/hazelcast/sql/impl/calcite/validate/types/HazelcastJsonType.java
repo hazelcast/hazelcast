@@ -33,7 +33,8 @@ public final class HazelcastJsonType extends RelDataTypeImpl {
     }
 
     public static RelDataType create(boolean nullable) {
-        return nullable ? TYPE_NULLABLE : TYPE_NULLABLE;
+        // TODO: actual nullability
+        return TYPE_NULLABLE;
     }
 
     @Override

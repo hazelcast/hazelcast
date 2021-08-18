@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.param.TemporalPrecedenceParameterConverter;
+import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
@@ -47,6 +48,8 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker MAP = new TypedOperandChecker(SqlTypeName.MAP);
     public static final TypedOperandChecker TIMESTAMP_WITH_LOCAL_TIME_ZONE =
             new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
+    public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
+    public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE_NULLABLE);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;

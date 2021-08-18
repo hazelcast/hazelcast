@@ -124,6 +124,7 @@ public interface SqlConnector {
      */
     String JSON_FORMAT = "json";
 
+    // TODO: swap with the value above, once #19318 is merged
     String JSON_TYPE_FORMAT = "json_type";
 
     /**

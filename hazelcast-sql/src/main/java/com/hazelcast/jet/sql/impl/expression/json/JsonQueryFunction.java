@@ -37,13 +37,9 @@ import java.util.Map;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
+@SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final ObjectMapper SERIALIZER = new ObjectMapper();
-    private static final int JSON_ARG_INDEX = 0;
-    private static final int PATH_INDEX = 1;
-    private static final int WRAPPER_BEHAVIOR_INDEX = 2;
-    private static final int ON_EMPTY_INDEX = 3;
-    private static final int ON_ERROR_INDEX = 4;
 
     public JsonQueryFunction() { }
 
@@ -67,17 +63,17 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
     @Override
     public HazelcastJsonValue eval(final Row row, final ExpressionEvalContext context) {
-        final Object operand0 = operands[JSON_ARG_INDEX].eval(row, context);
+        final Object operand0 = operands[0].eval(row, context);
         final String json = operand0 instanceof HazelcastJsonValue
                 ? operand0.toString()
                 : (String) operand0;
-        final String path = (String) operands[PATH_INDEX].eval(row, context);
+        final String path = (String) operands[1].eval(row, context);
 
-        final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[WRAPPER_BEHAVIOR_INDEX])
+        final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[2])
                 .getSymbol();
-        final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[ON_EMPTY_INDEX])
+        final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3])
                 .getSymbol();
-        final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[ON_ERROR_INDEX])
+        final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[4])
                 .getSymbol();
 
         if (isNullOrEmpty(path)) {
