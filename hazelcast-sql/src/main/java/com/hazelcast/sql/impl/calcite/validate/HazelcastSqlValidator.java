@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
-import com.hazelcast.jet.sql.impl.validate.JetSqlOperatorTable;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
@@ -43,12 +42,10 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
@@ -66,7 +63,6 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static java.util.Arrays.asList;
 import static org.apache.calcite.sql.SqlKind.AGGREGATE;
 import static org.apache.calcite.sql.SqlKind.VALUES;
 
@@ -78,11 +74,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
             .withSqlConformance(HazelcastSqlConformance.INSTANCE);
-
-    private static final SqlOperatorTable OPERATOR_TABLE = new ChainedSqlOperatorTable(asList(
-            JetSqlOperatorTable.instance(),
-            HazelcastSqlOperatorTable.instance()
-    ));
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
@@ -100,7 +91,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private boolean isInfiniteRows;
 
     public HazelcastSqlValidator(SqlValidatorCatalogReader catalogReader, List<Object> arguments) {
-        super(OPERATOR_TABLE, catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
+        super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         setTypeCoercion(new HazelcastTypeCoercion(this));
 

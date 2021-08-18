@@ -16,6 +16,9 @@
 
 package com.hazelcast.sql.impl.calcite.opt.distribution;
 
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
