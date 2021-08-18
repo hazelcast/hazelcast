@@ -23,7 +23,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
 import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
 import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -66,7 +66,7 @@ public final class FileTableFunction extends JetDynamicTableFunction {
         return SqlOperandCountRanges.between(1, PARAMETERS.size());
     }
 
-    private static TableMetadata toTable(List<Object> arguments, String format) {
+    private static Table toTable(List<Object> arguments, String format) {
         Map<String, Object> options = toOptions(arguments, format);
         List<MappingField> fields = FileSqlConnector.resolveAndValidateFields(options, emptyList());
         return FileSqlConnector.createTable(SCHEMA_NAME_FILES, randomName(), options, fields);

@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.rel.RelNode;
@@ -88,7 +88,7 @@ final class UpdateLogicalRules {
                     );
                 }
 
-                private List<Integer> keyProjects(TableMetadata table) {
+                private List<Integer> keyProjects(Table table) {
                     List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
                     return IntStream.range(0, table.getFieldCount())
                             .filter(i -> primaryKey.contains(table.getField(i).getName()))

@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelCollation;
@@ -84,7 +84,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class HazelcastTable extends AbstractTable {
 
-    private final TableMetadata target;
+    private final Table target;
     private final Statistic statistic;
     private final List<Integer> projects;
     private final RexNode filter;
@@ -92,11 +92,11 @@ public class HazelcastTable extends AbstractTable {
     private RelDataType rowType;
     private Set<String> hiddenFieldNames;
 
-    public HazelcastTable(TableMetadata target, Statistic statistic) {
+    public HazelcastTable(Table target, Statistic statistic) {
         this(target, statistic, null, null);
     }
 
-    private HazelcastTable(TableMetadata target, Statistic statistic, List<Integer> projects, RexNode filter) {
+    private HazelcastTable(Table target, Statistic statistic, List<Integer> projects, RexNode filter) {
         this.target = target;
         this.statistic = statistic;
         this.projects = projects;
@@ -133,7 +133,7 @@ public class HazelcastTable extends AbstractTable {
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends TableMetadata> T getTarget() {
+    public <T extends Table> T getTarget() {
         return (T) target;
     }
 

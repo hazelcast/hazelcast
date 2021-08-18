@@ -28,7 +28,7 @@ import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -232,7 +232,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     protected SqlSelect createSourceSelectForUpdate(SqlUpdate update) {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
-        TableMetadata table = extractTable((SqlIdentifier) update.getTargetTable());
+        Table table = extractTable((SqlIdentifier) update.getTargetTable());
         if (table != null) {
             SqlConnector connector = getJetSqlConnector(table);
 
@@ -292,7 +292,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     protected SqlSelect createSourceSelectForDelete(SqlDelete delete) {
         SqlNodeList selectList = new SqlNodeList(SqlParserPos.ZERO);
-        TableMetadata table = extractTable((SqlIdentifier) delete.getTargetTable());
+        Table table = extractTable((SqlIdentifier) delete.getTargetTable());
         if (table != null) {
             SqlConnector connector = getJetSqlConnector(table);
 
@@ -312,7 +312,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 delete.getCondition(), null, null, null, null, null, null, null);
     }
 
-    private TableMetadata extractTable(SqlIdentifier identifier) {
+    private Table extractTable(SqlIdentifier identifier) {
         SqlValidatorTable validatorTable = getCatalogReader().getTable(identifier.names);
         return validatorTable == null ? null : validatorTable.unwrap(HazelcastTable.class).getTarget();
     }

@@ -42,7 +42,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
@@ -100,7 +100,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onInsert(InsertPhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(table).insertProcessor(dag, table);
@@ -110,7 +110,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onSink(SinkPhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
         Vertex vertex = getJetSqlConnector(table).sinkProcessor(dag, table);
@@ -119,7 +119,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onUpdate(UpdatePhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
         Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
         connectInput(rel.getInput(), vertex, null);
@@ -127,7 +127,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onDelete(DeletePhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
         Vertex vertex = getJetSqlConnector(table).deleteProcessor(dag, table);
         connectInput(rel.getInput(), vertex, null);
@@ -135,7 +135,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
         return getJetSqlConnector(table)
@@ -143,7 +143,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
-        TableMetadata table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
         return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
@@ -285,7 +285,7 @@ public class CreateDagVisitor {
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
         assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
 
-        TableMetadata rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
+        Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
         VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
@@ -395,7 +395,7 @@ public class CreateDagVisitor {
         }
     }
 
-    private void collectObjectKeys(TableMetadata table) {
+    private void collectObjectKeys(Table table) {
         PlanObjectKey objectKey = table.getObjectKey();
         if (objectKey != null) {
             objectKeys.add(objectKey);

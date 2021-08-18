@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.connector.file;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
+import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.List;
 import java.util.Objects;
 
-abstract class FileTable extends JetTableMetadata {
+abstract class FileTable extends JetTable {
 
     protected final ProcessorMetaSupplierProvider processorMetaSupplierProvider;
     private final SupplierEx<QueryTarget> queryTargetSupplier;

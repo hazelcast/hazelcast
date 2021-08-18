@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
@@ -60,7 +60,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     protected JetDynamicTableFunction(
             String name,
             List<JetTableFunctionParameter> parameters,
-            Function<List<Object>, TableMetadata> tableFn,
+            Function<List<Object>, Table> tableFn,
             SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
@@ -84,7 +84,7 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
     private static RelDataType inferReturnType(
             String name,
             List<JetTableFunctionParameter> parameters,
-            Function<List<Object>, TableMetadata> tableFn,
+            Function<List<Object>, Table> tableFn,
             SqlOperatorBinding callBinding
     ) {
         List<Object> arguments = toArguments(name, parameters, callBinding);

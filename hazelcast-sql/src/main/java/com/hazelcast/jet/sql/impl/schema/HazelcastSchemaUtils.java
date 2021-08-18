@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.Statistic;
 
@@ -60,14 +60,14 @@ public final class HazelcastSchemaUtils {
         // Create schemas.
         Map<String, Schema> schemaMap = new HashMap<>();
 
-        for (Map.Entry<String, Map<String, TableMetadata>> currentSchemaEntry : catalog.getSchemas().entrySet()) {
+        for (Map.Entry<String, Map<String, Table>> currentSchemaEntry : catalog.getSchemas().entrySet()) {
             String schemaName = currentSchemaEntry.getKey();
 
             Map<String, org.apache.calcite.schema.Table> schemaTables = new HashMap<>();
 
-            for (Map.Entry<String, TableMetadata> tableEntry : currentSchemaEntry.getValue().entrySet()) {
+            for (Map.Entry<String, Table> tableEntry : currentSchemaEntry.getValue().entrySet()) {
                 String tableName = tableEntry.getKey();
-                TableMetadata table = tableEntry.getValue();
+                Table table = tableEntry.getValue();
 
                 HazelcastTable convertedTable = new HazelcastTable(
                         table,
@@ -96,7 +96,7 @@ public final class HazelcastSchemaUtils {
      * @param table Target table.
      * @return Statistics for the table.
      */
-    private static Statistic createTableStatistic(TableMetadata table) {
+    private static Statistic createTableStatistic(Table table) {
         return new HazelcastTableStatistic(table.getStatistics().getRowCount());
     }
 }

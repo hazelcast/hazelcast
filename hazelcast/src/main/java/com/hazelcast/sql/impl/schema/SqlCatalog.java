@@ -30,16 +30,16 @@ import java.util.Set;
  */
 public class SqlCatalog {
 
-    private final Map<String, Map<String, TableMetadata>> schemas;
+    private final Map<String, Map<String, Table>> schemas;
 
     public SqlCatalog(List<TableResolver> tableResolvers) {
         // Populate schemas and tables.
         schemas = new HashMap<>();
 
-        Map<String, Set<TableMetadata>> tableConflicts = new HashMap<>();
+        Map<String, Set<Table>> tableConflicts = new HashMap<>();
 
         for (TableResolver tableResolver : tableResolvers) {
-            Collection<TableMetadata> tables = tableResolver.getTables();
+            Collection<Table> tables = tableResolver.getTables();
 
             for (List<String> searchPath : tableResolver.getDefaultSearchPaths()) {
                 assert searchPath.size() == 2 && searchPath.get(0).equals(QueryUtils.CATALOG) : searchPath;
@@ -47,11 +47,13 @@ public class SqlCatalog {
                 schemas.putIfAbsent(searchPath.get(1), new HashMap<>());
             }
 
-            for (TableMetadata table : tables) {
+            for (Table table : tables) {
                 String schemaName = table.getSchemaName();
                 String tableName = table.getSqlName();
 
-                TableMetadata oldTable = schemas.computeIfAbsent(schemaName, key -> new HashMap<>()).putIfAbsent(tableName, table);
+                Table oldTable = schemas
+                        .computeIfAbsent(schemaName, key -> new HashMap<>())
+                        .putIfAbsent(tableName, table);
 
                 if (oldTable == null) {
                     tableConflicts.computeIfAbsent(tableName, key -> new HashSet<>()).add(table);
@@ -60,7 +62,7 @@ public class SqlCatalog {
         }
 
         // Add conflict information to tables
-        for (Set<TableMetadata> tableConflict : tableConflicts.values()) {
+        for (Set<Table> tableConflict : tableConflicts.values()) {
             if (tableConflict.size() == 1) {
                 // No conflict.
                 continue;
@@ -68,17 +70,17 @@ public class SqlCatalog {
 
             Set<String> conflictingSchemas = new HashSet<>(tableConflict.size());
 
-            for (TableMetadata table : tableConflict) {
+            for (Table table : tableConflict) {
                 conflictingSchemas.add(table.getSchemaName());
             }
 
-            for (TableMetadata table : tableConflict) {
+            for (Table table : tableConflict) {
                 table.setConflictingSchemas(conflictingSchemas);
             }
         }
     }
 
-    public Map<String, Map<String, TableMetadata>> getSchemas() {
+    public Map<String, Map<String, Table>> getSchemas() {
         return schemas;
     }
 }

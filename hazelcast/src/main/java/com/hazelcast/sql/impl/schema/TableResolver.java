@@ -47,7 +47,7 @@ public interface TableResolver {
      * @return Collection of tables to be registered.
      */
     @Nonnull
-    List<TableMetadata> getTables();
+    List<Table> getTables();
 
     /**
      * Adds a listener to be called when a {@see Table} is added, removed or changed.

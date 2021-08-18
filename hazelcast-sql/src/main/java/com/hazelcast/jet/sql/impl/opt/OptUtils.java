@@ -22,7 +22,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.jet.sql.impl.schema.JetTableMetadata;
+import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -30,7 +30,7 @@ import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
@@ -133,7 +133,7 @@ public final class OptUtils {
             RelOptCluster cluster,
             HazelcastTable hazelcastTable
     ) {
-        JetTableMetadata table = hazelcastTable.getTarget();
+        JetTable table = hazelcastTable.getTarget();
 
         HazelcastRelOptTable relTable = createRelTable(
                 table.getQualifiedName(),
@@ -270,11 +270,11 @@ public final class OptUtils {
     }
 
     public static PlanNodeSchema schema(RelOptTable relTable) {
-        TableMetadata table = relTable.unwrap(HazelcastTable.class).getTarget();
+        Table table = relTable.unwrap(HazelcastTable.class).getTarget();
         return schema(table);
     }
 
-    public static PlanNodeSchema schema(TableMetadata table) {
+    public static PlanNodeSchema schema(Table table) {
         List<QueryDataType> fieldTypes = new ArrayList<>();
         for (TableField field : table.getFields()) {
             fieldTypes.add(field.getType());
@@ -314,7 +314,7 @@ public final class OptUtils {
         return ((HazelcastRelOptCluster) rel.getCluster()).requiresJob();
     }
 
-    public static boolean hasTableType(RelNode rel, Class<? extends TableMetadata> tableClass) {
+    public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {
         if (rel.getTable() == null) {
             return false;
         }
@@ -366,7 +366,7 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(TableMetadata table) {
+    private static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         // just single field keys supported at the moment
         assert primaryKey.size() == 1;

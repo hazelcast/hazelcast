@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Generic table metadata.
  */
-public abstract class TableMetadata {
+public abstract class Table {
 
     private final String schemaName;
     private final String sqlName;
@@ -34,7 +34,7 @@ public abstract class TableMetadata {
 
     private Set<String> conflictingSchemas;
 
-    protected TableMetadata(
+    protected Table(
         String schemaName,
         String sqlName,
         List<TableField> fields,

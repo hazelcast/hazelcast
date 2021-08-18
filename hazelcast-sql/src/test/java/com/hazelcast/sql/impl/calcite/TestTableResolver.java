@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 
 import javax.annotation.Nonnull;
@@ -31,17 +31,17 @@ import java.util.List;
 public class TestTableResolver implements TableResolver {
 
     private final String searchPath;
-    private final List<TableMetadata> tables;
+    private final List<Table> tables;
 
-    public static TestTableResolver create(TableMetadata... tables) {
+    public static TestTableResolver create(Table... tables) {
         return create(null, tables);
     }
 
-    public static TestTableResolver create(String searchPath, TableMetadata... tables) {
+    public static TestTableResolver create(String searchPath, Table... tables) {
         return new TestTableResolver(searchPath, Arrays.asList(tables));
     }
 
-    private TestTableResolver(String searchPath, List<TableMetadata> tables) {
+    private TestTableResolver(String searchPath, List<Table> tables) {
         this.searchPath = searchPath;
         this.tables = tables;
     }
@@ -58,7 +58,7 @@ public class TestTableResolver implements TableResolver {
 
     @Nonnull
     @Override
-    public List<TableMetadata> getTables() {
+    public List<Table> getTables() {
         return tables;
     }
 

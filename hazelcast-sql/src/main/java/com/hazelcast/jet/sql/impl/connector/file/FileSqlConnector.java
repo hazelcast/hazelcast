@@ -23,7 +23,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlProcessors;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -81,7 +81,7 @@ public class FileSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public TableMetadata createTable(
+    public Table createTable(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull String schemaName,
             @Nonnull String mappingName,
@@ -103,7 +103,7 @@ public class FileSqlConnector implements SqlConnector {
 
     @Nonnull
     @SuppressWarnings("SameParameterValue")
-    static TableMetadata createTable(
+    static Table createTable(
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull Map<String, ?> options,
@@ -125,7 +125,7 @@ public class FileSqlConnector implements SqlConnector {
     @Override
     public Vertex fullScanReader(
             @Nonnull DAG dag,
-            @Nonnull TableMetadata table0,
+            @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections
     ) {

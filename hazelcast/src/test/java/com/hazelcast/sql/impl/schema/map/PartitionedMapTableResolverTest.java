@@ -33,7 +33,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -151,7 +151,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         map.put(remoteKey, 1);
 
         // Check statistics.
-        TableMetadata tableStats = getExistingTable(resolver().getTables(), mapName);
+        Table tableStats = getExistingTable(resolver().getTables(), mapName);
         assertEquals(2, tableStats.getStatistics().getRowCount());
     }
 
@@ -168,7 +168,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
      */
     @Test
     public void testNotStartedPredefinedMaps() {
-        Collection<TableMetadata> tables = filterOutJetInternals(resolver().getTables());
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
 
         assertEquals(4, tables.size());
 
@@ -191,7 +191,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         map.remove(1);
         assertEquals(0, map.size());
 
-        Collection<TableMetadata> tables = filterOutJetInternals(resolver().getTables());
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
 
         assertEquals(4, tables.size());
 
@@ -217,7 +217,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         dynamic.put(new SerializableKey(1, 1), new SerializableValue(1, 1));
 
         // Analyze metadata.
-        Collection<TableMetadata> tables = filterOutJetInternals(resolver().getTables());
+        Collection<Table> tables = filterOutJetInternals(resolver().getTables());
         assertEquals(5, tables.size());
 
         // Check serializable maps. They all should have the same schema.
@@ -261,7 +261,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         assertNull(getTable(tables, MAP_FROM_WILDCARD));
     }
 
-    private static void checkFields(TableMetadata table, MapTableField... expectedFields) {
+    private static void checkFields(Table table, MapTableField... expectedFields) {
         if (expectedFields == null) {
             expectedFields = new MapTableField[0];
         }
@@ -274,8 +274,8 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         IMap<Integer, BadValue> map = instance.getMap(MAP_SERIALIZABLE_BINARY);
         map.put(1, new BadValue());
 
-        Collection<TableMetadata> tables = resolver().getTables();
-        TableMetadata table = getExistingTable(tables, MAP_SERIALIZABLE_BINARY);
+        Collection<Table> tables = resolver().getTables();
+        Table table = getExistingTable(tables, MAP_SERIALIZABLE_BINARY);
 
         try {
             table.getFieldCount();
@@ -299,8 +299,8 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         given(jetMapMetadataResolver.resolveClass(Integer.class, true)).willReturn(keyJetMetadata);
         given(jetMapMetadataResolver.resolveClass(String.class, false)).willReturn(valueJetMetadata);
 
-        Collection<TableMetadata> tables = resolver().getTables();
-        TableMetadata existingTable = getExistingTable(tables, name);
+        Collection<Table> tables = resolver().getTables();
+        Table existingTable = getExistingTable(tables, name);
 
         assertEquals(keyJetMetadata, ((AbstractMapTable) existingTable).getKeyJetMetadata());
         assertEquals(valueJetMetadata, ((AbstractMapTable) existingTable).getValueJetMetadata());
@@ -310,7 +310,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         return new PartitionedMapTableResolver(nodeEngine(instance), jetMapMetadataResolver);
     }
 
-    private static void checkEmpty(TableMetadata table) {
+    private static void checkEmpty(Table table) {
         try {
             table.getFieldCount();
 
@@ -321,8 +321,8 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         }
     }
 
-    private static TableMetadata getExistingTable(Collection<TableMetadata> tables, String name) {
-        TableMetadata table = getTable(tables, name);
+    private static Table getExistingTable(Collection<Table> tables, String name) {
+        Table table = getTable(tables, name);
 
         if (table != null) {
             return table;
@@ -331,8 +331,8 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         throw new RuntimeException("Table not found: " + name);
     }
 
-    private static TableMetadata getTable(Collection<TableMetadata> tables, String name) {
-        for (TableMetadata table : tables) {
+    private static Table getTable(Collection<Table> tables, String name) {
+        for (Table table : tables) {
             if (table.getSqlName().equals(name)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 
@@ -350,7 +350,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
         return null;
     }
 
-    private static Collection<TableMetadata> filterOutJetInternals(Collection<TableMetadata> tables) {
+    private static Collection<Table> filterOutJetInternals(Collection<Table> tables) {
         return tables
                 .stream()
                 .filter(t -> !t.getSqlName().startsWith(JobRepository.INTERNAL_JET_OBJECTS_PREFIX))

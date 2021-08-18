@@ -32,7 +32,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
-import com.hazelcast.sql.impl.schema.TableMetadata;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadata;
 import com.hazelcast.sql.impl.schema.map.sample.MapSampleMetadataResolver;
@@ -60,11 +60,11 @@ public class PartitionedMapTableResolver extends AbstractMapTableResolver {
 
     @Override
     @Nonnull
-    public List<TableMetadata> getTables() {
+    public List<Table> getTables() {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         MapServiceContext context = mapService.getMapServiceContext();
 
-        List<TableMetadata> res = new ArrayList<>();
+        List<Table> res = new ArrayList<>();
         Set<String> knownNames = new HashSet<>();
 
         // Get started maps.

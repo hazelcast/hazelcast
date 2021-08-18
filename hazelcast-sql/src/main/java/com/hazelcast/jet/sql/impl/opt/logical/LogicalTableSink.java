@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl;
+package com.hazelcast.jet.sql.impl.opt.logical;
 
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCluster;
@@ -26,9 +26,9 @@ import org.apache.calcite.rel.core.TableModify;
 
 import java.util.List;
 
-public class LogicalTableInsert extends TableModify {
+public class LogicalTableSink extends TableModify {
 
-    public LogicalTableInsert(TableModify modify) {
+    public LogicalTableSink(TableModify modify) {
         this(
                 modify.getCluster(),
                 modify.getTraitSet(),
@@ -41,7 +41,7 @@ public class LogicalTableInsert extends TableModify {
         assert modify.getOperation() == Operation.INSERT;
     }
 
-    private LogicalTableInsert(
+    private LogicalTableSink(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -53,8 +53,8 @@ public class LogicalTableInsert extends TableModify {
     }
 
     @Override
-    public LogicalTableInsert copy(RelTraitSet traitSet, List<RelNode> inputs) {
+    public LogicalTableSink copy(RelTraitSet traitSet, List<RelNode> inputs) {
         assert traitSet.containsIfApplicable(Convention.NONE);
-        return new LogicalTableInsert(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
+        return new LogicalTableSink(getCluster(), traitSet, getTable(), getCatalogReader(), sole(inputs), isFlattened());
     }
 }
