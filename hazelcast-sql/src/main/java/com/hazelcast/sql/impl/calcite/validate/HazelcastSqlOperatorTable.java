@@ -16,6 +16,21 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.jet.pipeline.file.AvroFileFormat;
+import com.hazelcast.jet.pipeline.file.CsvFileFormat;
+import com.hazelcast.jet.pipeline.file.JsonFileFormat;
+import com.hazelcast.jet.pipeline.file.ParquetFileFormat;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
+import com.hazelcast.jet.sql.impl.connector.file.FileTableFunction;
+import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastCollectionTableOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastMapValueConstructor;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastRowOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.HazelcastValuesOperator;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastSqlCase;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtractFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToEpochMillisFunction;
@@ -55,6 +70,8 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlFunctionCategory;
+import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInfixOperator;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -63,11 +80,13 @@ import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlPostfixOperator;
 import org.apache.calcite.sql.SqlPrefixOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlSyntax;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.fun.SqlCase;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.util.ReflectiveSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
+import org.apache.calcite.sql.validate.SqlNameMatcher;
 import org.apache.calcite.sql.validate.SqlNameMatchers;
 
 import java.util.ArrayList;
@@ -173,7 +192,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
-    //#region String functions
+    //#region String functions.
 
     public static final SqlBinaryOperator CONCAT = HazelcastConcatOperator.INSTANCE;
     public static final SqlFunction CONCAT_WS = HazelcastConcatWSOperator.INSTANCE;
@@ -219,6 +238,48 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     //#endregion
 
+    //#region Aggregation functions.
+
+    public static final SqlFunction COUNT = new HazelcastCountAggFunction();
+    public static final SqlFunction SUM = new HazelcastSumAggFunction();
+    public static final SqlFunction AVG = new HazelcastAvgAggFunction();
+    public static final SqlFunction MIN = new HazelcastMinMaxAggFunction(SqlKind.MIN);
+    public static final SqlFunction MAX = new HazelcastMinMaxAggFunction(SqlKind.MAX);
+
+    //#endregion
+
+    //#region Generator functions.
+
+    public static final SqlFunction GENERATE_SERIES = new SeriesGeneratorTableFunction();
+    public static final SqlFunction GENERATE_STREAM = new StreamGeneratorTableFunction();
+
+    //#endregion
+
+    //#region File table functions.
+
+    public static final SqlFunction CSV_FILE = new FileTableFunction("CSV_FILE", CsvFileFormat.FORMAT_CSV);
+    public static final SqlFunction JSON_FILE = new FileTableFunction("JSON_FILE", JsonFileFormat.FORMAT_JSON);
+    public static final SqlFunction AVRO_FILE = new FileTableFunction("AVRO_FILE", AvroFileFormat.FORMAT_AVRO);
+    public static final SqlFunction PARQUET_FILE = new FileTableFunction("PARQUET_FILE", ParquetFileFormat.FORMAT_PARQUET);
+
+    //#endregion
+
+    //#region Miscellaneous.
+
+    public static final SqlSpecialOperator VALUES = new HazelcastValuesOperator();
+    public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
+    public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
+    public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
+
+    // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
+    // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for
+    // all operands, but in case of this operator we must not get it for the argument name operand, it's
+    // an SQL identifier and Calcite tries to resolve it as a column name. The other parameter accepts
+    // ANY type so there's no need for this
+    public static final SqlSpecialOperator ARGUMENT_ASSIGNMENT = SqlStdOperatorTable.ARGUMENT_ASSIGNMENT;
+
+    //#endregion
+
     //@formatter:on
 
     private static final HazelcastSqlOperatorTable INSTANCE = new HazelcastSqlOperatorTable();
@@ -233,6 +294,17 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
 
     public static HazelcastSqlOperatorTable instance() {
         return INSTANCE;
+    }
+
+    @Override
+    public void lookupOperatorOverloads(
+            SqlIdentifier name,
+            SqlFunctionCategory category,
+            SqlSyntax syntax,
+            List<SqlOperator> operators,
+            SqlNameMatcher nameMatcher
+    ) {
+        super.lookupOperatorOverloads(name, category, syntax, operators, SqlNameMatchers.withCaseSensitive(false));
     }
 
     /**

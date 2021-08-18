@@ -47,6 +47,13 @@ import java.util.List;
 
 import static org.apache.calcite.util.Static.RESOURCE;
 
+/**
+ * This class inherits from Calcite's {@link SqlInOperator} due to hacks inside
+ * {@link org.apache.calcite.sql2rel.SqlToRelConverter}.
+ *
+ * @see org.apache.calcite.sql2rel.SqlToRelConverter#substituteSubQuery
+ */
+@SuppressWarnings("JavadocReference")
 public class HazelcastInOperator extends SqlInOperator implements HazelcastOperandTypeCheckerAware {
 
     public static final HazelcastInOperator IN = new HazelcastInOperator("IN", false);

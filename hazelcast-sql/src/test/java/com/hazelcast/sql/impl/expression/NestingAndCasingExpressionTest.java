@@ -68,7 +68,19 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
             }
 
             if (!SqlOperator.class.isAssignableFrom(field.getType())
-                    || field.getName().equals("DESC")) {
+                    || field.getName().equals("DESC")
+                    || field.getName().equals("VALUES")
+                    || field.getName().equals("ROW")
+                    || field.getName().equals("COLLECTION_TABLE")
+                    || field.getName().equals("MAP_VALUE_CONSTRUCTOR")
+                    || field.getName().equals("ARGUMENT_ASSIGNMENT")
+                    || field.getName().equals("GENERATE_SERIES")
+                    || field.getName().equals("GENERATE_STREAM")
+                    || field.getName().equals("CSV_FILE")
+                    || field.getName().equals("JSON_FILE")
+                    || field.getName().equals("AVRO_FILE")
+                    || field.getName().equals("PARQUET_FILE")
+            ) {
                 continue;
             }
 
@@ -480,6 +492,31 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_TO_EPOCH_MILLIS() {
         check(sql("TO_EPOCH_MILLIS(?) || TO_EPOCH_MILLIS(?)"), OFFSET_DATE_TIME_VAL, OFFSET_DATE_TIME_VAL);
+    }
+
+    @Test
+    public void test_COUNT() {
+        check(sql("COUNT(?) || COUNT(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_SUM() {
+        check(sql("SUM(?) || SUM(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_AVG() {
+        check(sql("AVG(?) || AVG(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_MIN() {
+        check(sql("MIN(?) || MIN(?)"), 1L, 1L);
+    }
+
+    @Test
+    public void test_MAX() {
+        check(sql("MAX(?) || MAX(?)"), 1L, 1L);
     }
 
     @Test

@@ -28,6 +28,10 @@ public class PlanKey {
         this.sql = sql;
     }
 
+    public List<List<String>> getSearchPaths() {
+        return searchPaths;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -42,15 +42,12 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
-import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
-import org.apache.calcite.sql.validate.SqlConformance;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorImplBridge;
@@ -59,7 +56,6 @@ import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import org.apache.calcite.util.Util;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +71,9 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
  */
 public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
-    private static final Config CONFIG = Config.DEFAULT.withIdentifierExpansion(true);
+    private static final Config CONFIG = Config.DEFAULT
+            .withIdentifierExpansion(true)
+            .withSqlConformance(HazelcastSqlConformance.INSTANCE);
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
@@ -92,40 +90,13 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private boolean isCreateJob;
     private boolean isInfiniteRows;
 
-    public HazelcastSqlValidator(
-            SqlValidatorCatalogReader catalogReader,
-            HazelcastTypeFactory typeFactory,
-            SqlConformance conformance,
-            List<Object> arguments
-    ) {
-        this(null, catalogReader, typeFactory, conformance, arguments);
-    }
-
-    public HazelcastSqlValidator(
-            SqlOperatorTable extensionOperatorTable,
-            SqlValidatorCatalogReader catalogReader,
-            HazelcastTypeFactory typeFactory,
-            SqlConformance conformance,
-            List<Object> arguments
-    ) {
-        super(operatorTable(extensionOperatorTable), catalogReader, typeFactory, CONFIG.withSqlConformance(conformance));
+    public HazelcastSqlValidator(SqlValidatorCatalogReader catalogReader, List<Object> arguments) {
+        super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         setTypeCoercion(new HazelcastTypeCoercion(this));
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
-    }
-
-    private static SqlOperatorTable operatorTable(SqlOperatorTable extensionOperatorTable) {
-        List<SqlOperatorTable> operatorTables = new ArrayList<>();
-
-        if (extensionOperatorTable != null) {
-            operatorTables.add(extensionOperatorTable);
-        }
-
-        operatorTables.add(HazelcastSqlOperatorTable.instance());
-
-        return new ChainedSqlOperatorTable(operatorTables);
     }
 
     @Override

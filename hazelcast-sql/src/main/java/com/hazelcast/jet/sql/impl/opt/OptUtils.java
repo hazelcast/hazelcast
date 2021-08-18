@@ -20,9 +20,10 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
@@ -143,6 +144,25 @@ public final class OptUtils {
         return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
     }
 
+    public static LogicalTableScan createLogicalScan(
+            TableScan originalScan,
+            HazelcastTable newHazelcastTable
+    ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
+        HazelcastRelOptTable newTable = createRelTable(
+                originalRelTable,
+                newHazelcastTable,
+                originalScan.getCluster().getTypeFactory()
+        );
+
+        return LogicalTableScan.create(
+                originalScan.getCluster(),
+                newTable,
+                originalScan.getHints()
+        );
+    }
+
     public static HazelcastRelOptTable createRelTable(
             List<String> names,
             HazelcastTable hazelcastTable,
@@ -158,6 +178,22 @@ public final class OptUtils {
                 null
         );
         return new HazelcastRelOptTable(relTable);
+    }
+
+    public static HazelcastRelOptTable createRelTable(
+            HazelcastRelOptTable originalRelTable,
+            HazelcastTable newHazelcastTable,
+            RelDataTypeFactory typeFactory
+    ) {
+        RelOptTableImpl newTable = RelOptTableImpl.create(
+                originalRelTable.getRelOptSchema(),
+                newHazelcastTable.getRowType(typeFactory),
+                originalRelTable.getDelegate().getQualifiedName(),
+                newHazelcastTable,
+                null
+        );
+
+        return new HazelcastRelOptTable(newTable);
     }
 
     /**
@@ -187,6 +223,16 @@ public final class OptUtils {
 
     private static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(JetConventions.PHYSICAL);
+    }
+
+    public static HazelcastRelOptCluster getCluster(RelNode rel) {
+        assert rel.getCluster() instanceof HazelcastRelOptCluster;
+
+        return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
     }
 
     /**
