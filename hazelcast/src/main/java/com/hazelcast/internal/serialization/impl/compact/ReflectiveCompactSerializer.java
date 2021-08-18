@@ -75,7 +75,8 @@ import static java.util.stream.Collectors.toList;
  * Reflective serializer works for Compact format in zero-config case.
  * Specifically when explicit serializer is not given via
  * {@link com.hazelcast.config.CompactSerializationConfig#register(Class, String, CompactSerializer)}
- * {@link com.hazelcast.config.CompactSerializationConfig#register(Class, CompactSerializer)}
+ * or when a class is registered as reflectively serializable with
+ * {@link com.hazelcast.config.CompactSerializationConfig#register(Class)}.
  * <p>
  * ReflectiveCompactSerializer can de/serialize classes having an accessible empty constructor only.
  * Only types in {@link CompactWriter}/{@link CompactReader} interface are supported as fields.
