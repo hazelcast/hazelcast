@@ -40,6 +40,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -120,7 +121,9 @@ public abstract class AbstractJoiner
 
     @Override
     public boolean unblacklist(Address address) {
-        if (blacklistedAddresses.remove(address, Boolean.FALSE)) {
+        if (blacklistedAddresses.containsKey(address)
+                && Objects.equals(blacklistedAddresses.get(address).f0(), Boolean.FALSE)) {
+            blacklistedAddresses.remove(address);
             logger.info(address + " is removed from the blacklist.");
             return true;
         }

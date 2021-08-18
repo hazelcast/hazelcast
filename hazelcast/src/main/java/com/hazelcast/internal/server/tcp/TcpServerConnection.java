@@ -296,7 +296,10 @@ public class TcpServerConnection implements ServerConnection {
 
         if (Level.FINEST.equals(logLevel)) {
             logger.log(logLevel, message, closeCause);
-        } else if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
+        } else if (closeCause == null
+                || closeCause instanceof EOFException
+                || closeCause instanceof CancelledKeyException
+                || closeCause instanceof ProtocolException) {
             logger.log(logLevel, message);
         } else {
             logger.log(logLevel, message, closeCause);
