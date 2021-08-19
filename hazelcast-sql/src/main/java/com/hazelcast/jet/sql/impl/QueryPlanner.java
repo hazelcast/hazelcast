@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite;
+package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelTraitSet;

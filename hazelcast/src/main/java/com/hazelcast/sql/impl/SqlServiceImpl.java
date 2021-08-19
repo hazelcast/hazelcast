@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -47,7 +46,6 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static com.hazelcast.sql.SqlExpectedResultType.ANY;
@@ -59,7 +57,7 @@ import static java.util.Arrays.asList;
 /**
  * Base SQL service implementation that bridges optimizer implementation, public and private APIs.
  */
-public class SqlServiceImpl implements SqlService, Consumer<Packet> {
+public class SqlServiceImpl implements SqlService {
 
     private static final String OPTIMIZER_CLASS_PROPERTY_NAME = "hazelcast.sql.optimizerClass";
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.jet.sql.impl.CalciteSqlOptimizer";
@@ -195,10 +193,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
         }
-    }
-
-    @Override
-    public void accept(Packet packet) {
     }
 
     private SqlResult query0(

@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
@@ -31,29 +29,16 @@ public class SqlInternalService {
 
     public static final String SERVICE_NAME = "hz:impl:sqlService";
 
-    /**
-     * Default flow control factory.
-     */
-    private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
-
-    /**
-     * Registry for running queries.
-     */
+    /** Registry for running queries. */
     private final QueryStateRegistry stateRegistry;
 
-    /**
-     * Registry for client queries.
-     */
+    /** Registry for client queries. */
     private final QueryClientStateRegistry clientStateRegistry;
 
-    /**
-     * Registry for query results.
-     */
+    /** Registry for query results. */
     private final QueryResultRegistry resultRegistry;
 
-    /**
-     * State registry updater.
-     */
+    /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(

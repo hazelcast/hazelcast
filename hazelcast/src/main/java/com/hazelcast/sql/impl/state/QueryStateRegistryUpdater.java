@@ -45,9 +45,6 @@ public class QueryStateRegistryUpdater {
     /** "volatile" instead of "final" only to allow for value change from unit tests. */
     private volatile long stateCheckFrequency;
 
-    /** "volatile" instead of "final" only to allow for value change from unit tests. */
-    private volatile long orphanedQueryStateCheckFrequency = DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY;
-
     /** Worker performing periodic state check. */
     private final Worker worker;
 
@@ -87,13 +84,6 @@ public class QueryStateRegistryUpdater {
         this.stateCheckFrequency = stateCheckFrequency;
 
         worker.thread.interrupt();
-    }
-
-    /**
-     * For testing only.
-     */
-    public void setOrphanedQueryStateCheckFrequency(long orphanedQueryStateCheckFrequency) {
-        this.orphanedQueryStateCheckFrequency = orphanedQueryStateCheckFrequency;
     }
 
     private final class Worker implements Runnable {
@@ -166,7 +156,7 @@ public class QueryStateRegistryUpdater {
                 }
 
                 // 3. Check whether the query is not initialized for too long. If yes, trigger the check process.
-                if (state.requestQueryCheck(stateCheckFrequency, orphanedQueryStateCheckFrequency)) {
+                if (state.requestQueryCheck(stateCheckFrequency, DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY)) {
                     QueryId queryId = state.getQueryId();
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);

@@ -70,7 +70,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
     @Test
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
-        for (int i = 0; i <= ITEM_COUNT / 4; i++) {
+        for (int i = 0; i <= ITEM_COUNT / 5; i++) {
             map.put(i, 1);
             expected.add(new Row(i, 1));
         }
