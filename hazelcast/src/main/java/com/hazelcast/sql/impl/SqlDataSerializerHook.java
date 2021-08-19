@@ -118,7 +118,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int QUERY_OPERATION_CHECK = 12;
     public static final int QUERY_OPERATION_CHECK_RESPONSE = 13;
 
-    // ID range [14, 19] is free to use.
+    public static final int LAZY_TARGET = 14;
+
+    public static final int INDEX_FILTER_VALUE = 15;
+    public static final int INDEX_FILTER_EQUALS = 16;
+    public static final int INDEX_FILTER_RANGE = 17;
+    public static final int INDEX_FILTER_IN = 18;
+
+    public static final int MAP_INDEX_SCAN_METADATA = 19;
 
     public static final int EXPRESSION_COLUMN = 20;
     public static final int EXPRESSION_IS_NULL = 21;
@@ -152,42 +159,33 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FLOOR_CEIL = 45;
     public static final int EXPRESSION_ROUND_TRUNCATE = 46;
 
-    public static final int LAZY_TARGET = 47;
-
-    public static final int INDEX_FILTER_VALUE = 48;
-    public static final int INDEX_FILTER_EQUALS = 49;
-    public static final int INDEX_FILTER_RANGE = 50;
-    public static final int INDEX_FILTER_IN = 51;
-
-    public static final int MAP_INDEX_SCAN_METADATA = 52;
-
-    public static final int INTERVAL_YEAR_MONTH = 53;
-    public static final int INTERVAL_DAY_SECOND = 54;
+    public static final int INTERVAL_YEAR_MONTH = 47;
+    public static final int INTERVAL_DAY_SECOND = 48;
 
     //region String expressions IDs
-    public static final int EXPRESSION_ASCII = 55;
-    public static final int EXPRESSION_CHAR_LENGTH = 56;
-    public static final int EXPRESSION_INITCAP = 57;
-    public static final int EXPRESSION_LOWER = 58;
-    public static final int EXPRESSION_UPPER = 59;
-    public static final int EXPRESSION_CONCAT = 60;
-    public static final int EXPRESSION_LIKE = 61;
-    public static final int EXPRESSION_SUBSTRING = 62;
-    public static final int EXPRESSION_TRIM = 63;
-    public static final int EXPRESSION_REMAINDER = 64;
-    public static final int EXPRESSION_CONCAT_WS = 65;
-    public static final int EXPRESSION_REPLACE = 66;
-    public static final int EXPRESSION_POSITION = 67;
-    public static final int EXPRESSION_CASE = 68;
-    public static final int EXPRESSION_EXTRACT = 69;
+    public static final int EXPRESSION_ASCII = 49;
+    public static final int EXPRESSION_CHAR_LENGTH = 50;
+    public static final int EXPRESSION_INITCAP = 51;
+    public static final int EXPRESSION_LOWER = 52;
+    public static final int EXPRESSION_UPPER = 53;
+    public static final int EXPRESSION_CONCAT = 54;
+    public static final int EXPRESSION_LIKE = 55;
+    public static final int EXPRESSION_SUBSTRING = 56;
+    public static final int EXPRESSION_TRIM = 57;
+    public static final int EXPRESSION_REMAINDER = 58;
+    public static final int EXPRESSION_CONCAT_WS = 59;
+    public static final int EXPRESSION_REPLACE = 60;
+    public static final int EXPRESSION_POSITION = 61;
+    public static final int EXPRESSION_CASE = 62;
+    public static final int EXPRESSION_EXTRACT = 63;
     //endregion
 
-    public static final int EXPRESSION_DOUBLE_DOUBLE = 70;
-    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 71;
-    public static final int EXPRESSION_TO_EPOCH_MILLIS = 72;
+    public static final int EXPRESSION_DOUBLE_DOUBLE = 64;
+    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 65;
+    public static final int EXPRESSION_TO_EPOCH_MILLIS = 66;
 
-    public static final int MAPPING = 73;
-    public static final int MAPPING_FIELD = 74;
+    public static final int MAPPING = 67;
+    public static final int MAPPING_FIELD = 68;
 
     public static final int LEN = MAPPING_FIELD + 1;
 
@@ -218,6 +216,15 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_OPERATION_CANCEL] = arg -> new QueryCancelOperation();
         constructors[QUERY_OPERATION_CHECK] = arg -> new QueryCheckOperation();
         constructors[QUERY_OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
+
+        constructors[LAZY_TARGET] = arg -> new LazyTarget();
+
+        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
+        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
+        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+
+        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
@@ -250,15 +257,6 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_DOUBLE] = arg -> new DoubleFunction();
         constructors[EXPRESSION_FLOOR_CEIL] = arg -> new FloorCeilFunction<>();
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
-
-        constructors[LAZY_TARGET] = arg -> new LazyTarget();
-
-        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
-        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
-        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
-        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
-
-        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
         constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
