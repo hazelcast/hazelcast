@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.Preconditions;
@@ -87,9 +86,7 @@ public class SqlServiceImpl implements SqlService {
         this.nodeEngine = nodeEngine;
         this.nodeServiceProvider = new NodeServiceProviderImpl(nodeEngine);
 
-        SqlConfig config = nodeEngine.getConfig().getSqlConfig();
-
-        long queryTimeout = config.getStatementTimeoutMillis();
+        long queryTimeout = nodeEngine.getConfig().getSqlConfig().getStatementTimeoutMillis();
         assert queryTimeout >= 0L;
 
         this.queryTimeout = queryTimeout;
