@@ -50,7 +50,7 @@ import java.util.StringJoiner;
 import static java.util.stream.Collectors.joining;
 
 /**
- * Base class for all IMap tables in the Calcite integration:
+ * Base class for all tables in the Calcite integration:
  * <ul>
  *     <li>Maps field types defined in the {@code core} module to Calcite types</li>
  *     <li>Provides access to the underlying table and statistics</li>
