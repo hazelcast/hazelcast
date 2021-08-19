@@ -72,7 +72,6 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
                 null,
                 null,
                 null,
-                null,
                 QueryParameterMetadata.EMPTY,
                 key,
                 objectKeys0,
