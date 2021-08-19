@@ -152,10 +152,10 @@ public class SqlTestSupport extends HazelcastTestSupport {
         };
 
         return new QueryFragmentContext(
-            args,
-            new LoggingQueryFragmentScheduleCallback(),
-            stateCallback,
-            new DefaultSerializationServiceBuilder().build()
+                args,
+                new LoggingQueryFragmentScheduleCallback(),
+                stateCallback,
+                new DefaultSerializationServiceBuilder().build()
         );
     }
 
@@ -166,17 +166,16 @@ public class SqlTestSupport extends HazelcastTestSupport {
      */
     public static Plan opaquePlan() {
         return new Plan(
-            Collections.emptyMap(),
-            Collections.emptyList(),
-            Collections.emptyList(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            Collections.emptyMap(),
-            null,
-            QueryParameterMetadata.EMPTY,
-            null,
-            Collections.emptySet(),
-            Collections.emptyList()
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
+                null,
+                QueryParameterMetadata.EMPTY,
+                null,
+                Collections.emptySet(),
+                Collections.emptyList()
         );
     }
 
@@ -248,33 +247,33 @@ public class SqlTestSupport extends HazelcastTestSupport {
     }
 
     public static <K> K getLocalKey(
-        HazelcastInstance member,
-        IntFunction<K> keyProducer
+            HazelcastInstance member,
+            IntFunction<K> keyProducer
     ) {
         return getLocalKeys(member, 1, keyProducer).get(0);
     }
 
     public static <K> List<K> getLocalKeys(
-        HazelcastInstance member,
-        int count,
-        IntFunction<K> keyProducer
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer
     ) {
         return new ArrayList<>(getLocalEntries(member, count, keyProducer, keyProducer).keySet());
     }
 
     public static <K, V> Map.Entry<K, V> getLocalEntry(
-        HazelcastInstance member,
-        IntFunction<K> keyProducer,
-        IntFunction<V> valueProducer
+            HazelcastInstance member,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
     ) {
         return getLocalEntries(member, 1, keyProducer, valueProducer).entrySet().iterator().next();
     }
 
     public static <K, V> Map<K, V> getLocalEntries(
-        HazelcastInstance member,
-        int count,
-        IntFunction<K> keyProducer,
-        IntFunction<V> valueProducer
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
     ) {
         if (count == 0) {
             return Collections.emptyMap();

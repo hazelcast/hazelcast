@@ -21,12 +21,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.plan.node.PlanNode;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -34,7 +32,6 @@ import java.util.UUID;
  */
 public class QueryExecuteOperationFragment implements IdentifiedDataSerializable {
 
-    private PlanNode node;
     private QueryExecuteOperationFragmentMapping mapping;
     private Collection<UUID> memberIds;
 
@@ -43,20 +40,11 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
     }
 
     public QueryExecuteOperationFragment(
-        PlanNode node,
-        QueryExecuteOperationFragmentMapping mapping,
-        Collection<UUID> memberIds
+            QueryExecuteOperationFragmentMapping mapping,
+            Collection<UUID> memberIds
     ) {
-        this.node = node;
         this.mapping = mapping;
         this.memberIds = memberIds;
-    }
-
-    /**
-     * @return Operator tree or {@code null} if the fragment should not be executed on the target node.
-     */
-    public PlanNode getNode() {
-        return node;
     }
 
     public QueryExecuteOperationFragmentMapping getMapping() {
@@ -79,7 +67,7 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(node);
+        out.writeObject(null);
         out.writeInt(mapping.getId());
 
         if (memberIds != null) {
@@ -95,7 +83,6 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        node = in.readObject();
         mapping = QueryExecuteOperationFragmentMapping.getById(in.readInt());
 
         int mappedMemberIdsSize = in.readInt();
@@ -109,23 +96,4 @@ public class QueryExecuteOperationFragment implements IdentifiedDataSerializable
         }
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(node, memberIds);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        QueryExecuteOperationFragment fragment = (QueryExecuteOperationFragment) o;
-
-        return Objects.equals(node, fragment.node) && Objects.equals(memberIds, fragment.memberIds);
-    }
 }

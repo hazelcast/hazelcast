@@ -20,7 +20,6 @@ import com.hazelcast.config.SqlConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
@@ -66,11 +65,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private static final String SQL_MODULE_OPTIMIZER_CLASS = "com.hazelcast.jet.sql.impl.CalciteSqlOptimizer";
 
     /**
-     * Outbox batch size in bytes.
-     */
-    private static final int OUTBOX_BATCH_SIZE = 512 * 1024;
-
-    /**
      * Default state check frequency.
      */
     private static final long STATE_CHECK_FREQUENCY = 1_000L;
@@ -85,7 +79,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
     private final NodeServiceProviderImpl nodeServiceProvider;
     private final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
 
-    private final int poolSize;
     private final long queryTimeout;
 
     private SqlOptimizer optimizer;
@@ -98,17 +91,9 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
         SqlConfig config = nodeEngine.getConfig().getSqlConfig();
 
-        int poolSize = config.getExecutorPoolSize();
         long queryTimeout = config.getStatementTimeoutMillis();
-
-        if (poolSize == SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE) {
-            poolSize = Runtime.getRuntime().availableProcessors();
-        }
-
-        assert poolSize > 0;
         assert queryTimeout >= 0L;
 
-        this.poolSize = poolSize;
         this.queryTimeout = queryTimeout;
     }
 
@@ -117,7 +102,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
         optimizer = createOptimizer(nodeEngine, resultRegistry);
 
         String instanceName = nodeEngine.getHazelcastInstance().getName();
-        InternalSerializationService serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         PlanCacheChecker planCacheChecker = new PlanCacheChecker(
                 nodeEngine,
                 planCache,
@@ -127,9 +111,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
                 resultRegistry,
                 instanceName,
                 nodeServiceProvider,
-                serializationService,
-                poolSize,
-                OUTBOX_BATCH_SIZE,
                 STATE_CHECK_FREQUENCY,
                 planCacheChecker
         );
@@ -218,7 +199,6 @@ public class SqlServiceImpl implements SqlService, Consumer<Packet> {
 
     @Override
     public void accept(Packet packet) {
-        internalService.onPacket(packet);
     }
 
     private SqlResult query0(

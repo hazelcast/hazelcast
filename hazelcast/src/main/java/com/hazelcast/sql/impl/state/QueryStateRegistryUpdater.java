@@ -19,8 +19,6 @@ package com.hazelcast.sql.impl.state;
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.operation.QueryCheckOperation;
-import com.hazelcast.sql.impl.operation.QueryOperationHandler;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ public class QueryStateRegistryUpdater {
     private final NodeServiceProvider nodeServiceProvider;
     private final QueryStateRegistry stateRegistry;
     private final QueryClientStateRegistry clientStateRegistry;
-    private final QueryOperationHandler operationHandler;
     private final PlanCacheChecker planCacheChecker;
 
     /** "volatile" instead of "final" only to allow for value change from unit tests. */
@@ -59,7 +56,6 @@ public class QueryStateRegistryUpdater {
         NodeServiceProvider nodeServiceProvider,
         QueryStateRegistry stateRegistry,
         QueryClientStateRegistry clientStateRegistry,
-        QueryOperationHandler operationHandler,
         PlanCacheChecker planCacheChecker,
         long stateCheckFrequency
     ) {
@@ -70,7 +66,6 @@ public class QueryStateRegistryUpdater {
         this.nodeServiceProvider = nodeServiceProvider;
         this.stateRegistry = stateRegistry;
         this.clientStateRegistry = clientStateRegistry;
-        this.operationHandler = operationHandler;
         this.planCacheChecker = planCacheChecker;
         this.stateCheckFrequency = stateCheckFrequency;
 
@@ -176,15 +171,6 @@ public class QueryStateRegistryUpdater {
 
                     checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
                 }
-            }
-
-            // 4. Send batched check requests.
-            UUID localMemberId = nodeServiceProvider.getLocalMemberId();
-
-            for (Map.Entry<UUID, Collection<QueryId>> checkEntry : checkMap.entrySet()) {
-                QueryCheckOperation operation = new QueryCheckOperation(checkEntry.getValue());
-
-                operationHandler.submit(localMemberId, checkEntry.getKey(), operation);
             }
         }
 

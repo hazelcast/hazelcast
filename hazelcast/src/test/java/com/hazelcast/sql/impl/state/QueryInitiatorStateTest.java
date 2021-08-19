@@ -48,7 +48,6 @@ public class QueryInitiatorStateTest {
             null,
             null,
             null,
-            null,
             QueryParameterMetadata.EMPTY,
             null,
             Collections.emptySet(),
