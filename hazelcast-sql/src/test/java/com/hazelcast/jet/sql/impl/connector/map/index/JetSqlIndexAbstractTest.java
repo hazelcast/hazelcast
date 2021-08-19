@@ -496,13 +496,16 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         return res;
     }
 
+    /**
+     * It tests all non-base types. Base type interactions were tested by quick test suite.
+     */
     protected static Collection<Object[]> parametersSlow() {
         List<Object[]> res = new ArrayList<>();
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : allTypes()) {
-                    for (ExpressionType<?> secondType : allTypes()) {
+                for (ExpressionType<?> firstType : nonBaseTypes()) {
+                    for (ExpressionType<?> secondType : nonBaseTypes()) {
                         res.add(new Object[]{indexType, composite, firstType, secondType});
                     }
                 }
