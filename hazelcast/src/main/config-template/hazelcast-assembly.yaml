@@ -27,7 +27,7 @@ hazelcast:
   # must use it as well.
   cluster-name: dev
   properties:
-    hazelcast.socket.bind.any: false
+    hazelcast.socket.bind.any: @FILTER_BIND_ANY@
   network:
     # The preferred port number where the Hazelcast instance will listen. The
     # convention is to use 5701 and it is the default both here and in
@@ -54,7 +54,7 @@ hazelcast:
     # mechanism, so make sure to enable only one.
     join:
       auto-detection:
-        enabled: false
+        enabled: @FILTER_BIND_ANY@
       # Enables discovering nodes by using IP multicast. This is the
       # simplest technique, but in a cloud setting the network usually doesn't
       # allow multicast.
@@ -65,7 +65,7 @@ hazelcast:
       # This technique doesn't attempt any auto-discovery, you directly list all
       # the candidate IPs to check.
       tcp-ip:
-        enabled: true
+        enabled: @FILTER_LOOPBACK_INTERFACE@
         member-list:
           - 127.0.0.1
       # Specifies whether the member use the AWS API to get a list of candidate
@@ -99,7 +99,7 @@ hazelcast:
     # Which network interface to listen on. With "enabled" set to false
     # Hazelcast will listen on all available interfaces.
     interfaces:
-      enabled: true
+      enabled: @FILTER_LOOPBACK_INTERFACE@
       interfaces:
         - 127.0.0.1
     # Lets you configure SSL using the SSL context factory. This feature is

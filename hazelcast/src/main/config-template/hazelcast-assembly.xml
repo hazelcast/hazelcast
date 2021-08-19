@@ -50,14 +50,10 @@
 
     <properties>
         <!--
-            We only allow bind to loopback network interface (127.0.0.1) in the configuration for ZIP and TGZ
-            distribution packages .
-            Therefore we set the property "hazelcast.socket.bind.any" to "false" and explicitly specify the
-            network/interfaces configuration. It helps to keep the configuration secure.
-            Changing the property value to "true" will cause Hazelcast binding sockets to the wildcard address
-            (i.e. all network interfaces).
+            ZIP and TAR distributions binds only to loopback network interface (127.0.0.1),
+            Docker image listens on all interfaces (wildcard address).
          -->
-        <property name="hazelcast.socket.bind.any">false</property>
+        <property name="hazelcast.socket.bind.any">@FILTER_BIND_ANY@</property>
     </properties>
 
     <network>
@@ -85,7 +81,7 @@
             We enable binding to loopback interface only in ZIP and TGZ Hazelcast disribution packages
             for security reasons. (See also the property "hazelcast.socket.bind.any" value.)
         -->
-        <interfaces enabled="true">
+        <interfaces enabled="@FILTER_LOOPBACK_INTERFACE@">
             <interface>127.0.0.1</interface>
         </interfaces>
         <outbound-ports>
@@ -107,7 +103,7 @@
                 walk through all available discovery strategies and detect the correct one for the
                 current runtime environment.
             -->
-            <auto-detection enabled="false"/>
+            <auto-detection enabled="@FILTER_BIND_ANY@"/>
             <!-- Enables/disables the multicast discovery mechanism. The default value is disabled. -->
             <multicast enabled="false">
                 <!--
@@ -123,7 +119,7 @@
             </multicast>
 
             <!-- Specifies whether the TCP/IP discovery is enabled or not. Default value is false. -->
-            <tcp-ip enabled="true">
+            <tcp-ip enabled="@FILTER_LOOPBACK_INTERFACE@">
                 <member-list>
                     <member>127.0.0.1</member>
                 </member-list>
