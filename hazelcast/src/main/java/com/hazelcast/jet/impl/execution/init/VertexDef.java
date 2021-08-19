@@ -52,11 +52,11 @@ public class VertexDef implements IdentifiedDataSerializable {
         this.localParallelism = localParallelism;
     }
 
-    String name() {
+    public String name() {
         return name;
     }
 
-    int localParallelism() {
+    public int localParallelism() {
         return localParallelism;
     }
 
@@ -80,7 +80,7 @@ public class VertexDef implements IdentifiedDataSerializable {
         return outboundEdges;
     }
 
-    ProcessorSupplier processorSupplier() {
+    public ProcessorSupplier processorSupplier() {
         return processorSupplier;
     }
 
