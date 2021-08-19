@@ -168,6 +168,7 @@ public class SqlTestSupport extends HazelcastTestSupport {
         return new Plan(
                 Collections.emptyMap(),
                 Collections.emptyList(),
+                Collections.emptyList(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),
                 Collections.emptyMap(),

@@ -42,11 +42,11 @@ public class SqlInternalService {
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(
-            QueryResultRegistry resultRegistry,
-            String instanceName,
-            NodeServiceProvider nodeServiceProvider,
-            long stateCheckFrequency,
-            PlanCacheChecker planCacheChecker
+        QueryResultRegistry resultRegistry,
+        String instanceName,
+        NodeServiceProvider nodeServiceProvider,
+        long stateCheckFrequency,
+        PlanCacheChecker planCacheChecker
     ) {
         this.resultRegistry = resultRegistry;
 
@@ -56,12 +56,12 @@ public class SqlInternalService {
 
         // State checker depends on state registries and operation handler.
         this.stateRegistryUpdater = new QueryStateRegistryUpdater(
-                instanceName,
-                nodeServiceProvider,
-                stateRegistry,
-                clientStateRegistry,
-                planCacheChecker,
-                stateCheckFrequency
+            instanceName,
+            nodeServiceProvider,
+            stateRegistry,
+            clientStateRegistry,
+            planCacheChecker,
+            stateCheckFrequency
         );
     }
 
