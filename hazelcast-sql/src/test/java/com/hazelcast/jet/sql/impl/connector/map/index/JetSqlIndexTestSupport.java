@@ -73,6 +73,19 @@ abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
         );
     }
 
+    protected static List<ExpressionType<?>> nonBaseTypes() {
+        return Arrays.asList(
+                BYTE,
+                SHORT,
+                LONG,
+                BIG_DECIMAL,
+                BIG_INTEGER,
+                FLOAT,
+                DOUBLE,
+                CHARACTER
+        );
+    }
+
     protected static List<ExpressionType<?>> allTypes() {
         return Arrays.asList(
                 BOOLEAN,
