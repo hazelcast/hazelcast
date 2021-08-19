@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema;
+package com.hazelcast.jet.sql.impl.schema;
 
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelDistribution;

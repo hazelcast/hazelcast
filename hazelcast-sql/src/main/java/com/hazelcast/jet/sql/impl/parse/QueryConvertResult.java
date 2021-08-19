@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.parse;
+package com.hazelcast.jet.sql.impl.parse;
 
 import org.apache.calcite.rel.RelNode;
 

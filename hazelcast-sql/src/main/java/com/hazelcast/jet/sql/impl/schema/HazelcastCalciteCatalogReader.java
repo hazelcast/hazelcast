@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.schema;
+package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
