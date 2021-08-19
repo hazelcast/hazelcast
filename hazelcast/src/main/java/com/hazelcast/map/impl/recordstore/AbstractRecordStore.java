@@ -38,6 +38,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
+import com.hazelcast.map.impl.record.RecordFactoryAttributes;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -74,7 +75,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(null);
+        this.recordFactory = mapContainer.getRecordFactoryConstructor().createNew(new RecordFactoryAttributes(name,
+                partitionId));
         this.valueComparator = mapServiceContext.getValueComparatorOf(inMemoryFormat);
         this.mapStoreContext = mapContainer.getMapStoreContext();
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);

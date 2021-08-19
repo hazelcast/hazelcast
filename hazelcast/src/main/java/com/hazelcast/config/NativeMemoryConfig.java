@@ -313,7 +313,14 @@ public class NativeMemoryConfig {
         /**
          * POOLED memory allocator: manage memory blocks in pool
          */
-        POOLED
+        POOLED,
+
+        /**
+         * TODO remove me
+         * POOLED and TIERED memory allocator: manage memory blocks in pool optionally
+         * in multiple tiers
+         */
+        POOLED_TIERED
     }
 
     @Override
