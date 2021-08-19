@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.packetdispatcher.impl;
 
+import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.spi.impl.PacketDispatcher;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -50,7 +50,6 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
     private Consumer<Packet> invocationMonitor;
     private PacketDispatcher dispatcher;
     private Consumer<Packet> jetService;
-    private Consumer<Packet> sqlService;
 
     @Before
     public void setup() {
@@ -60,7 +59,6 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         eventService = mock(Consumer.class);
         invocationMonitor = mock(Consumer.class);
         jetService = mock(Consumer.class);
-        sqlService = mock(Consumer.class);
 
         dispatcher = new PacketDispatcher(
                 logger,
@@ -68,8 +66,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
                 responseHandler,
                 invocationMonitor,
                 eventService,
-                jetService,
-                sqlService
+                jetService
         );
     }
 
@@ -81,7 +78,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService, sqlService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
     @Test
@@ -92,7 +89,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(operationExecutor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService, sqlService);
+        verifyZeroInteractions(responseHandler, eventService, invocationMonitor, jetService);
     }
 
 
@@ -103,7 +100,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService, sqlService);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     @Test
@@ -113,7 +110,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(responseHandler).accept(packet);
-        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService, sqlService);
+        verifyZeroInteractions(operationExecutor, eventService, invocationMonitor, jetService);
     }
 
 
@@ -125,7 +122,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         verify(invocationMonitor).accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService, sqlService);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, jetService);
     }
 
 
@@ -136,7 +133,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(eventService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService, sqlService);
+        verifyZeroInteractions(responseHandler, operationExecutor, invocationMonitor, jetService);
     }
 
     @Test
@@ -145,16 +142,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
         dispatcher.accept(packet);
 
         verify(jetService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, sqlService);
-    }
-
-    @Test
-    public void whenSqlPacket() {
-        Packet packet = new Packet().setPacketType(Packet.Type.SQL);
-        dispatcher.accept(packet);
-
-        verify(sqlService).accept(packet);
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor);
     }
 
     // unrecognized packets are logged. No handlers is contacted.
@@ -164,8 +152,7 @@ public class PacketDispatcherTest extends HazelcastTestSupport {
 
         dispatcher.accept(packet);
 
-        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor,
-                jetService, sqlService);
+        verifyZeroInteractions(responseHandler, operationExecutor, eventService, invocationMonitor, jetService);
     }
 
     // when one of the handlers throws an exception, the exception is logged but not rethrown
