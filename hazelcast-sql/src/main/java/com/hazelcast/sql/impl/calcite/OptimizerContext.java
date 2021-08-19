@@ -17,17 +17,18 @@
 package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.sql.impl.QueryPlanner;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.parse.QueryConvertResult;
-import com.hazelcast.sql.impl.calcite.parse.QueryConverter;
-import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.parse.QueryParser;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastCalciteCatalogReader;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
+import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
+import com.hazelcast.jet.sql.impl.parse.QueryConverter;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
+import com.hazelcast.jet.sql.impl.schema.HazelcastCalciteCatalogReader;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.schema.SqlCatalog;

@@ -22,7 +22,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeCoercion;

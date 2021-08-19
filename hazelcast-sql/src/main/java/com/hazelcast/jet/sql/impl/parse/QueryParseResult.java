@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.parse;
+package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import org.apache.calcite.sql.SqlNode;

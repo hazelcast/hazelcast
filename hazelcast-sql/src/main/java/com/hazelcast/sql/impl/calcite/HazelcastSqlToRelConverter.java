@@ -18,8 +18,8 @@ package com.hazelcast.sql.impl.calcite;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.hazelcast.jet.sql.impl.LogicalTableInsert;
-import com.hazelcast.jet.sql.impl.LogicalTableSink;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableInsert;
+import com.hazelcast.jet.sql.impl.opt.logical.LogicalTableSink;
 import com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;

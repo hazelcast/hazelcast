@@ -17,6 +17,7 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
