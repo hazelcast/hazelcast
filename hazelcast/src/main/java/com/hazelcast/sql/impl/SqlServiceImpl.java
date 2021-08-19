@@ -88,7 +88,6 @@ public class SqlServiceImpl implements SqlService {
 
         long queryTimeout = nodeEngine.getConfig().getSqlConfig().getStatementTimeoutMillis();
         assert queryTimeout >= 0L;
-
         this.queryTimeout = queryTimeout;
     }
 
