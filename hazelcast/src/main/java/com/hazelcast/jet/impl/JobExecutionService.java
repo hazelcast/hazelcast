@@ -56,6 +56,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -597,7 +598,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     } else {
                         logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                     }
-                }));
+                    // TODO not sure about this fix yet
+                    // I tried using ExecutionService.ASYNC_EXECUTOR but this doesn't help - probably because it uses
+                    // com.hazelcast.internal.util.executor.ExecutorType.CONCRETE and it doesn't wait for the executor to shutdown
+                    // when using custom name it uses cached executor service under the hood, and it waits 3s for this to shutdown
+                }), nodeEngine.getExecutionService().getExecutor("jet:async"));
+//                }), nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
     }
 
     @Override
