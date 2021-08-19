@@ -270,8 +270,9 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private void rethrowProtocolException(Collection<Address> addresses) throws Throwable {
         for (Address address: addresses) {
-            if (isBlacklisted(address) && blacklistedAddresses.get(address).f1() instanceof ProtocolException) {
-                throw Objects.requireNonNull(blacklistedAddresses.get(address).f1());
+            Tuple2<Boolean, Throwable> tuple2 = blacklistedAddresses.get(address);
+            if (tuple2 != null && tuple2.f1() instanceof ProtocolException) {
+                throw tuple2.f1();
             }
         }
     }
