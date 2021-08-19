@@ -236,15 +236,30 @@ final class MapIndexScanP extends AbstractProcessor {
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
-        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+        boolean needRecalculation = true;
         Map<Address, Split> newSplits = new HashMap<>();
-        while (partitionIterator.hasNext()) {
-            int partitionId = partitionIterator.nextInt();
-            Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
-            newSplits.computeIfAbsent(owner, x -> new Split(
-                    new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
-            ).partitions.add(partitionId);
+
+        while (needRecalculation) {
+            PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+
+            while (partitionIterator.hasNext()) {
+                int partitionId = partitionIterator.nextInt();
+                Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
+                if (owner == null) {
+                    // if at least one partition owner is not assigned - recalculate everything.
+                    newSplits.clear();
+                    break;
+                }
+                newSplits.computeIfAbsent(owner, x -> new Split(
+                        new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
+                ).partitions.add(partitionId);
+            }
+
+            if (!newSplits.isEmpty()) {
+                needRecalculation = false;
+            }
         }
+
         return new ArrayList<>(newSplits.values());
     }
 
