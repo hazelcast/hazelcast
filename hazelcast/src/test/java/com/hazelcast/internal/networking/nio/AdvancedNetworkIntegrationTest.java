@@ -20,6 +20,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +39,7 @@ import java.util.Set;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -53,6 +56,29 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         Config config = createCompleteMultiSocketConfig();
         newHazelcastInstance(config);
         assertLocalPortsOpen(MEMBER_PORT, CLIENT_PORT, WAN1_PORT, WAN2_PORT, REST_PORT, MEMCACHE_PORT);
+
+        // Test if invalid protocol given then instance replies with HZX(UNEXPECTED_PROTOCOL)
+        assertWrongProtocolAlert(MEMBER_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(CLIENT_PORT, Protocols.CLUSTER, "AAA");
+        assertWrongProtocolAlert(WAN1_PORT, Protocols.CLIENT_BINARY, "AAA");
+        assertWrongProtocolAlert(WAN2_PORT, Protocols.CLIENT_BINARY, "AAA");
+    }
+
+    private void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
+        byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
+        for (String header : protocolHeadersToTry) {
+            try {
+                Socket socket = new Socket("127.0.0.1", port);
+                socket.getOutputStream().write(header.getBytes());
+                byte[] response = new byte[3];
+                IOUtil.readFully(socket.getInputStream(), response);
+                assertArrayEquals("The protocol header " + header + " should be unexpected on port " + port,
+                        expected, response);
+                socket.close();
+            } catch (IOException e) {
+                fail("Failed to connect to port " + port + ": " + e.getMessage());
+            }
+        }
     }
 
     @Test
