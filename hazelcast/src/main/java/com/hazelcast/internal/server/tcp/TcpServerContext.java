@@ -215,7 +215,7 @@ public class TcpServerContext implements ServerContext {
 
     @Override
     public void shouldConnectTo(Address address) {
-        if (node.getThisAddress().equals(address)) {
+        if (node.getServer().doAddressesMatch(node.getThisAddress(), address)) {
             throw new RuntimeException("Connecting to self! " + address);
         }
     }

@@ -17,14 +17,10 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -81,9 +77,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         initialize(1, smallInstanceConfig());
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
-        JetSqlCoreBackend jetSqlService = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
-        context = createContext(new HazelcastSqlBackend(nodeEngine), (SqlBackend) jetSqlService.sqlBackend());
+        context = createContext();
     }
 
     @Test
@@ -187,7 +181,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
         return res.toString();
     }
 
-    private static OptimizerContext createContext(SqlBackend hzBackend, SqlBackend jetBackend) {
+    private static OptimizerContext createContext() {
         PartitionedMapTable table1 = new PartitionedMapTable(
                 SCHEMA_1,
                 TABLE_1,
@@ -224,14 +218,11 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1,
-                hzBackend,
-                jetBackend
+                1
         );
     }
 
     private static <E> E last(E[] array) {
         return array[array.length - 1];
     }
-
 }

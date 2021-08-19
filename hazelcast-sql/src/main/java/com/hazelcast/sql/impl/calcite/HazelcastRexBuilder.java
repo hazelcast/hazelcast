@@ -36,8 +36,11 @@ import static org.apache.calcite.sql.type.SqlTypeName.ANY;
  * of the default Calcite expression builder.
  */
 public final class HazelcastRexBuilder extends RexBuilder {
-    public HazelcastRexBuilder(HazelcastTypeFactory typeFactory) {
-        super(typeFactory);
+
+    public static final HazelcastRexBuilder INSTANCE = new HazelcastRexBuilder();
+
+    private HazelcastRexBuilder() {
+        super(HazelcastTypeFactory.INSTANCE);
     }
 
     @Override
@@ -74,5 +77,4 @@ public final class HazelcastRexBuilder extends RexBuilder {
 
         return super.makeLiteral(value, type, allowCast);
     }
-
 }

@@ -62,23 +62,25 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("NOT IN " + longList), SqlColumnType.INTEGER, new Integer[]{3});
     }
 
+    /**
+     * @see <a href="https://github.com/hazelcast/hazelcast/issues/18592">Linked issue.</a>
+     */
     @Test
     public void inPredicateWithRawNullTest() {
         putAll(0, 1, 2);
-        checkValues(sqlQuery("IN (NULL, 0, 1)"), SqlColumnType.INTEGER, new Integer[]{0, 1});
-        checkValues(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{2, 0});
-        checkValues(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), SqlColumnType.INTEGER, new Integer[]{1});
-        checkValues(sqlQuery("NOT IN (NULL, 2, 1)"), SqlColumnType.INTEGER, new Integer[]{0});
+        checkFailure0(sqlQuery("IN (NULL, 0, 1)"), PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0(sqlQuery("IN (0, NULL, NULL, NULL, 2)"), PARSING, "Raw nulls are not supported for IN operator.");
 
-        checkValues("SELECT this FROM map WHERE NOT (this IN (2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE NOT (this IN (2, NULL, 1))", SqlColumnType.INTEGER, new Integer[]{0});
-        checkValues("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
-        checkValues("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1, 0))", SqlColumnType.INTEGER, new Integer[]{});
+        checkFailure0(sqlQuery("NOT IN (NULL, 1)"), PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0(sqlQuery("NOT IN (0, NULL, NULL, NULL, 2)"), PARSING, "Raw nulls are not supported for IN operator.");
+
+        checkFailure0("SELECT this FROM map WHERE NOT (this IN (NULL, 2, 1, 0))", PARSING, "Raw nulls are not supported for IN operator.");
+        checkFailure0("SELECT this FROM map WHERE true <> (this IN (NULL, 2, 1, 0))", PARSING, "Raw nulls are not supported for IN operator.");
     }
 
     @Test
     public void inPredicateWithSubQueryTest() {
-        String expectedExMessage = "Sub-queries are not allowed for IN operator.";
+        String expectedExMessage = "Sub-queries are not supported for IN operator.";
 
         putAll(1, 2);
         checkFailure0(sqlQuery("IN (SELECT __key FROM map)"), PARSING, expectedExMessage);
@@ -108,9 +110,9 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 SqlColumnType.INTEGER,
                 new Integer[]{(int) Byte.MAX_VALUE});
 
-        checkFailure0(sqlQuery("IN ('abc', 'bac')"),  PARSING, "CAST function cannot convert literal 'abc' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
-        checkFailure0(sqlQuery("IN (FALSE, TRUE)"),  PARSING, "Values passed to IN operator must have compatible types");
-        checkFailure0(sqlQuery("IN (CAST ('1970-01-01' AS DATE))"),  PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("IN ('abc', 'bac')"), PARSING, "CAST function cannot convert literal 'abc' to type INTEGER: Cannot parse VARCHAR value to INTEGER");
+        checkFailure0(sqlQuery("IN (FALSE, TRUE)"), PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("IN (CAST ('1970-01-01' AS DATE))"), PARSING, "Values passed to IN operator must have compatible types");
         checkFailure0(sqlQuery("IN (CAST ('00:00:00' AS TIME))"), PARSING, "Values passed to IN operator must have compatible types");
     }
 
@@ -132,7 +134,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 "Cannot parse VARCHAR value to DATE");
         checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01' AS TIMESTAMP))"), DATA_EXCEPTION,
                 "Cannot parse VARCHAR value to TIMESTAMP");
-        checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01+02:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"), DATA_EXCEPTION,
+        checkFailure0(sqlQuery("IN (CAST('2020-01-01T14:01+02:00' AS TIMESTAMP WITH TIME ZONE))"), DATA_EXCEPTION,
                 "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE");
 
         // in the following tests the conversion will succeed
@@ -154,7 +156,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T01:01"});
 
         putAll("2021-01-01T01:01+01:00", "2021-01-02T01:01+01:00");
-        checkValues(sqlQuery("IN (CAST('2021-01-02T01:01+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE), CAST('2021-01-03T01:01+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"),
+        checkValues(sqlQuery("IN (CAST('2021-01-02T01:01+01:00' AS TIMESTAMP WITH TIME ZONE), CAST('2021-01-03T01:01+01:00' AS TIMESTAMP WITH TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T01:01+01:00"});
     }
 
@@ -167,9 +169,9 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date1});
         checkValues(sqlQuery("NOT IN (CAST ('1970-01-01' AS DATE), CAST ('1970-01-02' AS DATE))"), SqlColumnType.DATE, new LocalDate[]{date2});
 
-        checkFailure0(sqlQuery("IN ('abc', 'bac')"),  PARSING, "CAST function cannot convert literal 'abc' to type DATE: Cannot parse VARCHAR value to DATE");
-        checkFailure0(sqlQuery("IN (2, 3)"),  PARSING, "Values passed to IN operator must have compatible types");
-        checkFailure0(sqlQuery("IN (TRUE, FALSE)"),  PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("IN ('abc', 'bac')"), PARSING, "CAST function cannot convert literal 'abc' to type DATE: Cannot parse VARCHAR value to DATE");
+        checkFailure0(sqlQuery("IN (2, 3)"), PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("IN (TRUE, FALSE)"), PARSING, "Values passed to IN operator must have compatible types");
     }
 
     @Test
@@ -181,10 +183,10 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (CAST('00:00:00' AS TIME), CAST('00:00:01' AS TIME))"), SqlColumnType.TIME, new LocalTime[]{time1});
         checkValues(sqlQuery("NOT IN (CAST('00:00:00' AS TIME))"), SqlColumnType.TIME, new LocalTime[]{time2});
 
-        checkFailure0(sqlQuery("IN ('abc', 'bac')"),  PARSING, "CAST function cannot convert literal 'abc' to type TIME: Cannot parse VARCHAR value to TIME");
+        checkFailure0(sqlQuery("IN ('abc', 'bac')"), PARSING, "CAST function cannot convert literal 'abc' to type TIME: Cannot parse VARCHAR value to TIME");
         checkFailure0(sqlQuery("IN (1)"), PARSING, "Values passed to IN operator must have compatible types");
-        checkFailure0(sqlQuery("IN (CAST('1970-01-01' AS DATE))"),  PARSING, "Values passed to IN operator must have compatible types");
-        checkFailure0(sqlQuery("NOT IN (0, 1)"),  PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("IN (CAST('1970-01-01' AS DATE))"), PARSING, "Values passed to IN operator must have compatible types");
+        checkFailure0(sqlQuery("NOT IN (0, 1)"), PARSING, "Values passed to IN operator must have compatible types");
         checkFailure0(sqlQuery("IN (CAST ('1970-01-01' AS DATE), 1, CAST ('00:00:02' AS TIME))"), PARSING, "Values passed to IN operator must have compatible types");
     }
 
@@ -202,17 +204,18 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (1, 194919940239)"), SqlColumnType.VARCHAR, new String[]{"1"});
         checkValues(sqlQuery("IN (cast(1.0 as REAL), cast(2.3 as DOUBLE))"), SqlColumnType.VARCHAR, new String[]{"1"});
         putAll("2021-01-02T00:00:00+01:00", "2021-01-02T01:03:04+01:00");
-        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH LOCAL TIME ZONE))"),
+        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+01:00"});
 
-        // this is a bug in Calcite that when an integer is followed by temporal type, it will try to coerce all right-hand values
-        // to temporal, and an assert inside Calcite code will fail later. ¯\_(ツ)_/¯
+        // this is a bug in Calcite that when an integer is followed by temporal type,
+        // it will try to coerce all right-hand values to temporal,
+        // and an assert inside Calcite code will fail later. ¯\_(ツ)_/¯
         assertThatThrownBy(() -> execute(member, sqlQuery("IN (3, CAST('1970-01-01' AS DATE))")))
                 .isInstanceOf(AssertionError.class)
                 .hasMessage(null);
     }
 
-    @Ignore(value = "Should be enabled after engines merge.")
+    @Ignore(value = "Support ROW().")
     @Test
     public void inPredicateRowsTest() {
         putAll(0, 1);

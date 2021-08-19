@@ -16,13 +16,11 @@
 
 package com.hazelcast.sql;
 
+import com.google.common.collect.Iterables;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.optimizer.OptimizationTask;
-import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
-import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +35,8 @@ import java.util.List;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -78,10 +78,6 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
         // Set the wrapped optimizer to track optimization requests.
         SqlServiceImpl service = (SqlServiceImpl) member.getSql();
 
-        WrappedSqlOptimizer optimizer = new WrappedSqlOptimizer(service.getOptimizer());
-
-        service.setOptimizer(optimizer);
-
         // Execute the query from the target without schema.
         SqlStatement statement = new SqlStatement("SELECT __key FROM map");
 
@@ -91,7 +87,7 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
 
         assertEquals(1, service.getPlanCache().size());
 
-        List<List<String>> originalSearchPaths = optimizer.getSearchPaths();
+        List<List<String>> originalSearchPaths = Iterables.getOnlyElement(extractSearchPaths());
 
         // Execute the query from the target with schema.
         statement.setSchema(SCHEMA_NAME);
@@ -102,32 +98,21 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
 
         assertEquals(2, service.getPlanCache().size());
 
-        List<List<String>> searchPaths = optimizer.getSearchPaths();
+        List<List<List<String>>> searchPaths = extractSearchPaths();
 
         List<List<String>> expectedSearchPaths = new ArrayList<>(originalSearchPaths);
         expectedSearchPaths.add(0, asList(CATALOG, SCHEMA_NAME));
 
-        assertEquals(expectedSearchPaths, searchPaths);
+        assertThat(searchPaths).containsExactlyInAnyOrder(originalSearchPaths, expectedSearchPaths);
     }
 
-    private static final class WrappedSqlOptimizer implements SqlOptimizer {
-
-        private final SqlOptimizer delegate;
-        private List<List<String>> searchPaths;
-
-        private WrappedSqlOptimizer(SqlOptimizer delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public SqlPlan prepare(OptimizationTask task) {
-            searchPaths = task.getSearchPaths();
-
-            return delegate.prepare(task);
-        }
-
-        private List<List<String>> getSearchPaths() {
-            return searchPaths;
-        }
+    private List<List<List<String>>> extractSearchPaths() {
+        return ((SqlServiceImpl) member.getSql())
+                .getPlanCache()
+                .getPlans()
+                .values()
+                .stream()
+                .map(plan -> plan.getPlanKey().getSearchPaths())
+                .collect(toList());
     }
 }

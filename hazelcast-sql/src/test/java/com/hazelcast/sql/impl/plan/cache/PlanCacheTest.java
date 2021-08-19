@@ -21,6 +21,7 @@ import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,6 +35,12 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class PlanCacheTest extends PlanCacheTestSupport {
+
+    @BeforeClass
+    public static void setUp() {
+        initialize(1, smallInstanceConfig());
+    }
+
     @Test
     public void testBasicOperations() {
         PlanCache cache = new PlanCache(10);

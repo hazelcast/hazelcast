@@ -17,14 +17,10 @@
 package com.hazelcast.sql.impl.calcite.parse;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
 import com.hazelcast.sql.impl.calcite.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
@@ -34,6 +30,7 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,20 +45,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * Tests for unsupported operations in parser.
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ParserOperationsTest extends SqlTestSupport {
-    private static OptimizerContext context;
+
+    private OptimizerContext context;
 
     @BeforeClass
     public static void beforeClass() {
         initialize(1, smallInstanceConfig());
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance());
-        JetSqlCoreBackend jetSqlService = nodeEngine.getService(JetSqlCoreBackend.SERVICE_NAME);
-        context = createContext(new HazelcastSqlBackend(nodeEngine), (SqlBackend) jetSqlService.sqlBackend());
+    }
+
+    @Before
+    public void before() {
+        context = createContext();
     }
 
     @Test
@@ -135,17 +132,17 @@ public class ParserOperationsTest extends SqlTestSupport {
     }
 
     @Test
-    public void testUnsupportedGroupBy() {
+    public void testGroupBy() {
         checkSuccess("SELECT a FROM t GROUP BY a");
     }
 
     @Test
-    public void testUnsupportedAggregate() {
+    public void testAggregate() {
         checkSuccess("SELECT SUM(a) FROM t");
     }
 
     @Test
-    public void testUnsupportedJoin() {
+    public void testJoin() {
         checkSuccess("SELECT t1.a, t2.a FROM t t1 JOIN t t2 ON t1.a = t2.a");
     }
 
@@ -154,11 +151,11 @@ public class ParserOperationsTest extends SqlTestSupport {
         checkFailure("select 1 + from t", "Was expecting one of");
     }
 
-    private static void checkSuccess(String sql) {
+    private void checkSuccess(String sql) {
         context.parse(sql);
     }
 
-    private static void checkFailure(String sql, String message) {
+    private void checkFailure(String sql, String message) {
         try {
             context.parse(sql);
 
@@ -170,7 +167,7 @@ public class ParserOperationsTest extends SqlTestSupport {
         }
     }
 
-    private static OptimizerContext createContext(SqlBackend hzBackend, SqlBackend jetBackend) {
+    private static OptimizerContext createContext() {
         PartitionedMapTable partitionedMapTable = new PartitionedMapTable(
                 "public",
                 "t",
@@ -196,9 +193,7 @@ public class ParserOperationsTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1,
-                hzBackend,
-                jetBackend
+                1
         );
     }
 }

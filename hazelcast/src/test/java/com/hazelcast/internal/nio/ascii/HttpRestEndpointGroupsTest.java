@@ -19,11 +19,11 @@ package com.hazelcast.internal.nio.ascii;
 import com.hazelcast.config.RestEndpointGroup;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -31,7 +31,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 /**
  * Tests if HTTP REST URLs are protected by the correct REST endpoint groups.
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class HttpRestEndpointGroupsTest extends RestApiConfigTestBase {

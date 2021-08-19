@@ -27,12 +27,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.BitSet;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.core.JobStatus.FAILED;
-import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -111,15 +107,5 @@ public class SqlClientTest extends SqlTestSupport {
         result.close();
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, FAILED);
-    }
-
-    private static Job awaitSingleRunningJob(HazelcastInstance hz) {
-        AtomicReference<Job> job = new AtomicReference<>();
-        assertTrueEventually(() -> {
-            List<Job> jobs = hz.getJet().getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
-            assertEquals(1, jobs.size());
-            job.set(jobs.get(0));
-        });
-        return job.get();
     }
 }

@@ -24,7 +24,6 @@ import com.hazelcast.sql.impl.calcite.validate.operators.misc.HazelcastCaseOpera
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSyntax;
 import org.junit.Test;
@@ -64,7 +63,8 @@ public class HazelcastSqlOperatorTableTest {
     public void testOperandTypeChecker() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
             boolean valid = operator instanceof HazelcastOperandTypeCheckerAware
-                    || operator instanceof HazelcastCaseOperator;
+                    || operator instanceof HazelcastCaseOperator
+                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT;
 
             assertTrue("Operator must implement one of classes from " + HazelcastFunction.class.getPackage().toString()
                     + ": " + operator.getClass().getSimpleName(), valid);
@@ -74,11 +74,9 @@ public class HazelcastSqlOperatorTableTest {
     @Test
     public void testReturnTypeInference() {
         for (SqlOperator operator : HazelcastSqlOperatorTable.instance().getOperatorList()) {
-            /**
-             * HazelcastInPredicate inherits from Calcite's SqlInOperator due to hacks inside SqlToRelConverter
-             * @see org.apache.calcite.sql2rel.SqlToRelConverter##substituteSubQuery
-             * */
-            if (operator.getKind() == SqlKind.IN || operator.getKind() == SqlKind.NOT_IN) {
+            if (operator == HazelcastSqlOperatorTable.IN
+                    || operator == HazelcastSqlOperatorTable.NOT_IN
+                    || operator == HazelcastSqlOperatorTable.ARGUMENT_ASSIGNMENT) {
                 continue;
             }
             boolean valid = operator.getReturnTypeInference() instanceof HazelcastReturnTypeInference;

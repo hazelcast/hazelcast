@@ -109,6 +109,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
 
     private final NodeEngineImpl nodeEngine;
+    private final JetServiceBackend jetServiceBackend;
     private volatile SnapshotContext snapshotContext;
     private JobConfig jobConfig;
 
@@ -123,6 +124,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         this.executionId = executionId;
         this.isLightJob = isLightJob;
         this.nodeEngine = nodeEngine;
+        this.jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
         this.jobName = idToString(jobId);
 
@@ -209,8 +211,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 return executionFuture;
             } else {
                 // begin job execution
-                JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-                ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
+                ClassLoader cl = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -240,7 +241,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
         if (!executionCompleted.compareAndSet(false, true)) {
             return;
         }
-
         for (Tasklet tasklet : tasklets) {
             try {
                 tasklet.close();

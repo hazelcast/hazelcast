@@ -22,9 +22,8 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.AbstractScanRel;
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
 import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -41,6 +40,7 @@ import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
@@ -56,7 +56,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Map index scan operator.
  */
-public class IndexScanMapPhysicalRel extends AbstractScanRel implements PhysicalRel {
+public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
 
     private final MapTableIndex index;
     private final IndexFilter indexFilter;
@@ -86,6 +86,10 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
 
     public IndexFilter getIndexFilter() {
         return indexFilter;
+    }
+
+    public RexNode getRemainderExp() {
+        return remainderExp;
     }
 
     public ComparatorEx<Object[]> getComparator() {
@@ -132,6 +136,10 @@ public class IndexScanMapPhysicalRel extends AbstractScanRel implements Physical
         }
 
         return project(schema, projection, parameterMetadata);
+    }
+
+    public HazelcastTable getTableUnwrapped() {
+        return table.unwrap(HazelcastTable.class);
     }
 
     @Override

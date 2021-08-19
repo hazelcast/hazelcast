@@ -21,11 +21,10 @@ import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -37,13 +36,13 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlRowImpl;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.client.SqlClientService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -74,25 +73,15 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     private static final String ERROR_KEY = "KEY FAILURE";
     private static final String ERROR_VALUE = "VALUE FAILURE";
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    private HazelcastInstance member;
-    private HazelcastInstance client;
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initializeWithClient(1, config(), clientConfig());
+    }
 
     @Before
     public void before() {
-        member = factory.newInstances(config(), 2)[0];
-        client = factory.newHazelcastClient(clientConfig());
-
         prepare();
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
-
-        member = null;
-        client = null;
     }
 
     private static Config config() {
@@ -125,8 +114,9 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testMember() {
-        try (SqlResult res = member.getSql().execute(SQL)) {
+        try (SqlResult res = instance().getSql().execute(SQL)) {
             for (SqlRow row : res) {
                 SqlRowImpl row0 = (SqlRowImpl) row;
 
@@ -140,10 +130,11 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19273")
     public void testClient() {
         int pageSize = KEY_COUNT / 2;
 
-        SqlClientService clientService = (SqlClientService) client.getSql();
+        SqlClientService clientService = (SqlClientService) client().getSql();
 
         ClientConnection connection = clientService.getQueryConnection();
 
@@ -211,7 +202,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             localMap.put(new PersonKey(i), new Person());
         }
 
-        member.getMap(MAP_NAME).putAll(localMap);
+        instance().getMap(MAP_NAME).putAll(localMap);
     }
 
     public static class PersonKey implements Portable {

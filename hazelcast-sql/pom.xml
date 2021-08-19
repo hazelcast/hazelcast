@@ -208,7 +208,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>false</shadeTestJar>
+                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <!--
                                 Including instead of excluding to workaround maven-shade-plugin issues:

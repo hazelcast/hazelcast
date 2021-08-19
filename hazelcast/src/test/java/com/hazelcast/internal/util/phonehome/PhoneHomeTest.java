@@ -53,11 +53,11 @@ import java.util.function.Function;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.test.Accessors.getNode;
-import static java.lang.Math.min;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -80,11 +80,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get(PhoneHomeMetrics.BUILD_VERSION.getRequestParameterName()), BuildInfoProvider.getBuildInfo().getVersion());
-        String expectedCP = System.getProperty("java.class.path");
-        assertEquals(
-                parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()),
-                expectedCP.substring(0, min(expectedCP.length(), BuildInfoCollector.CLASSPATH_MAX_LENGTH))
-        );
+        assertTrue(parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()).endsWith(".jar"));
         assertEquals(UUID.fromString(parameters.get(PhoneHomeMetrics.UUID_OF_CLUSTER.getRequestParameterName())), node.getLocalMember().getUuid());
         assertNull(parameters.get("e"));
         assertNull(parameters.get("oem"));
@@ -92,6 +88,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertNull(parameters.get("hdgb"));
         assertEquals(parameters.get(PhoneHomeMetrics.HAZELCAST_DOWNLOAD_ID.getRequestParameterName()), "source");
         assertEquals(parameters.get(PhoneHomeMetrics.CLUSTER_SIZE.getRequestParameterName()), "A");
+        assertEquals(parameters.get(PhoneHomeMetrics.EXACT_CLUSTER_SIZE.getRequestParameterName()), "1");
         assertEquals(parameters.get(PhoneHomeMetrics.CLIENT_ENDPOINT_COUNT.getRequestParameterName()), "A");
 
         assertEquals(parameters.get(PhoneHomeMetrics.ACTIVE_CPP_CLIENTS_COUNT.getRequestParameterName()), "0");

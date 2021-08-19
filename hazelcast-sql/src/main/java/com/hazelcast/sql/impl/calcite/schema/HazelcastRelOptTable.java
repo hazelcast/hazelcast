@@ -16,8 +16,8 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
-import com.hazelcast.sql.impl.calcite.opt.logical.FilterIntoScanLogicalRule;
-import com.hazelcast.sql.impl.calcite.opt.logical.ProjectIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.FilterIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.ProjectIntoScanLogicalRule;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptSchema;
 import org.apache.calcite.plan.RelOptTable;
