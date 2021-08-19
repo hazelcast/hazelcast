@@ -31,7 +31,6 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
@@ -79,7 +78,6 @@ import java.util.stream.Stream;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
@@ -89,7 +87,6 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
-import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -263,12 +260,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                         .collect(toList());
 
         tasklets.addAll(allReceivers);
-    }
-
-    public List<Tuple2<ProcessorSupplier, String>> getProcessorSuppliers() {
-        return unmodifiableList(toList(
-                vertices, vertexDef -> tuple2(vertexDef.processorSupplier(), vertexDef.name())
-        ));
     }
 
     public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> getReceiverMap() {
@@ -706,8 +697,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return VertexDef.getHigherPriorityVertices(vertices).size();
     }
 
-    // for test
-    List<VertexDef> getVertices() {
-        return vertices;
+    public List<VertexDef> getVertices() {
+        return unmodifiableList(vertices);
     }
 }

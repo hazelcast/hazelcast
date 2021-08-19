@@ -28,15 +28,14 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -100,7 +99,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile Map<SenderReceiverKey, SenderTasklet> senderMap;
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
 
-    private List<Tuple2<ProcessorSupplier, String>> procSuppliers = emptyList();
+    private List<VertexDef> vertices = emptyList();
     private List<Tasklet> tasklets = emptyList();
 
     // future which is completed only after all tasklets are completed and contains execution result
@@ -151,7 +150,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
-        procSuppliers = plan.getProcessorSuppliers();
+        vertices = plan.getVertices();
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
@@ -255,11 +254,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
         ClassLoader jobCL = jobExecutionService.getClassLoader(jobConfig, jobId);
         doWithClassLoader(jobCL, () -> {
 
-            for (Tuple2<ProcessorSupplier, String> s : procSuppliers) {
+            for (VertexDef vertex : vertices) {
                 try {
                     ClassLoader processorCl = isLightJob ?
-                            null : jobExecutionService.getProcessorClassLoader(jobId, s.f1());
-                    doWithClassLoader(processorCl, () -> s.f0().close(error));
+                            null : jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()
                                   + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
