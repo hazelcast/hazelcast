@@ -497,7 +497,7 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
     }
 
     /**
-     * It tests all non-base types. They were tested by quick test suite.
+     * It tests all non-base types. Base type interactions were tested by quick test suite.
      */
     protected static Collection<Object[]> parametersSlow() {
         List<Object[]> res = new ArrayList<>();
