@@ -114,7 +114,7 @@ public class PhoneHomeIntegrationTest extends HazelcastTestSupport {
         return condition ? aResponse().withStatus(200) : aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER);
     }
 
-    @Test()
+    @Test
     public void testMapMetrics() {
         node.hazelcastInstance.getMap("hazelcast");
         node.hazelcastInstance.getMap("phonehome");
