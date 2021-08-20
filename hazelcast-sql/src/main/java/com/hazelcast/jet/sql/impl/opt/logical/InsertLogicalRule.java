@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.LogicalTableInsert;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;

@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;

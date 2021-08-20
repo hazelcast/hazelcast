@@ -64,8 +64,6 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments, long timeout);
-
     protected void checkPermissions(SqlSecurityContext context, DAG dag) {
         if (!context.isSecurityEnabled()) {
             return;

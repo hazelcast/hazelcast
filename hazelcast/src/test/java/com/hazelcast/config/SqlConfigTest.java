@@ -35,33 +35,15 @@ public class SqlConfigTest extends HazelcastTestSupport {
     public void testEmpty() {
         SqlConfig config = new SqlConfig();
 
-        assertEquals(SqlConfig.DEFAULT_EXECUTOR_POOL_SIZE, config.getExecutorPoolSize());
         assertEquals(SqlConfig.DEFAULT_STATEMENT_TIMEOUT_MILLIS, config.getStatementTimeoutMillis());
     }
 
     @Test
     public void testNonEmpty() {
         SqlConfig config = new SqlConfig()
-                .setExecutorPoolSize(10)
                 .setStatementTimeoutMillis(30L);
 
-        assertEquals(10, config.getExecutorPoolSize());
         assertEquals(30L, config.getStatementTimeoutMillis());
-    }
-
-    @Test
-    public void testExecutorPoolSizeDefault() {
-        new SqlConfig().setExecutorPoolSize(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testExecutorPoolSizeZero() {
-        new SqlConfig().setExecutorPoolSize(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testExecutorPoolSizeNegative() {
-        new SqlConfig().setExecutorPoolSize(-2);
     }
 
     @Test

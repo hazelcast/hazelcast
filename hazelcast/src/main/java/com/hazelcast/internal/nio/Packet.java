@@ -322,11 +322,11 @@ public final class Packet extends HeapData implements OutboundFrame {
          */
         SERVER_CONTROL,
         /**
-         * The type of an SQL packet.
+         * Unused packet type. Available for future use.
          * <p>
          * {@code ordinal = 5}
          */
-        SQL,
+        UNDEFINED5,
         /**
          * Unused packet type. Available for future use.
          * <p>

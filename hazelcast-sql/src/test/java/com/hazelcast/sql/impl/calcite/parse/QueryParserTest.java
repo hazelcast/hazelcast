@@ -16,28 +16,22 @@
 
 package com.hazelcast.sql.impl.calcite.parse;
 
+import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.SqlBackend;
 import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlValidator;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.calcite.prepare.Prepare.CatalogReader;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.util.SqlVisitor;
-import org.apache.calcite.sql.validate.SqlConformance;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
 
@@ -45,48 +39,30 @@ import static org.mockito.BDDMockito.given;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueryParserTest {
 
+    @InjectMocks
     private QueryParser parser;
 
     @Mock
-    private CatalogReader catalogReader;
-
-    @Mock
-    private SqlConformance jetConformance;
-
-    @Mock
-    private SqlBackend jetSqlBackend;
-
-    @Mock
-    private HazelcastSqlValidator jetSqlValidator;
+    private HazelcastSqlValidator sqlValidator;
 
     @Mock
     private SqlNode validatedNode;
 
-    @Mock
-    private SqlVisitor<Void> unsupportedOperatorVisitor;
-
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        parser = new QueryParser(HazelcastTypeFactory.INSTANCE, catalogReader, jetConformance, emptyList(), jetSqlBackend);
-        given(jetSqlBackend.validator(catalogReader, HazelcastTypeFactory.INSTANCE, jetConformance, emptyList())).willReturn(jetSqlValidator);
     }
 
     @Test
     public void unsupportedKeywordTest() {
-        try {
-            parser.parse("show tables");
-            fail("\"show tables\" did not throw parsing exception");
-        } catch (Exception e) {
-            String message = e.getMessage();
-            assertEquals("Encountered \"show\" at line 1, column 1.", message);
-        }
+        assertThatThrownBy(() -> parser.parse("show tables"))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Encountered \"show tables\" at line 1, column 1.");
     }
 
     @Test
     public void test_trailingSemicolon() {
-        given(jetSqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(jetSqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
+        given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
 
         parser.parse("SELECT * FROM t;");
         parser.parse("SELECT * FROM t;;");
@@ -94,8 +70,7 @@ public class QueryParserTest {
 
     @Test
     public void test_noFrom() {
-        given(jetSqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
-        given(jetSqlBackend.unsupportedOperationVisitor(catalogReader)).willReturn(unsupportedOperatorVisitor);
+        given(sqlValidator.validate(isA(SqlNode.class))).willReturn(validatedNode);
 
         parser.parse("SELECT 1");
         parser.parse("SELECT 'test'");

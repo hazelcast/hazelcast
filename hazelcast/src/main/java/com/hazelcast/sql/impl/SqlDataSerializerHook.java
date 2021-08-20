@@ -79,16 +79,6 @@ import com.hazelcast.sql.impl.operation.QueryCheckResponseOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperation;
 import com.hazelcast.sql.impl.operation.QueryExecuteOperationFragment;
 import com.hazelcast.sql.impl.operation.QueryFlowControlExchangeOperation;
-import com.hazelcast.sql.impl.plan.node.EmptyPlanNode;
-import com.hazelcast.sql.impl.plan.node.FetchPlanNode;
-import com.hazelcast.sql.impl.plan.node.FilterPlanNode;
-import com.hazelcast.sql.impl.plan.node.MapIndexScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.MapScanPlanNode;
-import com.hazelcast.sql.impl.plan.node.ProjectPlanNode;
-import com.hazelcast.sql.impl.plan.node.RootPlanNode;
-import com.hazelcast.sql.impl.plan.node.io.ReceivePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.ReceiveSortMergePlanNode;
-import com.hazelcast.sql.impl.plan.node.io.SendPlanNode;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
@@ -128,12 +118,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int QUERY_OPERATION_CHECK = 12;
     public static final int QUERY_OPERATION_CHECK_RESPONSE = 13;
 
-    public static final int NODE_ROOT = 14;
-    public static final int NODE_SEND = 15;
-    public static final int NODE_RECEIVE = 16;
-    public static final int NODE_PROJECT = 17;
-    public static final int NODE_FILTER = 18;
-    public static final int NODE_MAP_SCAN = 19;
+    public static final int LAZY_TARGET = 14;
+
+    public static final int INDEX_FILTER_VALUE = 15;
+    public static final int INDEX_FILTER_EQUALS = 16;
+    public static final int INDEX_FILTER_RANGE = 17;
+    public static final int INDEX_FILTER_IN = 18;
+
+    public static final int MAP_INDEX_SCAN_METADATA = 19;
 
     public static final int EXPRESSION_COLUMN = 20;
     public static final int EXPRESSION_IS_NULL = 21;
@@ -167,51 +159,35 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_FLOOR_CEIL = 45;
     public static final int EXPRESSION_ROUND_TRUNCATE = 46;
 
-    public static final int NODE_EMPTY = 47;
+    public static final int INTERVAL_YEAR_MONTH = 47;
+    public static final int INTERVAL_DAY_SECOND = 48;
 
-    public static final int INDEX_FILTER_VALUE = 48;
-    public static final int INDEX_FILTER_EQUALS = 49;
-    public static final int INDEX_FILTER_RANGE = 50;
-    public static final int INDEX_FILTER_IN = 51;
+    //region String expressions IDs
+    public static final int EXPRESSION_ASCII = 49;
+    public static final int EXPRESSION_CHAR_LENGTH = 50;
+    public static final int EXPRESSION_INITCAP = 51;
+    public static final int EXPRESSION_LOWER = 52;
+    public static final int EXPRESSION_UPPER = 53;
+    public static final int EXPRESSION_CONCAT = 54;
+    public static final int EXPRESSION_LIKE = 55;
+    public static final int EXPRESSION_SUBSTRING = 56;
+    public static final int EXPRESSION_TRIM = 57;
+    public static final int EXPRESSION_REMAINDER = 58;
+    public static final int EXPRESSION_CONCAT_WS = 59;
+    public static final int EXPRESSION_REPLACE = 60;
+    public static final int EXPRESSION_POSITION = 61;
+    public static final int EXPRESSION_CASE = 62;
+    public static final int EXPRESSION_EXTRACT = 63;
+    //endregion
 
-    public static final int NODE_MAP_INDEX_SCAN = 52;
+    public static final int EXPRESSION_DOUBLE_DOUBLE = 64;
+    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 65;
+    public static final int EXPRESSION_TO_EPOCH_MILLIS = 66;
 
-    public static final int EXPRESSION_ASCII = 53;
-    public static final int EXPRESSION_CHAR_LENGTH = 54;
-    public static final int EXPRESSION_INITCAP = 55;
-    public static final int EXPRESSION_LOWER = 56;
-    public static final int EXPRESSION_UPPER = 57;
-    public static final int EXPRESSION_CONCAT = 58;
-    public static final int EXPRESSION_LIKE = 59;
-    public static final int EXPRESSION_SUBSTRING = 60;
-    public static final int EXPRESSION_TRIM = 61;
+    public static final int MAPPING = 67;
+    public static final int MAPPING_FIELD = 68;
 
-    public static final int NODE_RECEIVE_MERGE_SORT = 62;
-    public static final int NODE_FETCH = 63;
-
-    public static final int EXPRESSION_REMAINDER = 64;
-
-    public static final int LAZY_TARGET = 65;
-
-    public static final int EXPRESSION_DOUBLE_DOUBLE = 66;
-
-    public static final int INTERVAL_YEAR_MONTH = 67;
-    public static final int INTERVAL_DAY_SECOND = 68;
-
-    public static final int EXPRESSION_REPLACE = 69;
-    public static final int EXPRESSION_POSITION = 70;
-    public static final int EXPRESSION_CASE = 71;
-    public static final int EXPRESSION_EXTRACT = 72;
-    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 73;
-    public static final int EXPRESSION_TO_EPOCH_MILLIS = 74;
-
-    public static final int MAPPING = 75;
-    public static final int MAPPING_FIELD = 76;
-    public static final int MAP_INDEX_SCAN_METADATA = 77;
-
-    public static final int EXPRESSION_CONCAT_WS = 78;
-
-    public static final int LEN = EXPRESSION_CONCAT_WS + 1;
+    public static final int LEN = MAPPING_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -241,12 +217,14 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_OPERATION_CHECK] = arg -> new QueryCheckOperation();
         constructors[QUERY_OPERATION_CHECK_RESPONSE] = arg -> new QueryCheckResponseOperation();
 
-        constructors[NODE_ROOT] = arg -> new RootPlanNode();
-        constructors[NODE_SEND] = arg -> new SendPlanNode();
-        constructors[NODE_RECEIVE] = arg -> new ReceivePlanNode();
-        constructors[NODE_PROJECT] = arg -> new ProjectPlanNode();
-        constructors[NODE_FILTER] = arg -> new FilterPlanNode();
-        constructors[NODE_MAP_SCAN] = arg -> new MapScanPlanNode();
+        constructors[LAZY_TARGET] = arg -> new LazyTarget();
+
+        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
+        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
+        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
+        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
+
+        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
 
         constructors[EXPRESSION_COLUMN] = arg -> new ColumnExpression<>();
         constructors[EXPRESSION_IS_NULL] = arg -> new IsNullPredicate();
@@ -280,14 +258,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_FLOOR_CEIL] = arg -> new FloorCeilFunction<>();
         constructors[EXPRESSION_ROUND_TRUNCATE] = arg -> new RoundTruncateFunction<>();
 
-        constructors[NODE_EMPTY] = arg -> new EmptyPlanNode();
-
-        constructors[INDEX_FILTER_VALUE] = arg -> new IndexFilterValue();
-        constructors[INDEX_FILTER_EQUALS] = arg -> new IndexEqualsFilter();
-        constructors[INDEX_FILTER_RANGE] = arg -> new IndexRangeFilter();
-        constructors[INDEX_FILTER_IN] = arg -> new IndexInFilter();
-
-        constructors[NODE_MAP_INDEX_SCAN] = arg -> new MapIndexScanPlanNode();
+        constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
+        constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
 
         constructors[EXPRESSION_ASCII] = arg -> new AsciiFunction();
         constructors[EXPRESSION_CHAR_LENGTH] = arg -> new CharLengthFunction();
@@ -300,31 +272,18 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_TRIM] = arg -> new TrimFunction();
         constructors[EXPRESSION_REPLACE] = arg -> new ReplaceFunction();
         constructors[EXPRESSION_POSITION] = arg -> new PositionFunction();
-
+        constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
+        constructors[EXPRESSION_CONCAT_WS] = arg -> new ConcatWSFunction();
+        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
         constructors[EXPRESSION_EXTRACT] = arg -> new ExtractFunction();
 
-        constructors[NODE_RECEIVE_MERGE_SORT] = arg -> new ReceiveSortMergePlanNode();
-        constructors[NODE_FETCH] = arg -> new FetchPlanNode();
-
-        constructors[EXPRESSION_REMAINDER] = arg -> new RemainderFunction<>();
-
-        constructors[LAZY_TARGET] = arg -> new LazyTarget();
         constructors[EXPRESSION_DOUBLE_DOUBLE] = arg -> new DoubleBiFunction();
-
-        constructors[INTERVAL_YEAR_MONTH] = arg -> new SqlYearMonthInterval();
-        constructors[INTERVAL_DAY_SECOND] = arg -> new SqlDaySecondInterval();
-
-        constructors[EXPRESSION_CASE] = arg -> new CaseExpression<>();
-
         constructors[EXPRESSION_TO_TIMESTAMP_TZ] = arg -> new ToTimestampTzFunction();
         constructors[EXPRESSION_TO_EPOCH_MILLIS] = arg -> new ToEpochMillisFunction();
 
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
-        constructors[MAP_INDEX_SCAN_METADATA] = arg -> new MapIndexScanMetadata();
-
-        constructors[EXPRESSION_CONCAT_WS] = arg -> new ConcatWSFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

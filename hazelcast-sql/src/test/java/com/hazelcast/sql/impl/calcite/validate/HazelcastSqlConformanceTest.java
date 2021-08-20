@@ -45,7 +45,7 @@ public class HazelcastSqlConformanceTest {
         assertTrue(conformance.isHavingAlias());
 
         // FROM keyword is a must
-        assertTrue(conformance.isFromRequired());
+        assertFalse(conformance.isFromRequired());
 
         // MINUS in addition to EXCEPT
         assertTrue(conformance.isMinusAllowed());
