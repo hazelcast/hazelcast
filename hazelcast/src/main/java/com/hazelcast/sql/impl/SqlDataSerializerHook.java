@@ -73,10 +73,7 @@ import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.EmptyRow;
-import com.hazelcast.sql.impl.row.EmptyRowBatch;
 import com.hazelcast.sql.impl.row.HeapRow;
-import com.hazelcast.sql.impl.row.JoinRow;
-import com.hazelcast.sql.impl.row.ListRowBatch;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -98,79 +95,76 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int QUERY_ID = 1;
 
     public static final int ROW_HEAP = 2;
-    public static final int ROW_JOIN = 3;
-    public static final int ROW_EMPTY = 4;
-    public static final int ROW_BATCH_LIST = 5;
-    public static final int ROW_BATCH_EMPTY = 6;
+    public static final int ROW_EMPTY = 3;
 
-    public static final int LAZY_TARGET = 7;
+    public static final int LAZY_TARGET = 4;
 
-    public static final int INDEX_FILTER_VALUE = 8;
-    public static final int INDEX_FILTER_EQUALS = 9;
-    public static final int INDEX_FILTER_RANGE = 10;
-    public static final int INDEX_FILTER_IN = 11;
+    public static final int INDEX_FILTER_VALUE = 5;
+    public static final int INDEX_FILTER_EQUALS = 6;
+    public static final int INDEX_FILTER_RANGE = 7;
+    public static final int INDEX_FILTER_IN = 8;
 
-    public static final int MAP_INDEX_SCAN_METADATA = 12;
+    public static final int MAP_INDEX_SCAN_METADATA = 9;
 
-    public static final int EXPRESSION_COLUMN = 13;
-    public static final int EXPRESSION_IS_NULL = 14;
+    public static final int EXPRESSION_COLUMN = 10;
+    public static final int EXPRESSION_IS_NULL = 11;
 
-    public static final int TARGET_DESCRIPTOR_GENERIC = 15;
+    public static final int TARGET_DESCRIPTOR_GENERIC = 12;
 
-    public static final int QUERY_PATH = 16;
+    public static final int QUERY_PATH = 13;
 
-    public static final int EXPRESSION_CONSTANT = 17;
-    public static final int EXPRESSION_PARAMETER = 18;
-    public static final int EXPRESSION_CAST = 19;
-    public static final int EXPRESSION_DIVIDE = 20;
-    public static final int EXPRESSION_MINUS = 21;
-    public static final int EXPRESSION_MULTIPLY = 22;
-    public static final int EXPRESSION_PLUS = 23;
-    public static final int EXPRESSION_UNARY_MINUS = 24;
-    public static final int EXPRESSION_AND = 25;
-    public static final int EXPRESSION_OR = 26;
-    public static final int EXPRESSION_NOT = 27;
-    public static final int EXPRESSION_COMPARISON = 28;
-    public static final int EXPRESSION_IS_TRUE = 29;
-    public static final int EXPRESSION_IS_NOT_TRUE = 30;
-    public static final int EXPRESSION_IS_FALSE = 31;
-    public static final int EXPRESSION_IS_NOT_FALSE = 32;
-    public static final int EXPRESSION_IS_NOT_NULL = 33;
+    public static final int EXPRESSION_CONSTANT = 14;
+    public static final int EXPRESSION_PARAMETER = 15;
+    public static final int EXPRESSION_CAST = 16;
+    public static final int EXPRESSION_DIVIDE = 17;
+    public static final int EXPRESSION_MINUS = 18;
+    public static final int EXPRESSION_MULTIPLY = 19;
+    public static final int EXPRESSION_PLUS = 20;
+    public static final int EXPRESSION_UNARY_MINUS = 21;
+    public static final int EXPRESSION_AND = 22;
+    public static final int EXPRESSION_OR = 23;
+    public static final int EXPRESSION_NOT = 24;
+    public static final int EXPRESSION_COMPARISON = 25;
+    public static final int EXPRESSION_IS_TRUE = 26;
+    public static final int EXPRESSION_IS_NOT_TRUE = 27;
+    public static final int EXPRESSION_IS_FALSE = 28;
+    public static final int EXPRESSION_IS_NOT_FALSE = 29;
+    public static final int EXPRESSION_IS_NOT_NULL = 30;
 
-    public static final int EXPRESSION_ABS = 34;
-    public static final int EXPRESSION_SIGN = 35;
-    public static final int EXPRESSION_RAND = 36;
-    public static final int EXPRESSION_DOUBLE = 37;
-    public static final int EXPRESSION_FLOOR_CEIL = 38;
-    public static final int EXPRESSION_ROUND_TRUNCATE = 39;
+    public static final int EXPRESSION_ABS = 31;
+    public static final int EXPRESSION_SIGN = 32;
+    public static final int EXPRESSION_RAND = 33;
+    public static final int EXPRESSION_DOUBLE = 34;
+    public static final int EXPRESSION_FLOOR_CEIL = 35;
+    public static final int EXPRESSION_ROUND_TRUNCATE = 36;
 
-    public static final int INTERVAL_YEAR_MONTH = 40;
-    public static final int INTERVAL_DAY_SECOND = 41;
+    public static final int INTERVAL_YEAR_MONTH = 37;
+    public static final int INTERVAL_DAY_SECOND = 38;
 
     //region String expressions IDs
-    public static final int EXPRESSION_ASCII = 42;
-    public static final int EXPRESSION_CHAR_LENGTH = 43;
-    public static final int EXPRESSION_INITCAP = 44;
-    public static final int EXPRESSION_LOWER = 45;
-    public static final int EXPRESSION_UPPER = 46;
-    public static final int EXPRESSION_CONCAT = 47;
-    public static final int EXPRESSION_LIKE = 48;
-    public static final int EXPRESSION_SUBSTRING = 49;
-    public static final int EXPRESSION_TRIM = 50;
-    public static final int EXPRESSION_REMAINDER = 51;
-    public static final int EXPRESSION_CONCAT_WS = 52;
-    public static final int EXPRESSION_REPLACE = 53;
-    public static final int EXPRESSION_POSITION = 54;
-    public static final int EXPRESSION_CASE = 55;
-    public static final int EXPRESSION_EXTRACT = 56;
+    public static final int EXPRESSION_ASCII = 39;
+    public static final int EXPRESSION_CHAR_LENGTH = 40;
+    public static final int EXPRESSION_INITCAP = 41;
+    public static final int EXPRESSION_LOWER = 42;
+    public static final int EXPRESSION_UPPER = 43;
+    public static final int EXPRESSION_CONCAT = 44;
+    public static final int EXPRESSION_LIKE = 45;
+    public static final int EXPRESSION_SUBSTRING = 46;
+    public static final int EXPRESSION_TRIM = 47;
+    public static final int EXPRESSION_REMAINDER = 48;
+    public static final int EXPRESSION_CONCAT_WS = 49;
+    public static final int EXPRESSION_REPLACE = 50;
+    public static final int EXPRESSION_POSITION = 51;
+    public static final int EXPRESSION_CASE = 52;
+    public static final int EXPRESSION_EXTRACT = 53;
     //endregion
 
-    public static final int EXPRESSION_DOUBLE_DOUBLE = 57;
-    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 58;
-    public static final int EXPRESSION_TO_EPOCH_MILLIS = 59;
+    public static final int EXPRESSION_DOUBLE_DOUBLE = 54;
+    public static final int EXPRESSION_TO_TIMESTAMP_TZ = 55;
+    public static final int EXPRESSION_TO_EPOCH_MILLIS = 56;
 
-    public static final int MAPPING = 60;
-    public static final int MAPPING_FIELD = 61;
+    public static final int MAPPING = 57;
+    public static final int MAPPING_FIELD = 58;
 
     public static final int LEN = MAPPING_FIELD + 1;
 
@@ -189,10 +183,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_ID] = arg -> new QueryId();
 
         constructors[ROW_HEAP] = arg -> new HeapRow();
-        constructors[ROW_JOIN] = arg -> new JoinRow();
         constructors[ROW_EMPTY] = arg -> EmptyRow.INSTANCE;
-        constructors[ROW_BATCH_LIST] = arg -> new ListRowBatch();
-        constructors[ROW_BATCH_EMPTY] = arg -> EmptyRowBatch.INSTANCE;
 
         constructors[LAZY_TARGET] = arg -> new LazyTarget();
 
