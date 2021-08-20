@@ -484,7 +484,6 @@
     </instance-tracking>
 
     <sql>
-        <executor-pool-size>-1</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 

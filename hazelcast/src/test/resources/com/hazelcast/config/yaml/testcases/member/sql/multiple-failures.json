@@ -2,7 +2,6 @@
   "instance": {
     "hazelcast": {
       "sql": {
-        "executor-pool-size": null,
         "statement-timeout-millis": "100ms",
         "unknown-prop": false
       }
@@ -18,13 +17,6 @@
         "causingExceptions": [],
         "keyword": "additionalProperties",
         "message": "extraneous key [unknown-prop] is not permitted"
-      },
-      {
-        "schemaLocation": "#/definitions/Sql/properties/executor-pool-size",
-        "pointerToViolation": "#/hazelcast/sql/executor-pool-size",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: Integer, found: Null"
       },
       {
         "schemaLocation": "#/definitions/Sql/properties/statement-timeout-millis",
