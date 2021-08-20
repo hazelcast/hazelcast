@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.createNullableType;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.createNullableType;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 

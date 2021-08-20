@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operand.OperandChecker;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 public class JetTableFunctionParameter {

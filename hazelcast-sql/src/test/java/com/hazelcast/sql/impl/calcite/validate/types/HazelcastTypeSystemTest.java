@@ -16,6 +16,10 @@
 
 package com.hazelcast.sql.impl.calcite.validate.types;
 
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeSystem;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -27,7 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils.isObjectIdentifier;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isObjectIdentifier;
 import static org.apache.calcite.sql.parser.SqlParserPos.ZERO;
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;

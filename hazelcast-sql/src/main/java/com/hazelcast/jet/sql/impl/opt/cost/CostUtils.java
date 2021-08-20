@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.cost;
 
 import com.hazelcast.config.IndexType;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 

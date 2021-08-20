@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlConformance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

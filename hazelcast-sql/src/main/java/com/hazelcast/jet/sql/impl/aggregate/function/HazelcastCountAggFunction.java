@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastAggFunction;
-import com.hazelcast.sql.impl.calcite.validate.param.NoOpParameterConverter;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastIntegerType;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastAggFunction;
+import com.hazelcast.jet.sql.impl.validate.param.NoOpParameterConverter;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;
