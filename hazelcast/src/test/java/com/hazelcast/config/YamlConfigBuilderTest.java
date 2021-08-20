@@ -3766,11 +3766,9 @@ public class YamlConfigBuilderTest
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    executor-pool-size: 10\n"
                 + "    statement-timeout-millis: 30\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
-        assertEquals(10, sqlConfig.getExecutorPoolSize());
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
     }
 
