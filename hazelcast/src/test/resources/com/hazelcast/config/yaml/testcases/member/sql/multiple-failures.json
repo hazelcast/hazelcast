@@ -26,6 +26,6 @@
         "message": "expected type: Integer, found: String"
       }
     ],
-    "message": "3 schema violations found"
+    "message": "2 schema violations found"
   }
 }
