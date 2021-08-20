@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.plan.cache;
 
 import com.hazelcast.sql.impl.optimizer.PlanKey;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -48,13 +48,13 @@ public class PlanCacheTest extends PlanCacheTestSupport {
         PlanKey key = createKey("sql");
 
         // Put plan
-        Plan plan1 = createPlan(key, PART_MAP_1);
+        SqlPlan plan1 = createPlan(key, PART_MAP_1);
         cache.put(key, plan1);
         assertEquals(1, cache.size());
         assertSame(plan1, cache.get(key));
 
         // Overwrite plan
-        Plan plan2 = createPlan(key, PART_MAP_2);
+        SqlPlan plan2 = createPlan(key, PART_MAP_2);
         cache.put(key, plan2);
         assertEquals(1, cache.size());
         assertSame(plan2, cache.get(key));
@@ -112,7 +112,7 @@ public class PlanCacheTest extends PlanCacheTestSupport {
     public void testPlanUsageUpdate() {
         PlanCache cache = new PlanCache(10);
         PlanKey key = createKey("sql");
-        Plan plan = createPlan(key, PART_MAP_1);
+        SqlPlan plan = createPlan(key, PART_MAP_1);
 
         cache.put(key, plan);
         long timestamp1 = plan.getPlanLastUsed();

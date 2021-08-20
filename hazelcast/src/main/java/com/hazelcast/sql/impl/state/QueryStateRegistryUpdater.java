@@ -17,14 +17,9 @@
 package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.NodeServiceProvider;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,10 +30,7 @@ import static com.hazelcast.sql.impl.QueryUtils.WORKER_TYPE_STATE_CHECKER;
  */
 public class QueryStateRegistryUpdater {
 
-    private static final long DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY = 30_000L;
-
     private final NodeServiceProvider nodeServiceProvider;
-    private final QueryStateRegistry stateRegistry;
     private final QueryClientStateRegistry clientStateRegistry;
     private final PlanCacheChecker planCacheChecker;
 
@@ -51,7 +43,6 @@ public class QueryStateRegistryUpdater {
     public QueryStateRegistryUpdater(
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
-        QueryStateRegistry stateRegistry,
         QueryClientStateRegistry clientStateRegistry,
         PlanCacheChecker planCacheChecker,
         long stateCheckFrequency
@@ -61,7 +52,6 @@ public class QueryStateRegistryUpdater {
         }
 
         this.nodeServiceProvider = nodeServiceProvider;
-        this.stateRegistry = stateRegistry;
         this.clientStateRegistry = clientStateRegistry;
         this.planCacheChecker = planCacheChecker;
         this.stateCheckFrequency = stateCheckFrequency;
@@ -123,7 +113,6 @@ public class QueryStateRegistryUpdater {
                 try {
                     Thread.sleep(currentStateCheckFrequency);
 
-                    checkMemberState();
                     checkClientState();
                     checkPlans();
                 } catch (InterruptedException e) {
@@ -135,31 +124,6 @@ public class QueryStateRegistryUpdater {
                     Thread.currentThread().interrupt();
 
                     break;
-                }
-            }
-        }
-
-        private void checkMemberState() {
-            Collection<UUID> activeMemberIds = nodeServiceProvider.getDataMemberIds();
-
-            Map<UUID, Collection<QueryId>> checkMap = new HashMap<>();
-
-            for (QueryState state : stateRegistry.getStates()) {
-                // 1. Check if the query has timed out.
-                if (state.tryCancelOnTimeout()) {
-                    continue;
-                }
-
-                // 2. Check whether the member required for the query has left.
-                if (state.tryCancelOnMemberLeave(activeMemberIds)) {
-                    continue;
-                }
-
-                // 3. Check whether the query is not initialized for too long. If yes, trigger the check process.
-                if (state.requestQueryCheck(stateCheckFrequency, DEFAULT_ORPHANED_QUERY_STATE_CHECK_FREQUENCY)) {
-                    QueryId queryId = state.getQueryId();
-
-                    checkMap.computeIfAbsent(queryId.getMemberId(), (key) -> new ArrayList<>(1)).add(queryId);
                 }
             }
         }
