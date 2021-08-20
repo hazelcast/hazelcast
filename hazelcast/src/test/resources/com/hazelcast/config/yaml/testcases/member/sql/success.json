@@ -2,7 +2,6 @@
   "instance": {
     "hazelcast": {
       "sql": {
-        "executor-pool-size": 8,
         "statement-timeout-millis": 2
       }
     }
