@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.sql.impl.calcite.HazelcastSqlToRelConverter;
+import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
