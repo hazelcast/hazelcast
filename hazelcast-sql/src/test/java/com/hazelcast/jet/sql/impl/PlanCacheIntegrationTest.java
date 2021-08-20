@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.plan.cache;
+package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +36,7 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PlanCacheIntegrationTest extends PlanCacheTestSupport {
+public class PlanCacheIntegrationTest extends SqlTestSupport {
     private String mapName;
 
     @BeforeClass

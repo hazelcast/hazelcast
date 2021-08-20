@@ -37,15 +37,6 @@ public interface PlanNode extends DataSerializable {
     int getId();
 
     /**
-     * Visit the node.
-     * <p>
-     * If there are inputs, they should be visited first.
-     *
-     * @param visitor Visitor.
-     */
-    void visit(PlanNodeVisitor visitor);
-
-    /**
      * Get schema associated with the node.
      *
      * @return Schema.
