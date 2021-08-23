@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.prepare.CalciteCatalogReader;
