@@ -20,6 +20,7 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
+import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.internal.serialization.impl.portable.InnerPortable;
 import com.hazelcast.internal.serialization.impl.portable.MainPortable;
@@ -63,6 +64,14 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
      * @return cluster without any Portable Factory Config
      */
     protected abstract HazelcastInstance[] createCluster();
+
+
+    @Test
+    public void testToStringIsValidJson() {
+        MainPortable expectedPortable = createMainPortable();
+        GenericRecord expected = createGenericRecord(expectedPortable);
+        Json.parse(expected.toString());
+    }
 
     @Test
     public void testPutWithoutFactory_readAsPortable() {
