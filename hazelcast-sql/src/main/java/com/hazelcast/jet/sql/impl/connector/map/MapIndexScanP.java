@@ -238,7 +238,6 @@ final class MapIndexScanP extends AbstractProcessor {
         IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
         Map<Address, Split> newSplits = new HashMap<>();
-
         PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
 
         while (partitionIterator.hasNext()) {
@@ -329,6 +328,7 @@ final class MapIndexScanP extends AbstractProcessor {
          * Topology exception are those related to a member leaving the cluster.
          * We handle them the same as {@link MissingPartitionException} trigger.
          */
+        @SuppressWarnings("BooleanExpressionComplexity")
         private Throwable findTopologyExceptionInCauses(Throwable t) {
             while (t != null) {
                 if (t instanceof MissingPartitionException
