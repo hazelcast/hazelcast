@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.validate.operand;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.OperandChecker;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;

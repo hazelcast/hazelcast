@@ -21,7 +21,7 @@ import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.calcite.OptimizerContext;
+import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.sql.impl.calcite.TestTableResolver;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
