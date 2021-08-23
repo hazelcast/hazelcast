@@ -829,8 +829,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
-                    && c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
         }
 
         @Override

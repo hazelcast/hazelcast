@@ -21,9 +21,9 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.expression.json.ParseJsonFunction;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.validate.operators.string.HazelcastLikeOperator;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
@@ -94,9 +94,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
-import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
-import static com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable.LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
+import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.LENGTH;
 
 /**
  * Utility methods for REX to Hazelcast expression conversion.

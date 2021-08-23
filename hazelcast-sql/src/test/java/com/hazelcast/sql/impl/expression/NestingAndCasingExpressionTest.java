@@ -17,7 +17,7 @@
 package com.hazelcast.sql.impl.expression;
 
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
