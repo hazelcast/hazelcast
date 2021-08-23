@@ -120,7 +120,7 @@ public class SqlClientCursorCleanupTest extends SqlTestSupport {
     private void assertNoState() {
         SqlInternalService service = ((SqlServiceImpl) member.getSql()).getInternalService();
 
-        assertEquals(0, service.getStateRegistry().getStates().size());
+        assertEquals(0, service.getResultRegistry().getResultCount());
         assertEquals(0, service.getClientStateRegistry().getCursorCount());
     }
 
