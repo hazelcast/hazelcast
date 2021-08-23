@@ -50,10 +50,18 @@ public class SetOperation extends BasePutOperation implements MutatingOperation 
     }
 
     @Override
+    protected void innerBeforeRun() {
+        recordStore.beforeOperation();
+    }
+
+    @Override
     protected void afterRunInternal() {
         eventType = newRecord ? ADDED : UPDATED;
-
-        super.afterRunInternal();
+        try {
+            super.afterRunInternal();
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     @Override

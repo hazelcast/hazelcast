@@ -50,6 +50,8 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.RejectedExecutionException;
 
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.core.Offloadable.NO_OFFLOADING;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
@@ -175,6 +177,16 @@ EntryOperation extends LockAwareOperation
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
+        recordStore.beforeOperation();
+    }
+
+    @Override
+    protected void afterRunInternal() {
+        try {
+            super.afterRunInternal();
+        } finally {
+            recordStore.afterOperation();
+        }
     }
 
     @Override

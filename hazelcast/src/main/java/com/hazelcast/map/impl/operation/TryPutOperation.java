@@ -38,6 +38,21 @@ public class TryPutOperation extends BasePutOperation implements MutatingOperati
     }
 
     @Override
+    protected void innerBeforeRun() throws Exception {
+        recordStore.beforeOperation();
+        super.innerBeforeRun();
+    }
+
+    @Override
+    protected void afterRunInternal() {
+        try {
+            super.afterRunInternal();
+        } finally {
+            recordStore.afterOperation();
+        }
+    }
+
+    @Override
     public void onWaitExpire() {
         sendResponse(false);
     }
