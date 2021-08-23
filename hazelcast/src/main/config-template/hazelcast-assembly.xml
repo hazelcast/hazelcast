@@ -16,17 +16,17 @@
   -->
 
 <!--
-  The default Hazelcast configuration for ZIP and TAR distributions.
+  The default Hazelcast @FILTER_DISTRO_NAME@ configuration.
 
   This file differs from hazelcast-default.xml in some settings
-  and it is used by the scripts in the ZIP/TAR distributions.
+  and it is used by the scripts in the @FILTER_DISTRO_NAME@ distribution.
 
-  This configuration, compared to hazelcast-default.xml, enables more features
-  but it disallows external access to ports on which Hazelcast listens.
-  It helps to keep the runtime environment secure.
-  To allow full external access follow these steps:
-  - change "hazelcast.socket.bind.any" property value to "true"
-  - change "enabled" attribute value in "network/interfaces" element to "false"
+  This configuration, compared to hazelcast-default.xml, enables more features.
+  It's focused on keeping balance between security and usability in the distribution.
+
+  To allow full external access in ZIP/TGZ distribution, follow these steps:
+  - set "hazelcast.socket.bind.any" property value to "true"
+  - set "enabled" attribute value in "network/interfaces" element to "false"
   - in network/join configuration:
     - set autodiscovery "enabled" attribute to "true"
     - set tcp-ip "enabled" attribute to "false"

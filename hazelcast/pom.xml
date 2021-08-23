@@ -361,6 +361,7 @@
                                     <filterset>
                                         <filter token="FILTER_LOOPBACK_INTERFACE" value="true" />
                                         <filter token="FILTER_BIND_ANY" value="false" />
+                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ" />
                                     </filterset>
                                 </copy>
                                 <copy todir="${basedir}/target/classes">
@@ -371,6 +372,7 @@
                                     <filterset>
                                         <filter token="FILTER_LOOPBACK_INTERFACE" value="false" />
                                         <filter token="FILTER_BIND_ANY" value="true" />
+                                        <filter token="FILTER_DISTRO_NAME" value="Docker" />
                                     </filterset>
                                 </copy>
                             </target>
