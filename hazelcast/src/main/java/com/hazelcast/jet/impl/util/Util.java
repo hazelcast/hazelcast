@@ -111,7 +111,8 @@ public final class Util {
           "resource upload by one of the following:\n" +
           "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
           "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
-          "  - Add system property or environment variable: -Dhz.jet.resource-upload-enabled=true or HZ_JET_RESOUREUPLOADENABLED=true";
+          "  - Add system property or environment variable: " +
+          "-Dhz.jet.resource-upload-enabled=true or HZ_JET_RESOUREUPLOADENABLED=true";
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
