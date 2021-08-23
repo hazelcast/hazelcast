@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -40,15 +39,33 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final ObjectMapper SERIALIZER = new ObjectMapper();
+    // TODO: serialization, toString, equals-hashcode
+    private SqlJsonQueryWrapperBehavior wrapperBehavior;
+    private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
+    private SqlJsonQueryEmptyOrErrorBehavior onError;
 
     public JsonQueryFunction() { }
 
-    private JsonQueryFunction(Expression<?>[] operands) {
+    private JsonQueryFunction(Expression<?>[] operands,
+                              SqlJsonQueryWrapperBehavior wrapperBehavior,
+                              SqlJsonQueryEmptyOrErrorBehavior onEmpty,
+                              SqlJsonQueryEmptyOrErrorBehavior onError) {
         super(operands);
+        this.wrapperBehavior = wrapperBehavior;
+        this.onEmpty = onEmpty;
+        this.onError = onError;
     }
 
-    public static JsonQueryFunction create(Expression<?>[] operands) {
-        return new JsonQueryFunction(operands);
+    public static JsonQueryFunction create(Expression<?> json,
+                                           Expression<?> path,
+                                           SqlJsonQueryWrapperBehavior wrapperBehavior,
+                                           SqlJsonQueryEmptyOrErrorBehavior onEmpty,
+                                           SqlJsonQueryEmptyOrErrorBehavior onError) {
+        final Expression<?>[] operands = new Expression<?>[] {
+                json,
+                path
+        };
+        return new JsonQueryFunction(operands, wrapperBehavior, onEmpty, onError);
     }
 
     @Override
@@ -68,13 +85,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                 ? operand0.toString()
                 : (String) operand0;
         final String path = (String) operands[1].eval(row, context);
-
-        final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[2])
-                .getSymbol();
-        final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3])
-                .getSymbol();
-        final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[4])
-                .getSymbol();
 
         if (isNullOrEmpty(path)) {
             return onErrorResponse(onError, QueryException.error("JSON_QUERY path expression is empty"));

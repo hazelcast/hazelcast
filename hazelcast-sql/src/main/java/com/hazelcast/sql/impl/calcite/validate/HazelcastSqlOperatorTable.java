@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastExtra
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.datetime.HazelcastToTimestampTzFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastJsonQueryFunction;
+import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastParseJsonFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastAbsFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.math.HazelcastDoubleBiFunction;
@@ -226,6 +227,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
     public static final SqlFunction JSON_QUERY = HazelcastJsonQueryFunction.INSTANCE;
     public static final SqlOperator PARSE_JSON = HazelcastParseJsonFunction.INSTANCE;
+    public static final SqlOperator JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 

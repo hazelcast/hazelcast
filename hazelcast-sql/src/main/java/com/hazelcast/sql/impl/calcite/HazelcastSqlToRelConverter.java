@@ -27,6 +27,7 @@ import com.hazelcast.sql.impl.calcite.validate.HazelcastResources;
 import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
 import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
 import com.hazelcast.sql.impl.calcite.validate.operators.HazelcastReturnTypeInference;
+import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.json.HazelcastParseJsonFunction;
 import com.hazelcast.sql.impl.calcite.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
@@ -52,6 +53,9 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalQualifier;
+import org.apache.calcite.sql.SqlJsonEmptyOrError;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonValueReturning;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -84,6 +88,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.apache.calcite.avatica.util.TimeUnit.DAY;
 import static org.apache.calcite.avatica.util.TimeUnit.MONTH;
 import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
@@ -349,6 +354,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return null;
         }
 
+        if (((SqlCall) node).getOperator().getName().equalsIgnoreCase("JSON_VALUE")) {
+            return convertJsonValueCall((SqlCall) node, blackboard);
+        }
+
         if (callSet.add(node)) {
             try {
                 RelDataType type = validator.getValidatedNodeType(node);
@@ -373,6 +382,49 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         }
 
         return null;
+    }
+
+    /**
+     * Converts JSON_VALUE calls with extended syntax, with RETURNING clause among other things.
+     * Because there is no RexNode for type reference in Calcite (see CAST implementation),
+     * the type has to be instead set as the type of the parent (JSON_VALUE's RexCall), which is
+     * then interpreted as the desired type of the expression.
+     */
+    private RexNode convertJsonValueCall(SqlCall call, Blackboard blackboard) {
+        RexNode target = blackboard.convertExpression(call.operand(0));
+        RexNode path = blackboard.convertExpression(call.operand(1));
+        SqlJsonValueEmptyOrErrorBehavior onError = SqlJsonValueEmptyOrErrorBehavior.NULL;
+        SqlJsonValueEmptyOrErrorBehavior onEmpty = SqlJsonValueEmptyOrErrorBehavior.NULL;
+        RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.ANY);
+
+        for (int i = 2; i < call.operandCount(); i += 2) {
+            if (!(call.operand(i) instanceof SqlLiteral)) {
+                throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax.");
+            }
+
+            final SqlLiteral literal = call.operand(i);
+            final Object value = literal.getValue();
+            if (value instanceof SqlJsonValueReturning) {
+                returning = validator.getValidatedNodeType(call.operand(i + 1));
+                continue;
+            }
+
+            final SqlJsonValueEmptyOrErrorBehavior behavior = (SqlJsonValueEmptyOrErrorBehavior) literal.getValue();
+            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(i + 1)).getValue();
+
+            if (onTarget.equals(SqlJsonEmptyOrError.EMPTY)) {
+                onEmpty = behavior;
+            } else if (onTarget.equals(SqlJsonEmptyOrError.ERROR)) {
+                onError = behavior;
+            }
+        }
+
+        return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
+                target,
+                path,
+                blackboard.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
+                blackboard.convertLiteral(onError.symbol(SqlParserPos.ZERO))
+        ));
     }
 
     private static List<RexNode> convertExpressionList(RexBuilder rexBuilder,

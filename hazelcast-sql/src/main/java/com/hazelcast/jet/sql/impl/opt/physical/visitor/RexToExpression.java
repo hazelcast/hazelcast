@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
+import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.expression.json.ParseJsonFunction;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
@@ -75,6 +76,9 @@ import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.sql.SqlFunction;
+import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.fun.SqlTrimFunction;
@@ -174,7 +178,7 @@ public final class RexToExpression {
      *                        converted.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:MethodLength", "checkstyle:ReturnCount",
-            "checkstyle:NPathComplexity"})
+            "checkstyle:NPathComplexity", "checkstyle:MagicNumber"})
     public static Expression<?> convertCall(RexCall call, Expression<?>[] operands) {
         SqlOperator operator = call.getOperator();
         QueryDataType resultType = HazelcastTypeUtils.toHazelcastType(call.getType());
@@ -426,9 +430,19 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {
-                    return JsonQueryFunction.create(operands);
+                    final SqlJsonQueryWrapperBehavior wrapperBehavior = ((SymbolExpression) operands[2])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3])
+                            .getSymbol();
+                    final SqlJsonQueryEmptyOrErrorBehavior onError = ((SymbolExpression) operands[4])
+                            .getSymbol();
+                    return JsonQueryFunction.create(operands[0], operands[1], wrapperBehavior, onEmpty, onError);
                 } else if (function == HazelcastSqlOperatorTable.PARSE_JSON) {
                     return ParseJsonFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
+                    final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[2]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[3]).getSymbol();
+                    return JsonValueFunction.create(operands[0], operands[1], resultType, onEmpty, onError);
                 }
 
                 break;

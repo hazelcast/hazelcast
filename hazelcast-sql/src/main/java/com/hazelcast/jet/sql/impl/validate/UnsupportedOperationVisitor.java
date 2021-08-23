@@ -35,8 +35,11 @@ import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlJoin;
+import org.apache.calcite.sql.SqlJsonEmptyOrError;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
+import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
+import org.apache.calcite.sql.SqlJsonValueReturning;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
@@ -200,6 +203,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         // JSON
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_QUERY);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARSE_JSON);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_VALUE);
 
         // Extensions
         SUPPORTED_OPERATORS.add(SqlOption.OPERATOR);
@@ -276,6 +280,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
     }
 
     @Override
+    @SuppressWarnings("checkstyle:ReturnCount")
     public Void visit(SqlLiteral literal) {
         SqlTypeName typeName = literal.getTypeName();
 
@@ -335,6 +340,18 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
                 }
 
                 if (Arrays.asList(SqlJsonQueryEmptyOrErrorBehavior.values()).contains(symbolValue)) {
+                    return null;
+                }
+
+                if (Arrays.asList(SqlJsonValueReturning.values()).contains(symbolValue)) {
+                    return null;
+                }
+
+                if (Arrays.asList(SqlJsonValueEmptyOrErrorBehavior.values()).contains(symbolValue)) {
+                    return null;
+                }
+
+                if (Arrays.asList(SqlJsonEmptyOrError.values()).contains(symbolValue)) {
                     return null;
                 }
 
