@@ -101,18 +101,18 @@ import static java.util.stream.IntStream.range;
 public final class Util {
 
     public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
-            "To enable the Jet engine, please do one of the following:\n" +
+            "To enable the Jet engine on the members, please do one of the following:\n" +
             "  - Change member config using Java API: config.getJetConfig().setEnabled(true);\n" +
             "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
             "  - Add system property or environment variable: -Dhz.jet.enabled=true or HZ_JET_ENABLED=true";
 
-    public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "The JobConfig contains resources to upload, " +
-          "but the resource upload is disabled. Either remove the resources from the JobConfig or enable " +
-          "resource upload by one of the following:\n" +
-          "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
-          "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
-          "  - Add system property or environment variable: " +
-          "-Dhz.jet.resource-upload-enabled=true or HZ_JET_RESOUREUPLOADENABLED=true";
+    public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "A job is trying to upload resources to the " +
+            "cluster, but this feature is disabled. Either remove the resources from the JobConfig object or enable " +
+            "resource upload on the members, using one of the following:\n" +
+            "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
+            "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
+            "  - System property: -Dhz.jet.resource-upload-enabled=true" +
+            "  - Environment variable: HZ_JET_RESOUREUPLOADENABLED=true";
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
