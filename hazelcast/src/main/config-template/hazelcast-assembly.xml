@@ -24,13 +24,6 @@
   This configuration, compared to hazelcast-default.xml, enables more features.
   It's focused on keeping balance between security and usability in the distribution.
 
-  To allow full external access in ZIP/TGZ distribution, follow these steps:
-  - set "hazelcast.socket.bind.any" property value to "true"
-  - set "enabled" attribute value in "network/interfaces" element to "false"
-  - in network/join configuration:
-    - set autodiscovery "enabled" attribute to "true"
-    - set tcp-ip "enabled" attribute to "false"
-
   To learn how to configure Hazelcast, please see the schema at
   https://hazelcast.com/schema/config/hazelcast-config-5.0.xsd
   or the Reference Manual at https://docs.hazelcast.com/
