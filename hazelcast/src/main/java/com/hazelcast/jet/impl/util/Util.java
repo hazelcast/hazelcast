@@ -106,6 +106,13 @@ public final class Util {
             "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
             "  - Add system property or environment variable: -Dhz.jet.enabled=true or HZ_JET_ENABLED=true";
 
+    public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "The JobConfig contains resources to upload, " +
+          "but the resource upload is disabled. Either remove the resources from the JobConfig or enable " +
+          "resource upload by one of the following:\n" +
+          "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
+          "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
+          "  - Add system property or environment variable: -Dhz.jet.resource-upload-enabled=true or HZ_JET_RESOUREUPLOADENABLED=true";
+
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
 
