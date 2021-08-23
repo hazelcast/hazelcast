@@ -104,8 +104,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         assertEquals(100, localMapStats.getHits());
     }
 
-    public void testPutAllAndHitsGeneratedTemplate(Map<Integer, Collection<? extends Integer>> expectedMultiMap,
-                                                   Consumer<MultiMap<Integer, Integer>> putAllOperation) {
+    private void testPutAllAndHitsGeneratedTemplate(Map<Integer, Collection<? extends Integer>> expectedMultiMap,
+                                                    Consumer<MultiMap<Integer, Integer>> putAllOperation) {
         MultiMap<Integer, Integer> mmap1 = getMultiMap();
         MultiMap<Integer, Integer> mmap2 = getMultiMap(mapNameSet);
         for (int i = 0; i < 100; i++) {
@@ -123,7 +123,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         testPutAllAndHitsGeneratedTemplateVerify();
     }
 
-    public void testPutAllAndHitsGeneratedTemplateVerify() {
+    protected void testPutAllAndHitsGeneratedTemplateVerify() {
         LocalMapStats localMapStats1 = getMultiMapStats();
         LocalMapStats localMapStats2 = getMultiMapStats(mapNameSet);
 
@@ -373,7 +373,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/19382")
     public void testHitCountNotLost_whenKeysAreRemoved() {
         MultiMap<Integer, Integer> map = getMultiMap();
         for (int i = 0; i < 100; i++) {

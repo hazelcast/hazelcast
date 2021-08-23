@@ -18,10 +18,8 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -36,7 +34,7 @@ import java.util.Map;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
  */
 public class MultiMapContainsValueMessageTask
-        extends AbstractAllPartitionsMessageTask<MultiMapContainsValueCodec.RequestParameters> {
+        extends AbstractMultiMapAllPartitionsMessageTask<MultiMapContainsValueCodec.RequestParameters> {
 
     public MultiMapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -54,12 +52,10 @@ public class MultiMapContainsValueMessageTask
         for (Object obj : map.values()) {
             if (Boolean.TRUE.equals(obj)) {
                 found = true;
+                break;
             }
         }
-        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
-            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
-                    .incrementOtherOperations();
-        }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return found;
     }
 
@@ -71,11 +67,6 @@ public class MultiMapContainsValueMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapContainsValueCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -98,8 +89,4 @@ public class MultiMapContainsValueMessageTask
         return new Object[]{parameters.value};
     }
 
-    private MultiMapContainer getSampleContainer() {
-        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        return service.getOrCreateCollectionContainer(0, parameters.name);
-    }
 }

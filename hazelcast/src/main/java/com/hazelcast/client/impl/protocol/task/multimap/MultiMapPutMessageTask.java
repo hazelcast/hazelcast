@@ -18,13 +18,10 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapPutCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.Timer;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.util.Timer;
+import com.hazelcast.multimap.impl.operations.PutOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -36,7 +33,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_PUT}
  */
 public class MultiMapPutMessageTask
-        extends AbstractPartitionMessageTask<MultiMapPutCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapPutCodec.RequestParameters> {
 
     private transient long startTimeNanos;
 
@@ -53,10 +50,7 @@ public class MultiMapPutMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        if (getContainer().getConfig().isStatisticsEnabled()) {
-            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
-                    .incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
-        }
+        updateStats(stats -> stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos)));
         return response;
     }
 
@@ -73,11 +67,6 @@ public class MultiMapPutMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapPutCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -100,9 +89,5 @@ public class MultiMapPutMessageTask
         return new Object[]{parameters.key, parameters.value};
     }
 
-    public final MultiMapContainer getContainer() {
-        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        return service.getOrCreateCollectionContainer(getPartitionId(), parameters.name);
-    }
 }
 

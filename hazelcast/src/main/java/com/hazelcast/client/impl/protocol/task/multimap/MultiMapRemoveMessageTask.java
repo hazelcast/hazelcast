@@ -18,16 +18,13 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.internal.util.Timer;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.MultiMapResponse;
-import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.Timer;
+import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.operations.MultiMapResponse;
+import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -42,7 +39,7 @@ import java.util.List;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVE}
  */
 public class MultiMapRemoveMessageTask
-        extends AbstractPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {
 
     private transient long startTimeNanos;
 
@@ -59,10 +56,7 @@ public class MultiMapRemoveMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        if (getContainer().getConfig().isStatisticsEnabled()) {
-            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
-                    .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
-        }
+        updateStats(stats -> stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos)));
         return response;
     }
 
@@ -88,11 +82,6 @@ public class MultiMapRemoveMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
-    }
-
-    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }
@@ -112,8 +101,4 @@ public class MultiMapRemoveMessageTask
         return new Object[]{parameters.key};
     }
 
-    private MultiMapContainer getContainer() {
-        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        return service.getOrCreateCollectionContainer(getPartitionId(), parameters.name);
-    }
 }

@@ -18,12 +18,10 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
+import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.multimap.impl.operations.ContainsEntryOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -35,7 +33,7 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSKEY}
  */
 public class MultiMapContainsKeyMessageTask
-        extends AbstractPartitionMessageTask<MultiMapContainsKeyCodec.RequestParameters> {
+        extends AbstractMultiMapPartitionMessageTask<MultiMapContainsKeyCodec.RequestParameters> {
 
     public MultiMapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,10 +41,7 @@ public class MultiMapContainsKeyMessageTask
 
     @Override
     protected Object processResponseBeforeSending(Object response) {
-        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
-            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters.name)
-                    .incrementOtherOperations();
-        }
+        updateStats(LocalMapStatsImpl::incrementOtherOperations);
         return response;
     }
 
@@ -65,11 +60,6 @@ public class MultiMapContainsKeyMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapContainsKeyCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -92,8 +82,4 @@ public class MultiMapContainsKeyMessageTask
         return new Object[]{parameters.key};
     }
 
-    private MultiMapContainer getSampleContainer() {
-        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        return service.getOrCreateCollectionContainer(0, parameters.name);
-    }
 }
