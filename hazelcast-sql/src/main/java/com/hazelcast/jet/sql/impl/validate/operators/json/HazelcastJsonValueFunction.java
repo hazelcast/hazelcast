@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators.json;
+package com.hazelcast.jet.sql.impl.validate.operators.json;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.JsonFunctionOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastFunction;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.JsonFunctionOperandTypeInference;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -31,8 +31,6 @@ import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
-
-import static com.hazelcast.sql.impl.calcite.validate.operators.json.JsonFunctionUtil.checkJsonOperandType;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class HazelcastJsonValueFunction extends HazelcastFunction {
@@ -50,7 +48,7 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
 
     @Override
     protected boolean checkOperandTypes(final HazelcastCallBinding callBinding, final boolean throwOnFailure) {
-        return checkJsonOperandType(callBinding, throwOnFailure, 0)
+        return JsonFunctionUtil.checkJsonOperandType(callBinding, throwOnFailure, 0)
                 && TypedOperandChecker.VARCHAR.check(callBinding, throwOnFailure, 1);
     }
 

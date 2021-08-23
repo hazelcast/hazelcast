@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators;
+package com.hazelcast.jet.sql.impl.validate.operators.typeinference;
 
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastJsonType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;

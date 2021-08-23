@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.calcite.validate.operators.json;
+package com.hazelcast.jet.sql.impl.validate.operators.json;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;
 
