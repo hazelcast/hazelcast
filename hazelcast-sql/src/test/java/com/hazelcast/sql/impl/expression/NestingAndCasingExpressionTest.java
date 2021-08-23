@@ -77,7 +77,7 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("GENERATE_SERIES")
                     || field.getName().equals("GENERATE_STREAM")
                     || field.getName().equals("CSV_FILE")
-                    || field.getName().equals("JSON_FILE")
+                    || field.getName().equals("JSON_FLAT_FILE")
                     || field.getName().equals("AVRO_FILE")
                     || field.getName().equals("PARQUET_FILE")
             ) {
