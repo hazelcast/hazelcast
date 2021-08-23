@@ -31,7 +31,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.jet.sql.impl.optimizer.PlanKey;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.apache.calcite.rel.core.TableModify.Operation;

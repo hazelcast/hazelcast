@@ -20,7 +20,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.jet.sql.impl.expression.Expression;
 import org.apache.calcite.rel.core.JoinRelType;
 
 import java.io.IOException;

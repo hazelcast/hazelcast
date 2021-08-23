@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.infoschema;
 
 import com.hazelcast.jet.sql.impl.schema.JetTable;
-import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.jet.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 

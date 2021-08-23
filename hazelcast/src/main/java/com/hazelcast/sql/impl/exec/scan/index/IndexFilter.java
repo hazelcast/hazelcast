@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.exec.scan.index;
 
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 
 import java.util.Iterator;
 

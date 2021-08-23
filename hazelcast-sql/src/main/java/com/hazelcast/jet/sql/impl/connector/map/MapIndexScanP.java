@@ -48,7 +48,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

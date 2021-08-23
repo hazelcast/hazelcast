@@ -24,7 +24,7 @@ import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
 import java.util.Collections;

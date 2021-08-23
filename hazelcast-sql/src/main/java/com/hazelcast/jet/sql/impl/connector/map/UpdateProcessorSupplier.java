@@ -29,7 +29,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

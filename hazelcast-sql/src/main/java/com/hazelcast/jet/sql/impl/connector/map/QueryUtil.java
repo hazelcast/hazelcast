@@ -31,7 +31,7 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

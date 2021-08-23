@@ -24,8 +24,8 @@ import com.hazelcast.query.impl.AbstractIndex;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.Row;
 
 import java.io.IOException;

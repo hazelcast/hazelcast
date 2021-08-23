@@ -31,7 +31,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
-import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.jet.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;

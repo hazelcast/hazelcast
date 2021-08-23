@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.ColumnExpression;
-import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.jet.sql.impl.expression.ColumnExpression;
+import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.jet.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
