@@ -43,6 +43,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -236,28 +237,24 @@ final class MapIndexScanP extends AbstractProcessor {
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
-        boolean needRecalculation = true;
         Map<Address, Split> newSplits = new HashMap<>();
 
-        while (needRecalculation) {
-            PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
 
-            while (partitionIterator.hasNext()) {
-                int partitionId = partitionIterator.nextInt();
-                Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
-                if (owner == null) {
-                    // if at least one partition owner is not assigned - recalculate everything.
-                    newSplits.clear();
-                    break;
-                }
-                newSplits.computeIfAbsent(owner, x -> new Split(
-                        new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
-                ).partitions.add(partitionId);
-            }
+        while (partitionIterator.hasNext()) {
+            int partitionId = partitionIterator.nextInt();
+            // If at least one partition owner is not assigned -- assign current member.
+            // Later, a WrongTargetException will be thrown
+            // and it causes this method to be called again.
+            // Occasionally prediction with current member would be correct.
+            Address potentialOwner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            Address owner = potentialOwner == null
+                    ? split.owner
+                    : partitionService.getPartition(partitionId).getOwnerOrNull();
 
-            if (!newSplits.isEmpty()) {
-                needRecalculation = false;
-            }
+            newSplits.computeIfAbsent(owner, x -> new Split(
+                    new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
+            ).partitions.add(partitionId);
         }
 
         return new ArrayList<>(newSplits.values());
@@ -339,6 +336,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         || t instanceof MemberLeftException
                         || t instanceof TargetDisconnectedException
                         || t instanceof TargetNotMemberException
+                        || t instanceof WrongTargetException
                 ) {
                     return t;
                 }
