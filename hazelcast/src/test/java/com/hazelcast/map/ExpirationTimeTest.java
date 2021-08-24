@@ -52,6 +52,48 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     private static final long ONE_MINUTE_IN_MILLIS = MINUTES.toMillis(1);
 
     @Test
+    public void prefer_ttl_expiry_over_max_idle_when_ttl_is_smaller() {
+        IMap<Integer, Integer> map = createMap();
+        final long ttlSeconds = 5;
+        final long maxIdleSeconds = 10;
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        // multiple access
+        for (int i = 0; i < 3; i++) {
+            sleepSeconds(1);
+            map.get(1);
+        }
+
+        long expirationTimeAfterGet = getExpirationTime(map, 1);
+
+        assertEquals(expirationTimeAfterGet, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void prefer_max_idle_expiry_over_ttl_when_max_idle_is_smaller() {
+        IMap<Integer, Integer> map = createMap();
+        final long ttlSeconds = 12;
+        final long maxIdleSeconds = 10;
+
+        map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        // multiple access
+        for (int i = 0; i < 3; i++) {
+            sleepSeconds(1);
+            map.get(1);
+        }
+
+        long expirationTimeAfterGet = getExpirationTime(map, 1);
+
+        assertTrue(expirationTimeAfterGet > expirationTimeAfterPut);
+    }
+
+    @Test
     public void put_without_ttl_after_put_with_ttl_cancels_previous_ttl() {
         IMap<Integer, Integer> map = createMap();
 

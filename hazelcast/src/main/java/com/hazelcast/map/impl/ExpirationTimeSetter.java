@@ -28,7 +28,7 @@ public final class ExpirationTimeSetter {
     private ExpirationTimeSetter() {
     }
 
-    public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
+    public static long nextExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
         // select most nearest expiration time
         long expiryTime = Math.min(ttlMillis, maxIdleMillis);
         if (expiryTime == Long.MAX_VALUE) {
