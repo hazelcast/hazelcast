@@ -113,8 +113,7 @@ public class SqlClientCursorCleanupTest extends SqlTestSupport {
 
             fail("Must fail");
         } catch (Exception e) {
-            client.shutdown();
-            assertTrueEventually(this::assertNoState);
+            assertNoState();
         }
     }
 
