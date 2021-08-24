@@ -63,6 +63,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -149,7 +150,6 @@ public class SqlPortableTest extends SqlTestSupport {
         emptyClassDefinition =
                 new ClassDefinitionBuilder(EMPTY_TYPES_FACTORY_ID, EMPTY_TYPES_CLASS_ID, EMPTY_TYPES_CLASS_VERSION)
                         .build();
-        serializationService.getPortableContext().registerClassDefinition(emptyClassDefinition);
     }
 
     @Test
@@ -654,11 +654,14 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ")"
         );
 
+        assertRowsAnyOrder("SELECT * FROM " + name, emptyList());
+
         GenericRecord record = new PortableGenericRecordBuilder(emptyClassDefinition).build();
         instance().getMap(name).put(record, record);
-
-        assertRowsAnyOrder("SELECT __key, this FROM " + name,
-                singletonList(new Row(record, record)));
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(record, record))
+        );
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
