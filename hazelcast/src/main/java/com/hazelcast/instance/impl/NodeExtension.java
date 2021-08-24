@@ -18,6 +18,7 @@ package com.hazelcast.instance.impl;
 
 import com.hazelcast.auditlog.AuditlogService;
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.EndpointQualifier;
@@ -40,6 +41,7 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
@@ -337,8 +339,10 @@ public interface NodeExtension {
      */
     boolean registerListener(Object listener);
 
-    /** Returns the public hot restart service */
-    HotRestartService getHotRestartService();
+    /**
+     * Returns the public persistence service
+     */
+    PersistenceService getPersistenceService();
 
     /** Returns the internal hot restart service */
     InternalHotRestartService getInternalHotRestartService();

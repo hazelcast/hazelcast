@@ -15,8 +15,6 @@
  */
 
 /**
- * @deprecated since 5.0 because of renaming purposes.
- * Please use {@link com.hazelcast.persistence} for the replacement.
+ * <p>This package contains Persistence classes needed for open source Hazelcast code<br>
  */
-@Deprecated
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;

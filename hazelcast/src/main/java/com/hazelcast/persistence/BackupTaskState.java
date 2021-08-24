@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;
 
 /**
- * @deprecated since 5.0 because of package renaming
- * Use {@link com.hazelcast.persistence.BackupTaskState} instead.
+ * The state of the persistence backup task
  */
-@Deprecated
 public enum BackupTaskState {
     /** No backup task has yet been run */
     NO_TASK,
@@ -33,20 +31,12 @@ public enum BackupTaskState {
     /** The backup task completed successfully */
     SUCCESS;
 
-    /**
-     * @deprecated since 5.0 because of package renaming
-     * Use {@link com.hazelcast.persistence.BackupTaskState#isDone()} instead.
-     */
-    @Deprecated
+    /** Returns true if the backup task completed (successfully or with failure) */
     public boolean isDone() {
         return this == SUCCESS || this == FAILURE;
     }
 
-    /**
-     * @deprecated since 5.0 because of package renaming
-     * Use {@link com.hazelcast.persistence.BackupTaskState#inProgress()} instead.
-     */
-    @Deprecated
+    /** Returns if the backup task is in progress. The task could also not be started yet but will be. */
     public boolean inProgress() {
         return this == NOT_STARTED || this == IN_PROGRESS;
     }

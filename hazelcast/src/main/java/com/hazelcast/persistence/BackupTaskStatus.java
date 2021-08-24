@@ -14,42 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;
 
 /**
- * @deprecated since 5.0 because of package renaming
- * Use {@link com.hazelcast.persistence.BackupTaskStatus} instead.
+ * The status of the persistence backup task, including progress and state.
  */
-@Deprecated
 public class BackupTaskStatus {
 
     private final BackupTaskState state;
     private final int completed;
     private final int total;
 
-    @Deprecated
     public BackupTaskStatus(BackupTaskState state, int completed, int total) {
         this.state = state;
         this.completed = completed;
         this.total = total;
     }
 
-    @Deprecated
     public BackupTaskState getState() {
         return state;
     }
 
-    @Deprecated
     public int getCompleted() {
         return completed;
     }
 
-    @Deprecated
     public int getTotal() {
         return total;
     }
 
-    @Deprecated
     public float getProgress() {
         return total > 0 ? (float) completed / total : 0;
     }
