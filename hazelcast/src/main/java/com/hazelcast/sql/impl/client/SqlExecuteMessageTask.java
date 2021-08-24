@@ -25,7 +25,6 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.security.NoOpSqlSecurityContext;
@@ -94,8 +93,9 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     protected ClientMessage encodeException(Throwable throwable) {
         // exception can be thrown before parameters are decoded
-        QueryId queryId = parameters != null ? parameters.queryId : decodeClientMessage(clientMessage).queryId;
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(queryId);
+        if (parameters == null) {
+            return super.encodeException(throwable);
+        }
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
