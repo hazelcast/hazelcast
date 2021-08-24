@@ -376,19 +376,34 @@ public final class ProxyRegistry {
             String name = entry.getKey();
             DistributedObjectFuture future = entry.getValue();
             if (!future.isSetAndInitialized()) {
-                try {
-                    future.get();
-                } catch (Throwable e) {
-                    // proxy initialization failed
-                    // deregister future to avoid infinite hang on future.get()
-                    proxyService.logger.warning("Error while initializing proxy: " + name, e);
-                    future.setError(e);
-                    proxies.remove(entry.getKey());
-                    throw rethrow(e);
-                }
+                initializeProxy(entry);
                 UUID source = proxyService.nodeEngine.getLocalMember().getUuid();
                 publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source));
             }
+        }
+    }
+
+    /**
+     * Force-initializes all uninitialized proxies in this registry.
+     */
+    void initializeProxies() {
+        proxies.entrySet().stream()
+                .filter(entry -> !entry.getValue().isSetAndInitialized())
+                .forEach(this::initializeProxy);
+    }
+
+    private void initializeProxy(Map.Entry<String, DistributedObjectFuture> entry) {
+        String name = entry.getKey();
+        DistributedObjectFuture future = entry.getValue();
+        try {
+            future.get();
+        } catch (Throwable e) {
+            // proxy initialization failed
+            // deregister future to avoid infinite hang on future.get()
+            proxyService.logger.warning("Error while initializing proxy: " + name, e);
+            future.setError(e);
+            proxies.remove(name);
+            throw rethrow(e);
         }
     }
 

@@ -130,6 +130,10 @@ public class ProxyServiceImpl
         }
     }
 
+    public void initializeProxies() {
+        registries.values().forEach(ProxyRegistry::initializeProxies);
+    }
+
     @Override
     public void initializeDistributedObject(String serviceName, String name, UUID source) {
         checkServiceNameNotNull(serviceName);
