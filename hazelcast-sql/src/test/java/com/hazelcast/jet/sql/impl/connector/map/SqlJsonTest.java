@@ -103,7 +103,8 @@ public class SqlJsonTest extends SqlTestSupport {
     public void test_schemaEvolution() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
-                + "name VARCHAR"
+                + "__key INT "
+                + ", name VARCHAR"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
