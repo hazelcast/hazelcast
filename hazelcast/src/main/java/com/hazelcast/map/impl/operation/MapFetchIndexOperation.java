@@ -33,7 +33,6 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.QueryException;
@@ -321,6 +320,13 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     @Override
+    public void logError(Throwable e) {
+        if (!(e instanceof MissingPartitionException)) {
+            super.logError(e);
+        }
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         indexName = in.readString();
@@ -407,7 +413,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
-    public static final class MissingPartitionException extends HazelcastException implements SilentException {
+    public static final class MissingPartitionException extends HazelcastException {
         public MissingPartitionException(String message) {
             super(message);
         }
