@@ -16,10 +16,17 @@
 
 package com.hazelcast.sql.impl.optimizer;
 
+import com.hazelcast.sql.impl.schema.TableResolver;
+
+import java.util.List;
+
 /**
  * Optimizer responsible for conversion of SQL string to executable plan.
  */
 public interface SqlOptimizer {
+
+    List<TableResolver> tableResolvers();
+
     /**
      * Prepare SQL query.
      *

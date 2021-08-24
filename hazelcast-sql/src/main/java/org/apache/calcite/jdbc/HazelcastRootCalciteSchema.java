@@ -16,7 +16,7 @@
 
 package org.apache.calcite.jdbc;
 
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import org.apache.calcite.schema.SchemaVersion;
 
 /**

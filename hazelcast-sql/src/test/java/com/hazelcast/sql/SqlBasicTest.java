@@ -548,13 +548,10 @@ public class SqlBasicTest extends SqlTestSupport {
     }
 
     static Config memberConfig() {
-        Config config = new Config().setSerializationConfig(serializationConfig());
-
-        config
+        return smallInstanceConfig()
                 .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-                .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
-
-        return config;
+                .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY))
+                .setSerializationConfig(serializationConfig());
     }
 
     static ClientConfig clientConfig() {

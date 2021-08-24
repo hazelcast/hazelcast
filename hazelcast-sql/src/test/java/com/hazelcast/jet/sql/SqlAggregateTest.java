@@ -20,9 +20,13 @@ import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 
@@ -31,6 +35,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(JUnitParamsRunner.class)
 public class SqlAggregateTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -742,6 +747,45 @@ public class SqlAggregateTest extends SqlTestSupport {
         );
     }
 
+    @SuppressWarnings("unused")
+    private Object[] sum_types() {
+        return new Object[]{
+                new Object[]{QueryDataTypeFamily.TINYINT, QueryDataType.BIGINT},
+                new Object[]{QueryDataTypeFamily.SMALLINT, QueryDataType.BIGINT},
+                new Object[]{QueryDataTypeFamily.INTEGER, QueryDataType.BIGINT},
+                new Object[]{QueryDataTypeFamily.BIGINT, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.DECIMAL, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.REAL, QueryDataType.REAL},
+                new Object[]{QueryDataTypeFamily.DOUBLE, QueryDataType.DOUBLE},
+        };
+    }
+
+    @Test
+    @Parameters(method = "sum_types")
+    public void test_orderBySum(QueryDataTypeFamily columnType, QueryDataType expectedResultType) {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                asList("name", "distance"),
+                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(
+                        new String[]{"A", "1"},
+                        new String[]{"B", "2"},
+                        new String[]{"A", "3"},
+                        new String[]{"B", "4"}
+                )
+        );
+
+        assertRowsOrdered(
+                "SELECT name, SUM(distance) total_distance FROM " + name + " GROUP BY name ORDER BY total_distance DESC",
+                asList(
+                        new Row("B", expectedResultType.convert(6)),
+                        new Row("A", expectedResultType.convert(4))
+                )
+        );
+    }
+
     @Test
     public void test_avg() {
         String name = createTable(
@@ -867,6 +911,45 @@ public class SqlAggregateTest extends SqlTestSupport {
                 asList(
                         new Row("Bob", new BigDecimal("5")),
                         new Row("Joey", new BigDecimal("6"))
+                )
+        );
+    }
+
+    @SuppressWarnings("unused")
+    private Object[] avg_types() {
+        return new Object[]{
+                new Object[]{QueryDataTypeFamily.TINYINT, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.SMALLINT, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.INTEGER, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.BIGINT, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.DECIMAL, QueryDataType.DECIMAL},
+                new Object[]{QueryDataTypeFamily.REAL, QueryDataType.DOUBLE},
+                new Object[]{QueryDataTypeFamily.DOUBLE, QueryDataType.DOUBLE},
+        };
+    }
+
+    @Test
+    @Parameters(method = "avg_types")
+    public void test_orderByAvg(QueryDataTypeFamily columnType, QueryDataType expectedResultType) {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                asList("name", "distance"),
+                asList(QueryDataTypeFamily.VARCHAR, columnType),
+                asList(
+                        new String[]{"A", "1"},
+                        new String[]{"B", "2"},
+                        new String[]{"A", "3"},
+                        new String[]{"B", "4"}
+                )
+        );
+
+        assertRowsOrdered(
+                "SELECT name, AVG(distance) avg_distance FROM " + name + " GROUP BY name ORDER BY avg_distance DESC",
+                asList(
+                        new Row("B", expectedResultType.convert(3)),
+                        new Row("A", expectedResultType.convert(2))
                 )
         );
     }

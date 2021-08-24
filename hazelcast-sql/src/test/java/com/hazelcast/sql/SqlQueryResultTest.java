@@ -18,9 +18,7 @@ package com.hazelcast.sql;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.sql.impl.plan.Plan;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,8 +27,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -39,7 +39,8 @@ import static org.junit.Assert.fail;
 public class SqlQueryResultTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
-    private static final String SQL = "SELECT * FROM " + MAP_NAME;
+    private static final String SQL_READ = "SELECT * FROM " + MAP_NAME;
+    private static final String SQL_DELETE = "DELETE FROM " + MAP_NAME + " WHERE __key = 1";
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -64,33 +65,38 @@ public class SqlQueryResultTest extends SqlTestSupport {
 
         member.getMap(MAP_NAME).put(1, 1);
 
-        // Install the ability to change the expected result of a plan.
-        List<SqlRow> expectedRows = execute(member, SQL);
-
-        SqlServiceImpl memberService = ((SqlServiceImpl) member.getSql());
-
-        assertEquals(1, memberService.getPlanCache().size());
-
-        TestPlan plan = new TestPlan((Plan) memberService.getPlanCache().getPlans().values().iterator().next());
-
-        memberService.getPlanCache().put(plan.getPlanKey(), plan);
-
         // Check rows
-        plan.setProducesRows(true);
-        checkSuccess(target, SqlExpectedResultType.ANY, expectedRows);
-        checkSuccess(target, SqlExpectedResultType.ROWS, expectedRows);
-        checkFailure(target, SqlExpectedResultType.UPDATE_COUNT);
+        List<SqlRow> expectedRows = execute(member, SQL_READ);
+        assertEquals(1, expectedRows.size());
+        checkSuccess(target, SQL_READ, SqlExpectedResultType.ANY, expectedRows, -1);
+        checkSuccess(target, SQL_READ, SqlExpectedResultType.ROWS, expectedRows, -1);
+        checkFailure(target, SQL_READ, SqlExpectedResultType.UPDATE_COUNT);
 
         // Check update count
-        plan.setProducesRows(false);
-        checkSuccess(target, SqlExpectedResultType.ANY, expectedRows);
-        checkFailure(target, SqlExpectedResultType.ROWS);
-        checkSuccess(target, SqlExpectedResultType.UPDATE_COUNT, expectedRows);
+        // TODO: implement updateCount for DML and single key plans.
+        checkSuccess(target, SQL_DELETE, SqlExpectedResultType.ANY, emptyList(), 0);
+        checkFailure(target, SQL_DELETE, SqlExpectedResultType.ROWS);
+        checkSuccess(target, SQL_DELETE, SqlExpectedResultType.UPDATE_COUNT, emptyList(), 0);
     }
 
-    private void checkSuccess(HazelcastInstance target, SqlExpectedResultType type, List<SqlRow> expectedRows) {
-        List<SqlRow> rows = executeStatement(target, new SqlStatement(SQL).setExpectedResultType(type));
+    private void checkSuccess(
+            HazelcastInstance target,
+            String sql,
+            SqlExpectedResultType type,
+            List<SqlRow> expectedRows,
+            int expectedUpdateCount
+    ) {
+        SqlResult result = target.getSql().execute(new SqlStatement(sql).setExpectedResultType(type));
+        assertEquals(expectedUpdateCount, result.updateCount());
 
+        if (expectedUpdateCount >= 0) {
+            return;
+        }
+
+        List<SqlRow> rows = new ArrayList<>();
+        for (SqlRow row : result) {
+            rows.add(row);
+        }
         assertEquals(expectedRows.size(), rows.size());
 
         for (int i = 0; i < expectedRows.size(); i++) {
@@ -108,13 +114,12 @@ public class SqlQueryResultTest extends SqlTestSupport {
         }
     }
 
-    private void checkFailure(HazelcastInstance target, SqlExpectedResultType type) {
+    private void checkFailure(HazelcastInstance target, String sql, SqlExpectedResultType type) {
         assert type == SqlExpectedResultType.ROWS || type == SqlExpectedResultType.UPDATE_COUNT : type;
 
-        try (SqlResult result = target.getSql().execute(new SqlStatement(SQL).setExpectedResultType(type))) {
-            for (SqlRow ignore : result) {
-                // No-op.
-            }
+        try (SqlResult result = target.getSql().execute(new SqlStatement(sql).setExpectedResultType(type))) {
+            result.iterator().forEachRemaining(row -> {
+            });
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
@@ -125,36 +130,6 @@ public class SqlQueryResultTest extends SqlTestSupport {
             } else {
                 assertEquals(message, "The statement doesn't produce update count");
             }
-        }
-    }
-
-    private static class TestPlan extends Plan {
-
-        private boolean producesRows;
-
-        private TestPlan(Plan plan) {
-            super(
-                    plan.getPartitionMap(),
-                    plan.getFragments(),
-                    plan.getFragmentMappings(),
-                    plan.getOutboundEdgeMap(),
-                    plan.getInboundEdgeMap(),
-                    plan.getInboundEdgeMemberCountMap(),
-                    plan.getRowMetadata(),
-                    plan.getParameterMetadata(),
-                    plan.getPlanKey(),
-                    plan.getObjectKeys(),
-                    plan.getPermissions()
-            );
-        }
-
-        @Override
-        public boolean producesRows() {
-            return producesRows;
-        }
-
-        public void setProducesRows(boolean producesRows) {
-            this.producesRows = producesRows;
         }
     }
 }

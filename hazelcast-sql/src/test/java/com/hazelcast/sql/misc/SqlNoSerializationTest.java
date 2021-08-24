@@ -16,21 +16,29 @@
 
 package com.hazelcast.sql.misc;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,8 +51,12 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
+import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -56,7 +68,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlNoSerializationTest extends SqlTestSupport {
+public class SqlNoSerializationTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final int KEY_COUNT = 100;
@@ -64,34 +76,33 @@ public class SqlNoSerializationTest extends SqlTestSupport {
     @Parameterized.Parameter
     public boolean useIndex;
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private HazelcastInstance member;
-
     private static volatile boolean failOnSerialization;
 
     @Parameterized.Parameters(name = "useIndex:{0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(true, false);
+        return Arrays.asList(false, true);
+    }
+
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        initialize(1, smallInstanceConfig());
     }
 
     @Before
     public void before() {
-        member = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-
         Map<Key, Value> localMap = new HashMap<>();
 
         for (int i = 0; i < KEY_COUNT; i++) {
             localMap.put(new Key(i), new Value(i));
         }
 
-        IMap<Key, Value> map = member.getMap(MAP_NAME);
+        IMap<Key, Value> map = instance().getMap(MAP_NAME);
 
         map.putAll(localMap);
 
         // An index may change the behavior due to MapContainer.isUseCachedDeserializedValuesEnabled.
         if (useIndex) {
-            map.addIndex(new IndexConfig().setType(IndexType.SORTED).addAttribute("val"));
+            map.addIndex(new IndexConfig(IndexType.HASH, "val"));
         }
 
         failOnSerialization = true;
@@ -100,22 +111,17 @@ public class SqlNoSerializationTest extends SqlTestSupport {
     @After
     public void after() {
         failOnSerialization = false;
-
-        factory.shutdownAll();
     }
 
     @Test
-    public void testMapScan() {
-        check("SELECT __key, this FROM " + MAP_NAME, 100);
+    public void test() {
+        check("SELECT __key, this FROM " + MAP_NAME + " WHERE val = 1", useIndex);
     }
 
-    @Test
-    public void testIndexScan() {
-        check("SELECT __key, this FROM " + MAP_NAME + " WHERE val = 1", 1);
-    }
+    private void check(String sql, boolean expectedIndexUsage) {
+        checkIndexUsage(new SqlStatement(sql), expectedIndexUsage);
 
-    private void check(String sql, int expectedCount) {
-        try (SqlResult res = member.getSql().execute(sql)) {
+        try (SqlResult res = instance().getSql().execute(sql)) {
             int count = 0;
 
             for (SqlRow row : res) {
@@ -128,7 +134,38 @@ public class SqlNoSerializationTest extends SqlTestSupport {
                 count++;
             }
 
-            assertEquals(expectedCount, count);
+            assertEquals(1, count);
+        }
+    }
+
+    private void checkIndexUsage(SqlStatement statement, boolean expectedIndexUsage) {
+        List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.OBJECT, QueryDataType.INT);
+        List<TableField> mapTableFields = asList(
+                new MapTableField("__key", QueryDataType.INT, false, QueryPath.KEY_PATH),
+                new MapTableField("this", QueryDataType.OBJECT, false, QueryPath.VALUE_PATH),
+                new MapTableField("val", QueryDataType.INT, false, new QueryPath("val", false))
+        );
+        HazelcastTable table = partitionedTable(
+                MAP_NAME,
+                mapTableFields,
+                getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
+                KEY_COUNT
+        );
+        OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);
+        assertPlan(
+                optimizationResult.getLogical(),
+                plan(planRow(0, FullScanLogicalRel.class))
+        );
+        if (expectedIndexUsage) {
+            assertPlan(
+                    optimizationResult.getPhysical(),
+                    plan(planRow(0, IndexScanMapPhysicalRel.class))
+            );
+        } else {
+            assertPlan(
+                    optimizationResult.getPhysical(),
+                    plan(planRow(0, FullScanPhysicalRel.class))
+            );
         }
     }
 

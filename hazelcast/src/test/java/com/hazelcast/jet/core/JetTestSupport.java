@@ -52,13 +52,16 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -395,6 +398,16 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public static <T> ProcessorMetaSupplier processorFromPipelineSource(BatchSource<T> source) {
         return ((BatchSourceTransform<T>) source).metaSupplier;
+    }
+
+    public static Job awaitSingleRunningJob(HazelcastInstance hz) {
+        AtomicReference<Job> job = new AtomicReference<>();
+        assertTrueEventually(() -> {
+            List<Job> jobs = hz.getJet().getJobs().stream().filter(j -> j.getStatus() == RUNNING).collect(toList());
+            assertEquals(1, jobs.size());
+            job.set(jobs.get(0));
+        });
+        return job.get();
     }
 
     /**

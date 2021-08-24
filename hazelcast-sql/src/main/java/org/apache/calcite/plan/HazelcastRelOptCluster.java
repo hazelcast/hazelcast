@@ -17,7 +17,7 @@
 package org.apache.calcite.plan;
 
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.distribution.DistributionTraitDef;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexBuilder;

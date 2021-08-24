@@ -56,6 +56,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -77,16 +78,16 @@ public class JetPlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
-    private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
+    private final QueryResultRegistry resultRegistry;
 
     public JetPlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
-            Map<Long, JetQueryResultProducer> resultConsumerRegistry
+            QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
-        this.resultConsumerRegistry = resultConsumerRegistry;
+        this.resultRegistry = resultRegistry;
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -212,20 +213,20 @@ public class JetPlanExecutor {
 
         JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
-        Long jobId = jet.newJobId();
-        Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
+        long jobId = jet.newJobId();
+        Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
-                    queryResultProducer.onError(
-                            QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
+                    String errorMessage = findQueryExceptionMessage(t);
+                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {
-            resultConsumerRegistry.remove(jobId);
+            resultRegistry.remove(jobId);
             throw e;
         }
 
@@ -360,6 +361,16 @@ public class JetPlanExecutor {
             t = t.getCause();
         }
         return SqlErrorCode.GENERIC;
+    }
+
+    private static String findQueryExceptionMessage(Throwable t) {
+        while (t != null) {
+            if (t.getMessage() != null) {
+                return t.getMessage();
+            }
+            t = t.getCause();
+        }
+        return "";
     }
 
     private <T> T await(CompletableFuture<T> future, long timeout) {
