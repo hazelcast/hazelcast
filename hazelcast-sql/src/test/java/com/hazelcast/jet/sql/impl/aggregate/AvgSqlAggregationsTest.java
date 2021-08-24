@@ -25,16 +25,23 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(JUnitParamsRunner.class)
-public class AvgSqlAggregationTest {
+public class AvgSqlAggregationsTest {
 
     @SuppressWarnings("unused")
     private Object[] types() {
         return new Object[]{
+                new Object[]{QueryDataType.TINYINT},
+                new Object[]{QueryDataType.SMALLINT},
+                new Object[]{QueryDataType.INT},
+                new Object[]{QueryDataType.BIGINT},
                 new Object[]{QueryDataType.DECIMAL},
+                new Object[]{QueryDataType.REAL},
                 new Object[]{QueryDataType.DOUBLE}
         };
     }
@@ -50,16 +57,34 @@ public class AvgSqlAggregationTest {
     @SuppressWarnings("unused")
     private Object[] values() {
         return new Object[]{
+                new Object[]{QueryDataType.TINYINT, (byte) 1, (byte) 2, new BigDecimal("1.5")},
+                new Object[]{QueryDataType.TINYINT, null, (byte) 1, new BigDecimal(1)},
+                new Object[]{QueryDataType.TINYINT, (byte) 1, null, new BigDecimal(1)},
+                new Object[]{QueryDataType.TINYINT, null, null, null},
+                new Object[]{QueryDataType.SMALLINT, (short) 1, (short) 2, new BigDecimal("1.5")},
+                new Object[]{QueryDataType.SMALLINT, null, (short) 1, new BigDecimal(1)},
+                new Object[]{QueryDataType.SMALLINT, (short) 1, null, new BigDecimal(1)},
+                new Object[]{QueryDataType.SMALLINT, null, null, null},
+                new Object[]{QueryDataType.INT, 1, 2, new BigDecimal("1.5")},
+                new Object[]{QueryDataType.INT, null, 1, new BigDecimal(1)},
+                new Object[]{QueryDataType.INT, 1, null, new BigDecimal(1)},
+                new Object[]{QueryDataType.INT, null, null, null},
+                new Object[]{QueryDataType.BIGINT, 1L, 2L, new BigDecimal("1.5")},
+                new Object[]{QueryDataType.BIGINT, null, 1L, new BigDecimal(1)},
+                new Object[]{QueryDataType.BIGINT, 1L, null, new BigDecimal(1)},
+                new Object[]{QueryDataType.BIGINT, null, null, null},
                 new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), new BigDecimal(2), new BigDecimal("1.5")},
-                new Object[]{QueryDataType.DECIMAL, new BigDecimal("9223372036854775808998"),
-                        new BigDecimal("9223372036854775808999"), new BigDecimal("9223372036854775808998.5")},
-                new Object[]{QueryDataType.DOUBLE, 1D, 2D, 1.5D},
-                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), null, new BigDecimal(1)},
                 new Object[]{QueryDataType.DECIMAL, null, new BigDecimal(1), new BigDecimal(1)},
+                new Object[]{QueryDataType.DECIMAL, new BigDecimal(1), null, new BigDecimal(1)},
                 new Object[]{QueryDataType.DECIMAL, null, null, null},
-                new Object[]{QueryDataType.DOUBLE, 1D, null, 1D},
+                new Object[]{QueryDataType.REAL, 1F, 2F, 1.5D},
+                new Object[]{QueryDataType.REAL, null, 1F, 1D},
+                new Object[]{QueryDataType.REAL, 1F, null, 1D},
+                new Object[]{QueryDataType.REAL, null, null, null},
+                new Object[]{QueryDataType.DOUBLE, 1D, 2D, 1.5D},
                 new Object[]{QueryDataType.DOUBLE, null, 1D, 1D},
-                new Object[]{QueryDataType.DOUBLE, null, null, null},
+                new Object[]{QueryDataType.DOUBLE, 1D, null, 1D},
+                new Object[]{QueryDataType.DOUBLE, null, null, null}
         };
     }
 
@@ -83,15 +108,27 @@ public class AvgSqlAggregationTest {
         assertThat(aggregation.collect()).isEqualTo(new BigDecimal("0.66666666666666666666666666666666666667"));
     }
 
-    @Test
-    public void test_accumulateDistinct() {
-        SqlAggregation aggregation = AvgSqlAggregations.from(QueryDataType.DECIMAL, true);
-        aggregation.accumulate(null);
-        aggregation.accumulate(BigDecimal.ONE);
-        aggregation.accumulate(BigDecimal.ONE);
-        aggregation.accumulate(new BigDecimal(2L));
+    @SuppressWarnings("unused")
+    private Object[] values_distinct() {
+        return new Object[]{
+                new Object[]{QueryDataType.TINYINT, asList((byte) 1, (byte) 1, (byte) 2), new BigDecimal("1.5")},
+                new Object[]{QueryDataType.SMALLINT, asList((short) 1, (short) 1, (short) 2), new BigDecimal("1.5")},
+                new Object[]{QueryDataType.INT, asList(1, 1, 2), new BigDecimal("1.5")},
+                new Object[]{QueryDataType.BIGINT, asList(1L, 1L, 2L), new BigDecimal("1.5")},
+                new Object[]{QueryDataType.DECIMAL, asList(new BigDecimal(1), new BigDecimal(1), new BigDecimal(2)), new BigDecimal("1.5")},
+                new Object[]{QueryDataType.REAL, asList(1F, 1F, 2F), 1.5D},
+                new Object[]{QueryDataType.DOUBLE, asList(1D, 1D, 2D), 1.5D},
+        };
+    }
 
-        assertThat(aggregation.collect()).isEqualTo(new BigDecimal("1.5"));
+    @Test
+    @Parameters(method = "values_distinct")
+    public void test_accumulateDistinct(QueryDataType operandType, List<Object> values, Object expected) {
+        SqlAggregation aggregation = AvgSqlAggregations.from(operandType, true);
+        aggregation.accumulate(null);
+        values.forEach(aggregation::accumulate);
+
+        assertThat(aggregation.collect()).isEqualTo(expected);
     }
 
     @Test

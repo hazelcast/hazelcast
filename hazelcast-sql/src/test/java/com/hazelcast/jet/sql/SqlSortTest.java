@@ -24,6 +24,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlSortTest extends SqlTestSupport {
@@ -58,7 +59,7 @@ public class SqlSortTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_orderByOnNonProjectExpression() {
+    public void test_orderByProjectExpression() {
         String tableName = createTable(
                 new String[]{"A", "1"},
                 new String[]{"B", "4"},
@@ -164,7 +165,7 @@ public class SqlSortTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_nullsLastDescending() {
+    public void test_nullsLastDescending_notSupported() {
         String tableName = createTable(
                 new String[]{"B", null},
                 new String[]{"B", "1"},
@@ -243,7 +244,7 @@ public class SqlSortTest extends SqlTestSupport {
 
         assertRowsAnyOrder(
                 String.format("SELECT name, distance FROM %s ORDER BY distance DESC, name DESC OFFSET 100", tableName),
-                asList()
+                emptyList()
         );
     }
 
