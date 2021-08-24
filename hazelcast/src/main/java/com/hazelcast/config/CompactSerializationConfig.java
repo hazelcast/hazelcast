@@ -46,8 +46,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <p>
  * To explicitly configure a class to be serialized via Compact format following methods can be used.
  * {@link #register(Class)}
- * {@link #register(Class, String)}
- * {@link #register(Class, CompactSerializer)}
  * {@link #register(Class, String, CompactSerializer)} }
  * <p>
  * On the last two methods listed above reflection is not utilized instead given serializer is used to
@@ -59,27 +57,37 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 @Beta
 public class CompactSerializationConfig {
 
-    private final Map<String, TriTuple<Class, String, CompactSerializer>> classNameToRegistryMap;
+    // Package-private to access those via CompactSerializationConfigAccessor
+    final Map<String, TriTuple<String, String, String>> typeNameToNamedRegistryMap;
+    final Map<String, TriTuple<String, String, String>> classNameToNamedRegistryMap;
+
+    private final Map<String, TriTuple<Class, String, CompactSerializer>> typeNameToRegistryMap;
     private final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistryMap;
     private boolean enabled;
 
     public CompactSerializationConfig() {
-        this.classNameToRegistryMap = new ConcurrentHashMap<>();
+        this.typeNameToRegistryMap = new ConcurrentHashMap<>();
         this.classToRegistryMap = new ConcurrentHashMap<>();
+        this.typeNameToNamedRegistryMap = new ConcurrentHashMap<>();
+        this.classNameToNamedRegistryMap = new ConcurrentHashMap<>();
     }
 
     public CompactSerializationConfig(CompactSerializationConfig compactSerializationConfig) {
-        this.classNameToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classNameToRegistryMap);
+        this.typeNameToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToRegistryMap);
         this.classToRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classToRegistryMap);
+        this.typeNameToNamedRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.typeNameToNamedRegistryMap);
+        this.classNameToNamedRegistryMap = new ConcurrentHashMap<>(compactSerializationConfig.classNameToNamedRegistryMap);
         this.enabled = compactSerializationConfig.enabled;
     }
 
     /**
      * Registers the class to be serialized via compact serializer.
+     * <p>
      * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      * <p>
      * Type name is determined automatically from the class, which is its
      * fully qualified class name.
+     * <p>
      * Field types are determined automatically from the class via reflection.
      *
      * @param clazz Class to be serialized via compact serializer
@@ -93,23 +101,7 @@ public class CompactSerializationConfig {
 
     /**
      * Registers the class to be serialized via compact serializer.
-     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      * <p>
-     * Field types are determined automatically from the class via reflection.
-     *
-     * @param clazz    Class to be serialized via compact serializer
-     * @param typeName Type name of the class
-     * @return configured {@link com.hazelcast.config.CompactSerializationConfig} for chaining
-     */
-    public <T> CompactSerializationConfig register(@Nonnull Class<T> clazz, String typeName) {
-        checkNotNull(clazz, "Class cannot be null");
-        checkNotNull(typeName, "Type name cannot be null");
-        register0(clazz, typeName, null);
-        return this;
-    }
-
-    /**
-     * Registers the class to be serialized via compact serializer.
      * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
      *
      * @param clazz              Class to be serialized via compact serializer
@@ -126,27 +118,9 @@ public class CompactSerializationConfig {
         return this;
     }
 
-    /**
-     * Registers the class to be serialized via compact serializer.
-     * Overrides Portable, Identified, Java Serializable, or GlobalSerializer.
-     * <p>
-     * Type name is determined automatically from the class, which is its
-     * fully qualified class name.
-     *
-     * @param clazz              Class to be serialized via compact serializer
-     * @param explicitSerializer Serializer to be used for the given class
-     * @return configured {@link com.hazelcast.config.CompactSerializationConfig} for chaining
-     */
-    public <T> CompactSerializationConfig register(@Nonnull Class<T> clazz, @Nonnull CompactSerializer<T> explicitSerializer) {
-        checkNotNull(clazz, "Class cannot be null");
-        checkNotNull(explicitSerializer, "Explicit serializer cannot be null");
-        register0(clazz, clazz.getName(), explicitSerializer);
-        return this;
-    }
-
     @Nonnull
     public Map<String, TriTuple<Class, String, CompactSerializer>> getRegistries() {
-        return Collections.unmodifiableMap(classNameToRegistryMap);
+        return Collections.unmodifiableMap(typeNameToRegistryMap);
     }
 
     @Override
@@ -158,18 +132,18 @@ public class CompactSerializationConfig {
             return false;
         }
         CompactSerializationConfig that = (CompactSerializationConfig) o;
-        return Objects.equals(classNameToRegistryMap, that.classNameToRegistryMap)
+        return Objects.equals(typeNameToRegistryMap, that.typeNameToRegistryMap)
                 && Objects.equals(classToRegistryMap, that.classToRegistryMap);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(classNameToRegistryMap, classToRegistryMap);
+        return Objects.hash(typeNameToRegistryMap, classToRegistryMap);
     }
 
     private <T> void register0(Class<T> clazz, String typeName, CompactSerializer<T> explicitSerializer) {
         TriTuple<Class, String, CompactSerializer> registry = TriTuple.of(clazz, typeName, explicitSerializer);
-        TriTuple<Class, String, CompactSerializer> oldRegistry = classNameToRegistryMap.putIfAbsent(typeName, registry);
+        TriTuple<Class, String, CompactSerializer> oldRegistry = typeNameToRegistryMap.putIfAbsent(typeName, registry);
         if (oldRegistry != null) {
             throw new InvalidConfigurationException("Already have a registry for the type name " + typeName);
         }
@@ -192,7 +166,7 @@ public class CompactSerializationConfig {
      * Enables the Compact Format. The Compact Format will be disabled by default during the Beta period.
      * It will be enabled by default after the Beta.
      * Note that this method will be deleted after the Beta.
-     *
+     * <p>
      * The final version will not be backward compatible with the Beta.
      * Do not use BETA version in production
      *

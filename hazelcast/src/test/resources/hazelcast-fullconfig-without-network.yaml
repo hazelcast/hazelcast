@@ -965,5 +965,4 @@ hazelcast:
     enabled: false
 
   sql:
-    executor-pool-size: 16
     statement-timeout-millis: 0

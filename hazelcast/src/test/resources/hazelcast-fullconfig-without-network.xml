@@ -1038,7 +1038,6 @@
     </instance-tracking>
 
     <sql>
-        <executor-pool-size>16</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 </hazelcast>

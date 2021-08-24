@@ -16,38 +16,20 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.state.QueryState;
 import org.junit.Test;
 
-import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 public class SqlResultImplTest extends SqlTestSupport {
-    @Test
-    public void test_rowsResult() {
-        QueryId queryId = new QueryId(1, 2, 3, 4);
-        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("n", SqlColumnType.INTEGER, true)));
-        QueryState queryState = QueryState.createInitiatorState(queryId, null, null, 0, null, null, metadata,
-                null, System::currentTimeMillis);
-        SqlResultImpl r = SqlResultImpl.createRowsResult(queryState, new DefaultSerializationServiceBuilder().build());
 
-        assertEquals(-1, r.updateCount());
-        assertEquals(metadata, r.getRowMetadata());
-        assertEquals(queryId, r.getQueryId());
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void test_updateCountResult() {
         SqlResultImpl r = SqlResultImpl.createUpdateCountResult(10);
         assertEquals(10, r.updateCount());
 
-        assertIllegalStateException("This result contains only update count", r::iterator);
+        assertIllegalStateException("This result contains only update count", r::getQueryId);
         assertIllegalStateException("This result contains only update count", r::getRowMetadata);
+        assertIllegalStateException("This result contains only update count", r::iterator);
         r.close();
     }
 

@@ -90,7 +90,7 @@ public class SqlCatalogTest {
     private static class MockTableResolver implements TableResolver {
         private final List<Table> tables;
 
-        private MockTableResolver(Table ... tables) {
+        private MockTableResolver(Table... tables) {
             this.tables = asList(tables);
         }
 

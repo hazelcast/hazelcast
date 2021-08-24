@@ -27,7 +27,6 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
 import com.hazelcast.version.Version;
 
 import java.util.HashMap;
@@ -142,10 +141,6 @@ public class JetExtension {
         Map<String, Object> extensionServices = new HashMap<>();
 
         extensionServices.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
-
-        if (jetServiceBackend.getSqlCoreBackend() != null) {
-            extensionServices.put(JetSqlCoreBackend.SERVICE_NAME, jetServiceBackend.getSqlCoreBackend());
-        }
 
         return extensionServices;
     }

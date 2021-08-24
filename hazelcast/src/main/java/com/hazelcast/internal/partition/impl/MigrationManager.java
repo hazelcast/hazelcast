@@ -50,6 +50,7 @@ import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
+import com.hazelcast.internal.util.collection.IntHashSet;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.logging.ILogger;
@@ -1151,7 +1152,8 @@ public class MigrationManager {
          * Set of currently migrating partition IDs.
          * It's illegal to have concurrent migrations on the same partition.
          */
-        private final Set<Integer> migratingPartitions = new HashSet<>();
+        private final IntHashSet migratingPartitions;
+
         /**
          * Map of endpoint -> migration-count.
          * Only {@link #maxParallelMigrations} number of migrations are allowed on a single member.
@@ -1164,6 +1166,8 @@ public class MigrationManager {
         MigrationPlanTask(List<Queue<MigrationInfo>> migrationQs) {
             this.migrationQs = migrationQs;
             this.completed = new ArrayBlockingQueue<>(migrationQs.size());
+            this.migratingPartitions
+                    = new IntHashSet(migrationQs.stream().mapToInt(Collection::size).sum(), -1);
         }
 
         @Override
