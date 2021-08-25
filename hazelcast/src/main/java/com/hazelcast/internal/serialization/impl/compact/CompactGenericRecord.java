@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 
 /**
@@ -32,6 +33,6 @@ public abstract class CompactGenericRecord extends AbstractGenericRecord {
 
     @Override
     public String toString() {
-        return "{\"" + getSchema().getTypeName() + "\" : " + super.toString() + "}";
+        return "{" + JsonEscape.escape(getSchema().getTypeName()) + " : " + super.toString() + "}";
     }
 }

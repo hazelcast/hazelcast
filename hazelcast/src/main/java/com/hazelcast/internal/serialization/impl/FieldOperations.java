@@ -16,11 +16,17 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 /**
@@ -47,7 +53,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return record.getGenericRecord(fieldName).toString();
+            GenericRecord value = record.getGenericRecord(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return value.toString();
         }
     }),
     BYTE(new FieldTypeBasedOperations() {
@@ -68,7 +78,7 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return String.valueOf(record.getByte(fieldName));
+            return JsonEscape.escape(String.valueOf(record.getByte(fieldName)));
         }
     }),
     BOOLEAN(new FieldTypeBasedOperations() {
@@ -111,7 +121,7 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getChar(fieldName) + "\"";
+            return JsonEscape.escape(String.valueOf(record.getChar(fieldName)));
         }
     }),
     SHORT(new FieldTypeBasedOperations() {
@@ -232,7 +242,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getString(fieldName) + "\"";
+            String value = record.getString(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return JsonEscape.escape(value);
         }
     }),
 
@@ -265,14 +279,17 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
+            GenericRecord[] objects = record.getGenericRecordArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
             stringBuilder.append("[");
-            GenericRecord[] recordArray = record.getGenericRecordArray(fieldName);
-            int recordArraySize = recordArray.length;
+            int objectsSize = objects.length;
             int j = 0;
-            for (GenericRecord genericRecord : recordArray) {
+            for (GenericRecord object : objects) {
                 j++;
-                stringBuilder.append(genericRecord);
-                if (j != recordArraySize) {
+                stringBuilder.append(object);
+                if (j != objectsSize) {
                     stringBuilder.append(",");
                 }
             }
@@ -303,7 +320,23 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return Arrays.toString(record.getByteArray(fieldName));
+            StringBuilder stringBuilder = new StringBuilder();
+            byte[] objects = record.getByteArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
+            int objectsSize = objects.length;
+            int j = 0;
+            for (byte object : objects) {
+                j++;
+                stringBuilder.append(JsonEscape.escape(String.valueOf(object)));
+                if (j != objectsSize) {
+                    stringBuilder.append(",");
+                }
+            }
+            stringBuilder.append("]");
+            return stringBuilder.toString();
         }
     }),
     BOOLEAN_ARRAY(new FieldTypeBasedOperations() {
@@ -356,15 +389,16 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             char[] objects = record.getCharArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int objectsSize = objects.length;
             int j = 0;
             for (char object : objects) {
                 j++;
-                stringBuilder.append("\"");
-                stringBuilder.append(object);
-                stringBuilder.append("\"");
+                stringBuilder.append(JsonEscape.escape(String.valueOf(object)));
                 if (j != objectsSize) {
                     stringBuilder.append(",");
                 }
@@ -528,15 +562,16 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             Object[] objects = record.getStringArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int size = objects.length;
             int j = 0;
             for (Object object : objects) {
                 j++;
-                stringBuilder.append("\"");
-                stringBuilder.append(object);
-                stringBuilder.append("\"");
+                stringBuilder.append(JsonEscape.escape(String.valueOf(object)));
                 if (j != size) {
                     stringBuilder.append(",");
                 }
@@ -558,7 +593,8 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return record.getDecimal(fieldName).toString();
+            BigDecimal value = record.getDecimal(fieldName);
+            return value == null ? "null" : value.toString();
         }
     }),
     DECIMAL_ARRAY(new FieldTypeBasedOperations() {
@@ -605,7 +641,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getTime(fieldName).toString() + "\"";
+            LocalTime value = record.getTime(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return "\"" + value + "\"";
         }
     }),
     LOCAL_TIME_ARRAY(new FieldTypeBasedOperations() {
@@ -632,8 +672,11 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             Object[] objects = record.getTimeArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int size = objects.length;
             int j = 0;
             for (Object object : objects) {
@@ -667,7 +710,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getDate(fieldName).toString() + "\"";
+            LocalDate value = record.getDate(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return "\"" + value + "\"";
         }
     }),
     LOCAL_DATE_ARRAY(new FieldTypeBasedOperations() {
@@ -694,8 +741,11 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             Object[] objects = record.getDateArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int size = objects.length;
             int j = 0;
             for (Object object : objects) {
@@ -729,7 +779,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getTimestamp(fieldName) + "\"";
+            LocalDateTime value = record.getTimestamp(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return "\"" + value + "\"";
         }
     }),
     LOCAL_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {
@@ -756,8 +810,11 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             Object[] objects = record.getTimestampArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int size = objects.length;
             int j = 0;
             for (Object object : objects) {
@@ -791,7 +848,11 @@ public enum FieldOperations {
 
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
-            return "\"" + record.getTimestampWithTimezone(fieldName) + "\"";
+            OffsetDateTime value = record.getTimestampWithTimezone(fieldName);
+            if (value == null) {
+                return "null";
+            }
+            return "\"" + value + "\"";
         }
     }),
     OFFSET_DATE_TIME_ARRAY(new FieldTypeBasedOperations() {
@@ -818,8 +879,11 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append("[");
             Object[] objects = record.getTimestampWithTimezoneArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
+            stringBuilder.append("[");
             int size = objects.length;
             int j = 0;
             for (Object object : objects) {
@@ -889,14 +953,17 @@ public enum FieldOperations {
         @Override
         public String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName) {
             StringBuilder stringBuilder = new StringBuilder();
+            GenericRecord[] objects = record.getGenericRecordArray(fieldName);
+            if (objects == null) {
+                return "null";
+            }
             stringBuilder.append("[");
-            GenericRecord[] recordArray = record.getGenericRecordArray(fieldName);
-            int recordArraySize = recordArray.length;
+            int objectSize = objects.length;
             int j = 0;
-            for (GenericRecord genericRecord : recordArray) {
+            for (GenericRecord object : objects) {
                 j++;
-                stringBuilder.append(genericRecord);
-                if (j != recordArraySize) {
+                stringBuilder.append(object);
+                if (j != objectSize) {
                     stringBuilder.append(",");
                 }
             }
