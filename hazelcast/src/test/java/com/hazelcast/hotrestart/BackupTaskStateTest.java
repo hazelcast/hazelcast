@@ -16,6 +16,7 @@
 
 package com.hazelcast.hotrestart;
 
+import com.hazelcast.persistence.BackupTaskState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 public class BackupTaskStateTest {
 
     @Test
-    public void testBackupState() throws Exception {
+    public void testBackupState() {
         assertFalse(BackupTaskState.NO_TASK.isDone());
         assertFalse(BackupTaskState.NOT_STARTED.isDone());
         assertFalse(BackupTaskState.IN_PROGRESS.isDone());

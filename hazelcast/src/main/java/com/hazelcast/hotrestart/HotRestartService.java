@@ -23,56 +23,6 @@ import com.hazelcast.persistence.PersistenceService;
  * Please use {@link com.hazelcast.persistence.PersistenceService} instead.
  */
 @Deprecated
-public interface HotRestartService {
-    /** The prefix for each hot restart backup directory. The backup sequence is appended to this prefix. */
-    String BACKUP_DIR_PREFIX = "backup-";
+public interface HotRestartService extends PersistenceService {
 
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#backup()} instead.
-     */
-    @Deprecated
-    void backup();
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#backup(long)} instead.
-     */
-    @Deprecated
-    void backup(long backupSeq);
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#getBackupTaskStatus()} instead.
-     */
-    @Deprecated
-    BackupTaskStatus getBackupTaskStatus();
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#interruptLocalBackupTask()} instead.
-     */
-    @Deprecated
-    void interruptLocalBackupTask();
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#interruptBackupTask()} instead.
-     */
-    @Deprecated
-    void interruptBackupTask();
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#isHotBackupEnabled()} instead.
-     */
-    @Deprecated
-    boolean isHotBackupEnabled();
-
-    /**
-     * @deprecated since 5.0 because of renaming purposes.
-     * Please use {@link PersistenceService#getBackupDirectory()} instead.
-     */
-    @Deprecated
-    String getBackupDirectory();
 }
