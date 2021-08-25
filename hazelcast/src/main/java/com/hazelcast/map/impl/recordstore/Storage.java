@@ -39,7 +39,7 @@ public interface Storage<K, R> {
 
     void put(K key, R record);
 
-    void updateRecordValue(K key, R record, Object value);
+    Object updateRecordValue(K key, R record, Object value);
 
     R get(K key);
 

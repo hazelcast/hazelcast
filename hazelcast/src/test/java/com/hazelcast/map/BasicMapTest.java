@@ -246,6 +246,15 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapPutAndGet2() {
+        IMap<String, Integer> map = getInstance().getMap("testMapPutAndGet2");
+        Integer value = map.put("key", Integer.valueOf(1));
+        assertNull(value);
+        value = map.put("key", 2);
+        assertEquals(1, value.intValue());
+    }
+
+    @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
         assertEquals(map.putIfAbsent("key1", "value1"), null);
