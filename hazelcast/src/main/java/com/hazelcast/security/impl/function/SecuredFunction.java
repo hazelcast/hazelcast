@@ -18,6 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.List;
 
@@ -34,6 +35,7 @@ public interface SecuredFunction {
     /**
      * @return the list of permissions required to run this function
      */
+    @Nullable
     default List<Permission> permission() {
         return null;
     }
