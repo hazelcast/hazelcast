@@ -16,6 +16,8 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.jet.impl.util.IOUtil;
+
 import javax.annotation.Nullable;
 
 public class ConnectorPermission extends InstancePermission {
@@ -33,8 +35,12 @@ public class ConnectorPermission extends InstancePermission {
         super(name, actions);
     }
 
+    /**
+     * converts the {@code directory} to canonical path.
+     */
     public static ConnectorPermission file(String directory, String action) {
-        return new ConnectorPermission(FILE_PREFIX + directory, action);
+        String canonicalPath = IOUtil.canonicalName(directory);
+        return new ConnectorPermission(FILE_PREFIX + canonicalPath, action);
     }
 
     public static ConnectorPermission socket(String host, int port, String action) {
