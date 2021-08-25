@@ -34,6 +34,7 @@ import com.hazelcast.sql.impl.expression.FunctionalPredicateExpression;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelFieldCollation;
@@ -63,7 +64,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 @SuppressWarnings("rawtypes")
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 

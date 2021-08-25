@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,7 +26,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetSqlIndexTest extends JetSqlIndexAbstractTest {

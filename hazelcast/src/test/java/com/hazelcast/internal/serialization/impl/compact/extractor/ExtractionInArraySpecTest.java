@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.extractor;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -50,7 +51,7 @@ import static java.util.Arrays.asList;
  * - indexing
  * - extraction in collections and arrays
  */
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInArraySpecTest extends AbstractExtractionTest {
 

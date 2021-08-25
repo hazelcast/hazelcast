@@ -22,11 +22,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Year-month interval.
  */
-public class SqlYearMonthInterval implements IdentifiedDataSerializable, Comparable<SqlYearMonthInterval> {
+public class SqlYearMonthInterval implements IdentifiedDataSerializable, Comparable<SqlYearMonthInterval>, Serializable {
 
     private int months;
 

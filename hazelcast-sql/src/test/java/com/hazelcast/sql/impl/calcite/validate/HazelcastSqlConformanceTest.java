@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.validate;
 
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlConformance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,7 +46,7 @@ public class HazelcastSqlConformanceTest {
         assertTrue(conformance.isHavingAlias());
 
         // FROM keyword is a must
-        assertTrue(conformance.isFromRequired());
+        assertFalse(conformance.isFromRequired());
 
         // MINUS in addition to EXCEPT
         assertTrue(conformance.isMinusAllowed());

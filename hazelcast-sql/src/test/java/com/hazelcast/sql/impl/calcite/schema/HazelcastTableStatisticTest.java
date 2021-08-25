@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.calcite.schema;
 
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

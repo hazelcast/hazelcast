@@ -87,7 +87,7 @@ import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
-import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -260,10 +260,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                                         .collect(toList());
 
         tasklets.addAll(allReceivers);
-    }
-
-    public List<ProcessorSupplier> getProcessorSuppliers() {
-        return toList(vertices, VertexDef::processorSupplier);
     }
 
     public Map<Integer, Map<Integer, Map<Address, ReceiverTasklet>>> getReceiverMap() {
@@ -701,8 +697,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return VertexDef.getHigherPriorityVertices(vertices).size();
     }
 
-    // for test
-    List<VertexDef> getVertices() {
-        return vertices;
+    public List<VertexDef> getVertices() {
+        return unmodifiableList(vertices);
     }
 }
