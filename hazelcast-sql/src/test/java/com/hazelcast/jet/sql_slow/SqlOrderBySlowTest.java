@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql_slow;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
 import com.hazelcast.jet.sql.SqlOrderByTest;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -32,8 +33,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
-import static com.hazelcast.sql.impl.SqlTestSupport.SerializationMode.SERIALIZABLE;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
