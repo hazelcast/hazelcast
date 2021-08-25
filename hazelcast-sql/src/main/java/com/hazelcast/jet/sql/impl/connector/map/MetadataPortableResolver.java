@@ -73,7 +73,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
-        ClassDefinition classDefinition = resolveClassDefinition(isKey, options, serializationService);
+        ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
         return userFields.isEmpty()
                 ? resolveFields(isKey, classDefinition)
@@ -207,7 +207,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
     }
 
     @Nullable
-    private static ClassDefinition resolveClassDefinition(
+    private static ClassDefinition findClassDefinition(
             boolean isKey,
             Map<String, String> options,
             InternalSerializationService serializationService
