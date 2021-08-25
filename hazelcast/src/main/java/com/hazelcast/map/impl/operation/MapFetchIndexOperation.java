@@ -320,6 +320,13 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     }
 
     @Override
+    public void logError(Throwable e) {
+        if (!(e instanceof MissingPartitionException)) {
+            super.logError(e);
+        }
+    }
+
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         indexName = in.readString();
