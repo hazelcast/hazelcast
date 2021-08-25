@@ -20,22 +20,14 @@ import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-<<<<<<< HEAD
-import com.hazelcast.jet.sql.impl.expression.predicate.ComparisonMode;
-import com.hazelcast.jet.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
-=======
-import com.hazelcast.jet.sql.impl.util.ExpressionBiValue;
-import com.hazelcast.jet.sql.impl.util.ExpressionType;
-import com.hazelcast.jet.sql.impl.util.ExpressionTypes;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
->>>>>>> b3226333b72beda2409ef179d6945477bb21d02d
 import org.junit.Test;
 
 import java.io.Serializable;
