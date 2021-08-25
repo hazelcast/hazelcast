@@ -26,6 +26,7 @@ import java.util.Arrays;
 /**
  * Should always be consistent with {@link com.hazelcast.nio.serialization.FieldType}
  */
+@SuppressWarnings("checkstyle:AnonInnerLength")
 public enum FieldOperations {
 
     PORTABLE(new FieldTypeBasedOperations() {

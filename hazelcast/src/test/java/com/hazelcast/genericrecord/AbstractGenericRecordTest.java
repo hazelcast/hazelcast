@@ -65,7 +65,6 @@ public abstract class AbstractGenericRecordTest extends HazelcastTestSupport {
      */
     protected abstract HazelcastInstance[] createCluster();
 
-
     @Test
     public void testToStringIsValidJson() {
         MainPortable expectedPortable = createMainPortable();

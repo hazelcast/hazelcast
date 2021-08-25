@@ -756,13 +756,4 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         return values;
     }
-
-    @Override
-    public String toString() {
-        return "CompactGenericRecord{"
-                + "schema=" + schema
-                + ", finalPosition=" + finalPosition
-                + ", offset=" + dataStartPosition
-                + '}';
-    }
 }

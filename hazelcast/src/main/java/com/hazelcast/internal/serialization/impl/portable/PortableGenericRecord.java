@@ -257,7 +257,7 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
 
     @Override
     public String toString() {
-        return "PortableGenericRecord:" + super.toString();
+        return "{\"Portable\":" + super.toString() + "}";
     }
 
     @Nullable

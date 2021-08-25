@@ -145,19 +145,23 @@ public class GenericRecordTest {
         //generic record read from a remote instance without classes on the classpath
         List<String> excludes = Collections.singletonList("example.serialization");
         FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
-        Thread.currentThread().setContextClassLoader(classLoader);
-        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setClassLoader(classLoader)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig()))
-                .build();
-        GenericRecord genericRecord = ss2.toObject(data);
-        Json.parse(genericRecord.toString());
+        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(classLoader);
+            InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
+                    .setSchemaService(schemaService)
+                    .setClassLoader(classLoader)
+                    .setConfig(new SerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig()))
+                    .build();
+            GenericRecord genericRecord = ss2.toObject(data);
+            Json.parse(genericRecord.toString());
 
-        //generic record build by API
-        GenericRecord apiGenericRecord = createCompactGenericRecord(expectedDTO);
-        Json.parse(apiGenericRecord.toString());
-
+            //generic record build by API
+            GenericRecord apiGenericRecord = createCompactGenericRecord(expectedDTO);
+            Json.parse(apiGenericRecord.toString());
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
     }
 
     @Test

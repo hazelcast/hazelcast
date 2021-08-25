@@ -29,4 +29,9 @@ public abstract class CompactGenericRecord extends AbstractGenericRecord {
      * Returns the schema associated with this GenericRecord.
      */
     abstract Schema getSchema();
+
+    @Override
+    public String toString() {
+        return "{\"" + getSchema().getTypeName() + "\" : " + super.toString() + "}";
+    }
 }
