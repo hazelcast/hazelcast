@@ -228,6 +228,7 @@ public interface Cluster {
      * @return the persistence service
      * @throws UnsupportedOperationException if the persistence service is not
      * supported on this instance (e.g. on client)
+     * @since 5.0
      */
     PersistenceService getPersistenceService();
 
