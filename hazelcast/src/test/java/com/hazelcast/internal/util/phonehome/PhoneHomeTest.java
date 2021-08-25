@@ -52,6 +52,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -528,6 +529,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 1));
 
         DistributedObject obj2 = distributedObjectCreateFn.apply("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 2));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));
+
+        INTERNAL_OBJECTS_PREFIXES.stream()
+                .map(prefix -> prefix + "phonehome")
+                .forEach(distributedObjectCreateFn::apply);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 2));
         assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));
