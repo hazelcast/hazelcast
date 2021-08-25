@@ -18,8 +18,9 @@ package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -27,8 +27,8 @@ import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.jet.sql.impl.expression.Expression;
-import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;

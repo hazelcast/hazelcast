@@ -18,8 +18,9 @@ package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.expression.math.DoubleFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -44,8 +45,8 @@ import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.jet.sql.impl.expression.math.DoubleFunction.COS;
-import static com.hazelcast.jet.sql.impl.expression.math.DoubleFunction.SIN;
+import static com.hazelcast.sql.impl.expression.math.DoubleFunction.COS;
+import static com.hazelcast.sql.impl.expression.math.DoubleFunction.SIN;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.math.ExpressionMath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -18,11 +18,18 @@ package com.hazelcast.jet.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+<<<<<<< HEAD
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+=======
+import com.hazelcast.jet.sql.impl.util.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.util.ExpressionType;
+import com.hazelcast.jet.sql.impl.util.ExpressionTypes;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.string.ConcatFunction;
+>>>>>>> b3226333b72beda2409ef179d6945477bb21d02d
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

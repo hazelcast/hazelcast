@@ -24,7 +24,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 

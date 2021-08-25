@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static com.hazelcast.jet.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
 /**
  * Converter for {@link java.math.BigInteger} type.

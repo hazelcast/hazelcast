@@ -38,8 +38,8 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.jet.sql.impl.expression.Expression;
-import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

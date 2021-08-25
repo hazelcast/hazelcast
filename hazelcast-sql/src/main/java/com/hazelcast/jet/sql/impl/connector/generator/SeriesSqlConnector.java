@@ -24,7 +24,7 @@ import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;

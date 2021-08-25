@@ -25,7 +25,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-import static com.hazelcast.jet.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
+import static com.hazelcast.sql.impl.expression.math.ExpressionMath.DECIMAL_MATH_CONTEXT;
 
 public final class AvgSqlAggregations {
 

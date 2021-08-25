@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 import com.hazelcast.jet.impl.MasterJobContext;
-import com.hazelcast.jet.sql.impl.expression.SymbolExpression;
+import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.map.impl.wan.WanMapEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;

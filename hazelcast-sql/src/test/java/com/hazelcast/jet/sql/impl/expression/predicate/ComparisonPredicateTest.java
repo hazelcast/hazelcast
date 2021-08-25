@@ -18,8 +18,10 @@ package com.hazelcast.jet.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -28,9 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.sql.impl.expression.predicate.ComparisonMode.EQUALS;
-import static com.hazelcast.jet.sql.impl.expression.predicate.ComparisonMode.GREATER_THAN;
-import static com.hazelcast.jet.sql.impl.expression.predicate.ComparisonMode.LESS_THAN;
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.EQUALS;
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.GREATER_THAN;
+import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.LESS_THAN;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertFalse;

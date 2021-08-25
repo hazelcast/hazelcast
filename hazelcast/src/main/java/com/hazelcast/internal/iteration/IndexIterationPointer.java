@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexInFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexRangeFilter;
-import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 
 import java.io.IOException;
 import java.util.ArrayList;

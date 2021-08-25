@@ -17,8 +17,9 @@
 package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.math.MinusFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -20,7 +20,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;
 

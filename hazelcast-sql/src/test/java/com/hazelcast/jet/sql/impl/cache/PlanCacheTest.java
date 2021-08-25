@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.cache;
 
-import com.hazelcast.jet.sql.impl.optimizer.PlanKey;
-import com.hazelcast.jet.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

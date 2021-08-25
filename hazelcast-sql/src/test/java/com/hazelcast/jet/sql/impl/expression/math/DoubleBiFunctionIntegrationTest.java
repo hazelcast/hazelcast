@@ -18,8 +18,9 @@ package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.expression.math.DoubleBiFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -44,8 +45,8 @@ import static com.hazelcast.sql.SqlColumnType.TIME;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP;
 import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
-import static com.hazelcast.jet.sql.impl.expression.math.DoubleBiFunction.ATAN2;
-import static com.hazelcast.jet.sql.impl.expression.math.DoubleBiFunction.POWER;
+import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.ATAN2;
+import static com.hazelcast.sql.impl.expression.math.DoubleBiFunction.POWER;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -58,8 +59,8 @@ public class DoubleBiFunctionIntegrationTest extends ExpressionTestSupport {
     @Parameterized.Parameters(name = "function: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {new FunctionInfo("ATAN2", DoubleBiFunction.ATAN2)},
-                {new FunctionInfo("POWER", DoubleBiFunction.POWER)}
+                {new FunctionInfo("ATAN2", ATAN2)},
+                {new FunctionInfo("POWER", POWER)}
         });
     }
 
