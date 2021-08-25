@@ -60,6 +60,8 @@ public class ConnectorPermission extends InstancePermission {
                 mask |= READ;
             } else if (ActionConstants.ACTION_WRITE.equals(action)) {
                 mask |= WRITE;
+            } else {
+                throw new IllegalArgumentException("Configured action[" + action + "] is not supported");
             }
         }
         return mask;
