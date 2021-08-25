@@ -658,8 +658,7 @@ public class SqlPortableTest extends SqlTestSupport {
         GenericRecord record = new PortableGenericRecordBuilder(emptyClassDefinition).build();
         instance().getMap(name).put(record, record);
 
-        assertRowsAnyOrder("SELECT __key, this FROM " + name,
-                singletonList(new Row(record, record)));
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, singletonList(new Row(record, record)));
     }
 
     @Test
@@ -679,8 +678,7 @@ public class SqlPortableTest extends SqlTestSupport {
                 + ")"
         );
 
-        assertRowsAnyOrder("SELECT __key, this FROM " + name,
-                emptyList());
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})
