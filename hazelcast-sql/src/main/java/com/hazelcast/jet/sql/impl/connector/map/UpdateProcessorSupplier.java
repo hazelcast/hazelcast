@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,8 +102,8 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     @Override
-    public Permission permission() {
-        return new MapPermission(mapName, ACTION_CREATE, ACTION_PUT);
+    public List<Permission> permission() {
+        return Collections.singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
     }
 
     @Override

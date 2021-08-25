@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.Traversers.singleton;
@@ -139,8 +140,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     }
 
     @Override
-    public Permission permission() {
-        return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+    public List<Permission> permission() {
+        return Collections.singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override

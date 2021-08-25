@@ -46,6 +46,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -125,8 +127,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                     }
 
                     @Override
-                    public Permission permission() {
-                        return ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE);
+                    public List<Permission> permission() {
+                        return Collections.singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
                     }
                 });
     }

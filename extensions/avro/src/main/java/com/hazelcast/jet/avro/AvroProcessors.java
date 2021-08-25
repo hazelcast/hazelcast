@@ -35,6 +35,8 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -113,8 +115,8 @@ public final class AvroProcessors {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(directoryName, ACTION_WRITE);
+            public List<Permission> permission() {
+                return Collections.singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
             }
         };
     }
@@ -135,8 +137,8 @@ public final class AvroProcessors {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(directoryName, ACTION_READ);
+            public List<Permission> permission() {
+                return Collections.singletonList(ConnectorPermission.file(directoryName, ACTION_READ));
             }
         };
     }

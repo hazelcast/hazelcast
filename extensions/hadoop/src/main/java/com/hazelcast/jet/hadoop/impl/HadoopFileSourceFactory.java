@@ -58,6 +58,8 @@ import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -153,8 +155,13 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(fsc.getPath(), ACTION_READ);
+            public List<Permission> permission() {
+                String keyFile = fsc.getOptions().get("google.cloud.auth.service.account.json.keyfile");
+                if (keyFile != null) {
+                    return Arrays.asList(ConnectorPermission.file(keyFile, ACTION_READ),
+                            ConnectorPermission.file(fsc.getPath(), ACTION_READ));
+                }
+                return Collections.singletonList(ConnectorPermission.file(fsc.getPath(), ACTION_READ));
             }
         };
     }

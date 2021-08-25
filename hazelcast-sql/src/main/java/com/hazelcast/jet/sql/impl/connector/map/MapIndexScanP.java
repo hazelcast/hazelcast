@@ -54,6 +54,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -416,8 +417,8 @@ final class MapIndexScanP extends AbstractProcessor {
         }
 
         @Override
-        public Permission permission() {
-            return new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ);
+        public List<Permission> permission() {
+            return Collections.singletonList(new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ));
         }
 
         @Override

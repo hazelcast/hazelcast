@@ -45,6 +45,7 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -308,8 +309,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
 
         @Override
-        public Permission permission() {
-            return ConnectorPermission.jms(destination, ACTION_READ);
+        public List<Permission> permission() {
+            return Collections.singletonList(ConnectorPermission.jms(destination, ACTION_READ));
         }
     }
 }

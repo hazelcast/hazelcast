@@ -37,6 +37,8 @@ import javax.jms.XAConnection;
 import javax.jms.XASession;
 import java.security.Permission;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
@@ -177,8 +179,8 @@ public final class WriteJmsP<T> extends XaSinkProcessorBase {
         }
 
         @Override
-        public Permission permission() {
-            return ConnectorPermission.jms(destinationName, ACTION_WRITE);
+        public List<Permission> permission() {
+            return Collections.singletonList(ConnectorPermission.jms(destinationName, ACTION_WRITE));
         }
     }
 }
