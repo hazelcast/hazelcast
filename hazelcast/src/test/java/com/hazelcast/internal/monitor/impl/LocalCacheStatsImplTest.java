@@ -17,6 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.map.LocalReplicationStats;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -136,6 +137,11 @@ public class LocalCacheStatsImplTest {
 
             @Override
             public NearCacheStats getNearCacheStatistics() {
+                return null;
+            }
+
+            @Override
+            public LocalReplicationStats getReplicationStats() {
                 return null;
             }
         };
