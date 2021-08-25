@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.util;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -149,5 +150,11 @@ public final class IOUtil {
         // URLs always use forward slash to separate directories
         int lastSlash = fnamePath.lastIndexOf('/');
         return lastSlash < 0 ? fnamePath : fnamePath.substring(lastSlash + 1);
+    }
+
+
+    @Nonnull
+    public static String canonicalName(String directory) {
+        return Util.uncheckCall(() -> new File(directory).getCanonicalPath());
     }
 }
