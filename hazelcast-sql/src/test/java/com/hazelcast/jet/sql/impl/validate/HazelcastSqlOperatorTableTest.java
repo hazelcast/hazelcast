@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite.validate;
+package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;

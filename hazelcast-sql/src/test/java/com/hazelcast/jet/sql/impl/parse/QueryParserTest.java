@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite.parse;
+package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.parse.QueryParser;
 import com.hazelcast.sql.impl.QueryException;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite.opt;
+package com.hazelcast.jet.sql.impl.opt;
 
 import java.util.ArrayList;
 import java.util.List;

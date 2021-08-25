@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite.opt.distribution;
+package com.hazelcast.jet.sql.impl.opt.distribution;
 
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

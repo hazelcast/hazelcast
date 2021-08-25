@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite.opt;
+package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.impl.opt.cost.Cost;
 import org.apache.calcite.rel.RelNode;
