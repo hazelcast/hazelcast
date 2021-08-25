@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.expression.string;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.jet.sql.impl.util.ExpressionValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import org.junit.Test;
 
 import java.math.BigDecimal;

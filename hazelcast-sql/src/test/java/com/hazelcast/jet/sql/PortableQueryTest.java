@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.common;
+package com.hazelcast.jet.sql;
 
 import com.google.common.collect.Iterators;
 import com.hazelcast.client.config.ClientConfig;

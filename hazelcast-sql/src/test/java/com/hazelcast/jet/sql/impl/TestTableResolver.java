@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite;
+package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.Table;

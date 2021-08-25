@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.common;
+package com.hazelcast.jet.sql;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -60,20 +60,20 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.AbstractPojo;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.AbstractPojoKey;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.DataSerializablePojo;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.DataSerializablePojoKey;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.IdentifiedDataSerializablePojo;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.IdentifiedDataSerializablePojoKey;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.PortablePojo;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.PortablePojoKey;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.SerializablePojo;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.SerializablePojoKey;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.SerializationMode;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.SerializationMode.SERIALIZABLE;
-import static com.hazelcast.jet.sql.common.SqlBasicTest.serializationConfig;
+import static com.hazelcast.jet.sql.SqlBasicTest.AbstractPojo;
+import static com.hazelcast.jet.sql.SqlBasicTest.AbstractPojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojo;
+import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojo;
+import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojo;
+import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojo;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
+import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
+import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;

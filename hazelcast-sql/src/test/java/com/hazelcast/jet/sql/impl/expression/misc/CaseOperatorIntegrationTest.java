@@ -25,9 +25,9 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.jet.sql.impl.expression.predicate.ComparisonPredicate;
-import com.hazelcast.jet.sql.impl.util.ExpressionBiValue;
-import com.hazelcast.jet.sql.impl.util.ExpressionType;
-import com.hazelcast.jet.sql.impl.util.ExpressionTypes;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
 import org.junit.Test;
 
 import java.io.Serializable;

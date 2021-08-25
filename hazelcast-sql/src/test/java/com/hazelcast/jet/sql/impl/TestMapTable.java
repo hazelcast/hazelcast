@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.calcite;
+package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.optimizer.PlanObjectKey;

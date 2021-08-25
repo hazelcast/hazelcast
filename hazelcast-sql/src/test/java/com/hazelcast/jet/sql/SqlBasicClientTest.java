@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.common.client;
+package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.sql.common.SqlBasicTest;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

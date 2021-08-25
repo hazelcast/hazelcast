@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql_slow;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.jet.sql.common.SqlBasicTest;
+import com.hazelcast.jet.sql.SqlBasicTest;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.util;
+package com.hazelcast.jet.sql.impl.support.expressions;
 
 import java.util.function.Predicate;
 

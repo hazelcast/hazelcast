@@ -25,7 +25,7 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
-import com.hazelcast.jet.sql.impl.calcite.TestMapTable;
+import com.hazelcast.jet.sql.impl.TestMapTable;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;

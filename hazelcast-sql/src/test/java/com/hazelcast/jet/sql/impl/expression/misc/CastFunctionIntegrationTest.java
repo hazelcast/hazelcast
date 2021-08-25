@@ -26,7 +26,7 @@ import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
-import com.hazelcast.jet.sql.impl.util.ExpressionValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

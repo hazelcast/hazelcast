@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.common.client;
+package com.hazelcast.jet.sql;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SqlExecute_reservedCodec;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.sql.common.SqlErrorAbstractTest;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
