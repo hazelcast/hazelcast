@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.expression.math;
 
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.math.RemainderFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -45,7 +46,7 @@ import static com.hazelcast.sql.SqlColumnType.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.SqlColumnType.TINYINT;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.SqlErrorCode.DATA_EXCEPTION;
-import static com.hazelcast.jet.sql.impl.expression.ConstantExpression.create;
+import static com.hazelcast.sql.impl.expression.ConstantExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 
 @RunWith(HazelcastSerialClassRunner.class)

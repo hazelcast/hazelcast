@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.index;
 import com.hazelcast.query.impl.CompositeValue;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.Arrays;

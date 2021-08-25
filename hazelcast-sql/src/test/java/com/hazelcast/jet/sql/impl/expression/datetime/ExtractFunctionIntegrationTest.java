@@ -20,8 +20,10 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.datetime.ExtractField;
+import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -75,8 +77,8 @@ public class ExtractFunctionIntegrationTest {
             Iterable<TestCase> cases = testCases();
             List<Object[]> data = new ArrayList<>();
             for (TestCase c : cases) {
-                for (Map.Entry<String, Double> result: c.results.entrySet()) {
-                    data.add(new Object[] {
+                for (Map.Entry<String, Double> result : c.results.entrySet()) {
+                    data.add(new Object[]{
                             result.getKey(),   // Field
                             c.type,            // Type
                             c.input,           // Input
@@ -359,7 +361,7 @@ public class ExtractFunctionIntegrationTest {
             check(sql(field, "?"), expected, parameterInput);
         }
 
-        private <T> void check(String sql, T expectedResult, Object ...parameters) {
+        private <T> void check(String sql, T expectedResult, Object... parameters) {
             List<SqlRow> rows = execute(member, sql, parameters);
             SqlRow row = rows.get(0);
 
@@ -482,7 +484,7 @@ public class ExtractFunctionIntegrationTest {
         return new TestCase(type, input, objectInput, results);
     }
 
-    private static Map<String, Double> results(Object ...args) {
+    private static Map<String, Double> results(Object... args) {
         assertEquals(0, args.length % 2);
 
         Map<String, Double> expectedResults = new HashMap<>();

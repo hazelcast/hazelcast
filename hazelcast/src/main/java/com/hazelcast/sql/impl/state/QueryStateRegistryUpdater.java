@@ -18,7 +18,7 @@ package com.hazelcast.sql.impl.state;
 
 import com.hazelcast.sql.impl.NodeServiceProvider;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.jet.sql.impl.cache.PlanCacheChecker;
+import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 
 import java.util.Set;
 import java.util.UUID;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.sql.impl.schema;
 
-import com.hazelcast.jet.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 
 import java.util.Collections;
 import java.util.List;

@@ -18,9 +18,11 @@ package com.hazelcast.jet.sql.impl.expression.predicate;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.expression.Expression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.predicate.AndPredicate;
+import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.jet.sql.impl.util.ExpressionBiValue.BooleanBigDecimalVal;
 import com.hazelcast.jet.sql.impl.util.ExpressionBiValue.BooleanBigIntegerVal;

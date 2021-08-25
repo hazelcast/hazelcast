@@ -18,9 +18,10 @@ package com.hazelcast.jet.sql.impl.expression.string;
 
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.util.ExpressionValue.CharacterVal;
 import com.hazelcast.jet.sql.impl.util.ExpressionValue.StringVal;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.string.UpperFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

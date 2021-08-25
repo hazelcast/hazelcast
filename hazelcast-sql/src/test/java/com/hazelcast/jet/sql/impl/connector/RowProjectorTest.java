@@ -17,11 +17,11 @@
 package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.jet.sql.impl.expression.ColumnExpression;
-import com.hazelcast.jet.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.expression.Expression;
-import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.jet.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.type.QueryDataType;

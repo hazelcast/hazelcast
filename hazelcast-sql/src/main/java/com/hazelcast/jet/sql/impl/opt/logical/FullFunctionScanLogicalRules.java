@@ -20,7 +20,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;

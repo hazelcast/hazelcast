@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.SqlTestSupport;
+import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

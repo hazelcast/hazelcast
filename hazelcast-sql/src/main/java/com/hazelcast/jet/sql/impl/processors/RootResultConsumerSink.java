@@ -26,8 +26,8 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.sql.impl.JetQueryResultProducer;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.jet.sql.impl.expression.Expression;
-import com.hazelcast.jet.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 
 import javax.annotation.Nonnull;

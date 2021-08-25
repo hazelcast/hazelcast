@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.schema.map;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
-import com.hazelcast.jet.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.type.QueryDataType;
