@@ -60,20 +60,9 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
-import static com.hazelcast.jet.sql.SqlBasicTest.AbstractPojo;
-import static com.hazelcast.jet.sql.SqlBasicTest.AbstractPojoKey;
-import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojo;
-import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojoKey;
-import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojo;
-import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojoKey;
-import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojo;
-import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojoKey;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojo;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojoKey;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
-import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
+import static com.hazelcast.sql.impl.SqlTestSupport.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
+import static com.hazelcast.sql.impl.SqlTestSupport.SerializationMode.SERIALIZABLE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -87,10 +76,6 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
 public class SqlOrderByTest extends SqlTestSupport {
-
-    private static final String MAP_OBJECT = "map_object";
-    private static final String MAP_BINARY = "map_binary";
-
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
