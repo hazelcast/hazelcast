@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;

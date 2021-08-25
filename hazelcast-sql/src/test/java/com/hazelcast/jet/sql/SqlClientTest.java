@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
 import com.hazelcast.sql.SqlResult;

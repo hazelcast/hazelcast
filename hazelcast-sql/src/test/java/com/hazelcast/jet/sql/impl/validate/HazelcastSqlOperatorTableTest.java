@@ -17,11 +17,10 @@
 package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastOperandTypeCheckerAware;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCaseOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

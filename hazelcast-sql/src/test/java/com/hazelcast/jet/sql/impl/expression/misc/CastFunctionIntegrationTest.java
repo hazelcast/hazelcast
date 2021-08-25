@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.expression.misc;
 
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.jet.sql.impl.util.ExpressionValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -27,10 +27,6 @@ import com.hazelcast.sql.impl.type.converter.LocalDateConverter;
 import com.hazelcast.sql.impl.type.converter.LocalDateTimeConverter;
 import com.hazelcast.sql.impl.type.converter.LocalTimeConverter;
 import com.hazelcast.sql.impl.type.converter.OffsetDateTimeConverter;
-<<<<<<< HEAD
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
-=======
->>>>>>> b3226333b72beda2409ef179d6945477bb21d02d
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

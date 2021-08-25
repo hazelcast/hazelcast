@@ -16,9 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.impl.parse.QueryParser;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

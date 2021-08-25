@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;

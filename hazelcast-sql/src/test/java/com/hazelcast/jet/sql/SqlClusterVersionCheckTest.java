@@ -21,7 +21,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.version.Version;
 import org.junit.Assert;
