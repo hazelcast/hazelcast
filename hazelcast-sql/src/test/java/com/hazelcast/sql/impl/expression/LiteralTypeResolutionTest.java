@@ -16,9 +16,9 @@
 
 package com.hazelcast.sql.impl.expression;
 
-import com.hazelcast.sql.impl.calcite.validate.literal.Literal;
-import com.hazelcast.sql.impl.calcite.validate.literal.LiteralUtils;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
+import com.hazelcast.jet.sql.impl.validate.literal.Literal;
+import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

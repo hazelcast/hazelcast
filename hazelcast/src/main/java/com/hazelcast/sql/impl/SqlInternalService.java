@@ -19,7 +19,6 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
-import com.hazelcast.sql.impl.state.QueryStateRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 
 /**
@@ -29,14 +28,11 @@ public class SqlInternalService {
 
     public static final String SERVICE_NAME = "hz:impl:sqlService";
 
-    /** Registry for running queries. */
-    private final QueryStateRegistry stateRegistry;
+    /** Registry for query results. */
+    private final QueryResultRegistry resultRegistry;
 
     /** Registry for client queries. */
     private final QueryClientStateRegistry clientStateRegistry;
-
-    /** Registry for query results. */
-    private final QueryResultRegistry resultRegistry;
 
     /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
@@ -51,14 +47,12 @@ public class SqlInternalService {
         this.resultRegistry = resultRegistry;
 
         // Create state registries since they do not depend on anything.
-        this.stateRegistry = new QueryStateRegistry(nodeServiceProvider);
         this.clientStateRegistry = new QueryClientStateRegistry();
 
         // State checker depends on state registries and operation handler.
         this.stateRegistryUpdater = new QueryStateRegistryUpdater(
             instanceName,
             nodeServiceProvider,
-            stateRegistry,
             clientStateRegistry,
             planCacheChecker,
             stateCheckFrequency
@@ -72,20 +66,16 @@ public class SqlInternalService {
     public void shutdown() {
         stateRegistryUpdater.shutdown();
 
-        stateRegistry.shutdown();
+        resultRegistry.shutdown();
         clientStateRegistry.shutdown();
-    }
-
-    public QueryStateRegistry getStateRegistry() {
-        return stateRegistry;
-    }
-
-    public QueryClientStateRegistry getClientStateRegistry() {
-        return clientStateRegistry;
     }
 
     public QueryResultRegistry getResultRegistry() {
         return resultRegistry;
+    }
+
+    public QueryClientStateRegistry getClientStateRegistry() {
+        return clientStateRegistry;
     }
 
     /**

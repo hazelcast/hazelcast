@@ -65,7 +65,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.OptimizerContext;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;

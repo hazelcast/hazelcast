@@ -19,13 +19,17 @@ package com.hazelcast.sql.impl.plan.cache;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.impl.QueryId;
+import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
-import com.hazelcast.sql.impl.plan.Plan;
+import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.security.SqlSecurityContext;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -56,7 +60,7 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
         return new PlanKey(Collections.emptyList(), sql);
     }
 
-    public static Plan createPlan(PlanKey key, Map<UUID, PartitionIdSet> partMap, int... objectKeys) {
+    public static SqlPlan createPlan(PlanKey key, Map<UUID, PartitionIdSet> partitions, int... objectKeys) {
         Set<PlanObjectKey> objectKeys0 = new HashSet<>();
 
         if (objectKeys != null) {
@@ -64,20 +68,7 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
                 objectKeys0.add(createObjectId(objectId));
             }
         }
-
-        Plan plan = new Plan(
-                partMap,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                QueryParameterMetadata.EMPTY,
-                key,
-                objectKeys0,
-                Collections.emptyList()
-        );
+        SqlPlan plan = new TestPlan(key, objectKeys0, partitions);
 
         assertEquals(key, plan.getPlanKey());
         assertEquals(0L, plan.getPlanLastUsed());
@@ -105,11 +96,11 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
         }
     }
 
-    public static class TestPlanObjectKey implements PlanObjectKey {
+    private static class TestPlanObjectKey implements PlanObjectKey {
 
         private final int id;
 
-        public TestPlanObjectKey(int id) {
+        private TestPlanObjectKey(int id) {
             this.id = id;
         }
 
@@ -131,6 +122,42 @@ public abstract class PlanCacheTestSupport extends SqlTestSupport {
         @Override
         public int hashCode() {
             return id;
+        }
+    }
+
+    private static class TestPlan extends SqlPlan {
+
+        private final Set<PlanObjectKey> objectKeys;
+        private final Map<UUID, PartitionIdSet> partitions;
+
+        private TestPlan(PlanKey planKey, Set<PlanObjectKey> objectKeys, Map<UUID, PartitionIdSet> partitions) {
+            super(planKey);
+            this.objectKeys = objectKeys;
+            this.partitions = partitions;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys, partitions);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            throw new UnsupportedOperationException();
         }
     }
 }
