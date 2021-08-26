@@ -214,7 +214,12 @@ public final class SqlConsole {
             out.println(errorPrompt);
         } catch (Exception e) {
             // Print stack trace of the unexpected exception
-            out.println("Encountered an unexpected exception while executing the query:");
+            String unexpectedErrorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append("Encountered an unexpected exception while executing the query:")
+                    .append(e.getMessage())
+                    .toAnsi();
+            out.println(unexpectedErrorPrompt);
             e.printStackTrace(out);
         }
     }
