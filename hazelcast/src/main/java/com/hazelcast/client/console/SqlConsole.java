@@ -69,7 +69,7 @@ public final class SqlConsole {
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
 
-    private SqlConsole() { };
+    private SqlConsole() { }
 
     public static void run(HazelcastInstance hzClient) {
         LineReader reader = LineReaderBuilder.builder().parser(new MultilineParser())
@@ -212,6 +212,10 @@ public final class SqlConsole {
                     .append(e.getMessage())
                     .toAnsi();
             out.println(errorPrompt);
+        } catch (Exception e) {
+            // Print stack trace of the unexpected exception
+            out.println("Encountered an unexpected exception while executing the query:");
+            e.printStackTrace(out);
         }
     }
 
