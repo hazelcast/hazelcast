@@ -133,7 +133,7 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
 
     public CompletableFuture<Void> putAsync(Schema schema) {
         if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_0)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.0 cluster ");
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.0 cluster");
         }
         long schemaId = schema.getSchemaId();
         if (getLocal(schemaId) != null) {
