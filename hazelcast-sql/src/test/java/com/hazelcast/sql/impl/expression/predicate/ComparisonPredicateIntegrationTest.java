@@ -103,7 +103,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private static final Literal LITERAL_DECIMAL = new Literal("1.1", SqlColumnType.DECIMAL);
     private static final Literal LITERAL_DOUBLE = new Literal("1.1E1", SqlColumnType.DOUBLE);
 
-    @Test
+    @Test(timeout = 600_000)
     public void testString() {
         // Column/column
         putCheckCommute(stringValue2("a", "a"), "field1", "field2", RES_EQ);
@@ -143,7 +143,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void testBoolean() {
         // Column/column
         putCheckCommute(booleanValue2(true, true), "field1", "field2", RES_EQ);
@@ -197,7 +197,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void testNumeric() {
         Object[] values = getNumericValues();
 
