@@ -30,7 +30,7 @@ import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
@@ -211,7 +211,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 return executionFuture;
             } else {
                 // begin job execution
-                ClassLoader cl = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
+                ClassLoader cl = jetServiceBackend.getJobClassLoaderService().getClassLoader(jobConfig, jobId);
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -250,14 +250,13 @@ public class ExecutionContext implements DynamicMetricsProvider {
             }
         }
 
-        JobExecutionService jobExecutionService = jetServiceBackend.getJobExecutionService();
-        ClassLoader jobCL = jobExecutionService.getClassLoader(jobConfig, jobId);
-
-        doWithClassLoader(jobCL, () -> {
+        JobClassLoaderService jobClassloaderService = jetServiceBackend.getJobClassLoaderService();
+        ClassLoader classLoader = jobClassloaderService.getClassLoader(jobId);
+        doWithClassLoader(classLoader, () -> {
             for (VertexDef vertex : vertices) {
                 try {
                     ClassLoader processorCl = isLightJob ?
-                            null : jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                            null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
                     doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
                 } catch (Throwable e) {
                     logger.severe(jobNameAndExecutionId()

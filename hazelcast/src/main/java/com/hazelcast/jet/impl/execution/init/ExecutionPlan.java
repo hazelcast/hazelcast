@@ -32,7 +32,7 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -131,7 +131,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient PartitionArrangement ptionArrgmt;
 
     private transient NodeEngineImpl nodeEngine;
-    private transient JobExecutionService jobExecutionService;
+    private transient JobClassLoaderService jobClassLoaderService;
     private transient long executionId;
 
     // list of unique remote members
@@ -166,8 +166,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            ConcurrentHashMap<String, File> tempDirectories,
                            InternalSerializationService jobSerializationService) {
         this.nodeEngine = nodeEngine;
-        this.jobExecutionService =
-                ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobExecutionService();
+        this.jobClassLoaderService =
+                ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobClassLoaderService();
         this.executionId = executionId;
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
@@ -179,7 +179,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         }
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
-                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             Collection<? extends Processor> processors = doWithClassLoader(
                     processorClassLoader,
                     () -> createProcessors(vertex, vertex.localParallelism())
@@ -325,7 +325,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                    InternalSerializationService jobSerializationService) {
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
-                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
             String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);

@@ -1048,13 +1048,13 @@ public class JobCoordinationService {
     }
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
-        ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        JobExecutionService jetExecutionService = jetServiceBackend.getJobExecutionService();
+        JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
+        ClassLoader classLoader = jobClassLoaderService.getClassLoader(jobConfig, jobId);
         try {
-            jetExecutionService.prepareProcessorClassLoaders(jobId, jobConfig);
+            jobClassLoaderService.prepareProcessorClassLoaders(jobId);
             return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
         } finally {
-            jetExecutionService.clearProcessorClassLoaders();
+            jobClassLoaderService.clearProcessorClassLoaders();
         }
     }
 

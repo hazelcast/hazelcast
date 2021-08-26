@@ -33,6 +33,7 @@ import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
+import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -283,9 +284,9 @@ public class MasterJobContext {
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
-            JobExecutionService jobExecutionService = mc.getJetServiceBackend().getJobExecutionService();
+            JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             try {
-                jobExecutionService.prepareProcessorClassLoaders(mc.jobId(), mc.jobConfig());
+                jobClassLoaderService.prepareProcessorClassLoaders(mc.jobId());
                 dag = deserializeWithCustomClassLoader(
                         mc.nodeEngine().getSerializationService(),
                         classLoader,
@@ -294,7 +295,7 @@ public class MasterJobContext {
             } catch (Exception e) {
                 throw new JetException("DAG deserialization failed", e);
             } finally {
-                jobExecutionService.clearProcessorClassLoaders();
+                jobClassLoaderService.clearProcessorClassLoaders();
             }
             // save a copy of the vertex list because it is going to change
             vertices = new HashSet<>();
@@ -634,7 +635,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
-                mc.getJetServiceBackend().getJobExecutionService().removeClassloadersForJob(mc.jobId());
+                mc.getJetServiceBackend().getJobClassLoaderService().removeClassloadersForJob(mc.jobId());
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
@@ -767,13 +768,16 @@ public class MasterJobContext {
 
     private void completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
-            JobExecutionService jobExecutionService = mc.getJetServiceBackend().getJobExecutionService();
-            ClassLoader jobCL = jobExecutionService.getClassLoader(mc.jobConfig(), mc.jobId());
-            doWithClassLoader(jobCL, () -> {
+            JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
+            JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
+            doWithClassLoader(jobCl, () -> {
                 for (Vertex v : vertices) {
                     try {
-                        ClassLoader processorCL = jobExecutionService.getProcessorClassLoader(mc.jobId(), v.getName());
-                        Util.doWithClassLoader(processorCL, () -> v.getMetaSupplier().close(failure));
+                        ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
+                        doWithClassLoader(
+                                processorCl,
+                                () -> v.getMetaSupplier().close(failure)
+                        );
                     } catch (Throwable e) {
                         logger.severe(mc.jobIdString()
                                       + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);

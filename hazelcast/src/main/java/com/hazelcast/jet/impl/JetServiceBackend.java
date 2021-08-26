@@ -84,6 +84,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
+    private JobClassLoaderService jobClassLoaderService;
     private JobExecutionService jobExecutionService;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
@@ -108,8 +109,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         );
         jobRepository = new JobRepository(hazelcastInstance);
 
-        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
-        jobCoordinationService = createJobCoordinationService();
+        jobCoordinationService = new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
+        jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
@@ -202,10 +204,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.reset();
     }
 
-    JobCoordinationService createJobCoordinationService() {
-        return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
-    }
-
     public InternalSerializationService createSerializationService(Map<String, String> serializerConfigs) {
         return DelegatingSerializationService
                 .from(getNodeEngine().getSerializationService(), serializerConfigs);
@@ -240,6 +238,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return jobCoordinationService;
     }
 
+    public JobClassLoaderService getJobClassLoaderService() {
+        return jobClassLoaderService;
+    }
+
     public JobExecutionService getJobExecutionService() {
         return jobExecutionService;
     }
@@ -263,7 +265,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     public ClassLoader getClassLoader(long jobId) {
-        return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
+        return getJobClassLoaderService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
     public void handlePacket(Packet packet) {

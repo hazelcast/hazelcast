@@ -138,11 +138,11 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         // processor classloaders
         JetServiceBackend jetService = nodeEngineImpl.getService(JetServiceBackend.SERVICE_NAME);
         try {
-            jetService.getJobExecutionService().prepareProcessorClassLoaders(0, jobConfig);
+            jetService.getJobClassLoaderService().prepareProcessorClassLoaders(0);
             plan.initialize(nodeEngineImpl, 0, 0, ssContext, null,
                     (InternalSerializationService) nodeEngineImpl.getSerializationService());
         } finally {
-            jetService.getJobExecutionService().clearProcessorClassLoaders();
+            jetService.getJobClassLoaderService().clearProcessorClassLoaders();
         }
 
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
