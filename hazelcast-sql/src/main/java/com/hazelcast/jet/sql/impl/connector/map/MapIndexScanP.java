@@ -43,6 +43,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -236,15 +237,25 @@ final class MapIndexScanP extends AbstractProcessor {
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
-        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
         Map<Address, Split> newSplits = new HashMap<>();
+        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+
         while (partitionIterator.hasNext()) {
             int partitionId = partitionIterator.nextInt();
-            Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            // If at least one partition owner is not assigned -- assign current member.
+            // Later, a WrongTargetException will be thrown
+            // and it causes this method to be called again.
+            // Occasionally prediction with current member would be correct.
+            Address potentialOwner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            Address owner = potentialOwner == null
+                    ? split.owner
+                    : partitionService.getPartition(partitionId).getOwnerOrNull();
+
             newSplits.computeIfAbsent(owner, x -> new Split(
                     new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
             ).partitions.add(partitionId);
         }
+
         return new ArrayList<>(newSplits.values());
     }
 
@@ -317,6 +328,7 @@ final class MapIndexScanP extends AbstractProcessor {
          * Topology exception are those related to a member leaving the cluster.
          * We handle them the same as {@link MissingPartitionException} trigger.
          */
+        @SuppressWarnings("BooleanExpressionComplexity")
         private Throwable findTopologyExceptionInCauses(Throwable t) {
             while (t != null) {
                 if (t instanceof MissingPartitionException
@@ -324,6 +336,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         || t instanceof MemberLeftException
                         || t instanceof TargetDisconnectedException
                         || t instanceof TargetNotMemberException
+                        || t instanceof WrongTargetException
                 ) {
                     return t;
                 }
