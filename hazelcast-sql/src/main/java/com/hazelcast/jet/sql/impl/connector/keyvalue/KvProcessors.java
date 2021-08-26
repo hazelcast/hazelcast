@@ -50,9 +50,10 @@ public final class KvProcessors {
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTargetDescriptor keyDescriptor,
-            UpsertTargetDescriptor valueDescriptor
+            UpsertTargetDescriptor valueDescriptor,
+            boolean failOnNulls
     ) {
-        return new EntryProjectorProcessorSupplier(KvProjector.supplier(paths, types, keyDescriptor, valueDescriptor));
+        return new EntryProjectorProcessorSupplier(KvProjector.supplier(paths, types, keyDescriptor, valueDescriptor, failOnNulls));
     }
 
     @SuppressFBWarnings(
