@@ -211,7 +211,7 @@ public class JetPlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setTimeoutMillis(timeout);
 
-        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
+        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         long jobId = jet.newJobId();
         Object oldValue = resultRegistry.store(jobId, queryResultProducer);
