@@ -206,14 +206,14 @@ public final class SqlConsole {
                     .toAnsi();
             out.println(message);
         } catch (HazelcastSqlException e) {
-            // the query failed to execute
+            // the query failed to execute with HazelcastSqlException
             String errorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                     .append(e.getMessage())
                     .toAnsi();
             out.println(errorPrompt);
         } catch (Exception e) {
-            // Print stack trace of the unexpected exception
+            // the query failed to execute with an unexpected exception
             String unexpectedErrorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                     .append("Encountered an unexpected exception while executing the query:\n")
