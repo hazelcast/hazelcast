@@ -56,7 +56,6 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_RESTART;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
 
 abstract class JetPlan extends SqlPlan {
 
@@ -68,7 +67,6 @@ abstract class JetPlan extends SqlPlan {
         if (!context.isSecurityEnabled()) {
             return;
         }
-        context.checkPermission(new JobPermission(ACTION_SUBMIT));
         for (Vertex vertex : dag) {
             Permission permission = vertex.getMetaSupplier().getRequiredPermission();
             if (permission != null) {
