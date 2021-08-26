@@ -20,6 +20,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -31,15 +33,17 @@ import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
     private static final ObjectMapper SERIALIZER = new ObjectMapper();
-    // TODO: serialization, toString, equals-hashcode
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -123,8 +127,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                 return wrap("[]");
             case EMPTY_OBJECT:
                 return wrap("{}");
-            default:
             case NULL:
+            default:
                 return null;
         }
     }
@@ -172,5 +176,44 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     @Override
     public QueryDataType getType() {
         return QueryDataType.JSON;
+    }
+
+    @Override
+    public void writeData(final ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeString(onEmpty.name());
+        out.writeString(onError.name());
+    }
+
+    @Override
+    public void readData(final ObjectDataInput in) throws IOException {
+        super.readData(in);
+        this.onEmpty = SqlJsonQueryEmptyOrErrorBehavior.valueOf(in.readString());
+        this.onError = SqlJsonQueryEmptyOrErrorBehavior.valueOf(in.readString());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), onEmpty, onError);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        JsonQueryFunction that = (JsonQueryFunction) o;
+
+        return this.onEmpty.equals(that.onEmpty) && this.onError.equals(that.onError);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()
+                + "{operand=" + Arrays.toString(operands)
+                + ", onEmpty=" + onEmpty.name()
+                + ", onError=" + onError.name()
+                + '}';
     }
 }

@@ -440,9 +440,9 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.PARSE_JSON) {
                     return ParseJsonFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.JSON_VALUE) {
-                    final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[2]).getSymbol();
-                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[3]).getSymbol();
-                    return JsonValueFunction.create(operands[0], operands[1], resultType, onEmpty, onError);
+                    final SqlJsonValueEmptyOrErrorBehavior onEmpty = ((SymbolExpression) operands[3]).getSymbol();
+                    final SqlJsonValueEmptyOrErrorBehavior onError =  ((SymbolExpression) operands[4]).getSymbol();
+                    return JsonValueFunction.create(operands[0], operands[1], operands[2], resultType, onEmpty, onError);
                 }
 
                 break;

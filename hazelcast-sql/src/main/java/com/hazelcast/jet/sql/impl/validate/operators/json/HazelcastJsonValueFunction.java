@@ -66,7 +66,6 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
             }
 
             for (int i = 2; i < binding.getOperandCount(); i += 2) {
-                System.out.println("hello");
                 if (!binding.getOperandType(i).getSqlTypeName().equals(SqlTypeName.SYMBOL)) {
                     continue;
                 }

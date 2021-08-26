@@ -396,8 +396,9 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         SqlJsonValueEmptyOrErrorBehavior onError = SqlJsonValueEmptyOrErrorBehavior.NULL;
         SqlJsonValueEmptyOrErrorBehavior onEmpty = SqlJsonValueEmptyOrErrorBehavior.NULL;
         RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.ANY);
-
-        for (int i = 2; i < call.operandCount(); i += 2) {
+        RexNode defaultValue = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+        // TODO: clean up/simplify implementation
+        for (int i = 2; i < call.operandCount();) {
             if (!(call.operand(i) instanceof SqlLiteral)) {
                 throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax.");
             }
@@ -406,22 +407,34 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             final Object value = literal.getValue();
             if (value instanceof SqlJsonValueReturning) {
                 returning = validator.getValidatedNodeType(call.operand(i + 1));
+                i += 2;
                 continue;
             }
 
             final SqlJsonValueEmptyOrErrorBehavior behavior = (SqlJsonValueEmptyOrErrorBehavior) literal.getValue();
-            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(i + 1)).getValue();
+            final int onTargetIndex = behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)
+                    ? i + 2
+                    : i + 1;
+            final SqlJsonEmptyOrError onTarget = (SqlJsonEmptyOrError) ((SqlLiteral) call.operand(onTargetIndex)).getValue();
 
             if (onTarget.equals(SqlJsonEmptyOrError.EMPTY)) {
                 onEmpty = behavior;
             } else if (onTarget.equals(SqlJsonEmptyOrError.ERROR)) {
                 onError = behavior;
             }
+
+            if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
+                defaultValue = convertLiteral(call.operand(i + 1), typeFactory);
+            }
+
+            // DEFAULT is 3-tokens, everything else is 2.
+            i += behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT) ? 3 : 2;
         }
 
         return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
                 target,
                 path,
+                defaultValue,
                 blackboard.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
                 blackboard.convertLiteral(onError.symbol(SqlParserPos.ZERO))
         ));

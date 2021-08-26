@@ -529,6 +529,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
         check(sql("PARSE_JSON(?) || PARSE_JSON(?)"), "[1]", "[1]");
     }
 
+    @Test
+    public void test_JSON_VALUE() {
+        check(sql("JSON_VALUE(CAST(? AS JSON), '$[0]') || JSON_VALUE(CAST(? AS JSON), '$[0]')"), "[1]", "[1]");
+    }
+
     private void check(String sql, Object... params) {
         checkValue0(sql, SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);
         checkValue0(lowerCaseInternal(sql), SqlColumnType.VARCHAR, SKIP_VALUE_CHECK, params);

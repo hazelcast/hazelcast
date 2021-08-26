@@ -14,32 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql;
+package com.hazelcast.jet.sql;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
 import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @Category(SlowTest.class)
-public class SqlJsonTypeTest extends SqlTestSupport {
-    private static final ObjectMapper SERIALIZER = new ObjectMapper();
-
+public class SqlJsonTypeTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
         final Config config = new Config();
@@ -104,69 +93,5 @@ public class SqlJsonTypeTest extends SqlTestSupport {
         assertRowsWithType("SELECT * FROM test" ,
                 asList(SqlColumnType.BIGINT, SqlColumnType.JSON),
                 rows(2, 1L, json("[4,5,6]")));
-    }
-
-    private void execute(final String sql, final Object ...arguments) {
-        instance().getSql().execute(sql, arguments);
-    }
-
-    private HazelcastJsonValue jsonObj(Object ...values) {
-        if ((values.length % 2) != 0) {
-            throw new HazelcastException("Number of value args is not divisible by 2");
-        }
-        final Map<String, Object> objectMap = new HashMap<>();
-        for (int i = 0; i < values.length; i += 2) {
-            objectMap.put((String) values[i], values[i + 1]);
-        }
-
-        return json(serialize(objectMap));
-    }
-
-    private String serialize(Object val) {
-        try {
-            return SERIALIZER.writeValueAsString(val);
-        } catch (Exception exception) {
-            throw new HazelcastException(exception);
-        }
-    }
-
-    private HazelcastJsonValue json(final String value) {
-        return new HazelcastJsonValue(value);
-    }
-
-    private void assertRowsWithType(final String sql, List<SqlColumnType> expectedTypes, List<Row> expectedRows) {
-        final SqlResult result = instance().getSql().execute(sql);
-        final SqlRowMetadata rowMetadata = result.getRowMetadata();
-        final List<SqlColumnType> actualTypes = rowMetadata.getColumns().stream()
-                .map(SqlColumnMetadata::getType)
-                .collect(Collectors.toList());
-
-        final List<Row> actualRows = new ArrayList<>();
-        for (final SqlRow row : result) {
-            final Object[] rowValues = new Object[rowMetadata.getColumnCount()];
-            for (int i = 0; i < rowMetadata.getColumnCount(); i++) {
-                rowValues[i] = row.getObject(i);
-            }
-            actualRows.add(new Row(rowValues));
-        }
-
-        assertThat(actualTypes).containsExactlyElementsOf(expectedTypes);
-        assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
-    }
-
-    // maybe worth moving to base class
-    private List<Row> rows(final int rowLength, final Object ...values) {
-        if ((values.length % rowLength) != 0) {
-            throw new HazelcastException("Number of row value args is not divisible by row length");
-        }
-
-        final List<Row> rowList = new ArrayList<>();
-        for (int i = 0; i < values.length; i += rowLength) {
-            Object[] rowValues = new Object[rowLength];
-            System.arraycopy(values, i, rowValues, 0, rowLength);
-            rowList.add(new Row(rowValues));
-        }
-
-        return rowList;
     }
 }
