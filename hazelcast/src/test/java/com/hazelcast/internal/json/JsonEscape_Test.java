@@ -16,72 +16,118 @@
 
 package com.hazelcast.internal.json;
 
+import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
 public class JsonEscape_Test {
 
-    @Test
-    public void escapeBackSlashes() throws IOException {
-        assertEquals("\"foo\\\\bar\"", JsonEscape.escape(("foo\\bar")));
+    private StringBuilder stringBuilder;
+
+    @Before
+    public void setUp() {
+        stringBuilder = new StringBuilder();
     }
 
     @Test
-    public void escapesQuotes() throws IOException {
-        assertEquals("\"a\\\"b\"", JsonEscape.escape("a\"b"));
+    public void writeMemberName_escapesBackslashes() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\\bar");
+
+        assertEquals("\"foo\\\\bar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesEscapedQuotes() throws IOException {
-        assertEquals("\"foo\\\\\\\"bar\"", JsonEscape.escape("foo\\\"bar"));
+    public void escapesQuotes() {
+        JsonEscape.writeEscaped(stringBuilder, "a\"b");
+
+        assertEquals("\"a\\\"b\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesNewLine() throws IOException {
-        assertEquals("\"foo\\nbar\"", JsonEscape.escape("foo\nbar"));
+    public void escapesEscapedQuotes() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\\\"bar");
+
+        assertEquals("\"foo\\\\\\\"bar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesWindowsNewLine() throws IOException {
-        assertEquals("\"foo\\r\\nbar\"", JsonEscape.escape("foo\r\nbar"));
+    public void escapesNewLine() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\nbar");
+
+        assertEquals("\"foo\\nbar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesTabs() throws IOException {
-        assertEquals("\"foo\\tbar\"", JsonEscape.escape("foo\tbar"));
+    public void escapesWindowsNewLine() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\r\nbar");
+
+        assertEquals("\"foo\\r\\nbar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesSpecialCharacters() throws IOException {
-        assertEquals("\"foo\\u2028bar\\u2029\"", JsonEscape.escape("foo\u2028bar\u2029"));
+    public void escapesTabs() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\tbar");
+
+        assertEquals("\"foo\\tbar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesZeroCharacter() throws IOException {
-        assertEquals("\"foo\\u0000bar\"", JsonEscape.escape(string('f', 'o', 'o', (char) 0, 'b', 'a', 'r')));
+    public void escapesSpecialCharacters() {
+        JsonEscape.writeEscaped(stringBuilder, "foo\u2028bar\u2029");
+
+        assertEquals("\"foo\\u2028bar\\u2029\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesEscapeCharacter() throws IOException {
-        assertEquals("\"foo\\u001bbar\"", JsonEscape.escape(string('f', 'o', 'o', (char) 27, 'b', 'a', 'r')));
+    public void escapesZeroCharacter() {
+        JsonEscape.writeEscaped(stringBuilder, string('f', 'o', 'o', (char) 0, 'b', 'a', 'r'));
+
+        assertEquals("\"foo\\u0000bar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesControlCharacters() throws IOException {
-        assertEquals("\"\\u0001\\u0008\\u000f\\u0010\\u001f\"", JsonEscape.escape(string((char) 1, (char) 8, (char) 15, (char) 16, (char) 31)));
+    public void escapesEscapeCharacter() {
+        JsonEscape.writeEscaped(stringBuilder, string('f', 'o', 'o', (char) 27, 'b', 'a', 'r'));
+
+        assertEquals("\"foo\\u001bbar\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesFirstChar() throws IOException {
-        assertEquals("\"\\\\x\"", JsonEscape.escape(string('\\', 'x')));
+    public void escapesControlCharacters() {
+        JsonEscape.writeEscaped(stringBuilder, string((char) 1, (char) 8, (char) 15, (char) 16, (char) 31));
+
+        assertEquals("\"\\u0001\\u0008\\u000f\\u0010\\u001f\"", stringBuilder.toString());
     }
 
     @Test
-    public void escapesLastChar() throws IOException {
-        assertEquals("\"x\\\\\"", JsonEscape.escape(string('x', '\\')));
+    public void escapesFirstChar() {
+        JsonEscape.writeEscaped(stringBuilder, string('\\', 'x'));
+
+        assertEquals("\"\\\\x\"", stringBuilder.toString());
+    }
+
+    @Test
+    public void escapesLastChar() {
+        String x = string('x', '\\');
+        System.out.println(x);
+        JsonEscape.writeEscaped(stringBuilder, x);
+
+        assertEquals("\"x\\\\\"", stringBuilder.toString());
+    }
+
+    @Test
+    public void escapesEscapeChar() {
+        JsonEscape.writeEscaped(stringBuilder, '\\');
+
+        assertEquals("\"\\\\\"", stringBuilder.toString());
+    }
+
+    @Test
+    public void escapesNewLineChar() {
+        JsonEscape.writeEscaped(stringBuilder, '\n');
+
+        assertEquals("\"\\n\"", stringBuilder.toString());
     }
 
     private static String string(char... chars) {

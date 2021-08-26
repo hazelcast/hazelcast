@@ -33,6 +33,12 @@ public abstract class CompactGenericRecord extends AbstractGenericRecord {
 
     @Override
     public String toString() {
-        return "{" + JsonEscape.escape(getSchema().getTypeName()) + " : " + super.toString() + "}";
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append('{');
+        JsonEscape.writeEscaped(stringBuilder, getSchema().getTypeName());
+        stringBuilder.append(':');
+        writeFieldsToStringBuilder(stringBuilder);
+        stringBuilder.append('}');
+        return stringBuilder.toString();
     }
 }

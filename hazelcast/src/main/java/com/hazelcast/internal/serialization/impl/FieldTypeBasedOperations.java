@@ -53,10 +53,8 @@ public interface FieldTypeBasedOperations {
 
     /**
      * Used to built a json representation of generic record
-     *
-     * @return json formatted field
      */
-    String readAsJsonFormattedField(AbstractGenericRecord record, String fieldName);
+    void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName);
 
     /**
      * @return type size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}

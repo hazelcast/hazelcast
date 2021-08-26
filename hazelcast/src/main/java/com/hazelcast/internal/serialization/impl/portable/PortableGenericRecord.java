@@ -257,7 +257,11 @@ public class PortableGenericRecord extends AbstractGenericRecord implements Inte
 
     @Override
     public String toString() {
-        return "{\"Portable\":" + super.toString() + "}";
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("{ \"Portable\" :");
+        writeFieldsToStringBuilder(stringBuilder);
+        stringBuilder.append('}');
+        return stringBuilder.toString();
     }
 
     @Nullable

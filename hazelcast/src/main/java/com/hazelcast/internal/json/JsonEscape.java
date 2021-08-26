@@ -16,22 +16,37 @@
 
 package com.hazelcast.internal.json;
 
-import java.io.IOException;
-import java.io.StringWriter;
+import static com.hazelcast.internal.json.JsonWriter.getReplacementChars;
 
 /**
  * Utility method to escape characters for fields used in a Json.
  */
 public class JsonEscape {
 
-    public static String escape(String string) {
-        StringWriter writer = new StringWriter();
-        JsonWriter jsonWriter = new JsonWriter(writer);
-        try {
-            jsonWriter.writeString(string);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
+    public static void writeEscaped(StringBuilder stringBuilder, String string) {
+        stringBuilder.append('"');
+        int length = string.length();
+        int start = 0;
+        for (int index = 0; index < length; index++) {
+            char[] replacement = getReplacementChars(string.charAt(index));
+            if (replacement != null) {
+                stringBuilder.append(string, start, index);
+                stringBuilder.append(replacement);
+                start = index + 1;
+            }
         }
-        return writer.toString();
+        stringBuilder.append(string, start, length);
+        stringBuilder.append('"');
+    }
+
+    public static void writeEscaped(StringBuilder stringBuilder, char c) {
+        stringBuilder.append('"');
+        char[] replacement = getReplacementChars(c);
+        if (replacement != null) {
+            stringBuilder.append(replacement);
+        } else {
+            stringBuilder.append(c);
+        }
+        stringBuilder.append('"');
     }
 }

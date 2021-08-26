@@ -81,28 +81,26 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
     }
 
-    @Override
-    /*
-      Prints values without metadata(schema/classdefinition) in json format
+    /**
+     * Utility method to build a json String representation of the fields together with field names
+     *
+     * @param stringBuilder to be populated via json representation
      */
-    public String toString() {
+    protected void writeFieldsToStringBuilder(StringBuilder stringBuilder) {
         Set<String> fieldNames = getFieldNames();
-        StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("{");
         int size = fieldNames.size();
         int i = 0;
         for (String fieldName : fieldNames) {
             i++;
-            stringBuilder.append(JsonEscape.escape(fieldName));
+            JsonEscape.writeEscaped(stringBuilder, fieldName);
             stringBuilder.append(":");
             FieldType fieldType = getFieldType(fieldName);
-            String asJson = fieldOperations(fieldType).readAsJsonFormattedField(this, fieldName);
-            stringBuilder.append(asJson);
+            fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
             if (size != i) {
                 stringBuilder.append(",\n");
             }
         }
         stringBuilder.append("}");
-        return stringBuilder.toString();
     }
 }

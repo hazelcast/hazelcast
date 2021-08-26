@@ -140,7 +140,9 @@ public class GenericRecordTest {
 
         //internal generic record created on the servers on query
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
-        Json.parse(internalGenericRecord.toString());
+        String string = internalGenericRecord.toString();
+        System.out.println(string);
+        Json.parse(string);
 
         //generic record read from a remote instance without classes on the classpath
         List<String> excludes = Collections.singletonList("example.serialization");
