@@ -53,7 +53,13 @@ public final class KvProcessors {
             UpsertTargetDescriptor valueDescriptor,
             boolean failOnNulls
     ) {
-        return new EntryProjectorProcessorSupplier(KvProjector.supplier(paths, types, keyDescriptor, valueDescriptor, failOnNulls));
+        return new EntryProjectorProcessorSupplier(KvProjector.supplier(
+                paths,
+                types,
+                keyDescriptor,
+                valueDescriptor,
+                failOnNulls
+        ));
     }
 
     @SuppressFBWarnings(
