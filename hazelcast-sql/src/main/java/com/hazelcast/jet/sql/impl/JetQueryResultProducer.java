@@ -43,12 +43,25 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
     private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
 
+    private final boolean blockForNextItem;
+
     private final OneToOneConcurrentArrayQueue<Row> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
     private final AtomicReference<Exception> done = new AtomicReference<>();
 
     private InternalIterator iterator;
     private long limit = Long.MAX_VALUE;
     private long offset;
+
+    /**
+     * If {@code blockForNextItem} is true, the iterator's {@code
+     * hasNext(timeout)} method will block until a next item is available or
+     * iteration is done; the timeout will be ignored. This is suitable for
+     * batch jobs where low streaming latency isn't required, but rather we
+     * want to return full pages of results to the client.
+     */
+    public JetQueryResultProducer(boolean blockForNextItem) {
+        this.blockForNextItem = blockForNextItem;
+    }
 
     public void init(long limit, long offset) {
         this.limit = limit;
@@ -108,6 +121,9 @@ public class JetQueryResultProducer implements QueryResultProducer {
 
         @Override
         public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
+            if (blockForNextItem) {
+                return hasNext() ? YES : DONE;
+            }
             return nextRow != null || (nextRow = rows.poll()) != null ? YES
                     : isDone() ? DONE
                     : timeout == 0 ? TIMEOUT

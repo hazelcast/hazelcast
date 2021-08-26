@@ -306,9 +306,9 @@ public class CreateDagVisitor {
         Expression<?> offset;
 
         if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof ProjectPhysicalRel
-                    ? (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput()
-                    : (SortPhysicalRel) input;
+            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
+                    ? (SortPhysicalRel) input
+                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);

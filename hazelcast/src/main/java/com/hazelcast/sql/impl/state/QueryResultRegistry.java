@@ -43,4 +43,12 @@ public class QueryResultRegistry {
     public <T extends QueryResultProducer> T remove(long id) {
         return (T) results.remove(id);
     }
+
+    public int getResultCount() {
+        return results.size();
+    }
+
+    public void shutdown() {
+        results.clear();
+    }
 }

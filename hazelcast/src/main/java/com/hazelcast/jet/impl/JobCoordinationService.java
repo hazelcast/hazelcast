@@ -344,6 +344,10 @@ public class JobCoordinationService {
                 });
     }
 
+    public long getJobSubmittedCount() {
+        return jobSubmitted.get();
+    }
+
     private void checkPermissions(Subject subject, DAG dag) {
         SecurityContext securityContext = nodeEngine.getNode().securityContext;
         if (securityContext == null || subject == null) {

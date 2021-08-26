@@ -105,8 +105,8 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
             case TINYINT:
             case SMALLINT:
             case INTEGER:
-            case BIGINT:
                 return SqlTypeName.BIGINT;
+            case BIGINT:
             case DECIMAL:
                 return SqlTypeName.DECIMAL;
             case REAL:

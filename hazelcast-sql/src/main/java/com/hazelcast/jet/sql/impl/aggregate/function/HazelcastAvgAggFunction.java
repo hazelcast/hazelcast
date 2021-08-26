@@ -17,10 +17,8 @@
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastAggFunction;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlFunctionCategory;
@@ -28,10 +26,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.ReturnTypes;
 import org.apache.calcite.util.Optionality;
 
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNumericIntegerType;
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
 
 public class HazelcastAvgAggFunction extends HazelcastAggFunction {
 
@@ -57,14 +52,6 @@ public class HazelcastAvgAggFunction extends HazelcastAggFunction {
                 return false;
             }
         }
-
-        // we'll use DECIMAL for exact types (integers and DECIMAL) and DOUBLE for inexact types
-        RelDataType resultType = isNumericIntegerType(operandType) || operandType.getSqlTypeName() == DECIMAL
-                ? HazelcastTypeFactory.INSTANCE.createSqlType(DECIMAL)
-                : HazelcastTypeFactory.INSTANCE.createSqlType(DOUBLE);
-
-        TypedOperandChecker checker = TypedOperandChecker.forType(resultType);
-        assert checker.isNumeric();
-        return checker.check(binding, throwOnFailure, 0);
+        return true;
     }
 }
