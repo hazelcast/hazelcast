@@ -79,12 +79,22 @@ public enum CacheRecordReaderWriter {
         }
     };
 
-    private static CacheRecordReaderWriter getByRecord(CacheRecord cacheRecord) {
-        if (cacheRecord instanceof CacheObjectRecord) {
-            return OBJECT;
-        }
+    private byte recordTypeId;
 
-        return DATA;
+    CacheRecordReaderWriter(byte recordTypeId) {
+        this.recordTypeId = recordTypeId;
+    }
+
+    public static void writeCacheRecord(CacheRecord cacheRecord, ObjectDataOutput out) throws IOException {
+        CacheRecordReaderWriter readerWriter = getByRecord(cacheRecord);
+        out.writeByte(readerWriter.recordTypeId);
+        readerWriter.write(cacheRecord, out);
+    }
+
+    public static CacheRecord readCacheRecord(ObjectDataInput in) throws IOException {
+        byte recordTypeId = in.readByte();
+        CacheRecordReaderWriter readerWriter = getByRecordTypeId(recordTypeId);
+        return readerWriter.read(in);
     }
 
     public static CacheRecordReaderWriter getByRecordTypeId(int id) {
@@ -98,34 +108,21 @@ public enum CacheRecordReaderWriter {
         }
     }
 
-    private byte recordTypeId;
+    private static CacheRecordReaderWriter getByRecord(CacheRecord cacheRecord) {
+        if (cacheRecord instanceof CacheObjectRecord) {
+            return OBJECT;
+        }
 
-    CacheRecordReaderWriter(byte recordTypeId) {
-        this.recordTypeId = recordTypeId;
+        return DATA;
     }
 
     private static class RecordTypeId {
         private static final byte DATA = 1;
         private static final byte OBJECT = 2;
+
     }
 
     abstract void write(CacheRecord record, ObjectDataOutput out) throws IOException;
 
     abstract CacheRecord read(ObjectDataInput in) throws IOException;
-
-    public byte getRecordTypeId() {
-        return recordTypeId;
-    }
-
-    public static void writeCacheRecord(CacheRecord cacheRecord, ObjectDataOutput out) throws IOException {
-        CacheRecordReaderWriter readerWriter = getByRecord(cacheRecord);
-        out.writeByte(readerWriter.getRecordTypeId());
-        readerWriter.write(cacheRecord, out);
-    }
-
-    public static CacheRecord readCacheRecord(ObjectDataInput in) throws IOException {
-        byte recordTypeId = in.readByte();
-        CacheRecordReaderWriter readerWriter = getByRecordTypeId(recordTypeId);
-        return readerWriter.read(in);
-    }
 }
