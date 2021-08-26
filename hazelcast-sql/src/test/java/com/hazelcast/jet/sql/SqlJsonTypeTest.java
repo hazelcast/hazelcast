@@ -60,7 +60,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     public void when_insertNewIntoMappingBasedMap_typeIsCorrect() {
         execute("CREATE MAPPING test (__key BIGINT, this JSON) "
                 + "TYPE IMap "
-                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json_type')");
+                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
         execute("INSERT INTO test VALUES (1, CAST('[1,2,3]' AS JSON))");
         assertRowsWithType("SELECT * FROM test" ,
@@ -82,7 +82,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     public void when_sinkIsUsedWithExistingMap_typeIsCorrect() {
         execute("CREATE MAPPING test (__key BIGINT, this JSON) "
                 + "TYPE IMap "
-                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json_type')");
+                + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
         execute("INSERT INTO test VALUES (1, CAST('[1,2,3]' AS JSON))");
         assertRowsWithType("SELECT * FROM test" ,

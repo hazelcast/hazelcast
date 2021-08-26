@@ -122,10 +122,7 @@ public interface SqlConnector {
      * Value for {@value #OPTION_KEY_FORMAT}, {@value #OPTION_VALUE_FORMAT}
      * and {@value #OPTION_FORMAT} for JSON serialization.
      */
-    String JSON_FORMAT = "json";
-
-    // TODO: swap with the value above, once #19318 is merged
-    String JSON_TYPE_FORMAT = "json_type";
+    String JSON_FORMAT = "json_flat";
 
     /**
      * Value for {@value #OPTION_FORMAT} for CSV (comma-separated values)

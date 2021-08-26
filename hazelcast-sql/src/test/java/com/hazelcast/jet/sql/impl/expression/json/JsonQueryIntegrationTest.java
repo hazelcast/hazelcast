@@ -73,7 +73,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         instance().getSql()
                 .execute("CREATE MAPPING test (__key BIGINT, this JSON) " +
                         "TYPE IMap " +
-                        "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json_type')")
+                        "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')")
                 .updateCount();
 
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$') FROM test")) {
