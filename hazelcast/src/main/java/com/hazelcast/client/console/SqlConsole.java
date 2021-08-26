@@ -216,7 +216,7 @@ public final class SqlConsole {
             // Print stack trace of the unexpected exception
             String unexpectedErrorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
-                    .append("Encountered an unexpected exception while executing the query:")
+                    .append("Encountered an unexpected exception while executing the query:\n")
                     .append(e.getMessage())
                     .toAnsi();
             out.println(unexpectedErrorPrompt);
