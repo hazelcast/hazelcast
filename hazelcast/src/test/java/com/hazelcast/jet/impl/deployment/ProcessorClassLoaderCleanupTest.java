@@ -109,7 +109,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
 
         assertThatThrownBy(() -> jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name()))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Processor classloader for jobId=" + Util.idToString(job.getId())
-                        + " requested, but it does not exists");
+                .hasMessageContaining("JobClassLoaders for jobId=06b6-2652-1d80-0001 requested, " +
+                        "but it does not exists");
     }
 }
