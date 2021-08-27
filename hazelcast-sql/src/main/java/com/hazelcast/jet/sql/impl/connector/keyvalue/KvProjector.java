@@ -94,13 +94,13 @@ public class KvProjector {
         Object key = keyTarget.conclude();
         if (key == null && failOnNulls) {
             throw QueryException.error("Cannot write NULL to __key field. Consider explicitly listing the columns and " +
-                    "add the __key column like INSERT INTO person(__key, name) VALUES (1, 'Hazelcast')");
+                    "add the '__key' column like INSERT INTO person(__key, name) VALUES (1, 'Hazelcast')");
         }
 
         Object value = valueTarget.conclude();
         if (value == null && failOnNulls) {
-            throw QueryException.error("Cannot write NULL to this field. Consider explicitly listing the columns and " +
-                    "add the this column like INSERT INTO person(name, this) VALUES ('Hazelcast', 1)");
+            throw QueryException.error("Cannot write NULL to 'this' field. Consider explicitly listing the columns and " +
+                    "add the 'this' column like INSERT INTO person(name, this) VALUES ('Hazelcast', 1)");
         }
 
         return entry(key, value);

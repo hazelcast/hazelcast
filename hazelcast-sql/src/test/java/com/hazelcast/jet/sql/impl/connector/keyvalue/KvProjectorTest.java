@@ -100,7 +100,7 @@ public class KvProjectorTest {
 
         assertThatThrownBy(() -> projector.project(new Object[]{1, 2}))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Cannot write NULL to this field");
+                .hasMessageContaining("Cannot write NULL to 'this' field");
     }
 
     @Test

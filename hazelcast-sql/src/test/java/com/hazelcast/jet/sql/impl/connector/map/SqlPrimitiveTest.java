@@ -297,7 +297,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_keyColumnIsNotDeclared_then_itsIsHidden() {
+    public void when_keyColumnIsNotDeclared_then_itIsHidden() {
         String name = randomName();
 
         sqlService.execute("CREATE MAPPING " + name + '('
@@ -329,7 +329,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_valueColumnIsNotDeclared_then_itsIsHidden() {
+    public void when_valueColumnIsNotDeclared_then_itIsHidden() {
         String name = randomName();
 
         sqlService.execute("CREATE MAPPING " + name + '('
