@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
@@ -108,7 +109,7 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
 
         assertThatThrownBy(() -> jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name()))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("JobClassLoaders for jobId=06b6-2652-1d80-0001 requested, " +
-                        "but it does not exists");
+                .hasMessageContaining("JobClassLoaders for jobId=" + Util.idToString(job.getId())
+                        + " requested, but it does not exists");
     }
 }
