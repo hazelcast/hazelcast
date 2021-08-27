@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapOperationFactory;
 import com.hazelcast.internal.nio.Connection;
@@ -53,6 +54,10 @@ public class MultiMapSizeMessageTask
         long total = 0;
         for (Object obj : map.values()) {
             total += (Integer) obj;
+        }
+        if (getSampleContainer().getConfig().isStatisticsEnabled()) {
+            ((MultiMapService) getService(MultiMapService.SERVICE_NAME)).getLocalMultiMapStatsImpl(parameters)
+                    .incrementOtherOperations();
         }
         return toIntSize(total);
     }
@@ -90,5 +95,10 @@ public class MultiMapSizeMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private MultiMapContainer getSampleContainer() {
+        MultiMapService service = getService(MultiMapService.SERVICE_NAME);
+        return service.getOrCreateCollectionContainer(0, parameters);
     }
 }

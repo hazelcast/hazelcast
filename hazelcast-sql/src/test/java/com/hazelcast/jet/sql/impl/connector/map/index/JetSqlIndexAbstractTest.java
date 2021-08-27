@@ -27,14 +27,14 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.support.expressions.ExpressionBiValue;
-import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -55,24 +55,24 @@ import java.util.function.Predicate;
 import static com.hazelcast.sql.impl.SqlTestSupport.getLocalKeys;
 import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.and;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.eq_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gt;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gt_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gte;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.gte_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.isNotNull;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.isNotNull_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.isNull;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.isNull_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lt;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lt_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lte;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.lte_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.neq;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.neq_2;
-import static com.hazelcast.sql.support.expressions.ExpressionPredicates.or;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.and;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.gt;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.gt_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.gte;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.gte_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.isNotNull;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.isNotNull_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.isNull;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.isNull_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.lt;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.lt_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.lte;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.lte_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq_2;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.or;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -496,13 +496,16 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         return res;
     }
 
+    /**
+     * It tests all non-base types. Base type interactions were tested by quick test suite.
+     */
     protected static Collection<Object[]> parametersSlow() {
         List<Object[]> res = new ArrayList<>();
 
         for (IndexType indexType : Arrays.asList(IndexType.SORTED, IndexType.HASH)) {
             for (boolean composite : Arrays.asList(true, false)) {
-                for (ExpressionType<?> firstType : allTypes()) {
-                    for (ExpressionType<?> secondType : allTypes()) {
+                for (ExpressionType<?> firstType : nonBaseTypes()) {
+                    for (ExpressionType<?> secondType : nonBaseTypes()) {
                         res.add(new Object[]{indexType, composite, firstType, secondType});
                     }
                 }

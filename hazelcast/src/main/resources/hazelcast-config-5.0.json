@@ -4008,11 +4008,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "executor-pool-size": {
-          "type": "integer",
-          "default": -1,
-          "description": "Defines the number of threads responsible for query execution."
-        },
         "statement-timeout-millis": {
           "type": "integer",
           "default": 0,

@@ -297,6 +297,70 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_keyColumnIsNotDeclared_then_itIsHidden() {
+        String name = randomName();
+
+        sqlService.execute("CREATE MAPPING " + name + '('
+                + "this VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES(1, 'Alice')"))
+                .hasMessageContaining("Number of INSERT target columns (1) does not equal number of source items (2)");
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + "(__key, this) VALUES (2, 'Bob')",
+                createMap(2, "Bob")
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row("Bob"))
+        );
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(2, "Bob"))
+        );
+    }
+
+    @Test
+    public void when_valueColumnIsNotDeclared_then_itIsHidden() {
+        String name = randomName();
+
+        sqlService.execute("CREATE MAPPING " + name + '('
+                + "__key INT EXTERNAL NAME __key"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES(1, 'Alice')"))
+                .hasMessageContaining("Number of INSERT target columns (1) does not equal number of source items (2)");
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + "(__key, this) VALUES (2, 'Bob')",
+                createMap(2, "Bob")
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(2))
+        );
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(2, "Bob"))
+        );
+    }
+
+    @Test
     public void when_insert() {
         String name = randomName();
         sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));

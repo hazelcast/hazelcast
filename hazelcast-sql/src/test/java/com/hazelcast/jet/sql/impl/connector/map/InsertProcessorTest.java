@@ -81,7 +81,14 @@ public class InsertProcessorTest extends SqlTestSupport {
     public void when_keyIsNull_then_fail() {
         assertThatThrownBy(() -> executeInsert(singletonList(new Object[]{null, 1}), emptyList()))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Key cannot be null");
+                .hasMessageContaining("Cannot write NULL to '__key' field");
+    }
+
+    @Test
+    public void when_ValueIsNull_then_fail() {
+        assertThatThrownBy(() -> executeInsert(singletonList(new Object[]{1, null}), emptyList()))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Cannot write NULL to 'this' field");
     }
 
     @Test
@@ -121,7 +128,8 @@ public class InsertProcessorTest extends SqlTestSupport {
                 new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
                 new QueryDataType[]{INT, INT},
                 PrimitiveUpsertTargetDescriptor.INSTANCE,
-                PrimitiveUpsertTargetDescriptor.INSTANCE
+                PrimitiveUpsertTargetDescriptor.INSTANCE,
+                true
         );
 
         InsertProcessorSupplier processor = new InsertProcessorSupplier(MAP_NAME, projectorSupplier);

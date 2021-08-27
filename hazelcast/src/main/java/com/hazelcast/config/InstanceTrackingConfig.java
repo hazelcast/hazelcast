@@ -46,12 +46,6 @@ public class InstanceTrackingConfig {
     public static final Path DEFAULT_FILE = Paths.get(System.getProperty("java.io.tmpdir"), "Hazelcast.process");
 
     /**
-     * Default setting whether instance tracking should be enabled or not.
-     * It depends on whether the instance is an OEM/NLC build or not.
-     */
-    public static final boolean DEFAULT_ENABLED = isOEMBuild();
-
-    /**
      * Namespace for the placeholders in the file name and format pattern to
      * distinguish between different types of placeholders.
      */
@@ -59,7 +53,12 @@ public class InstanceTrackingConfig {
 
     boolean isEnabledSet;
 
-    private boolean enabled = DEFAULT_ENABLED;
+    /**
+     * Setting whether instance tracking should be enabled or not.
+     * It depends on whether the instance is an OEM/NLC build or not.
+     */
+    private boolean enabled = isOEMBuild();
+
     private String fileName;
     private String formatPattern;
 
