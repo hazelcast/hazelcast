@@ -21,6 +21,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.locksupport.LockProxySupport;
 import com.hazelcast.internal.locksupport.LockSupportServiceImpl;
+import com.hazelcast.internal.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
@@ -278,7 +279,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET)
                     );
-            Set<Data> keySet = new HashSet<Data>();
+            Set<Data> keySet = new HashSet<>();
             for (Object result : results.values()) {
                 if (result == null) {
                     continue;
@@ -302,6 +303,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.VALUES)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -316,6 +320,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.ENTRY_SET)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -331,6 +338,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             new MultiMapOperationFactory(name, OperationFactoryType.CONTAINS,
                                     key, value, ThreadUtil.getThreadId())
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -354,6 +364,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.SIZE)
                     );
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             long size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -374,7 +387,9 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
             Map<Integer, Object> resultMap = nodeEngine.getOperationService().invokeOnAllPartitions(
                     MultiMapService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CLEAR)
             );
-
+            if (config.isStatisticsEnabled()) {
+                getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+            }
             int numberOfAffectedEntries = 0;
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
@@ -408,33 +423,37 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         NodeEngine nodeEngine = getNodeEngine();
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            Future future;
             Object result;
             if (config.isStatisticsEnabled()) {
                 long startTimeNanos = Timer.nanos();
-                future = nodeEngine.getOperationService()
-                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                Future future;
+                future = operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
                 result = future.get();
-                if (operation instanceof PutOperation) {
-                    // TODO: @ali should we remove statics from operations?
-                    getService().getLocalMultiMapStatsImpl(name)
-                                .incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
-                } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
-                        || operation instanceof DeleteOperation) {
-                    getService().getLocalMultiMapStatsImpl(name)
-                                .incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
-                } else if (operation instanceof GetAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(name)
-                                .incrementGetLatencyNanos(Timer.nanosElapsed(startTimeNanos));
-                }
+                incrementOperationStats(startTimeNanos, name, operation);
             } else {
-                future = nodeEngine.getOperationService()
-                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                Future future = operationService.invokeOnPartition(
+                        MultiMapService.SERVICE_NAME,
+                        operation,
+                        partitionId
+                );
                 result = future.get();
             }
             return nodeEngine.toObject(result);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    private void incrementOperationStats(long startTimeNanos, String name, Operation operation) {
+        LocalMultiMapStatsImpl localMultiMapStatsImpl = getService().getLocalMultiMapStatsImpl(name);
+        final long durationNanos = Timer.nanosElapsed(startTimeNanos);
+        if (operation instanceof PutOperation) {
+            localMultiMapStatsImpl.incrementPutLatencyNanos(durationNanos);
+        } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation
+                || operation instanceof DeleteOperation) {
+            localMultiMapStatsImpl.incrementRemoveLatencyNanos(durationNanos);
+        } else if (operation instanceof GetAllOperation) {
+            localMultiMapStatsImpl.incrementGetLatencyNanos(durationNanos);
         }
     }
 
