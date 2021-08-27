@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 
@@ -47,7 +47,7 @@ final class MetadataJsonResolver implements KvMetadataResolver {
 
     @Override
     public Stream<String> supportedFormats() {
-        return Stream.of(JSON_FORMAT);
+        return Stream.of(JSON_FLAT_FORMAT);
     }
 
     @Override

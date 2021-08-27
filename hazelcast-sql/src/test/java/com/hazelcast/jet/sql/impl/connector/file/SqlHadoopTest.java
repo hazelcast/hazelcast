@@ -39,7 +39,7 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.CSV_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PARQUET_FORMAT;
 import static java.time.ZoneOffset.UTC;
@@ -130,7 +130,7 @@ public class SqlHadoopTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + path("json") + '\''
                 + ")"
         );
@@ -152,7 +152,7 @@ public class SqlHadoopTest extends SqlTestSupport {
         sqlService.execute("CREATE MAPPING " + name + ' '
                 + "TYPE " + FileSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", '" + FileSqlConnector.OPTION_PATH + "'='" + path("discovered-json") + '\''
                 + ")"
         );

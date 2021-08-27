@@ -42,7 +42,7 @@ import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -308,26 +308,26 @@ public class PropertiesResolverTest {
     @Test
     public void test_consumerProperties_json() {
         // key
-        assertThat(PropertiesResolver.resolveConsumerProperties(singletonMap(OPTION_KEY_FORMAT, JSON_FORMAT)))
+        assertThat(PropertiesResolver.resolveConsumerProperties(singletonMap(OPTION_KEY_FORMAT, JSON_FLAT_FORMAT)))
                 .containsExactlyEntriesOf(singletonMap(KEY_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()));
 
         // value
         assertThat(PropertiesResolver.resolveConsumerProperties(ImmutableMap.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
-                OPTION_VALUE_FORMAT, JSON_FORMAT
+                OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT
         ))).containsExactlyEntriesOf(singletonMap(VALUE_DESERIALIZER, ByteArrayDeserializer.class.getCanonicalName()));
     }
 
     @Test
     public void test_producerProperties_json() {
         // key
-        assertThat(PropertiesResolver.resolveProducerProperties(singletonMap(OPTION_KEY_FORMAT, JSON_FORMAT)))
+        assertThat(PropertiesResolver.resolveProducerProperties(singletonMap(OPTION_KEY_FORMAT, JSON_FLAT_FORMAT)))
                 .containsExactlyEntriesOf(singletonMap(KEY_SERIALIZER, ByteArraySerializer.class.getCanonicalName()));
 
         // value
         assertThat(PropertiesResolver.resolveProducerProperties(ImmutableMap.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
-                OPTION_VALUE_FORMAT, JSON_FORMAT
+                OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT
         ))).containsExactlyEntriesOf(singletonMap(VALUE_SERIALIZER, ByteArraySerializer.class.getCanonicalName()));
     }
 
@@ -335,7 +335,7 @@ public class PropertiesResolverTest {
     public void when_consumerProperties_jsonPropertyIsDefined_then_itsNotOverwritten() {
         // key
         Map<String, String> keyOptions = ImmutableMap.of(
-                OPTION_KEY_FORMAT, JSON_FORMAT,
+                OPTION_KEY_FORMAT, JSON_FLAT_FORMAT,
                 KEY_DESERIALIZER, "deserializer"
         );
 
@@ -345,7 +345,7 @@ public class PropertiesResolverTest {
         // value
         Map<String, String> valueOptions = ImmutableMap.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
-                OPTION_VALUE_FORMAT, JSON_FORMAT,
+                OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT,
                 VALUE_DESERIALIZER, "deserializer"
         );
 
@@ -357,7 +357,7 @@ public class PropertiesResolverTest {
     public void when_producerProperties_jsonPropertyIsDefined_then_itsNotOverwritten() {
         // key
         Map<String, String> keyOptions = ImmutableMap.of(
-                OPTION_KEY_FORMAT, JSON_FORMAT,
+                OPTION_KEY_FORMAT, JSON_FLAT_FORMAT,
                 KEY_SERIALIZER, "serializer"
         );
 
@@ -367,7 +367,7 @@ public class PropertiesResolverTest {
         // value
         Map<String, String> valueOptions = ImmutableMap.of(
                 OPTION_KEY_FORMAT, UNKNOWN_FORMAT,
-                OPTION_VALUE_FORMAT, JSON_FORMAT,
+                OPTION_VALUE_FORMAT, JSON_FLAT_FORMAT,
                 VALUE_SERIALIZER, "serializer"
         );
 
