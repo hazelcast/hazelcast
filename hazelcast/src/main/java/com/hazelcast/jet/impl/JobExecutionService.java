@@ -436,10 +436,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            // If this is the coordinator we need to keep the classloader around for ProcessorMetaSupplier#close
-            if (!nodeEngine.getLocalMember().getAddress().equals(executionContext.coordinator())) {
-                jobClassloaderService.removeClassloadersForJob(executionContext.jobId());
-            }
+            jobClassloaderService.removeClassloadersForJob(executionContext.jobId());
             executionCompleted.inc();
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
