@@ -81,7 +81,7 @@ public class InsertProcessorTest extends SqlTestSupport {
     public void when_keyIsNull_then_fail() {
         assertThatThrownBy(() -> executeInsert(singletonList(new Object[]{null, 1}), emptyList()))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Cannot write NULL to __key field");
+                .hasMessageContaining("Cannot write NULL to '__key' field");
     }
 
     @Test
