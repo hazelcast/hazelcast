@@ -82,7 +82,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
 
     @Before
     public void before() {
-        MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.openMocks(this);
 
         factory = createHazelcastInstanceFactory(2);
 
@@ -317,7 +317,7 @@ public class PartitionedMapTableResolverTest extends MapSchemaTestSupport {
             fail("Exception is not thrown: " + table.getSqlName());
         } catch (QueryException e) {
             assertEquals(SqlErrorCode.GENERIC, e.getCode());
-            assertTrue(e.getMessage().contains("Cannot resolve IMap schema because it doesn't have entries on the local member"));
+            assertTrue(e.getMessage().contains("Couldn't resolve IMap schema automatically because " + table.getSqlName() + " doesn't contain enough entries."));
         }
     }
 

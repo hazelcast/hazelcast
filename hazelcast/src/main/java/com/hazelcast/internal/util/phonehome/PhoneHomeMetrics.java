@@ -133,7 +133,18 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
-    DOCKER("dck");
+    DOCKER("dck"),
+
+    //JET METRICS
+    JET_ENABLED("jet"),
+    JET_RESOURCE_UPLOAD_ENABLED("jetrsup"),
+    JET_JOBS_SUBMITTED("jetjobss"),
+
+    // SQL METRICS
+    SQL_QUERIES_SUBMITTED("sqlqs"),
+
+    //CP SUBSYSTEM METRICS
+    CP_SUBSYSTEM_ENABLED("cp");
 
     private final String query;
 

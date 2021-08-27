@@ -63,6 +63,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Spliterator.ORDERED;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -657,8 +658,27 @@ public class SqlPortableTest extends SqlTestSupport {
         GenericRecord record = new PortableGenericRecordBuilder(emptyClassDefinition).build();
         instance().getMap(name).put(record, record);
 
-        assertRowsAnyOrder("SELECT __key, this FROM " + name,
-                singletonList(new Row(record, record)));
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, singletonList(new Row(record, record)));
+    }
+
+    @Test
+    public void when_unknownClassDef_then_wholeValueMapped() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + ' '
+                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='9999'"
+                + ", '" + OPTION_KEY_CLASS_ID + "'='9999'"
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='9999'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='9998'"
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='9998'"
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='9998'"
+                + ")"
+        );
+
+        assertRowsAnyOrder("SELECT __key, this FROM " + name, emptyList());
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

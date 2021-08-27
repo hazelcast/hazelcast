@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -49,11 +48,8 @@ import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.sql.impl.JetSqlCoreBackend;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -64,12 +60,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RESULTS_MAP_NAME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_TTL_SECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class JetServiceBackend implements ManagedService, MembershipAwareService, LiveOperationsTracker, PreJoinAwareService {
@@ -96,24 +92,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
-    @Nullable
-    private final JetSqlCoreBackend sqlCoreBackend;
-
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.jetConfig = node.getConfig().getJetConfig();
-
-        JetSqlCoreBackend sqlCoreBackend;
-        try {
-            Class<?> jetSqlServiceClass = Class.forName("com.hazelcast.jet.sql.impl.JetSqlCoreBackendImpl");
-            sqlCoreBackend = (JetSqlCoreBackend) jetSqlServiceClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            sqlCoreBackend = null;
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-        this.sqlCoreBackend = sqlCoreBackend;
     }
 
     // ManagedService
@@ -146,14 +128,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
                 + jetConfig.getInstanceConfig().getCooperativeThreadCount());
-        if (sqlCoreBackend != null) {
-            try {
-                Method initJetInstanceMethod = sqlCoreBackend.getClass().getMethod("init", HazelcastInstance.class);
-                initJetInstanceMethod.invoke(sqlCoreBackend, engine.getHazelcastInstance());
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
@@ -343,11 +317,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             }
         }
         return keys;
-    }
-
-    @Nullable
-    public JetSqlCoreBackend getSqlCoreBackend() {
-        return sqlCoreBackend;
     }
 
     public TaskletExecutionService getTaskletExecutionService() {

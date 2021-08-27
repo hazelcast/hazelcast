@@ -59,6 +59,7 @@ import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.NamedCompletableFuture;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -229,9 +230,7 @@ public class JobCoordinationService {
                     return;
                 }
                 if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
-                    throw new JetException("The JobConfig contains resources to upload, but the resource upload " +
-                            "is disabled. Either remove the resources from the job config or enabled resource " +
-                            "uploading, see JetConfig#setResourceUploadEnabled.");
+                    throw new JetException(Util.JET_RESOURCE_UPLOAD_DISABLED_MESSAGE);
                 }
 
                 int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
@@ -377,6 +376,10 @@ public class JobCoordinationService {
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                     unscheduleJobTimeout(jobId);
                 });
+    }
+
+    public long getJobSubmittedCount() {
+        return jobSubmitted.get();
     }
 
     private void checkPermissions(Subject subject, DAG dag) {

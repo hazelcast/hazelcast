@@ -59,6 +59,7 @@ import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import java.util.List;
 import java.util.Map;
@@ -80,17 +81,17 @@ public class JetPlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
-    private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
+    private final QueryResultRegistry resultRegistry;
     private final JetServiceBackend jetService;
 
     public JetPlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
-            Map<Long, JetQueryResultProducer> resultConsumerRegistry
+            QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
-        this.resultConsumerRegistry = resultConsumerRegistry;
+        this.resultRegistry = resultRegistry;
         jetService = getNodeEngine(hazelcastInstance).getService(JetServiceBackend.SERVICE_NAME);
     }
 
@@ -217,7 +218,7 @@ public class JetPlanExecutor {
                 .setTimeoutMillis(timeout)
                 .setPreventShutdown(!plan.isStreaming());
 
-        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
+        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
         Long jobId;
         try {
@@ -230,7 +231,7 @@ public class JetPlanExecutor {
             }
             throw e;
         }
-        Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
+        Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         LightMasterContext lightMasterContext;
         try {
@@ -248,7 +249,7 @@ public class JetPlanExecutor {
                 }
             });
         } catch (Throwable e) {
-            resultConsumerRegistry.remove(jobId);
+            resultRegistry.remove(jobId);
             throw e;
         }
 

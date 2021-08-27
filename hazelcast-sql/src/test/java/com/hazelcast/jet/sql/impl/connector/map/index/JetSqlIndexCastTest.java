@@ -23,16 +23,15 @@ import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.sql.support.expressions.ExpressionTypes;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -149,9 +148,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     private void check(ExpressionType<?> typeFrom, QueryDataTypeFamily typeTo, boolean expectedIndexUsage) {
-        // Clear plan cache
-        assertTrueEventually(() -> ((SqlServiceImpl) instance().getSql()).getPlanCache().clear());
-
         // Put value into map.
         Map map = instance().getMap(MAP_NAME);
 
