@@ -32,6 +32,11 @@ final class CsvMetadataResolver extends MetadataResolver<Map<String, String>> {
     private static final FileFormat<?> SAMPLE_FORMAT = FileFormat.csv(Map.class);
 
     @Override
+    protected String supportedFormat() {
+        return sampleFormat().format();
+    }
+
+    @Override
     protected FileFormat<?> sampleFormat() {
         return SAMPLE_FORMAT;
     }
