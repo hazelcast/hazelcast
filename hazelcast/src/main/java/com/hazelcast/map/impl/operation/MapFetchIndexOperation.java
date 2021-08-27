@@ -33,6 +33,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.QueryException;
@@ -99,7 +100,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         PartitionStamp indexStamp = index.getPartitionStamp();
         if (indexStamp == null) {
-            throw new MissingPartitionException("index is being rebuilt");
+            throw new IndexNotRebuiltException();
         }
         if (indexStamp.partitions.equals(partitionIdSet)) {
             // We clear the requested partitionIdSet, which means that we won't filter out any partitions.
@@ -420,6 +421,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         public MissingPartitionException(String message, Throwable t) {
             super(message, t);
+        }
+    }
+
+    public static final class IndexNotRebuiltException extends RetryableHazelcastException {
+        public IndexNotRebuiltException() {
+            super("Index is being rebuilt");
         }
     }
 }
