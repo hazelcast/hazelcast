@@ -31,7 +31,6 @@ import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationO
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.FutureUtil;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -40,7 +39,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -72,7 +70,7 @@ public abstract class AbstractJoiner
     protected final ILogger logger;
 
     // map blacklisted endpoints. Boolean value represents if blacklist is temporary or permanent
-    protected final ConcurrentMap<Address, Tuple2<Boolean, Throwable>> blacklistedAddresses = new ConcurrentHashMap<>();
+    protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<>();
     protected final ClusterJoinManager clusterJoinManager;
 
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
@@ -112,8 +110,8 @@ public abstract class AbstractJoiner
     }
 
     @Override
-    public void blacklist(Address address, boolean permanent, Throwable cause) {
-        Tuple2<Boolean, Throwable> prev = blacklistedAddresses.putIfAbsent(address, Tuple2.tuple2(permanent, cause));
+    public void blacklist(Address address, boolean permanent) {
+        Boolean prev = blacklistedAddresses.putIfAbsent(address, permanent);
         if (prev == null) {
             logger.info(address + " is " + (permanent ? "permanently " : "") + "added to the blacklist.");
         }
@@ -121,9 +119,7 @@ public abstract class AbstractJoiner
 
     @Override
     public boolean unblacklist(Address address) {
-        if (blacklistedAddresses.containsKey(address)
-                && Objects.equals(blacklistedAddresses.get(address).f0(), Boolean.FALSE)) {
-            blacklistedAddresses.remove(address);
+        if (blacklistedAddresses.remove(address, Boolean.FALSE)) {
             logger.info(address + " is removed from the blacklist.");
             return true;
         }

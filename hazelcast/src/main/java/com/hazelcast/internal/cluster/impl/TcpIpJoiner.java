@@ -26,12 +26,10 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.server.tcp.ProtocolException;
 import com.hazelcast.internal.util.AddressUtil;
 import com.hazelcast.internal.util.AddressUtil.AddressMatcher;
 import com.hazelcast.internal.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
 
@@ -127,9 +125,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 //noinspection BusyWait
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
             }
-            handleProtocolException(Collections.singleton(targetAddress));
-        } catch (Throwable t) {
-            logger.severe(t);
+        } catch (final Exception e) {
+            logger.warning(e);
         }
     }
 
@@ -142,7 +139,6 @@ public class TcpIpJoiner extends AbstractJoiner {
 
             while (shouldRetry() && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
                 tryJoinAddresses(possibleAddresses);
-                handleProtocolException(possibleAddresses);
 
                 if (clusterService.isJoined()) {
                     return;
@@ -264,28 +260,6 @@ public class TcpIpJoiner extends AbstractJoiner {
 
             if (!clusterService.isJoined()) {
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
-            }
-        }
-    }
-
-    private void handleProtocolException(Collection<Address> addresses) throws Throwable {
-        int failedJoins = 0;
-        StringBuilder failedAddresses = new StringBuilder();
-        for (Address address : addresses) {
-            Tuple2<Boolean, Throwable> tuple2 = blacklistedAddresses.get(address);
-            if (tuple2 != null && tuple2.f1() instanceof ProtocolException) {
-                failedJoins++;
-                failedAddresses.append(address.toString()).append(", ");
-            }
-        }
-        if (failedJoins > 0) {
-            failedAddresses.delete(failedAddresses.length() - 2, failedAddresses.length());
-            if (failedJoins == addresses.size()) {
-                throw new ProtocolException("All instances {"
-                        + failedAddresses
-                        + "} expect different protocol than protocol sent. Will shutdown.");
-            } else {
-                logger.severe("Some instances {" + failedAddresses + "} expect different protocol than protocol sent.");
             }
         }
     }

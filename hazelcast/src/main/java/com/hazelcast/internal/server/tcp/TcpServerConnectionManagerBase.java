@@ -316,8 +316,8 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
             long lastReadTime = connection.getChannel().lastReadTimeMillis();
             boolean hadNoDataTraffic = lastReadTime < 0;
-            if (hadNoDataTraffic || cause instanceof ProtocolException) {
-                serverContext.onFailedConnection(remoteAddress, cause);
+            if (hadNoDataTraffic) {
+                serverContext.onFailedConnection(remoteAddress);
                 if (!silent && plane != null) {
                     getErrorHandler(remoteAddress, plane.errorHandlers).onError(cause);
                 }

@@ -48,7 +48,7 @@ public interface Joiner {
      * @throws java.lang.NullPointerException if address is null.
      * @see #isBlacklisted(Address)
      */
-    void blacklist(Address address, boolean permanent, Throwable cause);
+    void blacklist(Address address, boolean permanent);
 
     /**
      * Removes an address from the blacklist if it is temporarily blacklisted.
@@ -72,7 +72,7 @@ public interface Joiner {
      * @param address the address to check.
      * @return true if blacklisted, false otherwise.
      * @throws java.lang.NullPointerException if address is null.
-     * @see #blacklist(Address, boolean, Throwable)
+     * @see #blacklist(Address, boolean)
      */
     boolean isBlacklisted(Address address);
 }

@@ -209,7 +209,7 @@ class MockJoiner extends AbstractJoiner {
     }
 
     @Override
-    public void blacklist(Address address, boolean permanent, Throwable cause) {
+    public void blacklist(Address address, boolean permanent) {
         // blacklist is always temporary in MockJoiner
         blacklist.add(address);
     }

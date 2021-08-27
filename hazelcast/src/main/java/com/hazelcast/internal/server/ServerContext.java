@@ -86,7 +86,7 @@ public interface ServerContext {
 
     void onSuccessfulConnection(Address address);
 
-    void onFailedConnection(Address address, Throwable cause);
+    void onFailedConnection(Address address);
 
     void shouldConnectTo(Address address);
 
