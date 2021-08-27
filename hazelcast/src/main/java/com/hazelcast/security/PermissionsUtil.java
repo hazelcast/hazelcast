@@ -81,7 +81,7 @@ public final class PermissionsUtil {
     public static void checkPermission(SecuredFunction function, ProcessorMetaSupplier.Context context) {
         if (context instanceof Contexts.MetaSupplierCtx) {
             Contexts.MetaSupplierCtx metaSupplierCtx = (Contexts.MetaSupplierCtx) context;
-            List<Permission> permissions = function.permission();
+            List<Permission> permissions = function.permissions();
             SecurityContext securityContext = metaSupplierCtx.nodeEngine().getNode().securityContext;
             Subject subject = metaSupplierCtx.subject();
             if (securityContext != null && permissions != null && subject != null) {

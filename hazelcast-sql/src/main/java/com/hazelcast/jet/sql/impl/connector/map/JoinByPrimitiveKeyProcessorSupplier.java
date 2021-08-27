@@ -39,13 +39,13 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @SuppressFBWarnings(
@@ -140,8 +140,8 @@ final class JoinByPrimitiveKeyProcessorSupplier implements ProcessorSupplier, Da
     }
 
     @Override
-    public List<Permission> permission() {
-        return Collections.singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override

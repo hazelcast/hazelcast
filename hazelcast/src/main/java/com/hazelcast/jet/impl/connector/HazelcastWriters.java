@@ -46,7 +46,6 @@ import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +63,7 @@ import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -237,8 +237,8 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public List<Permission> permission() {
-            return Collections.singletonList(cachePutPermission(clientXml, name));
+        public List<Permission> permissions() {
+            return singletonList(cachePutPermission(clientXml, name));
         }
     }
 
@@ -272,8 +272,8 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public List<Permission> permission() {
-            return Collections.singletonList(listAddPermission(clientXml, name));
+        public List<Permission> permissions() {
+            return singletonList(listAddPermission(clientXml, name));
         }
     }
 

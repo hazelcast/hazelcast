@@ -43,7 +43,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.security.Permission;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -58,6 +57,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.IntStream.range;
 import static javax.jms.Session.DUPS_OK_ACKNOWLEDGE;
@@ -102,8 +103,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
-        seenIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : Collections.emptySet();
-        restoredIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : Collections.emptySet();
+        seenIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : emptySet();
+        restoredIds = guarantee == EXACTLY_ONCE ? new HashSet<>() : emptySet();
     }
 
     @Override
@@ -152,7 +153,7 @@ public class StreamJmsP<T> extends AbstractProcessor {
                     if (restoredIdsExpiration == Long.MAX_VALUE) {
                         restoredIdsExpiration = System.nanoTime() + RESTORED_IDS_TTL;
                     } else if (!restoredIds.isEmpty() && restoredIdsExpiration <= System.nanoTime()) {
-                        restoredIds = Collections.emptySet();
+                        restoredIds = emptySet();
                     }
                     Object msgId = messageIdFn.apply(t);
                     if (msgId == null) {
@@ -309,8 +310,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
         }
 
         @Override
-        public List<Permission> permission() {
-            return Collections.singletonList(ConnectorPermission.jms(destination, ACTION_READ));
+        public List<Permission> permissions() {
+            return singletonList(ConnectorPermission.jms(destination, ACTION_READ));
         }
     }
 }

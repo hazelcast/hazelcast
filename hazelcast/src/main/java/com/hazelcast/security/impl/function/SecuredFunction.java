@@ -23,7 +23,7 @@ import java.security.Permission;
 import java.util.List;
 
 /**
- * A function which requires some permissions to run, see {@link #permission()}.
+ * A function which requires some permissions to run, see {@link #permissions()}.
  * The default implementation returns {@code null} which means no
  * permission is required to run this function.
  *
@@ -36,7 +36,7 @@ public interface SecuredFunction {
      * @return the list of permissions required to run this function
      */
     @Nullable
-    default List<Permission> permission() {
+    default List<Permission> permissions() {
         return null;
     }
 

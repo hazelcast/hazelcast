@@ -54,7 +54,6 @@ import java.nio.file.Path;
 import java.security.Permission;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
@@ -65,6 +64,7 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 
 /**
  * Factory methods for functions which requires a permission to run.
@@ -83,8 +83,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -99,8 +99,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(new MapPermission(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -115,8 +115,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(new CachePermission(name, ACTION_CREATE, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(new CachePermission(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -129,8 +129,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(new ReplicatedMapPermission(name, ACTION_CREATE, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(new ReplicatedMapPermission(name, ACTION_CREATE, ACTION_READ));
             }
         };
     }
@@ -143,8 +143,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(PermissionsUtil.listReadPermission(clientXml, name));
+            public List<Permission> permissions() {
+                return singletonList(PermissionsUtil.listReadPermission(clientXml, name));
             }
         };
     }
@@ -157,8 +157,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(new ReliableTopicPermission(name, ACTION_CREATE, ACTION_PUBLISH));
+            public List<Permission> permissions() {
+                return singletonList(new ReliableTopicPermission(name, ACTION_CREATE, ACTION_PUBLISH));
             }
         };
     }
@@ -173,8 +173,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return createContextFn.permission();
+            public List<Permission> permissions() {
+                return createContextFn.permissions();
             }
         };
     }
@@ -187,8 +187,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.socket(host, port, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.socket(host, port, ACTION_READ));
             }
         };
     }
@@ -207,8 +207,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.file(directory, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directory, ACTION_READ));
             }
         };
     }
@@ -224,8 +224,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.file(directory, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directory, ACTION_READ));
             }
         };
     }
@@ -240,8 +240,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.file(directory, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directory, ACTION_READ));
             }
         };
     }
@@ -261,8 +261,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.file(watchedDirectory, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(watchedDirectory, ACTION_READ));
             }
         };
     }
@@ -280,8 +280,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.jdbc(connectionUrl, ACTION_READ));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.jdbc(connectionUrl, ACTION_READ));
             }
         };
     }
@@ -296,8 +296,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.socket(host, port, ACTION_WRITE));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.socket(host, port, ACTION_WRITE));
             }
         };
     }
@@ -318,8 +318,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
             }
         };
     }
@@ -338,8 +338,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(mapUpdatePermission(clientXml, name));
+            public List<Permission> permissions() {
+                return singletonList(mapUpdatePermission(clientXml, name));
             }
         };
     }
@@ -359,8 +359,8 @@ public final class SecuredFunctions {
             }
 
             @Override
-            public List<Permission> permission() {
-                return Collections.singletonList(mapUpdatePermission(clientXml, name));
+            public List<Permission> permissions() {
+                return singletonList(mapUpdatePermission(clientXml, name));
             }
         };
     }

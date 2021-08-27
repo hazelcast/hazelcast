@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -49,6 +48,7 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.singletonList;
 
 @SuppressFBWarnings(
         value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
@@ -156,8 +156,8 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
     }
 
     @Override
-    public List<Permission> permission() {
-        return Collections.singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override
