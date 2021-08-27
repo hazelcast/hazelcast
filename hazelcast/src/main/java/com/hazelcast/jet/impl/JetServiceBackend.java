@@ -109,7 +109,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         );
         jobRepository = new JobRepository(hazelcastInstance);
 
-        jobCoordinationService = new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
+        jobCoordinationService = createJobCoordinationService();
         jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
@@ -202,6 +202,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void reset() {
         jobExecutionService.reset();
         jobCoordinationService.reset();
+    }
+
+    // Overridden in EE with EnterpriseJobCoordinationService
+    JobCoordinationService createJobCoordinationService() {
+        return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
 
     public InternalSerializationService createSerializationService(Map<String, String> serializerConfigs) {
