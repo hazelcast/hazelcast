@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -47,7 +46,6 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.e
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
-import static java.util.Collections.singletonList;
 
 /**
  * A utility for key-value connectors that use Java serialization ({@link
@@ -94,6 +92,24 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             List<MappingField> userFields,
             QueryDataType type
     ) {
+        return userFields.isEmpty()
+                ? resolvePrimitiveField(isKey, type)
+                : resolveAndValidatePrimitiveField(isKey, userFields, type);
+    }
+
+    private Stream<MappingField> resolvePrimitiveField(boolean isKey, QueryDataType type) {
+        QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
+        String name = isKey ? KEY : VALUE;
+        String externalName = path.toString();
+
+        return Stream.of(new MappingField(name, type, externalName));
+    }
+
+    private Stream<MappingField> resolveAndValidatePrimitiveField(
+            boolean isKey,
+            List<MappingField> userFields,
+            QueryDataType type
+    ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
 
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
@@ -114,7 +130,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             }
         }
 
-        return Stream.of(new MappingField(name, type, externalName));
+        return userFieldsByPath.values().stream();
     }
 
     private Stream<MappingField> resolveObjectSchema(boolean isKey, List<MappingField> userFields, Class<?> clazz) {
@@ -181,18 +197,28 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
         if (type != QueryDataType.OBJECT) {
-            return resolvePrimitiveMetadata(isKey, fields);
+            return resolvePrimitiveMetadata(isKey, resolvedFields, fields, type);
         } else {
             return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);
         }
     }
 
-    private KvMetadata resolvePrimitiveMetadata(boolean isKey, Map<QueryPath, MappingField> fieldsByPath) {
+    private KvMetadata resolvePrimitiveMetadata(
+            boolean isKey,
+            List<MappingField> resolvedFields,
+            Map<QueryPath, MappingField> fieldsByPath,
+            QueryDataType type
+    ) {
+        List<TableField> fields = new ArrayList<>();
         QueryPath path = isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH;
-        MappingField field = Objects.requireNonNull(fieldsByPath.get(path));
+        MappingField field = fieldsByPath.get(path);
+        if (field != null) {
+            fields.add(new MapTableField(field.name(), field.type(), false, path));
+        }
+        maybeAddDefaultField(isKey, resolvedFields, fields, type);
 
         return new KvMetadata(
-                singletonList(new MapTableField(field.name(), field.type(), false, path)),
+                fields,
                 GenericQueryTargetDescriptor.DEFAULT,
                 PrimitiveUpsertTargetDescriptor.INSTANCE
         );
@@ -218,7 +244,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 typeNamesByPaths.put(path.getPath(), typesByNames.get(path.getPath()).getName());
             }
         }
-        maybeAddDefaultField(isKey, resolvedFields, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,
