@@ -72,12 +72,13 @@ public interface KvMetadataResolver {
     static void maybeAddDefaultField(
             boolean isKey,
             @Nonnull List<MappingField> resolvedFields,
-            @Nonnull List<TableField> tableFields
+            @Nonnull List<TableField> tableFields,
+            @Nonnull QueryDataType type
     ) {
         // Add the default `__key` or `this` field as hidden, if not present in the field names
         String fieldName = isKey ? KEY : VALUE;
         if (resolvedFields.stream().noneMatch(field -> field.name().equals(fieldName))) {
-            tableFields.add(new MapTableField(fieldName, QueryDataType.OBJECT, true, QueryPath.create(fieldName)));
+            tableFields.add(new MapTableField(fieldName, type, true, QueryPath.create(fieldName)));
         }
     }
 }
