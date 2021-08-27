@@ -491,7 +491,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     } else {
                         logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                     }
-                }), nodeEngine.getExecutionService().getExecutor("jet:async"));
+                }));
     }
 
     @Override
