@@ -452,12 +452,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         int memberListVersion = membersView.getVersion();
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
-        final Map<MemberInfo, ExecutionPlan> executionPlans =
-                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView.getMembers(), dag, 1, 1,
-                        new JobConfig(), NO_SNAPSHOT, false, null);
-        ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
         long executionId = 1;
+        final Map<MemberInfo, ExecutionPlan> executionPlans =
+                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView.getMembers(), dag,
+                        jobId, executionId, new JobConfig(), NO_SNAPSHOT, false, null);
+        ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
 
         Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
         jetServiceBackend.getJobExecutionService().initExecution(
