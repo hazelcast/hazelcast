@@ -100,7 +100,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         PartitionStamp indexStamp = index.getPartitionStamp();
         if (indexStamp == null) {
-            throw new HazelcastRetryableException("Index is being rebuilt");
+            throw new RetryableHazelcastException("Index is being rebuilt");
         }
         if (indexStamp.partitions.equals(partitionIdSet)) {
             // We clear the requested partitionIdSet, which means that we won't filter out any partitions.
@@ -424,9 +424,4 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         }
     }
 
-    public static final class IndexNotRebuiltException extends RetryableHazelcastException {
-        public IndexNotRebuiltException() {
-            super("Index is being rebuilt");
-        }
-    }
 }
