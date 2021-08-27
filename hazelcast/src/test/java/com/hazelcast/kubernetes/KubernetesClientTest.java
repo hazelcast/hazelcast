@@ -19,6 +19,7 @@ package com.hazelcast.kubernetes;
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.kubernetes.KubernetesClient.Endpoint;
+import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.spi.exception.RestClientException;
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,7 +61,7 @@ public class KubernetesClientTest {
 
     @Before
     public void setUp() {
-        kubernetesClient = newKubernetesClient(false);
+        kubernetesClient = newKubernetesClient();
         stubFor(get(urlMatching("/api/.*")).atPriority(5)
                 .willReturn(aResponse().withStatus(401).withBody("\"reason\":\"Forbidden\"")));
     }
@@ -633,6 +634,46 @@ public class KubernetesClientTest {
         assertThat(formatPublic(result), containsInAnyOrder(ready("node-name-1", 31916), ready("node-name-2", 31917)));
     }
 
+    @Test
+    public void endpointsIgnoreNoPublicAccess() {
+        // given
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        assertThat(format(result), containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+    }
+
+    @Test(expected = KubernetesClientException.class)
+    public void endpointsFailFastWhenNoPublicAccess() {
+        // given
+        kubernetesClient = newKubernetesClient(ExposeExternallyMode.ENABLED, false, null, null);
+
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), podsListResponse());
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), endpointsListResponse());
+
+        stub(String.format("/api/v1/namespaces/%s/services/service-0", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub(String.format("/api/v1/namespaces/%s/services/hazelcast-0", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub(String.format("/api/v1/namespaces/%s/services/service-1", NAMESPACE), nodePortServiceIncorrectResponseException());
+        stub("/api/v1/nodes/node-name-1", node1Response());
+        stub("/api/v1/nodes/node-name-2", node2Response());
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpoints();
+
+        // then
+        // exception
+    }
+
     private static String podsListResponse() {
         //language=JSON
         return "{\n"
@@ -836,6 +877,31 @@ public class KubernetesClientTest {
                 + "}";
     }
 
+    private String nodePortServiceIncorrectResponseException() {
+        //language=JSON
+        return "{\n"
+                + "  \"kind\": \"Service\",\n"
+                + "  \"metadata\": {\n"
+                + "    \"name\": \"incorrect-service\"\n"
+                + "  "
+                + "},\n"
+                + "  \"spec\": {\n"
+                + "    \"ports\": [\n"
+                + "      {\n"
+                + "        \"port\": 0,\n"
+                + "        \"targetPort\": 0,\n"
+                + "        \"nodePort\": 0\n"
+                + "      },\n"
+                + "      {\n"
+                + "        \"port\": 1,\n"
+                + "        \"targetPort\": 1,\n"
+                + "        \"nodePort\": 2\n"
+                + "      }\n"
+                + "    ]\n"
+                + "  }\n"
+                + "}";
+    }
+
     private String node1Response() {
         //language=JSON
         return "{\n"
@@ -912,13 +978,22 @@ public class KubernetesClientTest {
                 .hasMessageContaining("Message: \"reason\":\"Forbidden\". HTTP Error Code: 501");
     }
 
+    private KubernetesClient newKubernetesClient() {
+        return newKubernetesClient(false);
+    }
+
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress) {
         return newKubernetesClient(useNodeNameAsExternalAddress, null, null);
     }
 
     private KubernetesClient newKubernetesClient(boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
         String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
-        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
+        return newKubernetesClient(ExposeExternallyMode.AUTO, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
+    }
+
+    private KubernetesClient newKubernetesClient(ExposeExternallyMode exposeExternally, boolean useNodeNameAsExternalAddress, String servicePerPodLabelName, String servicePerPodLabelValue) {
+        String kubernetesMasterUrl = String.format("http://%s:%d", KUBERNETES_MASTER_IP, wireMockRule.port());
+        return new KubernetesClient(NAMESPACE, kubernetesMasterUrl, TOKEN, CA_CERTIFICATE, RETRIES, exposeExternally, useNodeNameAsExternalAddress, servicePerPodLabelName, servicePerPodLabelValue);
     }
 
     private static List<String> format(List<Endpoint> addresses) {
