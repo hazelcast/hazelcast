@@ -32,7 +32,7 @@ import java.time.OffsetDateTime;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
@@ -59,8 +59,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -83,8 +83,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -103,12 +103,13 @@ public class SqlJsonTest extends SqlTestSupport {
     public void test_schemaEvolution() {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + " ("
-                + "name VARCHAR"
+                + "__key INT"
+                + ", name VARCHAR"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -117,13 +118,14 @@ public class SqlJsonTest extends SqlTestSupport {
 
         // alter schema
         sqlService.execute("CREATE OR REPLACE MAPPING " + name + " ("
-                + "name VARCHAR"
+                + "__key INT"
+                + ", name VARCHAR"
                 + ", ssn BIGINT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_KEY_CLASS + "'='" + Integer.class.getName() + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -164,8 +166,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", object OBJECT"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -211,8 +213,8 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
                         + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                         + ")"
                 ))
                 .isInstanceOf(HazelcastSqlException.class)
@@ -227,8 +229,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
 
@@ -251,8 +253,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ")"
         );
         sqlService.execute("SINK INTO " + name + " VALUES (1, 'Alice')");

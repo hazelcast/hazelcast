@@ -170,7 +170,7 @@ To execute an ad-hoc query against data in files you can use one of the
 predefined table functions:
 
 * `csv_file`
-* `json_file`
+* `json_flat_file`
 * `avro_file`
 * `parquet_file`
 

@@ -273,7 +273,8 @@ public class IMapSqlConnector implements SqlConnector {
                                 table.paths(),
                                 table.types(),
                                 (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                                (UpsertTargetDescriptor) table.getValueJetMetadata()
+                                (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                                true
                         )
                 )
         ).localParallelism(1);
@@ -294,7 +295,8 @@ public class IMapSqlConnector implements SqlConnector {
                         table.paths(),
                         table.types(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                        true
                 )
         );
 

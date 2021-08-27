@@ -29,7 +29,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
-import com.hazelcast.sql.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

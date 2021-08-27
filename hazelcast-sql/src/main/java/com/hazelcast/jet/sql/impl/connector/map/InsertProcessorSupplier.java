@@ -124,9 +124,6 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
             }
 
             Entry<Object, Object> entry = projector.project((Object[]) row);
-            if (entry.getKey() == null) {
-                throw QueryException.error("Key cannot be null");
-            }
             if (!seenKeys.add(entry.getKey())) {
                 throw QueryException.error("Duplicate key");
             }

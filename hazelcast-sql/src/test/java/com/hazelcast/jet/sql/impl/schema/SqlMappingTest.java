@@ -150,7 +150,7 @@ public class SqlMappingTest extends SqlTestSupport {
     private void test_alias(String javaClassName, String... aliases) {
         for (String alias : aliases) {
             sqlService.execute("CREATE MAPPING \"m_" + alias + "\"(__key " + alias + ") TYPE IMap " +
-                    "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json')");
+                    "OPTIONS('keyFormat'='java', 'keyJavaClass'='" + javaClassName + "', 'valueFormat'='json-flat')");
         }
 
         MappingStorage mappingStorage = new MappingStorage(getNodeEngineImpl(instance()));
