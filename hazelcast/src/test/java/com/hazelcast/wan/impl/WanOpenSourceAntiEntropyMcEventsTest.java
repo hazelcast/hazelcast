@@ -97,7 +97,6 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(hz);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        WanReplicationService wanService = nodeEngine.getWanReplicationService();
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
 
         List<Event> events = new LinkedList<>();
@@ -155,7 +154,6 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(hz);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        WanReplicationService wanService = nodeEngine.getWanReplicationService();
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
 
         List<Event> events = new LinkedList<>();
@@ -213,7 +211,6 @@ public class WanOpenSourceAntiEntropyMcEventsTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(hz);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        WanReplicationService wanService = nodeEngine.getWanReplicationService();
         ManagementCenterService mcService = nodeEngine.getManagementCenterService();
 
         List<Event> events = new LinkedList<>();

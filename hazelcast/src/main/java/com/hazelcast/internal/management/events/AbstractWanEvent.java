@@ -24,6 +24,7 @@ abstract class AbstractWanEvent extends AbstractEventBase {
     private final UUID uuid;
 
     protected AbstractWanEvent(UUID uuid) {
+        assert uuid != null : "UUID must not be null";
         this.uuid = uuid;
     }
 
