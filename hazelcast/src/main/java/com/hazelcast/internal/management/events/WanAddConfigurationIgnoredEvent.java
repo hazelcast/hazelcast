@@ -18,25 +18,25 @@ package com.hazelcast.internal.management.events;
 
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
+import com.hazelcast.internal.util.UuidUtil;
 
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.ADD_WAN_CONFIGURATION_IGNORED;
 
-public final class AddWanConfigIgnoredEvent extends AbstractEventBase {
-    private final String wanConfigName;
+public final class WanAddConfigurationIgnoredEvent extends AbstractWanConfigurationEventBase {
     private final String reason;
 
-    private AddWanConfigIgnoredEvent(String wanConfigName, String reason) {
-        this.wanConfigName = wanConfigName;
+    private WanAddConfigurationIgnoredEvent(String wanConfigName, String reason) {
+        super(UuidUtil.newUnsecureUUID(), wanConfigName);
         this.reason = reason;
     }
 
-    public static AddWanConfigIgnoredEvent alreadyExists(String wanConfigName) {
-        return new AddWanConfigIgnoredEvent(wanConfigName,
+    public static WanAddConfigurationIgnoredEvent alreadyExists(String wanConfigName) {
+        return new WanAddConfigurationIgnoredEvent(wanConfigName,
                 "A WAN replication config already exists with the given name.");
     }
 
-    public static AddWanConfigIgnoredEvent enterpriseOnly(String wanConfigName) {
-        return new AddWanConfigIgnoredEvent(wanConfigName,
+    public static WanAddConfigurationIgnoredEvent enterpriseOnly(String wanConfigName) {
+        return new WanAddConfigurationIgnoredEvent(wanConfigName,
                 "Adding new WAN replication config is supported for enterprise clusters only.");
     }
 
@@ -47,8 +47,7 @@ public final class AddWanConfigIgnoredEvent extends AbstractEventBase {
 
     @Override
     public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("wanConfigName", wanConfigName);
+        JsonObject json = super.toJson();
         json.add("reason", reason);
         return json;
     }
