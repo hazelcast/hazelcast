@@ -24,10 +24,13 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+// ignored - meant to be run manually. Doesn't assert anything.
+@Ignore
 public class LightJobBench extends JetTestSupport {
 
     private HazelcastInstance inst;

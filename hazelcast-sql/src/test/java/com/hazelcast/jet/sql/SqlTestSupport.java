@@ -217,7 +217,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create an IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * java serialization for both key and value with the given classes.
      */
     public static void createMapping(String name, Class<?> keyClass, Class<?> valueClass) {
@@ -225,7 +225,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create na IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * java serialization for both key and value with the given classes.
      */
     public static void createMapping(HazelcastInstance instance, String name, Class<?> keyClass, Class<?> valueClass) {
@@ -242,7 +242,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create na IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * portable serialization for both key and value with the given ids.
      */
     public static void createMapping(
@@ -254,7 +254,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create na IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * portable serialization for both key and value with the given ids.
      */
     public static void createMapping(
@@ -280,7 +280,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create na IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * java serialization for key and portable serialization for value
      * with the given class and ids.
      */
@@ -293,7 +293,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create na IMap mapping with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name} that uses
      * java serialization for key and portable serialization for value
      * with the given class and ids.
      */

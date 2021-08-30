@@ -91,7 +91,7 @@ public class PortableQueryTest extends SqlTestSupport {
         MapConfig mapConfig = new MapConfig("default").setInMemoryFormat(inMemoryFormat);
         Config config = smallInstanceConfig().addMapConfig(mapConfig);
         if (clusterHasPortableConfig) {
-            config.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+            config.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         }
 
         ClassDefinition childClassDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, PORTABLE_CHILD_CLASS_ID, 0)
@@ -116,7 +116,7 @@ public class PortableQueryTest extends SqlTestSupport {
     @Test
     public void testQueryOnPrimitive() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        clientConfig.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         createMapping(client, "test", int.class, PORTABLE_FACTORY_ID, PORTABLE_CHILD_CLASS_ID, 0);
         IMap<Integer, Object> map = client.getMap("test");
@@ -132,7 +132,7 @@ public class PortableQueryTest extends SqlTestSupport {
         //To be able to run comparison methods on objects on the server we need the classes
         assumeTrue(clusterHasPortableConfig);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        clientConfig.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         createMapping(client, "test", int.class, PORTABLE_FACTORY_ID, PORTABLE_PARENT_CLASS_ID, 0);
         IMap<Integer, ParentPortable> map = client.getMap("test");
@@ -149,7 +149,7 @@ public class PortableQueryTest extends SqlTestSupport {
     @Test
     public void testNestedPortableAsColumn() {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().addPortableFactory(1, new TestPortableFactory());
+        clientConfig.getSerializationConfig().addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         createMapping(client, "test", int.class, PORTABLE_FACTORY_ID, PORTABLE_PARENT_CLASS_ID, 0);
         IMap<Integer, ParentPortable> map = client.getMap("test");
@@ -183,12 +183,12 @@ public class PortableQueryTest extends SqlTestSupport {
 
         @Override
         public int getFactoryId() {
-            return 1;
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
         public int getClassId() {
-            return 1;
+            return PORTABLE_CHILD_CLASS_ID;
         }
 
         @Override
@@ -242,12 +242,12 @@ public class PortableQueryTest extends SqlTestSupport {
 
         @Override
         public int getFactoryId() {
-            return 1;
+            return PORTABLE_FACTORY_ID;
         }
 
         @Override
         public int getClassId() {
-            return 2;
+            return PORTABLE_PARENT_CLASS_ID;
         }
 
         @Override
@@ -271,9 +271,9 @@ public class PortableQueryTest extends SqlTestSupport {
     static class TestPortableFactory implements PortableFactory {
         @Override
         public Portable create(int classId) {
-            if (classId == 1) {
+            if (classId == PORTABLE_CHILD_CLASS_ID) {
                 return new ChildPortable();
-            } else if (classId == 2) {
+            } else if (classId == PORTABLE_PARENT_CLASS_ID) {
                 return new ParentPortable();
             }
             return null;

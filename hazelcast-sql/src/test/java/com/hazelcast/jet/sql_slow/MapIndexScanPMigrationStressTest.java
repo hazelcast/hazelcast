@@ -21,8 +21,8 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport.Row;
-import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -39,8 +39,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -61,18 +59,9 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         for (int i = 0; i < instances.length - 1; i++) {
             instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
         }
-        createMapping();
+        SqlTestSupport.createMapping(instances[0], MAP_NAME, Integer.class, Integer.class);
         map = instances[0].getMap(MAP_NAME);
         mutatorException = new AtomicReference<>(null);
-    }
-
-    private void createMapping() {
-        instances[0].getSql().execute("CREATE OR REPLACE MAPPING " + MAP_NAME + " TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='int'"
-                + ", '" + OPTION_VALUE_FORMAT + "'='int'"
-                + ")"
-        );
     }
 
     @After
