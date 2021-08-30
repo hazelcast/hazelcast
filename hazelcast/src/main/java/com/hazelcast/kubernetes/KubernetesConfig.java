@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import static com.hazelcast.kubernetes.KubernetesProperties.EXPOSE_EXTERNALLY;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIRES;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
@@ -69,6 +70,7 @@ final class KubernetesConfig {
     private final String podLabelName;
     private final String podLabelValue;
     private final boolean resolveNotReadyAddresses;
+    private final ExposeExternallyMode exposeExternallyMode;
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
@@ -92,6 +94,7 @@ final class KubernetesConfig {
         this.resolveNotReadyAddresses = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, RESOLVE_NOT_READY_ADDRESSES, true);
         this.useNodeNameAsExternalAddress
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, USE_NODE_NAME_AS_EXTERNAL_ADDRESS, false);
+        this.exposeExternallyMode = getExposeExternallyMode(properties);
         this.servicePerPodLabelName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_NAME);
         this.servicePerPodLabelValue = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PER_POD_LABEL_VALUE);
         this.kubernetesApiRetries
@@ -103,6 +106,17 @@ final class KubernetesConfig {
         this.namespace = getNamespaceWithFallbacks(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
 
         validateConfig();
+    }
+
+    private ExposeExternallyMode getExposeExternallyMode(Map<String, Comparable> properties) {
+        Boolean exposeExternally = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, EXPOSE_EXTERNALLY);
+        if (exposeExternally == null) {
+            return ExposeExternallyMode.AUTO;
+        } else if (exposeExternally) {
+            return ExposeExternallyMode.ENABLED;
+        } else {
+            return ExposeExternallyMode.DISABLED;
+        }
     }
 
     private String getNamespaceWithFallbacks(Map<String, Comparable> properties,
@@ -301,6 +315,10 @@ final class KubernetesConfig {
         return podLabelValue;
     }
 
+    public ExposeExternallyMode getExposeExternallyMode() {
+        return exposeExternallyMode;
+    }
+
     public String getServicePerPodLabelName() {
         return servicePerPodLabelName;
     }
@@ -350,6 +368,7 @@ final class KubernetesConfig {
                 + "pod-label: " + podLabelName + ", "
                 + "pod-label-value: " + podLabelValue + ", "
                 + "resolve-not-ready-addresses: " + resolveNotReadyAddresses + ", "
+                + "expose-externally-mode: " + exposeExternallyMode.name() + ", "
                 + "use-node-name-as-external-address: " + useNodeNameAsExternalAddress + ", "
                 + "service-per-pod-label: " + servicePerPodLabelName + ", "
                 + "service-per-pod-label-value: " + servicePerPodLabelValue + ", "
@@ -360,5 +379,11 @@ final class KubernetesConfig {
     enum DiscoveryMode {
         DNS_LOOKUP,
         KUBERNETES_API
+    }
+
+    enum ExposeExternallyMode {
+        AUTO,
+        ENABLED,
+        DISABLED
     }
 }
