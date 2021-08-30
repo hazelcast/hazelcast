@@ -30,7 +30,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
@@ -125,7 +125,7 @@ final class PropertiesResolver {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
             properties.putIfAbsent(deserializer, AVRO_DESERIALIZER);
-        } else if (JSON_FORMAT.equals(format)) {
+        } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(deserializer, BYTE_ARRAY_DESERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
             String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);
@@ -176,7 +176,7 @@ final class PropertiesResolver {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (AVRO_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, AVRO_SERIALIZER);
-        } else if (JSON_FORMAT.equals(format)) {
+        } else if (JSON_FLAT_FORMAT.equals(format)) {
             properties.putIfAbsent(serializer, BYTE_ARRAY_SERIALIZER);
         } else if (JAVA_FORMAT.equals(format)) {
             String clazz = options.get(isKey ? SqlConnector.OPTION_KEY_CLASS : SqlConnector.OPTION_VALUE_CLASS);

@@ -31,6 +31,11 @@ final class AvroMetadataResolver extends MetadataResolver<GenericRecord> {
     private static final FileFormat<Map<String, String>> FORMAT = FileFormat.avro();
 
     @Override
+    protected String supportedFormat() {
+        return sampleFormat().format();
+    }
+
+    @Override
     protected FileFormat<?> sampleFormat() {
         return FORMAT;
     }
