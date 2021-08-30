@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SqlJsonTestSupport extends SqlTestSupport {
+public abstract class SqlJsonTestSupport extends SqlTestSupport {
     protected static final ObjectMapper SERIALIZER = new ObjectMapper();
 
     protected void initComplexObject() {
