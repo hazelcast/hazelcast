@@ -81,7 +81,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         instance().getMap("map").put(1, "1");
 
         sqlService.execute("CREATE JOB job AS "
-                + "SINK INTO map SELECT \"int\", string FROM TABLE(JSON_FILE('" + RESOURCES_PATH + "', 'file.json'))");
+                + "SINK INTO map SELECT \"int\", string FROM TABLE(JSON_FLAT_FILE('" + RESOURCES_PATH + "', 'file.json'))");
         assertThat(planCache(instance()).size()).isZero();
     }
 

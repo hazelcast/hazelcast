@@ -41,11 +41,13 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,8 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_ADD_RESOURCES;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -72,6 +76,14 @@ import static java.util.stream.Collectors.toList;
 @SuppressWarnings("deprecation") // we implement a deprecated API here
 public abstract class AbstractJetInstance<M> implements JetInstance {
 
+    // These permissions are configured via JobPermission
+    // When the user doesn't configure the JobPermission correctly they get the permission violation on an internal
+    // data structure. We translate these to proper JobPermission violations.
+    private static final String FLAKE_ID_GENERATOR_JET_IDS_CREATE_DENIED_MESSAGE = "Permission " +
+            "\\(\"com.hazelcast.security.permission.FlakeIdGeneratorPermission\" \"__jet.ids\" \"create\"\\) denied!";
+    private static final String MAP_JET_RESOURCES_CREATE_DENIED_MESSAGE = "Permission " +
+            "\\(\"com.hazelcast.security.permission.MapPermission\" \"__jet\\.resources\\..*\" \"create\"\\) denied!";
+
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
@@ -85,7 +97,18 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     public long newJobId() {
-        return jobRepository.get().newJobId();
+        try {
+            return jobRepository.get().newJobId();
+        } catch (AccessControlException e) {
+            if (e.getMessage().matches(FLAKE_ID_GENERATOR_JET_IDS_CREATE_DENIED_MESSAGE)) {
+                AccessControlException ace = new AccessControlException("Permission " +
+                        new JobPermission(ACTION_SUBMIT) + " denied!");
+                ace.addSuppressed(e);
+                throw ace;
+            } else {
+                throw e;
+            }
+        }
     }
 
     @Nonnull @Override
@@ -317,7 +340,18 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     public abstract boolean existsDistributedObject(@Nonnull String serviceName, @Nonnull String objectName);
 
     private void uploadResources(long jobId, JobConfig config) {
-        jobRepository.get().uploadJobResources(jobId, config);
+        try {
+            jobRepository.get().uploadJobResources(jobId, config);
+        } catch (AccessControlException e) {
+            if (e.getMessage().matches(MAP_JET_RESOURCES_CREATE_DENIED_MESSAGE)) {
+                AccessControlException ace = new AccessControlException("Permission " +
+                        new JobPermission(ACTION_ADD_RESOURCES) + " denied!");
+                ace.addSuppressed(e);
+                throw ace;
+            } else {
+                throw e;
+            }
+        }
     }
 
     public abstract ILogger getLogger();

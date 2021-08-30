@@ -252,8 +252,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         JobExecutionService jobExecutionService = jetServiceBackend.getJobExecutionService();
         ClassLoader jobCL = jobExecutionService.getClassLoader(jobConfig, jobId);
-        doWithClassLoader(jobCL, () -> {
 
+        doWithClassLoader(jobCL, () -> {
             for (VertexDef vertex : vertices) {
                 try {
                     ClassLoader processorCl = isLightJob ?
