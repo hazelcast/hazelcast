@@ -113,7 +113,7 @@ public class NotPredicateIntegrationTest extends ExpressionTestSupport {
     private void check(String operand, Boolean expectedResult, Object... params) {
         String sql = sql(operand);
 
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         assertEquals(1, rows.size());
 
         SqlRow row = rows.get(0);

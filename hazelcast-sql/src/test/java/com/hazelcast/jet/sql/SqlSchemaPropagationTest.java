@@ -17,17 +17,16 @@
 package com.hazelcast.jet.sql;
 
 import com.google.common.collect.Iterables;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,37 +47,30 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
     private static final String MAP_NAME = "map";
     private static final String SCHEMA_NAME = "schema";
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory(2);
-
-    private HazelcastInstance member;
-    private HazelcastInstance client;
+    @BeforeClass
+    public static void setUpClass() {
+        initializeWithClient(1, null, null);
+    }
 
     @Before
     public void before() {
-        member = factory.newHazelcastInstance();
-        client = factory.newHazelcastClient();
-
-        member.getMap(MAP_NAME).put(1, 1);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
+        createMapping(MAP_NAME, int.class, int.class);
+        instance().getMap(MAP_NAME).put(1, 1);
     }
 
     @Test
     public void testMember() {
-        check(member);
+        check(instance());
     }
 
     @Test
     public void testClient() {
-        check(client);
+        check(client());
     }
 
     private void check(HazelcastInstance target) {
         // Set the wrapped optimizer to track optimization requests.
-        SqlServiceImpl service = (SqlServiceImpl) member.getSql();
+        SqlServiceImpl service = (SqlServiceImpl) instance().getSql();
 
         // Execute the query from the target without schema.
         SqlStatement statement = new SqlStatement("SELECT __key FROM map");
@@ -108,8 +100,18 @@ public class SqlSchemaPropagationTest extends SqlTestSupport {
         assertThat(searchPaths).containsExactlyInAnyOrder(originalSearchPaths, expectedSearchPaths);
     }
 
+    private static List<SqlRow> executeStatement(HazelcastInstance member, SqlStatement query) {
+        List<SqlRow> rows = new ArrayList<>();
+        try (SqlResult result = member.getSql().execute(query)) {
+            for (SqlRow row : result) {
+                rows.add(row);
+            }
+        }
+        return rows;
+    }
+
     private List<List<List<String>>> extractSearchPaths() {
-        return ((SqlServiceImpl) member.getSql())
+        return ((SqlServiceImpl) instance().getSql())
                 .getPlanCache()
                 .getPlans()
                 .values()

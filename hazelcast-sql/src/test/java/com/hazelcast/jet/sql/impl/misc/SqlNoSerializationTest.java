@@ -96,6 +96,8 @@ public class SqlNoSerializationTest extends OptimizerTestSupport {
             localMap.put(new Key(i), new Value(i));
         }
 
+        createMapping(MAP_NAME, Key.class, Value.class);
+
         IMap<Key, Value> map = instance().getMap(MAP_NAME);
 
         map.putAll(localMap);

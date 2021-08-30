@@ -29,7 +29,6 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import org.junit.After;
 
 import javax.annotation.Nonnull;
@@ -44,7 +43,7 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class SqlErrorAbstractTest extends SqlTestSupport {
+public abstract class SqlErrorAbstractTest extends SqlTestSupport {
     protected static final String MAP_NAME = "map";
     private static final int DATA_SET_SIZE = 100;
 
@@ -74,6 +73,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         instance2 = newHazelcastInstance(true);
         client = newClient();
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         populate(instance1, dataSetSize);
 
         // Execute query on the instance1.
@@ -89,6 +89,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
 
         IMap<Long, Object> map = instance1.getMap(MAP_NAME);
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         for (long i = 0; i < DATA_SET_SIZE; i++) {
             Object value = i == 0 ? Long.toString(i) : i;
 
@@ -121,6 +122,7 @@ public class SqlErrorAbstractTest extends SqlTestSupport {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         IMap<Long, Long> map = instance1.getMap(MAP_NAME);
         map.put(1L, 1L);
         map.put(2L, 2L);

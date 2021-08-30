@@ -24,11 +24,14 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -51,10 +54,16 @@ import java.util.function.BiPredicate;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
-import static com.hazelcast.sql.impl.SqlTestSupport.nodeEngine;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -65,6 +74,11 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     @After
     public void tearDown() {
+        //noinspection ConstantConditions
+        if (instances() == null) {
+            return;
+        }
+
         for (HazelcastInstance instance : instances()) {
             PlanCache planCache = planCache(instance);
             SUPPORT_LOGGER.info("Removing " + planCache.size() + " cached plans in SqlTestSupport.@After");
@@ -203,17 +217,104 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     /**
-     * Create DDL for an IMap with the given {@code name}, that uses
+     * Create an IMap mapping with the given {@code name}, that uses
      * java serialization for both key and value with the given classes.
      */
-    public static String javaSerializableMapDdl(String name, Class<?> keyClass, Class<?> valueClass) {
-        return "CREATE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
+    public static void createMapping(String name, Class<?> keyClass, Class<?> valueClass) {
+        createMapping(instance(), name, keyClass, valueClass);
+    }
+
+    /**
+     * Create na IMap mapping with the given {@code name}, that uses
+     * java serialization for both key and value with the given classes.
+     */
+    public static void createMapping(HazelcastInstance instance, String name, Class<?> keyClass, Class<?> valueClass) {
+        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                 + "OPTIONS (\n"
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "',\n"
-                + '\'' + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "',\n"
-                + '\'' + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
-                + ")";
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + "'\n"
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'\n"
+                + ", '" + OPTION_VALUE_CLASS + "'='" + valueClass.getName() + "'\n"
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
+    /**
+     * Create na IMap mapping with the given {@code name}, that uses
+     * portable serialization for both key and value with the given ids.
+     */
+    public static void createMapping(
+            String name,
+            int keyFactoryId, int keyClassId, int keyVersion,
+            int valueFactoryId, int valueClassId, int valueVersion
+    ) {
+        createMapping(instance(), name, keyFactoryId, keyClassId, keyVersion, valueFactoryId, valueClassId, valueVersion);
+    }
+
+    /**
+     * Create na IMap mapping with the given {@code name}, that uses
+     * portable serialization for both key and value with the given ids.
+     */
+    public static void createMapping(
+            HazelcastInstance instance,
+            String name,
+            int keyFactoryId, int keyClassId, int keyVersion,
+            int valueFactoryId, int valueClassId, int valueVersion
+    ) {
+        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_KEY_FACTORY_ID + "'='" + keyFactoryId + '\''
+                + ", '" + OPTION_KEY_CLASS_ID + "'='" + keyClassId + '\''
+                + ", '" + OPTION_KEY_CLASS_VERSION + "'='" + keyVersion + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + valueFactoryId + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + valueClassId + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + valueVersion + '\''
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
+    }
+
+    /**
+     * Create na IMap mapping with the given {@code name}, that uses
+     * java serialization for key and portable serialization for value
+     * with the given class and ids.
+     */
+    public static void createMapping(
+            String name,
+            Class<?> keyClass,
+            int valueFactoryId, int valueClassId, int valueVersion
+    ) {
+        createMapping(instance(), name, keyClass, valueFactoryId, valueClassId, valueVersion);
+    }
+
+    /**
+     * Create na IMap mapping with the given {@code name}, that uses
+     * java serialization for key and portable serialization for value
+     * with the given class and ids.
+     */
+    public static void createMapping(
+            HazelcastInstance instance,
+            String name,
+            Class<?> keyClass,
+            int valueFactoryId, int valueClassId, int valueVersion
+    ) {
+        try (SqlResult result = instance.getSql().execute("CREATE OR REPLACE MAPPING " + name + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + keyClass.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + valueFactoryId + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + valueClassId + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + valueVersion + '\''
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
+        }
     }
 
     public static String randomName() {
@@ -248,8 +349,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 : "/non/existing/path";
     }
 
+    public static SqlInternalService sqlInternalService(HazelcastInstance instance) {
+        return nodeEngine(instance).getSqlService().getInternalService();
+    }
+
     public static PlanCache planCache(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getPlanCache();
+    }
+
+    public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
+        return Accessors.getNodeEngineImpl(instance);
     }
 
     /**

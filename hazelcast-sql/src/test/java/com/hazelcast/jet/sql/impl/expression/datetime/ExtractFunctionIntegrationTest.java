@@ -362,7 +362,7 @@ public class ExtractFunctionIntegrationTest {
         }
 
         private <T> void check(String sql, T expectedResult, Object... parameters) {
-            List<SqlRow> rows = execute(member, sql, parameters);
+            List<SqlRow> rows = execute(sql, parameters);
             SqlRow row = rows.get(0);
 
             SqlColumnType typeOfReceived = row.getMetadata().getColumn(0).getType();

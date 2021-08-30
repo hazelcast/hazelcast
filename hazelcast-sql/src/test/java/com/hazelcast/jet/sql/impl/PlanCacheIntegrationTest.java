@@ -16,9 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,7 +29,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -51,6 +48,7 @@ public class PlanCacheIntegrationTest extends SqlTestSupport {
 
     @Test
     public void testPlanIsCached() {
+        createMapping(mapName, int.class, int.class);
         instance().getMap(mapName).put(1, 1);
 
         PlanCache planCache = planCache(instance());
@@ -63,63 +61,5 @@ public class PlanCacheIntegrationTest extends SqlTestSupport {
         assertEquals(1, planCache.size());
         SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
         assertSame(plan1, plan2);
-    }
-
-    @Test
-    public void testPlanInvalidatedOnIndexAdd() {
-        IMap<Integer, Integer> map = instance().getMap(mapName);
-        map.put(1, 1);
-
-        PlanCache planCache = planCache(instance());
-
-        instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
-        assertEquals(1, planCache.size());
-        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
-
-        map.addIndex(IndexType.HASH, "this");
-
-        assertTrueEventually(() -> {
-            instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
-            assertEquals(1, planCache.size());
-            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
-            assertNotSame(plan1, plan2);
-        });
-    }
-
-    @Test
-    public void testPlanInvalidatedOnMapDestroy() {
-        IMap<Integer, Integer> map = instance().getMap(mapName);
-        map.put(1, 1);
-
-        PlanCache planCache = planCache(instance());
-
-        instance().getSql().execute("SELECT * FROM " + mapName);
-        assertEquals(1, planCache.size());
-
-        map.destroy();
-        assertTrueEventually(() -> assertEquals(0, planCache.size()));
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @Test
-    public void testPlanInvalidatedOnMapSchemaChange() {
-        IMap map = instance().getMap(mapName);
-        map.put(1, 1);
-
-        PlanCache planCache = planCache(instance());
-
-        instance().getSql().execute("SELECT * FROM " + mapName);
-        assertEquals(1, planCache.size());
-        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
-
-        map.clear();
-        map.put("1", "1");
-
-        assertTrueEventually(() -> {
-            instance().getSql().execute("SELECT * FROM " + mapName);
-            assertEquals(1, planCache.size());
-            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
-            assertNotSame(plan1, plan2);
-        });
     }
 }
