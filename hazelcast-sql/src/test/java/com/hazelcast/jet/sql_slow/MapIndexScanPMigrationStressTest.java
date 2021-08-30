@@ -67,7 +67,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         factory.shutdownAll();
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void stressTest_hash() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT / 5; i++) {
@@ -88,7 +88,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         assertThat(mutatorException.get()).isNull();
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void stressTest_sorted() throws InterruptedException {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT; i++) {
