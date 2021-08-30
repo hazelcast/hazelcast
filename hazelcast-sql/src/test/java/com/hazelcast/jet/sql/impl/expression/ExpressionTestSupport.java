@@ -112,7 +112,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAll(Map<Integer, Object> entries) {
-        createMapping("map", int.class, Iterables.get(entries.values(),0).getClass());
+        createMapping("map", int.class, Iterables.get(entries.values(), 0).getClass());
         map.clear();
         map.putAll(entries);
     }
@@ -138,7 +138,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      * @param expectedResult expected result value. If it's {@link #SKIP_VALUE_CHECK},
      *                       don't assert the value
      * @param params         query parameters
-     *
      * @return the result value
      */
     protected Object checkValue0(
@@ -167,12 +166,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      * Execute a query, assert that it returns only 1 column and the values match the expectedResults array
      * in any order. Assert the type and count of the results.
      *
-     * @param sql            the input query
-     * @param expectedType   type of the returned value
+     * @param sql             the input query
+     * @param expectedType    type of the returned value
      * @param expectedResults expected result value. If it's {@link #SKIP_VALUE_CHECK},
-     *                       don't assert the value
-     * @param params         query parameters
-     *
+     *                        don't assert the value
+     * @param params          query parameters
      * @return the result values
      */
     protected Object[] checkValues0(
