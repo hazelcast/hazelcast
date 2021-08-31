@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.expression.VariExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 
 import java.io.IOException;
@@ -97,7 +96,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
 
         try {
-            return (T) convertResultType(JsonPath.read(json, path));
+            return (T) convertResultType(JsonPathUtil.read(json, path));
         } catch (Exception exception) {
             return onErrorResponse(onError, exception, defaultValue);
         }

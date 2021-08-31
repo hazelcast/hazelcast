@@ -39,6 +39,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     @Test
     public void when_insertedIntoExistingMap_typeIsCorrect() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
         test.put(1L, json("[1,2,3]"));
         assertRowsWithType("SELECT * FROM test" ,

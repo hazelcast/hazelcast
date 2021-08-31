@@ -52,6 +52,7 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_calledWithBasicSyntax_objectValueIsReturned() {
         initMultiTypeObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
         assertRowsWithType("SELECT JSON_VALUE(this, '$.byteField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, (byte) 1));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.shortField') FROM test" ,
@@ -75,6 +76,7 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_calledWithReturning_correctTypeIsReturned() {
         initMultiTypeObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
         assertRowsWithType("SELECT JSON_VALUE(this, '$.byteField' RETURNING TINYINT) FROM test" ,
                 singletonList(SqlColumnType.TINYINT), rows(1, (byte) 1));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.shortField' RETURNING SMALLINT) FROM test" ,
@@ -100,6 +102,7 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue(""));
         test.put(2L, new HazelcastJsonValue("[1,2,"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
         assertThrows(HazelcastSqlException.class, () -> instance().getSql()
                 .execute("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));

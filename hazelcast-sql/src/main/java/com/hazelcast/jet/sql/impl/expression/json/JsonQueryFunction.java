@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.VariExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.jayway.jsonpath.JsonPath;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
 import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 
@@ -138,7 +137,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     }
 
     private String execute(final String json, final String path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
-        final Object result = JsonPath.read(json, path);
+        final Object result = JsonPathUtil.read(json, path);
         final String serializedResult = serialize(result);
 
         switch (wrapperBehavior) {

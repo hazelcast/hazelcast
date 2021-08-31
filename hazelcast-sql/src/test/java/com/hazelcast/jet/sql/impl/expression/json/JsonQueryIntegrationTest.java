@@ -48,6 +48,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     public void when_stringIsPassed_queryWorks() {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='varchar')");
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test")) {
             System.out.println(row);
             assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
@@ -59,6 +60,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     public void when_jsonIsPassed_queryWorks() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue("[1,2,3]"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test")) {
             System.out.println(row);
             assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
@@ -87,6 +89,10 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     public void when_complexObjectIsPassed_queryWorks() {
         final IMap<Long, ComplexObject> test = instance().getMap("test");
         test.put(1L, new ComplexObject(1L, "[1,2,3]"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='java', "
+                + "'valueJavaClass'='" + ComplexObject.class.getName() + "')");
         for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(jsonValue, '$'), id FROM test")) {
             System.out.println(row);
             assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
@@ -101,6 +107,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue(""));
         test.put(2L, new HazelcastJsonValue("[1,2,"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
         assertThrows(HazelcastSqlException.class, () -> instance().getSql()
                 .execute("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
@@ -122,6 +129,7 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_defaultWrapperBehaviorIsSpecified_queryWorks() {
         initComplexObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
         assertEquals("[1,\"2\",3,{\"t\":1}]",
                 querySingleValue("SELECT JSON_QUERY(this, '$[0]') FROM test").toString());
         assertEquals("{\"t\":1}",
@@ -133,6 +141,8 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_noArrayWrapperSpecified_queryWorks() {
         initComplexObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
         assertEquals("[1,\"2\",3,{\"t\":1}]",
                 querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITHOUT ARRAY WRAPPER) FROM test")
                         .toString());
@@ -147,6 +157,8 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_conditionalArrayWrapperSpecified_queryWorks() {
         initComplexObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
         assertEquals("[1,\"2\",3,{\"t\":1}]",
                 querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH CONDITIONAL ARRAY WRAPPER) FROM test")
                         .toString());
@@ -161,6 +173,8 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_unconditionalArrayWrapperSpecified_queryWorks() {
         initComplexObject();
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
         assertEquals("[[1,\"2\",3,{\"t\":1}]]",
                 querySingleValue("SELECT JSON_QUERY(this, '$[0]' WITH UNCONDITIONAL ARRAY WRAPPER) FROM test")
                         .toString());
