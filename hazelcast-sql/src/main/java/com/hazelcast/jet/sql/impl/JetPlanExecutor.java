@@ -53,7 +53,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
@@ -92,12 +92,12 @@ public class JetPlanExecutor {
 
     SqlResult execute(CreateMappingPlan plan) {
         catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropMappingPlan plan) {
         catalog.removeMapping(plan.name(), plan.ifExists());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
@@ -108,7 +108,7 @@ public class JetPlanExecutor {
         } else {
             hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(AlterJobPlan plan) {
@@ -131,7 +131,7 @@ public class JetPlanExecutor {
 
             default:
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropJobPlan plan) {
@@ -139,7 +139,7 @@ public class JetPlanExecutor {
         boolean jobTerminated = job != null && job.getStatus().isTerminal();
         if (job == null || jobTerminated) {
             if (plan.isIfExists()) {
-                return SqlResultImpl.createUpdateCountResult(0);
+                return UpdateSqlResultImpl.createUpdateCountResult(0);
             }
             if (jobTerminated) {
                 throw QueryException.error("Job already terminated: " + plan.getJobName());
@@ -156,7 +156,7 @@ public class JetPlanExecutor {
             job.join();
         } catch (CancellationException ignored) {
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateSnapshotPlan plan) {
@@ -165,19 +165,19 @@ public class JetPlanExecutor {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
         job.exportSnapshot(plan.getSnapshotName());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropSnapshotPlan plan) {
         JobStateSnapshot snapshot = hazelcastInstance.getJet().getJobStateSnapshot(plan.getSnapshotName());
         if (snapshot == null) {
             if (plan.isIfExists()) {
-                return SqlResultImpl.createUpdateCountResult(0);
+                return UpdateSqlResultImpl.createUpdateCountResult(0);
             }
             throw QueryException.error("The snapshot doesn't exist: " + plan.getSnapshotName());
         }
         snapshot.destroy();
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(ShowStatementPlan plan) {
@@ -248,7 +248,7 @@ public class JetPlanExecutor {
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
@@ -288,7 +288,7 @@ public class JetPlanExecutor {
                 throw QueryException.error("Duplicate key");
             }
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
@@ -300,7 +300,7 @@ public class JetPlanExecutor {
                 .putAllAsync(entries)
                 .toCompletableFuture();
         await(future, timeout);
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
@@ -312,7 +312,7 @@ public class JetPlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
@@ -324,7 +324,7 @@ public class JetPlanExecutor {
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         await(future, timeout);
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

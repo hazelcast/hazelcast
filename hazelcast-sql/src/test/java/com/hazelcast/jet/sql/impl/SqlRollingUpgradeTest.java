@@ -19,16 +19,15 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
-import static com.hazelcast.jet.sql.SqlTestSupport.javaSerializableMapDdl;
 import static org.junit.Assert.assertEquals;
 
-public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
+public class SqlRollingUpgradeTest extends SqlTestSupport {
 
     private static HazelcastInstance client;
 
@@ -64,7 +63,7 @@ public class SqlRollingUpgradeTest extends SimpleTestInClusterSupport {
     public void when_clientSql_then_usesEitherVersion() {
         // Since the subsets of members with same version have the same size, the smart client must send the SQL command
         // to the member with newer version.
-        client.getSql().execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping(client, "m", Integer.class, Integer.class);
         client.getSql().execute("select * from table(generate_stream(1)) join m on __key=v");
         assertTrueEventually(() ->
                 assertEquals(1, getJetServiceBackend(instances()[1]).getJobExecutionService().getExecutionContexts().size()));

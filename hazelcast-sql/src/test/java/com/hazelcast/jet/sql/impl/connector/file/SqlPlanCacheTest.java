@@ -78,6 +78,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
 
     @Test
     public void test_tableFunctionInAJob() {
+        createMapping("map", int.class, String.class);
         instance().getMap("map").put(1, "1");
 
         sqlService.execute("CREATE JOB job AS "

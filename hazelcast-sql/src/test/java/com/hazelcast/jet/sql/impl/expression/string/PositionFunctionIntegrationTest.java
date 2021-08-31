@@ -152,7 +152,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private void check(String sql, Integer expectedResult, Object ...parameters) {
-        List<SqlRow> rows =  execute(member, sql, parameters);
+        List<SqlRow> rows =  execute(sql, parameters);
         assertEquals("size", 1, rows.size());
         SqlRow row = rows.get(0);
 
@@ -163,7 +163,7 @@ public class PositionFunctionIntegrationTest extends ExpressionTestSupport {
     private void checkError(String sql, String expectedError, Object... parameters) {
         assertThatThrownBy(
                 () -> {
-                    execute(member, sql, parameters);
+                    execute(sql, parameters);
                     fail("did not throw exception");
                 })
                 .isInstanceOf(HazelcastSqlException.class)

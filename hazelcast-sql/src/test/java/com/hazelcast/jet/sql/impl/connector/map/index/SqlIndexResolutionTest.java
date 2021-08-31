@@ -20,25 +20,28 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.jet.sql.impl.schema.MappingStorage;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.map.IMap;
+import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
-import com.hazelcast.sql.impl.schema.map.JetMapMetadataResolver;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -112,14 +115,18 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
 
         // Check empty map
         IMap<Integer, ExpressionBiValue> map = nextMap();
-        map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, null));
+        ExpressionBiValue value = ExpressionBiValue.createBiValue(valueClass, 1, null, null);
+        createMapping(map.getName(), int.class, value.getClass());
+        map.put(1, value);
         checkIndex(map);
         checkIndexUsage(map, f1, f2, false, false);
         map.destroy();
 
         // Check first component with known type
         map = nextMap();
-        map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null));
+        value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), null);
+        createMapping(map.getName(), int.class, value.getClass());
+        map.put(1, value);
         checkIndex(map, f1.getFieldConverterType());
         checkIndexUsage(map, f1, f2, true, false);
         map.destroy();
@@ -127,14 +134,18 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         if (composite) {
             // Check second component with known type
             map = nextMap();
-            map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom()));
+            value = ExpressionBiValue.createBiValue(valueClass, 1, null, f2.valueFrom());
+            createMapping(map.getName(), int.class, value.getClass());
+            map.put(1, value);
             checkIndex(map);
             checkIndexUsage(map, f1, f2, false, true);
             map.destroy();
 
             // Check both components known
             map = nextMap();
-            map.put(1, ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom()));
+            value = ExpressionBiValue.createBiValue(valueClass, 1, f1.valueFrom(), f2.valueFrom());
+            createMapping(map.getName(), int.class, value.getClass());
+            map.put(1, value);
             checkIndex(map, f1.getFieldConverterType(), f2.getFieldConverterType());
             checkIndexUsage(map, f1, f2, true, true);
             map.destroy();
@@ -167,10 +178,13 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
     private void checkIndex(IMap<?, ?> map, QueryDataType... expectedFieldConverterTypes) {
         String mapName = map.getName();
 
-        PartitionedMapTableResolver resolver = new PartitionedMapTableResolver(getNodeEngine(instance()), JetMapMetadataResolver.NO_OP);
+        NodeEngine nodeEngine = getNodeEngine(instance());
+        MappingStorage mappingStorage = new MappingStorage(nodeEngine);
+        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
+        TableResolver resolver = new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
 
         for (Table table : resolver.getTables()) {
-            if (((AbstractMapTable) table).getMapName().equals(mapName)) {
+            if (table instanceof AbstractMapTable && ((AbstractMapTable) table).getMapName().equals(mapName)) {
                 PartitionedMapTable table0 = (PartitionedMapTable) table;
 
                 int field1Ordinal = findFieldOrdinal(table0, "field1");
