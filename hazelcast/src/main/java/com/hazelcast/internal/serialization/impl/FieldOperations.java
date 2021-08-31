@@ -54,12 +54,7 @@ public enum FieldOperations {
 
         @Override
         public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-            GenericRecord value = record.getGenericRecord(fieldName);
-            if (value == null) {
-                stringBuilder.append("null");
-            } else {
-                stringBuilder.append(value);
-            }
+            stringBuilder.append(record.getGenericRecord(fieldName));
         }
     }),
     BYTE(new FieldTypeBasedOperations() {
