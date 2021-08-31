@@ -16,22 +16,17 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -40,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlClientResultTest extends SqlTestSupport {
 
@@ -48,22 +42,17 @@ public class SqlClientResultTest extends SqlTestSupport {
     private static final String SQL_GOOD = "SELECT * FROM " + MAP_NAME;
     private static final String SQL_BAD = "SELECT * FROM " + MAP_NAME + "_bad";
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private HazelcastInstance client;
+    @BeforeClass
+    public static void setUpClass() {
+        initializeWithClient(1, null, null);
+    }
 
     @Before
     public void before() {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        client = factory.newHazelcastClient();
-
-        Map<Integer, Integer> map = member.getMap(MAP_NAME);
+        createMapping(MAP_NAME, int.class, int.class);
+        Map<Integer, Integer> map = instance().getMap(MAP_NAME);
         map.put(0, 0);
         map.put(1, 1);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
     }
 
     @Test
@@ -125,6 +114,6 @@ public class SqlClientResultTest extends SqlTestSupport {
     }
 
     private SqlResult execute(String sql) {
-        return client.getSql().execute(new SqlStatement(sql).setCursorBufferSize(1));
+        return client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1));
     }
 }

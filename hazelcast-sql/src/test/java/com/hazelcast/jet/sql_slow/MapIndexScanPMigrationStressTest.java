@@ -21,6 +21,7 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport.Row;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlRow;
@@ -58,6 +59,7 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
         for (int i = 0; i < instances.length - 1; i++) {
             instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
         }
+        SqlTestSupport.createMapping(instances[0], MAP_NAME, Integer.class, Integer.class);
         map = instances[0].getMap(MAP_NAME);
         mutatorException = new AtomicReference<>(null);
     }

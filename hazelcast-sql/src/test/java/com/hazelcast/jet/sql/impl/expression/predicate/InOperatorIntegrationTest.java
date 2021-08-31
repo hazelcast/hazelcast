@@ -210,7 +210,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         // this is a bug in Calcite that when an integer is followed by temporal type,
         // it will try to coerce all right-hand values to temporal,
         // and an assert inside Calcite code will fail later. ¯\_(ツ)_/¯
-        assertThatThrownBy(() -> execute(member, sqlQuery("IN (3, CAST('1970-01-01' AS DATE))")))
+        assertThatThrownBy(() -> execute(sqlQuery("IN (3, CAST('1970-01-01' AS DATE))")))
                 .isInstanceOf(AssertionError.class)
                 .hasMessage(null);
     }
@@ -229,7 +229,7 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
             Object[] expectedResults,
             Object... params
     ) {
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         assertTrue(rows.stream().allMatch(row -> row.getMetadata().getColumn(0).getType().equals(expectedType)));
         List<Object> rowValues = rows.stream().map(row -> row.getObject(0)).collect(Collectors.toList());
         assertThat(rowValues).containsExactlyInAnyOrderElementsOf(asList(expectedResults));

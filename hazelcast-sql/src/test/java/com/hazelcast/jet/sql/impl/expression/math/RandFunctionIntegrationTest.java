@@ -71,7 +71,7 @@ public class RandFunctionIntegrationTest extends ExpressionTestSupport {
     public void testMultipleCallsInSingleQuery() {
         putAll(0, 1, 2, 3);
 
-        List<SqlRow> rows = execute(member, "SELECT RAND(), RAND() FROM map");
+        List<SqlRow> rows = execute("SELECT RAND(), RAND() FROM map");
         assertEquals(4, rows.size());
 
         Set<Double> values = new HashSet<>();
