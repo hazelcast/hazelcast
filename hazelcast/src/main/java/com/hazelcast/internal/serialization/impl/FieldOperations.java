@@ -809,12 +809,7 @@ public enum FieldOperations {
 
         @Override
         public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-            GenericRecord genericRecord = record.getGenericRecord(fieldName);
-            if (genericRecord == null) {
-                stringBuilder.append("null");
-                return;
-            }
-            stringBuilder.append(genericRecord);
+            stringBuilder.append(record.getGenericRecord(fieldName));
         }
     }),
     COMPOSED_ARRAY(new FieldTypeBasedOperations() {
