@@ -18,19 +18,15 @@ package com.hazelcast.jet.sql.impl.expression;
 
 import com.google.common.collect.Iterables;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.map.IMap;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import junit.framework.TestCase;
 import org.junit.BeforeClass;
 
@@ -49,7 +45,6 @@ import java.util.StringJoiner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -232,15 +227,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
     }
 
-    public static void checkEquals(Object first, Object second, boolean expected) {
-        if (expected) {
-            assertEquals(first, second);
-            assertEquals(first.hashCode(), second.hashCode());
-        } else {
-            assertNotEquals(first, second);
-        }
-    }
-
     protected static String signatureErrorFunction(String functionName, SqlColumnType... columnTypes) {
         TestCase.assertNotNull(columnTypes);
 
@@ -282,27 +268,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     protected static ExpressionBiValue booleanValue2(Boolean first, Boolean second) {
         return new ExpressionBiValue.BooleanBooleanVal().fields(first, second);
-    }
-
-    public static InternalSerializationService getSerializationService() {
-        return new DefaultSerializationServiceBuilder().build();
-    }
-
-    public static <T> T serialize(Object original) {
-        InternalSerializationService ss = getSerializationService();
-
-        return getSerializationService().toObject(ss.toData(original));
-    }
-
-    public static <T> T serializeAndCheck(Object original, int expectedClassId) {
-        assertTrue(original instanceof IdentifiedDataSerializable);
-
-        IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
-
-        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
-        assertEquals(expectedClassId, original0.getClassId());
-
-        return serialize(original);
     }
 
     protected static List<SqlRow> execute(String sql, Object... params) {
