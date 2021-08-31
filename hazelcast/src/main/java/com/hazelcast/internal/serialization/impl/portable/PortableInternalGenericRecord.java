@@ -876,7 +876,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("{ \"Portable\" :");
+        stringBuilder.append("{ \"Portable\": ");
         writeFieldsToStringBuilder(stringBuilder);
         stringBuilder.append('}');
         return stringBuilder.toString();
