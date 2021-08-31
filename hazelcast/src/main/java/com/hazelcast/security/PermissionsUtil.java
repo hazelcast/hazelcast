@@ -63,6 +63,11 @@ public final class PermissionsUtil {
     }
 
     @Nullable
+    public static Permission mapRemovePermission(@Nullable String clientXml, @Nonnull String name) {
+        return checkRemote(clientXml, new MapPermission(name, ACTION_REMOVE, ACTION_PUT));
+    }
+
+    @Nullable
     public static Permission cachePutPermission(@Nullable String clientXml, @Nonnull String name) {
         return checkRemote(clientXml, new CachePermission(name, ACTION_CREATE, ACTION_PUT));
     }
@@ -88,5 +93,4 @@ public final class PermissionsUtil {
             }
         }
     }
-
 }

@@ -60,6 +60,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.security.PermissionsUtil.cachePutPermission;
 import static com.hazelcast.security.PermissionsUtil.listAddPermission;
 import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
+import static com.hazelcast.security.PermissionsUtil.mapRemovePermission;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
@@ -159,6 +160,22 @@ public final class HazelcastWriters {
     }
 
     @Nonnull
+    public static <T, K, V> ProcessorMetaSupplier removeFromMapSupplier(
+            @Nonnull String name,
+            @Nullable ClientConfig clientConfig,
+            @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
+            @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> removeFn
+    ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(removeFn, "removeFn");
+
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapRemovePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.removeFromMapProcessorFn(name, clientXml, toKeyFn, removeFn)));
+    }
+
+    @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         String clientXml = asXmlString(clientConfig);
         return preferLocalParallelismOne(cachePutPermission(clientXml, name),
@@ -174,8 +191,7 @@ public final class HazelcastWriters {
 
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
         return new ProcessorMetaSupplier() {
-            @Nonnull
-            @Override
+            @Nonnull @Override
             public Map<String, String> getTags() {
                 return singletonMap(ObservableImpl.OWNED_OBSERVABLE, name);
             }
@@ -289,7 +305,8 @@ public final class HazelcastWriters {
             entries = new ArrayList<>(size);
         }
 
-        @Override @Nonnull
+        @Override
+        @Nonnull
         public Set<Entry<K, V>> entrySet() {
             return set;
         }
@@ -305,7 +322,8 @@ public final class HazelcastWriters {
 
         private class ArraySet extends AbstractSet<Entry<K, V>> {
 
-            @Override @Nonnull
+            @Override
+            @Nonnull
             public Iterator<Entry<K, V>> iterator() {
                 return entries.iterator();
             }

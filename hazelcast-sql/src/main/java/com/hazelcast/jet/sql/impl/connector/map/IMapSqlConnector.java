@@ -28,6 +28,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -62,7 +63,6 @@ import java.util.Map;
 import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
@@ -335,10 +335,13 @@ public class IMapSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 toString(table),
                 // TODO do a simpler, specialized deleting-only processor
-                updateMapP(table.getMapName(), (FunctionEx<Object[], Object>) row -> {
-                    assert row.length == 1;
-                    return row[0];
-                }, (v, t) -> null));
+                HazelcastWriters.removeFromMapSupplier(table.getMapName(),
+                        null,
+                        (FunctionEx<Object[], Object>) row -> {
+                            assert row.length == 1;
+                            return row[0];
+                        }, (v, t) -> null)
+        );
     }
 
     @Nonnull

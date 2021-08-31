@@ -973,7 +973,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_REMOVE));
+            context.checkPermission(new MapPermission(mapName, ACTION_PUT, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 

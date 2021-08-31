@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.function.LongSupplier;
 import java.util.stream.Stream;
 
+import static com.hazelcast.security.PermissionsUtil.mapRemovePermission;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUBLISH;
@@ -359,6 +360,26 @@ public final class SecuredFunctions {
             @Override
             public Permission permission() {
                 return mapUpdatePermission(clientXml, name);
+            }
+        };
+    }
+
+    public static <T, K, V> FunctionEx<HazelcastInstance, Processor> removeFromMapProcessorFn(
+            String name,
+            String clientXml,
+            FunctionEx<? super T, ? extends K> toKeyFn,
+            BiFunctionEx<? super V, ? super T, ? extends V> removeFn
+    ) {
+        return new FunctionEx<HazelcastInstance, Processor>() {
+
+            @Override
+            public Processor applyEx(HazelcastInstance instance) {
+                return new UpdateMapP<>(instance, name, toKeyFn, removeFn);
+            }
+
+            @Override
+            public Permission permission() {
+                return mapRemovePermission(clientXml, name);
             }
         };
     }
