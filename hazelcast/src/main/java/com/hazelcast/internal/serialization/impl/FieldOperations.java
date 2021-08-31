@@ -879,7 +879,7 @@ public enum FieldOperations {
                 itemWriter.accept(stringBuilder, object);
             }
             if (j != objectSize) {
-                stringBuilder.append(",");
+                stringBuilder.append(", ");
             }
         }
         stringBuilder.append("]");
