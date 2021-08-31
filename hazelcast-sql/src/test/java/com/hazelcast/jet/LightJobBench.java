@@ -20,13 +20,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+// ignored - meant to be run manually. Doesn't assert anything.
+@Ignore
 public class LightJobBench extends JetTestSupport {
 
     private HazelcastInstance inst;
@@ -65,6 +69,7 @@ public class LightJobBench extends JetTestSupport {
         int realIterations = 200;
         SqlService sqlService = inst.getSql();
         logger.info("will submit " + warmUpIterations + " jobs");
+        SqlTestSupport.createMapping(inst, "m", int.class, int.class);
         inst.getMap("m").put(1, 1);
         int numRows = 0;
         for (int i = 0; i < warmUpIterations; i++) {

@@ -69,7 +69,7 @@ public final class SqlConsole {
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
 
-    private SqlConsole() { };
+    private SqlConsole() { }
 
     public static void run(HazelcastInstance hzClient) {
         LineReader reader = LineReaderBuilder.builder().parser(new MultilineParser())
@@ -206,12 +206,21 @@ public final class SqlConsole {
                     .toAnsi();
             out.println(message);
         } catch (HazelcastSqlException e) {
-            // the query failed to execute
+            // the query failed to execute with HazelcastSqlException
             String errorPrompt = new AttributedStringBuilder()
                     .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
                     .append(e.getMessage())
                     .toAnsi();
             out.println(errorPrompt);
+        } catch (Exception e) {
+            // the query failed to execute with an unexpected exception
+            String unexpectedErrorPrompt = new AttributedStringBuilder()
+                    .style(AttributedStyle.BOLD.foreground(PRIMARY_COLOR))
+                    .append("Encountered an unexpected exception while executing the query:\n")
+                    .append(e.getMessage())
+                    .toAnsi();
+            out.println(unexpectedErrorPrompt);
+            e.printStackTrace(out);
         }
     }
 

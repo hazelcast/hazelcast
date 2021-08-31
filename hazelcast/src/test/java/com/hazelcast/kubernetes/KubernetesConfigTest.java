@@ -18,6 +18,7 @@ package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
@@ -116,6 +117,7 @@ public class KubernetesConfigTest {
         assertEquals(false, config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
+        assertEquals(ExposeExternallyMode.AUTO, config.getExposeExternallyMode());
     }
 
     @Test
@@ -162,6 +164,19 @@ public class KubernetesConfigTest {
 
         // then
         assertEquals(true, config.isUseNodeNameAsExternalAddress());
+    }
+
+    @Test
+    public void kubernetesApiExposeExternally() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(KubernetesProperties.EXPOSE_EXTERNALLY.key(), true);
+
+        // when
+        KubernetesConfig config = new KubernetesConfig(properties);
+
+        // then
+        assertEquals(ExposeExternallyMode.ENABLED, config.getExposeExternallyMode());
     }
 
     @Test

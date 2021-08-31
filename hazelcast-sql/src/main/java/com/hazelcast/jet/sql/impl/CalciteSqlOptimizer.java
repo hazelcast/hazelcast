@@ -33,7 +33,6 @@ import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
-import com.hazelcast.jet.sql.impl.connector.map.JetMapMetadataResolverImpl;
 import com.hazelcast.jet.sql.impl.opt.JetConventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -47,6 +46,8 @@ import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
@@ -55,6 +56,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
 import com.hazelcast.jet.sql.impl.schema.MappingStorage;
 import com.hazelcast.logging.ILogger;
@@ -65,9 +67,6 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
-import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
@@ -76,7 +75,6 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
-import com.hazelcast.sql.impl.schema.map.PartitionedMapTableResolver;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
@@ -96,7 +94,7 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -174,8 +172,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
-        TableResolver partitionedMapTableResolver = partitionedMapTableResolver(nodeEngine);
-        this.tableResolvers = asList(mappingCatalog, partitionedMapTableResolver);
+        this.tableResolvers = singletonList(mappingCatalog);
         this.planExecutor = new JetPlanExecutor(mappingCatalog, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
@@ -185,10 +182,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         return new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
-    }
-
-    private static TableResolver partitionedMapTableResolver(NodeEngine nodeEngine) {
-        return new PartitionedMapTableResolver(nodeEngine, JetMapMetadataResolverImpl.INSTANCE);
     }
 
     @Override

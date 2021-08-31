@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.services.RemoteService;
 import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.util.EmptyStatement;
+import com.hazelcast.internal.util.SetUtil;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -43,11 +45,21 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 
 /**
  * A ProxyRegistry contains all proxies for a given service. For example, it contains all proxies for the IMap.
  */
 public final class ProxyRegistry {
+
+    public static final Set<String> INTERNAL_OBJECTS_PREFIXES;
+
+    static {
+        INTERNAL_OBJECTS_PREFIXES = SetUtil.createHashSet(3);
+        INTERNAL_OBJECTS_PREFIXES.add(INTERNAL_JET_OBJECTS_PREFIX);
+        INTERNAL_OBJECTS_PREFIXES.add("__mc.");
+        INTERNAL_OBJECTS_PREFIXES.add("__sql.");
+    }
 
     private final ProxyServiceImpl proxyService;
     private final String serviceName;
@@ -259,7 +271,9 @@ public final class ProxyRegistry {
                 }
             }
             proxyFuture.set(proxy, initialize);
-            createdCounter.inc();
+            if (INTERNAL_OBJECTS_PREFIXES.stream().noneMatch(name::startsWith)) {
+                createdCounter.inc();
+            }
         } catch (Throwable e) {
             // proxy creation or initialization failed
             // deregister future to avoid infinite hang on future.get()
@@ -403,10 +417,10 @@ public final class ProxyRegistry {
     }
 
     /**
-     * Returns the total number of created proxies, even if some have already
+     * Returns the total number of created non-internal proxies, even if some have already
      * been destroyed.
      *
-     * @return the total count of created proxies
+     * @return the total count of created non-internal proxies
      */
     public long getCreatedCount() {
         return createdCounter.get();

@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS_ID;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTORY_ID;
@@ -93,7 +93,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        createMapping("map", "m", "id", PersonId.class, JSON_FORMAT);
+        createMapping("map", "m", "id", PersonId.class, JSON_FLAT_FORMAT);
         assertThat(planCache(instance()).size()).isZero();
     }
 
@@ -128,10 +128,10 @@ public class SqlPlanCacheTest extends SqlTestSupport {
     @Test
     public void test_dmlCaching() {
         createMapping("map", "m", "id", PersonId.class, "varchar");
-        sqlService.execute("INSERT INTO map VALUES(0, 'value-0')");
+        sqlService.execute("INSERT INTO map (id, this) VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        sqlService.execute("SINK INTO map VALUES(0, 'value-0')");
+        sqlService.execute("SINK INTO map (id, this) VALUES(0, 'value-0')");
         assertThat(planCache(instance()).size()).isEqualTo(2);
 
         sqlService.execute("UPDATE map SET this = 'value-1' WHERE id = 0");

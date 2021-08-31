@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * Marked interface for exceptions.
+ * Marker interface for exceptions.
  *
  * When an exception is marked with this interface then
  * it won't be logged by {@link Operation#logError(Throwable)}
