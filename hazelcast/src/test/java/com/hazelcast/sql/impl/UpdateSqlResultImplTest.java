@@ -21,11 +21,11 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
-public class SqlResultImplTest {
+public class UpdateSqlResultImplTest extends SqlTestSupport {
 
     @Test
     public void test_updateCountResult() {
-        try (SqlResultImpl result = SqlResultImpl.createUpdateCountResult(10)) {
+        try (AbstractSqlResult result = UpdateSqlResultImpl.createUpdateCountResult(10)) {
             assertEquals(10, result.updateCount());
 
             assertThatThrownBy(result::getQueryId)
