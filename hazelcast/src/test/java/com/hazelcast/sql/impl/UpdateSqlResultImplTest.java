@@ -20,11 +20,11 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class SqlResultImplTest extends SqlTestSupport {
+public class UpdateSqlResultImplTest extends SqlTestSupport {
 
     @Test
     public void test_updateCountResult() {
-        SqlResultImpl r = SqlResultImpl.createUpdateCountResult(10);
+        UpdateSqlResultImpl r = UpdateSqlResultImpl.createUpdateCountResult(10);
         assertEquals(10, r.updateCount());
 
         assertIllegalStateException("This result contains only update count", r::getQueryId);
