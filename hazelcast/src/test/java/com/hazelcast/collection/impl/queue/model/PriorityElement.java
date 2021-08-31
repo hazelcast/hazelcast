@@ -65,9 +65,9 @@ public class PriorityElement implements Serializable {
 
     @Override
     public String toString() {
-        return "PriorityElement{" +
-                "highPriority=" + highPriority +
-                ", version=" + version +
-                '}';
+        return "PriorityElement{"
+                + "highPriority=" + highPriority
+                + ", version=" + version
+                + '}';
     }
 }
