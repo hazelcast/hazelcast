@@ -24,20 +24,17 @@ import javax.annotation.Nullable;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 
-/**
- * Cursor implementation.
- */
-public final class SqlResultImpl extends AbstractSqlResult {
+public final class UpdateSqlResultImpl extends AbstractSqlResult {
 
     private final long updateCount;
 
-    private SqlResultImpl(long updateCount) {
+    private UpdateSqlResultImpl(long updateCount) {
         this.updateCount = checkNotNegative(updateCount, "the updateCount must be >= 0");
     }
 
-    public static SqlResultImpl createUpdateCountResult(long updateCount) {
+    public static UpdateSqlResultImpl createUpdateCountResult(long updateCount) {
         checkNotNegative(updateCount, "the updateCount must be >= 0");
-        return new SqlResultImpl(updateCount);
+        return new UpdateSqlResultImpl(updateCount);
     }
 
     @Nullable

@@ -34,7 +34,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call() {
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
         service.getClientStateRegistry().close(endpoint.getUuid(), parameters);
@@ -69,7 +69,7 @@ public class SqlCloseMessageTask extends SqlAbstractMessageTask<QueryId> {
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters } ;
+        return new Object[]{parameters};
     }
 
     @Override

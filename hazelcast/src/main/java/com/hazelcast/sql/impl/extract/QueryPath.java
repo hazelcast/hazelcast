@@ -24,6 +24,7 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 
 import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
 import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
@@ -149,7 +150,7 @@ public final class QueryPath implements IdentifiedDataSerializable {
             return false;
         }
 
-        return path != null ? path.equals(path1.path) : path1.path == null;
+        return Objects.equals(path, path1.path);
     }
 
     @Override
