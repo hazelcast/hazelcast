@@ -70,23 +70,6 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         assertWrongProtocolAlert(WAN2_PORT, Protocols.CLIENT_BINARY, "AAA");
     }
 
-    private void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
-        byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
-        for (String header : protocolHeadersToTry) {
-            try {
-                Socket socket = new Socket("127.0.0.1", port);
-                socket.getOutputStream().write(header.getBytes());
-                byte[] response = new byte[3];
-                IOUtil.readFully(socket.getInputStream(), response);
-                assertArrayEquals("The protocol header " + header + " should be unexpected on port " + port,
-                        expected, response);
-                socket.close();
-            } catch (IOException e) {
-                fail("Failed to connect to port " + port + ": " + e.getMessage());
-            }
-        }
-    }
-
     @Test
     public void testMembersReportAllAddresses() {
         Config config = createCompleteMultiSocketConfig();
@@ -193,6 +176,23 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
             Socket socket = new Socket();
             try {
                 socket.connect(new InetSocketAddress("127.0.0.1", port));
+                socket.close();
+            } catch (IOException e) {
+                fail("Failed to connect to port " + port + ": " + e.getMessage());
+            }
+        }
+    }
+
+    protected void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
+        byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
+        for (String header : protocolHeadersToTry) {
+            try {
+                Socket socket = new Socket("127.0.0.1", port);
+                socket.getOutputStream().write(header.getBytes());
+                byte[] response = new byte[3];
+                IOUtil.readFully(socket.getInputStream(), response);
+                assertArrayEquals("The protocol header " + header + " should be unexpected on port " + port,
+                        expected, response);
                 socket.close();
             } catch (IOException e) {
                 fail("Failed to connect to port " + port + ": " + e.getMessage());
