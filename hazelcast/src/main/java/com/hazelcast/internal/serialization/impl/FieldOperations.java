@@ -544,8 +544,7 @@ public enum FieldOperations {
 
         @Override
         public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
-            BigDecimal value = record.getDecimal(fieldName);
-            stringBuilder.append(value == null ? "null" : value.toString());
+            stringBuilder.append(record.getDecimal(fieldName));
         }
     }),
     DECIMAL_ARRAY(new FieldTypeBasedOperations() {
