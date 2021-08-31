@@ -367,7 +367,7 @@ public enum FieldOperations {
                 j++;
                 JsonEscape.writeEscaped(stringBuilder, object);
                 if (j != objectsSize) {
-                    stringBuilder.append(",");
+                    stringBuilder.append(", ");
                 }
             }
             stringBuilder.append("]");
