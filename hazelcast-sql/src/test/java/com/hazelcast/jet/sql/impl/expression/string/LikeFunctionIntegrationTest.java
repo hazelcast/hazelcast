@@ -189,7 +189,7 @@ public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
             expectedResult = !expectedResult;
         }
 
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         assertEquals(1, rows.size());
 
         SqlRow row = rows.get(0);
@@ -200,7 +200,7 @@ public class LikeFunctionIntegrationTest extends ExpressionTestSupport {
 
     private void checkFailure(String sql, int expectedErrorCode, String expectedErrorMessage, Object... params) {
         try {
-            execute(member, sql, params);
+            execute(sql, params);
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {

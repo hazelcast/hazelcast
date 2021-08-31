@@ -140,6 +140,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         // Get the first row.
@@ -166,6 +167,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         populate(instance1, DEFAULT_CURSOR_BUFFER_SIZE + 1);
 
         try {
@@ -200,6 +202,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             localMap.put(i, i);
         }
 
+        createMapping(instance1, MAP_NAME, int.class, int.class);
         map.putAll(localMap);
 
         QueryClientStateRegistry cursorRegistry = sqlInternalService(instance1).getClientStateRegistry();
@@ -247,6 +250,7 @@ public class SqlErrorClientTest extends SqlErrorAbstractTest {
             Map<Integer, BadValue> localMap = new HashMap<>();
             IMap<Integer, BadValue> map = instance1.getMap(MAP_NAME);
 
+            createMapping(instance1, MAP_NAME, int.class, BadValue.class);
             for (int i = 0; i < DEFAULT_CURSOR_BUFFER_SIZE + 1; i++) {
                 localMap.put(i, new BadValue());
             }
