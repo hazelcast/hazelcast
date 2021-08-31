@@ -83,7 +83,7 @@ public class SqlNoSerializationTest extends OptimizerTestSupport {
     }
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         initialize(1, smallInstanceConfig());
     }
 

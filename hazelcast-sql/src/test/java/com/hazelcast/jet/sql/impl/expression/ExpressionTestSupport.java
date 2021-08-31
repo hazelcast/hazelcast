@@ -166,9 +166,8 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      * @param expectedResults expected result value. If it's {@link #SKIP_VALUE_CHECK},
      *                        don't assert the value
      * @param params          query parameters
-     * @return the result values
      */
-    protected Object[] checkValues0(
+    protected void checkValues0(
             String sql,
             SqlColumnType expectedType,
             Object[] expectedResults,
@@ -190,7 +189,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
         assertThat(values).containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedResults));
 
-        return values;
     }
 
     protected void putAndCheckFailure(

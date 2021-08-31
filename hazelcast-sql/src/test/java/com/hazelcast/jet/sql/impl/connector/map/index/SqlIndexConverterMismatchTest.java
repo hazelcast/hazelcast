@@ -100,7 +100,7 @@ public class SqlIndexConverterMismatchTest extends JetSqlIndexTestSupport {
     /**
      * @see MapIndexScanExecIterator#getIndexEntries
      */
-    @SuppressWarnings("StatementWithEmptyBody")
+    @SuppressWarnings({"StatementWithEmptyBody", "JavadocReference"})
     @Ignore("https://github.com/hazelcast/hazelcast/issues/19287")
     @Test
     public void testMismatch() {
