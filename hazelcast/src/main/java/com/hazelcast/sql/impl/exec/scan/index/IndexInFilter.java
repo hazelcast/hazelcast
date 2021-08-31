@@ -72,6 +72,7 @@ public class IndexInFilter implements IndexFilter, IdentifiedDataSerializable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Iterator<QueryableEntry> getEntries(InternalIndex index, boolean descending, ExpressionEvalContext evalContext) {
 
         // Sort the filter Comparables, NULLs are less than any other value
