@@ -31,7 +31,7 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
 
-    private boolean isDecoderVerifiedProtocol = true;
+    private boolean isDecoderVerifiedProtocol;
     private boolean isDecoderReceivedProtocol;
     private boolean clusterProtocolBuffered;
 
@@ -54,7 +54,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
             }
 
             // Decoder didn't verify the protocol, protocol error should be sent
-            if (!isDecoderVerifiedProtocol) {
+            if (!isDecoderVerifiedProtocol && !channel.isClientMode()) {
                 if (!sendProtocol()) {
                     return DIRTY;
                 }
@@ -94,6 +94,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     public void signalProtocolVerified() {
         isDecoderReceivedProtocol = true;
+        isDecoderVerifiedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
