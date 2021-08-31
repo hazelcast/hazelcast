@@ -98,7 +98,7 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             FieldType fieldType = getFieldType(fieldName);
             fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
             if (size != i) {
-                stringBuilder.append(",\n");
+                stringBuilder.append(", ");
             }
         }
         stringBuilder.append("}");
