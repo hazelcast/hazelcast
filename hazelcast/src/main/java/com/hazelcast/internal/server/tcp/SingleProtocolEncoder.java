@@ -18,6 +18,7 @@ package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundHandler;
+import com.hazelcast.internal.nio.Protocols;
 
 import java.nio.ByteBuffer;
 
@@ -28,6 +29,13 @@ import static com.hazelcast.internal.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
+/**
+ * Together with {@link SingleProtocolDecoder}, these encoder decoder pair is used for checking correct protocol is used
+ * or not. {@link SingleProtocolDecoder} checks if the correct protocol is received. If the protocol is correct, both
+ * encoder and decoder swaps itself with the next handler in the pipeline. If it isn't {@link SingleProtocolEncoder}
+ * throws {@link ProtocolException} and {@link SingleProtocolDecoder} sends {@value Protocols#UNEXPECTED_PROTOCOL}. Note
+ * that in client mode {@link SingleProtocolEncoder} has no effect and it swaps itself with the next handler.
+ */
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
 
