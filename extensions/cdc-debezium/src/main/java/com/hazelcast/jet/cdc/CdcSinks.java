@@ -33,11 +33,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.security.Permission;
+import java.util.List;
 
 import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.DISTRIBUTED_PARTITIONED;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -252,8 +254,8 @@ public final class CdcSinks {
             }
 
             @Override
-            public Permission permission() {
-                return mapUpdatePermission(clientXml, name);
+            public List<Permission> permissions() {
+                return singletonList(mapUpdatePermission(clientXml, name));
             }
         };
     }

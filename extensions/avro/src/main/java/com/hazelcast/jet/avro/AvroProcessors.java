@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
+import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -42,6 +43,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelis
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 
 /**
  * Static utility class with factories of Apache Avro source and sink
@@ -113,8 +115,8 @@ public final class AvroProcessors {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(directoryName, ACTION_WRITE);
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
             }
         };
     }
@@ -135,8 +137,8 @@ public final class AvroProcessors {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(directoryName, ACTION_READ);
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_READ));
             }
         };
     }
