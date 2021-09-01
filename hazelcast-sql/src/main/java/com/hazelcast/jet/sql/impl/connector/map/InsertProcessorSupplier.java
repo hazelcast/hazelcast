@@ -63,7 +63,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     @Override
-    public void init(@Nonnull Context context) throws Exception {
+    public void init(@Nonnull Context context) {
         serializationService = ((Contexts.ProcSupplierCtx) context).serializationService();
     }
 
@@ -111,7 +111,7 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
         }
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             map = (MapProxyImpl<Object, Object>) context.hazelcastInstance().getMap(mapName);
             maxAccumulatedKeys = context.maxProcessorAccumulatedRecords();
         }

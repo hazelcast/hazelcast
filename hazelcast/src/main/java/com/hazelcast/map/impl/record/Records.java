@@ -16,24 +16,15 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
-import java.util.EnumMap;
-import java.util.Map;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
 
 /**
@@ -42,39 +33,12 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
  */
 public final class Records {
 
-    // RU_COMPAT_4_1
-    /**
-     * Maps RecordReaderWriter objects to their 4.1 equivalents. This is used to
-     * support compatibility between 4.1 and 4.2 during rolling upgrades.
-     */
-    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP = createAndInitRuCompatMap();
-
     private Records() {
-    }
-
-    private static EnumMap<RecordReaderWriter, RecordReaderWriter> createAndInitRuCompatMap() {
-        EnumMap<RecordReaderWriter, RecordReaderWriter> ruCompatMap = new EnumMap<>(RecordReaderWriter.class);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
-
-        assert ruCompatMap.size() == RecordReaderWriter.values().length
-                : "Missing enum mapping for RU compatibility";
-
-        return ruCompatMap;
     }
 
     public static void writeRecord(ObjectDataOutput out, Record record,
                                    Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
-        // RU_COMPAT_4_1
-        Version version = out.getVersion();
-        if (version.isUnknownOrLessThan(Versions.V4_2)) {
-            readerWriter = RU_COMPAT_MAP.get(readerWriter);
-        }
-
         out.writeByte(readerWriter.getId());
         readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
     }

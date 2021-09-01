@@ -612,6 +612,7 @@ public final class MetricDescriptorConstants {
     public static final String WAN_METRIC_ACK_DELAY_CURRENT_MILLIS = "ackDelayCurrentMillis";
     public static final String WAN_METRIC_ACK_DELAY_LAST_START = "ackDelayLastStart";
     public static final String WAN_METRIC_ACK_DELAY_LAST_END = "ackDelayLastEnd";
+    public static final String WAN_QUEUE_FILL_PERCENT = "queueFillPercent";
     // ===[/WAN]========================================================
 
     public static final String GENERAL_DISCRIMINATOR_NAME = "name";

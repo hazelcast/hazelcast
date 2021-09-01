@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -26,6 +25,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
@@ -37,13 +38,10 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -93,9 +91,9 @@ public class SqlBasicTest extends SqlTestSupport {
     private static final int IDS_FACTORY_ID = 1;
     private static final int IDS_KEY_CLASS_ID = 2;
     private static final int IDS_VALUE_CLASS_ID = 3;
-    private static final int PORTABLE_FACTORY_ID = 1;
+    static final int PORTABLE_FACTORY_ID = 1;
     private static final int PORTABLE_KEY_CLASS_ID = 2;
-    private static final int PORTABLE_VALUE_CLASS_ID = 3;
+    static final int PORTABLE_VALUE_CLASS_ID = 3;
     private static final int PORTABLE_NESTED_CLASS_ID = 4;
 
     private static final String MAP_OBJECT = "map_object";
@@ -103,7 +101,6 @@ public class SqlBasicTest extends SqlTestSupport {
 
     private static final int[] PAGE_SIZES = {256};
     private static final int[] DATA_SET_SIZES = {4096};
-    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
 
     private static HazelcastInstance member1;
     private static HazelcastInstance member2;
@@ -145,21 +142,12 @@ public class SqlBasicTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        member1 = FACTORY.newHazelcastInstance(memberConfig());
-        member2 = FACTORY.newHazelcastInstance(memberConfig());
+        initializeWithClient(2, memberConfig(), clientConfig());
 
-        client = FACTORY.newHazelcastClient(clientConfig());
-    }
+        member1 = instances()[0];
+        member2 = instances()[1];
 
-    @AfterClass
-    public static void afterClass() {
-        FACTORY.shutdownAll();
-    }
-
-    @Before
-    public void before() {
-        member1.getMap(MAP_OBJECT).clear();
-        member1.getMap(MAP_BINARY).clear();
+        client = client();
     }
 
     protected HazelcastInstance getTarget() {
@@ -169,6 +157,12 @@ public class SqlBasicTest extends SqlTestSupport {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void testSelect() {
+        if (isPortable()) {
+            createMapping(mapName(), PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+        } else {
+            createMapping(mapName(), keyClass(), valueClass());
+        }
+
         // Get proper map
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
@@ -509,6 +503,22 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
+    private Class<?> keyClass() {
+        switch (serializationMode) {
+            case SERIALIZABLE:
+                return SerializablePojoKey.class;
+
+            case DATA_SERIALIZABLE:
+                return DataSerializablePojoKey.class;
+
+            case IDENTIFIED_DATA_SERIALIZABLE:
+                return IdentifiedDataSerializablePojoKey.class;
+
+            default:
+                return PortablePojoKey.class;
+        }
+    }
+
     private AbstractPojo value(long i) {
         switch (serializationMode) {
             case SERIALIZABLE:
@@ -525,8 +535,53 @@ public class SqlBasicTest extends SqlTestSupport {
         }
     }
 
+    private Class<?> valueClass() {
+        switch (serializationMode) {
+            case SERIALIZABLE:
+                return SerializablePojo.class;
+
+            case DATA_SERIALIZABLE:
+                return DataSerializablePojo.class;
+
+            case IDENTIFIED_DATA_SERIALIZABLE:
+                return IdentifiedDataSerializablePojo.class;
+
+            default:
+                return PortablePojo.class;
+        }
+    }
+
     public static SerializationConfig serializationConfig() {
         SerializationConfig serializationConfig = new SerializationConfig();
+
+        ClassDefinition nestedClassDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, PORTABLE_NESTED_CLASS_ID, 0)
+                .addIntField("val")
+                .build();
+        ClassDefinition valueClassDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0)
+                .addBooleanField(portableFieldName("booleanVal"))
+                .addByteField(portableFieldName("tinyIntVal"))
+                .addShortField(portableFieldName("smallIntVal"))
+                .addIntField(portableFieldName("intVal"))
+                .addLongField(portableFieldName("bigIntVal"))
+                .addFloatField(portableFieldName("realVal"))
+                .addDoubleField(portableFieldName("doubleVal"))
+                .addDecimalField(portableFieldName("decimalVal"))
+                .addCharField(portableFieldName("charVal"))
+                .addStringField(portableFieldName("varcharVal"))
+                .addDateField(portableFieldName("dateVal"))
+                .addTimeField(portableFieldName("timeVal"))
+                .addTimestampField(portableFieldName("timestampVal"))
+                .addTimestampWithTimezoneField(portableFieldName("tsTzOffsetDateTimeVal"))
+                .addPortableField(portableFieldName("portableVal"), nestedClassDefinition)
+                .addStringField(portableFieldName("nullVal"))
+                .build();
+        ClassDefinition keyClassDefinition = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, PORTABLE_KEY_CLASS_ID, 0)
+                .addLongField(portableFieldName("key"))
+                .build();
+
+        serializationConfig.addClassDefinition(nestedClassDefinition);
+        serializationConfig.addClassDefinition(valueClassDefinition);
+        serializationConfig.addClassDefinition(keyClassDefinition);
 
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, classId -> {
             if (classId == PORTABLE_KEY_CLASS_ID) {

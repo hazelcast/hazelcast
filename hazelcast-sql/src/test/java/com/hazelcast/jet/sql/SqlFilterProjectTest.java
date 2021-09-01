@@ -112,7 +112,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsert() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         assertMapEventually(
                 "m",
@@ -123,7 +123,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsertExpression() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         assertMapEventually(
                 "m",
@@ -136,7 +136,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_valuesInsertDynamicParameter() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, String.class));
+        createMapping("m", Integer.class, String.class);
 
         assertMapEventually(
                 "m",
@@ -654,7 +654,7 @@ public class SqlFilterProjectTest extends SqlTestSupport {
 
     @Test
     public void test_sinkMetadata() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
 
         SqlResult result = sqlService.execute("SINK INTO m(__key, this) VALUES (1, 1), (2, 2)");
 

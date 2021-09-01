@@ -16,21 +16,17 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlExpectedResultType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +35,6 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlQueryResultTest extends SqlTestSupport {
 
@@ -47,11 +42,9 @@ public class SqlQueryResultTest extends SqlTestSupport {
     private static final String SQL_READ = "SELECT * FROM " + MAP_NAME;
     private static final String SQL_DELETE = "DELETE FROM " + MAP_NAME + " WHERE __key = 1";
 
-    private final TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    @After
-    public void after() {
-        factory.shutdownAll();
+    @BeforeClass
+    public static void setUpClass() {
+        initializeWithClient(1, null, null);
     }
 
     @Test
@@ -65,13 +58,14 @@ public class SqlQueryResultTest extends SqlTestSupport {
     }
 
     private void check(boolean client) {
-        HazelcastInstance member = factory.newHazelcastInstance();
-        HazelcastInstance target = client ? factory.newHazelcastClient() : member;
+        HazelcastInstance member = instance();
+        HazelcastInstance target = client ? client() : instance();
 
+        createMapping(MAP_NAME, int.class, int.class);
         member.getMap(MAP_NAME).put(1, 1);
 
         // Check rows
-        List<SqlRow> expectedRows = execute(member, SQL_READ);
+        List<SqlRow> expectedRows = execute(SQL_READ);
         assertEquals(1, expectedRows.size());
         checkSuccess(target, SQL_READ, SqlExpectedResultType.ANY, expectedRows, -1);
         checkSuccess(target, SQL_READ, SqlExpectedResultType.ROWS, expectedRows, -1);
@@ -82,6 +76,16 @@ public class SqlQueryResultTest extends SqlTestSupport {
         checkSuccess(target, SQL_DELETE, SqlExpectedResultType.ANY, emptyList(), 0);
         checkFailure(target, SQL_DELETE, SqlExpectedResultType.ROWS);
         checkSuccess(target, SQL_DELETE, SqlExpectedResultType.UPDATE_COUNT, emptyList(), 0);
+    }
+
+    private List<SqlRow> execute(String query) {
+        List<SqlRow> rows = new ArrayList<>();
+        try (SqlResult result = instance().getSql().execute(query)) {
+            for (SqlRow row : result) {
+                rows.add(row);
+            }
+        }
+        return rows;
     }
 
     private void checkSuccess(
