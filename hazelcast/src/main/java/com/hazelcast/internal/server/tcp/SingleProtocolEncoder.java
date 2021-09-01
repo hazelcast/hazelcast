@@ -30,11 +30,15 @@ import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
- * Together with {@link SingleProtocolDecoder}, these encoder decoder pair is used for checking correct protocol is used
- * or not. {@link SingleProtocolDecoder} checks if the correct protocol is received. If the protocol is correct, both
- * encoder and decoder swaps itself with the next handler in the pipeline. If it isn't {@link SingleProtocolEncoder}
- * throws {@link ProtocolException} and {@link SingleProtocolDecoder} sends {@value Protocols#UNEXPECTED_PROTOCOL}. Note
- * that in client mode {@link SingleProtocolEncoder} has no effect and it swaps itself with the next handler.
+ * Together with {@link SingleProtocolDecoder}, these encoder decoder pair is
+ * used for checking correct protocol is used or not. {@link
+ * SingleProtocolDecoder} checks if the correct protocol is received. If the
+ * protocol is correct, both encoder and decoder swaps itself with the next
+ * handler in the pipeline. If it isn't {@link SingleProtocolEncoder} throws
+ * {@link ProtocolException} and {@link SingleProtocolDecoder} sends {@value
+ * Protocols#UNEXPECTED_PROTOCOL}. Note that in client mode {@link
+ * SingleProtocolEncoder} has no effect, and it swaps itself with the next
+ * handler.
  */
 public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     private final OutboundHandler[] outboundHandlers;
@@ -55,6 +59,8 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     public HandlerStatus onWrite() throws Exception {
         compactOrClear(dst);
 
+        // Note that in client mode SingleProtocolEncoder never
+        // sends anything and only swaps itself with the next encoder
         try {
             // First, decoder must receive the protocol
             if (!isDecoderReceivedProtocol && !channel.isClientMode()) {
@@ -77,6 +83,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         }
     }
 
+    // Method used for sending HZX
     private boolean sendProtocol() {
         if (!clusterProtocolBuffered) {
             clusterProtocolBuffered = true;
@@ -87,6 +94,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         return isProtocolBufferDrained();
     }
 
+    // Swap this encoder with the next one
     protected void setupNextEncoder() {
         channel.outboundPipeline().replace(this, outboundHandlers);
     }
@@ -100,12 +108,15 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         return dst.position() == 0;
     }
 
+    // Used by SingleProtocolDecoder in order to swap
+    // SingleProtocolEncoder with the next encoder in the pipeline
     public void signalProtocolVerified() {
         isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = true;
         channel.outboundPipeline().wakeup();
     }
 
+    // Used by SingleProtocolDecoder in order to send HZX eventually
     public void signalWrongProtocol() {
         isDecoderReceivedProtocol = true;
         isDecoderVerifiedProtocol = false;

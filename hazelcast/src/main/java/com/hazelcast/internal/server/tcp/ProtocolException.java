@@ -19,7 +19,8 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * An exception thrown when an unexpected protocol is received through a connection.
+ * An exception thrown when an unexpected protocol is received through a
+ * connection.
  * <p>
  * See also {@link SingleProtocolEncoder} and {@link SingleProtocolDecoder}
  * </p>
