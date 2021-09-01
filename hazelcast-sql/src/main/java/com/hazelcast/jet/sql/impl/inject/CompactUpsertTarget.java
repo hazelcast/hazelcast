@@ -111,7 +111,6 @@ class CompactUpsertTarget implements UpsertTarget {
                 };
             case OBJECT:
                 return value -> {
-                    //This is a workaround until array types introduced in the sql.
                     if (value instanceof Boolean) {
                         builder.setBoolean(path, (boolean) value);
                     } else if (value instanceof Byte) {
