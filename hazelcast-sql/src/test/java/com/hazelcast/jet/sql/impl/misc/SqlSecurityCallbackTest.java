@@ -83,6 +83,7 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
     @Before
     public void before() {
         mapName = SqlTestSupport.randomName();
+        createMapping(mapName, int.class, int.class);
         IMap<Integer, Integer> map = instance().getMap(mapName);
         if (useIndex) {
             map.addIndex(IndexType.HASH, "this");

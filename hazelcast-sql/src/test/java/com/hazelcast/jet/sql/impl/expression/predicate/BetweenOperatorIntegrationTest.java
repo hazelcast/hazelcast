@@ -234,7 +234,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             Object[] expectedResults,
             Object... params
     ) {
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         assertEquals(expectedResults.length, rows.size());
         if (rows.size() == 0) {
             return;
@@ -259,7 +259,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             Object... params
     ) {
         try {
-            List<SqlRow> rows = execute(member, sql, params);
+            List<SqlRow> rows = execute(sql, params);
             assertNull(expectedOutcome.f1());
             assertEquals(expectedOutcome.f0().size(), rows.size());
             List<SqlRow> expectedResultsList = expectedOutcome.f0();
@@ -297,7 +297,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             Object... params
     ) {
         try {
-            SqlResult result = member.getSql().execute(sql, params);
+            SqlResult result = instance().getSql().execute(sql, params);
             List<SqlRow> rows = new ArrayList<>();
             for (SqlRow row : result) {
                 assertEquals(firstColumnExpectedType, row.getMetadata().getColumn(0).getType());

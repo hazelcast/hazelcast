@@ -674,11 +674,20 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
             // intentional termination, we are not testing graceful shutdown.
             unreliableInstance.getLifecycleService().terminate();
 
-            producer.offer("item");
+            boolean itemAdded = producer.offer("item");
+
 
             assertEquals("Failed at step :" + j
-                    + " (0 is first step)", 1, producer.size());
+                            + " (0 is first step) [itemAdded=" + itemAdded
+                            + ", " + getQueueContainer(producer) + "]",
+                    1, producer.size());
         }
+    }
+
+    private static QueueContainer getQueueContainer(IQueue<String> producer) {
+        QueueService queueService = (QueueService) ((QueueProxyImpl) producer).getService();
+        QueueContainer container = queueService.getExistingContainerOrNull(producer.getName());
+        return container;
     }
 
     private HazelcastInstance[] createHazelcastInstances() {
@@ -694,7 +703,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     protected Config getConfig() {
         Config config = smallInstanceConfig();
         config.getQueueConfig("default")
-              .setPriorityComparatorClassName(comparatorClassName);
+                .setPriorityComparatorClassName(comparatorClassName);
         return config;
     }
 }

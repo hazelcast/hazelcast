@@ -154,31 +154,6 @@ public class SqlPortableTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_sinkIntoDiscoveredMap() {
-        String name = randomName();
-
-        instance().getMap(name).put(
-                new PortableGenericRecordBuilder(personIdClassDefinition)
-                        .setInt("id", 1)
-                        .build(),
-                new PortableGenericRecordBuilder(personClassDefinition)
-                        .setInt("id", 2)
-                        .setString("name", "Alice")
-                        .build()
-        );
-
-        sqlService.execute("SINK INTO partitioned." + name + " VALUES (2, 'Bob')");
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(1, "Alice"),
-                        new Row(2, "Bob")
-                )
-        );
-    }
-
-    @Test
     public void test_nulls() throws IOException {
         String name = randomName();
         sqlService.execute("CREATE MAPPING " + name + ' '

@@ -121,7 +121,7 @@ public class ReplaceFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     private void check(String sql, String expectedResult) {
-        List<SqlRow> rows = execute(member, sql, null);
+        List<SqlRow> rows = execute(sql, null);
         assertGreaterOrEquals("size must be greater than 0", rows.size(), 0);
         SqlRow row = rows.get(0);
 
@@ -131,7 +131,7 @@ public class ReplaceFunctionIntegrationTest extends ExpressionTestSupport {
 
     private void checkFail(String sql) {
         try {
-            List<SqlRow> rows = execute(member, sql, null);
+            execute(sql, null);
             fail("Test should have been failed");
         } catch (Exception e) {
             assertTrue(e instanceof HazelcastSqlException);

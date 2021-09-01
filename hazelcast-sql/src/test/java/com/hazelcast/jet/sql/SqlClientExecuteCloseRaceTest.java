@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -50,7 +49,7 @@ import static org.junit.Assert.assertNull;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlClientExecuteCloseRaceTest {
+public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
     private static final String SQL = "SELECT * FROM " + MAP_NAME;
@@ -65,6 +64,7 @@ public class SqlClientExecuteCloseRaceTest {
         HazelcastInstance member = factory.newHazelcastInstance();
         HazelcastInstance client = factory.newHazelcastClient();
 
+        createMapping(member, MAP_NAME, int.class, int.class);
         Map<Integer, Integer> map = member.getMap(MAP_NAME);
         map.put(0, 0);
         map.put(1, 1);
