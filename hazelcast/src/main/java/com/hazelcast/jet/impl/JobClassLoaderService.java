@@ -49,6 +49,14 @@ import static java.util.Collections.unmodifiableMap;
 
 public class JobClassLoaderService {
 
+    /*
+     * On master node there is a race between closing PMS and PS.
+     * We need to close the classloader only after both have been called.
+     * The reference counting is done in removeClassloadersForJob()
+     */
+    private static final int MASTER_REF_COUNT = 2;
+    private static final int MEMBER_REF_COUNT = 1;
+
     // The type of classLoaders field is CHM and not ConcurrentMap because we
     // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
     // does not guarantee at most one computation per key.
@@ -65,6 +73,15 @@ public class JobClassLoaderService {
         this.jobRepository = jobRepository;
     }
 
+    /**
+     * Get or create a Job classloader for a job with given config.
+     * <p>
+     * It also creates processor classloaders if any are configured.
+     *
+     * @param config job config to use to create the classloader
+     * @param jobId  id of the job
+     * @return job classloader
+     */
     public ClassLoader getClassLoader(JobConfig config, long jobId) {
         JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
         return classLoaders.computeIfAbsent(jobId,
@@ -83,7 +100,8 @@ public class JobClassLoaderService {
                             Map<String, ClassLoader> processorCls = createProcessorClassLoaders(
                                     jobId, config, jobClassLoader
                             );
-                            int refCount = nodeEngine.getClusterService().isMaster() ? 2 : 1;
+                            int refCount = nodeEngine.getClusterService().isMaster()
+                                    ? MASTER_REF_COUNT : MEMBER_REF_COUNT;
                             return new JobClassLoaders(jobClassLoader, processorCls, refCount);
                         })).jobClassLoader();
     }
@@ -127,33 +145,48 @@ public class JobClassLoaderService {
         ProcessorClassLoaderTLHolder.putAll(getProcessorClassLoaders(jobId));
     }
 
-    public ClassLoader getProcessorClassLoader(long jobId, String name) {
+    private Map<String, ClassLoader> getProcessorClassLoaders(long jobId) {
+        return classLoaders.get(jobId).processorCls();
+    }
+
+    /**
+     * Clears processor classloaders from the current thread
+     */
+    public void clearProcessorClassLoaders() {
+        ProcessorClassLoaderTLHolder.remove();
+    }
+
+    /**
+     * Return processor classloader for a vertex with given name, in a job specified by the id
+     * <p>
+     * This method must be called after the classloader was created by {@link #getClassLoader(JobConfig, long)} on this
+     * member.
+     *
+     * @param jobId      job id
+     * @param vertexName vertex name
+     * @return processor classloader, null if the classloader is not defined for the vertex
+     */
+    public ClassLoader getProcessorClassLoader(long jobId, String vertexName) {
         JobClassLoaders jobClassLoaders = classLoaders.get(jobId);
         if (jobClassLoaders != null) {
-            return jobClassLoaders.processorCl(name);
+            return jobClassLoaders.processorCl(vertexName);
         } else {
             throw new HazelcastException("JobClassLoaders for jobId=" + Util.idToString(jobId)
                     + " requested, but it does not exists");
         }
     }
 
-    public Map<String, ClassLoader> getProcessorClassLoaders(long jobId) {
-        return classLoaders.get(jobId).processorCls();
-    }
-
-    public void clearProcessorClassLoaders() {
-        ProcessorClassLoaderTLHolder.remove();
-    }
-
-    public void removeClassloadersForJob(long jobId) {
+    /**
+     * Remove and close/shutdown job classloader and any processor classloaders for given job
+     */
+    public void tryRemoveClassloadersForJob(long jobId) {
         logger.fine("Removing classloaders for job " + Util.idToString(jobId));
         JobClassLoaders jobClassLoaders = this.classLoaders.get(jobId);
         if (jobClassLoaders == null) {
             return;
         }
         if (jobClassLoaders.decrementRefCount() == 0) {
-
-            this.classLoaders.remove(jobId);
+            classLoaders.remove(jobId);
             Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
             if (processorCls != null) {
                 for (ClassLoader cl : processorCls.values()) {
@@ -170,6 +203,12 @@ public class JobClassLoaderService {
         }
     }
 
+    /**
+     * Returns the job classloader for the job with given id.
+     *
+     * @param jobId job id
+     * @return the job classloader, null if the classloader hasn't been created yet or was already destroyed
+     */
     public JetDelegatingClassLoader getClassLoader(long jobId) {
         JobClassLoaders jobClassLoaders = classLoaders.get(jobId);
         return jobClassLoaders == null ? null : jobClassLoaders.jobClassLoader();
@@ -179,7 +218,7 @@ public class JobClassLoaderService {
 
         private final JetDelegatingClassLoader jobClassLoader;
         private final Map<String, ClassLoader> processorCls;
-        private AtomicInteger refCount;
+        private final AtomicInteger refCount;
 
         JobClassLoaders(
                 @Nonnull JetDelegatingClassLoader jobClassLoader,
