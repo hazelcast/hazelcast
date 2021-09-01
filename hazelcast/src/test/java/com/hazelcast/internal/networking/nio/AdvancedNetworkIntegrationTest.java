@@ -39,6 +39,7 @@ import java.net.Socket;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertArrayEquals;
@@ -183,15 +184,26 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         }
     }
 
-    protected void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
+    protected Socket buildSocket(int port) {
+        Socket socket;
+        try {
+            socket = new Socket("127.0.0.1", port);
+        } catch (IOException e) {
+            throw rethrow(e);
+        }
+        return socket;
+    }
+
+    private void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
         byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
         for (String header : protocolHeadersToTry) {
             try {
-                Socket socket = new Socket("127.0.0.1", port);
+                Socket socket = buildSocket(port);
                 socket.getOutputStream().write(header.getBytes());
                 byte[] response = new byte[3];
                 IOUtil.readFully(socket.getInputStream(), response);
-                assertArrayEquals("The protocol header " + header + " should be unexpected on port " + port,
+                assertArrayEquals(
+                        "The protocol header " + header + " should be unexpected on port " + port,
                         expected, response);
                 socket.close();
             } catch (IOException e) {
