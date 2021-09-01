@@ -23,7 +23,6 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -49,14 +48,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
-import static com.hazelcast.security.permission.ActionConstants.ACTION_CANCEL;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_EXPORT_SNAPSHOT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_RESTART;
-import static com.hazelcast.security.permission.ActionConstants.ACTION_SUBMIT;
 
 abstract class JetPlan extends SqlPlan {
 
@@ -68,13 +63,16 @@ abstract class JetPlan extends SqlPlan {
         if (!context.isSecurityEnabled()) {
             return;
         }
-        context.checkPermission(new JobPermission(ACTION_SUBMIT));
         for (Vertex vertex : dag) {
             Permission permission = vertex.getMetaSupplier().getRequiredPermission();
             if (permission != null) {
                 context.checkPermission(permission);
             }
         }
+    }
+
+    @Override
+    public void checkPermissions(SqlSecurityContext context) {
     }
 
     static class CreateMappingPlan extends JetPlan {
@@ -292,11 +290,6 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new JobPermission(ACTION_RESTART));
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -353,15 +346,6 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            if (withSnapshotName == null) {
-                context.checkPermission(new JobPermission(ACTION_CANCEL));
-            } else {
-                context.checkPermission(new JobPermission(ACTION_CANCEL, ACTION_EXPORT_SNAPSHOT));
-            }
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -408,11 +392,6 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return true;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new JobPermission(ACTION_EXPORT_SNAPSHOT));
         }
 
         @Override
@@ -465,11 +444,6 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new JobPermission(ACTION_EXPORT_SNAPSHOT));
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
@@ -509,13 +483,6 @@ abstract class JetPlan extends SqlPlan {
         @Override
         public boolean isPlanValid(PlanCheckContext context) {
             return true;
-        }
-
-        @Override
-        public void checkPermissions(SqlSecurityContext context) {
-            if (showTarget != ShowStatementTarget.MAPPINGS) {
-                context.checkPermission(new JobPermission(ACTION_READ));
-            }
         }
 
         @Override
