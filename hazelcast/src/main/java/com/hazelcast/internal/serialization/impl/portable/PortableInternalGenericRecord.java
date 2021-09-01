@@ -872,4 +872,13 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
     protected Object getClassIdentifier() {
         return cd;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("{\"Portable\": ");
+        writeFieldsToStringBuilder(stringBuilder);
+        stringBuilder.append('}');
+        return stringBuilder.toString();
+    }
 }

@@ -46,7 +46,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlParameterTest {
+public class SqlParameterTest extends SqlTestSupport {
 
     private static final String MAP_NAME = "map";
 
@@ -70,6 +70,7 @@ public class SqlParameterTest {
             client = factory.newHazelcastClient();
         }
 
+        createMapping(member, MAP_NAME, int.class, int.class);
         member.getMap(MAP_NAME).put(1, 1);
     }
 

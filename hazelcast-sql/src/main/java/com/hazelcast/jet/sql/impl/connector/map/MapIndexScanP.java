@@ -106,7 +106,7 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
@@ -367,7 +367,7 @@ final class MapIndexScanP extends AbstractProcessor {
             extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
         @SuppressWarnings("checkstyle:MagicNumber")
-        static int fetchSizeHint = 128;
+        static final int FETCH_SIZE_HINT = 128;
 
         private final HazelcastInstance hazelcastInstance;
         private final String indexName;
@@ -398,7 +398,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     indexName,
                     pointers,
                     partitions,
-                    fetchSizeHint
+                    FETCH_SIZE_HINT
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }

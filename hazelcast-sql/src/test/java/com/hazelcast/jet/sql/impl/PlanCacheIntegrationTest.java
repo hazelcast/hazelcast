@@ -51,6 +51,7 @@ public class PlanCacheIntegrationTest extends SqlTestSupport {
 
     @Test
     public void testPlanIsCached() {
+        createMapping(mapName, int.class, int.class);
         instance().getMap(mapName).put(1, 1);
 
         PlanCache planCache = planCache(instance());
@@ -68,6 +69,7 @@ public class PlanCacheIntegrationTest extends SqlTestSupport {
     @Test
     public void testPlanInvalidatedOnIndexAdd() {
         IMap<Integer, Integer> map = instance().getMap(mapName);
+        createMapping(mapName, int.class, int.class);
         map.put(1, 1);
 
         PlanCache planCache = planCache(instance());
@@ -80,43 +82,6 @@ public class PlanCacheIntegrationTest extends SqlTestSupport {
 
         assertTrueEventually(() -> {
             instance().getSql().execute("SELECT * FROM " + mapName + " WHERE this=1");
-            assertEquals(1, planCache.size());
-            SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
-            assertNotSame(plan1, plan2);
-        });
-    }
-
-    @Test
-    public void testPlanInvalidatedOnMapDestroy() {
-        IMap<Integer, Integer> map = instance().getMap(mapName);
-        map.put(1, 1);
-
-        PlanCache planCache = planCache(instance());
-
-        instance().getSql().execute("SELECT * FROM " + mapName);
-        assertEquals(1, planCache.size());
-
-        map.destroy();
-        assertTrueEventually(() -> assertEquals(0, planCache.size()));
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @Test
-    public void testPlanInvalidatedOnMapSchemaChange() {
-        IMap map = instance().getMap(mapName);
-        map.put(1, 1);
-
-        PlanCache planCache = planCache(instance());
-
-        instance().getSql().execute("SELECT * FROM " + mapName);
-        assertEquals(1, planCache.size());
-        SqlPlan plan1 = planCache.get(planCache.getPlans().keys().nextElement());
-
-        map.clear();
-        map.put("1", "1");
-
-        assertTrueEventually(() -> {
-            instance().getSql().execute("SELECT * FROM " + mapName);
             assertEquals(1, planCache.size());
             SqlPlan plan2 = planCache.get(planCache.getPlans().keys().nextElement());
             assertNotSame(plan1, plan2);

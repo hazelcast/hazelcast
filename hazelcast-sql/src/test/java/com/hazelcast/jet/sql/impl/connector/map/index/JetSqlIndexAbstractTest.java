@@ -112,6 +112,7 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         // Start members if needed
         valueClass = ExpressionBiValue.createBiClass(f1, f2);
 
+        createMapping(mapName, int.class, valueClass);
         MapConfig mapConfig = getMapConfig();
         instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);

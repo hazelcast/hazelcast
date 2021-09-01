@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.security;
 import java.security.Permission;
 
 /**
- * SQL securtiy that is used when the security is disabled. Does nothing.
+ * SQL security that is used when the security is disabled. Does nothing.
  */
 public final class NoOpSqlSecurityContext implements SqlSecurityContext {
 

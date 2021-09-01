@@ -109,7 +109,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
         String expression = "field1 " + function;
         String sql = "SELECT key, " + expression + " FROM map WHERE " + expression;
 
-        List<SqlRow> rows = execute(member, sql);
+        List<SqlRow> rows = execute(sql);
 
         assertEquals(expectedKeys.size(), rows.size());
 
@@ -209,7 +209,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
         String expression = literal + " " + function;
         String sql = "SELECT " + expression + " FROM map WHERE " + expression;
 
-        List<SqlRow> rows = execute(member, sql);
+        List<SqlRow> rows = execute(sql);
 
         if (expectedResult) {
             assertEquals(1, rows.size());
@@ -295,7 +295,7 @@ public class IsTrueFalsePredicateIntegrationTest extends ExpressionTestSupport {
     }
 
     private Set<Integer> keys(String sql, Object... params) {
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
 
         if (rows.size() == 0) {
             return Collections.emptySet();
