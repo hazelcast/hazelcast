@@ -20,9 +20,7 @@ import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.PortableUtil;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -57,7 +55,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 
-public class PortableInternalGenericRecord extends AbstractGenericRecord implements InternalGenericRecord {
+public class PortableInternalGenericRecord extends PortableGenericRecord {
     protected final ClassDefinition cd;
     protected final PortableSerializer serializer;
 
@@ -92,6 +90,7 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         in.position(finalPosition);
     }
 
+    @Override
     public ClassDefinition getClassDefinition() {
         return cd;
     }
@@ -873,12 +872,4 @@ public class PortableInternalGenericRecord extends AbstractGenericRecord impleme
         return cd;
     }
 
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("{\"Portable\": ");
-        writeFieldsToStringBuilder(stringBuilder);
-        stringBuilder.append('}');
-        return stringBuilder.toString();
-    }
 }

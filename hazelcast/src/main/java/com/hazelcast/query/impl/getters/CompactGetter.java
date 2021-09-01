@@ -20,7 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
 
 public class CompactGetter extends Getter {
     private final InternalSerializationService serializationService;
@@ -33,7 +33,7 @@ public class CompactGetter extends Getter {
     @Override
     Object getValue(Object target, String fieldPath) throws Exception {
         InternalGenericRecord record;
-        if (target instanceof CompactGenericRecord) {
+        if (target instanceof CompactInternalGenericRecord) {
             record = (InternalGenericRecord) target;
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);
