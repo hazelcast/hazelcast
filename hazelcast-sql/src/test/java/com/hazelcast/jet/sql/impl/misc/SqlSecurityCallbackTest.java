@@ -22,13 +22,13 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.map.IMap;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -120,7 +119,7 @@ public class SqlSecurityCallbackTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable(
                 mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
+                getPartitionedMapIndexes(mapContainer(instance().getMap(mapName)), mapTableFields),
                 mapSize
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);

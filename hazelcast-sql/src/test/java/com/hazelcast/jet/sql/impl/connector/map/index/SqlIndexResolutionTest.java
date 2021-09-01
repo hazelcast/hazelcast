@@ -59,7 +59,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -289,7 +288,7 @@ public class SqlIndexResolutionTest extends JetSqlIndexTestSupport {
         HazelcastTable table = partitionedTable(
                 mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(mapName)), mapTableFields),
+                getPartitionedMapIndexes(mapContainer(instance().getMap(mapName)), mapTableFields),
                 1 // we can place random number, doesn't matter in current case.
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);

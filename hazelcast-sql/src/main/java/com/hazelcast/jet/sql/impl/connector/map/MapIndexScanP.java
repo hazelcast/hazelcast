@@ -366,7 +366,6 @@ final class MapIndexScanP extends AbstractProcessor {
     private static final class LocalMapIndexReader
             extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
-        @SuppressWarnings("checkstyle:MagicNumber")
         static final int FETCH_SIZE_HINT = 128;
 
         private final HazelcastInstance hazelcastInstance;

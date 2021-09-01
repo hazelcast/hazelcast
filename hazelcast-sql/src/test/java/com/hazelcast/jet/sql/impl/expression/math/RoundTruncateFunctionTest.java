@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.expression.math;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.math.RoundTruncateFunction;
@@ -41,6 +41,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class RoundTruncateFunctionTest extends SqlTestSupport {
+
     @Test
     public void testEquals() {
         ConstantExpression<?> const1 = ConstantExpression.create(1, INT);

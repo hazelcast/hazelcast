@@ -33,7 +33,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FACTO
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlPlanCacheTest extends SqlTestSupport {
@@ -119,7 +118,7 @@ public class SqlPlanCacheTest extends SqlTestSupport {
         sqlService.execute("SELECT * FROM map ORDER BY id");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
-        getMapContainer(map).getIndexes().destroyIndexes();
+        mapContainer(map).getIndexes().destroyIndexes();
         map.addIndex(new IndexConfig(IndexType.HASH, "__key.id").setName(indexName));
 
         assertTrueEventually(() -> assertThat(planCache(instance()).size()).isZero());

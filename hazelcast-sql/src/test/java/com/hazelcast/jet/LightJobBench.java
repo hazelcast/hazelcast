@@ -41,7 +41,7 @@ public class LightJobBench extends JetTestSupport {
     }
 
     @Test
-    public void jetBench() throws Exception {
+    public void jetBench() {
         int warmUpIterations = 100;
         int realIterations = 2000;
         DAG dag = new DAG();
@@ -50,10 +50,10 @@ public class LightJobBench extends JetTestSupport {
         for (int i = 0; i < warmUpIterations; i++) {
             inst.getJet().newLightJob(dag).join();
         }
-//        for (int i = 20; i >= 0; i--) {
-//            System.out.println("attach profiler " + i);
-//            Thread.sleep(1000);
-//        }
+        // for (int i = 20; i >= 0; i--) {
+        //     System.out.println("attach profiler " + i);
+        //     Thread.sleep(1000);
+        // }
         logger.info("warmup jobs done, starting benchmark");
         long start = System.nanoTime();
         for (int i = 0; i < realIterations; i++) {
@@ -73,14 +73,14 @@ public class LightJobBench extends JetTestSupport {
         inst.getMap("m").put(1, 1);
         int numRows = 0;
         for (int i = 0; i < warmUpIterations; i++) {
-            for (SqlRow r : sqlService.execute("select * from m")) {
+            for (SqlRow ignored : sqlService.execute("select * from m")) {
                 numRows++;
             }
         }
         logger.info("warmup jobs done, starting benchmark");
         long start = System.nanoTime();
         for (int i = 0; i < realIterations; i++) {
-            for (SqlRow r : sqlService.execute("select * from m")) {
+            for (SqlRow ignored : sqlService.execute("select * from m")) {
                 numRows++;
             }
         }
