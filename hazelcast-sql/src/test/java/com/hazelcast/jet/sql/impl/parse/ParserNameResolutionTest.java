@@ -156,11 +156,12 @@ public class ParserNameResolutionTest extends SqlTestSupport {
     }
 
     private static String errorObjectNotFound(String tableName) {
-        return "Object '" + tableName + "' not found";
+        return "Object '" + tableName + "' not found, did you forget to CREATE MAPPING?";
     }
 
     private static String errorObjectNotFoundWithin(String tableName, String... schemaComponents) {
-        return errorObjectNotFound(tableName) + " within '" + SqlIdentifier.getString(Arrays.asList(schemaComponents)) + "'";
+        return "Object '" + tableName + "' not found within '" + SqlIdentifier.getString(Arrays.asList(schemaComponents))
+                + "', did you forget to CREATE MAPPING?";
     }
 
     private static String composeSelect(String fieldName, String... tableComponents) {
