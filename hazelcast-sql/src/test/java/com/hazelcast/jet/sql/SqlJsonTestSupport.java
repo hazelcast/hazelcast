@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -75,6 +76,10 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         instance().getSql().execute(sql, arguments);
     }
 
+    protected void executeClient(final String sql, final Object ...arguments) {
+        client().getSql().execute(sql, arguments);
+    }
+
     protected HazelcastJsonValue jsonObj(Object ...values) {
         if ((values.length % 2) != 0) {
             throw new HazelcastException("Number of value args is not divisible by 2");
@@ -99,8 +104,17 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
         return new HazelcastJsonValue(value);
     }
 
-    protected void assertRowsWithType(final String sql, List<SqlColumnType> expectedTypes, List<Row> expectedRows) {
-        final SqlResult result = instance().getSql().execute(sql);
+    protected void assertRowsWithType(final String sql,
+                                      final List<SqlColumnType> expectedTypes,
+                                      final List<Row> expectedRows) {
+        assertRowsWithType(instance(), sql, expectedTypes, expectedRows);
+    }
+
+    protected void assertRowsWithType(final HazelcastInstance instance,
+                                      final String sql,
+                                      final List<SqlColumnType> expectedTypes,
+                                      final List<Row> expectedRows) {
+        final SqlResult result = instance.getSql().execute(sql);
         final SqlRowMetadata rowMetadata = result.getRowMetadata();
         final List<SqlColumnType> actualTypes = rowMetadata.getColumns().stream()
                 .map(SqlColumnMetadata::getType)

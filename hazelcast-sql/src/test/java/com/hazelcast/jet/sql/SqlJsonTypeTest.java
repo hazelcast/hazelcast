@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.map.IMap;
@@ -33,7 +34,7 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
     public static void beforeClass() {
         final Config config = new Config();
         config.getJetConfig().setEnabled(true);
-        initialize(1, config);
+        initializeWithClient(1, config, new ClientConfig());
     }
 
     @Test
@@ -94,5 +95,20 @@ public class SqlJsonTypeTest extends SqlJsonTestSupport {
         assertRowsWithType("SELECT * FROM test" ,
                 asList(SqlColumnType.BIGINT, SqlColumnType.JSON),
                 rows(2, 1L, json("[4,5,6]")));
+    }
+
+    @Test
+    public void when_clientIsUsed_typeIsPassedCorrectly() {
+        executeClient("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
+        final IMap<Long, HazelcastJsonValue> test = client().getMap("test");
+        test.put(1L, json("[1,2,3]"));
+
+        executeClient("INSERT INTO test VALUES (2, CAST('[4,5,6]' AS JSON))");
+
+        assertRowsWithType(client(),
+                "SELECT * FROM test" ,
+                asList(SqlColumnType.BIGINT, SqlColumnType.JSON),
+                rows(2, 1L, json("[1,2,3]"), 2L, json("[4,5,6]")));
     }
 }
