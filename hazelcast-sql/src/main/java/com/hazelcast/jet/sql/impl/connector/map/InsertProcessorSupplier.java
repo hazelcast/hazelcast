@@ -38,6 +38,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -76,8 +77,8 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     @Override
-    public Permission permission() {
-        return new MapPermission(mapName, ACTION_CREATE, ACTION_PUT);
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
     }
 
     @Override

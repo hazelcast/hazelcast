@@ -17,6 +17,7 @@
 package com.hazelcast.security.permission;
 
 import com.hazelcast.jet.impl.util.IOUtil;
+import com.hazelcast.jet.pipeline.file.FileSourceBuilder;
 
 import javax.annotation.Nullable;
 
@@ -36,10 +37,15 @@ public class ConnectorPermission extends InstancePermission {
     }
 
     /**
-     * converts the {@code directory} to canonical path.
+     * converts the {@code directory} to canonical path if it is not
+     * one of the Hadoop prefixes.
+     * see {@link FileSourceBuilder#hasHadoopPrefix(String)}
      */
     public static ConnectorPermission file(String directory, String action) {
-        String canonicalPath = IOUtil.canonicalName(directory);
+        String canonicalPath = directory;
+        if (!FileSourceBuilder.hasHadoopPrefix(directory)) {
+            canonicalPath = IOUtil.canonicalName(directory);
+        }
         return new ConnectorPermission(FILE_PREFIX + canonicalPath, action);
     }
 
