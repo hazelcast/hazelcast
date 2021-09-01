@@ -390,6 +390,9 @@ public class MultiMapProxyImpl<K, V>
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
         }
+        if (config.isStatisticsEnabled()) {
+            getService().getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+        }
         return keySet;
     }
 

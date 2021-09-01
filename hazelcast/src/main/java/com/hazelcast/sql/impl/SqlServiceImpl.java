@@ -19,6 +19,8 @@ package com.hazelcast.sql.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -81,6 +83,8 @@ public class SqlServiceImpl implements SqlService {
     private SqlOptimizer optimizer;
     private SqlInternalService internalService;
 
+    private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
+
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
@@ -126,6 +130,10 @@ public class SqlServiceImpl implements SqlService {
         return internalService;
     }
 
+    public long getSqlQueriesSubmittedCount() {
+        return sqlQueriesSubmitted.get();
+    }
+
     /**
      * For testing only.
      */
@@ -153,6 +161,7 @@ public class SqlServiceImpl implements SqlService {
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
+        sqlQueriesSubmitted.inc();
         try {
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
                 throw QueryException.error("SQL queries cannot be executed until the cluster fully updates to 5.0");

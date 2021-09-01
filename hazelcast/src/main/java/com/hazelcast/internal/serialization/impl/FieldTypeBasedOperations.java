@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
+import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 
@@ -49,6 +50,11 @@ public interface FieldTypeBasedOperations {
     }
 
     void writeFieldFromRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
+
+    /**
+     * Used to built a json representation of generic record
+     */
+    void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName);
 
     /**
      * @return type size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}

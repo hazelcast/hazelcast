@@ -38,7 +38,7 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 import static com.hazelcast.jet.core.TestUtil.createMap;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
@@ -76,8 +76,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -102,8 +102,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -128,8 +128,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -145,8 +145,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", ssn BIGINT"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -189,8 +189,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", object OBJECT"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -225,7 +225,7 @@ public class SqlJsonTest extends SqlTestSupport {
         assertThatThrownBy(() ->
                 sqlService.execute("CREATE MAPPING kafka "
                         + "TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ('valueFormat'='json')"))
+                        + "OPTIONS ('valueFormat'='" + JSON_FLAT_FORMAT + "')"))
                 .hasMessage("Column list is required for JSON format");
     }
 
@@ -246,8 +246,8 @@ public class SqlJsonTest extends SqlTestSupport {
                         + ", f VARCHAR EXTERNAL NAME \"" + otherField + ".f\""
                         + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                        + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                         + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                         + ", 'auto.offset.reset'='earliest'"
                         + ")"))
@@ -263,8 +263,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -289,8 +289,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", name VARCHAR"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
@@ -314,8 +314,8 @@ public class SqlJsonTest extends SqlTestSupport {
                 + ", value_name VARCHAR EXTERNAL NAME \"this.name\""
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FORMAT + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FORMAT + '\''
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JSON_FLAT_FORMAT + '\''
                 + ", 'key.serializer'='" + ByteArraySerializer.class.getCanonicalName() + '\''
                 + ", 'key.deserializer'='" + ByteArrayDeserializer.class.getCanonicalName() + '\''
                 + ", 'value.serializer'='" + ByteArraySerializer.class.getCanonicalName() + '\''

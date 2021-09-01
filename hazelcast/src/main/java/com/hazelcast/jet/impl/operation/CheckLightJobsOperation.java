@@ -33,7 +33,7 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  * executions.
  * <p>
  * It's used to handle cases when the member misses a TerminateOp (e.g. the
- * execution wasn't yet started when it was received) or after a
+ * execution wasn't yet started when TerminateOp was received) or after a
  * coordinator crashed or if a TerminateOp was handled, but the
  * ExecutionContext was recreated due to a data packet arriving after the
  * cancellation etc.
