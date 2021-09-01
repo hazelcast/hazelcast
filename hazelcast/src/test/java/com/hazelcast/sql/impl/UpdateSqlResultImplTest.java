@@ -18,23 +18,25 @@ package com.hazelcast.sql.impl;
 
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 public class UpdateSqlResultImplTest extends SqlTestSupport {
 
     @Test
     public void test_updateCountResult() {
-        UpdateSqlResultImpl r = UpdateSqlResultImpl.createUpdateCountResult(10);
-        assertEquals(10, r.updateCount());
+        try (AbstractSqlResult result = UpdateSqlResultImpl.createUpdateCountResult(10)) {
+            assertEquals(10, result.updateCount());
 
-        assertIllegalStateException("This result contains only update count", r::getQueryId);
-        assertIllegalStateException("This result contains only update count", r::getRowMetadata);
-        assertIllegalStateException("This result contains only update count", r::iterator);
-        r.close();
-    }
-
-    private void assertIllegalStateException(String expectedMessage, Runnable action) {
-        IllegalStateException err = assertThrows(IllegalStateException.class, action);
-        assertEquals(expectedMessage, err.getMessage());
+            assertThatThrownBy(result::getQueryId)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("This result contains only update count");
+            assertThatThrownBy(result::getRowMetadata)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("This result contains only update count");
+            assertThatThrownBy(result::iterator)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("This result contains only update count");
+        }
     }
 }

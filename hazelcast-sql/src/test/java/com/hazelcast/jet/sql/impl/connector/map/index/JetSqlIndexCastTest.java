@@ -22,27 +22,23 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 
@@ -50,7 +46,6 @@ import static java.util.Arrays.asList;
  * Make sure that CAST expressions are unwrapped properly.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class JetSqlIndexCastTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
@@ -179,7 +174,7 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable(
                 MAP_NAME,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
+                getPartitionedMapIndexes(mapContainer(instance().getMap(MAP_NAME)), mapTableFields),
                 1
         );
         Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);

@@ -16,12 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.SimpleExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +37,7 @@ import static com.hazelcast.sql.impl.expression.predicate.ComparisonMode.LESS_TH
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -66,8 +68,14 @@ public class ComparisonPredicateTest extends SqlTestSupport {
         checkEquals(original, restored, true);
     }
 
+    private static com.hazelcast.sql.impl.row.Row row(Object... values) {
+        assertNotNull(values);
+        assertTrue(values.length > 0);
+
+        return new HeapRow(values);
+    }
+
     private static ComparisonPredicate comparison(Object lhs, Object rhs, QueryDataType type, ComparisonMode mode) {
         return ComparisonPredicate.create(ConstantExpression.create(lhs, type), ConstantExpression.create(rhs, type), mode);
     }
-
 }
