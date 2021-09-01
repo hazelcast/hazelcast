@@ -16,8 +16,10 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.LogTimer;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
@@ -31,6 +33,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static org.junit.Assert.assertTrue;
@@ -43,11 +47,8 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void testColumn() {
         ExpressionType<?>[] allTypes = ExpressionTypes.all();
-        System.out.println("ddddd = > length == " + allTypes.length);
         for (int i = 0; i < allTypes.length; i++) {
             for (int j = i; j < allTypes.length; j++) {
-                System.out.println("bbb = a query started!");
-                System.out.println("cccccc "+i+"="+j);
                 ExpressionType<?> type1 = allTypes[i];
                 ExpressionType<?> type2 = allTypes[j];
 
@@ -68,16 +69,20 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
                         ""
                 };
 
-                long prev = System.currentTimeMillis();
                 checkColumns(values, expectedResults);
-                System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev));
-
             }
         }
     }
 
     @Test
-    public void testSample() {
+    public void testSampleSelfTime(){
+        com.hazelcast.jet.LogTimer.calculateSelfTime("a");
+        com.hazelcast.jet.LogTimer.calculateSelfTime("b");
+        com.hazelcast.jet.LogTimer.calculateSelfTime("c");
+    }
+
+    @Test
+    public void testSample() throws InterruptedException {
         ExpressionType<?> type1 = ExpressionTypes.STRING;
         ExpressionType<?> type2 = ExpressionTypes.STRING;
 
@@ -88,21 +93,30 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
                 ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom())
         };
 
-        String[] expectedResults = new String[]{
-                type1.valueFrom() + "-" + type2.valueFrom()
-        };
-        long prev = System.currentTimeMillis();
+        putAll((Object[]) values);
+        String sql = "SELECT Concat_WS('-', field1, field2) FROM map";
 
-        checkColumns(values, expectedResults);
-        System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev));
+        int warmupCount = 500;
+        int benchmarkCount = 10000;
+//        Thread.sleep(20000);
+        for (int i = 0; i < warmupCount; i++) {
+            execute(member, sql);
+        }
 
-        long prev2 = System.currentTimeMillis();
+        LogTimer.active = true;
+        com.hazelcast.jet.LogTimer.active = true;
 
-        checkColumns(values, expectedResults);
-        System.out.println("dddd = a query ended in "+(System.currentTimeMillis()-prev2));
+        for (int i = 0; i < benchmarkCount; i++) {
+            LogTimer.start("singlequery");
+            List<SqlRow> results =  execute(member, sql);
+            LogTimer.stop("singlequery");
+        }
+
+        LogTimer.ExportHistograms();
+        com.hazelcast.jet.LogTimer.ExportHistograms();
     }
 
-        @Test
+    @Test
     public void testLiteral() {
         put("1");
 
@@ -133,7 +147,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testEmpty() {
+    public void testEmpty() { //todo why is this reading from map as well?
         put("1");
         // Empty separator => just concat, ignoring nulls
         check(getConcatWsExpression("", "3", "2"), "32");
@@ -212,11 +226,6 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
         checkEquals(corrupted3, restored, false);
         checkEquals(corrupted4, restored, false);
     }
-
-//    @Test
-//    public void testSample(){
-//        put();
-//    }
 
     private void checkColumns(Object[] values, Object[] expectedResults) {
         putAll(values);
