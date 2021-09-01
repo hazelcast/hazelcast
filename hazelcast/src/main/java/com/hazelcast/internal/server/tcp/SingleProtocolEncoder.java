@@ -30,7 +30,7 @@ import static com.hazelcast.internal.nio.Protocols.UNEXPECTED_PROTOCOL;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
 /**
- * Together with {@link SingleProtocolDecoder}, these encoder decoder pair is
+ * Together with {@link SingleProtocolDecoder}, this encoder decoder pair is
  * used for checking correct protocol is used or not. {@link
  * SingleProtocolDecoder} checks if the correct protocol is received. If the
  * protocol is correct, both encoder and decoder swaps itself with the next
