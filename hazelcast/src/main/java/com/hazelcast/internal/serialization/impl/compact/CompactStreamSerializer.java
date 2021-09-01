@@ -57,7 +57,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  */
 public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
-    private final Map<String, CompactSerializableRegistration> classNameToRegistrationMap = new ConcurrentHashMap<>();
+    private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private final SchemaService schemaService;
@@ -236,31 +236,26 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         throw new HazelcastSerializationException("The schema can not be found with id " + schemaId);
     }
 
-    private CompactSerializableRegistration getOrCreateRegistration(Class<?> clazz) {
-        return classToRegistrationMap.computeIfAbsent(clazz, aClass -> {
-            if (clazz.isEnum()) {
-                return new CompactSerializableRegistration(aClass, aClass.getName(), reflectiveSerializer);
+    private CompactSerializableRegistration getOrCreateRegistration(Object object) {
+        return classToRegistrationMap.computeIfAbsent(object.getClass(), aClass -> {
+            CompactSerializer<?> serializer;
+            if (object instanceof Compactable) {
+                serializer = ((Compactable<?>) object).getCompactSerializer();
+            } else {
+                serializer = reflectiveSerializer;
             }
 
-            if (Compactable.class.isAssignableFrom(clazz)) {
-                Object object;
-                try {
-                    object = ClassLoaderUtil.newInstance(clazz.getClassLoader(), clazz);
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
-                CompactSerializer<?> serializer = ((Compactable<?>) object).getCompactSerializer();
-                return new CompactSerializableRegistration(aClass, aClass.getName(), serializer);
-            }
-            return new CompactSerializableRegistration(aClass, aClass.getName(), reflectiveSerializer);
+            return new CompactSerializableRegistration(aClass, aClass.getName(), serializer);
         });
     }
 
-    private CompactSerializableRegistration getOrCreateRegistration(String className) {
-        return classNameToRegistrationMap.computeIfAbsent(className, s -> {
+    private CompactSerializableRegistration getOrCreateRegistration(String typeName) {
+        return typeNameToRegistrationMap.computeIfAbsent(typeName, s -> {
             Class<?> clazz;
             try {
-                clazz = ClassLoaderUtil.loadClass(classLoader, className);
+                //when the registration does not exist, we treat typeName as className to check if there is a class
+                //with the given name in the classpath.
+                clazz = ClassLoaderUtil.loadClass(classLoader, typeName);
             } catch (Exception e) {
                 return null;
             }
@@ -296,7 +291,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             serializer = serializer == null ? reflectiveSerializer : serializer;
             CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
             classToRegistrationMap.put(clazz, registration);
-            classNameToRegistrationMap.put(typeName, registration);
+            typeNameToRegistrationMap.put(typeName, registration);
         }
     }
 
@@ -325,7 +320,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             }
             CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
             classToRegistrationMap.put(clazz, registration);
-            classNameToRegistrationMap.put(typeName, registration);
+            typeNameToRegistrationMap.put(typeName, registration);
         }
     }
 }

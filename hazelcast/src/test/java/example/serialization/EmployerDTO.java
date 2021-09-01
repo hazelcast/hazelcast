@@ -17,6 +17,7 @@
 package example.serialization;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class EmployerDTO {
 
@@ -80,13 +81,13 @@ public class EmployerDTO {
         if (hiringStatus != that.hiringStatus) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
+        if (!Objects.equals(name, that.name)) {
             return false;
         }
         if (!Arrays.equals(ids, that.ids)) {
             return false;
         }
-        if (singleEmployee != null ? !singleEmployee.equals(that.singleEmployee) : that.singleEmployee != null) {
+        if (!Objects.equals(singleEmployee, that.singleEmployee)) {
             return false;
         }
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
