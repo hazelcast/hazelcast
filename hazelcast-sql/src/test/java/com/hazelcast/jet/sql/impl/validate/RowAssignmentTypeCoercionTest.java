@@ -18,10 +18,11 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.sql.SqlService;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.BeforeClass;
@@ -56,7 +57,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForTypeFamily;
 import static com.hazelcast.sql.impl.type.converter.AbstractTemporalConverter.DEFAULT_ZONE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -137,371 +137,394 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(1120, VARCHAR, DOUBLE, "'foo'", "foo",
                         "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1121, VARCHAR, TIME, "'01:42:01'", "01:42:01", LocalTime.of(1, 42, 1))
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1122, VARCHAR, TIME, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIME")
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1123, VARCHAR, DATE, "'2020-12-30'", "2020-12-30", LocalDate.of(2020, 12, 30))
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1124, VARCHAR, DATE, "'foo'", "foo",
                         "Cannot parse VARCHAR value to DATE")
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1125, VARCHAR, TIMESTAMP, "'2020-12-30T01:42:00'", "2020-12-30T01:42:00",
                         LocalDateTime.of(2020, 12, 30, 1, 42))
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1126, VARCHAR, TIMESTAMP, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIMESTAMP")
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1127, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'2020-12-30T01:42:00-05:00'",
                         "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.failingCase(1128, VARCHAR, TIMESTAMP_WITH_TIME_ZONE, "'foo'", "foo",
                         "Cannot parse VARCHAR value to TIMESTAMP WITH TIME ZONE")
-                        .setExpectedFailureNonLiteralRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
+                        .setExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type VARCHAR"),
                 TestParams.passingCase(1129, VARCHAR, OBJECT, "'foo'", "foo", "foo"),
 
                 // BOOLEAN
-                TestParams.failingCase(1201, BOOLEAN, VARCHAR, "true", "true",
+                TestParams.failingCase(1201, BOOLEAN, VARCHAR, "true", true,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type BOOLEAN"),
-                TestParams.passingCase(1202, BOOLEAN, BOOLEAN, "true", "true", true),
-                TestParams.failingCase(1203, BOOLEAN, TINYINT, "true", "true",
+                TestParams.passingCase(1202, BOOLEAN, BOOLEAN, "true", true, true),
+                TestParams.failingCase(1203, BOOLEAN, TINYINT, "true", true,
                         "Cannot assign to target field 'field1' of type TINYINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1204, BOOLEAN, SMALLINT, "true", "true",
+                TestParams.failingCase(1204, BOOLEAN, SMALLINT, "true", true,
                         "Cannot assign to target field 'field1' of type SMALLINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1205, BOOLEAN, INTEGER, "true", "true",
+                TestParams.failingCase(1205, BOOLEAN, INTEGER, "true", true,
                         "Cannot assign to target field 'field1' of type INTEGER from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1206, BOOLEAN, BIGINT, "true", "true",
+                TestParams.failingCase(1206, BOOLEAN, BIGINT, "true", true,
                         "Cannot assign to target field 'field1' of type BIGINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1207, BOOLEAN, DECIMAL, "true", "true",
+                TestParams.failingCase(1207, BOOLEAN, DECIMAL, "true", true,
                         "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1208, BOOLEAN, REAL, "true", "true",
+                TestParams.failingCase(1208, BOOLEAN, REAL, "true", true,
                         "Cannot assign to target field 'field1' of type REAL from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1209, BOOLEAN, DOUBLE, "true", "true",
+                TestParams.failingCase(1209, BOOLEAN, DOUBLE, "true", true,
                         "Cannot assign to target field 'field1' of type DOUBLE from source field '(EXPR\\$\\d|v)' of type BOOLEAN"),
-                TestParams.failingCase(1210, BOOLEAN, TIME, "true", "true",
+                TestParams.failingCase(1210, BOOLEAN, TIME, "true", true,
                         "Cannot assign to target field 'field1' of type TIME from source field '.+' of type BOOLEAN"),
-                TestParams.failingCase(1211, BOOLEAN, DATE, "true", "true",
+                TestParams.failingCase(1211, BOOLEAN, DATE, "true", true,
                         "Cannot assign to target field 'field1' of type DATE from source field '.+' of type BOOLEAN"),
-                TestParams.failingCase(1212, BOOLEAN, TIMESTAMP, "true", "true",
+                TestParams.failingCase(1212, BOOLEAN, TIMESTAMP, "true", true,
                         "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type BOOLEAN"),
-                TestParams.failingCase(1213, BOOLEAN, TIMESTAMP_WITH_TIME_ZONE, "true", "true",
+                TestParams.failingCase(1213, BOOLEAN, TIMESTAMP_WITH_TIME_ZONE, "true", true,
                         "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BOOLEAN"),
-                TestParams.passingCase(1214, BOOLEAN, OBJECT, "true", "true", true),
+                TestParams.passingCase(1214, BOOLEAN, OBJECT, "true", true, true),
 
                 // TINYINT
-                TestParams.failingCase(1301, TINYINT, VARCHAR, "cast(42 as tinyint)", "42",
+                TestParams.failingCase(1301, TINYINT, VARCHAR, "cast(42 as tinyint)", (byte) 42,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TINYINT"),
-                TestParams.failingCase(1302, TINYINT, BOOLEAN, "cast(42 as tinyint)", "42",
+                TestParams.failingCase(1302, TINYINT, BOOLEAN, "cast(42 as tinyint)", (byte) 42,
                         "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TINYINT"),
-                TestParams.passingCase(1303, TINYINT, TINYINT, "cast(42 as tinyint)", "42", (byte) 42),
-                TestParams.passingCase(1304, TINYINT, SMALLINT, "cast(42 as tinyint)", "42", (short) 42),
-                TestParams.passingCase(1305, TINYINT, INTEGER, "cast(42 as tinyint)", "42", 42),
-                TestParams.passingCase(1306, TINYINT, BIGINT, "cast(42 as tinyint)", "42", 42L),
-                TestParams.passingCase(1307, TINYINT, DECIMAL, "cast(42 as tinyint)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1308, TINYINT, REAL, "cast(42 as tinyint)", "42", 42f),
-                TestParams.passingCase(1309, TINYINT, DOUBLE, "cast(42 as tinyint)", "42", 42d),
-                TestParams.failingCase(1310, TINYINT, TIME, "cast(42 as tinyint)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type TINYINT"),
-                TestParams.failingCase(1311, TINYINT, DATE, "cast(42 as tinyint)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type TINYINT"),
-                TestParams.failingCase(1312, TINYINT, TIMESTAMP, "cast(42 as tinyint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type TINYINT"),
-                TestParams.failingCase(1313, TINYINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as tinyint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type TINYINT"),
-                TestParams.passingCase(1314, TINYINT, OBJECT, "cast(42 as tinyint)", "42", (byte) 42),
+                TestParams.passingCase(1303, TINYINT, TINYINT, "cast(42 as tinyint)", (byte) 42, (byte) 42),
+                TestParams.passingCase(1304, TINYINT, SMALLINT, "cast(42 as tinyint)", (byte) 42, (short) 42),
+                TestParams.passingCase(1305, TINYINT, INTEGER, "cast(42 as tinyint)", (byte) 42, 42),
+                TestParams.passingCase(1306, TINYINT, BIGINT, "cast(42 as tinyint)", (byte) 42, 42L),
+                TestParams.passingCase(1307, TINYINT, DECIMAL, "cast(42 as tinyint)", (byte) 42, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1308, TINYINT, REAL, "cast(42 as tinyint)", (byte) 42, 42f),
+                TestParams.passingCase(1309, TINYINT, DOUBLE, "cast(42 as tinyint)", (byte) 42, 42d),
+                TestParams.failingCase(1310, TINYINT, TIME, "cast(42 as tinyint)", (byte) 42,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type TINYINT"),
+                TestParams.failingCase(1311, TINYINT, DATE, "cast(42 as tinyint)", (byte) 42,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type TINYINT"),
+                TestParams.failingCase(1312, TINYINT, TIMESTAMP, "cast(42 as tinyint)", (byte) 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type TINYINT"),
+                TestParams.failingCase(1313, TINYINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as tinyint)", (byte) 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type TINYINT"),
+                TestParams.passingCase(1314, TINYINT, OBJECT, "cast(42 as tinyint)", (byte) 42, (byte) 42),
 
                 // SMALLINT
-                TestParams.failingCase(1401, SMALLINT, VARCHAR, "cast(42 as smallint)", "42",
+                TestParams.failingCase(1401, SMALLINT, VARCHAR, "cast(42 as smallint)", (short) 42,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type SMALLINT"),
-                TestParams.failingCase(1402, SMALLINT, BOOLEAN, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type SMALLINT"),
-                TestParams.passingCase(1403, SMALLINT, TINYINT, "cast(42 as smallint)", "42", (byte) 42),
-                TestParams.failingCase(1404, SMALLINT, TINYINT, "420",
-                        "420", "Numeric overflow while converting SMALLINT to TINYINT"),
-                TestParams.passingCase(1405, SMALLINT, SMALLINT, "cast(42 as smallint)", "42", (short) 42),
-                TestParams.passingCase(1406, SMALLINT, INTEGER, "cast(42 as smallint)", "42", 42),
-                TestParams.passingCase(1407, SMALLINT, BIGINT, "cast(42 as smallint)", "42", 42L),
-                TestParams.passingCase(1408, SMALLINT, DECIMAL, "cast(42 as smallint)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1409, SMALLINT, REAL, "cast(42 as smallint)", "42", 42f),
-                TestParams.passingCase(1410, SMALLINT, DOUBLE, "cast(42 as smallint)", "42", 42d),
-                TestParams.failingCase(1411, SMALLINT, TIME, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type SMALLINT"),
-                TestParams.failingCase(1412, SMALLINT, DATE, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type SMALLINT"),
-                TestParams.failingCase(1413, SMALLINT, TIMESTAMP, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type SMALLINT"),
-                TestParams.failingCase(1414, SMALLINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as smallint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type SMALLINT"),
-                TestParams.passingCase(1415, SMALLINT, OBJECT, "cast(42 as smallint)", "42", (short) 42),
+                TestParams.failingCase(1402, SMALLINT, BOOLEAN, "cast(42 as smallint)", (short) 42,
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type SMALLINT"),
+                TestParams.passingCase(1403, SMALLINT, TINYINT, "cast(42 as smallint)", (short) 42, (byte) 42),
+                TestParams.failingCase(1404, SMALLINT, TINYINT, "420", (short) 420,
+                        "Numeric overflow while converting SMALLINT to TINYINT"),
+                TestParams.passingCase(1405, SMALLINT, SMALLINT, "cast(42 as smallint)", (short) 42, (short) 42),
+                TestParams.passingCase(1406, SMALLINT, INTEGER, "cast(42 as smallint)", (short) 42, 42),
+                TestParams.passingCase(1407, SMALLINT, BIGINT, "cast(42 as smallint)", (short) 42, 42L),
+                TestParams.passingCase(1408, SMALLINT, DECIMAL, "cast(42 as smallint)", (short) 42, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1409, SMALLINT, REAL, "cast(42 as smallint)", (short) 42, 42f),
+                TestParams.passingCase(1410, SMALLINT, DOUBLE, "cast(42 as smallint)", (short) 42, 42d),
+                TestParams.failingCase(1411, SMALLINT, TIME, "cast(42 as smallint)", (short) 42,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type SMALLINT"),
+                TestParams.failingCase(1412, SMALLINT, DATE, "cast(42 as smallint)", (short) 42,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type SMALLINT"),
+                TestParams.failingCase(1413, SMALLINT, TIMESTAMP, "cast(42 as smallint)", (short) 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type SMALLINT"),
+                TestParams.failingCase(1414, SMALLINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as smallint)", (short) 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type SMALLINT"),
+                TestParams.passingCase(1415, SMALLINT, OBJECT, "cast(42 as smallint)", (short) 42, (short) 42),
 
                 // INTEGER
-                TestParams.failingCase(1501, INTEGER, VARCHAR, "cast(42 as integer)", "42",
+                TestParams.failingCase(1501, INTEGER, VARCHAR, "cast(42 as integer)", 42,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type INTEGER"),
-                TestParams.failingCase(1502, INTEGER, BOOLEAN, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type INTEGER"),
-                TestParams.passingCase(1503, INTEGER, TINYINT, "cast(42 as integer)", "42", (byte) 42),
-                TestParams.failingCase(1504, INTEGER, TINYINT, "42000", "42000",
+                TestParams.failingCase(1502, INTEGER, BOOLEAN, "cast(42 as integer)", 42,
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type INTEGER"),
+                TestParams.passingCase(1503, INTEGER, TINYINT, "cast(42 as integer)", 42, (byte) 42),
+                TestParams.failingCase(1504, INTEGER, TINYINT, "42000", 42000,
                         "Numeric overflow while converting INTEGER to TINYINT"),
-                TestParams.passingCase(1505, INTEGER, SMALLINT, "cast(42 as integer)", "42", (short) 42),
-                TestParams.failingCase(1506, INTEGER, SMALLINT, "42000", "42000",
+                TestParams.passingCase(1505, INTEGER, SMALLINT, "cast(42 as integer)", 42, (short) 42),
+                TestParams.failingCase(1506, INTEGER, SMALLINT, "42000", 42000,
                         "Numeric overflow while converting INTEGER to SMALLINT"),
-                TestParams.passingCase(1507, INTEGER, INTEGER, "cast(42 as integer)", "42", 42),
-                TestParams.passingCase(1508, INTEGER, BIGINT, "cast(42 as integer)", "42", 42L),
-                TestParams.passingCase(1509, INTEGER, DECIMAL, "cast(42 as integer)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1510, INTEGER, REAL, "cast(42 as integer)", "42", 42f),
-                TestParams.passingCase(1511, INTEGER, DOUBLE, "cast(42 as integer)", "42", 42d),
-                TestParams.failingCase(1512, INTEGER, TIME, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type INTEGER"),
-                TestParams.failingCase(1513, INTEGER, DATE, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type INTEGER"),
-                TestParams.failingCase(1514, INTEGER, TIMESTAMP, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type INTEGER"),
-                TestParams.failingCase(1515, INTEGER, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as integer)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type INTEGER"),
-                TestParams.passingCase(1516, INTEGER, OBJECT, "cast(42 as integer)", "42", 42),
+                TestParams.passingCase(1507, INTEGER, INTEGER, "cast(42 as integer)", 42, 42),
+                TestParams.passingCase(1508, INTEGER, BIGINT, "cast(42 as integer)", 42, 42L),
+                TestParams.passingCase(1509, INTEGER, DECIMAL, "cast(42 as integer)", 42, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1510, INTEGER, REAL, "cast(42 as integer)", 42, 42f),
+                TestParams.passingCase(1511, INTEGER, DOUBLE, "cast(42 as integer)", 42, 42d),
+                TestParams.failingCase(1512, INTEGER, TIME, "cast(42 as integer)", 42,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type INTEGER"),
+                TestParams.failingCase(1513, INTEGER, DATE, "cast(42 as integer)", 42,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type INTEGER"),
+                TestParams.failingCase(1514, INTEGER, TIMESTAMP, "cast(42 as integer)", 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type INTEGER"),
+                TestParams.failingCase(1515, INTEGER, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as integer)", 42,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type INTEGER"),
+                TestParams.passingCase(1516, INTEGER, OBJECT, "cast(42 as integer)", 42, 42),
 
                 // BIGINT
-                TestParams.failingCase(1601, BIGINT, VARCHAR, "cast(42 as bigint)", "42",
+                TestParams.failingCase(1601, BIGINT, VARCHAR, "cast(42 as bigint)", 42L,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type BIGINT"),
-                TestParams.failingCase(1602, BIGINT, BOOLEAN, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type BIGINT"),
-                TestParams.passingCase(1603, BIGINT, TINYINT, "cast(42 as bigint)", "42", (byte) 42),
-                TestParams.failingCase(1604, BIGINT, TINYINT, "4200000000", "4200000000",
+                TestParams.failingCase(1602, BIGINT, BOOLEAN, "cast(42 as bigint)", 42L,
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type BIGINT"),
+                TestParams.passingCase(1603, BIGINT, TINYINT, "cast(42 as bigint)", 42L, (byte) 42),
+                TestParams.failingCase(1604, BIGINT, TINYINT, "4200000000", 4200000000L,
                         "Numeric overflow while converting BIGINT to TINYINT"),
-                TestParams.passingCase(1605, BIGINT, SMALLINT, "cast(42 as bigint)", "42", (short) 42),
-                TestParams.failingCase(1606, BIGINT, SMALLINT, "4200000000", "4200000000",
+                TestParams.passingCase(1605, BIGINT, SMALLINT, "cast(42 as bigint)", 42L, (short) 42),
+                TestParams.failingCase(1606, BIGINT, SMALLINT, "4200000000", 4200000000L,
                         "Numeric overflow while converting BIGINT to SMALLINT"),
-                TestParams.passingCase(1607, BIGINT, INTEGER, "cast(42 as bigint)", "42", 42),
-                TestParams.failingCase(1608, BIGINT, INTEGER, "4200000000", "4200000000",
+                TestParams.passingCase(1607, BIGINT, INTEGER, "cast(42 as bigint)", 42L, 42),
+                TestParams.failingCase(1608, BIGINT, INTEGER, "4200000000", 4200000000L,
                         "Numeric overflow while converting BIGINT to INTEGER"),
-                TestParams.passingCase(1609, BIGINT, BIGINT, "cast(42 as bigint)", "42", 42L),
-                TestParams.passingCase(1610, BIGINT, DECIMAL, "cast(42 as bigint)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1611, BIGINT, REAL, "cast(42 as bigint)", "42", 42f),
-                TestParams.passingCase(1612, BIGINT, DOUBLE, "cast(42 as bigint)", "42", 42d),
-                TestParams.failingCase(1613, BIGINT, TIME, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type BIGINT"),
-                TestParams.failingCase(1614, BIGINT, DATE, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type BIGINT"),
-                TestParams.failingCase(1615, BIGINT, TIMESTAMP, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type BIGINT"),
-                TestParams.failingCase(1616, BIGINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as bigint)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BIGINT"),
-                TestParams.passingCase(1617, BIGINT, OBJECT, "cast(42 as bigint)", "42", 42L),
+                TestParams.passingCase(1609, BIGINT, BIGINT, "cast(42 as bigint)", 42L, 42L),
+                TestParams.passingCase(1610, BIGINT, DECIMAL, "cast(42 as bigint)", 42L, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1611, BIGINT, REAL, "cast(42 as bigint)", 42L, 42f),
+                TestParams.passingCase(1612, BIGINT, DOUBLE, "cast(42 as bigint)", 42L, 42d),
+                TestParams.failingCase(1613, BIGINT, TIME, "cast(42 as bigint)", 42L,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type BIGINT"),
+                TestParams.failingCase(1614, BIGINT, DATE, "cast(42 as bigint)", 42L,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type BIGINT"),
+                TestParams.failingCase(1615, BIGINT, TIMESTAMP, "cast(42 as bigint)", 42L,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type BIGINT"),
+                TestParams.failingCase(1616, BIGINT, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as bigint)", 42L,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type BIGINT"),
+                TestParams.passingCase(1617, BIGINT, OBJECT, "cast(42 as bigint)", 42L, 42L),
 
                 // DECIMAL
-                TestParams.failingCase(1701, DECIMAL, VARCHAR, "cast(42 as decimal)", "42",
+                TestParams.failingCase(1701, DECIMAL, VARCHAR, "cast(42 as decimal)", new BigDecimal("42"),
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DECIMAL\\(38, 38\\)"),
-                TestParams.failingCase(1702, DECIMAL, BOOLEAN, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(38, 38\\)"),
-                TestParams.passingCase(1703, DECIMAL, TINYINT, "cast(42 as decimal)", "42", (byte) 42),
-                TestParams.failingCase(1704, DECIMAL, TINYINT, "9223372036854775809", "9223372036854775809",
+                TestParams.failingCase(1702, DECIMAL, BOOLEAN, "cast(42 as decimal)", new BigDecimal("42"),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(38, 38\\)"),
+                TestParams.passingCase(1703, DECIMAL, TINYINT, "cast(42 as decimal)", new BigDecimal("42"), (byte) 42),
+                TestParams.failingCase(1704, DECIMAL, TINYINT, "9223372036854775809", new BigDecimal("9223372036854775809"),
                         "Numeric overflow while converting DECIMAL to TINYINT"),
-                TestParams.passingCase(1705, DECIMAL, SMALLINT, "cast(42 as decimal)", "42", (short) 42),
-                TestParams.failingCase(1706, DECIMAL, SMALLINT, "9223372036854775809", "9223372036854775809",
+                TestParams.passingCase(1705, DECIMAL, SMALLINT, "cast(42 as decimal)", new BigDecimal("42"), (short) 42),
+                TestParams.failingCase(1706, DECIMAL, SMALLINT, "9223372036854775809", new BigDecimal("9223372036854775809"),
                         "Numeric overflow while converting DECIMAL to SMALLINT"),
-                TestParams.passingCase(1707, DECIMAL, INTEGER, "cast(42 as decimal)", "42", 42),
-                TestParams.failingCase(1708, DECIMAL, INTEGER, "9223372036854775809", "9223372036854775809",
+                TestParams.passingCase(1707, DECIMAL, INTEGER, "cast(42 as decimal)", new BigDecimal("42"), 42),
+                TestParams.failingCase(1708, DECIMAL, INTEGER, "9223372036854775809", new BigDecimal("9223372036854775809"),
                         "Numeric overflow while converting DECIMAL to INTEGER"),
-                TestParams.passingCase(1709, DECIMAL, BIGINT, "cast(42 as decimal)", "42", 42L),
-                TestParams.passingCase(1710, DECIMAL, BIGINT, "cast(42.1 as decimal)", "42.1", 42L),
-                TestParams.failingCase(1711, DECIMAL, BIGINT, "9223372036854775809", "9223372036854775809",
+                TestParams.passingCase(1709, DECIMAL, BIGINT, "cast(42 as decimal)", new BigDecimal("42"), 42L),
+                TestParams.passingCase(1710, DECIMAL, BIGINT, "cast(42.1 as decimal)", new BigDecimal("42.1"), 42L),
+                TestParams.failingCase(1711, DECIMAL, BIGINT, "9223372036854775809", new BigDecimal("9223372036854775809"),
                         "Numeric overflow while converting DECIMAL to BIGINT"),
-                TestParams.passingCase(1712, DECIMAL, DECIMAL, "cast(42 as decimal)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1713, DECIMAL, REAL, "cast(42 as decimal)", "42", 42f),
-                TestParams.passingCase(1714, DECIMAL, DOUBLE, "cast(42 as decimal)", "42", 42d),
-                TestParams.failingCase(1715, DECIMAL, TIME, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DECIMAL"),
-                TestParams.failingCase(1716, DECIMAL, DATE, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type DECIMAL"),
-                TestParams.failingCase(1717, DECIMAL, TIMESTAMP, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(38, 38\\)"),
-                TestParams.failingCase(1718, DECIMAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as decimal)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(38, 38\\)"),
-                TestParams.passingCase(1719, DECIMAL, OBJECT, "cast(42 as decimal)", "42", BigDecimal.valueOf(42)),
+                TestParams.passingCase(1712, DECIMAL, DECIMAL, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
+                TestParams.passingCase(1713, DECIMAL, REAL, "cast(42 as decimal)", new BigDecimal("42"), 42f),
+                TestParams.passingCase(1714, DECIMAL, DOUBLE, "cast(42 as decimal)", new BigDecimal("42"), 42d),
+                TestParams.failingCase(1715, DECIMAL, TIME, "cast(42 as decimal)", new BigDecimal("42"),
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DECIMAL"),
+                TestParams.failingCase(1716, DECIMAL, DATE, "cast(42 as decimal)", new BigDecimal("42"),
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type DECIMAL"),
+                TestParams.failingCase(1717, DECIMAL, TIMESTAMP, "cast(42 as decimal)", new BigDecimal("42"),
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(38, 38\\)"),
+                TestParams.failingCase(1718, DECIMAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as decimal)", new BigDecimal("42"),
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(38, 38\\)"),
+                TestParams.passingCase(1719, DECIMAL, OBJECT, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
 
                 // REAL
-                TestParams.failingCase(1801, REAL, VARCHAR, "cast(42 as real)", "42",
+                TestParams.failingCase(1801, REAL, VARCHAR, "cast(42 as real)", 42F,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type REAL"),
-                TestParams.failingCase(1802, REAL, BOOLEAN, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type REAL"),
-                TestParams.passingCase(1803, REAL, TINYINT, "cast(42 as real)", "42", (byte) 42),
-                TestParams.failingCase(1804, REAL, TINYINT, "cast(420 as real)",
-                        "420", "Numeric overflow while converting REAL to TINYINT"),
-                TestParams.passingCase(1805, REAL, SMALLINT, "cast(42 as real)", "42", (short) 42),
-                TestParams.failingCase(1806, REAL, SMALLINT, "cast(420000 as real)",
-                        "420000", "Numeric overflow while converting REAL to SMALLINT"),
-                TestParams.passingCase(1807, REAL, INTEGER, "cast(42 as real)", "42", 42),
-                TestParams.failingCase(1808, REAL, INTEGER, "cast(4200000000 as real)",
-                        "4200000000", "Numeric overflow while converting REAL to INTEGER"),
-                TestParams.passingCase(1809, REAL, BIGINT, "cast(42 as real)", "42", 42L),
-                TestParams.passingCase(18010, REAL, BIGINT, "cast(42.1 as real)", "42.1", 42L),
-                TestParams.failingCase(1811, REAL, BIGINT, "cast(18223372036854775808000 as real)",
-                        "18223372036854775808000", "Numeric overflow while converting REAL to BIGINT"),
-                TestParams.passingCase(1812, REAL, DECIMAL, "cast(42 as real)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1813, REAL, REAL, "cast(42 as real)", "42", 42f),
-                TestParams.passingCase(1814, REAL, DOUBLE, "cast(42 as real)", "42", 42d),
-                TestParams.failingCase(1815, REAL, TIME, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type REAL"),
-                TestParams.failingCase(1816, REAL, DATE, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type REAL"),
-                TestParams.failingCase(1817, REAL, TIMESTAMP, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type REAL"),
-                TestParams.failingCase(1818, REAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as real)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL"),
-                TestParams.passingCase(1819, REAL, OBJECT, "cast(42 as real)", "42", 42f),
+                TestParams.failingCase(1802, REAL, BOOLEAN, "cast(42 as real)", 42F,
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type REAL"),
+                TestParams.passingCase(1803, REAL, TINYINT, "cast(42 as real)", 42F, (byte) 42),
+                TestParams.failingCase(1804, REAL, TINYINT, "cast(420 as real)", 420F,
+                        "Numeric overflow while converting REAL to TINYINT"),
+                TestParams.passingCase(1805, REAL, SMALLINT, "cast(42 as real)", 42F, (short) 42),
+                TestParams.failingCase(1806, REAL, SMALLINT, "cast(420000 as real)", 420000F,
+                        "Numeric overflow while converting REAL to SMALLINT"),
+                TestParams.passingCase(1807, REAL, INTEGER, "cast(42 as real)", 42F, 42),
+                TestParams.failingCase(1808, REAL, INTEGER, "cast(4200000000 as real)", 4200000000F,
+                        "Numeric overflow while converting REAL to INTEGER"),
+                TestParams.passingCase(1809, REAL, BIGINT, "cast(42 as real)", 42F, 42L),
+                TestParams.passingCase(18010, REAL, BIGINT, "cast(42.1 as real)", 42.1F, 42L),
+                TestParams.failingCase(1811, REAL, BIGINT, "cast(18223372036854775808000 as real)", 18223372036854775808000F,
+                        "Numeric overflow while converting REAL to BIGINT"),
+                TestParams.passingCase(1812, REAL, DECIMAL, "cast(42 as real)", 42F, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1813, REAL, REAL, "cast(42 as real)", 42F, 42f),
+                TestParams.passingCase(1814, REAL, DOUBLE, "cast(42 as real)", 42F, 42d),
+                TestParams.failingCase(1815, REAL, TIME, "cast(42 as real)", 42F,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type REAL"),
+                TestParams.failingCase(1816, REAL, DATE, "cast(42 as real)", 42F,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type REAL"),
+                TestParams.failingCase(1817, REAL, TIMESTAMP, "cast(42 as real)", 42F,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type REAL"),
+                TestParams.failingCase(1818, REAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as real)", 42F,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL"),
+                TestParams.passingCase(1819, REAL, OBJECT, "cast(42 as real)", 42F, 42f),
 
                 // DOUBLE
-                TestParams.failingCase(1901, DOUBLE, VARCHAR, "cast(42 as double)", "42",
+                TestParams.failingCase(1901, DOUBLE, VARCHAR, "cast(42 as double)", 42D,
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DOUBLE"),
-                TestParams.failingCase(1902, DOUBLE, BOOLEAN, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DOUBLE"),
-                TestParams.passingCase(1903, DOUBLE, TINYINT, "cast(42 as double)", "42", (byte) 42),
-                TestParams.failingCase(1904, DOUBLE, TINYINT, "cast(420 as double)",
-                        "420", "Numeric overflow while converting DOUBLE to TINYINT"),
-                TestParams.passingCase(1905, DOUBLE, SMALLINT, "cast(42 as double)", "42", (short) 42),
-                TestParams.failingCase(1906, DOUBLE, SMALLINT, "cast(420000 as double)",
-                        "420000", "Numeric overflow while converting DOUBLE to SMALLINT"),
-                TestParams.passingCase(1907, DOUBLE, INTEGER, "cast(42 as double)", "42", 42),
-                TestParams.failingCase(1908, DOUBLE, INTEGER, "cast(4200000000 as double)",
-                        "4200000000", "Numeric overflow while converting DOUBLE to INTEGER"),
-                TestParams.passingCase(1909, DOUBLE, BIGINT, "cast(42 as double)", "42", 42L),
-                TestParams.failingCase(1910, DOUBLE, BIGINT, "cast(19223372036854775808000 as double)",
-                        "19223372036854775808000", "Numeric overflow while converting DOUBLE to BIGINT"),
-                TestParams.passingCase(1911, DOUBLE, DECIMAL, "cast(42 as double)", "42", BigDecimal.valueOf(42)),
-                TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", "42", 42f),
-                TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", "42.1", 42L),
-                TestParams.failingCase(1914, DOUBLE, REAL, "cast(42e42 as double)", "42e42",
+                TestParams.failingCase(1902, DOUBLE, BOOLEAN, "cast(42 as double)", 42D,
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DOUBLE"),
+                TestParams.passingCase(1903, DOUBLE, TINYINT, "cast(42 as double)", 42D, (byte) 42),
+                TestParams.failingCase(1904, DOUBLE, TINYINT, "cast(420 as double)", 420D,
+                        "Numeric overflow while converting DOUBLE to TINYINT"),
+                TestParams.passingCase(1905, DOUBLE, SMALLINT, "cast(42 as double)", 42D, (short) 42),
+                TestParams.failingCase(1906, DOUBLE, SMALLINT, "cast(420000 as double)", 420000D,
+                        "Numeric overflow while converting DOUBLE to SMALLINT"),
+                TestParams.passingCase(1907, DOUBLE, INTEGER, "cast(42 as double)", 42D, 42),
+                TestParams.failingCase(1908, DOUBLE, INTEGER, "cast(4200000000 as double)", 4200000000D,
+                        "Numeric overflow while converting DOUBLE to INTEGER"),
+                TestParams.passingCase(1909, DOUBLE, BIGINT, "cast(42 as double)", 42D, 42L),
+                TestParams.failingCase(1910, DOUBLE, BIGINT, "cast(19223372036854775808000 as double)", 19223372036854775808000D,
+                        "Numeric overflow while converting DOUBLE to BIGINT"),
+                TestParams.passingCase(1911, DOUBLE, DECIMAL, "cast(42 as double)", 42D, BigDecimal.valueOf(42)),
+                TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42f),
+                TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L),
+                TestParams.failingCase(1914, DOUBLE, REAL, "cast(42e42 as double)", 42e42D,
                         "Numeric overflow while converting DOUBLE to REAL"),
-                TestParams.passingCase(1915, DOUBLE, DOUBLE, "cast(42 as double)", "42", 42d),
-                TestParams.failingCase(1916, DOUBLE, TIME, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DOUBLE"),
-                TestParams.failingCase(1917, DOUBLE, DATE, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type DOUBLE"),
-                TestParams.failingCase(1918, DOUBLE, TIMESTAMP, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DOUBLE"),
-                TestParams.failingCase(1919, DOUBLE, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as double)",
-                        "42", "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE"),
-                TestParams.passingCase(1920, DOUBLE, OBJECT, "cast(42 as double)", "42", 42d),
+                TestParams.passingCase(1915, DOUBLE, DOUBLE, "cast(42 as double)", 42D, 42d),
+                TestParams.failingCase(1916, DOUBLE, TIME, "cast(42 as double)", 42D,
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DOUBLE"),
+                TestParams.failingCase(1917, DOUBLE, DATE, "cast(42 as double)", 42D,
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type DOUBLE"),
+                TestParams.failingCase(1918, DOUBLE, TIMESTAMP, "cast(42 as double)", 42D,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DOUBLE"),
+                TestParams.failingCase(1919, DOUBLE, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as double)", 42D,
+                        "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE"),
+                TestParams.passingCase(1920, DOUBLE, OBJECT, "cast(42 as double)", 42D, 42d),
 
                 // TIME
-                TestParams.failingCase(2001, TIME, VARCHAR, "cast('01:42:00' as time)", "01:42:00",
+                TestParams.failingCase(2001, TIME, VARCHAR, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIME"),
-                TestParams.failingCase(2002, TIME, BOOLEAN, "cast('01:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIME"),
-                TestParams.failingCase(2003, TIME, TINYINT, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIME"),
-                TestParams.failingCase(2004, TIME, SMALLINT, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIME"),
-                TestParams.failingCase(2005, TIME, INTEGER, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIME"),
-                TestParams.failingCase(2006, TIME, BIGINT, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIME"),
-                TestParams.failingCase(2007, TIME, DECIMAL, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIME"),
-                TestParams.failingCase(2008, TIME, REAL, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIME"),
-                TestParams.failingCase(2009, TIME, DOUBLE, "cast('1:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIME"),
-                TestParams.passingCase(2010, TIME, TIME, "cast('01:42:00' as time)", "01:42:00", LocalTime.of(1, 42)),
-                TestParams.failingCase(2011, TIME, DATE, "cast('01:42:00' as time)",
-                        "01:42:00", "Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME"),
-                TestParams.passingCase(2012, TIME, TIMESTAMP, "cast('01:42:00' as time)", "01:42:00",
+                TestParams.failingCase(2002, TIME, BOOLEAN, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIME"),
+                TestParams.failingCase(2003, TIME, TINYINT, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIME"),
+                TestParams.failingCase(2004, TIME, SMALLINT, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIME"),
+                TestParams.failingCase(2005, TIME, INTEGER, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIME"),
+                TestParams.failingCase(2006, TIME, BIGINT, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIME"),
+                TestParams.failingCase(2007, TIME, DECIMAL, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIME"),
+                TestParams.failingCase(2008, TIME, REAL, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIME"),
+                TestParams.failingCase(2009, TIME, DOUBLE, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIME"),
+                TestParams.passingCase(2010, TIME, TIME, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0), LocalTime.of(1, 42)),
+                TestParams.failingCase(2011, TIME, DATE, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
+                        "Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME"),
+                TestParams.passingCase(2012, TIME, TIMESTAMP, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
                         LocalDateTime.of(TODAY, LocalTime.of(1, 42)),
                         LocalDateTime.of(TOMORROW, LocalTime.of(1, 42))),
-                TestParams.passingCase(2013, TIME, TIMESTAMP_WITH_TIME_ZONE, "cast('01:42:00' as time)", "01:42:00",
+                TestParams.passingCase(2013, TIME, TIMESTAMP_WITH_TIME_ZONE, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
                         ZonedDateTime.of(LocalDateTime.of(TODAY, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime(),
                         ZonedDateTime.of(LocalDateTime.of(TOMORROW, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime()),
-                TestParams.passingCase(2014, TIME, OBJECT, "cast('01:42:00' as time)", "01:42:00", LocalTime.of(1, 42)),
+                TestParams.passingCase(2014, TIME, OBJECT, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0), LocalTime.of(1, 42)),
 
                 // DATE
-                TestParams.failingCase(2101, DATE, VARCHAR, "cast('2020-12-30' as date)", "2020-12-30",
+                TestParams.failingCase(2101, DATE, VARCHAR, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DATE"),
-                TestParams.failingCase(2102, DATE, BOOLEAN, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DATE"),
-                TestParams.failingCase(2103, DATE, TINYINT, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type DATE"),
-                TestParams.failingCase(2104, DATE, SMALLINT, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type DATE"),
-                TestParams.failingCase(2105, DATE, INTEGER, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type DATE"),
-                TestParams.failingCase(2106, DATE, BIGINT, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type DATE"),
-                TestParams.failingCase(2107, DATE, DECIMAL, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type DATE"),
-                TestParams.failingCase(2108, DATE, REAL, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type DATE"),
-                TestParams.failingCase(2109, DATE, DOUBLE, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type DATE"),
-                TestParams.failingCase(2110, DATE, TIME, "cast('2020-12-30' as date)",
-                        "2020-12-30", "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DATE"),
-                TestParams.passingCase(2111, DATE, DATE, "cast('2020-12-30' as date)", "2020-12-30",
+                TestParams.failingCase(2102, DATE, BOOLEAN, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DATE"),
+                TestParams.failingCase(2103, DATE, TINYINT, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type DATE"),
+                TestParams.failingCase(2104, DATE, SMALLINT, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type DATE"),
+                TestParams.failingCase(2105, DATE, INTEGER, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type DATE"),
+                TestParams.failingCase(2106, DATE, BIGINT, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type DATE"),
+                TestParams.failingCase(2107, DATE, DECIMAL, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type DATE"),
+                TestParams.failingCase(2108, DATE, REAL, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type REAL from source field '.+' of type DATE"),
+                TestParams.failingCase(2109, DATE, DOUBLE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type DATE"),
+                TestParams.failingCase(2110, DATE, TIME, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        "Cannot assign to target field 'field1' of type TIME from source field '.+' of type DATE"),
+                TestParams.passingCase(2111, DATE, DATE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
                         LocalDate.of(2020, 12, 30)),
-                TestParams.passingCase(2112, DATE, TIMESTAMP, "cast('2020-12-30' as date)", "2020-12-30",
+                TestParams.passingCase(2112, DATE, TIMESTAMP, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
                         LocalDateTime.of(2020, 12, 30, 0, 0)),
-                TestParams.passingCase(2113, DATE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30' as date)", "2020-12-30",
+                TestParams.passingCase(2113, DATE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
                         ZonedDateTime.of(2020, 12, 30, 0, 0, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
-                TestParams.passingCase(2114, DATE, OBJECT, "cast('2020-12-30' as date)", "2020-12-30",
+                TestParams.passingCase(2114, DATE, OBJECT, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
                         LocalDate.of(2020, 12, 30)),
 
                 // TIMESTAMP
-                TestParams.failingCase(2201, TIMESTAMP, VARCHAR, "cast('2020-12-30T01:42:00' as timestamp)", "2020-12-30T01:42:00",
+                TestParams.failingCase(2201, TIMESTAMP, VARCHAR, "cast('2020-12-30T01:42:00' as timestamp)",
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
                         "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2202, TIMESTAMP, BOOLEAN, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2203, TIMESTAMP, TINYINT, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2204, TIMESTAMP, SMALLINT, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2205, TIMESTAMP, INTEGER, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2206, TIMESTAMP, BIGINT, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2207, TIMESTAMP, DECIMAL, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2208, TIMESTAMP, REAL, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP"),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP"),
                 TestParams.failingCase(2209, TIMESTAMP, DOUBLE, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP"),
-                TestParams.passingCase(2210, TIMESTAMP, TIME, "cast('2020-12-30T01:42:00' as timestamp)", "2020-12-30T01:42:00",
-                        LocalTime.of(1, 42)),
-                TestParams.passingCase(2211, TIMESTAMP, DATE, "cast('2020-12-30T01:42:00' as timestamp)", "2020-12-30T01:42:00",
-                        LocalDate.of(2020, 12, 30)),
-                TestParams.passingCase(2212, TIMESTAMP, TIMESTAMP, "cast('2020-12-30T01:42:00' as timestamp)", "2020-12-30T01:42:00",
-                        LocalDateTime.of(2020, 12, 30, 1, 42)),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP"),
+                TestParams.passingCase(2210, TIMESTAMP, TIME, "cast('2020-12-30T01:42:00' as timestamp)",
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalTime.of(1, 42)),
+                TestParams.passingCase(2211, TIMESTAMP, DATE, "cast('2020-12-30T01:42:00' as timestamp)",
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDate.of(2020, 12, 30)),
+                TestParams.passingCase(2212, TIMESTAMP, TIMESTAMP, "cast('2020-12-30T01:42:00' as timestamp)",
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDateTime.of(2020, 12, 30, 1, 42)),
                 TestParams.passingCase(2213, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00' as timestamp)",
-                        "2020-12-30T01:42:00", ZonedDateTime.of(2020, 12, 30, 1, 42, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
-                TestParams.passingCase(2214, TIMESTAMP, OBJECT, "cast('2020-12-30T01:42:00' as timestamp)", "2020-12-30T01:42:00",
-                        LocalDateTime.of(2020, 12, 30, 1, 42)),
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0), ZonedDateTime.of(2020, 12, 30, 1, 42, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
+                TestParams.passingCase(2214, TIMESTAMP, OBJECT, "cast('2020-12-30T01:42:00' as timestamp)",
+                        LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDateTime.of(2020, 12, 30, 1, 42)),
 
                 // TIMESTAMP WITH TIME ZONE
                 TestParams.failingCase(2301, TIMESTAMP_WITH_TIME_ZONE, VARCHAR, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2302, TIMESTAMP_WITH_TIME_ZONE, BOOLEAN, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2303, TIMESTAMP_WITH_TIME_ZONE, TINYINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type TINYINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2304, TIMESTAMP_WITH_TIME_ZONE, SMALLINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type SMALLINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2305, TIMESTAMP_WITH_TIME_ZONE, INTEGER, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type INTEGER from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2306, TIMESTAMP_WITH_TIME_ZONE, BIGINT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2307, TIMESTAMP_WITH_TIME_ZONE, DECIMAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2308, TIMESTAMP_WITH_TIME_ZONE, REAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.failingCase(2309, TIMESTAMP_WITH_TIME_ZONE, DOUBLE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        "Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP WITH TIME ZONE"),
                 TestParams.passingCase(2310, TIMESTAMP_WITH_TIME_ZONE, TIME, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", LocalTime.of(1, 42)),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalTime.of(1, 42)),
                 TestParams.passingCase(2311, TIMESTAMP_WITH_TIME_ZONE, DATE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", LocalDate.of(2020, 12, 30)),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalDate.of(2020, 12, 30)),
                 TestParams.passingCase(2312, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", LocalDateTime.of(2020, 12, 30, 1, 42)),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalDateTime.of(2020, 12, 30, 1, 42)),
                 TestParams.passingCase(2313, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
                 TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        "2020-12-30T01:42:00-05:00", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
 
                 // OBJECT
                 TestParams.failingCase(2401, OBJECT, VARCHAR, "cast('foo' as object)", null,
@@ -531,8 +554,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.failingCase(2413, OBJECT, TIMESTAMP_WITH_TIME_ZONE,
                         "cast(cast('2020-12-30T01:42:00-05:00' as timestamp with time zone) as object)", null,
                         "Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field 'EXPR\\$\\d' of type OBJECT"),
-                TestParams.passingCase(2414, OBJECT, OBJECT, "cast('foo' as object)",
-                        "foo", "foo"),
+                TestParams.passingCase(2414, OBJECT, OBJECT, "cast('foo' as object)", "foo", "foo"),
         };
     }
 
@@ -542,34 +564,22 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertValues() throws Exception {
+    public void test_insertValues() {
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
-        String sql = "CREATE MAPPING m type IMap " +
+        execute("CREATE MAPPING m type IMap " +
                 "OPTIONS(" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
                 "'valueJavaClass'='" + targetClassName +
-                "')";
-        logger.info(sql);
-        sqlService.execute(sql);
-        sql = "SINK INTO m VALUES(0, " + testParams.valueLiteral + ", 0)";
-        logger.info(sql);
+                "')"
+        );
+
         try {
-            sqlService.execute(sql);
-            if (testParams.expectedFailureRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
-            }
+            execute("SINK INTO m VALUES(0, " + testParams.valueLiteral + ", 0)");
+            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null) {
-                throw e;
-            }
-            if (!testParams.exceptionMatches(e)) {
-                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
-                        + testParams.expectedFailureRegex + "'", e);
-            } else {
-                logger.info("Caught expected exception", e);
-            }
+            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -581,83 +591,49 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", singletonList("v"),
                 singletonList(testParams.srcType),
-                singletonList(new String[]{testParams.valueTestSource}));
-
-        String sql = "CREATE MAPPING target TYPE IMap " +
+                singletonList(new String[]{String.valueOf(testParams.valueTestSource)}));
+        execute("CREATE MAPPING target TYPE IMap " +
                 "OPTIONS(" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
                 "'valueJavaClass'='" + targetClassName +
-                "')";
-        logger.info(sql);
-        sqlService.execute(sql);
+                "')"
+        );
+
         try {
-            sql = "SINK INTO target SELECT 0, v, 0 FROM src";
-            logger.info(sql);
-            sqlService.execute(sql);
-            if (testParams.expectedFailureNonLiteralRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureNonLiteralRegex
-                        + "\", but no exception was thrown");
-            }
-            if (testParams.expectedFailureRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
-            }
+            execute("SINK INTO target SELECT 0, v, 0 FROM src");
+            assertThatFailureWasNotExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
-                throw new AssertionError("The query failed unexpectedly: " + e, e);
-            }
-            if (testParams.expectedFailureNonLiteralRegex != null) {
-                if (!testParams.nonLiteralFailureMatches(e)) {
-                    throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain \n'"
-                            + testParams.expectedFailureNonLiteralRegex + "'", e);
-                }
-            } else if (!testParams.exceptionMatches(e)) {
-                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
-                        + testParams.expectedFailureRegex + "'", e);
-            }
-            logger.info("Caught expected exception", e);
+            assertFailureMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
         }
     }
 
     @Test
-    public void test_insertSelect_withLiteral() throws Exception {
+    public void test_insertSelect_withLiteral() {
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
         TestBatchSqlConnector.create(sqlService, "src", 1);
-
-        String sql = "CREATE MAPPING target TYPE IMap " +
+        execute("CREATE MAPPING target TYPE IMap " +
                 "OPTIONS(" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
                 "'valueJavaClass'='" + targetClassName +
-                "')";
-        logger.info(sql);
-        sqlService.execute(sql);
+                "')"
+        );
+
         try {
-            sql = "SINK INTO target SELECT 0, " + testParams.valueLiteral + ", 0 FROM src";
-            logger.info(sql);
-            sqlService.execute(sql);
-            if (testParams.expectedFailureRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
-            }
+            execute("SINK INTO target SELECT 0, " + testParams.valueLiteral + ", 0 FROM src");
+            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null) {
-                throw e;
-            }
-            if (!testParams.exceptionMatches(e)) {
-                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
-                        + testParams.expectedFailureRegex + "'", e);
-            } else {
-                logger.info("Caught expected exception", e);
-            }
+            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
     @Test
-    public void test_update_literals() throws Exception {
+    public void test_update_literals() {
         String targetClassName = ExpressionValue.classForType(testParams.targetType);
-        sqlService.execute("CREATE MAPPING m type IMap " +
+        execute("CREATE MAPPING m type IMap " +
                 "OPTIONS (" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
@@ -667,19 +643,11 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         instance().getMap("m").put(0, ExpressionValue.create(targetClassName));
 
         try {
-            sqlService.execute("UPDATE m SET field1 = " + testParams.valueLiteral);
-            if (testParams.expectedFailureRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
-            }
+            execute("UPDATE m SET field1 = " + testParams.valueLiteral);
+            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null) {
-                throw e;
-            }
-            if (!testParams.exceptionMatches(e)) {
-                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
-                        + testParams.expectedFailureRegex + "'", e);
-            }
+            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -688,41 +656,53 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         assumeFalse(testParams.srcType == NULL);
 
         Class<? extends ExpressionBiValue> valueClass = ExpressionBiValue.biClassForType(testParams.targetType, testParams.srcType);
-        sqlService.execute("CREATE MAPPING m TYPE IMap " +
+        execute("CREATE MAPPING m TYPE IMap " +
                 "OPTIONS(" +
                 "'keyFormat'='int', " +
                 "'valueFormat'='java', " +
                 "'valueJavaClass'='" + valueClass.getName() +
                 "')"
         );
-        Object sourceValue = resolveTypeForTypeFamily(testParams.srcType).convert(testParams.valueTestSource);
-        instance().getMap("m").put(0, ExpressionBiValue.createBiValue(valueClass, null, sourceValue));
+        instance().getMap("m").put(0, ExpressionBiValue.createBiValue(valueClass, null, testParams.valueTestSource));
 
         try {
-            sqlService.execute("UPDATE m SET field1 = field2");
-            if (testParams.expectedFailureNonLiteralRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureNonLiteralRegex + "\", but no exception was thrown");
-            }
-            if (testParams.expectedFailureRegex != null) {
-                fail("Expected to fail with \"" + testParams.expectedFailureRegex + "\", but no exception was thrown");
-            }
+            execute("UPDATE m SET field1 = field2");
+            assertThatFailureWasNotExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            if (testParams.expectedFailureRegex == null && testParams.expectedFailureNonLiteralRegex == null) {
-                throw new AssertionError("The query failed unexpectedly: " + e, e);
-            }
-            if (testParams.expectedFailureNonLiteralRegex != null) {
-                if (!testParams.nonLiteralFailureMatches(e)) {
-                    throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain \n'"
-                            + testParams.expectedFailureNonLiteralRegex + "'", e);
-                }
-            } else if (!testParams.exceptionMatches(e)) {
-                throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain the regexp \n'"
-                        + testParams.expectedFailureRegex + "'", e);
+            assertFailureMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
+        }
+    }
+
+    private void execute(String sql) {
+        logger.info(sql);
+        //noinspection EmptyTryBlock
+        try (SqlResult ignored = sqlService.execute(sql)) {
+        }
+    }
+
+    private static void assertThatFailureWasNotExpected(Pattern... patterns) {
+        for (Pattern pattern : patterns) {
+            if (pattern != null) {
+                fail("Expected to fail with \"" + pattern + "\", but no exception was thrown");
             }
         }
     }
 
+    private static void assertFailureMatches(Exception e, Pattern... patterns) {
+        for (Pattern pattern : patterns) {
+            if (pattern != null) {
+                if (!pattern.matcher(e.getMessage()).find()) {
+                    throw new AssertionError("\n'" + e.getMessage() + "'\ndidn't contain \n'" + pattern + "'", e);
+                } else {
+                    return;
+                }
+            }
+        }
+        throw new AssertionError("The query failed unexpectedly: " + e, e);
+    }
+
+    @SuppressWarnings("SameParameterValue")
     private static Object extractValue(String mapName, String fieldName) throws Exception {
         Object valueWrapper = instance().getMap(mapName).get(0);
         return valueWrapper.getClass().getField(fieldName).get(valueWrapper);
@@ -733,29 +713,29 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         private final QueryDataTypeFamily srcType;
         private final QueryDataTypeFamily targetType;
         private final String valueLiteral;
-        private final String valueTestSource;
+        private final Object valueTestSource;
         private final List<Object> targetValues;
-        private final Pattern expectedFailureRegex;
-        private Pattern expectedFailureNonLiteralRegex;
+        private final Pattern expectedLiteralFailureRegex;
+        private Pattern expectedColumnFailureRegex;
 
         private TestParams(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType, String valueLiteral,
-                           String valueTestSource, List<Object> targetValues, String expectedFailureRegex) {
+                           Object valueTestSource, List<Object> targetValues, String expectedLiteralFailureRegex) {
             this.testId = testId;
             this.srcType = srcType;
             this.targetType = targetType;
             this.valueLiteral = valueLiteral;
             this.valueTestSource = valueTestSource;
             this.targetValues = targetValues;
-            this.expectedFailureRegex = expectedFailureRegex != null ? Pattern.compile(expectedFailureRegex) : null;
+            this.expectedLiteralFailureRegex = expectedLiteralFailureRegex != null ? Pattern.compile(expectedLiteralFailureRegex) : null;
         }
 
         static TestParams passingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,
-                                      String valueLiteral, String valueTestSource, Object... targetValues) {
+                                      String valueLiteral, Object valueTestSource, Object... targetValues) {
             return new TestParams(testId, srcType, targetType, valueLiteral, valueTestSource, asList(targetValues), null);
         }
 
         static TestParams failingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,
-                                      String valueLiteral, String valueTestSource, String errorMsg) {
+                                      String valueLiteral, Object valueTestSource, String errorMsg) {
             return new TestParams(testId, srcType, targetType, valueLiteral, valueTestSource, null, errorMsg);
         }
 
@@ -767,14 +747,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
          * column, but you can't assign VARCHAR column or expression to a date
          * column.
          */
-        private TestParams setExpectedFailureNonLiteralRegex(String failureRegex) {
-            this.expectedFailureNonLiteralRegex = Pattern.compile(failureRegex);
+        private TestParams setExpectedColumnFailureRegex(String failureRegex) {
+            this.expectedColumnFailureRegex = Pattern.compile(failureRegex);
             return this;
-        }
-
-        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-        private boolean nonLiteralFailureMatches(Exception e) {
-            return expectedFailureNonLiteralRegex.matcher(e.getMessage()).find();
         }
 
         @Override
@@ -785,13 +760,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                     ", targetType=" + targetType +
                     ", value=" + valueTestSource +
                     ", targetValues=" + targetValues +
-                    ", expectedFailureRegex=" + expectedFailureRegex +
+                    ", expectedLiteralFailureRegex=" + expectedLiteralFailureRegex +
+                    ", expectedColumnFailureRegex=" + expectedColumnFailureRegex +
                     '}';
-        }
-
-        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-        public boolean exceptionMatches(Exception e) {
-            return expectedFailureRegex.matcher(e.getMessage()).find();
         }
     }
 }
