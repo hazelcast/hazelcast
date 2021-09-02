@@ -22,6 +22,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.ServiceFactory;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
@@ -29,41 +30,49 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provides a way to perform enrichment using a Map or ReplicatedMap from Hazelcast 3 cluster.
- * The usage is similar to {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)}
- * and other similarly named methods. The difference is that instead of providing a name of
- * the map, a {@link ServiceFactory} to Hazelcast 3 Map is used. This class provides a utility
- * methods to create and use this service factory.
+ * Provides a way to perform enrichment using a Map or ReplicatedMap from
+ * Hazelcast 3 cluster.
+ * <p>
+ * The usage is similar to
+ * {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)} and
+ * other similarly named methods. The difference is that instead of providing
+ * a name of the map, a {@link ServiceFactory} to Hazelcast 3 Map is used.
+ * This class provides a utility methods to create and use this service factory.
  * <p>
  * Usage:
  * <p>
- * First you need to obtain a ServiceFactory for a Hazelcast 3 Map/ReplicatedMap:
+ * First you need to obtain a ServiceFactory for a Hazelcast 3
+ * Map/ReplicatedMap:
  * <pre>{@code
  * ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
  *     hz3MapServiceFactory("test-map", HZ3_CLIENT_CONFIG);
  * }</pre>
- * Then use this service factory in a pipeline step {@link GeneralStage#mapUsingService(ServiceFactory, BiFunctionEx)}:
+ * Then use this service factory in a pipeline step
+ * {@link GeneralStage#mapUsingService(ServiceFactory, BiFunctionEx)}:
  * <pre>{@code
  * BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
- *     .mapUsingService(
- *             hz3MapSF,
- *             mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
- *     );
+ *  .mapUsingService(
+ *    hz3MapSF,
+ *    mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s)
+ *  );
  * mapStage.writeTo(Sinks.list(results));
  * }</pre>
- * And finally, a custom classpath element for the {@code mapUsingService} stage must be set with the Hazelcast 3
- * client:
+ * And finally, a custom classpath element for the {@code mapUsingService}
+ * stage must be set with the Hazelcast 3 client:
  * <pre>{@code
  * List<String> jars = new ArrayList<>();
  * jars.add("hazelcast-3.12.12.jar");
  * jars.add("hazelcast-client-3.12.12.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
- * config.addCustomClasspaths(name, jars);
+ * config.addCustomClasspaths(source.name(), jars);
  * } </pre>
  * The jars must exist in the directory specified by the
  * {@link ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
  * directory. This is already set up for the regular zip distribution.
+ *
+ * @since 5.0
  */
+@Beta
 public final class Hz3Enrichment {
 
     private Hz3Enrichment() {
