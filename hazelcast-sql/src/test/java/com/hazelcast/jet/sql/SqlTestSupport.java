@@ -30,6 +30,8 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -48,15 +50,18 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiPredicate;
+import java.util.function.IntFunction;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -402,6 +407,68 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {
         return Accessors.getNodeEngineImpl(instance);
+    }
+
+    protected static <K> K getLocalKey(
+            HazelcastInstance member,
+            IntFunction<K> keyProducer
+    ) {
+        return getLocalKeys(member, 1, keyProducer).get(0);
+    }
+
+    protected static <K> List<K> getLocalKeys(
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer
+    ) {
+        return new ArrayList<>(getLocalEntries(member, count, keyProducer, keyProducer).keySet());
+    }
+
+    protected static <K, V> Map<K, V> getLocalEntries(
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
+    ) {
+        if (count == 0) {
+            return Collections.emptyMap();
+        }
+
+        PartitionService partitionService = member.getPartitionService();
+
+        Map<K, V> res = new LinkedHashMap<>();
+
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            K key = keyProducer.apply(i);
+
+            if (key == null) {
+                continue;
+            }
+
+            Partition partition = partitionService.getPartition(key);
+
+            if (!partition.getOwner().localMember()) {
+                continue;
+            }
+
+            V value = valueProducer.apply(i);
+
+            if (value == null) {
+                continue;
+            }
+
+            res.put(key, value);
+
+            if (res.size() == count) {
+                break;
+            }
+        }
+
+        if (res.size() < count) {
+            throw new RuntimeException("Failed to get the necessary number of keys: " + res.size());
+        }
+
+        return res;
     }
 
     /**
