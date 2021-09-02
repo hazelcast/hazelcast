@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -183,7 +184,7 @@ public class MetadataPortableResolverTest {
         //noinspection ResultOfMethodCallIgnored
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(toList()))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Cannot derive Portable type for '" + QueryDataType.OBJECT + "'");
+                .hasMessageContaining("Cannot derive Portable type for '" + QueryDataTypeFamily.OBJECT + "'");
     }
 
     @Test
