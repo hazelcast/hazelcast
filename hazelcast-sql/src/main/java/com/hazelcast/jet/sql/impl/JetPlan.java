@@ -907,7 +907,8 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
+            // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 
@@ -973,7 +974,8 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new MapPermission(mapName, ACTION_PUT, ACTION_REMOVE));
+            // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
             permissions.forEach(context::checkPermission);
         }
 
