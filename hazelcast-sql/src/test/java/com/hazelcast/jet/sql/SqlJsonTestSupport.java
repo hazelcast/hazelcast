@@ -89,10 +89,10 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
             objectMap.put((String) values[i], values[i + 1]);
         }
 
-        return json(serialize(objectMap));
+        return json(serializeToJson(objectMap));
     }
 
-    protected String serialize(Object val) {
+    protected String serializeToJson(Object val) {
         try {
             return SERIALIZER.writeValueAsString(val);
         } catch (Exception exception) {
