@@ -19,16 +19,17 @@ package com.hazelcast.jet.sql.impl.validate;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
-import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
-import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
-import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
+import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
@@ -75,16 +76,24 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             .withIdentifierExpansion(true)
             .withSqlConformance(HazelcastSqlConformance.INSTANCE);
 
-    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
+    /**
+     * Visitor to rewrite Calcite operators to Hazelcast operators.
+     */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
 
-    /** Parameter converter that will be passed to parameter metadata. */
+    /**
+     * Parameter converter that will be passed to parameter metadata.
+     */
     private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
 
-    /** Parameter positions. */
+    /**
+     * Parameter positions.
+     */
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
-    /** Parameter values. */
+    /**
+     * Parameter values.
+     */
     private final List<Object> arguments;
 
     private boolean isCreateJob;
@@ -441,11 +450,9 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             ParameterConverter converter = parameterConverterMap.get(i);
 
             if (converter == null) {
-                converter = new StrictParameterConverter(
-                        i,
-                        parameterPositionMap.get(i),
-                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName())
-                );
+                QueryDataType targetType =
+                        HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName());
+                converter = AbstractParameterConverter.from(targetType,  i, parameterPositionMap.get(i));
             }
 
             res[i] = converter;
