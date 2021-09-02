@@ -576,10 +576,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
         try {
             execute("SINK INTO m VALUES(0, " + testParams.valueLiteral + ", 0)");
-            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
+            throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
+            assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -602,10 +602,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
         try {
             execute("SINK INTO target SELECT 0, v, 0 FROM src");
-            assertThatFailureWasNotExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
+            throwIfFailureWasExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            assertFailureMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
+            assertExceptionMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -623,10 +623,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
         try {
             execute("SINK INTO target SELECT 0, " + testParams.valueLiteral + ", 0 FROM src");
-            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
+            throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("target", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
+            assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -644,10 +644,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
         try {
             execute("UPDATE m SET field1 = " + testParams.valueLiteral);
-            assertThatFailureWasNotExpected(testParams.expectedLiteralFailureRegex);
+            throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            assertFailureMatches(e, testParams.expectedLiteralFailureRegex);
+            assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -667,10 +667,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
         try {
             execute("UPDATE m SET field1 = field2");
-            assertThatFailureWasNotExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
+            throwIfFailureWasExpected(testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
             assertThat(extractValue("m", "field1")).isIn(testParams.targetValues);
         } catch (Exception e) {
-            assertFailureMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
+            assertExceptionMatches(e, testParams.expectedColumnFailureRegex, testParams.expectedLiteralFailureRegex);
         }
     }
 
@@ -681,7 +681,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         }
     }
 
-    private static void assertThatFailureWasNotExpected(Pattern... patterns) {
+    private static void throwIfFailureWasExpected(Pattern... patterns) {
         for (Pattern pattern : patterns) {
             if (pattern != null) {
                 fail("Expected to fail with \"" + pattern + "\", but no exception was thrown");
@@ -689,7 +689,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         }
     }
 
-    private static void assertFailureMatches(Exception e, Pattern... patterns) {
+    private static void assertExceptionMatches(Exception e, Pattern... patterns) {
         for (Pattern pattern : patterns) {
             if (pattern != null) {
                 if (!pattern.matcher(e.getMessage()).find()) {
