@@ -28,7 +28,9 @@ import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import javax.annotation.Nonnull;
@@ -36,10 +38,16 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assume.assumeTrue;
 
 public class AuthElasticSourcesTest extends BaseElasticTest {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+    }
 
     @After
     public void afterClass() {

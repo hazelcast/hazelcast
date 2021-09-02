@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.collection.IList;
@@ -39,8 +41,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import javax.annotation.Nonnull;
 import javax.cache.Cache;

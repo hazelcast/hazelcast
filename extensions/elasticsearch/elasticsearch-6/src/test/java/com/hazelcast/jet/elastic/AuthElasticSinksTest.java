@@ -30,8 +30,10 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import java.io.IOException;
@@ -39,11 +41,17 @@ import java.io.IOException;
 import static com.hazelcast.jet.elastic.ElasticClients.client;
 import static com.hazelcast.jet.elastic.ElasticSupport.PORT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assume.assumeTrue;
 
 @Category(SlowTest.class)
 public class AuthElasticSinksTest extends BaseElasticTest {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+    }
 
     @After
     public void afterClass() throws Exception {
