@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
-import com.hazelcast.jet.sql.impl.TestMapTable;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
@@ -141,7 +140,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     }
 
     protected static TableField field(String name, QueryDataType type) {
-        return TestMapTable.field(name, type, false);
+        return new Field(name, type, false);
     }
 
     protected static void assertPlan(RelNode rel, PlanRows expected) {
@@ -174,6 +173,12 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected static PlanRow planRow(int level, Class<? extends RelNode> node) {
         return new PlanRow(level, node);
+    }
+
+    private static class Field extends TableField {
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
+        }
     }
 
     protected static class Result {

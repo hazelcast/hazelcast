@@ -38,7 +38,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
+public abstract class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
 
     protected static final String MAP_NAME = "map";
     protected static final String INDEX_NAME = "index";
@@ -78,11 +78,11 @@ public class IndexFilterIteratorTestSupport extends IndexFilterTestSupport {
             Object value = entry.getValue();
 
             if (key instanceof Data) {
-                key = getSerializationService().toObject(key);
+                key = serializationService().toObject(key);
             }
 
             if (value instanceof Data) {
-                value = getSerializationService().toObject(value);
+                value = serializationService().toObject(value);
             }
 
             if (indexType == SORTED && prevValue != null) {

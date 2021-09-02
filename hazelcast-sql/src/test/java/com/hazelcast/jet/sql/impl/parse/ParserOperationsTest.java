@@ -17,16 +17,17 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.OptimizerContext;
+import com.hazelcast.jet.sql.impl.TestTableResolver;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.OptimizerContext;
-import com.hazelcast.jet.sql.impl.TestMapTable;
-import com.hazelcast.jet.sql.impl.TestTableResolver;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -172,7 +173,7 @@ public class ParserOperationsTest extends SqlTestSupport {
                 "public",
                 "t",
                 "t",
-                Arrays.asList(TestMapTable.field("a"), TestMapTable.field("b")),
+                Arrays.asList(field("a"), field("b")),
                 new ConstantTableStatistics(100L),
                 null,
                 null,
@@ -195,5 +196,15 @@ public class ParserOperationsTest extends SqlTestSupport {
                 emptyList(),
                 1
         );
+    }
+
+    private static TableField field(String name) {
+        return new Field(name, QueryDataType.INT, false);
+    }
+
+    private static class Field extends TableField {
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
+        }
     }
 }

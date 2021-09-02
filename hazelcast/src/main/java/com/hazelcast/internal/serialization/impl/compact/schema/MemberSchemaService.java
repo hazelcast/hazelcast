@@ -19,6 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.services.ManagedService;
@@ -80,6 +81,9 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Schema> getAsync(long schemaId) {
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_0)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.0 cluster");
+        }
         Schema schema = getLocal(schemaId);
         if (schema != null) {
             return CompletableFuture.completedFuture(schema);
@@ -128,6 +132,9 @@ public class MemberSchemaService implements ManagedService, PreJoinAwareService,
     }
 
     public CompletableFuture<Void> putAsync(Schema schema) {
+        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_0)) {
+            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.0 cluster");
+        }
         long schemaId = schema.getSchemaId();
         if (getLocal(schemaId) != null) {
             return CompletableFuture.completedFuture(null);
