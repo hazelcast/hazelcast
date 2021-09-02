@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -24,11 +26,16 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.sql.impl.plan.cache.PlanCache;
 import com.hazelcast.test.Accessors;
@@ -66,6 +73,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
@@ -216,6 +226,35 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 
+    public static void checkEquals(Object first, Object second, boolean expected) {
+        if (expected) {
+            assertEquals(first, second);
+            assertEquals(first.hashCode(), second.hashCode());
+        } else {
+            assertNotEquals(first, second);
+        }
+    }
+
+    public static <T> T serializeAndCheck(Object original, int expectedClassId) {
+        assertTrue(original instanceof IdentifiedDataSerializable);
+
+        IdentifiedDataSerializable original0 = (IdentifiedDataSerializable) original;
+
+        assertEquals(SqlDataSerializerHook.F_ID, original0.getFactoryId());
+        assertEquals(expectedClassId, original0.getClassId());
+
+        return serialize(original);
+    }
+
+    public static <T> T serialize(Object original) {
+        InternalSerializationService ss = serializationService();
+        return ss.toObject(ss.toData(original));
+    }
+
+    public static InternalSerializationService serializationService() {
+        return new DefaultSerializationServiceBuilder().build();
+    }
+
     /**
      * Create an IMap mapping with the given {@code name} that uses
      * java serialization for both key and value with the given classes.
@@ -355,6 +394,10 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     public static PlanCache planCache(HazelcastInstance instance) {
         return nodeEngine(instance).getSqlService().getPlanCache();
+    }
+
+    public static MapContainer mapContainer(IMap<?, ?> map) {
+        return ((MapProxyImpl<?, ?>) map).getService().getMapServiceContext().getMapContainer(map.getName());
     }
 
     public static NodeEngineImpl nodeEngine(HazelcastInstance instance) {

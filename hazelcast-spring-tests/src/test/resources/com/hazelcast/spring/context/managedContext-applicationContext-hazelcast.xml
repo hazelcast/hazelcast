@@ -39,9 +39,13 @@
             <hz:spring-aware/>
             <hz:cluster-name>test-managed-context</hz:cluster-name>
             <hz:network port="5701">
-                <hz:interfaces enabled="true">
-                    <hz:interface>127.0.0.1</hz:interface>
-                </hz:interfaces>
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:interface>127.0.0.1:5701</hz:interface>
+                        <hz:interface>127.0.0.1:5702</hz:interface>
+                    </hz:tcp-ip>
+                </hz:join>
             </hz:network>
         </hz:config>
     </hz:hazelcast>
@@ -51,9 +55,13 @@
             <hz:spring-aware/>
             <hz:cluster-name>test-managed-context</hz:cluster-name>
             <hz:network port="5702">
-                <hz:interfaces enabled="true">
-                    <hz:interface>127.0.0.1</hz:interface>
-                </hz:interfaces>
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:tcp-ip enabled="true">
+                        <hz:interface>127.0.0.1:5701</hz:interface>
+                        <hz:interface>127.0.0.1:5702</hz:interface>
+                    </hz:tcp-ip>
+                </hz:join>
             </hz:network>
         </hz:config>
     </hz:hazelcast>

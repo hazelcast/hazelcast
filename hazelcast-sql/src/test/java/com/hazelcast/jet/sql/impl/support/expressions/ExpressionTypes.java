@@ -101,10 +101,6 @@ public final class ExpressionTypes {
         };
     }
 
-    public static ExpressionType<?>[] nonNumeric() {
-        return allExcept(numeric());
-    }
-
     public static ExpressionType<?>[] allExcept(ExpressionType<?>... excludeTypes) {
         if (excludeTypes == null || excludeTypes.length == 0) {
             return all();

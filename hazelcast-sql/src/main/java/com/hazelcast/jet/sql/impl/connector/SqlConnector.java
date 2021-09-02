@@ -107,6 +107,18 @@ public interface SqlConnector {
     String OPTION_VALUE_CLASS_VERSION = "valuePortableClassVersion";
 
     /**
+     * The key Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_KEY_COMPACT_TYPE_NAME = "keyCompactTypeName";
+
+    /**
+     * The value Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */
@@ -117,6 +129,12 @@ public interface SqlConnector {
      * for Portable serialization.
      */
     String PORTABLE_FORMAT = "portable";
+
+    /**
+     * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
+     * for Compact serialization.
+     */
+    String COMPACT_FORMAT = "compact";
 
     /**
      * Value for {@value #OPTION_KEY_FORMAT}, {@value #OPTION_VALUE_FORMAT}
