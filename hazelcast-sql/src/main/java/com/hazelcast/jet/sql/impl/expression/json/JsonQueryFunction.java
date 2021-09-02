@@ -150,7 +150,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
             default:
             case WITHOUT_ARRAY:
                 if (!isArrayOrObject(result)) {
-                    throw QueryException.error("JSON_QUERY result is not an array");
+                    throw QueryException.error("JSON_QUERY result is not an array or object");
                 }
                 return serializedResult;
         }
@@ -162,10 +162,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         } catch (JsonProcessingException exception) {
             throw QueryException.error("Failed to serialize JSON_QUERY result: ", exception);
         }
-    }
-
-    private boolean isArray(Object value) {
-        return value instanceof List;
     }
 
     private boolean isArrayOrObject(Object value) {

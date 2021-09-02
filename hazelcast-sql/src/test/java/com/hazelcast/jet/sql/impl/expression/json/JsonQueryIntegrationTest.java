@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -49,11 +50,9 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, String> test = instance().getMap("test");
         test.put(1L, "[1,2,3]");
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='varchar')");
-        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[2,3]"), row.getObject(0));
-        }
+        assertRowsWithType("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test",
+                singletonList(SqlColumnType.JSON),
+                rows(1, new HazelcastJsonValue("[2,3]")));
     }
 
     @Test
@@ -61,28 +60,21 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue("[1,2,3]"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
-        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[2,3]"), row.getObject(0));
-        }
+        assertRowsWithType("SELECT JSON_QUERY(this, '$[?(@ > 1)]') FROM test",
+                singletonList(SqlColumnType.JSON),
+                rows(1, new HazelcastJsonValue("[2,3]")));
     }
 
     @Test
     public void when_mappedJsonIsPassed_queryWorks() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
         test.put(1L, new HazelcastJsonValue("[1,2,3]"));
-        instance().getSql()
-                .execute("CREATE MAPPING test (__key BIGINT, this JSON) " +
+        execute("CREATE MAPPING test (__key BIGINT, this JSON) " +
                         "TYPE IMap " +
-                        "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')")
-                .updateCount();
-
-        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(this, '$') FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
-        }
+                        "OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+        assertRowsWithType("SELECT JSON_QUERY(this, '$') FROM test",
+                singletonList(SqlColumnType.JSON),
+                rows(1, new HazelcastJsonValue("[1,2,3]")));
     }
 
     @Test
@@ -93,13 +85,10 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
                 + "'keyFormat'='bigint', "
                 + "'valueFormat'='java', "
                 + "'valueJavaClass'='" + ComplexObject.class.getName() + "')");
-        for (final SqlRow row : instance().getSql().execute("SELECT JSON_QUERY(jsonValue, '$'), id FROM test")) {
-            System.out.println(row);
-            assertEquals(SqlColumnType.JSON, row.getMetadata().getColumn(0).getType());
-            assertEquals(new HazelcastJsonValue("[1,2,3]"), row.getObject(0));
-            assertEquals(SqlColumnType.BIGINT, row.getMetadata().getColumn(1).getType());
-            assertEquals((Long) 1L, row.getObject(1));
-        }
+
+        assertRowsWithType("SELECT JSON_QUERY(jsonValue, '$'), id FROM test",
+                asList(SqlColumnType.JSON, SqlColumnType.BIGINT),
+                rows(2, new HazelcastJsonValue("[1,2,3]"), 1L));
     }
 
     @Test
@@ -109,16 +98,15 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         test.put(2L, new HazelcastJsonValue("[1,2,"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
-                .execute("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertThrows(HazelcastSqlException.class, () ->
+                query("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals(new HazelcastJsonValue("[]"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals(new HazelcastJsonValue("{}"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON EMPTY) AS c1 FROM test WHERE __key = 1"));
 
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
-                .execute("SELECT JSON_QUERY(this, '$' ERROR ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_QUERY(this, '$' ERROR ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertEquals(new HazelcastJsonValue("[]"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON ERROR) AS c1 FROM test WHERE __key = 2"));

@@ -104,15 +104,35 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         test.put(2L, new HazelcastJsonValue("[1,2,"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
-                .execute("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
 
-        assertThrows(HazelcastSqlException.class, () -> instance().getSql()
-                .execute("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test WHERE __key = 2"));
+        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test WHERE __key = 2"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test WHERE __key = 2"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
+    }
+
+    @Test
+    public void when_arrayIsReturned_errorIsThrown() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, new HazelcastJsonValue("[1,2,3]"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
+        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"));
+        assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test"));
+        assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
+    }
+
+    @Test
+    public void when_objectIsReturned_errorIsThrown() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, new HazelcastJsonValue("{\"test\":1}"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
+        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"));
+        assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test"));
+        assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
     }
 
     private void initMultiTypeObject() {

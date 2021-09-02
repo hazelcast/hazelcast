@@ -34,6 +34,8 @@ import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -96,7 +98,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
         }
 
         try {
-            return (T) convertResultType(JsonPathUtil.read(json, path));
+            return execute(json, path);
         } catch (Exception exception) {
             return onErrorResponse(onError, exception, defaultValue);
         }
@@ -124,6 +126,14 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             default:
                 return null;
         }
+    }
+
+    private T execute(final String json, final String path) {
+        final Object result = JsonPathUtil.read(json, path);
+        if (result instanceof Map || result instanceof List) {
+            throw QueryException.error("Result of JSON_VALUE can not be array or object.");
+        }
+        return (T) convertResultType(result);
     }
 
     @SuppressWarnings("checkstyle:ReturnCount")
