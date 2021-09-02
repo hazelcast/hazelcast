@@ -30,7 +30,7 @@ public class AnyToVarcharParameterConverter extends AbstractParameterConverter {
 
     @Override
     protected boolean isValid(Object value, Converter valueConverter) {
-        // No validation, since everything could be converted to a string.
+        // No validation, since everything can be converted to a string.
         return true;
     }
 }
