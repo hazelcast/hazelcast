@@ -46,11 +46,11 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -62,7 +62,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PortableQueryTest extends SqlTestSupport {
+public class SqlClientPortableQueryTest extends SqlTestSupport {
 
     private static final int PORTABLE_FACTORY_ID = 1;
     private static final int PORTABLE_CHILD_CLASS_ID = 1;
@@ -122,9 +122,9 @@ public class PortableQueryTest extends SqlTestSupport {
         IMap<Integer, Object> map = client.getMap("test");
         fillMap(map, 50, ChildPortable::new);
 
-        SqlResult rows = client.getSql().execute("SELECT * FROM test WHERE i >= 45");
+        SqlResult result = client.getSql().execute("SELECT * FROM test WHERE i >= 45");
 
-        assertEquals(5, Iterators.size(rows.iterator()));
+        assertThat(result).hasSize(5);
     }
 
     @Test
@@ -141,9 +141,8 @@ public class PortableQueryTest extends SqlTestSupport {
         ChildPortable expected = new ChildPortable(10);
         SqlResult rows = client.getSql().execute("SELECT id FROM test WHERE child = ?", expected);
 
-        Iterator<SqlRow> iterator = rows.iterator();
-        SqlRow row = Iterators.getOnlyElement(iterator);
-        assertEquals((Integer) 10, row.getObject("id"));
+        SqlRow row = Iterators.getOnlyElement(rows.iterator());
+        assertEquals(new Integer(10), row.getObject("id"));
     }
 
     @Test
@@ -155,21 +154,20 @@ public class PortableQueryTest extends SqlTestSupport {
         IMap<Integer, ParentPortable> map = client.getMap("test");
         fillMap(map, 100, ParentPortable::new);
 
-        SqlResult sqlRows = client.getSql().execute("SELECT id, child FROM test WHERE id = ? ", 1);
+        SqlResult result = client.getSql().execute("SELECT id, child FROM test WHERE id = ? ", 1);
 
-        Iterator<SqlRow> iterator = sqlRows.iterator();
-        SqlRow row = Iterators.getOnlyElement(iterator);
+        SqlRow row = Iterators.getOnlyElement(result.iterator());
         assertEquals((Integer) 1, row.getObject(0));
         assertEquals(new ChildPortable(1), row.getObject(1));
     }
 
-    private <T> void fillMap(IMap<Integer, T> map, int count, Function<Integer, T> constructor) {
+    private static <T> void fillMap(IMap<Integer, T> map, int count, Function<Integer, T> constructor) {
         for (int i = 0; i < count; i++) {
             map.put(i, constructor.apply(i));
         }
     }
 
-    static class ChildPortable implements Portable, Comparable<ChildPortable> {
+    private static class ChildPortable implements Portable, Comparable<ChildPortable> {
         private int i;
         private int[] ia;
 
@@ -228,7 +226,7 @@ public class PortableQueryTest extends SqlTestSupport {
         }
     }
 
-    static class ParentPortable implements Portable, Comparable<ParentPortable> {
+    private static class ParentPortable implements Portable, Comparable<ParentPortable> {
         private ChildPortable c;
         private int id;
 
@@ -268,7 +266,7 @@ public class PortableQueryTest extends SqlTestSupport {
         }
     }
 
-    static class TestPortableFactory implements PortableFactory {
+    private static class TestPortableFactory implements PortableFactory {
         @Override
         public Portable create(int classId) {
             if (classId == PORTABLE_CHILD_CLASS_ID) {

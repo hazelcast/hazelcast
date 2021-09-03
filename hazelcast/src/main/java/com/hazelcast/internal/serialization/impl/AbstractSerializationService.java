@@ -143,6 +143,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.constantTypesMap = new IdentityHashMap<>(prototype.constantTypesMap.size());
         this.constantTypeIds = new SerializerAdapter[prototype.constantTypeIds.length];
         this.allowOverrideDefaultSerializers = prototype.allowOverrideDefaultSerializers;
+        this.compactStreamSerializer = prototype.compactStreamSerializer;
+        this.compactWithSchemaSerializerAdapter = prototype.compactWithSchemaSerializerAdapter;
+        this.compactSerializerAdapter = prototype.compactSerializerAdapter;
     }
 
     //region Serialization Service
