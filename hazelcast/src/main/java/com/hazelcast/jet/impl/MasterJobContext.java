@@ -595,7 +595,7 @@ public class MasterJobContext {
                     // have to use Async version, the future is completed inside a synchronized block
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
-            if (error instanceof ExecutionNotFoundException && requestedTerminationMode != null) {
+            if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
                 if (requestedTerminationMode != null) {
                     // This cancellation can be because the master cancelled it upon to a user
