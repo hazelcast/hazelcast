@@ -343,13 +343,6 @@ public interface NodeExtension {
      */
     HotRestartService getHotRestartService();
 
-    /**
-     * Returns the public persistence service
-     */
-    default PersistenceService getPersistenceService() {
-        return getHotRestartService();
-    }
-
     /** Returns the internal hot restart service */
     InternalHotRestartService getInternalHotRestartService();
 

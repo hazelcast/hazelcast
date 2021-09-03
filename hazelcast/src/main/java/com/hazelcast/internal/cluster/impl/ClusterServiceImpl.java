@@ -867,7 +867,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public PersistenceService getPersistenceService() {
-        return node.getNodeExtension().getPersistenceService();
+        return node.getNodeExtension().getHotRestartService();
     }
 
     @Override
