@@ -19,6 +19,8 @@ package com.hazelcast.persistence;
 /**
  * Service for interacting with Persistence. For example - starting cluster-wide data backups, determining the
  * local backup state and interrupting a currently running local hot restart backup.
+ *
+ * @since 5.0
  */
 public interface PersistenceService {
     /** The prefix for each hot restart backup directory. The backup sequence is appended to this prefix. */
@@ -30,6 +32,8 @@ public interface PersistenceService {
      * The backup request is performed transactionally. This method will throw an exception if an another request (transaction)
      * is already in progress. If a node is already performing a backup (there is a file indicating a backup is in progress),
      * the node will only log a warning and ignore the backup request.
+     *
+     * @since 5.0
      */
     void backup();
 
@@ -41,23 +45,30 @@ public interface PersistenceService {
      * the node will only log a warning and ignore the backup request.
      *
      * @param backupSeq the suffix of the backup directory for this cluster hot restart backup
+     * @since 5.0
      */
     void backup(long backupSeq);
 
     /**
      * Returns the local hot restart backup task status (not the cluster backup status).
+     *
+     * @since 5.0
      */
     BackupTaskStatus getBackupTaskStatus();
 
     /**
      * Interrupts the local backup task if one is currently running. The contents of the target backup directory will be left
      * as-is.
+     *
+     * @since 5.0
      */
     void interruptLocalBackupTask();
 
     /**
      * Interrupts the backup tasks on each cluster member if one is currently running. The contents of the target backup
      * directories will be left as-is.
+     *
+     * @since 5.0
      */
     void interruptBackupTask();
 
@@ -65,6 +76,7 @@ public interface PersistenceService {
      * Returns if hot backup is enabled.
      *
      * @return {@code true} if hot backup is enabled, {@code false} otherwise
+     * @since 5.0
      */
     boolean isHotBackupEnabled();
 
@@ -72,6 +84,7 @@ public interface PersistenceService {
      * Returns the persistence backup directory.
      *
      * @return persistence backup directory if hot backup is enabled, {@code null} otherwise.
+     * @since 5.0
      */
     String getBackupDirectory();
 }

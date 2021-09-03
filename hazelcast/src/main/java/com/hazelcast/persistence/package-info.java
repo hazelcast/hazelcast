@@ -16,5 +16,7 @@
 
 /**
  * <p>This package contains Persistence classes needed for open source Hazelcast code<br>
+ *
+ * @since 5.0
  */
 package com.hazelcast.persistence;
