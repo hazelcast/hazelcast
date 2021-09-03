@@ -272,8 +272,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1305, TINYINT, INTEGER, "cast(42 as tinyint)", (byte) 42, 42),
                 TestParams.passingCase(1306, TINYINT, BIGINT, "cast(42 as tinyint)", (byte) 42, 42L),
                 TestParams.passingCase(1307, TINYINT, DECIMAL, "cast(42 as tinyint)", (byte) 42, BigDecimal.valueOf(42)),
-                TestParams.passingCase(1308, TINYINT, REAL, "cast(42 as tinyint)", (byte) 42, 42f),
-                TestParams.passingCase(1309, TINYINT, DOUBLE, "cast(42 as tinyint)", (byte) 42, 42d),
+                TestParams.passingCase(1308, TINYINT, REAL, "cast(42 as tinyint)", (byte) 42, 42F),
+                TestParams.passingCase(1309, TINYINT, DOUBLE, "cast(42 as tinyint)", (byte) 42, 42D),
                 TestParams.failingCase(1310, TINYINT, TIME, "cast(42 as tinyint)", (byte) 42)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type TINYINT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type TINYINT")
@@ -311,8 +311,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1406, SMALLINT, INTEGER, "cast(42 as smallint)", (short) 42, 42),
                 TestParams.passingCase(1407, SMALLINT, BIGINT, "cast(42 as smallint)", (short) 42, 42L),
                 TestParams.passingCase(1408, SMALLINT, DECIMAL, "cast(42 as smallint)", (short) 42, BigDecimal.valueOf(42)),
-                TestParams.passingCase(1409, SMALLINT, REAL, "cast(42 as smallint)", (short) 42, 42f),
-                TestParams.passingCase(1410, SMALLINT, DOUBLE, "cast(42 as smallint)", (short) 42, 42d),
+                TestParams.passingCase(1409, SMALLINT, REAL, "cast(42 as smallint)", (short) 42, 42F),
+                TestParams.passingCase(1410, SMALLINT, DOUBLE, "cast(42 as smallint)", (short) 42, 42D),
                 TestParams.failingCase(1411, SMALLINT, TIME, "cast(42 as smallint)", (short) 42)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type SMALLINT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type SMALLINT")
@@ -355,8 +355,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1507, INTEGER, INTEGER, "cast(42 as integer)", 42, 42),
                 TestParams.passingCase(1508, INTEGER, BIGINT, "cast(42 as integer)", 42, 42L),
                 TestParams.passingCase(1509, INTEGER, DECIMAL, "cast(42 as integer)", 42, BigDecimal.valueOf(42)),
-                TestParams.passingCase(1510, INTEGER, REAL, "cast(42 as integer)", 42, 42f),
-                TestParams.passingCase(1511, INTEGER, DOUBLE, "cast(42 as integer)", 42, 42d),
+                TestParams.passingCase(1510, INTEGER, REAL, "cast(42 as integer)", 42, 42F),
+                TestParams.passingCase(1511, INTEGER, DOUBLE, "cast(42 as integer)", 42, 42D),
                 TestParams.failingCase(1512, INTEGER, TIME, "cast(42 as integer)", 42)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type INTEGER")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type INTEGER")
@@ -404,8 +404,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of INTEGER type, but BIGINT was found"),
                 TestParams.passingCase(1609, BIGINT, BIGINT, "cast(42 as bigint)", 42L, 42L),
                 TestParams.passingCase(1610, BIGINT, DECIMAL, "cast(42 as bigint)", 42L, BigDecimal.valueOf(42)),
-                TestParams.passingCase(1611, BIGINT, REAL, "cast(42 as bigint)", 42L, 42f),
-                TestParams.passingCase(1612, BIGINT, DOUBLE, "cast(42 as bigint)", 42L, 42d),
+                TestParams.passingCase(1611, BIGINT, REAL, "cast(42 as bigint)", 42L, 42F),
+                TestParams.passingCase(1612, BIGINT, DOUBLE, "cast(42 as bigint)", 42L, 42D),
                 TestParams.failingCase(1613, BIGINT, TIME, "cast(42 as bigint)", 42L)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type BIGINT")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type BIGINT")
@@ -460,8 +460,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DECIMAL to BIGINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DECIMAL was found"),
                 TestParams.passingCase(1712, DECIMAL, DECIMAL, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
-                TestParams.passingCase(1713, DECIMAL, REAL, "cast(42 as decimal)", new BigDecimal("42"), 42f),
-                TestParams.passingCase(1714, DECIMAL, DOUBLE, "cast(42 as decimal)", new BigDecimal("42"), 42d),
+                TestParams.passingCase(1713, DECIMAL, REAL, "cast(42 as decimal)", new BigDecimal("42"), 42F),
+                TestParams.passingCase(1714, DECIMAL, DOUBLE, "cast(42 as decimal)", new BigDecimal("42"), 42D),
                 TestParams.failingCase(1715, DECIMAL, TIME, "cast(42 as decimal)", new BigDecimal("42"))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DECIMAL")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DECIMAL")
@@ -517,8 +517,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
                 TestParams.passingCase(1812, REAL, DECIMAL, "cast(42 as real)", 42F, BigDecimal.valueOf(42))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but REAL was found"),
-                TestParams.passingCase(1813, REAL, REAL, "cast(42 as real)", 42F, 42f),
-                TestParams.passingCase(1814, REAL, DOUBLE, "cast(42 as real)", 42F, 42d),
+                TestParams.passingCase(1813, REAL, REAL, "cast(42 as real)", 42F, 42F),
+                TestParams.passingCase(1814, REAL, DOUBLE, "cast(42 as real)", 42F, 42D),
                 TestParams.failingCase(1815, REAL, TIME, "cast(42 as real)", 42F)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type REAL")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type REAL")
@@ -535,7 +535,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type REAL")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but REAL was found"),
-                TestParams.passingCase(1819, REAL, OBJECT, "cast(42 as real)", 42F, 42f),
+                TestParams.passingCase(1819, REAL, OBJECT, "cast(42 as real)", 42F, 42F),
 
                 // DOUBLE
                 TestParams.failingCase(1901, DOUBLE, VARCHAR, "cast(42 as double)", 42D)
@@ -572,7 +572,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found"),
                 TestParams.passingCase(1911, DOUBLE, DECIMAL, "cast(42 as double)", 42D, BigDecimal.valueOf(42))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but DOUBLE was found"),
-                TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42f)
+                TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42F)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but DOUBLE was found"),
                 TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found"),
@@ -580,7 +580,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting DOUBLE to REAL")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DOUBLE to REAL")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but DOUBLE was found"),
-                TestParams.passingCase(1915, DOUBLE, DOUBLE, "cast(42 as double)", 42D, 42d),
+                TestParams.passingCase(1915, DOUBLE, DOUBLE, "cast(42 as double)", 42D, 42D),
                 TestParams.failingCase(1916, DOUBLE, TIME, "cast(42 as double)", 42D)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DOUBLE")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DOUBLE")
@@ -597,7 +597,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DOUBLE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but DOUBLE was found"),
-                TestParams.passingCase(1920, DOUBLE, OBJECT, "cast(42 as double)", 42D, 42d),
+                TestParams.passingCase(1920, DOUBLE, OBJECT, "cast(42 as double)", 42D, 42D),
 
                 // TIME
                 TestParams.failingCase(2001, TIME, VARCHAR, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0))
@@ -636,7 +636,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIME")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIME")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DOUBLE type, but TIME was found"),
-                TestParams.passingCase(2010, TIME, TIME, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0), LocalTime.of(1, 42)),
+                TestParams.passingCase(2010, TIME, TIME, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
+                        LocalTime.of(1, 42)),
                 TestParams.failingCase(2011, TIME, DATE, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME")
@@ -690,10 +691,16 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DATE")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIME from source field '.+' of type DATE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIME type, but DATE was found"),
-                TestParams.passingCase(2111, DATE, DATE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30), LocalDate.of(2020, 12, 30)),
-                TestParams.passingCase(2112, DATE, TIMESTAMP, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30), LocalDateTime.of(2020, 12, 30, 0, 0)),
-                TestParams.passingCase(2113, DATE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30), ZonedDateTime.of(2020, 12, 30, 0, 0, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
-                TestParams.passingCase(2114, DATE, OBJECT, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30), LocalDate.of(2020, 12, 30)),
+                TestParams.passingCase(2111, DATE, DATE, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        LocalDate.of(2020, 12, 30)),
+                TestParams.passingCase(2112, DATE, TIMESTAMP, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30),
+                        LocalDateTime.of(2020, 12, 30, 0, 0)),
+                TestParams.passingCase(2113, DATE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30' as date)",
+                        LocalDate.of(2020, 12, 30),
+                        ZonedDateTime.of(2020, 12, 30, 0, 0, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
+                TestParams.passingCase(2114, DATE, OBJECT, "cast('2020-12-30' as date)",
+                        LocalDate.of(2020, 12, 30),
+                        LocalDate.of(2020, 12, 30)),
 
                 // TIMESTAMP
                 TestParams.failingCase(2201, TIMESTAMP, VARCHAR, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0))
@@ -732,13 +739,18 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DOUBLE type, but TIMESTAMP was found"),
-                TestParams.passingCase(2210, TIMESTAMP, TIME, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalTime.of(1, 42))
+                TestParams.passingCase(2210, TIMESTAMP, TIME, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        LocalTime.of(1, 42))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIME type, but TIMESTAMP was found"),
-                TestParams.passingCase(2211, TIMESTAMP, DATE, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDate.of(2020, 12, 30))
+                TestParams.passingCase(2211, TIMESTAMP, DATE, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        LocalDate.of(2020, 12, 30))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DATE type, but TIMESTAMP was found"),
-                TestParams.passingCase(2212, TIMESTAMP, TIMESTAMP, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDateTime.of(2020, 12, 30, 1, 42)),
-                TestParams.passingCase(2213, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0), ZonedDateTime.of(2020, 12, 30, 1, 42, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
-                TestParams.passingCase(2214, TIMESTAMP, OBJECT, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0), LocalDateTime.of(2020, 12, 30, 1, 42)),
+                TestParams.passingCase(2212, TIMESTAMP, TIMESTAMP, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        LocalDateTime.of(2020, 12, 30, 1, 42)),
+                TestParams.passingCase(2213, TIMESTAMP, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        ZonedDateTime.of(2020, 12, 30, 1, 42, 0, 0, DEFAULT_ZONE).toOffsetDateTime()),
+                TestParams.passingCase(2214, TIMESTAMP, OBJECT, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0),
+                        LocalDateTime.of(2020, 12, 30, 1, 42)),
 
                 // TIMESTAMP WITH TIME ZONE
                 TestParams.failingCase(2301, TIMESTAMP_WITH_TIME_ZONE, VARCHAR, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
@@ -777,17 +789,18 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP WITH TIME ZONE")
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DOUBLE from source field '.+' of type TIMESTAMP WITH TIME ZONE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DOUBLE type, but TIMESTAMP WITH TIME ZONE was found"),
-                TestParams.passingCase(2310, TIMESTAMP_WITH_TIME_ZONE, TIME, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)), LocalTime.of(1, 42))
+                TestParams.passingCase(2310, TIMESTAMP_WITH_TIME_ZONE, TIME, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalTime.of(1, 42))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIME type, but TIMESTAMP WITH TIME ZONE was found"),
-                TestParams.passingCase(2311, TIMESTAMP_WITH_TIME_ZONE, DATE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)), LocalDate.of(2020, 12, 30))
+                TestParams.passingCase(2311, TIMESTAMP_WITH_TIME_ZONE, DATE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalDate.of(2020, 12, 30))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DATE type, but TIMESTAMP WITH TIME ZONE was found"),
-                TestParams.passingCase(2312, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)), LocalDateTime.of(2020, 12, 30, 1, 42))
+                TestParams.passingCase(2312, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                        LocalDateTime.of(2020, 12, 30, 1, 42))
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP type, but TIMESTAMP WITH TIME ZONE was found"),
-                TestParams.passingCase(2313, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                TestParams.passingCase(2313, TIMESTAMP_WITH_TIME_ZONE, TIMESTAMP_WITH_TIME_ZONE, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
                         OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
-                TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)",
-                        OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
+                TestParams.passingCase(2314, TIMESTAMP_WITH_TIME_ZONE, OBJECT, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)),
                         OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5))),
 
                 // OBJECT

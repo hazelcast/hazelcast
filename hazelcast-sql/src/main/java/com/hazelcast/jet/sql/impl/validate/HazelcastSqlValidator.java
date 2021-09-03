@@ -76,24 +76,16 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             .withIdentifierExpansion(true)
             .withSqlConformance(HazelcastSqlConformance.INSTANCE);
 
-    /**
-     * Visitor to rewrite Calcite operators to Hazelcast operators.
-     */
+    /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
 
-    /**
-     * Parameter converter that will be passed to parameter metadata.
-     */
+    /** Parameter converter that will be passed to parameter metadata. */
     private final Map<Integer, ParameterConverter> parameterConverterMap = new HashMap<>();
 
-    /**
-     * Parameter positions.
-     */
+    /** Parameter positions. */
     private final Map<Integer, SqlParserPos> parameterPositionMap = new HashMap<>();
 
-    /**
-     * Parameter values.
-     */
+    /** Parameter values. */
     private final List<Object> arguments;
 
     private boolean isCreateJob;
