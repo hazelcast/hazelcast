@@ -40,7 +40,6 @@ import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.version.Version;
