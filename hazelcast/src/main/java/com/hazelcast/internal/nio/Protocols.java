@@ -46,6 +46,11 @@ public final class Protocols {
      */
     public static final String MEMCACHE = "Memcached";
 
+    /**
+     * Protocol that is only used if received an unexpected protocol
+     */
+    public static final String UNEXPECTED_PROTOCOL = "HZX";
+
     private Protocols() {
     }
 
