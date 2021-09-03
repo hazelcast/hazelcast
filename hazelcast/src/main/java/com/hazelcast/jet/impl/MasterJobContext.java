@@ -595,10 +595,15 @@ public class MasterJobContext {
                     // have to use Async version, the future is completed inside a synchronized block
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
-            if (error instanceof ExecutionNotFoundException) {
-                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
+            if (error instanceof ExecutionNotFoundException && requestedTerminationMode != null) {
+                // If the StartExecutionOperation didn't find the execution and requestedTerminationMode
+                // is not null it means that we must have cancelled it.
                 // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
-                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
+                // Note that the local execution cancellation need not be performed only on
+                // an explicit user cancellation request. In this case, requestedTerminationMode
+                // becomes null. For example, this local cancellation can happen in
+                // JobExecutionService#onMemberRemoved. We will continue to handle these cases as if we
+                // would handle an unspecific exception
                 error = new JobTerminateRequestedException(requestedTerminationMode);
             }
             finalizeJob(error);
