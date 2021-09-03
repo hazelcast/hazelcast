@@ -155,7 +155,8 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
                 .clientFn(elasticClientSupplier())
-                .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", "document", item.getId()).doc(item.asMap()))
+                .mapToRequestFn((TestItem item)
+                        -> new UpdateRequest("my-index", "document", item.getId()).doc(item.asMap()))
                 .retries(0)
                 .build();
 
