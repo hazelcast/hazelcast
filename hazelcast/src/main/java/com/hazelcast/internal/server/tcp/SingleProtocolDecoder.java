@@ -19,7 +19,6 @@ package com.hazelcast.internal.server.tcp;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.InboundHandler;
-import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.server.ServerConnection;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
