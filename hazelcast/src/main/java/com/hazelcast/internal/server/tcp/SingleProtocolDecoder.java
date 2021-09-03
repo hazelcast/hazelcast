@@ -57,13 +57,22 @@ public class SingleProtocolDecoder
      * supportedProtocol} and, when matching, replaces itself in the inbound
      * pipeline with the {@code next InboundHandler}s.
      *
-     * @param supportedProtocol the {@link ProtocolType} supported by this
-     *                          {@code ProtocolDecoder}
-     * @param next              the {@link InboundHandler}s to replace this one
-     *                          in the inbound pipeline upon match of protocol
-     *                          bytes
-     * @param encoder           a {@link OutboundHandler} that will be notified
-     *                          when matching protocol bytes have been received
+     * @param supportedProtocol                 the {@link ProtocolType}
+     *                                          supported by this {@code
+     *                                          ProtocolDecoder}
+     * @param next                              the {@link InboundHandler}s to
+     *                                          replace this one in the inbound
+     *                                          pipeline upon match of protocol
+     *                                          bytes
+     * @param encoder                           a {@link SingleProtocolEncoder}
+     *                                          that will be notified when
+     *                                          non-matching protocol bytes have
+     *                                          been received
+     * @param shouldSignalMemberProtocolEncoder a boolean used to notify the
+     *                                          next encoder in the pipeline
+     *                                          after the {@link SingleProtocolEncoder}
+     *                                          when matching protocol bytes
+     *                                          have been received
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next,
