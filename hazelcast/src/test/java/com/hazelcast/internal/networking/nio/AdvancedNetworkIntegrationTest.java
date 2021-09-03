@@ -197,15 +197,13 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     private void assertWrongProtocolAlert(int port, String... protocolHeadersToTry) {
         byte[] expected = Protocols.UNEXPECTED_PROTOCOL.getBytes();
         for (String header : protocolHeadersToTry) {
-            try {
-                Socket socket = buildSocket(port);
+            try (Socket socket = buildSocket(port)) {
                 socket.getOutputStream().write(header.getBytes());
                 byte[] response = new byte[3];
                 IOUtil.readFully(socket.getInputStream(), response);
                 assertArrayEquals(
                         "The protocol header " + header + " should be unexpected on port " + port,
                         expected, response);
-                socket.close();
             } catch (IOException e) {
                 fail("Failed to connect to port " + port + ": " + e.getMessage());
             }
