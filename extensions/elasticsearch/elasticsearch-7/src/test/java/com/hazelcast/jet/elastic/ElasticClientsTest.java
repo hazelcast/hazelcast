@@ -23,22 +23,14 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import org.elasticsearch.search.SearchHit;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assume.assumeTrue;
 
 public class ElasticClientsTest extends BaseElasticTest {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    @BeforeClass
-    public static void beforeClassCheckDocker() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
-    }
 
     @After
     public void afterClass() {

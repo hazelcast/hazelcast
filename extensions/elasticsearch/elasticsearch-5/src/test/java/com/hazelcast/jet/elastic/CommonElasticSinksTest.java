@@ -106,7 +106,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
-                item -> new UpdateRequest("my-index", "document", item.id).doc(item.asMap())
+                item -> new UpdateRequest("my-index", "document", item.getId()).doc(item.asMap())
         );
 
         Pipeline p = Pipeline.create();
@@ -127,7 +127,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
         Sink<TestItem> elasticSink = ElasticSinks.elastic(
                 elasticClientSupplier(),
-                (item) -> new DeleteRequest("my-index", "document", item.id)
+                (item) -> new DeleteRequest("my-index", "document", item.getId())
         );
 
         Pipeline p = Pipeline.create();
@@ -152,7 +152,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
         Sink<TestItem> elasticSink = new ElasticSinkBuilder<>()
                 .clientFn(elasticClientSupplier())
-                .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", "document", item.id).doc(item.asMap()))
+                .mapToRequestFn((TestItem item) -> new UpdateRequest("my-index", "document", item.getId()).doc(item.asMap()))
                 .retries(0)
                 .build();
 
@@ -192,6 +192,7 @@ public abstract class CommonElasticSinksTest extends BaseElasticTest {
 
     static class TestItem implements Serializable {
 
+        private static final long serialVersionUID = 1L;
         private final String id;
         private final String name;
 
