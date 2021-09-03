@@ -49,6 +49,7 @@ import com.hazelcast.internal.partition.operation.ShutdownRequestOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
@@ -1505,6 +1506,20 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
                     applyNewPartitionTable(latestPartitions, allCompletedMigrations, thisAddress);
                 }
                 shouldFetchPartitionTables = false;
+            } catch (Throwable rethrowed) {
+                String lineSeparator = System.lineSeparator();
+
+                StringBuilder sb = new StringBuilder()
+                        .append("latestPartitions:").append(lineSeparator)
+                        .append(StringUtil.toString(latestPartitions)).append(lineSeparator)
+                        .append("allCompletedMigrations:").append(lineSeparator)
+                        .append(StringUtil.toString(allCompletedMigrations)).append(lineSeparator)
+                        .append("allActiveMigrations:").append(lineSeparator)
+                        .append(StringUtil.toString((allActiveMigrations))).append(lineSeparator)
+                        .append(rethrowed);
+
+                logger.warning(sb.toString());
+                throw rethrowed;
             } finally {
                 lock.unlock();
             }
