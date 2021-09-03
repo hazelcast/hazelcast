@@ -17,7 +17,7 @@
 package com.hazelcast.persistence;
 
 /**
- * Service for interacting with Hot Restart. For example - starting cluster-wide hot restart data backups, determining the
+ * Service for interacting with Persistence. For example - starting cluster-wide data backups, determining the
  * local backup state and interrupting a currently running local hot restart backup.
  */
 public interface PersistenceService {
