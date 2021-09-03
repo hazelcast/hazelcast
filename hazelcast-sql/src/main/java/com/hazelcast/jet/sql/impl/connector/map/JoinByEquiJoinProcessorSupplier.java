@@ -61,6 +61,7 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.extendArray;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -185,8 +186,8 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     }
 
     @Override
-    public Permission permission() {
-        return new MapPermission(mapName, ACTION_CREATE, ACTION_READ);
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
     }
 
     @Override

@@ -21,15 +21,14 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.sql.impl.exec.scan.index.MapIndexScanExecIterator;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,6 +41,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +49,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Simple test to verify the behavior in case of the converter type mismatch.
@@ -59,7 +58,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class SqlIndexConverterMismatchTest extends SqlTestSupport {
+public class SqlIndexConverterMismatchTest extends JetSqlIndexTestSupport {
 
     private static final String MAP_NAME = "map";
 
@@ -101,7 +100,7 @@ public class SqlIndexConverterMismatchTest extends SqlTestSupport {
     /**
      * @see MapIndexScanExecIterator#getIndexEntries
      */
-    @SuppressWarnings("StatementWithEmptyBody")
+    @SuppressWarnings({"StatementWithEmptyBody", "JavadocReference"})
     @Ignore("https://github.com/hazelcast/hazelcast/issues/19287")
     @Test
     public void testMismatch() {

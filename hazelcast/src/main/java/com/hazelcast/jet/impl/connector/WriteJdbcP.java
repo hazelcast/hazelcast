@@ -46,6 +46,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,6 +55,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -125,8 +127,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                     }
 
                     @Override
-                    public Permission permission() {
-                        return ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE);
+                    public List<Permission> permissions() {
+                        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
                     }
                 });
     }

@@ -24,6 +24,7 @@ import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -137,10 +138,16 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
     @Test
     public void testEntryProcessor() {
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
+        IMap<Integer, Object> map = instance1.getMap("test");
         for (int i = 0; i < 100; i++) {
-            EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
-            map.put(i, employeeDTO);
+            if (serverDoesNotHaveClasses) {
+                GenericRecord record = GenericRecordBuilder.compact("employee").setInt("age", i)
+                        .setLong("id", 102310312).build();
+                map.put(i, record);
+            } else {
+                EmployeeDTO employeeDTO = new EmployeeDTO(i, 102310312);
+                map.put(i, employeeDTO);
+            }
         }
 
         IMap map2 = instance2.getMap("test");
@@ -151,8 +158,14 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         }
 
         for (int i = 0; i < 100; i++) {
-            EmployeeDTO employeeDTO = map.get(i);
-            assertEquals(employeeDTO.getAge(), 1000 + i);
+            if (serverDoesNotHaveClasses) {
+                GenericRecord record = (GenericRecord) map2.get(i);
+                assertEquals(record.getInt("age"), 1000 + i);
+            } else {
+                EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
+                assertEquals(employeeDTO.getAge(), 1000 + i);
+
+            }
         }
     }
 

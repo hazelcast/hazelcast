@@ -45,6 +45,19 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_mappingIsNotCreated_then_itIsNotAvailable() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found, did you forget to CREATE MAPPING?");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM public.map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM hazelcast.public.map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+    }
+
+    @Test
     public void when_mappingIsDeclared_then_itIsAvailable() {
         // given
         String name = randomName();

@@ -199,7 +199,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
                             // the queries have extra spaces so that the errors are on the same positions
-                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?) ORDER BY this",
+                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this >= ? AND this <= ?) ORDER BY this",
                             fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2(),

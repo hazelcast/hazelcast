@@ -25,6 +25,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.math.DivideFunction;
 import com.hazelcast.sql.impl.expression.math.MultiplyFunction;
+import com.hazelcast.sql.impl.extract.GenericQueryTarget;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -64,6 +65,28 @@ public class KvRowProjectorTest {
         );
 
         Object[] row = projector.project(1, 8);
+
+        assertThat(row).isEqualTo(new Object[]{2, 4});
+    }
+
+    @Test
+    public void test_project_onlyDataKeyAndValueIsProvided() {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
+        KvRowProjector projector = new KvRowProjector(
+                new QueryPath[]{QueryPath.KEY_PATH, QueryPath.VALUE_PATH},
+                new QueryDataType[]{INT, INT},
+                new GenericQueryTarget(serializationService, null, true),
+                new GenericQueryTarget(serializationService, null, false),
+                null,
+                asList(
+                        MultiplyFunction.create(ColumnExpression.create(0, INT), ConstantExpression.create(2, INT), INT),
+                        DivideFunction.create(ColumnExpression.create(1, INT), ConstantExpression.create(2, INT), INT)
+                ),
+                mock(ExpressionEvalContext.class)
+        );
+
+        Object[] row = projector.project(serializationService.toData(1), serializationService.toData(8));
 
         assertThat(row).isEqualTo(new Object[]{2, 4});
     }
@@ -114,7 +137,6 @@ public class KvRowProjectorTest {
 
         @Override
         public void setTarget(Object value, Data valueData) {
-            assert valueData == null;
             this.value = value;
         }
 

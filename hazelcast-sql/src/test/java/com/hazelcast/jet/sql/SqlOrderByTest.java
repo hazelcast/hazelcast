@@ -328,7 +328,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndWhere() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(singletonList(intValField), SORTED);
@@ -342,7 +342,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndWhereNotIndexedField() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(singletonList(realValField), SORTED);
@@ -355,7 +355,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndWhere2Conditions() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(Arrays.asList(intValField, realValField), SORTED);
@@ -368,7 +368,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndWhere2ConditionsHashIndex() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(Arrays.asList(intValField, realValField), HASH);
@@ -516,7 +516,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectFetchOffsetInvalid() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql1 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
@@ -708,8 +708,6 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     private void assertSqlResultCount(String sql, int expectedCount) {
         try (SqlResult res = query(sql)) {
-
-            SqlRowMetadata rowMetadata = res.getRowMetadata();
 
             Iterator<SqlRow> rowIterator = res.iterator();
 
