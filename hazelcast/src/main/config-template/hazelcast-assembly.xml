@@ -16,11 +16,13 @@
   -->
 
 <!--
-  The default Hazelcast configuration.
+  The default Hazelcast @FILTER_DISTRO_NAME@ configuration.
 
   This file differs from hazelcast-default.xml in some settings
-  and it is used by the scripts in the ZIP/TAR distributions,
-  which are the basis for other distributions like docker & package managers.
+  and it is used by the scripts in the @FILTER_DISTRO_NAME@ distribution.
+
+  This configuration, compared to hazelcast-default.xml, enables more features.
+  It's focused on keeping balance between security and usability in the distribution.
 
   To learn how to configure Hazelcast, please see the schema at
   https://hazelcast.com/schema/config/hazelcast-config-5.0.xsd
@@ -38,6 +40,14 @@
         configured and a client connecting to this cluster must use it as well.
     -->
     <cluster-name>dev</cluster-name>
+
+    <properties>
+        <!--
+            ZIP and TAR distributions binds only to loopback network interface (127.0.0.1),
+            Docker image listens on all interfaces (wildcard address).
+         -->
+        <property name="hazelcast.socket.bind.any">@FILTER_BIND_ANY@</property>
+    </properties>
 
     <network>
         <!--
@@ -58,6 +68,15 @@
                 value as false.
         -->
         <port auto-increment="true" port-count="100">5701</port>
+        <!--
+            Specifies which network interfaces Hazelcast should use. You can define multiple
+            interfaces using its <interface> sub-element.
+            We enable binding to loopback interface only in ZIP and TGZ Hazelcast disribution packages
+            for security reasons. (See also the property "hazelcast.socket.bind.any" value.)
+        -->
+        <interfaces enabled="@FILTER_LOOPBACK_INTERFACE@">
+            <interface>127.0.0.1</interface>
+        </interfaces>
         <outbound-ports>
             <!--
             Allowed port range when connecting to other nodes.
@@ -77,7 +96,7 @@
                 walk through all available discovery strategies and detect the correct one for the
                 current runtime environment.
             -->
-            <auto-detection enabled="true"/>
+            <auto-detection enabled="@FILTER_BIND_ANY@"/>
             <!-- Enables/disables the multicast discovery mechanism. The default value is disabled. -->
             <multicast enabled="false">
                 <!--
@@ -93,8 +112,7 @@
             </multicast>
 
             <!-- Specifies whether the TCP/IP discovery is enabled or not. Default value is false. -->
-            <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+            <tcp-ip enabled="@FILTER_LOOPBACK_INTERFACE@">
                 <member-list>
                     <member>127.0.0.1</member>
                 </member-list>
@@ -144,61 +162,12 @@
             </discovery-strategies>
         </join>
         <!--
-            Specifies which network interfaces Hazelcast should use. You need to set its "enabled"
-            attribute to true to be able to use your defined interfaces. You can define multiple
-            interfaces using its <interface> sub-element. By default, it is disabled.
-        -->
-        <interfaces enabled="false">
-            <interface>10.10.1.*</interface>
-        </interfaces>
-        <!--
             Lets you configure SSL using the SSL context factory. This feature is available
             only in Hazelcast Enterprise. To be able to use it, encryption should NOT be enabled
             and you should first implement your SSLContextFactory class. Its configuration contains
             the factory class and SSL properties. By default, it is disabled.
         -->
         <ssl enabled="false"/>
-        <!--
-            Lets you add custom hooks to join and perform connection procedures (like a custom
-            authentication negotiation protocol, etc.). This feature is available only in Hazelcast
-            Enterprise. To be able to use it, you should first implement the MemberSocketInterceptor
-            (for members joining to a cluster) or SocketInterceptor (for clients connecting to a
-            member) class. Its configuration contains the class you implemented and socket
-            interceptor properties. By default, it is disabled. The following is an example:
-            <socket-interceptor enabled="true">
-                <class-name>
-                    com.hazelcast.examples.MySocketInterceptor
-                </class-name>
-                <properties>
-                    <property name="property1">value1</property>
-                    <property name="property2">value2</property>
-                </properties>
-            </socket-interceptor>
-        -->
-        <socket-interceptor enabled="false"/>
-        <!--
-            Lets you encrypt the entire socket level communication among all Hazelcast members.
-            This feature is available only in Hazelcast Enterprise. Its configuration contains
-            the encryption properties and the same configuration must be placed to all members.
-            By default, it is disabled.
-        -->
-        <symmetric-encryption enabled="false">
-            <!--
-               encryption algorithm such as
-               DES/ECB/PKCS5Padding,
-               PBEWithMD5AndDES,
-               AES/CBC/PKCS5Padding,
-               Blowfish,
-               DESede
-            -->
-            <algorithm>PBEWithMD5AndDES</algorithm>
-            <!-- salt value to use when generating the secret key -->
-            <salt>thesalt</salt>
-            <!-- pass phrase to use when generating the secret key -->
-            <password>thepass</password>
-            <!-- iteration count to use when generating the secret key -->
-            <iteration-count>19</iteration-count>
-        </symmetric-encryption>
         <failure-detector>
             <icmp enabled="false"/>
         </failure-detector>
@@ -487,7 +456,7 @@
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 
-    <jet enabled="true" resource-upload-enabled="false">
+    <jet enabled="true" resource-upload-enabled="true">
         <instance>
             <!-- time spacing of flow-control (ack) packets -->
             <flow-control-period>100</flow-control-period>
