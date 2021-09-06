@@ -74,9 +74,11 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 return;
             } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
                 handleForceStart(command);
-            } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
+            } else if (uri.startsWith(URI_PERSISTENCE_BACKUP_INTERRUPT_CLUSTER_URL)
+                    || uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
                 handleHotRestartBackupInterrupt(command);
-            } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
+            } else if (uri.startsWith(URI_PERSISTENCE_BACKUP_CLUSTER_URL)
+                    || uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
                 handleHotRestartBackup(command);
             } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
                 handlePartialStart(command);

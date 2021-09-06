@@ -67,7 +67,7 @@ public class RestApiFilter implements TextProtocolFilter {
         if (parsers.getParser(operation) == null) {
             return null;
         }
-        // the operation is a HTTP method so the next token should be a resource path
+        // the operation is an HTTP method so the next token should be a resource path
         String requestUri = nextToken(st);
         return requestUri != null ? getHttpApiEndpointGroup(operation, requestUri) : null;
     }
@@ -87,9 +87,14 @@ public class RestApiFilter implements TextProtocolFilter {
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_FORCESTART_CLUSTER_URL)
                 || requestUri.startsWith(HttpCommandProcessor.URI_PARTIALSTART_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_PERSISTENCE_BACKUP_CLUSTER_URL)
+                || requestUri.startsWith(HttpCommandProcessor.URI_PERSISTENCE_BACKUP_INTERRUPT_CLUSTER_URL)
+                // deprecated
                 || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_CLUSTER_URL)
-                || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
-            return RestEndpointGroup.HOT_RESTART;
+                // deprecated
+                || requestUri.startsWith(HttpCommandProcessor.URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)
+        ) {
+            return RestEndpointGroup.PERSISTENCE;
         }
         if (requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER)
                 || requestUri.startsWith(HttpCommandProcessor.URI_CLUSTER_STATE_URL)
