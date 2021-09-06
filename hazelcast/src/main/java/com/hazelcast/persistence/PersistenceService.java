@@ -18,18 +18,18 @@ package com.hazelcast.persistence;
 
 /**
  * Service for interacting with Persistence. For example - starting cluster-wide data backups, determining the
- * local backup state and interrupting a currently running local hot restart backup.
+ * local backup state and interrupting a currently running local backup.
  *
  * @since 5.0
  */
 public interface PersistenceService {
-    /** The prefix for each hot restart backup directory. The backup sequence is appended to this prefix. */
+    /** The prefix for each persistence backup directory. The backup sequence is appended to this prefix. */
     String BACKUP_DIR_PREFIX = "backup-";
 
     /**
-     * Attempts to perform a cluster hot restart data backup. Each node will create a directory under the defined backup dir
+     * Attempts to perform a cluster-wide data backup. Each node will create a directory under the defined backup dir
      * with the name {@link #BACKUP_DIR_PREFIX} followed by the cluster time defined by this node.
-     * The backup request is performed transactionally. This method will throw an exception if an another request (transaction)
+     * The backup request is performed transactionally. This method will throw an exception if another request (transaction)
      * is already in progress. If a node is already performing a backup (there is a file indicating a backup is in progress),
      * the node will only log a warning and ignore the backup request.
      *
@@ -38,19 +38,19 @@ public interface PersistenceService {
     void backup();
 
     /**
-     * Attempts to perform a cluster hot restart data backup. Each node will create a directory under the defined backup dir
+     * Attempts to perform a cluster-wide data backup. Each node will create a directory under the defined backup dir
      * with the name {@link #BACKUP_DIR_PREFIX} followed by the {@code backupSeq}.
-     * The backup request is performed transactionally. This method will throw an exception if an another request (transaction)
+     * The backup request is performed transactionally. This method will throw an exception if another request (transaction)
      * is already in progress. If a node is already performing a backup (there is a file indicating a backup is in progress),
      * the node will only log a warning and ignore the backup request.
      *
-     * @param backupSeq the suffix of the backup directory for this cluster hot restart backup
+     * @param backupSeq the suffix of the backup directory for this cluster backup
      * @since 5.0
      */
     void backup(long backupSeq);
 
     /**
-     * Returns the local hot restart backup task status (not the cluster backup status).
+     * Returns the local backup task status (not the cluster backup status).
      *
      * @since 5.0
      */
@@ -73,17 +73,26 @@ public interface PersistenceService {
     void interruptBackupTask();
 
     /**
-     * Returns if hot backup is enabled.
+     * Returns if backup is enabled.
      *
-     * @return {@code true} if hot backup is enabled, {@code false} otherwise
+     * @return {@code true} if backup is enabled, {@code false} otherwise
      * @since 5.0
      */
+    default boolean isBackupEnabled() {
+        return isHotBackupEnabled();
+    }
+
+    /**
+     * @deprecated since 5.0
+     * Use {@link #isBackupEnabled()} instead.
+     */
+    @Deprecated
     boolean isHotBackupEnabled();
 
     /**
      * Returns the persistence backup directory.
      *
-     * @return persistence backup directory if hot backup is enabled, {@code null} otherwise.
+     * @return persistence backup directory if backup is enabled, {@code null} otherwise.
      * @since 5.0
      */
     String getBackupDirectory();
