@@ -29,6 +29,7 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
@@ -183,7 +184,7 @@ public class MetadataPortableResolverTest {
         //noinspection ResultOfMethodCallIgnored
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(toList()))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Cannot derive Portable type for '" + QueryDataType.OBJECT + "'");
+                .hasMessageContaining("Cannot derive Portable type for '" + QueryDataTypeFamily.OBJECT + "'");
     }
 
     @Test
@@ -272,6 +273,42 @@ public class MetadataPortableResolverTest {
                 ss
         )).isInstanceOf(QueryException.class)
           .hasMessageContaining("Mismatch between declared and resolved type: field");
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void when_objectUsedForCurrentlyUnknownType_then_allowed(boolean key, String prefix) {
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
+        ClassDefinition nestedClassDef =
+                new ClassDefinitionBuilder(1, 3, 4)
+                        .addIntField("intField")
+                        .build();
+        ClassDefinition classDefinition =
+                new ClassDefinitionBuilder(1, 2, 3)
+                        .addIntArrayField("intArrayField")
+                        .addPortableField("nestedPortableField", nestedClassDef)
+                        .build();
+        ss.getPortableContext().registerClassDefinition(nestedClassDef);
+        ss.getPortableContext().registerClassDefinition(classDefinition);
+        Map<String, String> options = ImmutableMap.of(
+                (key ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID), String.valueOf(classDefinition.getFactoryId()),
+                (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), String.valueOf(classDefinition.getClassId()),
+                (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
+        );
+
+        // We normally don't allow mapping e.g. INT field as OBJECT. But we need to allow it for arrays and nested objects
+        // due to backwards-compatibility.
+        INSTANCE.resolveAndValidateFields(
+                key,
+                asList(
+                        field("intArrayField", QueryDataType.OBJECT, prefix + ".intArrayField"),
+                        field("nestedPortableField", QueryDataType.OBJECT, prefix + ".nestedPortableField")),
+                options,
+                ss
+        );
     }
 
     @Test

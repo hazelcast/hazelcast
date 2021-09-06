@@ -17,14 +17,14 @@
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -199,7 +199,7 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
 
                     Tuple2<List<SqlRow>, HazelcastSqlException> comparisonEquivalentResult = executePossiblyFailingQuery(
                             // the queries have extra spaces so that the errors are on the same positions
-                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this <= ? AND this >= ?) ORDER BY this",
+                            "SELECT this FROM map WHERE (this >=     ? AND this <= ?) OR (this >= ? AND this <= ?) ORDER BY this",
                             fieldType.getFieldConverterType().getTypeFamily().getPublicType(),
                             biValue.field1(),
                             biValue.field2(),
@@ -280,7 +280,15 @@ public class BetweenOperatorIntegrationTest extends ExpressionTestSupport {
             // Actual   :At line 1, column [6]5: ...
             // To overcome             this ^ we are comparing substrings like
             // "Parameter at position 1 must be of $1 type, but $2 was found (consider adding an explicit CAST)"
+            //
+            // Expected :The Jet SQL job failed: Execution on a member failed: com.hazelcast.jet.JetException: Exception in ProcessorTasklet{06bd-fcd0-9e82-0001/Project(IMap[public.map])#1}: com.hazelcast.sql.impl.QueryException: ...
+            // Actual   :The Jet SQL job failed: Execution on a member failed: com.hazelcast.jet.JetException: Exception in ProcessorTasklet{06bd-fcd0-9e83-0001/Project(IMap[public.map])#1}: com.hazelcast.sql.impl.QueryException: ...
+            // To overcome                                                                                                                           this ^ we are comparing substrings like
+            // "Cannot compare two OBJECT values, because left operand has class com.hazelcast.jet.sql.impl.support.expressions.ExpressionType$ObjectHolder type and right operand has class java.lang.String type
             int startIndex = e.getMessage().indexOf("Parameter");
+            if (startIndex == -1) {
+                startIndex = e.getMessage().indexOf("Cannot compare");
+            }
             assertEquals(
                     expectedOutcome.f1().getMessage().substring(startIndex),
                     e.getMessage().substring(startIndex)

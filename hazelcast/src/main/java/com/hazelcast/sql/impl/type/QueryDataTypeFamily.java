@@ -138,6 +138,10 @@ public enum QueryDataTypeFamily {
         }
     }
 
+    public boolean isObject() {
+        return this == QueryDataTypeFamily.OBJECT;
+    }
+
     public int getEstimatedSize() {
         return estimatedSize;
     }

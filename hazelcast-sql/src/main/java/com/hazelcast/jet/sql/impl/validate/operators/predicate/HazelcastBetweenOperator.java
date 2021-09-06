@@ -140,5 +140,4 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
             validator.setParameterConverter(node0.getIndex(), converter);
         }
     }
-
 }

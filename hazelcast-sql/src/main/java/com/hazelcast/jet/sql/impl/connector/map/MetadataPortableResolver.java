@@ -107,7 +107,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                     .peek(mappingField -> {
                         QueryDataType type = mappingField.type();
                         if (type == QueryDataType.OBJECT) {
-                            throw QueryException.error("Cannot derive Portable type for '" + type + "'");
+                            throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
                         }
                     });
         }
