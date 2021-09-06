@@ -228,9 +228,9 @@
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
                                     <include>org.slf4j:slf4j-api</include>
-                                    <include>com.fasterxml.jackson.core:jackson-core</include>
-                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                     <include>net.minidev:json-smart</include>
+                                    <include>net.minidev:accessors-smart</include>
+                                    <include>org.ow2.asm:asm</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -279,6 +279,14 @@
                                 <relocation>
                                     <pattern>net.minidev</pattern>
                                     <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.ow2.asm</pattern>
+                                    <shadedPattern>${relocation.root}.org.ow2.asm</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb.asm</pattern>
+                                    <shadedPattern>${relocation.root}.org.objectweb.asm</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -352,19 +360,19 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-databind</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/MANIFEST.MF</exclude>
-                                    </excludes>
-                                </filter>
-                                <filter>
                                     <artifact>net.minidev:json-smart</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>net.minidev:accessors-smart</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.ow2.asm:asm</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -505,16 +513,13 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
