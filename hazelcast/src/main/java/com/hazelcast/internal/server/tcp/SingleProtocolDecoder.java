@@ -99,12 +99,19 @@ public class SingleProtocolDecoder
 
             verifyProtocol(loadProtocol());
             encoder.signalProtocolVerified();
-            // initialize the connection
+
+            // Initialize the connection
             initConnection();
             setupNextDecoder();
+            if (!channel.isClientMode()) {
+                // Set up the next encoder in the pipeline if  in client mode
+                // This replaces SignalProtocolEncoder with next one in the pipeline
+                encoder.setupNextEncoder();
 
-            if (shouldSignalProtocolLoaded()) {
-                ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalProtocolLoaded();
+                // Signal the member protocol encoder only if it's needed
+                if (shouldSignalMemberProtocolEncoder) {
+                    ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalProtocolLoaded();
+                }
             }
 
             return CLEAN;
@@ -114,7 +121,7 @@ public class SingleProtocolDecoder
     }
 
     protected void setupNextDecoder() {
-        // replace this handler with the next one
+        // Replace this handler with the next one
         channel.inboundPipeline().replace(this, inboundHandlers);
     }
 
@@ -144,9 +151,5 @@ public class SingleProtocolDecoder
             TcpServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
             connection.setConnectionType(ConnectionType.MEMBER);
         }
-    }
-
-    private boolean shouldSignalProtocolLoaded() {
-        return !channel.isClientMode() && shouldSignalMemberProtocolEncoder;
     }
 }
