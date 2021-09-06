@@ -20,6 +20,7 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -95,5 +96,18 @@ public abstract class AbstractParameterConverter implements ParameterConverter {
         }
 
         return context + ": " + message;
+    }
+
+    public static ParameterConverter from(QueryDataType targetType, int index, SqlParserPos parserPosition) {
+        QueryDataTypeFamily targetTypeFamily = targetType.getTypeFamily();
+        if (targetTypeFamily.isNumeric()) {
+            return new NumericPrecedenceParameterConverter(index, parserPosition, targetType);
+        } else if (targetTypeFamily.isTemporal()) {
+            return new TemporalPrecedenceParameterConverter(index, parserPosition, targetType);
+        } else if (targetTypeFamily.isObject()) {
+            return NoOpParameterConverter.INSTANCE;
+        } else {
+            return new StrictParameterConverter(index, parserPosition, targetType);
+        }
     }
 }
