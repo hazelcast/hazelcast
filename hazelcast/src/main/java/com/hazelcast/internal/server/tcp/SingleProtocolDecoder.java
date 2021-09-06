@@ -45,10 +45,9 @@ public class SingleProtocolDecoder
     protected final ProtocolType supportedProtocol;
 
     private final SingleProtocolEncoder encoder;
-    private final boolean shouldSignalMemberProtocolEncoder;
 
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
-        this(supportedProtocol, new InboundHandler[]{next}, encoder, false);
+        this(supportedProtocol, new InboundHandler[]{next}, encoder);
     }
 
     /**
@@ -67,19 +66,13 @@ public class SingleProtocolDecoder
      *                                          that will be notified when
      *                                          non-matching protocol bytes have
      *                                          been received
-     * @param shouldSignalMemberProtocolEncoder a boolean used to notify the
-     *                                          next encoder in the pipeline
-     *                                          after the {@link SingleProtocolEncoder}
-     *                                          when matching protocol bytes
-     *                                          have been received
      */
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public SingleProtocolDecoder(ProtocolType supportedProtocol, InboundHandler[] next,
-                                 SingleProtocolEncoder encoder, boolean shouldSignalMemberProtocolEncoder) {
+                                 SingleProtocolEncoder encoder) {
         this.supportedProtocol = supportedProtocol;
         this.inboundHandlers = next;
         this.encoder = encoder;
-        this.shouldSignalMemberProtocolEncoder = shouldSignalMemberProtocolEncoder;
     }
 
     @Override
@@ -102,10 +95,6 @@ public class SingleProtocolDecoder
             // initialize the connection
             initConnection();
             setupNextDecoder();
-
-            if (shouldSignalProtocolLoaded()) {
-                ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalProtocolLoaded();
-            }
 
             return CLEAN;
         } finally {
@@ -144,9 +133,5 @@ public class SingleProtocolDecoder
             TcpServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
             connection.setConnectionType(ConnectionType.MEMBER);
         }
-    }
-
-    private boolean shouldSignalProtocolLoaded() {
-        return !channel.isClientMode() && shouldSignalMemberProtocolEncoder;
     }
 }

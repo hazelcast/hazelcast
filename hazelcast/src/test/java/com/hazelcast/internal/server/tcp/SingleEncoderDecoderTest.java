@@ -18,6 +18,7 @@ package com.hazelcast.internal.server.tcp;
 
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.networking.OutboundPipeline;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -73,7 +74,7 @@ public class SingleEncoderDecoderTest extends HazelcastTestSupport {
     public void testIncompatibleProtocolSentToClient() {
         // Set up encoder and decoder
         SingleProtocolEncoder protocolEncoder = new SingleProtocolEncoder((OutboundHandler) null);
-        SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(supportedProtocol, null, protocolEncoder);
+        SingleProtocolDecoder protocolDecoder = new SingleProtocolDecoder(supportedProtocol, (InboundHandler) null, protocolEncoder);
 
         // Set up buffers
         ByteBuffer encoderDst = ByteBuffer.allocate(1000);
