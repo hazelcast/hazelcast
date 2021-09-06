@@ -383,26 +383,36 @@ public final class ProxyRegistry {
      * <p>
      * Calling this method concurrently with
      * {@code doCreateProxy(publishEvent=true)} may result in publishing the remote
-     * events multiple times for some of the proxies.
+     * events multiple times for some proxies.
+     *
+     * @param publishAfterInitialization whether to publish distributed object
+     *                                   created event after the proxy initialization
      */
-    void initializeAndPublishProxies() {
+    void initializeProxies(boolean publishAfterInitialization) {
         for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
             String name = entry.getKey();
             DistributedObjectFuture future = entry.getValue();
-            if (!future.isSetAndInitialized()) {
-                try {
-                    future.get();
-                } catch (Throwable e) {
-                    // proxy initialization failed
-                    // deregister future to avoid infinite hang on future.get()
-                    proxyService.logger.warning("Error while initializing proxy: " + name, e);
-                    future.setError(e);
-                    proxies.remove(entry.getKey());
-                    throw rethrow(e);
-                }
+            if (future.isSetAndInitialized()) {
+                continue;
+            }
+            initializeProxy(name, future);
+            if (publishAfterInitialization) {
                 UUID source = proxyService.nodeEngine.getLocalMember().getUuid();
                 publish(new DistributedObjectEventPacket(CREATED, serviceName, name, source));
             }
+        }
+    }
+
+    private void initializeProxy(String name, DistributedObjectFuture future) {
+        try {
+            future.get();
+        } catch (Throwable e) {
+            // proxy initialization failed
+            // deregister future to avoid infinite hang on future.get()
+            proxyService.logger.warning("Error while initializing proxy: " + name, e);
+            future.setError(e);
+            proxies.remove(name);
+            throw rethrow(e);
         }
     }
 
