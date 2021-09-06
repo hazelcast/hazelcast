@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.validate.operand;
 
-import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
-import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
-import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
-import com.hazelcast.jet.sql.impl.validate.param.TemporalPrecedenceParameterConverter;
+import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
@@ -109,7 +107,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             return false;
         }
 
-        // Otherwise we are good to go. Construct the new type of the operand.
+        // Otherwise, we are good to go. Construct the new type of the operand.
         RelDataType newOperandType = getTargetType(validator.getTypeFactory(), operandType.isNullable());
 
         // Perform coercion
@@ -125,38 +123,15 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
 
     @Override
     protected ParameterConverter parameterConverter(SqlDynamicParam operand) {
-        QueryDataType hazelcastType = getTargetHazelcastType();
-
-        if (isNumeric()) {
-            return new NumericPrecedenceParameterConverter(
-                    operand.getIndex(),
-                    operand.getParserPosition(),
-                    hazelcastType
-            );
-        } else if (isTemporal()) {
-            return new TemporalPrecedenceParameterConverter(
-                    operand.getIndex(),
-                    operand.getParserPosition(),
-                    hazelcastType
-            );
-        } else {
-            return new StrictParameterConverter(
-                    operand.getIndex(),
-                    operand.getParserPosition(),
-                    hazelcastType
-            );
-        }
-    }
-
-    private QueryDataType getTargetHazelcastType() {
-        return HazelcastTypeUtils.toHazelcastType(targetTypeName);
+        QueryDataType targetHazelcastType = getTargetHazelcastType();
+        return AbstractParameterConverter.from(targetHazelcastType,  operand.getIndex(), operand.getParserPosition());
     }
 
     public boolean isNumeric() {
         return getTargetHazelcastType().getTypeFamily().isNumeric();
     }
 
-    public boolean isTemporal() {
-        return getTargetHazelcastType().getTypeFamily().isTemporal();
+    private QueryDataType getTargetHazelcastType() {
+        return HazelcastTypeUtils.toHazelcastType(targetTypeName);
     }
 }
