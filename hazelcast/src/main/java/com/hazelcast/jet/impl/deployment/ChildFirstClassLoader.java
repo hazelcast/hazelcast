@@ -49,7 +49,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
         for (URL url : urls) {
             try {
                 if (!new File(url.toURI()).exists()) {
-                    LOG.warning("URL " + url + " does not exist.");
+                    LOG.warning("URL '" + url + "' does not point to an existing local file.");
                 }
             } catch (URISyntaxException e) {
                 throw new HazelcastException("URL has incorrect syntax", e);
