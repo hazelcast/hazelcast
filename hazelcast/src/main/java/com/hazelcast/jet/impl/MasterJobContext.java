@@ -598,15 +598,14 @@ public class MasterJobContext {
             if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
                 if (requestedTerminationMode != null) {
-                    // This cancellation can be because the master cancelled it upon to a user
-                    // request. Let's pretend that case as the StartExecutionOperation returned
-                    // JobTerminateRequestedException.
+                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                    // to JobTerminateRequestedException.
                     error = new JobTerminateRequestedException(requestedTerminationMode);
                 }
-                // The cancellation can also happen that some participants left and
+                // The cancellation can also happen if some participant left and
                 // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
-                // Since this is an unexpected cancellation, we don't turn it into a post-handled
-                // exception type and let the execution complete with failure.
+                // We keep this (and possibly other) exceptions as they are
+                // and let the execution complete with failure.
             }
             finalizeJob(error);
         }
