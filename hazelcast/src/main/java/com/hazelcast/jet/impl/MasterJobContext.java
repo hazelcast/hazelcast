@@ -600,7 +600,7 @@ public class MasterJobContext {
                 if (requestedTerminationMode != null) {
                     // This cancellation can be because the master cancelled it. If that's the case, convert the exception
                     // to JobTerminateRequestedException.
-                    error = new JobTerminateRequestedException(requestedTerminationMode);
+                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
                 }
                 // The cancellation can also happen if some participant left and
                 // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
