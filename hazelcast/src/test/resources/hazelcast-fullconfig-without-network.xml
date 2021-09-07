@@ -920,6 +920,11 @@
                     <action>all</action>
                 </actions>
             </connector-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>all</action>
+                </actions>
+            </sql-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
     </security>
