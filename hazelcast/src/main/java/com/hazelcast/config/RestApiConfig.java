@@ -58,7 +58,7 @@ public class RestApiConfig {
      * Enables provided REST endpoint groups. It doesn't replace already enabled groups.
      */
     public RestApiConfig enableGroups(RestEndpointGroup... endpointGroups) {
-        if (enabledGroupCodes != null) {
+        if (endpointGroups != null) {
             enabledGroupCodes.addAll(Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode)
                     .distinct().collect(Collectors.toList()));
         }
