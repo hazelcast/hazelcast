@@ -104,7 +104,7 @@ public class SingleProtocolDecoder
             initConnection();
             setupNextDecoder();
             if (!channel.isClientMode()) {
-                // Set up the next encoder in the pipeline if  in client mode
+                // Set up the next encoder in the pipeline if in server mode
                 // This replaces SignalProtocolEncoder with next one in the pipeline
                 encoder.setupNextEncoder();
 

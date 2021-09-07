@@ -75,7 +75,7 @@ public class SingleProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
             }
 
             if (channel.isClientMode()) {
-                // Set up the next encoder in the pipeline if  in client mode
+                // Set up the next encoder in the pipeline if in client mode
                 setupNextEncoder();
             }
 
