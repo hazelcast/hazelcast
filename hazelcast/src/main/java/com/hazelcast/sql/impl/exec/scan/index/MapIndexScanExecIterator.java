@@ -148,7 +148,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
         if (actualComponentCount != expectedComponentCount) {
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
                 + "\" of the IMap \"" + mapName + "\" because it has " + actualComponentCount + " component(s), but "
-                + expectedComponentCount + " expected").markInvalidate();
+                + expectedComponentCount + " expected");
         }
 
         // Validate component types
@@ -175,7 +175,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
                 throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
                     + "\" of the IMap \"" + mapName + "\" because it has component \"" + component + "\" of type "
-                    + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected").markInvalidate();
+                    + actual.getTypeFamily() + ", but " + expected.getTypeFamily() + " was expected");
             }
         }
 
@@ -185,7 +185,7 @@ public class MapIndexScanExecIterator implements KeyValueIterator {
 
             throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + index.getName()
                 + "\" of the IMap \"" + mapName + "\" because it does not have suitable converter for component \""
-                + component + "\" (expected " + expected.getTypeFamily() + ")").markInvalidate();
+                + component + "\" (expected " + expected.getTypeFamily() + ")");
         }
     }
 }
