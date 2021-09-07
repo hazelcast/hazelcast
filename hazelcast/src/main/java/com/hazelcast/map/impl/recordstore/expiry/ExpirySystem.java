@@ -26,6 +26,7 @@ import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -42,9 +43,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.nextExpirationTime;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getNextExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.trySetLastUpdateTimeAsVersion;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -134,19 +136,29 @@ public class ExpirySystem {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime);
     }
 
-    public final void addKeyIfExpirable(Data key, long ttl, long maxIdle, long expiryTime, long now) {
+    public final void addKeyIfExpirable(Data key, long ttl, long maxIdle,
+                                        long expiryTime, long now, Record record) {
+        // We have no previously-set-expiryTime, need to find it.
         if (expiryTime <= 0) {
             MapConfig mapConfig = mapContainer.getMapConfig();
-            long ttlMillis = pickTTLMillis(ttl, mapConfig);
-            long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-            long expirationTime = nextExpirationTime(ttlMillis, maxIdleMillis, now);
-            addExpirableKey(key, ttlMillis, maxIdleMillis, expirationTime);
+            long ttlMillis = pickTTLMillis(mapConfig, ttl);
+            long maxIdleMillis = pickMaxIdleMillis(mapConfig, maxIdle);
+            trySetLastUpdateTimeAsVersion(record, ttlMillis, maxIdleMillis,
+                    now, mapConfig.isPerEntryStatsEnabled());
+            long expirationTime = getNextExpirationTime(record, ttlMillis, maxIdleMillis,
+                    now, mapConfig.isPerEntryStatsEnabled());
+            storeOrRemoveExpiryMetadataOfKey(key, ttlMillis, maxIdleMillis, expirationTime);
         } else {
-            addExpirableKey(key, ttl, maxIdle, expiryTime);
+            // We know expiryTime of key
+            storeOrRemoveExpiryMetadataOfKey(key, ttl, maxIdle, expiryTime);
         }
+
+        // Schedule background expiry task
+        mapServiceContext.getExpirationManager().scheduleExpirationTask();
     }
 
-    private void addExpirableKey(Data key, long ttlMillis, long maxIdleMillis, long expirationTime) {
+    private void storeOrRemoveExpiryMetadataOfKey(Data key, long ttlMillis,
+                                                  long maxIdleMillis, long expirationTime) {
         if (expirationTime == Long.MAX_VALUE) {
             if (!isEmpty()) {
                 callRemove(key, expireTimeByKey);
@@ -154,26 +166,37 @@ public class ExpirySystem {
             return;
         }
 
+        createOrUpdateExpiryMetadata(key, ttlMillis, maxIdleMillis, expirationTime);
+    }
+
+    private void createOrUpdateExpiryMetadata(Data key, long ttlMillis,
+                                              long maxIdleMillis, long expirationTime) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(true);
         ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
+
+        // create expiryMetadata when it is absent
         if (expiryMetadata == null) {
             expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis, expirationTime);
             Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
             expireTimeByKey.put(nativeKey, expiryMetadata);
-        } else {
-            expiryMetadata.setTtl(ttlMillis)
-                    .setMaxIdle(maxIdleMillis)
-                    .setExpirationTime(expirationTime);
+            return;
         }
 
-        mapServiceContext.getExpirationManager().scheduleExpirationTask();
+        // update expiryMetadata when it exists
+        expiryMetadata.setTtl(ttlMillis)
+                .setMaxIdle(maxIdleMillis)
+                .setExpirationTime(expirationTime);
     }
 
-    public final long calculateExpirationTime(long ttl, long maxIdle, long now) {
+    public final long calculateExpirationTime(Record record, long ttl, long maxIdle, long now) {
         MapConfig mapConfig = mapContainer.getMapConfig();
-        long ttlMillis = pickTTLMillis(ttl, mapConfig);
-        long maxIdleMillis = pickMaxIdleMillis(maxIdle, mapConfig);
-        return nextExpirationTime(ttlMillis, maxIdleMillis, now);
+        long ttlMillis = pickTTLMillis(mapConfig, ttl);
+        long maxIdleMillis = pickMaxIdleMillis(mapConfig, maxIdle);
+        boolean perEntryStatsEnabled = mapConfig.isPerEntryStatsEnabled();
+        trySetLastUpdateTimeAsVersion(record, ttlMillis, maxIdleMillis,
+                now, perEntryStatsEnabled);
+        return getNextExpirationTime(record, ttlMillis, maxIdleMillis,
+                now, perEntryStatsEnabled);
     }
 
     public final void removeKeyFromExpirySystem(Data key) {
@@ -184,7 +207,8 @@ public class ExpirySystem {
         callRemove(key, expireTimeByKey);
     }
 
-    public final void extendExpiryTime(Data dataKey, long now) {
+    public final void extendExpiryTime(Data dataKey, long now,
+                                       Record record, boolean perEntryStatsEnabled) {
         if (isEmpty()) {
             return;
         }
@@ -209,7 +233,8 @@ public class ExpirySystem {
             return;
         }
 
-        expiryMetadata.setExpirationTime(nextExpirationTime(ttl, maxIdle, now));
+        expiryMetadata.setExpirationTime(getNextExpirationTime(record, ttl,
+                maxIdle, now, perEntryStatsEnabled));
     }
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {

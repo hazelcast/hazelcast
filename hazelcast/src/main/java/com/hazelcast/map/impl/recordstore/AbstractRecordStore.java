@@ -62,6 +62,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+    protected final boolean perEntryStatsEnabled;
 
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
@@ -80,6 +81,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.mutationObserver = new CompositeMutationObserver<>();
+        perEntryStatsEnabled = mapContainer.getMapConfig().isPerEntryStatsEnabled();
     }
 
     @Override
