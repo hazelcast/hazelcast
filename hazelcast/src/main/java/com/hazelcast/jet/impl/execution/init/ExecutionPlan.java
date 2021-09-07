@@ -175,7 +175,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
-            memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
+            Connection conn = getMemberConnection(nodeEngine, destAddr);
+            if (conn == null) {
+                throw new RuntimeException("no connection to job participant: " + destAddr);
+            }
+            memberConnections.put(destAddr, conn);
         }
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :

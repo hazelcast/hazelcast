@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.collection.IQueue;
+import com.hazelcast.map.IMap;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -28,13 +30,13 @@ import java.time.OffsetDateTime;
 import java.util.Set;
 
 /**
- * A generic object interface that is returned to user when the domain class can not be created from any of the distributed
- * hazelcast data structures like {@link com.hazelcast.map.IMap} ,{@link com.hazelcast.collection.IQueue} etc.
+ * A generic object interface that is returned to the user when the domain class can not be created from any of the distributed
+ * hazelcast data structures like {@link IMap}, {@link IQueue} etc.
  * <p>
- * On remote calls like distributed executor service or EntryProcessors, you may need to access to the domain object. In
- * case class of the domain object is not available on the cluster, GenericRecord allows to access, read and write the objects
- * back without the class of the domain object on the classpath. Here is an read example with EntryProcessor:
- * <pre>
+ * On remote calls like in the distributed executor service or EntryProcessors, you may need access to the domain object. In
+ * case the class of the domain object is not available on the cluster, GenericRecord allows you to read and write the object
+ * without the domain class on the classpath. Here is an example with EntryProcessor:
+ * <pre>{@code
  * map.executeOnKey(key, (EntryProcessor<Object, Object, Object>) entry -> {
  *             Object value = entry.getValue();
  *             GenericRecord genericRecord = (GenericRecord) value;
@@ -43,9 +45,9 @@ import java.util.Set;
  *
  *             return null;
  *         });
- * </pre>
- * Another example with EntryProcessor to demonstrate how to read, modify and set back to the map:
- * <pre>
+ * }</pre>
+ * Another example with EntryProcessor to demonstrate how to read, modify and set the value back to the map:
+ * <pre>{@code
  * map.executeOnKey("key", (EntryProcessor<Object, Object, Object>) entry -> {
  *             GenericRecord genericRecord = (GenericRecord) entry.getValue();
  *             GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
@@ -53,13 +55,13 @@ import java.util.Set;
  *             entry.setValue(modifiedGenericRecord);
  *             return null;
  *         });
- * </pre>
+ * }</pre>
  * <p>
- * GenericRecord also allows to read from a cluster without having the classes on the client side.
+ * GenericRecord also allows reading from the cluster without having the classes on the client side.
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
  * a {@link HazelcastSerializationException} was thrown stating that a factory could not be found. Starting from 4.1,
- * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write the objects back to
- * the cluster without needing the classes of the domain objects on the classpath.
+ * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
+ * the cluster without the need that the domain classes are on the classpath.
  * <p>
  * Currently this is valid for {@link Portable} objects.
  *
