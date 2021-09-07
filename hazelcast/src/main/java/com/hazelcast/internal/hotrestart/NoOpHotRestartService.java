@@ -54,6 +54,11 @@ public class NoOpHotRestartService implements HotRestartService {
     }
 
     @Override
+    public boolean isBackupEnabled() {
+        return false;
+    }
+
+    @Override
     public String getBackupDirectory() {
         return null;
     }

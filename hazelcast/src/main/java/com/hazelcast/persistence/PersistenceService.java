@@ -78,16 +78,7 @@ public interface PersistenceService {
      * @return {@code true} if backup is enabled, {@code false} otherwise
      * @since 5.0
      */
-    default boolean isBackupEnabled() {
-        return isHotBackupEnabled();
-    }
-
-    /**
-     * @deprecated since 5.0
-     * Use {@link #isBackupEnabled()} instead.
-     */
-    @Deprecated
-    boolean isHotBackupEnabled();
+    boolean isBackupEnabled();
 
     /**
      * Returns the persistence backup directory.
