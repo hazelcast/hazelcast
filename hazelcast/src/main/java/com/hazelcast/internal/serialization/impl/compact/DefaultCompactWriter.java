@@ -322,6 +322,12 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
+    public <T extends Enum> void writeEnum(@Nonnull String fieldName, @Nullable T value) {
+        String stringValue = value == null ? null : ((Enum) value).name();
+        writeString(fieldName, stringValue);
+    }
+
+    @Override
     public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values) {
         writeVariableSizeField(fieldName, BYTE_ARRAY, values, ObjectDataOutput::writeByteArray);
     }
@@ -423,6 +429,19 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
         writeVariableSizeField(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY, values, DefaultCompactWriter::writeOffsetDateTimeArray0);
+    }
+
+    @Override
+    public <T extends Enum> void writeEnumArray(@Nonnull String fieldName, @Nullable T[] values) {
+        if (values == null) {
+            writeStringArray(fieldName, null);
+        } else {
+            String[] stringArray = new String[values.length];
+            for (int i = 0; i < values.length; i++) {
+                stringArray[i] = values[i].name();
+            }
+            writeStringArray(fieldName, stringArray);
+        }
     }
 
     protected void setPositionAsNull(@Nonnull String fieldName, FieldType fieldType) {
