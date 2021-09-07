@@ -743,8 +743,8 @@ hazelcast:
     #   Operations which changes cluster or node state or their configurations.
     # * HEALTH_CHECK - disabled
     #   Group of endpoints for HTTP health checking.
-    # * HOT_RESTART - disabled
-    #   Group of HTTP REST APIs related to Hot Restart feature.
+    # * PERSISTENCE - disabled
+    #   Group of HTTP REST APIs related to Persistence feature.
     # * WAN - disabled
     #   Group of HTTP REST APIs related to WAN Replication feature.
     # * DATA - disabled
@@ -759,7 +759,7 @@ hazelcast:
           enabled: false
         HEALTH_CHECK:
           enabled: false
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: false
         WAN:
           enabled: false
@@ -2972,8 +2972,8 @@ hazelcast:
   #            Operations which changes cluster or node state or their configurations.
   #          * HEALTH_CHECK - disabled
   #            Group of endpoints for HTTP health checking.
-  #          * HOT_RESTART - disabled
-  #            Group of HTTP REST APIs related to Hot Restart feature.
+  #          * PERSISTENCE - disabled
+  #            Group of HTTP REST APIs related to Persistence feature.
   #          * WAN - disabled
   #            Group of HTTP REST APIs related to WAN Replication feature.
   #          * DATA - disabled
@@ -3545,11 +3545,11 @@ hazelcast:
   #      * "lossless-restart-enabled":
   #          Sets whether lossless job restart is enabled for the node. With lossless
   #          restart you can restart the whole cluster without losing the jobs and
-  #          their state. The feature is implemented on top of the Hot Restart
+  #          their state. The feature is implemented on top of the Persistence
   #          feature of Hazelcast which persists the data to disk. If enabled, you
-  #          have to also configure Hot Restart.
+  #          have to also configure Persistence.
   #          Note: the snapshots exported using `Job#exportSnapshot` will also have
-  #          Hot Restart storage enabled.
+  #          Persistence storage enabled.
   #          Feature is disabled by default. If you enable this option in open-source,
   #          the member will fail to start, you need Enterprise to run it and obtain a
   #          license from Hazelcast.
@@ -3629,8 +3629,8 @@ hazelcast:
       scale-up-delay-millis: 10000
       # Sets whether lossless job restart is enabled for the node. With
       # lossless restart you can restart the whole cluster without losing the
-      # jobs and their state. The feature is implemented on top of the Hot
-      # Restart feature of Hazelcast IMDG which persists the data to disk.
+      # jobs and their state. The feature is implemented on top of the Persistence
+      # feature of Hazelcast which persists the data to disk.
       lossless-restart-enabled: false
       # Sets the maximum number of records that can be accumulated by any single
       # Processor instance.

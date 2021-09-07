@@ -496,7 +496,7 @@
                  their state.
 
                  This feature requires Hazelcast Enterprise and is implemented on top of the
-                 Hot Restart feature. Therefore you should configure Hot Restart, especially
+                 Persistence feature. Therefore you should configure Persistence, especially
                  the base directory where to store the recovery files.
              -->
             <lossless-restart-enabled>false</lossless-restart-enabled>
