@@ -35,7 +35,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
-import static com.hazelcast.config.RestEndpointGroup.*;
+import static com.hazelcast.config.RestEndpointGroup.DATA;
+import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -636,7 +637,6 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
           .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
           .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
           .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
-        System.out.println(config.getNetworkConfig().getRestApiConfig());
         assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
@@ -650,7 +650,6 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
                 .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
                 .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_PERSISTENCE_ENABLED", "true")
                 .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
-        System.out.println(config.getNetworkConfig().getRestApiConfig());
         assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
@@ -666,7 +665,6 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
                 .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
                 .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_PERSISTENCE_ENABLED", "true")
                 .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
-        System.out.println(config.getNetworkConfig().getRestApiConfig());
         assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));

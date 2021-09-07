@@ -25,7 +25,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.RestEndpointGroup.*;
+import static com.hazelcast.config.RestEndpointGroup.DATA;
+import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.entry;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperties;
 import static org.junit.Assert.assertEquals;
