@@ -43,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
-public class MapIndexScanPMigrationStressTest extends JetTestSupport {
+public class JetMapScanMigrationStressTest extends JetTestSupport {
     private static final int ITEM_COUNT = 500_000;
     private static final String MAP_NAME = "map";
 
@@ -84,6 +84,23 @@ public class MapIndexScanPMigrationStressTest extends JetTestSupport {
 
         // Awful performance of such a query, but still a good load for test.
         assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected, mutator);
+
+        mutator.terminate();
+        mutator.join();
+        assertThat(mutatorException.get()).isNull();
+    }
+
+    @Test(timeout = 600_000)
+    public void stressTest_fullFetch() throws InterruptedException {
+        List<Row> expected = new ArrayList<>();
+        for (int i = 0; i <= ITEM_COUNT / 5; i++) {
+            map.put(i, 1);
+            expected.add(new Row(i, i+"-"+1));
+        }
+
+        MutatorThread mutator = new MutatorThread(1000L);
+
+        assertRowsAnyOrder("SELECT __key, Concat_WS('-', __key, this) FROM " + MAP_NAME , expected, mutator);
 
         mutator.terminate();
         mutator.join();
