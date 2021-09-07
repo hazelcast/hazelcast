@@ -208,7 +208,7 @@
                     <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
                     <hz:endpoint-group name="CLUSTER_WRITE" enabled="true"/>
                     <hz:endpoint-group name="HEALTH_CHECK" enabled="true"/>
-                    <hz:endpoint-group name="HOT_RESTART" enabled="true"/>
+                    <hz:endpoint-group name="PERSISTENCE" enabled="true"/>
                     <hz:endpoint-group name="WAN" enabled="true"/>
                     <hz:endpoint-group name="DATA" enabled="true"/>
                     <hz:endpoint-group name="CP" enabled="true"/>

@@ -4523,13 +4523,13 @@
                 <xs:annotation>
                     <xs:documentation>
                         DEPRECATED. Please use PERSISTENCE endpoint group instead.
-                        Note: We define PERSISTENCE and HOT_RESTART endpoint groups
-                        as alias of each other and these names actually refer to the
-                        same endpoint group. We're using PERSISTENCE as canonical name
+                        Note: We define PERSISTENCE and HOT_RESTART endpoint group
+                        names as alias of each other and these names actually refer to
+                        the same endpoint group. We're using PERSISTENCE as canonical name
                         for this group while listing enabled endpoint groups. If this
                         group enabled by using any of these name, Hazelcast will activate
-                        this PERSISTENCE endpoint group. HOT_RESTART name will be
-                        removed in a future release.
+                        this PERSISTENCE endpoint group. HOT_RESTART endpoint group name
+                        will be removed in a future release.
                     </xs:documentation>
                 </xs:annotation>
             </xs:enumeration>

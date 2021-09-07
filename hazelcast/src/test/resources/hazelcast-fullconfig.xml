@@ -171,7 +171,7 @@
             <endpoint-group name="CLUSTER_READ" enabled="true"/>
             <endpoint-group name="CLUSTER_WRITE" enabled="true"/>
             <endpoint-group name="HEALTH_CHECK" enabled="true"/>
-            <endpoint-group name="HOT_RESTART" enabled="true"/>
+            <endpoint-group name="PERSISTENCE" enabled="true"/>
             <endpoint-group name="WAN" enabled="true"/>
             <endpoint-group name="DATA" enabled="true"/>
         </rest-api>
