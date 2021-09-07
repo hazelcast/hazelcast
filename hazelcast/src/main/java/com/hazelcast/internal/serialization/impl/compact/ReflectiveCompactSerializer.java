@@ -23,9 +23,6 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
-import org.objenesis.instantiator.ObjectInstantiator;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -91,9 +88,6 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
     private final Map<Class, Writer[]> writersCache = new ConcurrentHashMap<>();
     private final Map<Class, Reader[]> readersCache = new ConcurrentHashMap<>();
-
-    private final Objenesis objenesis = new ObjenesisStd();
-    private final Map<Class<?>, ObjectInstantiator> objectInstantiators = new ConcurrentHashMap<>();
 
     @Override
     public void write(@Nonnull CompactWriter writer, @Nonnull Object object) throws IOException {
@@ -169,8 +163,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     @Nonnull
     private Object createObject(Class associatedClass) {
         try {
-            ObjectInstantiator instantiator = objectInstantiators.computeIfAbsent(associatedClass, objenesis::getInstantiatorOf);
-            return instantiator.newInstance();
+            return ClassLoaderUtil.newInstance(associatedClass.getClassLoader(), associatedClass);
         } catch (Exception e) {
             throw new HazelcastSerializationException("Could not construct the class " + associatedClass, e);
         }
