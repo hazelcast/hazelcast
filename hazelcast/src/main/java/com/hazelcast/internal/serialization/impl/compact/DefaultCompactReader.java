@@ -217,6 +217,13 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    @Nonnull
+    public <T extends Enum> T readEnum(@Nonnull String fieldName, Class<T> enumType) {
+        String name = getString(fieldName);
+        return (T) Enum.valueOf(enumType, name);
+    }
+
+    @Override
     public <T> T readObject(@Nonnull String fieldName) {
         return getObject(fieldName);
     }
@@ -365,6 +372,21 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     public OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] defaultValue) {
         return isFieldExists(fieldName, TIMESTAMP_WITH_TIMEZONE_ARRAY)
                 ? this.getTimestampWithTimezoneArray(fieldName) : defaultValue;
+    }
+
+    @org.jetbrains.annotations.Nullable
+    @Override
+    public <T> T[] readEnumArray(@Nonnull String fieldName, @Nullable Class<T> componentType) {
+        String[] stringArray = readStringArray(fieldName);
+        if (stringArray == null) {
+            return null;
+        } else {
+            Enum[] enumArray = new Enum[stringArray.length];
+            for (int i = 0; i < stringArray.length; i++) {
+                enumArray[i] = Enum.valueOf((Class<? extends Enum>) componentType, stringArray[i]);
+            }
+            return null;
+        }
     }
 
     @Override
