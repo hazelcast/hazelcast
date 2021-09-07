@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
@@ -177,7 +178,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (Address destAddr : remoteMembers.get()) {
             Connection conn = getMemberConnection(nodeEngine, destAddr);
             if (conn == null) {
-                throw new RuntimeException("no connection to job participant: " + destAddr);
+                throw new TopologyChangedException("no connection to job participant: " + destAddr);
             }
             memberConnections.put(destAddr, conn);
         }
