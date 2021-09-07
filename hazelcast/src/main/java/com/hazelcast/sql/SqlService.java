@@ -26,15 +26,10 @@ import java.util.List;
 /**
  * A service to execute SQL statements.
  * <p>
- * The service is in beta state. Behavior and API might change in future releases. Binary compatibility is not
- * guaranteed between minor or patch releases.
+ * If this cluster has Jet enabled, a statement can be executed by SQL backend as Jet job.
+ * The {@code hazelcast-sql} must be in the classpath, otherwise an exception will be thrown.
  * <p>
- * If this cluster is a Hazelcast Jet cluster, a statement can be executed by either the default SQL backend or by Hazelcast
- * Jet backend, as a Jet job. If some of the features used in a statement isn't supported by the default backend, the engine will
- * attempt to execute it using Jet. This class is the API to both backends.
- * <p>
- * The text below summarizes features supported by the default SQL engine. For a summary of Hazelcast Jet SQL features
- * see {@code com.hazelcast.jet.sql} package javadoc in Hazelcast Jet (once released).
+ * The text below summarizes features supported by the default SQL engine, based on Jet jobs.
  *
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
@@ -42,10 +37,8 @@ import java.util.List;
  *     <li>IMap
  * </ul>
  * When an SQL statement is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module, that is based
- * on <a href="https://calcite.apache.org">Apache Calcite</a>. The {@code hazelcast-sql} must be in the classpath, otherwise
- * an exception will be thrown.
- * <p>
- * During optimization a statement is converted into a directed acyclic graph (DAG) that is sent to cluster members for execution.
+ * on <a href="https://calcite.apache.org">Apache Calcite</a>. During optimization a statement is converted
+ * into a directed acyclic graph (DAG) that is sent to cluster members for execution.
  * Results are sent back to the originating member asynchronously and returned to the user via {@link SqlResult}.
  *
  * <h1>Querying an IMap</h1>
@@ -53,9 +46,7 @@ import java.util.List;
  * schema is included into a default search path, therefore an IMap could be referenced in an SQL statement with or without the
  * schema name.
  * <h2>Column resolution</h2>
- * Every table backed by an IMap has a set of columns that are resolved automatically. Column resolution uses IMap entries
- * located on the member that initiates the query. The engine extracts columns from a key and a value and then merges them
- * into a single column set. In case the key and the value have columns with the same name, the key takes precedence.
+ * Every table backed by an IMap should explicitly defined by creating a {@link com.hazelcast.sql.impl.schema.Mapping}.
  * <p>
  * Columns are extracted from objects as follows:
  * <ul>
@@ -122,13 +113,12 @@ public interface SqlService {
      * Converts passed SQL string and parameter values into an {@link
      * SqlStatement} object and invokes {@link #execute(SqlStatement)}.
      *
-     * @param sql SQL string
+     * @param sql       SQL string
      * @param arguments query parameter values that will be passed to {@link SqlStatement#setParameters(List)}
      * @return result
-     * @throws NullPointerException if the SQL string is null
+     * @throws NullPointerException     if the SQL string is null
      * @throws IllegalArgumentException if the SQL string is empty
-     * @throws HazelcastSqlException in case of execution error
-     *
+     * @throws HazelcastSqlException    in case of execution error
      * @see SqlService
      * @see SqlStatement
      * @see #execute(SqlStatement)
@@ -151,9 +141,8 @@ public interface SqlService {
      *
      * @param statement statement to be executed
      * @return result
-     * @throws NullPointerException if the statement is null
+     * @throws NullPointerException  if the statement is null
      * @throws HazelcastSqlException in case of execution error
-     *
      * @see SqlService
      */
     @Nonnull
