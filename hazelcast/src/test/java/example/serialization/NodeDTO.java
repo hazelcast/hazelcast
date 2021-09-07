@@ -35,6 +35,14 @@ public class NodeDTO implements Comparable<NodeDTO> {
         this.id = id;
     }
 
+    public NodeDTO getChild() {
+        return child;
+    }
+
+    public int getId() {
+        return id;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

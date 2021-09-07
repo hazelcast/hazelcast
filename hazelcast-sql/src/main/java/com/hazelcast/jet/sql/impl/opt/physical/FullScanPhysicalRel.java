@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.cost.CostUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -32,6 +32,7 @@ import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableScan;
+import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
 
@@ -94,11 +96,17 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
                 ? table.getTotalRowCount()
                 : getTable().getRowCount();
 
+        double filterRowCount = totalRowCount;
+
+        if (table.getFilter() != null) {
+            filterRowCount = CostUtils.adjustFilteredRowCount(totalRowCount, RelMdUtil.guessSelectivity(table.getFilter()));
+        }
+
         return computeSelfCost(
                 planner,
                 totalRowCount,
                 table.getFilter() != null,
-                this.table.getRowCount(),
+                filterRowCount,
                 table.getProjects().size()
         );
     }
@@ -111,7 +119,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
             int projectCount
     ) {
         // 1. Get cost of the scan itself.
-        double scanCpu = scanRowCount * CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
+        double scanCpu = scanRowCount * TABLE_SCAN_CPU_MULTIPLIER;
 
         // 2. Get cost of the filter, if any.
         double filterCpu = hasFilter ? CostUtils.adjustCpuForConstrainedScan(scanCpu) : 0;

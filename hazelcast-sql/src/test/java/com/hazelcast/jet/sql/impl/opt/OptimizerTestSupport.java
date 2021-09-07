@@ -16,30 +16,21 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.sql.impl.JetPlanExecutor;
-import com.hazelcast.jet.sql.impl.JetSqlBackend;
-import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
-import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
-import com.hazelcast.jet.sql.impl.schema.MappingStorage;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
+import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
+import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.sql.impl.calcite.HazelcastSqlBackend;
-import com.hazelcast.sql.impl.calcite.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.TestMapTable;
-import com.hazelcast.sql.impl.calcite.parse.QueryParseResult;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchema;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastSchemaUtils;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
-import com.hazelcast.sql.impl.calcite.validate.param.StrictParameterConverter;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -60,13 +51,12 @@ import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
+public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema = schema(tables);
@@ -89,7 +79,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
         QueryParseResult parseResult = context.parse(sql);
-        RelNode rel = context.convert(parseResult).getRel();
+        RelNode rel = context.convert(parseResult.getNode()).getRel();
 
         return (LogicalRel) context
                 .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
@@ -107,20 +97,11 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     private static OptimizerContext context(HazelcastSchema schema, QueryDataType... parameterTypes) {
-        HazelcastInstance instance = instance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(instance);
-        MappingStorage mappingStorage = new MappingStorage(nodeEngine);
-        SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
-        MappingCatalog mappingCatalog = new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
-        JetPlanExecutor planExecutor = new JetPlanExecutor(mappingCatalog, instance, emptyMap());
-
         OptimizerContext context = OptimizerContext.create(
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1,
-                new HazelcastSqlBackend(nodeEngine),
-                new JetSqlBackend(nodeEngine, planExecutor)
+                1
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
@@ -133,14 +114,13 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     protected static HazelcastTable partitionedTable(String name, List<TableField> fields, long rowCount) {
-        return partitionedTable(name, fields, emptyList(), false, rowCount);
+        return partitionedTable(name, fields, emptyList(), rowCount);
     }
 
     protected static HazelcastTable partitionedTable(
             String name,
             List<TableField> fields,
             List<MapTableIndex> indexes,
-            boolean isHd,
             long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
@@ -154,13 +134,13 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
                 null,
                 null,
                 indexes,
-                isHd
+                false
         );
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 
     protected static TableField field(String name, QueryDataType type) {
-        return TestMapTable.field(name, type, false);
+        return new Field(name, type, false);
     }
 
     protected static void assertPlan(RelNode rel, PlanRows expected) {
@@ -193,6 +173,12 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     protected static PlanRow planRow(int level, Class<? extends RelNode> node) {
         return new PlanRow(level, node);
+    }
+
+    private static class Field extends TableField {
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
+        }
     }
 
     protected static class Result {
@@ -253,10 +239,6 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
         protected PlanRow(int level, String node) {
             this.level = level;
             this.node = node;
-        }
-
-        protected String getNode() {
-            return node;
         }
 
         protected static PlanRow parse(String input) {

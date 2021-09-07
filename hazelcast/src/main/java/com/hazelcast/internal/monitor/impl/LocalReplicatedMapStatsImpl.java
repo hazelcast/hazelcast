@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.map.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 
@@ -364,23 +365,8 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     }
 
     @Override
-    public long getDifferentialPartitionReplicationCount() {
-        return 0;
-    }
-
-    @Override
-    public long getFullPartitionReplicationCount() {
-        return 0;
-    }
-
-    @Override
-    public long getDifferentialReplicationRecordCount() {
-        return 0;
-    }
-
-    @Override
-    public long getFullReplicationRecordCount() {
-        return 0;
+    public LocalReplicationStats getReplicationStats() {
+        throw new UnsupportedOperationException("Replication stats are not available for replicated maps.");
     }
 
     @Override

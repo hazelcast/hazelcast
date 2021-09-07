@@ -40,6 +40,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -63,6 +64,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
@@ -79,6 +81,11 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public KinesisIntegrationTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
+    }
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
     }
 
     @BeforeClass

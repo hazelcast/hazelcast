@@ -37,11 +37,12 @@ import java.net.UnknownHostException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
-import static org.junit.Assert.assertThrows;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueAllTheTime;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DefaultAddressPicker.class)
-@PowerMockIgnore("javax.management.*")
+@PowerMockIgnore({"com.sun.org.apache.xerces.*", "javax.xml.*",
+        "org.xml.*", "javax.management.*", "org.w3c.dom.*"})
 @Category(SlowTest.class)
 public class TcpIpHostnameJoinTest {
 
@@ -80,9 +81,14 @@ public class TcpIpHostnameJoinTest {
     }
 
     @Test
-    public void test_whenClusterNamesDifferSecondMemberFailsToStart() {
-        instance("cluster1", HOSTNAME1);
-        assertThrows(IllegalStateException.class, () -> instance("cluster2", HOSTNAME2));
+    public void test_whenClusterNamesDiffer_then_have_two_separate_clusters() {
+        HazelcastInstance cluster1 = instance("cluster1", HOSTNAME1);
+        HazelcastInstance cluster2 = instance("cluster2", HOSTNAME2);
+
+        assertTrueAllTheTime(() -> {
+            assertClusterSize(1, cluster1);
+            assertClusterSize(1, cluster2);
+        }, 20);
     }
 
     private HazelcastInstance instance(String hostnameOrIp) {
@@ -100,7 +106,7 @@ public class TcpIpHostnameJoinTest {
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(15)
-            .clear().addMember(hostnameOrIp);
+                .clear().addMember(hostnameOrIp);
 
         return Hazelcast.newHazelcastInstance(config);
     }

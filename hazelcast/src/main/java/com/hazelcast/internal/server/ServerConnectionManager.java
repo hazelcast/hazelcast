@@ -207,6 +207,10 @@ public interface ServerConnectionManager
      */
     NetworkStats getNetworkStats();
 
+    default boolean doAddressesMatch(Address expected, Address checked) {
+        return expected != null && expected.equals(checked);
+    }
+
     /**
      * Gets the Server this {@link ServerConnectionManager} belongs to.
      *

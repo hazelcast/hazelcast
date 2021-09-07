@@ -28,13 +28,14 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.util.LoggingUtil;
@@ -64,7 +65,6 @@ import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
 /**
@@ -99,7 +99,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private volatile Map<SenderReceiverKey, SenderTasklet> senderMap;
     private final Map<SenderReceiverKey, Queue<byte[]>> receiverQueuesMap;
 
-    private List<ProcessorSupplier> procSuppliers = emptyList();
+    private List<VertexDef> vertices = emptyList();
     private List<Tasklet> tasklets = emptyList();
 
     // future which is completed only after all tasklets are completed and contains execution result
@@ -109,6 +109,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
 
     private final NodeEngineImpl nodeEngine;
+    private final JetServiceBackend jetServiceBackend;
     private volatile SnapshotContext snapshotContext;
     private JobConfig jobConfig;
 
@@ -123,6 +124,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
         this.executionId = executionId;
         this.isLightJob = isLightJob;
         this.nodeEngine = nodeEngine;
+        this.jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
         this.jobName = idToString(jobId);
 
@@ -148,7 +150,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
-        procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
+        vertices = plan.getVertices();
         snapshotContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), jobNameAndExecutionId(),
                 plan.lastSnapshotId(), jobConfig.getProcessingGuarantee());
 
@@ -209,8 +211,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 return executionFuture;
             } else {
                 // begin job execution
-                JetServiceBackend service = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-                ClassLoader cl = service.getJobExecutionService().getClassLoader(jobConfig, jobId);
+                ClassLoader cl = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -240,24 +241,30 @@ public class ExecutionContext implements DynamicMetricsProvider {
         if (!executionCompleted.compareAndSet(false, true)) {
             return;
         }
-
         for (Tasklet tasklet : tasklets) {
             try {
                 tasklet.close();
             } catch (Throwable e) {
                 logger.severe(jobNameAndExecutionId()
-                        + " encountered an exception in Processor.close(), ignoring it", e);
+                              + " encountered an exception in Processor.close(), ignoring it", e);
             }
         }
 
-        for (ProcessorSupplier s : procSuppliers) {
-            try {
-                doWithClassLoader(s.getClass().getClassLoader(), () -> s.close(error));
-            } catch (Throwable e) {
-                logger.severe(jobNameAndExecutionId()
-                        + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+        JobExecutionService jobExecutionService = jetServiceBackend.getJobExecutionService();
+        ClassLoader jobCL = jobExecutionService.getClassLoader(jobConfig, jobId);
+
+        doWithClassLoader(jobCL, () -> {
+            for (VertexDef vertex : vertices) {
+                try {
+                    ClassLoader processorCl = isLightJob ?
+                            null : jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    doWithClassLoader(processorCl, () -> vertex.processorSupplier().close(error));
+                } catch (Throwable e) {
+                    logger.severe(jobNameAndExecutionId()
+                                  + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
+                }
             }
-        }
+        });
 
         tempDirectories.forEach((k, dir) -> {
             try {

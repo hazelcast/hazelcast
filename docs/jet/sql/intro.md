@@ -207,7 +207,7 @@ sql〉 CREATE EXTERNAL MAPPING myMap (
 TYPE IMap
 OPTIONS (
     'keyFormat'='bigint',
-    'valueFormat'='json');
+    'valueFormat'='json-flat');
 OK
 sql〉 SHOW MAPPINGS;
 +--------------------+
@@ -423,7 +423,7 @@ sql〉 CREATE MAPPING tradeMap (
 TYPE IMap
 OPTIONS (
     'keyFormat'='bigint',
-    'valueFormat'='json');
+    'valueFormat'='json-flat');
 OK
 sql〉 SINK INTO tradeMap VALUES (1, 'hazl', 10, 1);
 OK

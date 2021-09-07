@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -317,6 +318,8 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
         }
 
         Map<Connection, ClientConnectionRegistration> registrations = listenerRegistration.getConnectionRegistrations();
+        CompletableFuture[] futures = new CompletableFuture[registrations.size()];
+        int i = 0;
         for (Map.Entry<Connection, ClientConnectionRegistration> entry : registrations.entrySet()) {
             ClientConnectionRegistration registration = entry.getValue();
             ClientConnection subscriber = (ClientConnection) entry.getKey();
@@ -327,11 +330,12 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
             UUID serverRegistrationId = registration.getServerRegistrationId();
             ClientMessage request = listenerMessageCodec.encodeRemoveRequest(serverRegistrationId);
             if (request == null) {
+                futures[i++] = CompletableFuture.completedFuture(null);
                 continue;
             }
             ClientInvocation clientInvocation = new ClientInvocation(client, request, null, subscriber);
             clientInvocation.setInvocationTimeoutMillis(Long.MAX_VALUE);
-            clientInvocation.invokeUrgent().exceptionally(throwable -> {
+            futures[i++] = clientInvocation.invokeUrgent().exceptionally(throwable -> {
                 if (!(throwable instanceof HazelcastClientNotActiveException
                         || throwable instanceof IOException
                         || throwable instanceof TargetDisconnectedException)) {
@@ -341,6 +345,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
                 return null;
             });
         }
+        CompletableFuture.allOf(futures).join();
         return true;
     }
 

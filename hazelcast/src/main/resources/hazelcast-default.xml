@@ -477,12 +477,7 @@
         <collection-frequency-seconds>5</collection-frequency-seconds>
     </metrics>
 
-    <instance-tracking enabled="false">
-
-    </instance-tracking>
-
     <sql>
-        <executor-pool-size>-1</executor-pool-size>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
 

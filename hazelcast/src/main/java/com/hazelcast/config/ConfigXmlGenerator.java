@@ -1303,7 +1303,7 @@ public class ConfigXmlGenerator {
 
     private static void multicastConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
         MulticastConfig mcConfig = join.getMulticastConfig();
-        gen.open("multicast", "enabled", mcConfig.isEnabled(), "loopbackModeEnabled", mcConfig.isLoopbackModeEnabled())
+        gen.open("multicast", "enabled", mcConfig.isEnabled(), "loopbackModeEnabled", mcConfig.getLoopbackModeEnabled())
                 .node("multicast-group", mcConfig.getMulticastGroup())
                 .node("multicast-port", mcConfig.getMulticastPort())
                 .node("multicast-timeout-seconds", mcConfig.getMulticastTimeoutSeconds())
@@ -1655,7 +1655,6 @@ public class ConfigXmlGenerator {
     private static void sqlConfig(XmlGenerator gen, Config config) {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
-                .node("executor-pool-size", sqlConfig.getExecutorPoolSize())
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
                 .close();
     }

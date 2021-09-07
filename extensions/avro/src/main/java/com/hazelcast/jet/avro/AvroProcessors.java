@@ -35,11 +35,15 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Permission;
+import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
 
 /**
  * Static utility class with factories of Apache Avro source and sink
@@ -63,14 +67,9 @@ public final class AvroProcessors {
             @Nonnull SupplierEx<? extends DatumReader<D>> datumReaderSupplier,
             @Nonnull BiFunctionEx<String, ? super D, T> mapOutputFn
     ) {
-        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, true,
-                path -> {
-                    DataFileReader<D> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
-                    String fileName = path.getFileName().toString();
-                    return StreamSupport.stream(reader.spliterator(), false)
-                                        .map(item -> mapOutputFn.apply(fileName, item))
-                                        .onClose(() -> uncheckRun(reader::close));
-                });
+        FunctionEx<? super Path, ? extends Stream<T>> readFileFn =
+                dataFileReadFn(directory, datumReaderSupplier, mapOutputFn);
+        return ReadFilesP.metaSupplier(directory, glob, sharedFileSystem, true, readFileFn);
     }
 
     /**
@@ -116,8 +115,30 @@ public final class AvroProcessors {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(directoryName, ACTION_WRITE);
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_WRITE));
+            }
+        };
+    }
+
+    private static <D, T> FunctionEx<? super Path, ? extends Stream<T>> dataFileReadFn(
+            String directoryName,
+            SupplierEx<? extends DatumReader<D>> datumReaderSupplier,
+            BiFunctionEx<String, ? super D, T> mapOutputFn
+    ) {
+        return new FunctionEx<Path, Stream<T>>() {
+            @Override
+            public Stream<T> applyEx(Path path) throws Exception {
+                DataFileReader<D> reader = new DataFileReader<>(path.toFile(), datumReaderSupplier.get());
+                String fileName = path.getFileName().toString();
+                return StreamSupport.stream(reader.spliterator(), false)
+                        .map(item -> mapOutputFn.apply(fileName, item))
+                        .onClose(() -> uncheckRun(reader::close));
+            }
+
+            @Override
+            public List<Permission> permissions() {
+                return singletonList(ConnectorPermission.file(directoryName, ACTION_READ));
             }
         };
     }

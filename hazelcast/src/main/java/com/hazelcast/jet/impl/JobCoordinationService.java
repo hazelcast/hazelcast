@@ -55,6 +55,7 @@ import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl;
 import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.util.LoggingUtil;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -100,7 +101,6 @@ import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -113,6 +113,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_SCAN_PERIOD;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -229,9 +230,7 @@ public class JobCoordinationService {
                     return;
                 }
                 if (!config.isResourceUploadEnabled() && !jobConfig.getResourceConfigs().isEmpty()) {
-                    throw new JetException("The JobConfig contains resources to upload, but the resource upload " +
-                            "is disabled. Either remove the resources from the job config or enabled resource " +
-                            "uploading, see JetConfig#setResourceUploadEnabled.");
+                    throw new JetException(Util.JET_RESOURCE_UPLOAD_DISABLED_MESSAGE);
                 }
 
                 int quorumSize = jobConfig.isSplitBrainProtectionEnabled() ? getQuorumSize() : 0;
@@ -329,7 +328,7 @@ public class JobCoordinationService {
         checkPermissions(subject, dag);
 
         // Initialize and start the job (happens in the constructor). We do this before adding the actual
-        // LightMasterContext to the map to avoid possible races of the the job initialization and cancellation.
+        // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
         LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
         oldContext = lightMasterContexts.put(jobId, mc);
         assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
@@ -342,6 +341,10 @@ public class JobCoordinationService {
                     assert removed instanceof LightMasterContext : "LMC not found: " + removed;
                     unscheduleJobTimeout(jobId);
                 });
+    }
+
+    public long getJobSubmittedCount() {
+        return jobSubmitted.get();
     }
 
     private void checkPermissions(Subject subject, DAG dag) {
@@ -691,7 +694,8 @@ public class JobCoordinationService {
                     .filter(lmc -> lmc != UNINITIALIZED_LIGHT_JOB_MARKER)
                     .map(LightMasterContext.class::cast)
                     .map(lmc -> new JobSummary(
-                            lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()), RUNNING, lmc.getStartTime()))
+                            true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
+                            RUNNING, lmc.getStartTime()))
                     .forEach(s -> jobs.put(s.getJobId(), s));
 
             return jobs.values().stream().sorted(comparing(JobSummary::getSubmissionTime).reversed()).collect(toList());
@@ -1151,7 +1155,7 @@ public class JobCoordinationService {
         } else {
             status = ctx.jobStatus();
         }
-        return new JobSummary(record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
+        return new JobSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status, record.getCreationTime());
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {

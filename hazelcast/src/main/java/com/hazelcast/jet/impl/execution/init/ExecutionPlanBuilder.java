@@ -112,7 +112,7 @@ public final class ExecutionPlanBuilder {
             }
 
             Function<? super Address, ? extends ProcessorSupplier> procSupplierFn =
-                    doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.get(addresses));
+                    doWithClassLoader(processorClassLoader, () -> metaSupplier.get(addresses));
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier =
                         doWithClassLoader(processorClassLoader, () -> procSupplierFn.apply(e.getKey().getAddress()));

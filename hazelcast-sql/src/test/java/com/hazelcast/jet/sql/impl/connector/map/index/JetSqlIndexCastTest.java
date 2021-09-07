@@ -22,31 +22,23 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.sql.impl.SqlServiceImpl;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.support.expressions.ExpressionType;
-import com.hazelcast.sql.support.expressions.ExpressionTypes;
-import com.hazelcast.sql.support.expressions.ExpressionValue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 
@@ -54,8 +46,6 @@ import static java.util.Arrays.asList;
  * Make sure that CAST expressions are unwrapped properly.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class JetSqlIndexCastTest extends OptimizerTestSupport {
 
     private static final String MAP_NAME = "map";
@@ -76,7 +66,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_tinyint() {
         check(ExpressionTypes.BYTE, QueryDataTypeFamily.TINYINT, true);
         check(ExpressionTypes.BYTE, QueryDataTypeFamily.SMALLINT, true);
@@ -88,7 +77,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_smallint() {
         check(ExpressionTypes.SHORT, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.SHORT, QueryDataTypeFamily.SMALLINT, true);
@@ -100,7 +88,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_integer() {
         check(ExpressionTypes.INTEGER, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.INTEGER, QueryDataTypeFamily.SMALLINT, false);
@@ -112,7 +99,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_bigint() {
         check(ExpressionTypes.LONG, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.LONG, QueryDataTypeFamily.SMALLINT, false);
@@ -124,7 +110,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_decimal() {
         check(ExpressionTypes.BIG_DECIMAL, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.BIG_DECIMAL, QueryDataTypeFamily.SMALLINT, false);
@@ -136,7 +121,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_real() {
         check(ExpressionTypes.FLOAT, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.FLOAT, QueryDataTypeFamily.SMALLINT, false);
@@ -148,7 +132,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     @Test
-    @Ignore // TODO: [sasha] un-ignore after IMDG engine removal
     public void test_double() {
         check(ExpressionTypes.DOUBLE, QueryDataTypeFamily.TINYINT, false);
         check(ExpressionTypes.DOUBLE, QueryDataTypeFamily.SMALLINT, false);
@@ -160,9 +143,6 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
     }
 
     private void check(ExpressionType<?> typeFrom, QueryDataTypeFamily typeTo, boolean expectedIndexUsage) {
-        // Clear plan cache
-        assertTrueEventually(() -> ((SqlServiceImpl) instance().getSql()).getPlanCache().clear());
-
         // Put value into map.
         Map map = instance().getMap(MAP_NAME);
 
@@ -194,8 +174,7 @@ public class JetSqlIndexCastTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable(
                 MAP_NAME,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(instance().getMap(MAP_NAME)), mapTableFields),
-                false,
+                getPartitionedMapIndexes(mapContainer(instance().getMap(MAP_NAME)), mapTableFields),
                 1
         );
         Result optimizationResult = optimizePhysical(statement.getSql(), parameterTypes, table);

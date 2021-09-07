@@ -38,7 +38,9 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteBySingleKey() {
+        createMapping("test_map", int.class, int.class);
         put(1);
+
         checkUpdateCount("delete from test_map where __key = 1", 0);
         assertMapDoesNotContainKey(1);
 
@@ -57,7 +59,9 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteBySingleKeyExpression() {
+        createMapping("test_map", int.class, int.class);
         put(2);
+
         checkUpdateCount("delete from test_map where __key = 1 + 1 ", 0);
         assertMapDoesNotContainKey(2);
 
@@ -68,7 +72,9 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteWithoutKeyInPredicate() {
+        createMapping("test_map", int.class, int.class);
         put(1, 1);
+
         checkUpdateCount("delete from test_map where this = 1", 0);
         assertMapDoesNotContainKey(1);
 
@@ -76,6 +82,7 @@ public class SqlDeleteTest extends SqlTestSupport {
         checkUpdateCount("delete from test_map where 1 = this", 0);
         assertMapDoesNotContainKey(1);
 
+        createMapping("test_map", int.class, Person.class);
         put(1, new Person("name", 18));
         checkUpdateCount("delete from test_map where name = 'name' and age = 18", 0);
         assertMapDoesNotContainKey(1);
@@ -83,7 +90,9 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteByKey_andAnotherFields() {
+        createMapping("test_map", int.class, Person.class);
         put(1, new Person("name1", 18));
+
         checkUpdateCount("delete from test_map where __key = 1 and age = 18", 0);
         assertMapDoesNotContainKey(1);
 
@@ -94,8 +103,10 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteWithDisjunctionPredicate_whenOnlyKeysInPredicate() {
+        createMapping("test_map", int.class, int.class);
         put(1);
         put(2);
+
         checkUpdateCount("delete from test_map where __key = 1 or __key = 2", 0);
         assertMapDoesNotContainKey(1);
         assertMapDoesNotContainKey(2);
@@ -103,6 +114,7 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteThatDoesNotCheckKeyForEquality_fails() {
+        createMapping("test_map", int.class, int.class);
         put(10);
 
         checkUpdateCount("delete from test_map where __key > 1", 0);
@@ -111,6 +123,7 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void doNotDelete_whenKeyFieldOccursMoreThanOneWithConjunctionPredicate() {
+        createMapping("test_map", int.class, int.class);
         put(1);
 
         checkUpdateCount("delete from test_map where __key = 1 and __key = 2", 0);
@@ -144,6 +157,7 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteByDynamicParam() {
+        createMapping("test_map", int.class, int.class);
         IMap<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
         map.put(2, 2);
@@ -157,7 +171,7 @@ public class SqlDeleteTest extends SqlTestSupport {
 
     @Test
     public void deleteByComplexKey() {
-        instance().getSql().execute(javaSerializableMapDdl("test_map", PersonId.class, Integer.class));
+        createMapping("test_map", PersonId.class, Integer.class);
         Map<PersonId, Integer> map = instance().getMap("test_map");
         map.put(new PersonId(1), 1);
 

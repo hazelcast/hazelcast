@@ -25,6 +25,8 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
+
 /**
  * Base class for {@link GetJobStatusOperation} and others.
  */
@@ -61,9 +63,7 @@ public abstract class AbstractJobOperation extends Operation implements Identifi
     }
 
     protected JetServiceBackend getJetServiceBackend() {
-        if (!getNodeEngine().getConfig().getJetConfig().isEnabled()) {
-            throw new IllegalArgumentException("Jet is disabled, see JetConfig#setEnabled.");
-        }
+        checkJetIsEnabled(getNodeEngine());
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
         return getService();
     }

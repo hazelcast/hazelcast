@@ -2040,7 +2040,7 @@
         <xs:attribute name="multicast-port" type="xs:string" default="54327"/>
         <xs:attribute name="multicast-timeout-seconds" type="xs:string" default="2"/>
         <xs:attribute name="multicast-time-to-live" type="xs:string" default="32"/>
-        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean"/>
     </xs:complexType>
 
     <xs:complexType name="aliased-discovery-strategy">
@@ -5378,20 +5378,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="executor-pool-size" type="xs:int" minOccurs="0" default="-1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Sets the number of threads responsible for execution of SQL statements.
-                        The default value -1 sets the pool size equal to the number of CPU cores, and should be good enough
-                        for most workloads.
-                        Setting the value to less than the number of CPU cores will limit the degree of parallelism of the SQL
-                        subsystem. This may be beneficial if you would like to prioritize other CPU-intensive workloads on the
-                        same machine.
-                        It is not recommended to set the value of this parameter higher than the number of CPU cores because it
-                        may decrease the system's overall performance due to excessive context switches.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="statement-timeout-millis" type="xs:unsignedLong" minOccurs="0" default="0">
                 <xs:annotation>
                     <xs:documentation>

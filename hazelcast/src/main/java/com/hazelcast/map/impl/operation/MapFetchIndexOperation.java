@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.Comparison;
 import com.hazelcast.query.impl.GlobalIndexPartitionTracker.PartitionStamp;
 import com.hazelcast.query.impl.IndexKeyEntries;
@@ -34,8 +33,11 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.OrderedIndexStore;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.operationservice.ReadonlyOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -85,7 +87,7 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
     protected void runInternal() {
         Indexes indexes = mapContainer.getIndexes();
         if (indexes == null) {
-            throw new QueryException("Cannot use the index \"" + indexName
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Cannot use the index \"" + indexName
                     + "\" of the IMap \"" + name + "\" because it is not global "
                     + "(make sure the property \"" + ClusterProperty.GLOBAL_HD_INDEX_ENABLED
                     + "\" is set to \"true\")");
@@ -93,12 +95,12 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
 
         InternalIndex index = indexes.getIndex(indexName);
         if (index == null) {
-            throw new QueryException("Index \"" + indexName + "\" does not exist");
+            throw QueryException.error(SqlErrorCode.INDEX_INVALID, "Index \"" + indexName + "\" does not exist");
         }
 
         PartitionStamp indexStamp = index.getPartitionStamp();
         if (indexStamp == null) {
-            throw new MissingPartitionException("index is being rebuilt");
+            throw new RetryableHazelcastException("Index is being rebuilt");
         }
         if (indexStamp.partitions.equals(partitionIdSet)) {
             // We clear the requested partitionIdSet, which means that we won't filter out any partitions.
@@ -313,6 +315,18 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         return response;
     }
 
+    // Index scan via operation is thread-safe, no need to run from partition thread.
+    @Override
+    protected void assertNativeMapOnPartitionThread() {
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (!(e instanceof MissingPartitionException)) {
+            super.logError(e);
+        }
+    }
+
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
@@ -404,5 +418,10 @@ public class MapFetchIndexOperation extends MapOperation implements ReadonlyOper
         public MissingPartitionException(String message) {
             super(message);
         }
+
+        public MissingPartitionException(String message, Throwable t) {
+            super(message, t);
+        }
     }
+
 }

@@ -16,11 +16,17 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.JarUtil;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.commons.io.IOUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +42,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class ChildFirstClassLoaderTest {
 
     private static URL jarUrl;
@@ -52,6 +60,14 @@ public class ChildFirstClassLoaderTest {
     public static void afterClass() throws Exception {
         if (jarUrl != null) {
             Files.delete(Paths.get(jarUrl.toURI()));
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (cl != null) {
+            cl.close();
+            cl = null;
         }
     }
 

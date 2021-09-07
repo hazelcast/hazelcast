@@ -30,10 +30,11 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.testcontainers.DockerClientFactory;
+
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -46,14 +47,14 @@ import static java.lang.System.lineSeparator;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 import static software.amazon.awssdk.core.sync.ResponseTransformer.toInputStream;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class S3MockTest extends S3TestBase {
 
-    @ClassRule
-    public static S3MockContainer s3MockContainer = new S3MockContainer();
+    private static S3MockContainer s3MockContainer;
 
     private static final ILogger logger = Logger.getLogger(S3MockTest.class);
     private static final String SOURCE_BUCKET = "source-bucket";
@@ -67,15 +68,27 @@ public class S3MockTest extends S3TestBase {
 
     private static S3Client s3Client;
 
+
     @BeforeClass
     public static void setupS3() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        s3MockContainer = new S3MockContainer();
+        s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));
         s3Client = s3MockContainer.client();
     }
 
     @AfterClass
     public static void teardown() {
-        s3Client.close();
+        try {
+            if (s3Client != null) {
+                s3Client.close();
+            }
+        } finally {
+            if (s3MockContainer != null) {
+                s3MockContainer.stop();
+            }
+        }
     }
 
     @Before
