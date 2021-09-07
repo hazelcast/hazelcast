@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelJVMTest.class})
-public class MapIndexScanPMigrationStressTest extends JetTestSupport {
+public class JetMapReadMigrationStressTest extends JetTestSupport {
     private static final int ITEM_COUNT = 650_000;
     private static final String MAP_NAME = "map";
 

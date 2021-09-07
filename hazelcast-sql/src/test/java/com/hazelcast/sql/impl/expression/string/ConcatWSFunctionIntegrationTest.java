@@ -16,10 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.string;
 
-import com.hazelcast.jet.sql.impl.LogTimer;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionTestSupport;
@@ -32,8 +30,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
@@ -75,48 +71,6 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testSampleSelfTime(){
-        com.hazelcast.jet.LogTimer.calculateSelfTime("a");
-        com.hazelcast.jet.LogTimer.calculateSelfTime("b");
-        com.hazelcast.jet.LogTimer.calculateSelfTime("c");
-    }
-
-    @Test
-    public void testSample() throws InterruptedException {
-        ExpressionType<?> type1 = ExpressionTypes.STRING;
-        ExpressionType<?> type2 = ExpressionTypes.STRING;
-
-        Class<? extends ExpressionBiValue> clazz =
-                ExpressionBiValue.createBiClass(type1.typeName(), type2.typeName());
-
-        ExpressionBiValue[] values = new ExpressionBiValue[]{
-                ExpressionBiValue.createBiValue(clazz, 0, type1.valueFrom(), type2.valueFrom())
-        };
-
-        putAll((Object[]) values);
-        String sql = "SELECT Concat_WS('-', field1, field2) FROM map";
-
-        int warmupCount = 500;
-        int benchmarkCount = 10000;
-//        Thread.sleep(20000);
-        for (int i = 0; i < warmupCount; i++) {
-            execute(member, sql);
-        }
-
-        LogTimer.active = true;
-        com.hazelcast.jet.LogTimer.active = true;
-
-        for (int i = 0; i < benchmarkCount; i++) {
-            LogTimer.start("singlequery");
-            List<SqlRow> results =  execute(member, sql);
-            LogTimer.stop("singlequery");
-        }
-
-        LogTimer.ExportHistograms();
-        com.hazelcast.jet.LogTimer.ExportHistograms();
-    }
-
-    @Test
     public void testLiteral() {
         put("1");
 
@@ -147,7 +101,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
-    public void testEmpty() { //todo why is this reading from map as well?
+    public void testEmpty() {
         put("1");
         // Empty separator => just concat, ignoring nulls
         check(getConcatWsExpression("", "3", "2"), "32");
