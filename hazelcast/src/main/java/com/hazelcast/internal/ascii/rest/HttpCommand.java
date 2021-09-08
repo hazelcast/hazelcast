@@ -165,6 +165,62 @@ public abstract class HttpCommand extends AbstractTextCommand {
     /**
      * Prepares a response with the provided status line, binary-encoded
      * content type and response.
+     * The format of response:
+     *       Status-Line (that includes CRLF itself);
+     *       for each header in header do:
+     *          header + CLRF
+     *       done;
+     *       CRLF;
+     *       response-body;
+     *
+     * @param statusLine  the binary-encoded HTTP response status line
+     * @param headers    the map of response headers (In addition to these, we also
+     *                   add the content-length header)
+     * @param value       binary-encoded response content value
+     */
+    public void setResponseWithHeaders(@Nonnull byte[] statusLine,
+                            @Nullable Map<String, Object> headers,
+                            @Nullable byte[] value) {
+        int valueSize = (value == null) ? 0 : value.length;
+        byte[] len = stringToBytes(String.valueOf(valueSize));
+        int size = statusLine.length;
+
+        size += CONTENT_LENGTH.length;
+        size += len.length;
+        size += TextCommandConstants.RETURN.length;
+        if (headers != null) {
+            for (Map.Entry<String, Object> entry : headers.entrySet()) {
+                size += stringToBytes(entry.getKey() + ": ").length;
+                size += stringToBytes(entry.getValue().toString()).length;
+                size += TextCommandConstants.RETURN.length;
+            }
+        }
+        size += TextCommandConstants.RETURN.length;
+        size += valueSize;
+
+        this.response = ByteBuffer.allocate(size);
+        response.put(statusLine);
+        response.put(CONTENT_LENGTH);
+        response.put(len);
+        response.put(TextCommandConstants.RETURN);
+        if (headers != null) {
+            for (Map.Entry<String, Object> entry : headers.entrySet()) {
+                response.put(stringToBytes(entry.getKey() + ": "));
+                response.put(stringToBytes(entry.getValue().toString()));
+                response.put(TextCommandConstants.RETURN);
+            }
+        }
+        response.put(TextCommandConstants.RETURN);
+
+        if (value != null) {
+            response.put(value);
+        }
+        response.flip();
+    }
+
+    /**
+     * Prepares a response with the provided status line, binary-encoded
+     * content type and response.
      *
      * @param statusLine  the binary-encoded HTTP response status line
      * @param contentType binary-encoded response content type
