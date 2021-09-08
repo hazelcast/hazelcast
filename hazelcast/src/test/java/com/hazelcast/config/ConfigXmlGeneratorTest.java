@@ -2001,7 +2001,6 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
     }
 
-
     @Test
     public void testExplicitlyAssignedGroupsRestApiConfig_whenPersistenceEnabled() {
         RestApiConfig restApiConfig = new RestApiConfig();

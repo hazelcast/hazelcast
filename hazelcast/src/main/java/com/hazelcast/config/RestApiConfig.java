@@ -60,7 +60,7 @@ public class RestApiConfig {
     public RestApiConfig enableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
             enabledGroupCodes.addAll(Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode)
-                    .distinct().collect(Collectors.toList()));
+                    .collect(Collectors.toSet()));
         }
         return this;
     }
@@ -78,8 +78,7 @@ public class RestApiConfig {
      */
     public RestApiConfig disableGroups(RestEndpointGroup... endpointGroups) {
         if (endpointGroups != null) {
-            Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode)
-                    .distinct().collect(Collectors.toList()).forEach(enabledGroupCodes::remove);
+            Arrays.stream(endpointGroups).map(RestEndpointGroup::getCode).forEach(enabledGroupCodes::remove);
         }
         return this;
     }
@@ -126,8 +125,7 @@ public class RestApiConfig {
     public RestApiConfig setEnabledGroups(Collection<RestEndpointGroup> groups) {
         enabledGroupCodes.clear();
         if (groups != null) {
-            enabledGroupCodes.addAll(groups.stream().map(RestEndpointGroup::getCode)
-                    .distinct().collect(Collectors.toList()));
+            enabledGroupCodes.addAll(groups.stream().map(RestEndpointGroup::getCode).collect(Collectors.toSet()));
         }
         return this;
     }
