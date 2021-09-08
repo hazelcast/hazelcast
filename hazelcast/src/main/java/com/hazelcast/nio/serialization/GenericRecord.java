@@ -57,7 +57,7 @@ import java.util.Set;
  *         });
  * }</pre>
  * <p>
- * GenericRecord also allows reading from the cluster without having the classes on the client side.
+ * GenericRecord also allows reading from a cluster without having the classes on the client side.
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
  * a {@link HazelcastSerializationException} was thrown stating that a factory could not be found. Starting from 4.1,
  * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
