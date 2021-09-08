@@ -38,7 +38,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
-import static com.hazelcast.internal.ascii.rest.HttpCommand.*;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.SUCCESS;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
