@@ -1991,8 +1991,37 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testExplicitlyAssignedGroupsRestApiConfig() {
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true);
-        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK, RestEndpointGroup.HOT_RESTART,
-                RestEndpointGroup.WAN);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.HOT_RESTART, RestEndpointGroup.WAN);
+        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
+                new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+
+    @Test
+    public void testExplicitlyAssignedGroupsRestApiConfig_whenPersistenceEnabled() {
+        RestApiConfig restApiConfig = new RestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.PERSISTENCE, RestEndpointGroup.WAN);
+        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
+                new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testExplicitlyAssignedGroupsRestApiConfig_whenBothHotRestartAndPersistenceEnabled() {
+        RestApiConfig restApiConfig = new RestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.HOT_RESTART, RestEndpointGroup.PERSISTENCE, RestEndpointGroup.WAN);
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
