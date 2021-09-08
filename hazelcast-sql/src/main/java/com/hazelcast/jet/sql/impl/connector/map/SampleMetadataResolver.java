@@ -58,6 +58,7 @@ final class SampleMetadataResolver {
     }
 
     @Nullable
+    @SuppressWarnings("checkstyle:returncount")
     static Metadata resolve(InternalSerializationService ss, Object target, boolean key) {
         try {
             if (target instanceof Data) {
