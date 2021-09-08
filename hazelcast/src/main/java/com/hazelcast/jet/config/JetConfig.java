@@ -282,7 +282,9 @@ public class JetConfig {
     /**
      * Returns the Jet instance config.
      *
-     * @deprecated use {@link JetConfig} instead.
+     * @deprecated The fields from {@link InstanceConfig} class were
+     * moved to {@link JetConfig} class. Get the fields directly from
+     * {@link JetConfig}.
      */
     @Nonnull
     @Deprecated
@@ -293,7 +295,9 @@ public class JetConfig {
     /**
      * Sets the Jet instance config.
      *
-     * @deprecated use {@link JetConfig} instead.
+     * @deprecated The fields from {@link InstanceConfig} class were
+     * moved to {@link JetConfig} class. Set the fields directly on
+     * {@link JetConfig}.
      */
     @Nonnull
     @Deprecated

@@ -138,6 +138,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -2988,7 +2989,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
             }
         }
-
+        // if JetConfig contains InstanceConfig(deprecated) fields
+        // <instance> tag will be ignored.
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             if (matches("cooperative-thread-count", nodeName)) {
@@ -3010,6 +3012,55 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                         getLongValue("max-processor-accumulated-records", getTextContent(child)));
             } else if (matches("edge-defaults", nodeName)) {
                 handleEdgeDefaults(jetConfig, child);
+            } else if (matches("instance", nodeName)) {
+                if (jetConfigContainsInstanceConfigFields(node)) {
+                    LOGGER.warning("<instance> tag will be ignored "
+                            + "since <jet> tag already contains the instance fields.");
+                } else {
+                    LOGGER.warning("<instance> tag is deprecated, use <jet> tag directly for configuration.");
+                    handleInstance(jetConfig, child);
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private boolean jetConfigContainsInstanceConfigFields(Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("cooperative-thread-count".equals(nodeName)
+                    || "flow-control-period".equals(nodeName)
+                    || "backup-count".equals(nodeName)
+                    || "scale-up-delay-millis".equals(nodeName)
+                    || "lossless-restart-enabled".equals(nodeName)
+                    || "max-processor-accumulated-records".equals(nodeName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void handleInstance(JetConfig jetConfig, Node node) {
+        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("cooperative-thread-count", nodeName)) {
+                instanceConfig.setCooperativeThreadCount(
+                                getIntegerValue("cooperative-thread-count", getTextContent(child)));
+            } else if (matches("flow-control-period", nodeName)) {
+                instanceConfig.setFlowControlPeriodMs(
+                                getIntegerValue("flow-control-period", getTextContent(child)));
+            } else if (matches("backup-count", nodeName)) {
+                instanceConfig.setBackupCount(
+                                getIntegerValue("backup-count", getTextContent(child)));
+            } else if (matches("scale-up-delay-millis", nodeName)) {
+                instanceConfig.setScaleUpDelayMillis(
+                                getLongValue("scale-up-delay-millis", getTextContent(child)));
+            } else if (matches("lossless-restart-enabled", nodeName)) {
+                instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("max-processor-accumulated-records", nodeName)) {
+                instanceConfig.setMaxProcessorAccumulatedRecords(
+                                getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }
     }
