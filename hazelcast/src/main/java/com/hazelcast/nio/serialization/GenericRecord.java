@@ -61,7 +61,7 @@ import java.util.Set;
  * For {@link Portable}, when {@link PortableFactory} is not provided in the config at the start,
  * a {@link HazelcastSerializationException} was thrown stating that a factory could not be found. Starting from 4.1,
  * the objects will be returned as {@link GenericRecord}. This way, the clients can read and write objects back to
- * the cluster without the need that the domain classes are on the classpath.
+ * the cluster without the need to have the domain classes on the classpath.
  * <p>
  * Currently this is valid for {@link Portable} objects.
  *
