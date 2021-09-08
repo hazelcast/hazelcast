@@ -71,6 +71,7 @@ public abstract class InvocationBuilder {
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
     protected boolean failOnIndeterminateOperationState;
+    protected boolean async = false;
     protected ServerConnectionManager connectionManager;
 
     /**
@@ -147,6 +148,14 @@ public abstract class InvocationBuilder {
      */
     public boolean shouldFailOnIndeterminateOperationState() {
         return failOnIndeterminateOperationState;
+    }
+
+    /**
+     * Sets async flag to true.
+     */
+    public InvocationBuilder setAsync() {
+        this.async = true;
+        return this;
     }
 
     /**
