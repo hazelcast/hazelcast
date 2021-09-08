@@ -2509,6 +2509,12 @@
                     <endpoint>127.0.0.1</endpoint>
                 </endpoints>
             </management-permission>
+            <sql-permission name="*">
+                <actions>
+                    <action>create</action>
+                    <action>destroy</action>
+                </actions>
+            </sql-permission>
         </client-permissions>
         <client-block-unmapped-actions>true</client-block-unmapped-actions>
         <security-interceptors>

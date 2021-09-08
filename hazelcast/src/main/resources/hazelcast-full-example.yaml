@@ -2450,6 +2450,11 @@ hazelcast:
         - principal: management
           endpoints:
             - 127.0.0.1
+      sql:
+        - name: "*"
+          actions:
+            - create
+            - destroy
     client-block-unmapped-actions: true
     security-interceptors:
       - com.your-package.YourSecurityInterceptorImplementation
