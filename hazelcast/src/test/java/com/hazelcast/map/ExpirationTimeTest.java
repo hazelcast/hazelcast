@@ -75,7 +75,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
     @Test
     public void expire_based_on_ttl_when_when_ttl_is_smaller_than_max_idle() {
         IMap<Integer, Integer> map = createMap();
-        final long ttlSeconds = 5;
+        final long ttlSeconds = 8;
         final long maxIdleSeconds = 10;
 
         map.put(1, 1, ttlSeconds, SECONDS, maxIdleSeconds, SECONDS);

@@ -1444,6 +1444,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
         config.getMapConfig(MAP_NAME)
+                .setPerEntryStatsEnabled(true)
                 .setTimeToLiveSeconds(60)
                 .setMaxIdleSeconds(30);
 

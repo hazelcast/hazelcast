@@ -63,6 +63,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         String mapName = randomMapName();
 
         Config config = getConfig();
+        config.getMapConfig(mapName).setPerEntryStatsEnabled(true);
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
 
         HazelcastInstance node = createHazelcastInstance(config);
