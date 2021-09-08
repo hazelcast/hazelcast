@@ -24,10 +24,10 @@ import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.query.impl.ComparableIdentifiedDataSerializable;
 import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.exec.scan.index.IndexEqualsFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilterValue;
@@ -69,10 +69,10 @@ import java.util.TreeMap;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.createRelTable;
+import static com.hazelcast.jet.sql.impl.opt.OptUtils.getCluster;
 import static com.hazelcast.query.impl.CompositeValue.NEGATIVE_INFINITY;
 import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
-import static com.hazelcast.sql.impl.calcite.opt.OptUtils.createRelTable;
-import static com.hazelcast.sql.impl.calcite.opt.OptUtils.getCluster;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.singletonList;
@@ -888,7 +888,7 @@ public final class JetIndexResolver {
         HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
         HazelcastTable originalHazelcastTable = OptUtils.extractHazelcastTable(scan);
 
-        RelOptTable newRelTable = OptUtils.createRelTable(
+        RelOptTable newRelTable = createRelTable(
                 originalRelTable.getDelegate().getQualifiedName(),
                 originalHazelcastTable.withFilter(null),
                 scan.getCluster().getTypeFactory()

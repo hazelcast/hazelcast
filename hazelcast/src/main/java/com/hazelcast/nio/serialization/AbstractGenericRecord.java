@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.internal.json.JsonEscape;
+
 import javax.annotation.Nonnull;
 import java.util.Objects;
 import java.util.Set;
@@ -77,5 +79,28 @@ public abstract class AbstractGenericRecord implements GenericRecord {
     public final <T> T readAny(@Nonnull String fieldName) {
         FieldType type = getFieldType(fieldName);
         return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
+    }
+
+    /**
+     * Utility method to build a json String representation of the fields together with field names
+     *
+     * @param stringBuilder to be populated via json representation
+     */
+    protected void writeFieldsToStringBuilder(StringBuilder stringBuilder) {
+        Set<String> fieldNames = getFieldNames();
+        stringBuilder.append("{");
+        int size = fieldNames.size();
+        int i = 0;
+        for (String fieldName : fieldNames) {
+            i++;
+            JsonEscape.writeEscaped(stringBuilder, fieldName);
+            stringBuilder.append(": ");
+            FieldType fieldType = getFieldType(fieldName);
+            fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
+            if (size != i) {
+                stringBuilder.append(", ");
+            }
+        }
+        stringBuilder.append("}");
     }
 }

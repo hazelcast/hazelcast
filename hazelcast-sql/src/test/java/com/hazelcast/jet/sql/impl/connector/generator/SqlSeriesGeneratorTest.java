@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -214,8 +213,8 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
 
     @Test
     public void when_notInFromClause_then_throws() {
-        IMap<Integer, Integer> map = instance().getMap("m");
-        map.put(42, 43);
+        createMapping("m", int.class, int.class);
+        instance().getMap("m").put(42, 43);
         assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_SERIES(null, null) FROM m"))
                 .hasMessage("unexpected SQL type: ROW");
     }

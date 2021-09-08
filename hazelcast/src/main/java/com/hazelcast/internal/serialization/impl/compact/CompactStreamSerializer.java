@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -55,7 +56,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.T
  */
 public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
-    private final Map<String, CompactSerializableRegistration> classNameToRegistrationMap = new ConcurrentHashMap<>();
+    private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
     private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
     private final SchemaService schemaService;
@@ -77,15 +78,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         this.bufferObjectDataOutputSupplier = bufferObjectDataOutputSupplier;
         this.classLoader = classLoader;
         this.isEnabled = compactSerializationConfig.isEnabled();
-        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registries.entrySet()) {
-            String typeName = entry.getKey();
-            CompactSerializer serializer = entry.getValue().element3;
-            serializer = serializer == null ? reflectiveSerializer : serializer;
-            Class clazz = entry.getValue().element1;
-            classToRegistrationMap.put(clazz, new CompactSerializableRegistration(clazz, typeName, serializer));
-            classNameToRegistrationMap.put(typeName, new CompactSerializableRegistration(clazz, typeName, serializer));
-        }
+        registerConfiguredSerializers(compactSerializationConfig);
+        registerConfiguredNamedSerializers(compactSerializationConfig);
     }
 
     /**
@@ -243,19 +237,24 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     private CompactSerializableRegistration getOrCreateRegistration(Object object) {
         return classToRegistrationMap.computeIfAbsent(object.getClass(), aClass -> {
+            CompactSerializer<?> serializer;
             if (object instanceof Compactable) {
-                CompactSerializer<?> serializer = ((Compactable<?>) object).getCompactSerializer();
-                return new CompactSerializableRegistration(aClass, aClass.getName(), serializer);
+                serializer = ((Compactable<?>) object).getCompactSerializer();
+            } else {
+                serializer = reflectiveSerializer;
             }
-            return new CompactSerializableRegistration(aClass, aClass.getName(), reflectiveSerializer);
+
+            return new CompactSerializableRegistration(aClass, aClass.getName(), serializer);
         });
     }
 
-    private CompactSerializableRegistration getOrCreateRegistration(String className) {
-        return classNameToRegistrationMap.computeIfAbsent(className, s -> {
+    private CompactSerializableRegistration getOrCreateRegistration(String typeName) {
+        return typeNameToRegistrationMap.computeIfAbsent(typeName, s -> {
             Class<?> clazz;
             try {
-                clazz = ClassLoaderUtil.loadClass(classLoader, className);
+                //when the registration does not exist, we treat typeName as className to check if there is a class
+                //with the given name in the classpath.
+                clazz = ClassLoaderUtil.loadClass(classLoader, typeName);
             } catch (Exception e) {
                 return null;
             }
@@ -281,5 +280,47 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     //Should be deleted with removing Beta tags
     public boolean isEnabled() {
         return isEnabled;
+    }
+
+    private void registerConfiguredSerializers(CompactSerializationConfig compactSerializationConfig) {
+        Map<String, TriTuple<Class, String, CompactSerializer>> registries = compactSerializationConfig.getRegistries();
+        for (TriTuple<Class, String, CompactSerializer> registry : registries.values()) {
+            Class clazz = registry.element1;
+            String typeName = registry.element2;
+            CompactSerializer serializer = registry.element3;
+            serializer = serializer == null ? reflectiveSerializer : serializer;
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
+            classToRegistrationMap.put(clazz, registration);
+            typeNameToRegistrationMap.put(typeName, registration);
+        }
+    }
+
+    private void registerConfiguredNamedSerializers(CompactSerializationConfig compactSerializationConfig) {
+        Map<String, TriTuple<String, String, String>> namedRegistries
+                = CompactSerializationConfigAccessor.getNamedRegistries(compactSerializationConfig);
+        for (TriTuple<String, String, String> registry : namedRegistries.values()) {
+            String className = registry.element1;
+            String typeName = registry.element2;
+            String serializerClassName = registry.element3;
+            CompactSerializer serializer;
+            if (serializerClassName != null) {
+                try {
+                    serializer = ClassLoaderUtil.newInstance(classLoader, serializerClassName);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("Cannot create an instance of " + serializerClassName);
+                }
+            } else {
+                serializer = reflectiveSerializer;
+            }
+            Class clazz;
+            try {
+                clazz = ClassLoaderUtil.loadClass(classLoader, className);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException("Cannot load the class " + className);
+            }
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
+            classToRegistrationMap.put(clazz, registration);
+            typeNameToRegistrationMap.put(typeName, registration);
+        }
     }
 }

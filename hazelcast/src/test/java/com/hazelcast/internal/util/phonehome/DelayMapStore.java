@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastMillis;
 
 public class DelayMapStore implements MapStore<Object, Object> {
     Map<Object, Object> store = new ConcurrentHashMap<>();
@@ -49,7 +49,7 @@ public class DelayMapStore implements MapStore<Object, Object> {
 
     @Override
     public Object load(Object key) {
-        sleepMillis(200);
+        sleepAtLeastMillis(200);
         return store.get(key);
     }
 

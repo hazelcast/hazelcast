@@ -18,8 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.map.index;
 
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.jet.sql.SqlTestSupport.Row;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,10 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Test of merge-sort correctness on DAG level (ordered edge).
@@ -40,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @see com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor#onMapIndexScan
  */
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSupport {
+public class MapSortedIndexScanIntegrationTest extends SqlTestSupport {
     private static final int ITEM_COUNT = 10_000;
     private static final String MAP_NAME = "map";
 
@@ -53,6 +49,7 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
 
     @Before
     public void before() {
+        createMapping(MAP_NAME, int.class, int.class);
         map = instance().getMap(MAP_NAME);
     }
 
@@ -71,15 +68,5 @@ public class MapSortedIndexScanIntegrationTest extends SimpleTestInClusterSuppor
         for (int i = 0; i < 5; i++) {
             assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected);
         }
-    }
-
-    private void assertRowsOrdered(String sql, Collection<Row> expectedRows) {
-        List<Row> actualRows = new ArrayList<>();
-        instance().getSql()
-                .execute(sql)
-                .iterator()
-                .forEachRemaining(row -> actualRows.add(new Row(row.getObject(0), row.getObject(1))));
-
-        assertThat(actualRows).containsExactlyElementsOf(expectedRows);
     }
 }

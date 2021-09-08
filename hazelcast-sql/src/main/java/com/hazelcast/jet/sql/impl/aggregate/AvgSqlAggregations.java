@@ -39,8 +39,13 @@ public final class AvgSqlAggregations {
 
     private static SqlAggregation from(QueryDataType operandType) {
         switch (operandType.getTypeFamily()) {
+            case TINYINT:
+            case SMALLINT:
+            case INTEGER:
+            case BIGINT:
             case DECIMAL:
                 return new AvgDecimalSqlAggregation();
+            case REAL:
             case DOUBLE:
                 return new AvgDoubleSqlAggregation();
             default:
@@ -75,7 +80,10 @@ public final class AvgSqlAggregations {
                 sum = BigDecimal.ZERO;
             }
 
-            sum = sum.add((BigDecimal) value, DECIMAL_MATH_CONTEXT);
+            BigDecimal decimalValue = value instanceof BigDecimal
+                    ? (BigDecimal) value
+                    : new BigDecimal(((Number) value).longValue());
+            sum = sum.add(decimalValue, DECIMAL_MATH_CONTEXT);
             this.count += count;
         }
 

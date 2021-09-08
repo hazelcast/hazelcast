@@ -25,7 +25,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -105,6 +104,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Collections.emptyList;
@@ -282,7 +282,7 @@ public class MasterJobContext {
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
             DAG dag;
-            JobExecutionService jobExecutionService = mc.coordinationService().getJetServiceBackend().getJobExecutionService();
+            JobExecutionService jobExecutionService = mc.getJetServiceBackend().getJobExecutionService();
             try {
                 jobExecutionService.prepareProcessorClassLoaders(mc.jobId(), mc.jobConfig());
                 dag = deserializeWithCustomClassLoader(
@@ -595,10 +595,16 @@ public class MasterJobContext {
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
             if (error instanceof ExecutionNotFoundException) {
-                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
-                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
-                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
-                error = new JobTerminateRequestedException(requestedTerminationMode);
+                // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
+                if (requestedTerminationMode != null) {
+                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                    // to JobTerminateRequestedException.
+                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
+                }
+                // The cancellation can also happen if some participant left and
+                // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
+                // We keep this (and possibly other) exceptions as they are
+                // and let the execution complete with failure.
             }
             finalizeJob(error);
         }
@@ -633,6 +639,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
+                mc.getJetServiceBackend().getJobExecutionService().removeClassloadersForJob(mc.jobId());
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
@@ -765,15 +772,19 @@ public class MasterJobContext {
 
     private void completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
-            for (Vertex vertex : vertices) {
-                try {
-                    ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
-                    Util.doWithClassLoader(metaSupplier.getClass().getClassLoader(), () -> metaSupplier.close(failure));
-                } catch (Throwable e) {
-                    logger.severe(mc.jobIdString()
-                            + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+            JobExecutionService jobExecutionService = mc.getJetServiceBackend().getJobExecutionService();
+            ClassLoader jobCL = jobExecutionService.getClassLoader(mc.jobConfig(), mc.jobId());
+            doWithClassLoader(jobCL, () -> {
+                for (Vertex v : vertices) {
+                    try {
+                        ClassLoader processorCL = jobExecutionService.getProcessorClassLoader(mc.jobId(), v.getName());
+                        Util.doWithClassLoader(processorCL, () -> v.getMetaSupplier().close(failure));
+                    } catch (Throwable e) {
+                        logger.severe(mc.jobIdString()
+                                      + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                    }
                 }
-            }
+            });
         }
     }
 

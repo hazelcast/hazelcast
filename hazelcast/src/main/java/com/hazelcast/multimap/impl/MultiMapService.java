@@ -237,7 +237,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                 keySet.addAll(multiMapContainer.keySet());
             }
         }
-        getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         return keySet;
     }
 

@@ -16,23 +16,31 @@
 
 package com.hazelcast.jet.sql.impl.connector.map.index;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
-import com.hazelcast.sql.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.partition.Partition;
+import com.hazelcast.partition.PartitionService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.IntFunction;
 
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_DECIMAL;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BIG_INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BOOLEAN;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.BYTE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.CHARACTER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.DOUBLE;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.FLOAT;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.INTEGER;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.LONG;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.SHORT;
-import static com.hazelcast.sql.support.expressions.ExpressionTypes.STRING;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BIG_DECIMAL;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BIG_INTEGER;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BOOLEAN;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.BYTE;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.CHARACTER;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.DOUBLE;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.FLOAT;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.INTEGER;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.LONG;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.SHORT;
+import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.STRING;
 
 abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
 
@@ -73,6 +81,19 @@ abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
         );
     }
 
+    protected static List<ExpressionType<?>> nonBaseTypes() {
+        return Arrays.asList(
+                BYTE,
+                SHORT,
+                LONG,
+                BIG_DECIMAL,
+                BIG_INTEGER,
+                FLOAT,
+                DOUBLE,
+                CHARACTER
+        );
+    }
+
     protected static List<ExpressionType<?>> allTypes() {
         return Arrays.asList(
                 BOOLEAN,
@@ -87,5 +108,67 @@ abstract class JetSqlIndexTestSupport extends OptimizerTestSupport {
                 STRING,
                 CHARACTER
         );
+    }
+
+    protected static <K> K getLocalKey(
+            HazelcastInstance member,
+            IntFunction<K> keyProducer
+    ) {
+        return getLocalKeys(member, 1, keyProducer).get(0);
+    }
+
+    protected static <K> List<K> getLocalKeys(
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer
+    ) {
+        return new ArrayList<>(getLocalEntries(member, count, keyProducer, keyProducer).keySet());
+    }
+
+    protected static <K, V> Map<K, V> getLocalEntries(
+            HazelcastInstance member,
+            int count,
+            IntFunction<K> keyProducer,
+            IntFunction<V> valueProducer
+    ) {
+        if (count == 0) {
+            return Collections.emptyMap();
+        }
+
+        PartitionService partitionService = member.getPartitionService();
+
+        Map<K, V> res = new LinkedHashMap<>();
+
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+            K key = keyProducer.apply(i);
+
+            if (key == null) {
+                continue;
+            }
+
+            Partition partition = partitionService.getPartition(key);
+
+            if (!partition.getOwner().localMember()) {
+                continue;
+            }
+
+            V value = valueProducer.apply(i);
+
+            if (value == null) {
+                continue;
+            }
+
+            res.put(key, value);
+
+            if (res.size() == count) {
+                break;
+            }
+        }
+
+        if (res.size() < count) {
+            throw new RuntimeException("Failed to get the necessary number of keys: " + res.size());
+        }
+
+        return res;
     }
 }

@@ -16,14 +16,9 @@
 
 package com.hazelcast.sql.impl;
 
-import com.hazelcast.internal.nio.Packet;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.FlowControlFactory;
-import com.hazelcast.sql.impl.exec.io.flowcontrol.simple.SimpleFlowControlFactory;
-import com.hazelcast.sql.impl.operation.QueryOperationHandlerImpl;
 import com.hazelcast.sql.impl.plan.cache.PlanCacheChecker;
 import com.hazelcast.sql.impl.state.QueryClientStateRegistry;
-import com.hazelcast.sql.impl.state.QueryStateRegistry;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.state.QueryStateRegistryUpdater;
 
 /**
@@ -33,52 +28,32 @@ public class SqlInternalService {
 
     public static final String SERVICE_NAME = "hz:impl:sqlService";
 
-    /** Default flow control factory. */
-    private static final FlowControlFactory FLOW_CONTROL_FACTORY = SimpleFlowControlFactory.INSTANCE;
-
-    /** Registry for running queries. */
-    private final QueryStateRegistry stateRegistry;
+    /** Registry for query results. */
+    private final QueryResultRegistry resultRegistry;
 
     /** Registry for client queries. */
     private final QueryClientStateRegistry clientStateRegistry;
-
-    /** Operation manager. */
-    private final QueryOperationHandlerImpl operationHandler;
 
     /** State registry updater. */
     private final QueryStateRegistryUpdater stateRegistryUpdater;
 
     public SqlInternalService(
+        QueryResultRegistry resultRegistry,
         String instanceName,
         NodeServiceProvider nodeServiceProvider,
-        InternalSerializationService serializationService,
-        int threadCount,
-        int outboxBatchSize,
         long stateCheckFrequency,
         PlanCacheChecker planCacheChecker
     ) {
-        // Create state registries since they do not depend on anything.
-        stateRegistry = new QueryStateRegistry(nodeServiceProvider);
-        clientStateRegistry = new QueryClientStateRegistry();
+        this.resultRegistry = resultRegistry;
 
-        // Operation handler depends on state registry.
-        operationHandler = new QueryOperationHandlerImpl(
-            instanceName,
-            nodeServiceProvider,
-            serializationService,
-            stateRegistry,
-            outboxBatchSize,
-            FLOW_CONTROL_FACTORY,
-            threadCount
-        );
+        // Create state registries since they do not depend on anything.
+        this.clientStateRegistry = new QueryClientStateRegistry();
 
         // State checker depends on state registries and operation handler.
-        stateRegistryUpdater = new QueryStateRegistryUpdater(
+        this.stateRegistryUpdater = new QueryStateRegistryUpdater(
             instanceName,
             nodeServiceProvider,
-            stateRegistry,
             clientStateRegistry,
-            operationHandler,
             planCacheChecker,
             stateCheckFrequency
         );
@@ -90,22 +65,13 @@ public class SqlInternalService {
 
     public void shutdown() {
         stateRegistryUpdater.shutdown();
-        operationHandler.shutdown();
 
-        stateRegistry.shutdown();
+        resultRegistry.shutdown();
         clientStateRegistry.shutdown();
     }
 
-    public void onPacket(Packet packet) {
-        operationHandler.onPacket(packet);
-    }
-
-    public QueryStateRegistry getStateRegistry() {
-        return stateRegistry;
-    }
-
-    public QueryOperationHandlerImpl getOperationHandler() {
-        return operationHandler;
+    public QueryResultRegistry getResultRegistry() {
+        return resultRegistry;
     }
 
     public QueryClientStateRegistry getClientStateRegistry() {

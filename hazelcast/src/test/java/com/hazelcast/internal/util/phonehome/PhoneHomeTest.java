@@ -31,7 +31,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.impl.SqlServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -52,12 +56,13 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
+import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static com.hazelcast.test.Accessors.getNode;
-import static java.lang.Math.min;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -80,11 +85,7 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get(PhoneHomeMetrics.BUILD_VERSION.getRequestParameterName()), BuildInfoProvider.getBuildInfo().getVersion());
-        String expectedCP = System.getProperty("java.class.path");
-        assertEquals(
-                parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()),
-                expectedCP.substring(0, min(expectedCP.length(), BuildInfoCollector.CLASSPATH_MAX_LENGTH))
-        );
+        assertTrue(parameters.get(PhoneHomeMetrics.JAVA_CLASSPATH.getRequestParameterName()).endsWith(".jar"));
         assertEquals(UUID.fromString(parameters.get(PhoneHomeMetrics.UUID_OF_CLUSTER.getRequestParameterName())), node.getLocalMember().getUuid());
         assertNull(parameters.get("e"));
         assertNull(parameters.get("oem"));
@@ -138,6 +139,9 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(PhoneHomeMetrics.OPERATING_SYSTEM_VERSION.getRequestParameterName()), osMxBean.getVersion());
         assertEquals(parameters.get(PhoneHomeMetrics.RUNTIME_MXBEAN_VM_NAME.getRequestParameterName()), runtimeMxBean.getVmName());
         assertEquals(parameters.get(PhoneHomeMetrics.JAVA_VERSION_OF_SYSTEM.getRequestParameterName()), System.getProperty("java.version"));
+        assertEquals(parameters.get(PhoneHomeMetrics.JET_ENABLED.getRequestParameterName()), "true");
+        assertEquals(parameters.get(PhoneHomeMetrics.JET_RESOURCE_UPLOAD_ENABLED.getRequestParameterName()), "false");
+        assertEquals(parameters.get(PhoneHomeMetrics.CP_SUBSYSTEM_ENABLED.getRequestParameterName()), "false");
     }
 
     @Test
@@ -518,6 +522,35 @@ public class PhoneHomeTest extends HazelcastTestSupport {
                 Long.parseLong(parameters.get(PhoneHomeMetrics.AVERAGE_GET_LATENCY_OF_MAPS_USING_MAPSTORE.getRequestParameterName())), 200);
     }
 
+    @Test
+    public void testSqlQueriesSubmitted() {
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()), "0");
+
+        SqlServiceImpl sqlService = node.getNodeEngine().getSqlService();
+        try {
+            sqlService.execute("SELECT * FROM map");
+        } catch (Exception e) {
+            ignore(e);
+        }
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.SQL_QUERIES_SUBMITTED.getRequestParameterName()), "1");
+    }
+
+    @Test
+    public void testJetJobsSubmitted() {
+        Map<String, String> parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()), "0");
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(1, 2, 3))
+                .writeTo(Sinks.logger());
+        node.hazelcastInstance.getJet().newJob(pipeline);
+
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.JET_JOBS_SUBMITTED.getRequestParameterName()), "1");
+    }
+
     private void testCounts(Function<String, ? extends DistributedObject> distributedObjectCreateFn,
                             int initial, PhoneHomeMetrics countMetric,
                             PhoneHomeMetrics totalCountMetric) {
@@ -532,6 +565,13 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 1));
 
         DistributedObject obj2 = distributedObjectCreateFn.apply("phonehome");
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 2));
+        assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));
+
+        INTERNAL_OBJECTS_PREFIXES.stream()
+                .map(prefix -> prefix + "phonehome")
+                .forEach(distributedObjectCreateFn::apply);
         parameters = phoneHome.phoneHome(true);
         assertEquals(parameters.get(countMetric.getRequestParameterName()), Integer.toString(initial + 2));
         assertEquals(parameters.get(totalCountMetric.getRequestParameterName()), Integer.toString(initial + 2));

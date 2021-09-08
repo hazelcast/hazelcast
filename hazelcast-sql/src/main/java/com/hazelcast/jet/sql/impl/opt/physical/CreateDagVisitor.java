@@ -38,7 +38,7 @@ import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -306,9 +306,9 @@ public class CreateDagVisitor {
         Expression<?> offset;
 
         if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof ProjectPhysicalRel
-                    ? (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput()
-                    : (SortPhysicalRel) input;
+            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
+                    ? (SortPhysicalRel) input
+                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);

@@ -3497,14 +3497,10 @@ hazelcast:
   # Configuration element's name is "sql".
   #
   # It has the following sub-elements:
-  #     * "executor-pool-size":
-  #         Defines the number of threads responsible for query execution.
-  #
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
   #
   sql:
-    executor-pool-size: 8
     statement-timeout-millis: 0
 
   #  ===== HAZELCAST JET CONFIGURATION =====

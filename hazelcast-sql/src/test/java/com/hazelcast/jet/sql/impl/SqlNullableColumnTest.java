@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.SimpleTestInClusterSupport;
-import com.hazelcast.map.IMap;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import org.junit.BeforeClass;
@@ -29,17 +28,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class SqlNullableColumnTest extends SimpleTestInClusterSupport {
+public class SqlNullableColumnTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, smallInstanceConfig());
+        initialize(1, null);
     }
 
     @Test
     public void testSelectWithNonNullSupport() {
-        IMap<String, Integer> map = instance().getMap("map");
-        map.put("key", 1);
+        createMapping("map", String.class, int.class);
+        instance().getMap("map").put("key", 1);
 
         SqlResult result = instance().getSql().execute("SELECT __key, 1 FROM map");
         List<SqlColumnMetadata> columns = result.getRowMetadata().getColumns();

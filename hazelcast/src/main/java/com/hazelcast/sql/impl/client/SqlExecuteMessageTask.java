@@ -42,7 +42,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call() {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
 
         SqlStatement query = new SqlStatement(parameters.sql);
@@ -76,22 +76,27 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
             SqlPage page = sqlService.getInternalService().getClientStateRegistry().registerAndFetch(
-                endpoint.getUuid(),
-                result,
-                parameters.cursorBufferSize,
-                serializationService
+                    endpoint.getUuid(),
+                    result,
+                    parameters.cursorBufferSize,
+                    serializationService
             );
 
             return SqlExecuteCodec.encodeResponse(
-                result.getRowMetadata().getColumns(),
-                page,
-                -1,
-                null
+                    result.getRowMetadata().getColumns(),
+                    page,
+                    -1,
+                    null
             );
         }
     }
 
     protected ClientMessage encodeException(Throwable throwable) {
+        // exception can be thrown before parameters are decoded
+        if (parameters == null) {
+            return super.encodeException(throwable);
+        }
+
         nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
@@ -103,10 +108,10 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
-            null,
-            null,
-            -1,
-            error
+                null,
+                null,
+                -1,
+                error
         );
     }
 
@@ -127,14 +132,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
-            parameters.sql,
-            parameters.parameters,
-            parameters.timeoutMillis,
-            parameters.cursorBufferSize,
-            parameters.schema,
-            parameters.queryId
-        } ;
+        return new Object[]{
+                parameters.sql,
+                parameters.parameters,
+                parameters.timeoutMillis,
+                parameters.cursorBufferSize,
+                parameters.schema,
+                parameters.queryId
+        };
     }
 
     @Override

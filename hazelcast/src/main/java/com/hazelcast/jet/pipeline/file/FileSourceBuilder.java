@@ -230,7 +230,19 @@ public class FileSourceBuilder<T> {
         return useHadoop || hasHadoopPrefix(path);
     }
 
-    private static boolean hasHadoopPrefix(String path) {
+    /**
+     * Checks if the given path starts with one of the defined Hadoop
+     * prefixes:
+     *     "s3a://",   // Amazon S3
+     *     "hdfs://",  // HDFS
+     *     "wasbs://", // Azure Cloud Storage
+     *     "adl://",   // Azure Data Lake Gen 1
+     *     "abfs://",  // Azure Data Lake Gen 2
+     *     "gs://"     // Google Cloud Storage
+     *
+     * see {@link #HADOOP_PREFIXES}
+     */
+    public static boolean hasHadoopPrefix(String path) {
         return HADOOP_PREFIXES.stream().anyMatch(path::startsWith);
     }
 }

@@ -788,10 +788,15 @@ public class MembershipManager {
                 unmodifiableSet(new LinkedHashSet<Member>(newMembers.getMembers())), false);
     }
 
-    void onMemberRemove(MemberImpl deadMember) {
+    void onMemberRemove(MemberImpl... deadMembers) {
+        if (deadMembers.length == 0) {
+            return;
+        }
         // sync calls
-        node.getPartitionService().memberRemoved(deadMember);
-        nodeEngine.onMemberLeft(deadMember);
+        node.getPartitionService().memberRemoved(deadMembers);
+        for (MemberImpl deadMember : deadMembers) {
+            nodeEngine.onMemberLeft(deadMember);
+        }
         node.getNodeExtension().onMemberListChange();
     }
 
@@ -1145,12 +1150,13 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             Map<Object, MemberImpl> m = missingMembersRef.get();
-            Collection<MemberImpl> members = m.values();
-            missingMembersRef.set(Collections.emptyMap());
-            for (MemberImpl member : members) {
-                onMemberRemove(member);
+            if (m.isEmpty()) {
+                return;
             }
+            MemberImpl[] members = m.values().toArray(new MemberImpl[0]);
+            missingMembersRef.set(Collections.emptyMap());
 
+            onMemberRemove(members);
         } finally {
             clusterServiceLock.unlock();
         }

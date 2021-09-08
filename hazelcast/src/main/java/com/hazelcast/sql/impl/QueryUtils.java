@@ -46,8 +46,6 @@ public final class QueryUtils {
     public static final String CATALOG = "hazelcast";
     public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
-    public static final String WORKER_TYPE_FRAGMENT = "query-fragment-thread";
-    public static final String WORKER_TYPE_SYSTEM = "query-system-thread";
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
     private QueryUtils() {
@@ -56,10 +54,6 @@ public final class QueryUtils {
 
     public static String workerName(String instanceName, String workerType) {
         return instanceName + "-" + workerType;
-    }
-
-    public static String workerName(String instanceName, String workerType, long index) {
-        return instanceName + "-" + workerType + "-" + index;
     }
 
     public static HazelcastSqlException toPublicException(Throwable e, UUID localMemberId) {
@@ -121,7 +115,7 @@ public final class QueryUtils {
                     throw QueryException.error(
                         SqlErrorCode.PARTITION_DISTRIBUTION,
                         "Partition is not assigned to any member: " + part.getPartitionId()
-                    ).markInvalidate();
+                    );
                 } else {
                     continue;
                 }

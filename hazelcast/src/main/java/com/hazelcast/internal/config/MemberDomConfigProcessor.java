@@ -3085,9 +3085,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("executor-pool-size", nodeName)) {
-                sqlConfig.setExecutorPoolSize(Integer.parseInt(getTextContent(child)));
-            } else if (matches("statement-timeout-millis", nodeName)) {
+            if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
             }
         }

@@ -23,8 +23,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
-import java.io.IOException;
-
 /**
  * Generic descriptor that imposes no limitations on the underlying target.
  */
@@ -52,12 +50,12 @@ public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Iden
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) {
         // No-op.
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) {
         // No-op.
     }
 

@@ -82,6 +82,7 @@ public class IMapSqlConnector implements SqlConnector {
     private static final KvMetadataResolvers METADATA_RESOLVERS = new KvMetadataResolvers(
             KvMetadataJavaResolver.INSTANCE,
             MetadataPortableResolver.INSTANCE,
+            MetadataCompactResolver.INSTANCE,
             MetadataJsonResolver.INSTANCE
     );
 
@@ -273,7 +274,8 @@ public class IMapSqlConnector implements SqlConnector {
                                 table.paths(),
                                 table.types(),
                                 (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                                (UpsertTargetDescriptor) table.getValueJetMetadata()
+                                (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                                true
                         )
                 )
         ).localParallelism(1);
@@ -294,7 +296,8 @@ public class IMapSqlConnector implements SqlConnector {
                         table.paths(),
                         table.types(),
                         (UpsertTargetDescriptor) table.getKeyJetMetadata(),
-                        (UpsertTargetDescriptor) table.getValueJetMetadata()
+                        (UpsertTargetDescriptor) table.getValueJetMetadata(),
+                        true
                 )
         );
 

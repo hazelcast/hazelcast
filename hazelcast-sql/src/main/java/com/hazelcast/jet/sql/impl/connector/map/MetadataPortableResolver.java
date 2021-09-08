@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
@@ -32,6 +33,7 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -71,17 +73,16 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
-        ClassDefinition classDefinition =
-                resolveClassDefinition(isKey, options, userFieldsByPath.values(), serializationService);
+        ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
         return userFields.isEmpty()
                 ? resolveFields(isKey, classDefinition)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
-    Stream<MappingField> resolveFields(boolean isKey, ClassDefinition clazz) {
-        if (clazz.getFieldCount() == 0) {
-            // we didn't find any non-object fields, map the whole value
+    Stream<MappingField> resolveFields(boolean isKey, @Nullable ClassDefinition clazz) {
+        if (clazz == null || clazz.getFieldCount() == 0) {
+            // ClassDefinition does not exist, or it is empty, map the whole value
             String name = isKey ? KEY : VALUE;
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
@@ -98,8 +99,19 @@ final class MetadataPortableResolver implements KvMetadataResolver {
     private static Stream<MappingField> resolveAndValidateFields(
             boolean isKey,
             Map<QueryPath, MappingField> userFieldsByPath,
-            ClassDefinition clazz
+            @Nullable ClassDefinition clazz
     ) {
+        if (clazz == null) {
+            // CLassDefinition does not exist, make sure there are no OBJECT fields
+            return userFieldsByPath.values().stream()
+                    .peek(mappingField -> {
+                        QueryDataType type = mappingField.type();
+                        if (type == QueryDataType.OBJECT) {
+                            throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
+                        }
+                    });
+        }
+
         for (String name : clazz.getFieldNames()) {
             QueryPath path = new QueryPath(name, isKey);
             QueryDataType type = resolvePortableType(clazz.getFieldType(name));
@@ -185,13 +197,26 @@ final class MetadataPortableResolver implements KvMetadataResolver {
 
             fields.add(new MapTableField(name, type, false, path));
         }
-        maybeAddDefaultField(isKey, resolvedFields, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
                 new PortableUpsertTargetDescriptor(clazz)
         );
+    }
+
+    @Nullable
+    private static ClassDefinition findClassDefinition(
+            boolean isKey,
+            Map<String, String> options,
+            InternalSerializationService serializationService
+    ) {
+        Tuple3<Integer, Integer, Integer> settings = settings(isKey, options);
+        //noinspection ConstantConditions
+        return serializationService
+                .getPortableContext()
+                .lookupClassDefinition(settings.f0(), settings.f1(), settings.f2());
     }
 
     @Nonnull
@@ -201,31 +226,16 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             Collection<MappingField> fields,
             InternalSerializationService serializationService
     ) {
-        String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
-        String factoryIdString = options.get(factoryIdProperty);
-        String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
-        String classIdString = options.get(classIdProperty);
-        String classVersionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
-        String classVersionString = options.getOrDefault(classVersionProperty, "0");
-        if (factoryIdString == null || classIdString == null) {
-            throw QueryException.error(
-                    "Unable to resolve table metadata. Missing ['"
-                            + factoryIdProperty + "'|'"
-                            + classIdProperty
-                            + "'] option(s)");
-        }
-        int factoryId = asInt(factoryIdProperty, factoryIdString);
-        int classId = asInt(classIdProperty, classIdString);
-        int classVersion = asInt(classVersionProperty, classVersionString);
-
+        Tuple3<Integer, Integer, Integer> settings = settings(isKey, options);
+        //noinspection ConstantConditions
         ClassDefinition classDefinition = serializationService
                 .getPortableContext()
-                .lookupClassDefinition(factoryId, classId, classVersion);
+                .lookupClassDefinition(settings.f0(), settings.f1(), settings.f2());
         if (classDefinition != null) {
             return classDefinition;
         }
 
-        ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(factoryId, classId, classVersion);
+        ClassDefinitionBuilder classDefinitionBuilder = new ClassDefinitionBuilder(settings.f0(), settings.f1(), settings.f2());
         for (MappingField field : fields) {
             String name = field.name();
             QueryDataType type = field.type();
@@ -270,10 +280,31 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                     classDefinitionBuilder.addTimestampWithTimezoneField(name);
                     break;
                 default:
-                    throw QueryException.error("Cannot derive Portable type for '" + type + "'");
+                    // validated earlier, skip whole __key & this
             }
         }
         return classDefinitionBuilder.build();
+    }
+
+    private static Tuple3<Integer, Integer, Integer> settings(boolean isKey, Map<String, String> options) {
+        String factoryIdProperty = isKey ? OPTION_KEY_FACTORY_ID : OPTION_VALUE_FACTORY_ID;
+        String factoryIdString = options.get(factoryIdProperty);
+        String classIdProperty = isKey ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID;
+        String classIdString = options.get(classIdProperty);
+        String classVersionProperty = isKey ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION;
+        String classVersionString = options.getOrDefault(classVersionProperty, "0");
+        if (factoryIdString == null || classIdString == null) {
+            throw QueryException.error(
+                    "Unable to resolve table metadata. Missing ['"
+                            + factoryIdProperty + "'|'"
+                            + classIdProperty
+                            + "'] option(s)");
+        }
+        return Tuple3.tuple3(
+                asInt(factoryIdProperty, factoryIdString),
+                asInt(classIdProperty, classIdString),
+                asInt(classVersionProperty, classVersionString)
+        );
     }
 
     private static int asInt(String property, String value) {

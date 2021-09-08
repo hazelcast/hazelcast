@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.TestProcessors.CollectPerProcessorSink;
@@ -28,7 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.testcontainers.shaded.com.google.common.collect.ImmutableSet;
 
 import java.util.Collection;
 import java.util.HashSet;

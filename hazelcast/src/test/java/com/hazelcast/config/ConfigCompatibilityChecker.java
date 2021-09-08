@@ -829,8 +829,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
-                    && c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
         }
 
         @Override
@@ -1555,7 +1554,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
                     && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
                     && nullSafeEqual(c1.isAllowOverrideDefaultSerializers(), c2.isAllowOverrideDefaultSerializers())
-                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
+                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig())
+                    && nullSafeEqual(c1.getCompactSerializationConfig(), c2.getCompactSerializationConfig());
         }
 
         private static boolean isCompatible(GlobalSerializerConfig c1, GlobalSerializerConfig c2) {
