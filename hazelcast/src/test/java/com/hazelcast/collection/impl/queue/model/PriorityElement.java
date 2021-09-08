@@ -62,4 +62,12 @@ public class PriorityElement implements Serializable {
     public int hashCode() {
         return Objects.hash(highPriority, version);
     }
+
+    @Override
+    public String toString() {
+        return "PriorityElement{"
+                + "highPriority=" + highPriority
+                + ", version=" + version
+                + '}';
+    }
 }

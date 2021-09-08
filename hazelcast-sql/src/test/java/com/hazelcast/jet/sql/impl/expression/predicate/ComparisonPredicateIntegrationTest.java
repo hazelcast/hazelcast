@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -103,7 +103,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
     private static final Literal LITERAL_DECIMAL = new Literal("1.1", SqlColumnType.DECIMAL);
     private static final Literal LITERAL_DOUBLE = new Literal("1.1E1", SqlColumnType.DOUBLE);
 
-    @Test
+    @Test(timeout = 600_000)
     public void testString() {
         // Column/column
         putCheckCommute(stringValue2("a", "a"), "field1", "field2", RES_EQ);
@@ -143,7 +143,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void testBoolean() {
         // Column/column
         putCheckCommute(booleanValue2(true, true), "field1", "field2", RES_EQ);
@@ -197,7 +197,7 @@ public class ComparisonPredicateIntegrationTest extends ExpressionTestSupport {
         checkFailure("null", "?", SqlErrorCode.PARSING, signatureErrorOperator(mode.token(), SqlColumnType.NULL, SqlColumnType.NULL), true);
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void testNumeric() {
         Object[] values = getNumericValues();
 

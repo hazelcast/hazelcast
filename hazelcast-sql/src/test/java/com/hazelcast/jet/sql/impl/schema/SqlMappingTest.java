@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.schema.model.IdentifiedPerson;
 import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
@@ -29,10 +28,8 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -48,15 +45,24 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_mappingIsNotCreated_then_itIsNotAvailable() {
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found, did you forget to CREATE MAPPING?");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM public.map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM hazelcast.public.map"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+    }
+
+    @Test
     public void when_mappingIsDeclared_then_itIsAvailable() {
         // given
         String name = randomName();
 
-        // when
-        SqlResult createResult = sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
-
-        // then
-        assertThat(createResult.updateCount()).isEqualTo(0);
+        createMapping(name, Integer.class, String.class);
 
         // when
         SqlResult queryResult = sqlService.execute("SELECT __key, this FROM public." + name);
@@ -67,30 +73,11 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_mappingIsDeclared_then_itsDefinitionHasPrecedenceOverDiscoveredOne() {
-        // given
-        String name = randomName();
-
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, Person.class));
-
-        Map<Integer, Person> map = instance().getMap(name);
-        map.put(1, new IdentifiedPerson(2, "Alice"));
-
-        // when
-        // then
-        // The column `id` exists in IdentifiedPerson class (that was used in the sample entry), but not
-        // in the Person class (that was used in the DDL). If the explicit mapping is used, we won't find it.
-        assertThatThrownBy(() -> sqlService.execute("SELECT id FROM " + name))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("Column 'id' not found in any table");
-    }
-
-    @Test
     public void when_mappingIsDropped_then_itIsNotAvailable() {
         // given
         String name = randomName();
 
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, Person.class));
+        createMapping(name, Integer.class, Person.class);
 
         // when
         SqlResult dropResult = sqlService.execute("DROP MAPPING " + name);
@@ -179,15 +166,6 @@ public class SqlMappingTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_dropFromPartitionedSchema_then_fail() {
-        instance().getMap("my_map").put(42, 43);
-        // check that we can query that table
-        assertRowsEventuallyInAnyOrder("SELECT * FROM partitioned.my_map", singletonList(new Row(42, 43)));
-        assertThatThrownBy(() -> sqlService.execute("DROP MAPPING partitioned.my_map"))
-                .hasMessageContaining("Mapping does not exist: partitioned.my_map");
-    }
-
-    @Test
     public void test_createDropMappingUsingSchema_public() {
         test_createDropMappingUsingSchema("public");
     }
@@ -199,7 +177,7 @@ public class SqlMappingTest extends SqlTestSupport {
 
     private void test_createDropMappingUsingSchema(String schemaName) {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(schemaName + "." + name, Integer.class, Integer.class));
+        createMapping(schemaName + "." + name, Integer.class, Integer.class);
         sqlService.execute("sink into " + name + " values(1, 1)");
         sqlService.execute("sink into public." + name + " values(2, 2)");
         sqlService.execute("sink into hazelcast.public." + name + " values(3, 3)");

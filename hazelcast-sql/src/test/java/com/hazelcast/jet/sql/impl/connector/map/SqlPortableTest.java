@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -151,31 +150,6 @@ public class SqlPortableTest extends SqlTestSupport {
                 new ClassDefinitionBuilder(EMPTY_TYPES_FACTORY_ID, EMPTY_TYPES_CLASS_ID, EMPTY_TYPES_CLASS_VERSION)
                         .build();
         serializationService.getPortableContext().registerClassDefinition(emptyClassDefinition);
-    }
-
-    @Test
-    public void test_sinkIntoDiscoveredMap() {
-        String name = randomName();
-
-        instance().getMap(name).put(
-                new PortableGenericRecordBuilder(personIdClassDefinition)
-                        .setInt("id", 1)
-                        .build(),
-                new PortableGenericRecordBuilder(personClassDefinition)
-                        .setInt("id", 2)
-                        .setString("name", "Alice")
-                        .build()
-        );
-
-        sqlService.execute("SINK INTO partitioned." + name + " VALUES (2, 'Bob')");
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(1, "Alice"),
-                        new Row(2, "Bob")
-                )
-        );
     }
 
     @Test
@@ -509,7 +483,7 @@ public class SqlPortableTest extends SqlTestSupport {
         Iterator<SqlRow> resultIter = sqlService.execute("SELECT __key, this, name FROM " + mapName).iterator();
         SqlRow row = resultIter.next();
         assertEquals(1, (int) row.getObject(0));
-        assertInstanceOf(PortableGenericRecord.class, row.getObject(1));
+        assertInstanceOf(GenericRecord.class, row.getObject(1));
         assertEquals("foo", row.getObject(2));
         assertFalse(resultIter.hasNext());
     }
@@ -536,15 +510,13 @@ public class SqlPortableTest extends SqlTestSupport {
         SqlRow row = rowIterator.next();
         assertFalse(rowIterator.hasNext());
 
-        assertThat(row.<Object>getObject(0)).isEqualToComparingFieldByField(
-                new PortableGenericRecordBuilder(personIdClassDefinition)
-                        .setInt("id", 1)
-                        .build());
-        assertThat(row.<Object>getObject(1)).isEqualToComparingFieldByField(
-                new PortableGenericRecordBuilder(personClassDefinition)
-                        .setInt("id", 0)
-                        .setString("name", "Alice")
-                        .build());
+        assertEquals(new PortableGenericRecordBuilder(personIdClassDefinition)
+                .setInt("id", 1)
+                .build(), row.getObject(0));
+        assertEquals(new PortableGenericRecordBuilder(personClassDefinition)
+                .setInt("id", 0)
+                .setString("name", "Alice")
+                .build(), row.getObject(1));
     }
 
     @Test

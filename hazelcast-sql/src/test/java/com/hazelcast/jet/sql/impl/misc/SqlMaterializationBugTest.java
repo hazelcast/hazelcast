@@ -16,62 +16,48 @@
 
 package com.hazelcast.jet.sql.impl.misc;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.map.IMap;
-import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
+import static java.util.Collections.singletonList;
 
 /**
  * Tests for the issue reported in https://github.com/hazelcast/hazelcast/issues/17554
  */
-@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlMaterializationBugTest extends SqlTestSupport {
 
-    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
-    private HazelcastInstance instance;
+    @BeforeClass
+    public static void setUpClass() {
+        initialize(1, null);
+    }
 
     @Before
     public void before() {
-        instance = factory.newHazelcastInstance();
-
-        IMap<Integer, Integer> map = instance.getMap("map");
+        createMapping("map", int.class, int.class);
+        IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 2);
-    }
-
-    @After
-    public void after() {
-        factory.shutdownAll();
     }
 
     @Test
     public void test_0() {
-        List<SqlRow> rows = execute(instance, "SELECT * FROM (SELECT * FROM map WHERE 0 = 0) WHERE 1 = 1");
-
-        assertEquals(1, rows.size());
-        assertEquals(Integer.valueOf(1), rows.get(0).getObject(0));
-        assertEquals(Integer.valueOf(2), rows.get(0).getObject(1));
+        assertRowsOrdered(
+                "SELECT * FROM (SELECT * FROM map WHERE 0 = 0) WHERE 1 = 1",
+                singletonList(new Row(1, 2))
+        );
     }
 
     @Test
     public void test_1() {
-        List<SqlRow> rows = execute(instance, "SELECT * FROM (SELECT * FROM map WHERE 1 = 1) WHERE 1 = 1");
-
-        assertEquals(1, rows.size());
-        assertEquals(Integer.valueOf(1), rows.get(0).getObject(0));
-        assertEquals(Integer.valueOf(2), rows.get(0).getObject(1));
+        assertRowsOrdered(
+                "SELECT * FROM (SELECT * FROM map WHERE 1 = 1) WHERE 1 = 1",
+                singletonList(new Row(1, 2))
+        );
     }
 }

@@ -69,7 +69,7 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
     private final boolean negated;
     private final Flag flag;
 
-    protected HazelcastBetweenOperator(boolean negated, Flag symmetricalFlag, String[] names) {
+    HazelcastBetweenOperator(boolean negated, Flag symmetricalFlag, String[] names) {
         super(names,
                 SqlKind.BETWEEN,
                 PRECEDENCE,
@@ -140,5 +140,4 @@ public final class HazelcastBetweenOperator extends HazelcastInfixOperator {
             validator.setParameterConverter(node0.getIndex(), converter);
         }
     }
-
 }

@@ -28,7 +28,6 @@ import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
-import com.hazelcast.sql.impl.SqlTestSupport;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -66,6 +65,8 @@ import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.DataSerializablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.IdentifiedDataSerializablePojoKey;
+import static com.hazelcast.jet.sql.SqlBasicTest.PORTABLE_FACTORY_ID;
+import static com.hazelcast.jet.sql.SqlBasicTest.PORTABLE_VALUE_CLASS_ID;
 import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojo;
 import static com.hazelcast.jet.sql.SqlBasicTest.PortablePojoKey;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializablePojo;
@@ -74,6 +75,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -111,7 +113,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     public static Collection<Object[]> parameters() {
         List<Object[]> res = new ArrayList<>();
 
-        for (int membersCount : Collections.singletonList(1)) {
+        for (int membersCount : singletonList(1)) {
             for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
                 for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                     res.add(new Object[]{
@@ -134,6 +136,12 @@ public class SqlOrderByTest extends SqlTestSupport {
             for (int i = 0; i < membersCount; ++i) {
                 members.add(FACTORY.newHazelcastInstance(memberConfig()));
             }
+        }
+
+        if (isPortable()) {
+            createMapping(members.get(0), mapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+        } else {
+            createMapping(members.get(0), mapName(), keyClass(), valueClass());
         }
 
         // Get proper map
@@ -175,6 +183,12 @@ public class SqlOrderByTest extends SqlTestSupport {
             idx++;
         }
 
+        if (isPortable()) {
+            createMapping(members.get(0), stableMapName(), PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0, PORTABLE_FACTORY_ID, PORTABLE_VALUE_CLASS_ID, 0);
+        } else {
+            createMapping(members.get(0), stableMapName(), keyClass(), valueClass());
+        }
+
         IMap<Object, AbstractPojo> stableMap = getTarget().getMap(stableMapName());
         stableMap.putAll(stableData);
     }
@@ -207,20 +221,20 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByDesc() {
-        checkSelectWithOrderBy(Collections.singletonList("intVal"),
-                Collections.singletonList("intVal"), Collections.singletonList(true));
+        checkSelectWithOrderBy(singletonList("intVal"),
+                singletonList("intVal"), singletonList(true));
     }
 
     @Test
     public void testSelectWithOrderByAsc() {
-        checkSelectWithOrderBy(Collections.singletonList("intVal"),
-                Collections.singletonList("intVal"), Collections.singletonList(false));
+        checkSelectWithOrderBy(singletonList("intVal"),
+                singletonList("intVal"), singletonList(false));
     }
 
     @Test
     public void testSelectWithOrderByDefault() {
-        checkSelectWithOrderBy(Collections.singletonList("intVal"),
-                Collections.singletonList("intVal"), Collections.singletonList(null));
+        checkSelectWithOrderBy(singletonList("intVal"),
+                singletonList("intVal"), singletonList(null));
     }
 
     @Test
@@ -296,8 +310,8 @@ public class SqlOrderByTest extends SqlTestSupport {
 
         checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
                 sql,
-                Arrays.asList("intVal"),
-                Arrays.asList(true));
+                singletonList("intVal"),
+                singletonList(true));
     }
 
     @Test
@@ -314,34 +328,34 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Test
     public void testSelectWithOrderByAndWhere() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
-        addIndex(Arrays.asList(intValField), SORTED);
-        addIndex(Arrays.asList(realValField), SORTED);
+        addIndex(singletonList(intValField), SORTED);
+        addIndex(singletonList(realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
                 + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
 
-        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
 
     @Test
     public void testSelectWithOrderByAndWhereNotIndexedField() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
-        addIndex(Arrays.asList(realValField), SORTED);
+        addIndex(singletonList(realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
                 + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
 
-        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
 
     @Test
     public void testSelectWithOrderByAndWhere2Conditions() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(Arrays.asList(intValField, realValField), SORTED);
@@ -349,59 +363,59 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
                 + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
 
-        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
 
     @Test
     public void testSelectWithOrderByAndWhere2ConditionsHashIndex() {
-        IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
+        getTarget().getMap(mapName());
         String intValField = "intVal";
         String realValField = "realVal";
         addIndex(Arrays.asList(intValField, realValField), HASH);
-        addIndex(Arrays.asList(intValField), SORTED);
+        addIndex(singletonList(intValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
                 + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
 
-        assertSqlResultOrdered(sql, Arrays.asList(realValField), Arrays.asList(false), 1);
+        assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
 
     @Test
     public void testSelectWithOrderByAndFetchOffset() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY";
 
-        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 10, 5, 14);
+        assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 10, 5, 14);
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " LIMIT 10 OFFSET 5 ROWS";
 
-        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 10, 5, 14);
+        assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 10, 5, 14);
     }
 
     @Test
     public void testSelectWithOrderByAndFetchOffsetNoResult() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " OFFSET 4096 ROWS FETCH FIRST 10 ROWS ONLY";
 
-        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 0, 0, 0);
+        assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 0, 0, 0);
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4096 ROWS";
 
-        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 0, 0, 0);
+        assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 0, 0, 0);
     }
 
     @Test
     public void testSelectWithOrderByAndFetchOffsetTail() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
@@ -409,14 +423,14 @@ public class SqlOrderByTest extends SqlTestSupport {
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
                 + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4090 ROWS";
 
-        assertSqlResultOrdered(sql, Arrays.asList(intValField), Arrays.asList(false), 6, 4090, 4095);
-        assertSqlResultOrdered(sqlLimit, Arrays.asList(intValField), Arrays.asList(false), 6, 4090, 4095);
+        assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 6, 4090, 4095);
+        assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 6, 4090, 4095);
     }
 
     @Test
     public void testSelectFetchOffsetOnly() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
@@ -502,7 +516,7 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectFetchOffsetInvalid() {
         String intValField = "intVal";
-        addIndex(Arrays.asList(intValField), SORTED, stableMapName());
+        addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql1 = "SELECT " + intValField + " FROM " + stableMapName()
                 + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
@@ -694,8 +708,6 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     private void assertSqlResultCount(String sql, int expectedCount) {
         try (SqlResult res = query(sql)) {
-
-            SqlRowMetadata rowMetadata = res.getRowMetadata();
 
             Iterator<SqlRow> rowIterator = res.iterator();
 
@@ -918,6 +930,10 @@ public class SqlOrderByTest extends SqlTestSupport {
         return inMemoryFormat == InMemoryFormat.OBJECT ? MAP_OBJECT : MAP_BINARY;
     }
 
+    private boolean isPortable() {
+        return serializationMode == SerializationMode.PORTABLE;
+    }
+
     private AbstractPojoKey key(long i) {
         switch (serializationMode) {
             case SERIALIZABLE:
@@ -931,6 +947,22 @@ public class SqlOrderByTest extends SqlTestSupport {
 
             default:
                 return new PortablePojoKey(i);
+        }
+    }
+
+    private Class<?> keyClass() {
+        switch (serializationMode) {
+            case SERIALIZABLE:
+                return SerializablePojoKey.class;
+
+            case DATA_SERIALIZABLE:
+                return DataSerializablePojoKey.class;
+
+            case IDENTIFIED_DATA_SERIALIZABLE:
+                return IdentifiedDataSerializablePojoKey.class;
+
+            default:
+                return PortablePojoKey.class;
         }
     }
 
@@ -951,6 +983,22 @@ public class SqlOrderByTest extends SqlTestSupport {
 
             default:
                 return i == null ? new PortablePojo() : new PortablePojo(i);
+        }
+    }
+
+    private Class<?> valueClass() {
+        switch (serializationMode) {
+            case SERIALIZABLE:
+                return SerializablePojo.class;
+
+            case DATA_SERIALIZABLE:
+                return DataSerializablePojo.class;
+
+            case IDENTIFIED_DATA_SERIALIZABLE:
+                return IdentifiedDataSerializablePojo.class;
+
+            default:
+                return PortablePojo.class;
         }
     }
 }

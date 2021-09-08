@@ -198,7 +198,7 @@ public class ConcatWSFunctionIntegrationTest extends ExpressionTestSupport {
     private void checkFail(String expression, Object... params) {
         try {
             String sql = "SELECT " + expression + " FROM map";
-            execute(member, sql, params);
+            execute(sql, params);
             fail("Following query should have caused an error!  ===> " + sql);
         } catch (Exception e) {
             assertTrue(e instanceof HazelcastSqlException);

@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.internal.management.events;
+
+import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public class TestLocalMemberIdProvider implements LocalMemberIdProvider {
+abstract class AbstractWanEvent extends AbstractEventBase {
+    private final UUID uuid;
 
-    private final UUID localMemberId;
+    protected AbstractWanEvent(UUID uuid) {
+        assert uuid != null : "UUID must not be null";
+        this.uuid = uuid;
+    }
 
-    public TestLocalMemberIdProvider(UUID localMemberId) {
-        this.localMemberId = localMemberId;
+    public UUID getUuid() {
+        return uuid;
     }
 
     @Override
-    public UUID getLocalMemberId() {
-        return localMemberId;
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.add("uuid", uuid != null ? uuid.toString() : "null");
+        return json;
     }
 }

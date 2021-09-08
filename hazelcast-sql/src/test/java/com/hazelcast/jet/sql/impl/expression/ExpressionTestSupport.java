@@ -16,22 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.expression;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.DistributedObject;
+import com.google.common.collect.Iterables;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.Job;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlStatement;
 import junit.framework.TestCase;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import java.math.BigDecimal;
@@ -40,17 +36,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.core.JetTestSupport.ditchJob;
-import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -59,7 +51,6 @@ import static org.junit.Assert.fail;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class ExpressionTestSupport extends SqlTestSupport {
-    private static final ILogger SUPPORT_LOGGER = Logger.getLogger(ExpressionTestSupport.class);
 
     public static final Character CHAR_VAL = 'f';
     public static final String STRING_VAL = "foo";
@@ -85,42 +76,12 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     protected static final String STANDARD_LOCAL_OFFSET_TIME_VAL = "2020-1-1 0:0:0+00:00";
     protected static final String STANDARD_LOCAL_DATE_TIME_VAL = "2020-1-1 0:0:0";
 
-    protected static HazelcastInstance member;
-
-    private static final TestHazelcastFactory factory = new TestHazelcastFactory();
     protected static IMap map;
 
     @BeforeClass
     public static void beforeClass() {
-        member = factory.newHazelcastInstance();
-        map = member.getMap("map");
-    }
-
-    @After
-    public void supportAfter() {
-        if (member == null) {
-            return;
-        }
-        // after each test ditch all jobs and objects
-        List<Job> jobs = member.getJet().getJobs();
-        SUPPORT_LOGGER.info("Ditching " + jobs.size() + " jobs in ExpressionTestSupport.@After: "
-                + jobs.stream().map(j -> idToString(j.getId())).collect(joining(", ", "[", "]")));
-        for (Job job : jobs) {
-            ditchJob(job, member);
-        }
-        Collection<DistributedObject> objects = member.getDistributedObjects();
-        SUPPORT_LOGGER.info("Destroying " + objects.size()
-                + " distributed objects in SimpleTestInClusterSupport.@After: "
-                + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
-                .collect(Collectors.joining(", ", "[", "]")));
-        for (DistributedObject o : objects) {
-            o.destroy();
-        }
-    }
-
-    @AfterClass
-    public static void after() {
-        factory.terminateAll();
+        initialize(1, null);
+        map = instance().getMap("map");
     }
 
     protected void put(Object value) {
@@ -128,10 +89,9 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void put(int key, Object value) {
+        createMapping("map", int.class, value.getClass());
         map.clear();
         map.put(key, value);
-
-        clearPlanCache(member);
     }
 
     protected void putAll(Object... values) {
@@ -147,10 +107,9 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
     }
 
     protected void putAll(Map<Integer, Object> entries) {
+        createMapping("map", int.class, Iterables.get(entries.values(), 0).getClass());
         map.clear();
         map.putAll(entries);
-
-        clearPlanCache(member);
     }
 
     protected void putAndCheckValue(
@@ -174,7 +133,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      * @param expectedResult expected result value. If it's {@link #SKIP_VALUE_CHECK},
      *                       don't assert the value
      * @param params         query parameters
-     *
      * @return the result value
      */
     protected Object checkValue0(
@@ -183,7 +141,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             Object expectedResult,
             Object... params
     ) {
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         assertEquals(1, rows.size());
 
         SqlRow row = rows.get(0);
@@ -203,21 +161,19 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
      * Execute a query, assert that it returns only 1 column and the values match the expectedResults array
      * in any order. Assert the type and count of the results.
      *
-     * @param sql            the input query
-     * @param expectedType   type of the returned value
+     * @param sql             the input query
+     * @param expectedType    type of the returned value
      * @param expectedResults expected result value. If it's {@link #SKIP_VALUE_CHECK},
-     *                       don't assert the value
-     * @param params         query parameters
-     *
-     * @return the result values
+     *                        don't assert the value
+     * @param params          query parameters
      */
-    protected Object[] checkValues0(
+    protected void checkValues0(
             String sql,
             SqlColumnType expectedType,
             Object[] expectedResults,
             Object... params
     ) {
-        List<SqlRow> rows = execute(member, sql, params);
+        List<SqlRow> rows = execute(sql, params);
         int expectedResultCount = expectedResults.length;
         assertEquals(expectedResultCount, rows.size());
 
@@ -233,7 +189,6 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         }
         assertThat(values).containsExactlyInAnyOrderElementsOf(Arrays.asList(expectedResults));
 
-        return values;
     }
 
     protected void putAndCheckFailure(
@@ -255,7 +210,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
             Object... params
     ) {
         try {
-            execute(member, sql, params);
+            execute(sql, params);
 
             fail("Must fail");
         } catch (HazelcastSqlException e) {
@@ -311,5 +266,27 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
 
     protected static ExpressionBiValue booleanValue2(Boolean first, Boolean second) {
         return new ExpressionBiValue.BooleanBooleanVal().fields(first, second);
+    }
+
+    protected static List<SqlRow> execute(String sql, Object... params) {
+        return execute(instance(), sql, params);
+    }
+
+    protected static List<SqlRow> execute(HazelcastInstance member, String sql, Object... params) {
+        SqlStatement query = new SqlStatement(sql);
+        if (params != null) {
+            query.setParameters(Arrays.asList(params));
+        }
+        return executeStatement(member, query);
+    }
+
+    protected static List<SqlRow> executeStatement(HazelcastInstance member, SqlStatement query) {
+        List<SqlRow> rows = new ArrayList<>();
+        try (SqlResult result = member.getSql().execute(query)) {
+            for (SqlRow row : result) {
+                rows.add(row);
+            }
+        }
+        return rows;
     }
 }
