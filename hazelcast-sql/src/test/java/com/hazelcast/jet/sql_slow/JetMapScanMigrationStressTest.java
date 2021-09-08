@@ -95,7 +95,7 @@ public class JetMapScanMigrationStressTest extends JetTestSupport {
         List<Row> expected = new ArrayList<>();
         for (int i = 0; i <= ITEM_COUNT / 5; i++) {
             map.put(i, 1);
-            expected.add(new Row(i, i+"-"+1));
+            expected.add(new Row(i, i + "-" + 1));
         }
 
         MutatorThread mutator = new MutatorThread(1000L);
