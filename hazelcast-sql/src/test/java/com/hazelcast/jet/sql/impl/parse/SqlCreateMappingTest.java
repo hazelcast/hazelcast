@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.sql.impl.parse;
+
+import com.google.common.collect.ImmutableMap;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.type.QueryDataType;
+import org.junit.Test;
+
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class SqlCreateMappingTest {
+
+    @Test
+    public void test_unparse() {
+        Mapping mapping = new Mapping(
+                "name",
+                "external-name",
+                "Type",
+                asList(
+                        new MappingField("field1", QueryDataType.VARCHAR, "__key.field1"),
+                        new MappingField("field2", QueryDataType.INT, "this.field2")
+                ),
+                ImmutableMap.of("key1", "value1", "key2", "value2")
+        );
+
+        String sql = SqlCreateMapping.unparse(mapping);
+        assertThat(sql).isEqualTo("CREATE MAPPING \"name\" EXTERNAL NAME \"external-name\"(\n" +
+                "  \"field1\" VARCHAR EXTERNAL NAME \"__key.field1\",\n" +
+                "  \"field2\" INTEGER EXTERNAL NAME \"this.field2\"\n" +
+                ")\n" +
+                "TYPE Type\n" +
+                "OPTIONS (\n" +
+                "  'key1'='value1',\n" +
+                "  'key2'='value2'\n" +
+                ")"
+        );
+    }
+}

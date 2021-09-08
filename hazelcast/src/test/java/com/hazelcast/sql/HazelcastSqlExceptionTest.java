@@ -37,12 +37,14 @@ public class HazelcastSqlExceptionTest {
         int errorCode = SqlErrorCode.DATA_EXCEPTION;
         String errorMessage = "error";
         Exception cause = new IllegalArgumentException();
+        String suggestion = "CREATE MAPPING...";
 
-        HazelcastSqlException exception = new HazelcastSqlException(memberId, errorCode, errorMessage, cause);
+        HazelcastSqlException exception = new HazelcastSqlException(memberId, errorCode, errorMessage, cause, suggestion);
 
         assertEquals(memberId, exception.getOriginatingMemberId());
         assertEquals(errorCode, exception.getCode());
         assertEquals(errorMessage, exception.getMessage());
         assertEquals(cause, exception.getCause());
+        assertEquals(suggestion, exception.getSuggestion());
     }
 }

@@ -29,13 +29,21 @@ public class HazelcastSqlException extends HazelcastException {
 
     private final UUID originatingMemberId;
     private final int code;
+    private final String suggestion;
 
     @PrivateApi
-    public HazelcastSqlException(@Nonnull UUID originatingMemberId, int code, String message, Throwable cause) {
+    public HazelcastSqlException(
+            @Nonnull UUID originatingMemberId,
+            int code,
+            String message,
+            Throwable cause,
+            String suggestion
+    ) {
         super(message, cause);
 
         this.originatingMemberId = originatingMemberId;
         this.code = code;
+        this.suggestion = suggestion;
     }
 
     /**
@@ -56,5 +64,15 @@ public class HazelcastSqlException extends HazelcastException {
     @PrivateApi
     public int getCode() {
         return code;
+    }
+
+    /**
+     * Gets the suggested SQL statement to remediate experienced error
+     *
+     * @return Suggested SQL statement to remediate experienced error.
+     */
+    @PrivateApi
+    public String getSuggestion() {
+        return suggestion;
     }
 }
