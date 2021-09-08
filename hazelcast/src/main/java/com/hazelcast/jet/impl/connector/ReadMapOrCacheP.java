@@ -484,6 +484,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final MapProxyImpl mapProxyImpl;
         private final MapServiceContext mapServiceContext;
         private final NodeEngineImpl nodeEngine;
+        private final int retryDelay = 100;
+
 
         LocalMapReader(@Nonnull HazelcastInstance hzInstance,
                        @Nonnull InternalSerializationService serializationService,
@@ -538,7 +540,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         private void scheduleForLater(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
-            nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), 100, TimeUnit.MILLISECONDS);
+            nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), retryDelay, TimeUnit.MILLISECONDS);
         }
 
         private MapEntriesWithCursor accessRecordStore(int partitionId, IterationPointer[] pointers) {
@@ -550,7 +552,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 return recordStore.fetchEntries(pointers, MAX_FETCH_SIZE);
             }
             //Partition is empty
-            return new MapEntriesWithCursor(new ArrayList<>(), new IterationPointer[]{new IterationPointer(-1, 256)});
+            return new MapEntriesWithCursor(new ArrayList<>(), new IterationPointer[]{new IterationPointer(-1, -1)});
         }
 
         private CompletableFuture<MapEntriesWithCursor> readWithOperationService(int partitionId, IterationPointer[] pointers) {
