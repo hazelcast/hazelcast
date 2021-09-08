@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache;
 
-import com.hazelcast.map.LocalReplicationStats;
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.nearcache.NearCacheStats;
 
 /**
