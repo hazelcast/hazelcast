@@ -27,17 +27,23 @@ public class SqlError {
     private final int code;
     private final String message;
     private final UUID originatingMemberId;
+    private final boolean suggestionExists;
     private final String suggestion;
+
+    public SqlError(int code, String message, UUID originatingMemberId) {
+        this(code, message, originatingMemberId, false, null);
+    }
 
     public SqlError(
             int code,
             String message,
             UUID originatingMemberId,
-            @SuppressWarnings("unused") boolean suggestionExists, String suggestion
+            boolean suggestionExists, String suggestion
     ) {
         this.code = code;
         this.message = message;
         this.originatingMemberId = originatingMemberId;
+        this.suggestionExists = suggestionExists;
         this.suggestion = suggestion;
     }
 
@@ -81,7 +87,7 @@ public class SqlError {
             return false;
         }
 
-        return Objects.equals(suggestion, sqlError.suggestion);
+        return !suggestionExists || !sqlError.suggestionExists || Objects.equals(suggestion, sqlError.suggestion);
     }
 
     @Override
