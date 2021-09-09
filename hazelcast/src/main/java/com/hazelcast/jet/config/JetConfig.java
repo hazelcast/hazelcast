@@ -79,7 +79,9 @@ public class JetConfig {
      * Sets the number of threads each cluster member will use to execute Jet
      * jobs. This refers only to threads executing <em>cooperative</em>
      * processors; each <em>blocking</em> processor is assigned its own thread.
-     */
+     *
+     * @since 5.0
+    */
     @Nonnull
     public JetConfig setCooperativeThreadCount(int size) {
         checkPositive(size, "cooperativeThreadCount should be a positive number");
@@ -89,6 +91,8 @@ public class JetConfig {
 
     /**
      * Returns the number of cooperative execution threads.
+     *
+     * @since 5.0
      */
     public int getCooperativeThreadCount() {
         return cooperativeThreadCount;
@@ -100,6 +104,8 @@ public class JetConfig {
      * receiver will regularly report to each sender how much more data it
      * is allowed to send over a given DAG edge. This method sets the length
      * (in milliseconds) of the interval between flow-control ("ack") packets.
+     *
+     * @since 5.0
      */
     @Nonnull
     public JetConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
@@ -111,6 +117,8 @@ public class JetConfig {
     /**
      * Returns the {@link #setFlowControlPeriodMs(int) flow-control period} in
      * milliseconds.
+     *
+     * @since 5.0
      */
     public int getFlowControlPeriodMs() {
         return flowControlPeriodMs;
@@ -127,6 +135,8 @@ public class JetConfig {
      * the job metadata and snapshot data to two other members. If one or two
      * members of the cluster fail, Jet can recover the data from the snapshot
      * and continue executing the job on the remaining members without loss.
+     *
+     * @since 5.0
      */
     @Nonnull
     public JetConfig setBackupCount(int newBackupCount) {
@@ -138,6 +148,8 @@ public class JetConfig {
     /**
      * Returns the {@link #setBackupCount(int) number of backups} used for job
      * metadata and snapshots.
+     *
+     * @since 5.0
      */
     public int getBackupCount() {
         return backupCount;
@@ -151,6 +163,8 @@ public class JetConfig {
      *
      * @param millis the delay, in milliseconds
      * @return this instance for fluent API
+     *
+     * @since 5.0
      */
     public JetConfig setScaleUpDelayMillis(long millis) {
         checkNotNegative(millis, "The delay must be >=0");
@@ -160,6 +174,8 @@ public class JetConfig {
 
     /**
      * Returns the scale-up delay, see {@link #setScaleUpDelayMillis(long)}.
+     *
+     * @since 5.0
      */
     public long getScaleUpDelayMillis() {
         return scaleUpDelayMillis;
@@ -187,6 +203,8 @@ public class JetConfig {
      * Feature is disabled by default. If you enable this option in open-source
      * Hazelcast Jet, the member will fail to start, you need Jet Enterprise to
      * run it and obtain a license from Hazelcast.
+     *
+     * @since 5.0
      */
     public JetConfig setLosslessRestartEnabled(boolean enabled) {
         this.losslessRestartEnabled = enabled;
@@ -197,6 +215,8 @@ public class JetConfig {
     /**
      * Returns if lossless restart is enabled, see {@link
      * #setLosslessRestartEnabled(boolean)}.
+     *
+     * @since 5.0
      */
     public boolean isLosslessRestartEnabled() {
         return losslessRestartEnabled;
