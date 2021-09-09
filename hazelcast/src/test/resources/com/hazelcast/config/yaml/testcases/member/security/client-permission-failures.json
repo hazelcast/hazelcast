@@ -45,13 +45,6 @@
         "message": "invalid-key is not a valid enum value"
       },
       {
-        "schemaLocation": "#/definitions/Security/properties/client-permissions/propertyNames",
-        "pointerToViolation": "#/hazelcast/security/client-permissions/sql",
-        "causingExceptions": [],
-        "keyword": "enum",
-        "message": "sql is not a valid enum value"
-      },
-      {
         "schemaLocation": "#/definitions/Security/properties/client-permissions/additionalProperties",
         "pointerToViolation": "#/hazelcast/security/client-permissions/invalid-key",
         "causingExceptions": [],
@@ -107,15 +100,8 @@
         "causingExceptions": [],
         "keyword": "type",
         "message": "expected type: JSONObject, found: JSONArray"
-      },
-      {
-        "schemaLocation": "#/definitions/SecurityPermission",
-        "pointerToViolation": "#/hazelcast/security/client-permissions/sql",
-        "causingExceptions": [],
-        "keyword": "type",
-        "message": "expected type: JSONObject, found: JSONArray"
       }
     ],
-    "message": "10 schema violations found"
+    "message": "8 schema violations found"
   }
 }
