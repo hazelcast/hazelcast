@@ -45,7 +45,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.execution.DoneItem;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
