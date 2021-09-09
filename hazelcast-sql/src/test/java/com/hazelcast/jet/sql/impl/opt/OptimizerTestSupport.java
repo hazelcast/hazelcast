@@ -16,22 +16,21 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
-import com.hazelcast.sql.impl.ParameterConverter;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.QueryUtils;
-import com.hazelcast.jet.sql.impl.OptimizerContext;
-import com.hazelcast.sql.impl.calcite.TestMapTable;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.validate.param.StrictParameterConverter;
+import com.hazelcast.sql.impl.ParameterConverter;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
@@ -57,7 +56,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
-public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
+public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema = schema(tables);
@@ -141,7 +140,7 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
     }
 
     protected static TableField field(String name, QueryDataType type) {
-        return TestMapTable.field(name, type, false);
+        return new Field(name, type, false);
     }
 
     protected static void assertPlan(RelNode rel, PlanRows expected) {
@@ -174,6 +173,12 @@ public abstract class OptimizerTestSupport extends SimpleTestInClusterSupport {
 
     protected static PlanRow planRow(int level, Class<? extends RelNode> node) {
         return new PlanRow(level, node);
+    }
+
+    private static class Field extends TableField {
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
+        }
     }
 
     protected static class Result {

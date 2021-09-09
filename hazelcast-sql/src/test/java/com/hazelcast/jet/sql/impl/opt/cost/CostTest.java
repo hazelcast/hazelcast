@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.cost;
 
-import com.hazelcast.sql.impl.SqlTestSupport;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.plan.RelOptUtil;
@@ -30,9 +30,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CostTest extends SqlTestSupport {
+
     @Test
     public void testCostFactory() {
         CostFactory factory = CostFactory.INSTANCE;

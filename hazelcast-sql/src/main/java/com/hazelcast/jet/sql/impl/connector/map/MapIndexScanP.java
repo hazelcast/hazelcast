@@ -43,6 +43,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
@@ -66,6 +67,7 @@ import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -105,7 +107,7 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         hazelcastInstance = context.hazelcastInstance();
         evalContext = SimpleExpressionEvalContext.from(context);
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
@@ -236,15 +238,25 @@ final class MapIndexScanP extends AbstractProcessor {
     private List<Split> splitOnMigration(Split split) {
         IndexIterationPointer[] lastPointers = split.pointers;
         InternalPartitionService partitionService = getNodeEngine(hazelcastInstance).getPartitionService();
-        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
         Map<Address, Split> newSplits = new HashMap<>();
+        PrimitiveIterator.OfInt partitionIterator = split.partitions.intIterator();
+
         while (partitionIterator.hasNext()) {
             int partitionId = partitionIterator.nextInt();
-            Address owner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            // If at least one partition owner is not assigned -- assign current member.
+            // Later, a WrongTargetException will be thrown
+            // and it causes this method to be called again.
+            // Occasionally prediction with current member would be correct.
+            Address potentialOwner = partitionService.getPartition(partitionId).getOwnerOrNull();
+            Address owner = potentialOwner == null
+                    ? split.owner
+                    : partitionService.getPartition(partitionId).getOwnerOrNull();
+
             newSplits.computeIfAbsent(owner, x -> new Split(
                     new PartitionIdSet(partitionService.getPartitionCount()), owner, lastPointers)
             ).partitions.add(partitionId);
         }
+
         return new ArrayList<>(newSplits.values());
     }
 
@@ -317,6 +329,7 @@ final class MapIndexScanP extends AbstractProcessor {
          * Topology exception are those related to a member leaving the cluster.
          * We handle them the same as {@link MissingPartitionException} trigger.
          */
+        @SuppressWarnings("BooleanExpressionComplexity")
         private Throwable findTopologyExceptionInCauses(Throwable t) {
             while (t != null) {
                 if (t instanceof MissingPartitionException
@@ -324,6 +337,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         || t instanceof MemberLeftException
                         || t instanceof TargetDisconnectedException
                         || t instanceof TargetNotMemberException
+                        || t instanceof WrongTargetException
                 ) {
                     return t;
                 }
@@ -353,8 +367,7 @@ final class MapIndexScanP extends AbstractProcessor {
     private static final class LocalMapIndexReader
             extends AbstractIndexReader<MapFetchIndexOperationResult, QueryableEntry<?, ?>> {
 
-        @SuppressWarnings("checkstyle:MagicNumber")
-        static int fetchSizeHint = 128;
+        static final int FETCH_SIZE_HINT = 128;
 
         private final HazelcastInstance hazelcastInstance;
         private final String indexName;
@@ -385,7 +398,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     indexName,
                     pointers,
                     partitions,
-                    fetchSizeHint
+                    FETCH_SIZE_HINT
             );
             return mapProxyImpl.getOperationService().invokeOnTarget(mapProxyImpl.getServiceName(), op, address);
         }
@@ -416,8 +429,8 @@ final class MapIndexScanP extends AbstractProcessor {
         }
 
         @Override
-        public Permission permission() {
-            return new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ);
+        public List<Permission> permissions() {
+            return singletonList(new MapPermission(metadata.getMapName(), ACTION_CREATE, ACTION_READ));
         }
 
         @Override

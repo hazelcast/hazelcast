@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static java.util.Collections.singletonList;
 
 final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable {
 
@@ -101,8 +102,8 @@ final class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializab
     }
 
     @Override
-    public Permission permission() {
-        return new MapPermission(mapName, ACTION_CREATE, ACTION_PUT);
+    public List<Permission> permissions() {
+        return singletonList(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
     }
 
     @Override

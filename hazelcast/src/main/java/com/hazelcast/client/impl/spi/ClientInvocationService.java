@@ -62,7 +62,7 @@ public interface ClientInvocationService {
      * SmartClient randomly picks a connection to invoke on via {@link LoadBalancer}
      *
      * @param invocation to be invoked
-     * @return true if successfully send , false otherwise
+     * @return true if successfully send, false otherwise
      */
     boolean invoke(ClientInvocation invocation);
 

@@ -33,6 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 
+import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.TIMEOUT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -45,12 +46,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetQueryResultProducerTest extends JetTestSupport {
 
-    private final JetQueryResultProducer producer = new JetQueryResultProducer();
-    private final ResultIterator<Row> iterator = producer.iterator();
+    private JetQueryResultProducer producer;
+    private ResultIterator<Row> iterator;
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
+    private void initProducer(boolean blockForNextItem) {
+        producer = new JetQueryResultProducer(blockForNextItem);
+        iterator = producer.iterator();
+    }
+
     @Test
-    public void smokeTest() throws Exception {
+    public void smokeTest_streaming() throws Exception {
+        initProducer(false);
         Semaphore semaphore = new Semaphore(0);
         Future<?> future = spawn(() -> {
             try {
@@ -96,7 +103,52 @@ public class JetQueryResultProducerTest extends JetTestSupport {
     }
 
     @Test
+    public void smokeTest_blocking() throws Exception {
+        initProducer(true);
+        Semaphore semaphore = new Semaphore(0);
+        Future<?> future = spawn(() -> {
+            try {
+                semaphore.release();
+                assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(YES);
+                assertThat(iterator.next().getColumnCount()).isEqualTo(0);
+                semaphore.release();
+                assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(DONE);
+                semaphore.release();
+            } catch (Throwable t) {
+                logger.info("", t);
+                throw t;
+            }
+        });
+
+        semaphore.acquire();
+        // now the spawned thread is blocked in hasNext()
+
+        // check that the thread is blocked in `hasNext` - that it did not release the 2nd permit
+        sleepMillis(50);
+        assertThat(semaphore.availablePermits()).isZero();
+
+        inbox.queue().add(new Object[0]);
+        producer.consume(inbox);
+
+        // 2nd permit - the row returned from the iterator
+        semaphore.acquire();
+
+        // check that the thread is blocked in the 2nd `hasNext` - that it did not release the 3rd permit
+        sleepMillis(50);
+        assertThat(semaphore.availablePermits()).isZero();
+
+        producer.done();
+
+        assertTrueEventually(future::isDone, 5);
+        semaphore.acquire();
+
+        // called for the side-effect of throwing the exception if it happened in the thread
+        future.get();
+    }
+
+    @Test
     public void when_done_then_remainingItemsIterated() {
+        initProducer(false);
         inbox.queue().add(new Object[]{1});
         inbox.queue().add(new Object[]{2});
         producer.consume(inbox);
@@ -111,6 +163,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_doneWithErrorWhileWaiting_then_throw_async() {
+        initProducer(false);
         assertThat(iterator.hasNext(0, SECONDS)).isEqualTo(TIMEOUT);
         producer.onError(QueryException.error("mock error"));
         assertThatThrownBy(() -> iterator.hasNext(0, SECONDS))
@@ -119,6 +172,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_doneWithErrorWhileWaiting_then_throw_sync() throws Exception {
+        initProducer(false);
         Future<?> future = spawn(() -> {
             assertThatThrownBy(() -> iterator.hasNext(1, DAYS))
                     .hasMessageContaining("mock error");
@@ -130,6 +184,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_nextItemWhileWaiting_then_hasNextReturns() throws Exception {
+        initProducer(false);
         Future<?> future = spawn(() -> {
             assertThat(iterator.hasNext(1, DAYS)).isEqualTo(YES);
             assertThat((int) iterator.next().get(0)).isEqualTo(42);
@@ -144,6 +199,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_noNextItem_then_timeoutElapses() {
+        initProducer(false);
         long start = System.nanoTime();
         iterator.hasNext(500, MILLISECONDS);
         long elapsed = MILLISECONDS.toNanos(System.nanoTime() - start);
@@ -152,12 +208,14 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_iteratorRequestedTheSecondTime_then_fail() {
+        initProducer(false);
         assertThatThrownBy(producer::iterator)
                 .hasMessageContaining("can be requested only once");
     }
 
     @Test
     public void when_onErrorAfterDone_then_ignored() {
+        initProducer(false);
         producer.done();
         producer.onError(QueryException.error("error"));
 
@@ -167,6 +225,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
     @Test
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public void when_onErrorCalledTwice_then_secondIgnored() {
+        initProducer(false);
         producer.onError(QueryException.error("error1"));
         producer.onError(QueryException.error("error2"));
 
@@ -176,6 +235,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_doneCalledTwice_then_secondIgnored() {
+        initProducer(false);
         producer.done();
         producer.done();
 
@@ -184,6 +244,7 @@ public class JetQueryResultProducerTest extends JetTestSupport {
 
     @Test
     public void when_queueCapacityExceeded_then_inboxNotConsumed() {
+        initProducer(false);
         int numExcessItems = 2;
         for (int i = 0; i < JetQueryResultProducer.QUEUE_CAPACITY + numExcessItems; i++) {
             inbox.queue().add(new Object[0]);

@@ -75,11 +75,11 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     void memberAdded(Member member);
 
     /**
-     * Called when a member is removed from the cluster.
-     * Executes maintenance tasks, removes the member from partition table and triggers promotions.
-     * @param member removed member
+     * Called when some members are removed from the cluster.
+     * Executes maintenance tasks, removes the members from the partition table and triggers promotions.
+     * @param members removed members
      */
-    void memberRemoved(Member member);
+    void memberRemoved(Member... members);
 
     InternalPartition[] getInternalPartitions();
 

@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.file;
 import com.hazelcast.jet.pipeline.file.FileFormat;
 import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 
 import java.util.List;
@@ -30,10 +30,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.toList;
 
 abstract class MetadataResolver<T> {
-
-    String supportedFormat() {
-        return sampleFormat().format();
-    }
 
     List<MappingField> resolveAndValidateFields(List<MappingField> userFields, Map<String, ?> options) {
         return !userFields.isEmpty() ? validateFields(userFields) : resolveFieldsFromSample(options);
@@ -66,6 +62,12 @@ abstract class MetadataResolver<T> {
         }
     }
 
+    protected abstract String supportedFormat();
+
+    protected abstract FileFormat<?> sampleFormat();
+
+    protected abstract List<MappingField> resolveFieldsFromSample(T sample);
+
     protected abstract Metadata resolveMetadata(List<MappingField> resolvedFields, Map<String, ?> options);
 
     protected List<TableField> toFields(List<MappingField> resolvedFields) {
@@ -78,8 +80,4 @@ abstract class MetadataResolver<T> {
                 )
         );
     }
-
-    protected abstract FileFormat<?> sampleFormat();
-
-    protected abstract List<MappingField> resolveFieldsFromSample(T sample);
 }

@@ -19,17 +19,17 @@ package com.hazelcast.internal.management.events;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.events.EventMetadata.EventType;
+import com.hazelcast.internal.util.UuidUtil;
 
 import java.util.Collection;
 
 import static com.hazelcast.internal.management.events.EventMetadata.EventType.WAN_CONFIGURATION_EXTENDED;
 
-public class WanConfigurationExtendedEvent extends AbstractEventBase {
-    private final String wanConfigName;
+public class WanConfigurationExtendedEvent extends AbstractWanConfigurationEventBase {
     private final Collection<String> wanPublisherIds;
 
     public WanConfigurationExtendedEvent(String wanConfigName, Collection<String> wanPublisherIds) {
-        this.wanConfigName = wanConfigName;
+        super(UuidUtil.newUnsecureUUID(), wanConfigName);
         this.wanPublisherIds = wanPublisherIds;
     }
 
@@ -40,8 +40,7 @@ public class WanConfigurationExtendedEvent extends AbstractEventBase {
 
     @Override
     public JsonObject toJson() {
-        JsonObject json = new JsonObject();
-        json.add("wanConfigName", wanConfigName);
+        JsonObject json = super.toJson();
         JsonArray publisherIds = new JsonArray();
         for (String publisherId : wanPublisherIds) {
             publisherIds.add(publisherId);

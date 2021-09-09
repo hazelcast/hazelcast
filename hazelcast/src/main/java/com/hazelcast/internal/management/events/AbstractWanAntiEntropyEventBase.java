@@ -20,25 +20,36 @@ import com.hazelcast.internal.json.JsonObject;
 
 import java.util.UUID;
 
-public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEventBase {
-    private final UUID uuid;
+public abstract class AbstractWanAntiEntropyEventBase extends AbstractWanEvent {
+    protected final String wanReplicationName;
+    protected final String wanPublisherId;
+    protected final String mapName;
 
-    protected AbstractWanAntiEntropyEventBase(UUID uuid,
-                                              String wanReplicationName,
-                                              String wanPublisherId,
-                                              String mapName) {
-        super(wanReplicationName, wanPublisherId, mapName);
-        this.uuid = uuid;
+    AbstractWanAntiEntropyEventBase(UUID uuid, String wanReplicationName, String wanPublisherId, String mapName) {
+        super(uuid);
+        this.wanReplicationName = wanReplicationName;
+        this.wanPublisherId = wanPublisherId;
+        this.mapName = mapName;
     }
 
-    public UUID getUuid() {
-        return uuid;
+    public String getWanReplicationName() {
+        return wanReplicationName;
+    }
+
+    public String getWanPublisherId() {
+        return wanPublisherId;
+    }
+
+    public String getMapName() {
+        return mapName;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = super.toJson();
-        json.add("uuid", uuid != null ? uuid.toString() : "null");
+        json.add("wanReplicationName", wanReplicationName);
+        json.add("wanPublisherId", wanPublisherId);
+        json.add("mapName", mapName);
         return json;
     }
 }

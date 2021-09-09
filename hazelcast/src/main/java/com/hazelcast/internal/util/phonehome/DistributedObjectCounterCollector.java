@@ -33,7 +33,6 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.topic.impl.TopicService;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -62,6 +61,7 @@ import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.COUNT_OF_SE
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.COUNT_OF_SETS_ALL_TIME;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.COUNT_OF_TOPICS;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.COUNT_OF_TOPICS_ALL_TIME;
+import static com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry.INTERNAL_OBJECTS_PREFIXES;
 import static java.util.stream.Collectors.groupingBy;
 
 @SuppressWarnings("checkstyle:magicnumber")
@@ -100,11 +100,10 @@ class DistributedObjectCounterCollector implements MetricsCollector {
     @Override
     public void forEachMetric(Node node, BiConsumer<PhoneHomeMetrics, String> metricsConsumer) {
         InternalProxyService proxyService = node.nodeEngine.getProxyService();
-        Collection<DistributedObject> objects = proxyService.getAllDistributedObjects();
-        Map<String, Long> objectsPerService =
-                objects.stream()
-                        .filter(obj -> SERVICE_NAME_TO_METRIC_NAME.containsKey(obj.getServiceName()))
-                        .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
+        Map<String, Long> objectsPerService = proxyService.getAllDistributedObjects().stream()
+                .filter(obj -> INTERNAL_OBJECTS_PREFIXES.stream().noneMatch(prefix -> obj.getName().startsWith(prefix)))
+                .filter(obj -> SERVICE_NAME_TO_METRIC_NAME.containsKey(obj.getServiceName()))
+                .collect(groupingBy(DistributedObject::getServiceName, Collectors.counting()));
 
         SERVICE_NAME_TO_METRIC_NAME.forEach((serviceName, metricNames) -> {
             metricsConsumer.accept(

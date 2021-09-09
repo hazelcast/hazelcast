@@ -115,7 +115,7 @@ public final class QueryUtils {
                     throw QueryException.error(
                         SqlErrorCode.PARTITION_DISTRIBUTION,
                         "Partition is not assigned to any member: " + part.getPartitionId()
-                    ).markInvalidate();
+                    );
                 } else {
                     continue;
                 }

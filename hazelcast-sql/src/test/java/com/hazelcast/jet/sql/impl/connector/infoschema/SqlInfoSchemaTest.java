@@ -51,7 +51,8 @@ public class SqlInfoSchemaTest extends SqlTestSupport {
     public void setUp() {
         sqlService.execute(
                 "CREATE MAPPING " + mappingName + " EXTERNAL NAME " + mappingExternalName + "("
-                        + "__value VARCHAR EXTERNAL NAME \"this.value\""
+                        + "__key INT"
+                        + ", __value VARCHAR EXTERNAL NAME \"this.value\""
                         + ") TYPE " + IMapSqlConnector.TYPE_NAME + "\n"
                         + "OPTIONS (\n"
                         + '\'' + OPTION_KEY_FORMAT + "'='int'\n"

@@ -63,6 +63,7 @@ import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -236,8 +237,8 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public Permission permission() {
-            return cachePutPermission(clientXml, name);
+        public List<Permission> permissions() {
+            return singletonList(cachePutPermission(clientXml, name));
         }
     }
 
@@ -271,8 +272,8 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public Permission permission() {
-            return listAddPermission(clientXml, name);
+        public List<Permission> permissions() {
+            return singletonList(listAddPermission(clientXml, name));
         }
     }
 

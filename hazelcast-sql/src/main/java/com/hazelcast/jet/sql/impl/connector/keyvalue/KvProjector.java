@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -48,11 +49,14 @@ public class KvProjector {
 
     private final UpsertInjector[] injectors;
 
+    private final boolean failOnNulls;
+
     KvProjector(
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTarget keyTarget,
-            UpsertTarget valueTarget
+            UpsertTarget valueTarget,
+            boolean failOnNulls
     ) {
         checkTrue(paths.length == types.length, "paths.length != types.length");
         this.types = types;
@@ -61,6 +65,8 @@ public class KvProjector {
         this.valueTarget = valueTarget;
 
         this.injectors = createInjectors(paths, types, keyTarget, valueTarget);
+
+        this.failOnNulls = failOnNulls;
     }
 
     private static UpsertInjector[] createInjectors(
@@ -84,16 +90,30 @@ public class KvProjector {
             Object value = getToConverter(types[i]).convert(row[i]);
             injectors[i].set(value);
         }
-        return entry(keyTarget.conclude(), valueTarget.conclude());
+
+        Object key = keyTarget.conclude();
+        if (key == null && failOnNulls) {
+            throw QueryException.error("Cannot write NULL to '__key' field. " +
+                    "Note that NULL is used also if your INSERT/SINK command doesn't write to '__key' at all.");
+        }
+
+        Object value = valueTarget.conclude();
+        if (value == null && failOnNulls) {
+            throw QueryException.error("Cannot write NULL to 'this' field. " +
+                    "Note that NULL is used also if your INSERT/SINK command doesn't write to 'this' at all.");
+        }
+
+        return entry(key, value);
     }
 
     public static Supplier supplier(
             QueryPath[] paths,
             QueryDataType[] types,
             UpsertTargetDescriptor keyDescriptor,
-            UpsertTargetDescriptor valueDescriptor
+            UpsertTargetDescriptor valueDescriptor,
+            boolean failOnNulls
     ) {
-        return new Supplier(paths, types, keyDescriptor, valueDescriptor);
+        return new Supplier(paths, types, keyDescriptor, valueDescriptor, failOnNulls);
     }
 
     public static final class Supplier implements DataSerializable {
@@ -104,6 +124,8 @@ public class KvProjector {
         private UpsertTargetDescriptor keyDescriptor;
         private UpsertTargetDescriptor valueDescriptor;
 
+        private boolean failOnNulls;
+
         @SuppressWarnings("unused")
         private Supplier() {
         }
@@ -112,12 +134,14 @@ public class KvProjector {
                 QueryPath[] paths,
                 QueryDataType[] types,
                 UpsertTargetDescriptor keyDescriptor,
-                UpsertTargetDescriptor valueDescriptor
+                UpsertTargetDescriptor valueDescriptor,
+                boolean failOnNulls
         ) {
             this.paths = paths;
             this.types = types;
             this.keyDescriptor = keyDescriptor;
             this.valueDescriptor = valueDescriptor;
+            this.failOnNulls = failOnNulls;
         }
 
         public KvProjector get(InternalSerializationService serializationService) {
@@ -125,7 +149,8 @@ public class KvProjector {
                     paths,
                     types,
                     keyDescriptor.create(serializationService),
-                    valueDescriptor.create(serializationService)
+                    valueDescriptor.create(serializationService),
+                    failOnNulls
             );
         }
 
@@ -141,6 +166,7 @@ public class KvProjector {
             }
             out.writeObject(keyDescriptor);
             out.writeObject(valueDescriptor);
+            out.writeBoolean(failOnNulls);
         }
 
         @Override
@@ -155,6 +181,7 @@ public class KvProjector {
             }
             keyDescriptor = in.readObject();
             valueDescriptor = in.readObject();
+            failOnNulls = in.readBoolean();
         }
     }
 }

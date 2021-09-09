@@ -55,7 +55,6 @@ import java.util.function.BiPredicate;
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.ExpressionUtil.comparisonFn;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
-import static com.hazelcast.sql.impl.SqlTestSupport.valuePath;
 import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
@@ -286,19 +285,12 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
         );
     }
 
-    public static class Person implements Serializable {
+    private static QueryPath valuePath(String path) {
+        return path(path, false);
+    }
 
-        public String name;
-        public int age;
-
-        @SuppressWarnings("unused")
-        private Person() {
-        }
-
-        private Person(String name, int age) {
-            this.name = name;
-            this.age = age;
-        }
+    private static QueryPath path(String path, boolean key) {
+        return new QueryPath(path, key);
     }
 
     private static IndexFilterValue intValue(Integer value) {
@@ -314,5 +306,20 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
 
     private static ConstantExpression constant(Object value, QueryDataType type) {
         return ConstantExpression.create(value, type);
+    }
+
+    public static class Person implements Serializable {
+
+        public String name;
+        public int age;
+
+        @SuppressWarnings("unused")
+        private Person() {
+        }
+
+        private Person(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
     }
 }

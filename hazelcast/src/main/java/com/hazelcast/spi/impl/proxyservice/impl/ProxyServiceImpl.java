@@ -124,9 +124,9 @@ public class ProxyServiceImpl
         return count;
     }
 
-    public void initializeAndPublishProxies() {
+    public void initializeProxies(boolean publishAfterInitialization) {
         for (ProxyRegistry registry : registries.values()) {
-            registry.initializeAndPublishProxies();
+            registry.initializeProxies(publishAfterInitialization);
         }
     }
 

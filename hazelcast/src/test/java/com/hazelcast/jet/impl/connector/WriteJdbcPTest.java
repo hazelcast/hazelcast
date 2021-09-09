@@ -34,6 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.postgresql.ds.PGSimpleDataSource;
 import org.postgresql.ds.common.BaseDataSource;
 import org.postgresql.xa.PGXADataSource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import javax.sql.CommonDataSource;
@@ -53,6 +54,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -68,6 +70,11 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     private static AtomicInteger tableCounter = new AtomicInteger();
     private String tableName;
+
+    @BeforeClass
+    public static void beforeClassCheckDocker() {
+        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+    }
 
     @BeforeClass
     public static void setupClass() {
