@@ -2776,7 +2776,8 @@
               "replicatedmap",
               "management",
               "job",
-              "connector"
+              "connector",
+              "sql"
             ]
           },
           "properties": {
@@ -2794,9 +2795,6 @@
               "$ref": "#/definitions/SecurityPermission"
             },
             "transaction": {
-              "$ref": "#/definitions/SecurityPermission"
-            },
-            "sql": {
               "$ref": "#/definitions/SecurityPermission"
             }
           },

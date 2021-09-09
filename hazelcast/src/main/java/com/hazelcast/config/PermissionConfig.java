@@ -176,8 +176,12 @@ public class PermissionConfig implements IdentifiedDataSerializable {
         /**
          * Jet Connector permission
          */
-        CONNECTOR("connector-permission")
-        ;
+        CONNECTOR("connector-permission"),
+        /**
+         * Specific SQL permissions
+         */
+        SQL("sql-permission");
+
         private final String nodeName;
 
         PermissionType(String nodeName) {
