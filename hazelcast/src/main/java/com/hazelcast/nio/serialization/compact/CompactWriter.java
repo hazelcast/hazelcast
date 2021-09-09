@@ -147,14 +147,6 @@ public interface CompactWriter {
     void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value);
 
     /**
-     * Writes an enum object.
-     *
-     * @param fieldName name of the field.
-     * @param value value to be written.
-     */
-    <T extends Enum> void writeEnum(@Nonnull String fieldName, @Nullable T value);
-
-    /**
      * Writes an arbitrary object.
      *
      * @param fieldName name of the field.
@@ -273,14 +265,6 @@ public interface CompactWriter {
      * @param values values to be written.
      */
     void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values);
-
-    /**
-     * Writes an array of enums.
-     *
-     * @param fieldName name of the field.
-     * @param values values to be written.
-     */
-    <T extends Enum> void writeEnumArray(@Nonnull String fieldName, @Nullable T[] values);
 
     /**
      * Writes an array of arbitrary objects.

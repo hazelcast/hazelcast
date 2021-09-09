@@ -18,7 +18,6 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -133,11 +132,6 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
-    public <T extends Enum> void writeEnum(@NotNull String fieldName, @Nullable T value) {
-        addField(new FieldDescriptor(fieldName, FieldType.UTF));
-    }
-
-    @Override
     public void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.BYTE_ARRAY));
     }
@@ -205,11 +199,6 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY));
-    }
-
-    @Override
-    public <T extends Enum> void writeEnumArray(@NotNull String fieldName, @Nullable T[] values) {
-        addField(new FieldDescriptor(fieldName, FieldType.UTF_ARRAY));
     }
 
     @Override

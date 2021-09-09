@@ -377,19 +377,6 @@ public interface CompactReader {
     OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime defaultValue);
 
     /**
-     * Reads an enum.
-     *
-     * @param fieldName name of the field.
-     * @param enumType underlying enum type.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    @Nullable
-    <T extends Enum> T readEnum(@Nonnull String fieldName, Class<T> enumType);
-
-    /**
      * Reads an arbitrary object.
      *
      * @param fieldName name of the field.
@@ -765,18 +752,6 @@ public interface CompactReader {
      */
     @Nullable
     OffsetDateTime[] readTimestampWithTimezoneArray(@Nonnull String fieldName, @Nullable OffsetDateTime[] defaultValue);
-
-    /**
-     * Reads an array of enums.
-     *
-     * @param fieldName name of the field.
-     * @return the value of the field.
-     * @throws HazelcastSerializationException if the field does not exist in the schema
-     *                                         or the type of the field does not match
-     *                                         with the one defined in the schema.
-     */
-    @Nullable
-    <T> T[] readEnumArray(@Nonnull String fieldName, @Nullable Class<T> componentType);
 
     /**
      * Reads an array of arbitrary objects.

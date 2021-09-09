@@ -264,12 +264,11 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
             } else if (type.isEnum()) {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, UTF)) {
-                        field.set(o, reader.readEnum(name, (Class<? extends Enum>) type));
+                        String enumName = reader.readString(name);
+                        field.set(o, Enum.valueOf((Class<? extends Enum>) type, enumName));
                     }
                 };
-                writers[index] = (w, o) -> {
-                    w.writeEnum(name, (Enum) field.get(o));
-                };
+                writers[index] = (w, o) -> w.writeString(name, ((Enum) field.get(o)).name());
             } else if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
                 if (Byte.TYPE.equals(componentType)) {
@@ -373,11 +372,27 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 } else if (componentType.isEnum()) {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, UTF_ARRAY)) {
-                            field.set(o, reader.readEnumArray(name, componentType));
+                            String[] stringArray = reader.readStringArray(name);
+                            Enum[] enumArray = null;
+                            if (stringArray != null) {
+                                enumArray = new Enum[stringArray.length];
+                                for (int i = 0; i < stringArray.length; i++) {
+                                    enumArray[i] = Enum.valueOf((Class<? extends Enum>) componentType, stringArray[i]);
+                                }
+                            }
+                            field.set(o, enumArray);
                         }
                     };
                     writers[index] = (w, o) -> {
-                       w.writeEnumArray(name, (Enum[]) o);
+                        Enum[] values = (Enum[]) field.get(o);
+                        String[] stringArray = null;
+                        if (values != null) {
+                            stringArray = new String[values.length];
+                            for (int i = 0; i < values.length; i++) {
+                                stringArray[i] = values[i].name();
+                            }
+                        }
+                       w.writeStringArray(name, stringArray);
                     };
                 } else {
                     readers[index] = (reader, schema, o) -> {
