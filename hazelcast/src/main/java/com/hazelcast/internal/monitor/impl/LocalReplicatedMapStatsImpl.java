@@ -18,7 +18,7 @@ package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.Clock;
-import com.hazelcast.map.LocalReplicationStats;
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;
 

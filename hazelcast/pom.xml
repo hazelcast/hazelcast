@@ -346,6 +346,39 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-and-fill-hazelcast-assembly-xml</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-default-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="true" />
+                                        <filter token="FILTER_BIND_ANY" value="false" />
+                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ" />
+                                    </filterset>
+                                </copy>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-docker-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="false" />
+                                        <filter token="FILTER_BIND_ANY" value="true" />
+                                        <filter token="FILTER_DISTRO_NAME" value="Docker" />
+                                    </filterset>
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>repack</id>
                         <phase>package</phase>
                         <goals>

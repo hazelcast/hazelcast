@@ -17,6 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
 import com.hazelcast.nearcache.NearCacheStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -78,6 +79,8 @@ public class CacheStatisticsImpl
 
     protected final CacheEntryCountResolver cacheEntryCountResolver;
 
+    private final LocalReplicationStatsImpl replicationStats = new LocalReplicationStatsImpl();
+
     public CacheStatisticsImpl(long creationTime) {
         this(creationTime, null);
     }
@@ -117,7 +120,6 @@ public class CacheStatisticsImpl
     }
 
     /**
-     *
      * The total number of expiries from the cache. An expiry may or may not be evicted.
      * This number represents the entries that fail evaluation and may not include the entries which are not yet
      * evaluated for expiry or not accessed.
@@ -215,8 +217,14 @@ public class CacheStatisticsImpl
         return ((1f * cacheRemoveTimeTakenNanos) / cacheRemoves) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
+    @Override
+    public LocalReplicationStatsImpl getReplicationStats() {
+        return replicationStats;
+    }
+
     /**
      * Implementation of {@link javax.cache.management.CacheStatisticsMXBean#clear()}.
+     *
      * @see javax.cache.management.CacheStatisticsMXBean#clear()
      */
     public void clear() {
@@ -366,7 +374,7 @@ public class CacheStatisticsImpl
      * @param duration the time taken in nanoseconds.
      */
     public void addGetTimeNanos(long duration) {
-        for (;;) {
+        for (; ; ) {
             long nanos = getCacheTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
                 if (GET_CACHE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
@@ -388,7 +396,7 @@ public class CacheStatisticsImpl
      * @param duration the time taken in nanoseconds.
      */
     public void addPutTimeNanos(long duration) {
-        for (;;) {
+        for (; ; ) {
             long nanos = putTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
                 if (PUT_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
@@ -410,7 +418,7 @@ public class CacheStatisticsImpl
      * @param duration the time taken in nanoseconds.
      */
     public void addRemoveTimeNanos(long duration) {
-        for (;;) {
+        for (; ; ) {
             long nanos = removeTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
                 if (REMOVE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
@@ -434,19 +442,20 @@ public class CacheStatisticsImpl
     @Override
     public String toString() {
         return "CacheStatisticsImpl{"
-                    + "creationTime=" + creationTime
-                    + ", lastAccessTime=" + lastAccessTime
-                    + ", lastUpdateTime=" + lastUpdateTime
-                    + ", ownedEntryCount=" + getOwnedEntryCount()
-                    + ", removals=" + removals
-                    + ", expiries=" + expiries
-                    + ", puts=" + puts
-                    + ", hits=" + hits
-                    + ", misses=" + misses
-                    + ", evictions=" + evictions
-                    + ", putTimeTakenNanos=" + putTimeTakenNanos
-                    + ", getCacheTimeTakenNanos=" + getCacheTimeTakenNanos
-                    + ", removeTimeTakenNanos=" + removeTimeTakenNanos
+                + "creationTime=" + creationTime
+                + ", lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + ", ownedEntryCount=" + getOwnedEntryCount()
+                + ", removals=" + removals
+                + ", expiries=" + expiries
+                + ", puts=" + puts
+                + ", hits=" + hits
+                + ", misses=" + misses
+                + ", evictions=" + evictions
+                + ", putTimeTakenNanos=" + putTimeTakenNanos
+                + ", getCacheTimeTakenNanos=" + getCacheTimeTakenNanos
+                + ", removeTimeTakenNanos=" + removeTimeTakenNanos
+                + ", replicationStats=" + replicationStats
                 + '}';
     }
 }

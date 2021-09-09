@@ -59,6 +59,7 @@ import java.util.TreeSet;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
+import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -148,6 +149,9 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
 
         serializableClasses.removeAll(allIdDataSerializableClasses);
+
+        // do not check non hazelcast classes & interfaces
+        filterNonHazelcastClasses(serializableClasses);
         // do not check abstract classes & interfaces
         filterNonConcreteClasses(serializableClasses);
 

@@ -33,10 +33,6 @@ public class TestTableResolver implements TableResolver {
     private final String searchPath;
     private final List<Table> tables;
 
-    public static TestTableResolver create(Table... tables) {
-        return create(null, tables);
-    }
-
     public static TestTableResolver create(String searchPath, Table... tables) {
         return new TestTableResolver(searchPath, Arrays.asList(tables));
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.map.LocalReplicationStats;
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.replicatedmap.LocalReplicatedMapStats;

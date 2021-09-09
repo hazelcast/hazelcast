@@ -18,15 +18,16 @@ package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
-import com.hazelcast.jet.sql.impl.TestMapTable;
 import com.hazelcast.jet.sql.impl.TestTableResolver;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
+import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -156,11 +157,12 @@ public class ParserNameResolutionTest extends SqlTestSupport {
     }
 
     private static String errorObjectNotFound(String tableName) {
-        return "Object '" + tableName + "' not found";
+        return "Object '" + tableName + "' not found, did you forget to CREATE MAPPING?";
     }
 
     private static String errorObjectNotFoundWithin(String tableName, String... schemaComponents) {
-        return errorObjectNotFound(tableName) + " within '" + SqlIdentifier.getString(Arrays.asList(schemaComponents)) + "'";
+        return "Object '" + tableName + "' not found within '" + SqlIdentifier.getString(Arrays.asList(schemaComponents))
+                + "', did you forget to CREATE MAPPING?";
     }
 
     private static String composeSelect(String fieldName, String... tableComponents) {
@@ -186,7 +188,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 SCHEMA_1,
                 TABLE_1,
                 TABLE_1,
-                Arrays.asList(TestMapTable.field(FIELD_1), TestMapTable.field(FIELD_2)),
+                Arrays.asList(field(FIELD_1), field(FIELD_2)),
                 new ConstantTableStatistics(100L),
                 null,
                 null,
@@ -199,7 +201,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 SCHEMA_2,
                 TABLE_2,
                 TABLE_2,
-                Arrays.asList(TestMapTable.field(FIELD_1), TestMapTable.field(FIELD_2)),
+                Arrays.asList(field(FIELD_1), field(FIELD_2)),
                 new ConstantTableStatistics(100L),
                 null,
                 null,
@@ -224,5 +226,15 @@ public class ParserNameResolutionTest extends SqlTestSupport {
 
     private static <E> E last(E[] array) {
         return array[array.length - 1];
+    }
+
+    private static TableField field(String name) {
+        return new Field(name, QueryDataType.INT, false);
+    }
+
+    private static class Field extends TableField {
+        private Field(String name, QueryDataType type, boolean hidden) {
+            super(name, type, hidden);
+        }
     }
 }

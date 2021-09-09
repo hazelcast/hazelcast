@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl;
+package com.hazelcast.internal.server.tcp;
 
-import java.util.UUID;
+import com.hazelcast.core.HazelcastException;
 
-public class TestLocalMemberIdProvider implements LocalMemberIdProvider {
+/**
+ * An exception thrown when an unexpected protocol is received through a
+ * connection.
+ * <p>
+ * See also {@link SingleProtocolEncoder} and {@link SingleProtocolDecoder}
+ * </p>
+ */
+public class ProtocolException extends HazelcastException {
 
-    private final UUID localMemberId;
-
-    public TestLocalMemberIdProvider(UUID localMemberId) {
-        this.localMemberId = localMemberId;
+    public ProtocolException(final String message) {
+        super(message);
     }
 
-    @Override
-    public UUID getLocalMemberId() {
-        return localMemberId;
-    }
 }
