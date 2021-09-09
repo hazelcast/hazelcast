@@ -24,10 +24,12 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
@@ -52,16 +54,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.util.ReflectionUtils.readFieldOrNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -87,6 +93,20 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     @After
     public void shutdownFactory() throws Exception {
         if (instanceFactory != null) {
+
+            Collection<HazelcastInstance> instances = instanceFactory.getAllHazelcastInstances();
+            for (HazelcastInstance instance : instances) {
+                HazelcastInstanceImpl instanceImpl = (HazelcastInstanceImpl) instance;
+                JetServiceBackend jetServiceBackend = instanceImpl.node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
+                JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
+
+                ConcurrentHashMap<Long, ?> classLoaders = readFieldOrNull(jobClassLoaderService, "classLoaders");
+                assertThat(classLoaders)
+                        .describedAs("There one or more unreleased classloaders left. This is a bug, but it is not " +
+                                "necesarilly related to this test.")
+                        .isEmpty();
+            }
+
             SUPPORT_LOGGER.info("Terminating instanceFactory in JetTestSupport.@After");
             spawn(() -> instanceFactory.terminateAll())
                     .get(1, TimeUnit.MINUTES);
