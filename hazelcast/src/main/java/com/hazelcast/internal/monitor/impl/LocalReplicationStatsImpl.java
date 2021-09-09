@@ -17,7 +17,7 @@
 package com.hazelcast.internal.monitor.impl;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.map.LocalReplicationStats;
+import com.hazelcast.partition.LocalReplicationStats;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
