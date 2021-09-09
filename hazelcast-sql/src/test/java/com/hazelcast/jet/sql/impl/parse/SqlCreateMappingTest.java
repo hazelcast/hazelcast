@@ -23,6 +23,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SqlCreateMappingTest {
@@ -41,14 +42,35 @@ public class SqlCreateMappingTest {
         );
 
         String sql = SqlCreateMapping.unparse(mapping);
-        assertThat(sql).isEqualTo("CREATE MAPPING \"name\" EXTERNAL NAME \"external-name\"(\n" +
+        assertThat(sql).isEqualTo("CREATE MAPPING \"name\" EXTERNAL NAME \"external-name\" (\n" +
                 "  \"field1\" VARCHAR EXTERNAL NAME \"__key.field1\",\n" +
                 "  \"field2\" INTEGER EXTERNAL NAME \"this.field2\"\n" +
                 ")\n" +
                 "TYPE Type\n" +
                 "OPTIONS (\n" +
-                "  'key1'='value1',\n" +
-                "  'key2'='value2'\n" +
+                "  'key1' = 'value1',\n" +
+                "  'key2' = 'value2'\n" +
+                ")"
+        );
+    }
+
+    @Test
+    public void test_unparse_quoting() {
+        Mapping mapping = new Mapping(
+                "na\"me",
+                "external\"name",
+                "Type",
+                singletonList(new MappingField("fi\"eld", QueryDataType.VARCHAR, "__key\"field")),
+                ImmutableMap.of("ke'y", "val'ue")
+        );
+
+        String sql = SqlCreateMapping.unparse(mapping);
+        assertThat(sql).isEqualTo("CREATE MAPPING \"na\"\"me\" EXTERNAL NAME \"external\"\"name\" (\n" +
+                "  \"fi\"\"eld\" VARCHAR EXTERNAL NAME \"__key\"\"field\"\n" +
+                ")\n" +
+                "TYPE Type\n" +
+                "OPTIONS (\n" +
+                "  'ke''y' = 'val''ue'\n" +
                 ")"
         );
     }

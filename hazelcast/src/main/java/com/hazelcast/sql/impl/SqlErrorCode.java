@@ -44,11 +44,11 @@ public final class SqlErrorCode {
     /** An error caused by an attempt to query an index that is not valid. */
     public static final int INDEX_INVALID = 1009;
 
+    /** Object (mapping/table) not found. */
+    public static final int OBJECT_NOT_FOUND = 1010;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
-
-    /** Object (mapping/table) not found. */
-    public static final int OBJECT_NOT_FOUND = 3000;
 
     private SqlErrorCode() {
         // No-op.

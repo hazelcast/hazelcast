@@ -48,8 +48,6 @@ public class HazelcastSqlException extends HazelcastException {
 
     /**
      * Gets ID of the member that caused or initiated an error condition.
-     *
-     * @return ID of the member that caused or initiated an error condition
      */
     @Nonnull
     public UUID getOriginatingMemberId() {
@@ -58,8 +56,6 @@ public class HazelcastSqlException extends HazelcastException {
 
     /**
      * Gets the internal error code associated with the exception.
-     *
-     * @return the internal error code associated with the exception
      */
     @PrivateApi
     public int getCode() {
@@ -68,8 +64,6 @@ public class HazelcastSqlException extends HazelcastException {
 
     /**
      * Gets the suggested SQL statement to remediate experienced error
-     *
-     * @return Suggested SQL statement to remediate experienced error.
      */
     @PrivateApi
     public String getSuggestion() {

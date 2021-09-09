@@ -174,12 +174,11 @@ public class SqlCreateMapping extends SqlCreate {
         SqlPrettyWriter writer = new SqlPrettyWriter(SqlPrettyWriter.config());
 
         writer.keyword("CREATE MAPPING");
-        writer.print(escape(mapping.name()));
+        writer.identifier(mapping.name(), true);
 
         if (mapping.externalName() != null) {
-            writer.print(" ");
             writer.keyword("EXTERNAL NAME");
-            writer.print(escape(mapping.externalName()));
+            writer.identifier(mapping.externalName(), true);
         }
 
         List<MappingField> fields = mapping.fields();
@@ -187,13 +186,12 @@ public class SqlCreateMapping extends SqlCreate {
             SqlWriter.Frame frame = writer.startList("(", ")");
             for (MappingField field : fields) {
                 printIndent(writer);
-                writer.print(escape(field.name()));
-                writer.print(" ");
+                writer.identifier(field.name(), true);
                 writer.print(field.type().getTypeFamily().toString());
                 if (field.externalName() != null) {
                     writer.print(" ");
                     writer.keyword("EXTERNAL NAME");
-                    writer.print(escape(field.externalName()));
+                    writer.identifier(field.externalName(), true);
                 }
             }
             writer.newlineAndIndent();
@@ -211,17 +209,15 @@ public class SqlCreateMapping extends SqlCreate {
             SqlWriter.Frame withFrame = writer.startList("(", ")");
             for (Map.Entry<String, String> option : options.entrySet()) {
                 printIndent(writer);
-                writer.print("'" + option.getKey() + "'='" + option.getValue() + "'");
+                writer.literal(writer.getDialect().quoteStringLiteral(option.getKey()));
+                writer.print("= ");
+                writer.literal(writer.getDialect().quoteStringLiteral(option.getValue()));
             }
             writer.newlineAndIndent();
             writer.endList(withFrame);
         }
 
         return writer.toString();
-    }
-
-    private static String escape(String s) {
-        return "\"" + s + "\"";
     }
 
     private static void printIndent(SqlWriter writer) {

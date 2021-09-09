@@ -63,6 +63,7 @@ import org.apache.calcite.sql.validate.SqlValidatorImplBridge;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import java.util.HashMap;
@@ -80,8 +81,8 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
  */
 public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
-    private static final String OBJECT_NOT_FOUND = "ObjectNotFound";
-    private static final String OBJECT_NOT_FOUND_WITHING = "ObjectNotFoundWithin";
+    private static final String OBJECT_NOT_FOUND = ResourceUtil.key(Static.RESOURCE.objectNotFound(""));
+    private static final String OBJECT_NOT_FOUND_WITHING = ResourceUtil.key(Static.RESOURCE.objectNotFoundWithin("", ""));
 
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
