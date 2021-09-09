@@ -765,6 +765,8 @@ hazelcast:
           enabled: false
         DATA:
           enabled: false
+        CP:
+          enabled: false
 
     #
     # ===== HAZELCAST MEMCACHE PROTOCOL CONFIGURATION =====

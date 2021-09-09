@@ -785,6 +785,7 @@
             <endpoint-group name="HOT_RESTART" enabled="false"/>
             <endpoint-group name="WAN" enabled="false"/>
             <endpoint-group name="DATA" enabled="false"/>
+            <endpoint-group name="CP" enabled="false"/>
         </rest-api>
 
         <!--
