@@ -81,7 +81,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MASTER;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -461,7 +461,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                         jobId, executionId, jobConfig, NO_SNAPSHOT, false, null);
         ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
 
-        jetServiceBackend.getJobClassLoaderService().getOrCreateClassLoader(jobConfig, jobId, MASTER);
+        jetServiceBackend.getJobClassLoaderService().getOrCreateClassLoader(jobConfig, jobId, COORDINATOR);
         Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
         jetServiceBackend.getJobExecutionService().initExecution(
                 jobId, executionId, localAddress, memberListVersion, participants, executionPlan

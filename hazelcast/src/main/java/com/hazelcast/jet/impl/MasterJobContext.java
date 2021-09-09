@@ -90,7 +90,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MASTER;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
@@ -284,7 +284,7 @@ public class MasterJobContext {
                 requestedTerminationMode = null;
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), MASTER);
+                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
             DAG dag;
             JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             try {
@@ -633,7 +633,6 @@ public class MasterJobContext {
     }
 
     void finalizeJob(@Nullable Throwable failure) {
-        logger.fine("finalizing job " + idToString(mc.jobId()), new RuntimeException());
         mc.coordinationService().submitToCoordinatorThread(() -> {
             final Runnable nonSynchronizedAction;
             mc.lock();
@@ -644,7 +643,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
-                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), MASTER);
+                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;

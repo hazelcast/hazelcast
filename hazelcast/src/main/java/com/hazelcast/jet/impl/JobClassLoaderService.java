@@ -49,14 +49,6 @@ import static java.util.Collections.unmodifiableMap;
 
 public class JobClassLoaderService {
 
-    /*
-     * On master node there is a race between closing PMS and PS.
-     * We need to close the classloader only after both have been called.
-     * The reference counting is done in removeClassloadersForJob()
-     */
-    private static final int MASTER_REF_COUNT = 2;
-    private static final int MEMBER_REF_COUNT = 1;
-
     // The type of classLoaders field is CHM and not ConcurrentMap because we
     // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
     // does not guarantee at most one computation per key.
@@ -80,31 +72,43 @@ public class JobClassLoaderService {
      *
      * @param config job config to use to create the classloader
      * @param jobId  id of the job
-     * @param reference
+     * @param phase  phase for which the classloader is needed - coordinator/member
      * @return job classloader
      */
-    public ClassLoader getOrCreateClassLoader(JobConfig config, long jobId, ClassLoaderReferenceType reference) {
+    public ClassLoader getOrCreateClassLoader(JobConfig config, long jobId, JobPhase phase) {
         JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
-        JobClassLoaders jobClassLoaders = classLoaders.computeIfAbsent(jobId,
-                k -> AccessController.doPrivileged(
-                        (PrivilegedAction<JobClassLoaders>) () -> {
-                            logger.fine("Creating job classLoader for job " + idToString(jobId));
-                            ClassLoader parent = parentClassLoader(config);
-                            JetDelegatingClassLoader jobClassLoader;
-                            if (!jetConfig.isResourceUploadEnabled()) {
-                                jobClassLoader = new JetDelegatingClassLoader(parent);
-                            } else {
-                                jobClassLoader = new JetClassLoader(nodeEngine, parent, config.getName(), jobId,
-                                        jobRepository);
-                            }
-
-                            Map<String, ClassLoader> processorCls = createProcessorClassLoaders(
-                                    jobId, config, jobClassLoader
-                            );
-                            return new JobClassLoaders(jobClassLoader, processorCls);
-                        }));
-        jobClassLoaders.recordReference(reference);
+        JobClassLoaders jobClassLoaders = classLoaders.compute(jobId,
+                (k, current) -> {
+                    JobClassLoaders result = current;
+                    if (current == null) {
+                        result = createJobClassLoaders(config, jobId, jetConfig);
+                    }
+                    result.recordPhase(phase);
+                    return result;
+                }
+        );
+        jobClassLoaders.recordPhase(phase);
         return jobClassLoaders.jobClassLoader();
+    }
+
+    private JobClassLoaders createJobClassLoaders(JobConfig config, long jobId, JetConfig jetConfig) {
+        return AccessController.doPrivileged(
+                (PrivilegedAction<JobClassLoaders>) () -> {
+                    logger.fine("Creating job classLoader for job " + idToString(jobId));
+                    ClassLoader parent = parentClassLoader(config);
+                    JetDelegatingClassLoader jobClassLoader;
+                    if (!jetConfig.isResourceUploadEnabled()) {
+                        jobClassLoader = new JetDelegatingClassLoader(parent);
+                    } else {
+                        jobClassLoader = new JetClassLoader(nodeEngine, parent, config.getName(), jobId,
+                                jobRepository);
+                    }
+
+                    Map<String, ClassLoader> processorCls = createProcessorClassLoaders(
+                            jobId, config, jobClassLoader
+                    );
+                    return new JobClassLoaders(jobClassLoader, processorCls);
+                });
     }
 
     private ClassLoader parentClassLoader(JobConfig config) {
@@ -161,7 +165,7 @@ public class JobClassLoaderService {
      * Return processor classloader for a vertex with given name, in a job specified by the id
      * <p>
      * This method must be called after the classloader was created by
-     * {@link #getOrCreateClassLoader(JobConfig, long, ClassLoaderReferenceType)} on this
+     * {@link #getOrCreateClassLoader(JobConfig, long, JobPhase)} on this
      * member.
      *
      * @param jobId      job id
@@ -181,29 +185,35 @@ public class JobClassLoaderService {
     /**
      * Remove and close/shutdown job classloader and any processor classloaders for given job
      */
-    public void tryRemoveClassloadersForJob(long jobId, ClassLoaderReferenceType reference) {
-        logger.fine("Try remove classloaders for job " + Util.idToString(jobId), new RuntimeException());
-        JobClassLoaders jobClassLoaders = this.classLoaders.get(jobId);
-        if (jobClassLoaders == null) {
-            return;
-        }
-        if (jobClassLoaders.removeReference(reference) == 0) {
-            logger.fine("JobClassLoaders refCount = 0, removing classloaders");
-            classLoaders.remove(jobId);
-            Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
-            if (processorCls != null) {
-                for (ClassLoader cl : processorCls.values()) {
-                    try {
-                        ((ChildFirstClassLoader) cl).close();
-                    } catch (IOException e) {
-                        logger.fine("Exception when closing processor classloader", e);
+    public void tryRemoveClassloadersForJob(long jobId, JobPhase phase) {
+        logger.fine("Try remove classloaders for job " + idToString(jobId) + ", reference " + phase);
+        classLoaders.compute(jobId, (k, jobClassLoaders) -> {
+            if (jobClassLoaders == null) {
+                return null;
+            }
+
+            if (jobClassLoaders.removePhase(phase) == 0) {
+                logger.fine("JobClassLoaders refCount = 0, removing classloaders");
+                Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
+                if (processorCls != null) {
+                    for (ClassLoader cl : processorCls.values()) {
+                        try {
+                            ((ChildFirstClassLoader) cl).close();
+                        } catch (IOException e) {
+                            logger.fine("Exception when closing processor classloader", e);
+                        }
                     }
                 }
+                // the class loader might not have been initialized if the job failed before that
+                JetDelegatingClassLoader jobClassLoader = jobClassLoaders.jobClassLoader();
+                jobClassLoader.shutdown();
+
+                // Removes the item from the map
+                return null;
+            } else {
+                return jobClassLoaders;
             }
-            // the class loader might not have been initialized if the job failed before that
-            JetDelegatingClassLoader jobClassLoader = jobClassLoaders.jobClassLoader();
-            jobClassLoader.shutdown();
-        }
+        });
     }
 
     /**
@@ -214,24 +224,42 @@ public class JobClassLoaderService {
      */
     public JetDelegatingClassLoader getClassLoader(long jobId) {
         JobClassLoaders jobClassLoaders = classLoaders.get(jobId);
-        if (jobClassLoaders != null) {
-            return jobClassLoaders.jobClassLoader();
-        } else {
-            throw new HazelcastException("JobClassLoaders for jobId=" + Util.idToString(jobId)
-                    + " requested, but it does not exists");
-        }
+        return jobClassLoaders == null ? null : jobClassLoaders.jobClassLoader;
     }
 
-    public enum ClassLoaderReferenceType {
-        MASTER,
-        MEMBER
+    /**
+     * Phase where the classloader is needed
+     */
+    public enum JobPhase {
+
+        /**
+         * Needed on job coordinator (master) for Pipeline/DAG deserialization and MetaSupplier init/get/close
+         */
+        COORDINATOR,
+
+        /**
+         * Needed on member for ExecutionPlan deserialization, ProcessorSupplier init/get/close and Processors
+         */
+        EXECUTION
     }
 
+    /**
+     * Keeps job classloader and potentially processor classloaders for a job.
+     *
+     * Note:
+     * On master node there is a race between closing PMS and PS.
+     * We need to close the classloader only after both have been called.
+     * When we create JobClassLoaders we record that by calling {@link #recordPhase(JobPhase)} and
+     * when we release it we call {@link #removePhase(JobPhase)}
+     */
     private static class JobClassLoaders {
 
         private final JetDelegatingClassLoader jobClassLoader;
         private final Map<String, ClassLoader> processorCls;
-        private final EnumSet<ClassLoaderReferenceType> references = EnumSet.noneOf(ClassLoaderReferenceType.class);
+
+        // EnumSet is not thread-safe
+        // Interactions are synchronized on this. It's reference never leaks the JobClassLoaders instance.
+        private final EnumSet<JobPhase> phases = EnumSet.noneOf(JobPhase.class);
 
         JobClassLoaders(
                 @Nonnull JetDelegatingClassLoader jobClassLoader,
@@ -253,16 +281,16 @@ public class JobClassLoaderService {
             return processorCls.get(key);
         }
 
-        public void recordReference(ClassLoaderReferenceType reference) {
+        public void recordPhase(JobPhase phase) {
             synchronized (this) {
-                references.add(reference);
+                phases.add(phase);
             }
         }
 
-        public int removeReference(ClassLoaderReferenceType reference) {
+        public int removePhase(JobPhase phase) {
             synchronized (this) {
-                references.remove(reference);
-                return references.size();
+                phases.remove(phase);
+                return phases.size();
             }
         }
     }

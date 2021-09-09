@@ -78,6 +78,9 @@ public final class ReflectionUtils {
         }
     }
 
+    /**
+     * Returns value of private field. In case of any exceptions it returns null.
+     */
     @SuppressWarnings("unchecked")
     public static <T> T readFieldOrNull(Object object, String fieldName) {
         try {
@@ -87,7 +90,7 @@ public final class ReflectionUtils {
             }
             return (T) field.get(object);
         } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            return null;
         }
     }
 

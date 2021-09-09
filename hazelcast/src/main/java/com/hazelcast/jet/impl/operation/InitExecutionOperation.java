@@ -37,7 +37,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MEMBER;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 
@@ -145,7 +145,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
             JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
 
             try {
-                ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), MEMBER);
+                ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
 
                 jobClassloaderService.prepareProcessorClassLoaders(jobId());
                 return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);

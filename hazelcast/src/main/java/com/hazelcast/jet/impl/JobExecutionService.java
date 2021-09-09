@@ -71,7 +71,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MEMBER;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
@@ -437,7 +437,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), MEMBER);
+            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
             executionCompleted.inc();
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
