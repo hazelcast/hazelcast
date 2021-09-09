@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Defines a record-store.
@@ -656,4 +657,13 @@ public interface RecordStore<R extends Record> {
     LocalRecordStoreStatsImpl getStats();
 
     void setStats(LocalRecordStoreStats stats);
+
+    /**
+     * Replaces each entry's value with the result of invoking the given
+     * function on that entry until all entries have been processed or the
+     * function throws an exception.
+     *
+     * @param function the function to apply to each entry
+     */
+    void replaceAll(BiFunction function);
 }
