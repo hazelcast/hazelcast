@@ -61,6 +61,7 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -1399,6 +1401,25 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void destroy() {
         clearPartition(false, true);
+    }
+
+    @Override
+    public void replaceAll(BiFunction function) {
+        Iterator<Map.Entry<Data, Record>> entryIterator = storage.mutationTolerantIterator();
+        while (entryIterator.hasNext()) {
+            try {
+                Map.Entry<Data, Record> entry = entryIterator.next();
+                Data key = entry.getKey();
+                Record record = entry.getValue();
+                Object keyObj = serializationService.toObject(key);
+                Object valueObj = serializationService.toObject(record.getValue());
+                Object newValue = function.apply(keyObj, valueObj);
+                storage.updateRecordValue(key, record, newValue);
+            } catch (IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
+        }
     }
 
     @Override
