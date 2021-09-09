@@ -120,7 +120,7 @@ public final class HazelcastTypeUtils {
             return QueryDataType.JSON;
         }
 
-        throw new IllegalArgumentException("unexpected SQL type: " + relDataType);
+        throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
     }
 
     public static QueryDataType toHazelcastType(SqlTypeName sqlTypeName) {
@@ -132,7 +132,7 @@ public final class HazelcastTypeUtils {
         }
         QueryDataType queryDataType = CALCITE_TO_HZ.get(sqlTypeName);
         if (queryDataType == null) {
-            throw new IllegalArgumentException("unexpected SQL type: " + sqlTypeName);
+            throw new IllegalArgumentException("Unexpected SQL type: " + sqlTypeName);
         }
         return queryDataType;
     }
