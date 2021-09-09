@@ -37,7 +37,8 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelis
  * The usage is similar to {@link Sinks#remoteMap(String, ClientConfig)}.
  * Because of incompatible APIs the configuration is passed as an XML
  * document in a string - note that the XML configuration must conform
- * to 3.x schema.
+ * to 3.x schema - see <a href="https://www.hazelcast.com/schema/config/">
+ * https://www.hazelcast.com/schema/config/</a>.
  * <p>
  * Usage:
  * <pre>{@code
@@ -81,6 +82,7 @@ public final class Hz3Sinks {
      * <p>
      * The default local parallelism for this sink is 1.
      */
+    @Beta
     @Nonnull
     public static <K, V> Sink<Map.Entry<K, V>> map(@Nonnull String mapName, @Nonnull String clientXml) {
         return map(mapName, Map.Entry::getKey, Map.Entry::getValue, clientXml);
@@ -101,6 +103,7 @@ public final class Hz3Sinks {
      * The given functions must be stateless and {@linkplain
      * Processor#isCooperative() cooperative}.
      */
+    @Beta
     @Nonnull
     public static <T, K, V> Sink<T> map(
             @Nonnull String mapName,

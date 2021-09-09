@@ -37,7 +37,12 @@ import java.util.concurrent.CompletableFuture;
  * {@link GeneralStage#mapUsingIMap(String, FunctionEx, BiFunctionEx)} and
  * other similarly named methods. The difference is that instead of providing
  * a name of the map, a {@link ServiceFactory} to Hazelcast 3 Map is used.
- * This class provides a utility methods to create and use this service factory.
+ * This class provides utility methods to create and use this service factory.
+ * <p>
+ * Because of incompatible APIs the configuration is passed as an XML
+ * document in a string - note that the XML configuration must conform
+ * to 3.x schema - see <a href="https://www.hazelcast.com/schema/config/">
+ * https://www.hazelcast.com/schema/config/</a>.
  * <p>
  * Usage:
  * <p>
@@ -83,6 +88,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V> ServiceFactory<Hz3MapAdapter, AsyncMap<K, V>> hz3MapServiceFactory(
             String mapName, String clientXML
     ) {
@@ -99,6 +105,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V> ServiceFactory<Hz3MapAdapter, Map<K, V>> hz3ReplicatedMapServiceFactory(
             String mapName, String clientXML
     ) {
@@ -116,6 +123,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V, T, R> BiFunctionEx<? super AsyncMap<K, V>, ? super T, CompletableFuture<R>> mapUsingIMapAsync(
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn
@@ -131,6 +139,7 @@ public final class Hz3Enrichment {
      * <p>
      * See the class javadoc for usage.
      */
+    @Beta
     public static <K, V, T, R> BiFunctionEx<? super Map<K, V>, ? super T, R> mapUsingIMap(
             @Nonnull FunctionEx<? super T, ? extends K> lookupKeyFn,
             @Nonnull BiFunctionEx<? super T, ? super V, ? extends R> mapFn

@@ -35,7 +35,8 @@ import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
  * The usage is similar to {@link Sources#remoteMap(String, ClientConfig)}.
  * Because of incompatible APIs the configuration is passed as an XML
  * document in a string - note that the XML configuration must conform
- * to 3.x schema.
+ * to 3.x schema - see <a href="https://www.hazelcast.com/schema/config/">
+ *  https://www.hazelcast.com/schema/config/</a>.
  * <p>
  * Usage:
  * <p>
@@ -77,8 +78,8 @@ public final class Hz3Sources {
      * @param mapName   name of the map
      * @param clientXml client configuration for the remote cluster
      */
-    @Nonnull
     @Beta
+    @Nonnull
     public static <K, V> BatchSource<Map.Entry<K, V>> remoteMap(
             @Nonnull String mapName,
             @Nonnull String clientXml
@@ -91,8 +92,8 @@ public final class Hz3Sources {
      * Returns a supplier of processors for
      * {@link Sources#remoteMap(String, ClientConfig)}.
      */
-    @Nonnull
     @Beta
+    @Nonnull
     public static ProcessorSupplier readRemoteMapP(@Nonnull String mapName, @Nonnull String clientXml) {
         return new ReadMapOrCacheP.RemoteProcessorSupplier<>(mapName, clientXml);
     }
