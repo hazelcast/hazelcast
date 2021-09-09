@@ -71,6 +71,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MEMBER;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
@@ -244,7 +245,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         try {
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(plan.getJobConfig(), jobId);
+            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
             doWithClassLoader(
                     jobCl,
                     () -> execCtx.initialize(coordinator, addresses, plan)
@@ -300,7 +301,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             jobClassloaderService.prepareProcessorClassLoaders(jobId);
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = jobClassloaderService.getClassLoader(plan.getJobConfig(), jobId);
+            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
             doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
         } finally {
             jobClassloaderService.clearProcessorClassLoaders();
@@ -436,7 +437,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId());
+            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), MEMBER);
             executionCompleted.inc();
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());

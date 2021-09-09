@@ -36,12 +36,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
@@ -80,11 +80,12 @@ public class JobClassLoaderService {
      *
      * @param config job config to use to create the classloader
      * @param jobId  id of the job
+     * @param reference
      * @return job classloader
      */
-    public ClassLoader getClassLoader(JobConfig config, long jobId) {
+    public ClassLoader getOrCreateClassLoader(JobConfig config, long jobId, ClassLoaderReferenceType reference) {
         JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
-        return classLoaders.computeIfAbsent(jobId,
+        JobClassLoaders jobClassLoaders = classLoaders.computeIfAbsent(jobId,
                 k -> AccessController.doPrivileged(
                         (PrivilegedAction<JobClassLoaders>) () -> {
                             logger.fine("Creating job classLoader for job " + idToString(jobId));
@@ -100,10 +101,10 @@ public class JobClassLoaderService {
                             Map<String, ClassLoader> processorCls = createProcessorClassLoaders(
                                     jobId, config, jobClassLoader
                             );
-                            int refCount = nodeEngine.getClusterService().isMaster()
-                                    ? MASTER_REF_COUNT : MEMBER_REF_COUNT;
-                            return new JobClassLoaders(jobClassLoader, processorCls, refCount);
-                        })).jobClassLoader();
+                            return new JobClassLoaders(jobClassLoader, processorCls);
+                        }));
+        jobClassLoaders.recordReference(reference);
+        return jobClassLoaders.jobClassLoader();
     }
 
     private ClassLoader parentClassLoader(JobConfig config) {
@@ -159,7 +160,8 @@ public class JobClassLoaderService {
     /**
      * Return processor classloader for a vertex with given name, in a job specified by the id
      * <p>
-     * This method must be called after the classloader was created by {@link #getClassLoader(JobConfig, long)} on this
+     * This method must be called after the classloader was created by
+     * {@link #getOrCreateClassLoader(JobConfig, long, ClassLoaderReferenceType)} on this
      * member.
      *
      * @param jobId      job id
@@ -179,13 +181,14 @@ public class JobClassLoaderService {
     /**
      * Remove and close/shutdown job classloader and any processor classloaders for given job
      */
-    public void tryRemoveClassloadersForJob(long jobId) {
-        logger.fine("Removing classloaders for job " + Util.idToString(jobId));
+    public void tryRemoveClassloadersForJob(long jobId, ClassLoaderReferenceType reference) {
+        logger.fine("Try remove classloaders for job " + Util.idToString(jobId), new RuntimeException());
         JobClassLoaders jobClassLoaders = this.classLoaders.get(jobId);
         if (jobClassLoaders == null) {
             return;
         }
-        if (jobClassLoaders.decrementRefCount() == 0) {
+        if (jobClassLoaders.removeReference(reference) == 0) {
+            logger.fine("JobClassLoaders refCount = 0, removing classloaders");
             classLoaders.remove(jobId);
             Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
             if (processorCls != null) {
@@ -211,23 +214,31 @@ public class JobClassLoaderService {
      */
     public JetDelegatingClassLoader getClassLoader(long jobId) {
         JobClassLoaders jobClassLoaders = classLoaders.get(jobId);
-        return jobClassLoaders == null ? null : jobClassLoaders.jobClassLoader();
+        if (jobClassLoaders != null) {
+            return jobClassLoaders.jobClassLoader();
+        } else {
+            throw new HazelcastException("JobClassLoaders for jobId=" + Util.idToString(jobId)
+                    + " requested, but it does not exists");
+        }
+    }
+
+    public enum ClassLoaderReferenceType {
+        MASTER,
+        MEMBER
     }
 
     private static class JobClassLoaders {
 
         private final JetDelegatingClassLoader jobClassLoader;
         private final Map<String, ClassLoader> processorCls;
-        private final AtomicInteger refCount;
+        private final EnumSet<ClassLoaderReferenceType> references = EnumSet.noneOf(ClassLoaderReferenceType.class);
 
         JobClassLoaders(
                 @Nonnull JetDelegatingClassLoader jobClassLoader,
-                @Nonnull Map<String, ClassLoader> processorCls,
-                int refCount
+                @Nonnull Map<String, ClassLoader> processorCls
         ) {
             this.jobClassLoader = jobClassLoader;
             this.processorCls = unmodifiableMap(processorCls);
-            this.refCount = new AtomicInteger(refCount);
         }
 
         public JetDelegatingClassLoader jobClassLoader() {
@@ -242,8 +253,17 @@ public class JobClassLoaderService {
             return processorCls.get(key);
         }
 
-        public int decrementRefCount() {
-            return refCount.decrementAndGet();
+        public void recordReference(ClassLoaderReferenceType reference) {
+            synchronized (this) {
+                references.add(reference);
+            }
+        }
+
+        public int removeReference(ClassLoaderReferenceType reference) {
+            synchronized (this) {
+                references.remove(reference);
+                return references.size();
+            }
         }
     }
 }

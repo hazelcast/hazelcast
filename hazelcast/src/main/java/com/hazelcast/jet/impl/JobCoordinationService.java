@@ -45,6 +45,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.execution.DoneItem;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
@@ -106,6 +107,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MASTER;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
@@ -1049,7 +1051,7 @@ public class JobCoordinationService {
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
         JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
-        ClassLoader classLoader = jobClassLoaderService.getClassLoader(jobConfig, jobId);
+        ClassLoader classLoader = jobClassLoaderService.getOrCreateClassLoader(jobConfig, jobId, MASTER);
         try {
             jobClassLoaderService.prepareProcessorClassLoaders(jobId);
             return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);

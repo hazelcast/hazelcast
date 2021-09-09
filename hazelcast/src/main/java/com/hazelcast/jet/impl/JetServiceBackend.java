@@ -269,10 +269,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         throw new JobNotFoundException(jobId);
     }
 
-    public ClassLoader getClassLoader(long jobId) {
-        return getJobClassLoaderService().getClassLoader(getJobConfig(jobId), jobId);
-    }
-
     public void handlePacket(Packet packet) {
         try {
             networking.handle(packet);

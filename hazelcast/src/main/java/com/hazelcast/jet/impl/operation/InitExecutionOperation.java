@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -36,6 +37,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MEMBER;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 
@@ -139,10 +141,11 @@ public class InitExecutionOperation extends AsyncJobOperation {
             return getNodeEngine().getSerializationService().toObject(planBlob);
         } else {
             JetServiceBackend service = getJetServiceBackend();
+            JobConfig jobConfig = service.getJobConfig(jobId());
             JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
 
             try {
-                ClassLoader cl = service.getClassLoader(jobId());
+                ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), MEMBER);
 
                 jobClassloaderService.prepareProcessorClassLoaders(jobId());
                 return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);

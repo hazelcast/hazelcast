@@ -101,7 +101,7 @@ public final class ExecutionPlanBuilder {
 
             JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
             JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
-            ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobConfig, jobId);
+            ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
             try {
                 doWithClassLoader(processorClassLoader, () ->
                         metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,

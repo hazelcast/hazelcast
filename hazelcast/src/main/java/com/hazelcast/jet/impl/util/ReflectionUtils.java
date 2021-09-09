@@ -78,6 +78,19 @@ public final class ReflectionUtils {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T readFieldOrNull(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            if (!field.isAccessible()) {
+                field.setAccessible(true);
+            }
+            return (T) field.get(object);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Reads a value of a static field. In case of any exceptions it returns
      * null.

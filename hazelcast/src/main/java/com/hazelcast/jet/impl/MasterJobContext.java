@@ -90,6 +90,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JobClassLoaderService.ClassLoaderReferenceType.MASTER;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.SnapshotValidator.validateSnapshot;
 import static com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate.RESTART;
@@ -282,7 +283,8 @@ public class MasterJobContext {
                 // requested termination mode is RESTART, ignore it because we are just starting
                 requestedTerminationMode = null;
             }
-            ClassLoader classLoader = mc.getJetServiceBackend().getClassLoader(mc.jobId());
+            ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
+                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), MASTER);
             DAG dag;
             JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             try {
@@ -631,6 +633,7 @@ public class MasterJobContext {
     }
 
     void finalizeJob(@Nullable Throwable failure) {
+        logger.fine("finalizing job " + idToString(mc.jobId()), new RuntimeException());
         mc.coordinationService().submitToCoordinatorThread(() -> {
             final Runnable nonSynchronizedAction;
             mc.lock();
@@ -641,7 +644,7 @@ public class MasterJobContext {
                     return;
                 }
                 completeVertices(failure);
-                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId());
+                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), MASTER);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
                         ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
