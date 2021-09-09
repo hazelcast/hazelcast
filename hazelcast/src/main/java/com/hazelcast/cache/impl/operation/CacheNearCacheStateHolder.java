@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.services.ObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -44,12 +45,12 @@ public class CacheNearCacheStateHolder implements IdentifiedDataSerializable {
 
     private UUID partitionUuid;
     private List<Object> cacheNameSequencePairs = emptyList();
-    private CacheReplicationOperation cacheReplicationOperation;
+    private Operation cacheReplicationOperation;
 
     public CacheNearCacheStateHolder() {
     }
 
-    public void setCacheReplicationOperation(CacheReplicationOperation cacheReplicationOperation) {
+    public void setCacheReplicationOperation(Operation cacheReplicationOperation) {
         this.cacheReplicationOperation = cacheReplicationOperation;
     }
 

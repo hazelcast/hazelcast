@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.nearcache.NearCacheStats;
 
 /**
@@ -203,4 +204,10 @@ public interface CacheStatistics {
      * @return the Near Cache statistics
      */
     NearCacheStats getNearCacheStatistics();
+
+    /**
+     * @return replication statistics.
+     * @since 5.0
+     */
+    LocalReplicationStats getReplicationStats();
 }
