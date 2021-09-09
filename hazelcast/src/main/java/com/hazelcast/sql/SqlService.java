@@ -26,10 +26,11 @@ import java.util.List;
 /**
  * A service to execute SQL statements.
  * <p>
- * If this cluster has Jet enabled, a statement can be executed by SQL backend as Jet job.
- * The {@code hazelcast-sql} must be in the classpath, otherwise an exception will be thrown.
+ * In order to use the service, Jet engine must be enabled - SQL statements are executed as
+ * Jet jobs. On members, the {@code hazelcast-sql.jar} must be on the member's classpaths,
+ * otherwise an exception will be thrown; on client, it is not necessary.
  * <p>
- * The text below summarizes features supported by the default SQL engine, based on Jet jobs.
+ * The text below summarizes features supported by the SQL engine.
  *
  * <h1>Overview</h1>
  * Hazelcast is able to execute distributed SQL queries over the following entities:
@@ -46,7 +47,8 @@ import java.util.List;
  * schema is included into a default search path, therefore an IMap could be referenced in an SQL statement with or without the
  * schema name.
  * <h2>Column resolution</h2>
- * Every table backed by an IMap should explicitly defined by creating a {@link com.hazelcast.sql.impl.schema.Mapping}.
+ * Before you can access an IMap, a <em>mapping</em> has to be created first. See the reference manual
+ * for the CREATE MAPPING command.
  * <p>
  * Columns are extracted from objects as follows:
  * <ul>
