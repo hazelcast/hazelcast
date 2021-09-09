@@ -85,6 +85,7 @@ import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder;
@@ -114,6 +115,7 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.map.EntryProcessor;
@@ -2191,4 +2193,22 @@ public class ClientMapProxy<K, V> extends ClientProxy
         }
     }
 
+    @Override
+    public void replaceAll(@Nonnull BiFunction<? super K, ? super V, ? extends V> function) {
+        checkNotNull(function, NULL_BIFUNCTION_IS_NOT_ALLOWED);
+        replaceAllInternal(function);
+    }
+
+    protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
+        if (SerializationUtil.isClassStaticAndSerializable(function)) {
+            int partitionCount = getContext().getPartitionService().getPartitionCount();
+            Data functionAsData = toData(function);
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
+                new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+            }
+        } else {
+            IMap.super.replaceAll(function);
+        }
+    }
 }
