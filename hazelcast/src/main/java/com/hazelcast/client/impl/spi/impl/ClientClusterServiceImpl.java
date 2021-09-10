@@ -285,7 +285,7 @@ public class ClientClusterServiceImpl
                     .uuid(memberInfo.getUuid())
                     .attributes(memberInfo.getAttributes())
                     .liteMember(memberInfo.isLiteMember())
-                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion()).build();
+                    .memberListJoinVersion(memberInfo.getMemberListJoinVersion());
             newMembers.put(memberInfo.getUuid(), memberBuilder.build());
         }
         return new MemberListSnapshot(memberListVersion, newMembers);
