@@ -152,10 +152,6 @@ public class ExpirySystem {
         }
     }
 
-    // TODO
-    // - add lastUpdateTime to update
-    // - add related test
-    // - throw exception as in 4.2
     private void addExpirableKey(Data key, long ttlMillis, long maxIdleMillis,
                                  long expirationTime, long lastUpdateTime) {
         if (expirationTime == Long.MAX_VALUE) {
@@ -197,8 +193,8 @@ public class ExpirySystem {
                                                      long maxIdleMillis, long ttlMillis) {
         if (lastUpdateTime == UNSET && isTtlOrMaxIdleConfigured(ttlMillis)
                 && isTtlOrMaxIdleConfigured(maxIdleMillis) && ttlMillis > maxIdleMillis) {
-            String message = "Map `%s` has timeToLiveSeconds `%d` which is greater than maxIdleSeconds `%d`, " +
-                    "for this configuration to work, please set `perEntryStatsEnabled` field of map-config to `true`.";
+            String message = "Map `%s` has timeToLiveSeconds `%d` which is greater than maxIdleSeconds `%d`, "
+                    + "for this configuration to work, please set `perEntryStatsEnabled` field of map-config to `true`.";
             throw new UnsupportedOperationException(String.format(message, mapName,
                     MILLISECONDS.toSeconds(ttlMillis), MILLISECONDS.toSeconds(maxIdleMillis)));
         }
