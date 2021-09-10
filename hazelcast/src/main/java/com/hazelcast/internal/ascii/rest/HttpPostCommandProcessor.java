@@ -190,13 +190,12 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleBackup(HttpPostCommand cmd, boolean deprecated) throws Throwable {
         decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().backup();
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("Deprecation", "true");
-        headers.put("Warning", "299 - \"Deprecated API\". Please use /hazelcast/rest/management/cluster/backup instead."
-                + " This API will be removed in future releases.");
-
         if (deprecated) {
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Type", "application/json");
+            headers.put("Deprecation", "true");
+            headers.put("Warning", "299 - \"Deprecated API\". Please use /hazelcast/rest/management/cluster/backup"
+                    + " instead. This API will be removed in future releases.");
             cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
         } else {
             prepareResponse(cmd, response(SUCCESS));
@@ -206,12 +205,13 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private void handleBackupInterrupt(HttpPostCommand cmd, boolean deprecated) throws Throwable {
         decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
-        Map<String, Object> headers = new HashMap<>();
-        headers.put("Content-Type", CONTENT_TYPE_JSON);
-        headers.put("Deprecation", "true");
-        headers.put("Warning", "299 - \"Deprecated API\". Please use /hazelcast/rest/management/cluster/backupInterrupt instead."
-                + " This API will be removed in future releases.");
         if (deprecated) {
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Type", CONTENT_TYPE_JSON);
+            headers.put("Deprecation", "true");
+            headers.put("Warning", "299 - \"Deprecated API\". Please use"
+                    + " /hazelcast/rest/management/cluster/backupInterrupt instead. This API will be removed"
+                    + " in future releases.");
             cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
         } else {
             prepareResponse(cmd, response(SUCCESS));
