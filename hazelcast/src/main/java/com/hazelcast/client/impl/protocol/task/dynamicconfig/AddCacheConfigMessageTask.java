@@ -86,6 +86,9 @@ public class AddCacheConfigMessageTask
         config.setValueType(parameters.valueType);
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setWriteThrough(parameters.writeThrough);
+        if (parameters.isMerkleTreeConfigExists) {
+            config.setMerkleTreeConfig(parameters.merkleTreeConfig);
+        }
         return config;
     }
 

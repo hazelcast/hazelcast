@@ -207,4 +207,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
 
     Semaphore getNodeWideLoadedKeyLimiter();
+
+    /**
+     * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
+     *          otherwise {@code false}.
+     */
+    default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
+        return false;
+    }
 }
