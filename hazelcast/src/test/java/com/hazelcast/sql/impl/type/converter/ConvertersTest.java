@@ -1084,7 +1084,6 @@ public class ConvertersTest {
     private static final class MockConverter extends Converter {
 
         private QueryDataTypeFamily invoked;
-        private boolean invokedSelf;
 
         private MockConverter() {
             super(-1, OBJECT);
@@ -1195,17 +1194,11 @@ public class ConvertersTest {
 
         @Override
         public Object convertToSelf(Converter converter, Object val) {
-            invokedSelf = true;
-
             return val;
         }
 
         private QueryDataTypeFamily getInvoked() {
             return invoked;
-        }
-
-        private boolean isInvokedSelf() {
-            return invokedSelf;
         }
     }
 }

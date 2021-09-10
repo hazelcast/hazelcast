@@ -162,7 +162,8 @@ public class KafkaSqlConnector implements SqlConnector {
                         table.paths(),
                         table.types(),
                         table.keyUpsertDescriptor(),
-                        table.valueUpsertDescriptor()
+                        table.valueUpsertDescriptor(),
+                        false
                 )
         );
 

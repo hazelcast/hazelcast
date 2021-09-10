@@ -75,7 +75,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
 
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         initializeWithClient(1, config(), clientConfig());
     }
 

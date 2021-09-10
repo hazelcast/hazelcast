@@ -35,7 +35,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call() {
         SqlInternalService service = nodeEngine.getSqlService().getInternalService();
 
         return service.getClientStateRegistry().fetch(
@@ -100,7 +100,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.queryId, parameters.cursorBufferSize } ;
+        return new Object[]{parameters.queryId, parameters.cursorBufferSize};
     }
 
     @Override

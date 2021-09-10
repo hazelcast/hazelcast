@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -151,9 +151,5 @@ public abstract class StringFunctionIntegrationTestSupport extends ExpressionTes
         String sql = "SELECT " + functionName() + "(?) FROM map";
 
         checkFailure0(sql, SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, typeInErrorMessage), param);
-    }
-
-    protected static Object[] params(Object... params) {
-        return params;
     }
 }

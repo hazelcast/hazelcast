@@ -48,6 +48,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -75,6 +76,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -96,6 +98,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -117,6 +120,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -140,6 +144,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 2);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
 
@@ -161,6 +166,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 2);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
 
@@ -189,6 +195,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -207,6 +214,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -226,6 +234,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -247,6 +256,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -267,6 +277,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -285,6 +296,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 3);
@@ -306,6 +318,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -328,6 +341,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -357,6 +371,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -375,11 +390,13 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName1 = randomName();
+        createMapping(mapName1, int.class, String.class);
         instance().getMap(mapName1).put(1, "value-1.1");
         instance().getMap(mapName1).put(2, "value-1.2");
         instance().getMap(mapName1).put(3, "value-1.3");
 
         String mapName2 = randomName();
+        createMapping(mapName2, int.class, String.class);
         instance().getMap(mapName2).put(1, "value-2.1");
         instance().getMap(mapName2).put(2, "value-2.2");
         instance().getMap(mapName2).put(3, "value-2.3");
@@ -410,6 +427,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, Person.class, PersonId.class);
         instance().getMap(mapName).put(new Person(null, "value-1"), new PersonId());
         instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
         instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
@@ -434,6 +452,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, Person.class, PersonId.class);
         instance().getMap(mapName).put(new Person(1, null), new PersonId());
         instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
         instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
@@ -458,6 +477,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, Person.class, PersonId.class);
         instance().getMap(mapName).put(new Person(1, "value-1"), new PersonId());
         instance().getMap(mapName).put(new Person(2, "value-2"), new PersonId());
         instance().getMap(mapName).put(new Person(3, "value-3"), new PersonId());
@@ -485,6 +505,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, PersonId.class, Person.class);
         instance().getMap(mapName).put(new PersonId(1), new Person(0, "value-1"));
         instance().getMap(mapName).put(new PersonId(2), new Person(0, "value-2"));
         instance().getMap(mapName).put(new PersonId(3), new Person(0, "value-3"));
@@ -506,6 +527,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, Person.class);
         instance().getMap(mapName).put(1, new Person(0, "value-1"));
         instance().getMap(mapName).put(2, new Person(2, "value-2"));
         instance().getMap(mapName).put(3, new Person(0, "value-3"));
@@ -524,6 +546,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 4);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -542,6 +565,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, short.class, String.class);
         instance().getMap(mapName).put((short) 1, "value-1");
         instance().getMap(mapName).put((short) 2, "value-2");
         instance().getMap(mapName).put((short) 3, "value-3");
@@ -563,6 +587,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 3);
 
         String mapName = randomName();
+        createMapping(mapName, long.class, String.class);
         instance().getMap(mapName).put(1L, "value-1");
         instance().getMap(mapName).put(2L, "value-2");
         instance().getMap(mapName).put(3L, "value-3");
@@ -584,6 +609,7 @@ public class SqlJoinTest extends SqlTestSupport {
         TestBatchSqlConnector.create(sqlService, leftName, 1);
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
 
         assertThatThrownBy(() ->
@@ -621,6 +647,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -649,6 +676,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -677,6 +705,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 3);
@@ -705,6 +734,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 3);
@@ -733,6 +763,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 2);
@@ -762,6 +793,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 2);
@@ -790,6 +822,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
         instance().getMap(mapName).put("value-1", 1);
         instance().getMap(mapName).put("value-2", 2);
         instance().getMap(mapName).put("value-3", 3);
@@ -821,6 +854,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");
@@ -852,6 +886,7 @@ public class SqlJoinTest extends SqlTestSupport {
         );
 
         String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
         instance().getMap(mapName).put(1, "value-1");
         instance().getMap(mapName).put(2, "value-2");
         instance().getMap(mapName).put(3, "value-3");

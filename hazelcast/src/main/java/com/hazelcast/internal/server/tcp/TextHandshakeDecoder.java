@@ -26,8 +26,8 @@ import java.nio.ByteBuffer;
 public class TextHandshakeDecoder
         extends SingleProtocolDecoder {
 
-    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next) {
-        super(supportedProtocol, new InboundHandler[] {next}, null);
+    public TextHandshakeDecoder(ProtocolType supportedProtocol, InboundHandler next, SingleProtocolEncoder encoder) {
+        super(supportedProtocol, next, encoder);
     }
 
     @Override

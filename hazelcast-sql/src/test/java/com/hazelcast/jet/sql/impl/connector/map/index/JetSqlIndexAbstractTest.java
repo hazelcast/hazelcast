@@ -23,18 +23,18 @@ import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlStatement;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,9 +52,6 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
-import static com.hazelcast.sql.impl.SqlTestSupport.getLocalKeys;
-import static com.hazelcast.sql.impl.SqlTestSupport.getMapContainer;
-import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.and;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.eq_2;
@@ -73,6 +70,7 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicate
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.neq_2;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionPredicates.or;
+import static com.hazelcast.sql.impl.schema.map.MapTableUtils.getPartitionedMapIndexes;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -112,6 +110,7 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         // Start members if needed
         valueClass = ExpressionBiValue.createBiClass(f1, f2);
 
+        createMapping(mapName, int.class, valueClass);
         MapConfig mapConfig = getMapConfig();
         instance().getConfig().addMapConfig(mapConfig);
         map = instance().getMap(mapName);
@@ -462,7 +461,7 @@ public abstract class JetSqlIndexAbstractTest extends JetSqlIndexTestSupport {
         HazelcastTable table = partitionedTable(
                 mapName,
                 mapTableFields,
-                getPartitionedMapIndexes(getMapContainer(map), mapTableFields),
+                getPartitionedMapIndexes(mapContainer(map), mapTableFields),
                 map.size()
         );
         OptimizerTestSupport.Result optimizationResult = optimizePhysical(sql, parameterTypes, table);

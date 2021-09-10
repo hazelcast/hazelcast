@@ -88,7 +88,7 @@ final class MetadataJsonResolver implements KvMetadataResolver {
 
             fields.add(new MapTableField(name, type, false, path));
         }
-        maybeAddDefaultField(isKey, resolvedFields, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,

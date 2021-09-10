@@ -31,6 +31,7 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
@@ -175,7 +176,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
-            memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
+            Connection conn = getMemberConnection(nodeEngine, destAddr);
+            if (conn == null) {
+                throw new TopologyChangedException("no connection to job participant: " + destAddr);
+            }
+            memberConnections.put(destAddr, conn);
         }
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :

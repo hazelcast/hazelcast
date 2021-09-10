@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.partition.LocalReplicationStats;
 import com.hazelcast.query.LocalIndexStats;
 import com.hazelcast.instance.LocalInstanceStats;
 import com.hazelcast.internal.monitor.MemberState;

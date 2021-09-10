@@ -71,6 +71,8 @@ import static com.hazelcast.jet.hadoop.impl.CsvInputFormat.CSV_INPUT_FORMAT_FIEL
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_INPUT_FORMAT_BEAN_CLASS;
 import static com.hazelcast.jet.hadoop.impl.JsonInputFormat.JSON_MULTILINE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -153,8 +155,13 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
             }
 
             @Override
-            public Permission permission() {
-                return ConnectorPermission.file(fsc.getPath(), ACTION_READ);
+            public List<Permission> permissions() {
+                String keyFile = fsc.getOptions().get("google.cloud.auth.service.account.json.keyfile");
+                if (keyFile != null) {
+                    return asList(ConnectorPermission.file(keyFile, ACTION_READ),
+                            ConnectorPermission.file(fsc.getPath(), ACTION_READ));
+                }
+                return singletonList(ConnectorPermission.file(fsc.getPath(), ACTION_READ));
             }
         };
     }

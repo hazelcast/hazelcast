@@ -185,7 +185,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     private ClassLoader parentClassLoader(JobConfig config) {
-        return config.getClassLoaderFactory() != null
+        // config can be null for light jobs initialized after receiving a packet, but before the
+        // InitExecutionOperation was received. We can ignore the classLoaderFactory, because
+        // it's not supported anyway for light jobs.
+        return config != null && config.getClassLoaderFactory() != null
                 ? config.getClassLoaderFactory().getJobClassLoader()
                 : nodeEngine.getConfigClassLoader();
     }

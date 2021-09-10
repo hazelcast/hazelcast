@@ -42,7 +42,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call() {
         SqlSecurityContext sqlSecurityContext = prepareSecurityContext();
         nodeEngine.getSqlService().getInternalService().getClientStateRegistry()
                 .register(endpoint.getUuid(), parameters.queryId);
@@ -78,16 +78,16 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
             SqlPage page = sqlService.getInternalService().getClientStateRegistry().initResultAndFetch(
-                result,
-                parameters.cursorBufferSize,
-                serializationService
+                    result,
+                    parameters.cursorBufferSize,
+                    serializationService
             );
 
             return SqlExecuteCodec.encodeResponse(
-                result.getRowMetadata().getColumns(),
-                page,
-                -1,
-                null
+                    result.getRowMetadata().getColumns(),
+                    page,
+                    -1,
+                    null
             );
         }
     }
@@ -111,10 +111,10 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 SqlClientUtils.exceptionToClientError(logger, (Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlExecuteCodec.encodeResponse(
-            null,
-            null,
-            -1,
-            error
+                null,
+                null,
+                -1,
+                error
         );
     }
 
@@ -135,14 +135,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
     @Override
     public Object[] getParameters() {
-        return new Object[] {
-            parameters.sql,
-            parameters.parameters,
-            parameters.timeoutMillis,
-            parameters.cursorBufferSize,
-            parameters.schema,
-            parameters.queryId
-        } ;
+        return new Object[]{
+                parameters.sql,
+                parameters.parameters,
+                parameters.timeoutMillis,
+                parameters.cursorBufferSize,
+                parameters.schema,
+                parameters.queryId
+        };
     }
 
     @Override

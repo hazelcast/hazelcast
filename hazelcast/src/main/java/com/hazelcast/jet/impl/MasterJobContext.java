@@ -597,10 +597,16 @@ public class MasterJobContext {
                     .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
         } else {
             if (error instanceof ExecutionNotFoundException) {
-                // If the StartExecutionOperation didn't find the execution, it means that we must have cancelled it.
-                // Let's pretend that the StartExecutionOperation returned JobTerminateRequestedException
-                assert requestedTerminationMode != null && !requestedTerminationMode.isWithTerminalSnapshot();
-                error = new JobTerminateRequestedException(requestedTerminationMode);
+                // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
+                if (requestedTerminationMode != null) {
+                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                    // to JobTerminateRequestedException.
+                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
+                }
+                // The cancellation can also happen if some participant left and
+                // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
+                // We keep this (and possibly other) exceptions as they are
+                // and let the execution complete with failure.
             }
             finalizeJob(error);
         }
