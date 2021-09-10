@@ -16,10 +16,12 @@
 
 package com.hazelcast.map.impl.record;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -37,15 +39,26 @@ public enum RecordReaderWriter {
         void writeRecord(ObjectDataOutput out, Record record, Data dataValue,
                          ExpiryMetadata expiryMetadata) throws IOException {
             writeData(out, dataValue);
-            out.writeInt(expiryMetadata.getRawTtl());
-            out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(record.getRawCreationTime());
-            out.writeInt(record.getRawLastAccessTime());
-            out.writeInt(record.getRawLastUpdateTime());
-            out.writeInt(record.getHits());
-            out.writeLong(record.getVersion());
-            out.writeInt(record.getRawLastStoredTime());
-            out.writeInt(expiryMetadata.getRawExpirationTime());
+            // RU_COMPAT_4_2
+            Version version = out.getVersion();
+            if (version.isGreaterOrEqual(Versions.V5_0)) {
+                out.writeInt(record.getRawCreationTime());
+                out.writeInt(record.getRawLastAccessTime());
+                out.writeInt(record.getRawLastUpdateTime());
+                out.writeInt(record.getHits());
+                out.writeInt(record.getVersion());
+                out.writeInt(record.getRawLastStoredTime());
+            } else {
+                out.writeInt(expiryMetadata.getRawTtl());
+                out.writeInt(expiryMetadata.getRawMaxIdle());
+                out.writeInt(record.getRawCreationTime());
+                out.writeInt(record.getRawLastAccessTime());
+                out.writeInt(record.getRawLastUpdateTime());
+                out.writeInt(record.getHits());
+                out.writeLong(record.getVersion());
+                out.writeInt(record.getRawLastStoredTime());
+                out.writeInt(expiryMetadata.getRawExpirationTime());
+            }
         }
 
         @Override
@@ -53,15 +66,26 @@ public enum RecordReaderWriter {
                                  ExpiryMetadata expiryMetadata) throws IOException {
             Record record = new DataRecordWithStats();
             record.setValue(readData(in));
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setRawMaxIdle(in.readInt());
-            record.setRawCreationTime(in.readInt());
-            record.setRawLastAccessTime(in.readInt());
-            record.setRawLastUpdateTime(in.readInt());
-            record.setHits(in.readInt());
-            record.setVersion(longToIntVersion(in.readLong()));
-            record.setRawLastStoredTime(in.readInt());
-            expiryMetadata.setRawExpirationTime(in.readInt());
+            // RU_COMPAT_4_2
+            Version version = in.getVersion();
+            if (version.isGreaterOrEqual(Versions.V5_0)) {
+                record.setRawCreationTime(in.readInt());
+                record.setRawLastAccessTime(in.readInt());
+                record.setRawLastUpdateTime(in.readInt());
+                record.setHits(in.readInt());
+                record.setVersion(in.readInt());
+                record.setRawLastStoredTime(in.readInt());
+            } else {
+                expiryMetadata.setRawTtl(in.readInt());
+                expiryMetadata.setRawMaxIdle(in.readInt());
+                record.setRawCreationTime(in.readInt());
+                record.setRawLastAccessTime(in.readInt());
+                record.setRawLastUpdateTime(in.readInt());
+                record.setHits(in.readInt());
+                record.setVersion(longToIntVersion(in.readLong()));
+                record.setRawLastStoredTime(in.readInt());
+                expiryMetadata.setRawExpirationTime(in.readInt());
+            }
 
             return record;
         }
@@ -73,9 +97,11 @@ public enum RecordReaderWriter {
                          ExpiryMetadata expiryMetadata) throws IOException {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
-            out.writeInt(expiryMetadata.getRawTtl());
-            out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(expiryMetadata.getRawExpirationTime());
+            // RU_COMPAT_4_2
+            Version version = out.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.write(out);
+            }
         }
 
         @Override
@@ -84,9 +110,11 @@ public enum RecordReaderWriter {
             Record record = new SimpleRecord();
             record.setValue(readData(in));
             record.setVersion(in.readInt());
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setRawMaxIdle(in.readInt());
-            expiryMetadata.setRawExpirationTime(in.readInt());
+            // RU_COMPAT_4_2
+            Version version = in.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.read(in);
+            }
 
             return record;
         }
@@ -99,9 +127,11 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getRawLastAccessTime());
-            out.writeInt(expiryMetadata.getRawTtl());
-            out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(expiryMetadata.getRawExpirationTime());
+            // RU_COMPAT_4_2
+            Version version = out.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.write(out);
+            }
         }
 
         @Override
@@ -111,9 +141,11 @@ public enum RecordReaderWriter {
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setRawLastAccessTime(in.readInt());
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setRawMaxIdle(in.readInt());
-            expiryMetadata.setRawExpirationTime(in.readInt());
+            // RU_COMPAT_4_2
+            Version version = in.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.read(in);
+            }
 
             return record;
         }
@@ -126,9 +158,11 @@ public enum RecordReaderWriter {
             writeData(out, dataValue);
             out.writeInt(record.getVersion());
             out.writeInt(record.getHits());
-            out.writeInt(expiryMetadata.getRawTtl());
-            out.writeInt(expiryMetadata.getRawMaxIdle());
-            out.writeInt(expiryMetadata.getRawExpirationTime());
+            // RU_COMPAT_4_2
+            Version version = out.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.write(out);
+            }
         }
 
         @Override
@@ -138,9 +172,11 @@ public enum RecordReaderWriter {
             record.setValue(readData(in));
             record.setVersion(in.readInt());
             record.setHits(in.readInt());
-            expiryMetadata.setRawTtl(in.readInt());
-            expiryMetadata.setRawMaxIdle(in.readInt());
-            expiryMetadata.setRawExpirationTime(in.readInt());
+            // RU_COMPAT_4_2
+            Version version = in.getVersion();
+            if (!version.isGreaterOrEqual(Versions.V5_0)) {
+                expiryMetadata.read(in);
+            }
 
             return record;
         }

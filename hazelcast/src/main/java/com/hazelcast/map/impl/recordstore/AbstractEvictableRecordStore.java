@@ -140,7 +140,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public boolean isExpired(Data key, long now, boolean backup) {
-         return hasExpired(key, now, backup) != NOT_EXPIRED;
+        return hasExpired(key, now, backup) != NOT_EXPIRED;
     }
 
     @Override
@@ -180,11 +180,12 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
             getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime(), now);
+                    maxIdle, mergingEntry.getExpirationTime(), now, mergingEntry.getLastUpdateTime());
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
             getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(), now);
+                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
+                    now, mergingEntry.getLastUpdateTime());
         }
     }
 
