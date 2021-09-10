@@ -270,9 +270,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 };
                 writers[index] = (w, o) -> {
                     Object rawValue = field.get(o);
-                    String value = rawValue == null ? null : ((Enum) rawValue).name()
+                    String value = rawValue == null ? null : ((Enum) rawValue).name();
                     w.writeString(name, value);
-                }
+                };
             } else if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
                 if (Byte.TYPE.equals(componentType)) {
@@ -381,7 +381,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                             if (stringArray != null) {
                                 enumArray = new Enum[stringArray.length];
                                 for (int i = 0; i < stringArray.length; i++) {
-                                    enumArray[i] = Enum.valueOf((Class<? extends Enum>) componentType, stringArray[i]);
+                                    enumArray[i] = stringArray[i] == null
+                                        ? null
+                                        : Enum.valueOf((Class<? extends Enum>) componentType, stringArray[i]);
                                 }
                             }
                             field.set(o, enumArray);
@@ -393,7 +395,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                         if (values != null) {
                             stringArray = new String[values.length];
                             for (int i = 0; i < values.length; i++) {
-                                stringArray[i] = values[i].name();
+                                stringArray[i] = values[i] == null ? null : values[i].name();
                             }
                         }
                        w.writeStringArray(name, stringArray);
