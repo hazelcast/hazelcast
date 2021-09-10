@@ -175,7 +175,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
 
-        this.mappingResolver = new MappingResolver.CompositeMappingResolver(new MetadataResolver(nodeEngine));
+        this.mappingResolver = new MetadataResolver(nodeEngine);
 
         MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(mappingCatalog);
