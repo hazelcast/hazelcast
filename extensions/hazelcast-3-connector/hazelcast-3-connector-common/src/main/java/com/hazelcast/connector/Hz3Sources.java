@@ -55,7 +55,7 @@ import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
  * jars.add("hazelcast-client-3.12.12.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
  * JobConfig config = new JobConfig();
- * config.addCustomClasspaths(mapStage.name(), jars)
+ * config.addCustomClasspaths(source.name(), jars)
  * }</pre>
  * <p>
  * The jars must exist in the directory specified by the

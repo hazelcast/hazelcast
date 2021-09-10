@@ -69,7 +69,7 @@ import java.util.concurrent.CompletableFuture;
  * jars.add("hazelcast-3.12.12.jar");
  * jars.add("hazelcast-client-3.12.12.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
- * config.addCustomClasspaths(source.name(), jars);
+ * config.addCustomClasspaths(mapStage.name(), jars);
  * } </pre>
  * The jars must exist in the directory specified by the
  * {@link ClusterProperty#PROCESSOR_CUSTOM_LIB_DIR}
