@@ -265,7 +265,7 @@ public class JobClassLoaderService {
         private final Map<String, ClassLoader> processorCls;
 
         // EnumSet is not thread-safe
-        // Interactions are synchronized on this. It's reference never leaks the JobClassLoaders instance.
+        // Interactions are synchronized on this. Its reference never leaks the JobClassLoaders instance.
         private final EnumSet<JobPhase> phases = EnumSet.noneOf(JobPhase.class);
 
         JobClassLoaders(

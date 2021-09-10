@@ -79,7 +79,7 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Returns value of private field. In case of any exceptions it returns null.
+     * Returns value of private field. In case of any exception it returns null.
      */
     @SuppressWarnings("unchecked")
     public static <T> T readFieldOrNull(Object object, String fieldName) {
