@@ -48,6 +48,16 @@ public final class ExpirationTimeSetter {
     }
 
     /**
+     * @param time value of ttl or maxIdle
+     * @return {@code true} if time parameter is
+     * between zero and long-max, this means ttl/maxIdle
+     * value is configured otherwise {@code false}
+     */
+    public static boolean isTtlOrMaxIdleConfigured(long time) {
+        return time > 0 && time < Long.MAX_VALUE;
+    }
+
+    /**
      * Decides if TTL millis should to be set on record.
      *
      * @param operationTTLMillis user provided TTL during operation call like put with TTL
