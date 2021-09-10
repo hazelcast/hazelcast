@@ -406,28 +406,14 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, UTF_ARRAY)) {
                             String[] stringArray = reader.readStringArray(name);
-                            Enum[] enumArray = null;
-                            if (stringArray != null) {
-                                enumArray = new Enum[stringArray.length];
-                                for (int i = 0; i < stringArray.length; i++) {
-                                    enumArray[i] = stringArray[i] == null
-                                        ? null
-                                        : Enum.valueOf((Class<? extends Enum>) componentType, stringArray[i]);
-                                }
-                            }
+                            Enum[] enumArray = enumsFromString((Class<? extends Enum>) componentType, stringArray);
                             field.set(o, enumArray);
                         }
                     };
                     writers[index] = (w, o) -> {
                         Enum[] values = (Enum[]) field.get(o);
-                        String[] stringArray = null;
-                        if (values != null) {
-                            stringArray = new String[values.length];
-                            for (int i = 0; i < values.length; i++) {
-                                stringArray[i] = values[i] == null ? null : values[i].name();
-                            }
-                        }
-                       w.writeStringArray(name, stringArray);
+                        String[] stringArray = enumsAsStrings(values);
+                        w.writeStringArray(name, stringArray);
                     };
                 } else {
                     readers[index] = (reader, schema, o) -> {
@@ -450,6 +436,30 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
         writersCache.put(clazz, writers);
         readersCache.put(clazz, readers);
+    }
+
+    private String[] enumsAsStrings(Enum[] values) {
+        String[] stringArray = null;
+        if (values != null) {
+            stringArray = new String[values.length];
+            for (int i = 0; i < values.length; i++) {
+                stringArray[i] = values[i] == null ? null : values[i].name();
+            }
+        }
+        return stringArray;
+    }
+
+    private Enum[] enumsFromString(Class<? extends Enum> componentType, String[] stringArray) {
+        Enum[] enumArray = null;
+        if (stringArray != null) {
+            enumArray = new Enum[stringArray.length];
+            for (int i = 0; i < stringArray.length; i++) {
+                enumArray[i] = stringArray[i] == null
+                    ? null
+                    : Enum.valueOf(componentType, stringArray[i]);
+            }
+        }
+        return enumArray;
     }
 
     interface Reader {
