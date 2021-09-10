@@ -265,10 +265,14 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                 readers[index] = (reader, schema, o) -> {
                     if (fieldExists(schema, name, UTF)) {
                         String enumName = reader.readString(name);
-                        field.set(o, Enum.valueOf((Class<? extends Enum>) type, enumName));
+                        field.set(o, enumName == null ? null : Enum.valueOf((Class<? extends Enum>) type, enumName));
                     }
                 };
-                writers[index] = (w, o) -> w.writeString(name, ((Enum) field.get(o)).name());
+                writers[index] = (w, o) -> {
+                    Object rawValue = field.get(o);
+                    String value = rawValue == null ? null : ((Enum) rawValue).name()
+                    w.writeString(name, value);
+                }
             } else if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
                 if (Byte.TYPE.equals(componentType)) {
