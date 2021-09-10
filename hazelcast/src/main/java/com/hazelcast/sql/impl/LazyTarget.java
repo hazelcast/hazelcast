@@ -44,14 +44,15 @@ public class LazyTarget implements IdentifiedDataSerializable {
     }
 
     public LazyTarget(Data serialized, Object deserialized) {
-        assert serialized != null || deserialized != null;
-
         this.serialized = serialized;
         this.deserialized = deserialized;
     }
 
     public Object deserialize(InternalSerializationService serializationService) {
         try {
+            if (serialized == null) {
+                return null;
+            }
             if (deserialized == null) {
                 deserialized = serializationService.toObject(serialized);
             }

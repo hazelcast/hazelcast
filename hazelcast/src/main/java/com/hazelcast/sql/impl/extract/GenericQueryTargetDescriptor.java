@@ -23,10 +23,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
+import java.io.Serializable;
+
 /**
  * Generic descriptor that imposes no limitations on the underlying target.
  */
-public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, IdentifiedDataSerializable {
+public class GenericQueryTargetDescriptor implements QueryTargetDescriptor, Serializable, IdentifiedDataSerializable {
 
     public static final GenericQueryTargetDescriptor DEFAULT = new GenericQueryTargetDescriptor();
 
