@@ -183,17 +183,21 @@ public class JobClassLoaderService {
     }
 
     /**
-     * Remove and close/shutdown job classloader and any processor classloaders for given job
+     * Try to remove and close/shutdown job classloader and any processor classloaders for given job
+     *
+     * If there are some
      */
     public void tryRemoveClassloadersForJob(long jobId, JobPhase phase) {
-        logger.fine("Try remove classloaders for job " + idToString(jobId) + ", reference " + phase);
+        logger.fine("Try remove classloaders for job " + idToString(jobId) + ", phase " + phase);
         classLoaders.compute(jobId, (k, jobClassLoaders) -> {
             if (jobClassLoaders == null) {
+                logger.fine("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
                 return null;
             }
 
-            if (jobClassLoaders.removePhase(phase) == 0) {
-                logger.fine("JobClassLoaders refCount = 0, removing classloaders");
+            int phaseCount = jobClassLoaders.removePhase(phase);
+            if (phaseCount == 0) {
+                logger.fine("JobClassLoaders phaseCount = 0, removing classloaders for jobId=" + idToString(jobId));
                 Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
                 if (processorCls != null) {
                     for (ClassLoader cl : processorCls.values()) {
@@ -208,9 +212,12 @@ public class JobClassLoaderService {
                 JetDelegatingClassLoader jobClassLoader = jobClassLoaders.jobClassLoader();
                 jobClassLoader.shutdown();
 
+                logger.fine("Finish JobClassLoaders phaseCount = 0," +
+                        " removing classloaders for jobId=" + idToString(jobId));
                 // Removes the item from the map
                 return null;
             } else {
+                logger.fine("JobClassLoaders refCount > 0, NOT removing classloaders for jobId=" + idToString(jobId));
                 return jobClassLoaders;
             }
         });
@@ -292,6 +299,13 @@ public class JobClassLoaderService {
                 phases.remove(phase);
                 return phases.size();
             }
+        }
+
+        @Override
+        public String toString() {
+            return "JobClassLoaders{" +
+                    "phases=" + phases +
+                    '}';
         }
     }
 }
