@@ -92,6 +92,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
@@ -187,6 +188,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         return new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
+    }
+
+    @Nullable
+    @Override
+    public String mappingDdl(String name) {
+        Mapping mapping = mappingResolver.resolve(name);
+        return mapping != null ? SqlCreateMapping.unparse(mapping) : null;
     }
 
     @Override

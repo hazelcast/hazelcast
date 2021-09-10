@@ -373,6 +373,7 @@ import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
@@ -846,6 +847,7 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
+import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -1834,6 +1836,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new SqlFetchMessageTask(cm, node, con));
         factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlCloseMessageTask(cm, node, con));
+        factories.put(SqlMappingDdlCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SqlMappingDdlTask(cm, node, con));
     }
 
     private void initializeSchemaFactories() {
