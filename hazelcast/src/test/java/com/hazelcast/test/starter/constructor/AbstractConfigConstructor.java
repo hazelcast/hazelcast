@@ -63,7 +63,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
             return cloneSplitBrainProtectionFunctionImplementation(thisConfigObject, otherConfigClass);
         }
 
-        if (thisConfigClass.getName().equals("com.hazelcast.jet.config.InstanceConfigDelegate")) {
+        if (thisConfigClass.getName().equals("com.hazelcast.jet.impl.config.DelegatingInstanceConfig")) {
             otherConfigClass = classloader.loadClass("com.hazelcast.jet.config.InstanceConfig");
         }
 

@@ -21,6 +21,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.impl.config.DelegatingInstanceConfig;
 
 import javax.annotation.Nonnull;
 
@@ -56,7 +57,7 @@ public class JetConfig {
      */
     private static final long MAX_PROCESSOR_ACCUMULATED_RECORDS = Long.MAX_VALUE;
 
-    private final InstanceConfigDelegate instanceConfig = new InstanceConfigDelegate(this);
+    private final DelegatingInstanceConfig instanceConfig = new DelegatingInstanceConfig(this);
 
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private boolean enabled;

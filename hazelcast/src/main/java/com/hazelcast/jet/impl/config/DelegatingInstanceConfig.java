@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.config;
+package com.hazelcast.jet.impl.config;
+
+import com.hazelcast.jet.config.InstanceConfig;
+import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
 
@@ -22,11 +25,11 @@ import javax.annotation.Nonnull;
  * This class is used to delegate the deprecated {@link InstanceConfig} method
  * calls to {@link JetConfig}.
  */
-public final class InstanceConfigDelegate extends InstanceConfig {
+public final class DelegatingInstanceConfig extends InstanceConfig {
 
     private final JetConfig jetConfig;
 
-    InstanceConfigDelegate(JetConfig jetConfig) {
+    public DelegatingInstanceConfig(JetConfig jetConfig) {
         this.jetConfig = jetConfig;
     }
 
