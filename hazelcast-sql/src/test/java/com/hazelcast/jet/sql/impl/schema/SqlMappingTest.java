@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.schema.model.Person;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Mapping;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,10 +30,13 @@ import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.function.ConsumerEx.noop;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class SqlMappingTest extends SqlTestSupport {
 
@@ -40,21 +44,57 @@ public class SqlMappingTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initializeWithClient(1, null, null);
         sqlService = instance().getSql();
     }
 
     @Test
     public void when_mappingIsNotCreated_then_itIsNotAvailable() {
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM map"))
+        assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
+                .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
+                .hasFieldOrPropertyWithValue("suggestion", null)
                 .hasMessageContaining("Object 'map' not found, did you forget to CREATE MAPPING?");
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM public.map"))
+        assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM public.map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
+                .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
+                .hasFieldOrPropertyWithValue("suggestion", null)
                 .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM hazelcast.public.map"))
+        assertThatThrownBy(() -> client().getSql().execute("SELECT * FROM hazelcast.public.map").forEach(noop()))
                 .isInstanceOf(HazelcastSqlException.class)
+                .hasFieldOrPropertyWithValue("code", SqlErrorCode.OBJECT_NOT_FOUND)
+                .hasFieldOrPropertyWithValue("suggestion", null)
                 .hasMessageContaining("Object 'map' not found within 'hazelcast.public', did you forget to CREATE MAPPING?");
+    }
+
+    @Test
+    public void when_mappingIsNotCreatedButIMapExists_then_suggestionIsProvided() {
+        try {
+            instance().getMap("map1").put(1, "value-1");
+            client().getSql().execute("SELECT * FROM map1").forEach(noop());
+            fail();
+        } catch (HazelcastSqlException e) {
+            client().getSql().execute(e.getSuggestion());
+            assertRowsAnyOrder("SELECT * FROM map1", singletonList(new Row(1, "value-1")));
+        }
+
+        try {
+            instance().getMap("map2").put(2, "value-2");
+            client().getSql().execute("SELECT * FROM public.map2").forEach(noop());
+            fail();
+        } catch (HazelcastSqlException e) {
+            client().getSql().execute(e.getSuggestion());
+            assertRowsAnyOrder("SELECT * FROM public.map2", singletonList(new Row(2, "value-2")));
+        }
+
+        try {
+            instance().getMap("map3").put(3, "value-3");
+            client().getSql().execute("SELECT * FROM hazelcast.public.map3").forEach(noop());
+            fail();
+        } catch (HazelcastSqlException e) {
+            client().getSql().execute(e.getSuggestion());
+            assertRowsAnyOrder("SELECT * FROM hazelcast.public.map3", singletonList(new Row(3, "value-3")));
+        }
     }
 
     @Test

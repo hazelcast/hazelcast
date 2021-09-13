@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.validate;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.parse.SqlCreateJob;
+import com.hazelcast.jet.sql.impl.parse.SqlCreateMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunction;
@@ -28,9 +29,15 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.runtime.CalciteContextException;
+import org.apache.calcite.runtime.ResourceUtil;
+import org.apache.calcite.runtime.Resources;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
@@ -51,10 +58,12 @@ import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.validate.SelectScope;
 import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
+import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorImplBridge;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.apache.calcite.util.Static;
 import org.apache.calcite.util.Util;
 
 import java.util.HashMap;
@@ -72,6 +81,9 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
  */
 public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
+    private static final String OBJECT_NOT_FOUND = ResourceUtil.key(Static.RESOURCE.objectNotFound(""));
+    private static final String OBJECT_NOT_FOUND_WITHIN = ResourceUtil.key(Static.RESOURCE.objectNotFoundWithin("", ""));
+
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
             .withSqlConformance(HazelcastSqlConformance.INSTANCE);
@@ -88,16 +100,23 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     /** Parameter values. */
     private final List<Object> arguments;
 
+    private final MappingResolver mappingResolver;
+
     private boolean isCreateJob;
     private boolean isInfiniteRows;
 
-    public HazelcastSqlValidator(SqlValidatorCatalogReader catalogReader, List<Object> arguments) {
+    public HazelcastSqlValidator(
+            SqlValidatorCatalogReader catalogReader,
+            List<Object> arguments,
+            MappingResolver mappingResolver
+    ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
         setTypeCoercion(new HazelcastTypeCoercion(this));
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;
+        this.mappingResolver = mappingResolver;
     }
 
     @Override
@@ -444,7 +463,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             if (converter == null) {
                 QueryDataType targetType =
                         HazelcastTypeUtils.toHazelcastType(rowType.getFieldList().get(i).getType().getSqlTypeName());
-                converter = AbstractParameterConverter.from(targetType,  i, parameterPositionMap.get(i));
+                converter = AbstractParameterConverter.from(targetType, i, parameterPositionMap.get(i));
             }
 
             res[i] = converter;
@@ -506,5 +525,21 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
      */
     public boolean isInfiniteRows() {
         return isInfiniteRows;
+    }
+
+    @Override
+    public CalciteContextException newValidationError(SqlNode node, Resources.ExInst<SqlValidatorException> e) {
+        assert node != null;
+
+        CalciteContextException exception = SqlUtil.newContextException(node.getParserPosition(), e);
+        if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
+            Object[] arguments = ResourceUtil.args(e);
+            String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
+            Mapping mapping = identifier != null ? mappingResolver.resolve(identifier) : null;
+            String sql = mapping != null ? SqlCreateMapping.unparse(mapping) : null;
+            String message = sql != null ? ValidatorResource.imapNotMapped(e.str(), identifier, sql) : e.str();
+            throw QueryException.error(SqlErrorCode.OBJECT_NOT_FOUND, message, exception, sql);
+        }
+        return exception;
     }
 }

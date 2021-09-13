@@ -35,9 +35,6 @@ public final class SqlErrorCode {
     /** A problem with partition distribution. */
     public static final int PARTITION_DISTRIBUTION = 1005;
 
-    /** An error caused by a concurrent destroy of a map. */
-    public static final int MAP_DESTROYED = 1006;
-
     /** Map loading is not finished yet. */
     public static final int MAP_LOADING_IN_PROGRESS = 1007;
 
@@ -46,6 +43,9 @@ public final class SqlErrorCode {
 
     /** An error caused by an attempt to query an index that is not valid. */
     public static final int INDEX_INVALID = 1009;
+
+    /** Object (mapping/table) not found. */
+    public static final int OBJECT_NOT_FOUND = 1010;
 
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;

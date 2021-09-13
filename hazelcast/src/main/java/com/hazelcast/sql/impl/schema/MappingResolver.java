@@ -14,30 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.optimizer;
-
-import com.hazelcast.sql.impl.schema.TableResolver;
+package com.hazelcast.sql.impl.schema;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 /**
- * Optimizer responsible for conversion of SQL string to executable plan.
+ * Generic interface that resolves mappings based on object name.
  */
-public interface SqlOptimizer {
+@FunctionalInterface
+public interface MappingResolver {
 
     @Nullable
-    default String mappingDdl(String name) {
-        return null;
-    }
-
-    List<TableResolver> tableResolvers();
-
-    /**
-     * Prepare SQL query.
-     *
-     * @param task Optimization task containing all necessary context.
-     * @return Prepared plan.
-     */
-    SqlPlan prepare(OptimizationTask task);
+    Mapping resolve(String name);
 }

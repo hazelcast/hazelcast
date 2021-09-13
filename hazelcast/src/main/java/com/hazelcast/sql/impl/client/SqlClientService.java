@@ -259,7 +259,13 @@ public class SqlClientService implements SqlService {
 
     private static HazelcastSqlException handleResponseError(SqlError error) {
         if (error != null) {
-            return new HazelcastSqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
+            return new HazelcastSqlException(
+                    error.getOriginatingMemberId(),
+                    error.getCode(),
+                    error.getMessage(),
+                    null,
+                    error.getSuggestion()
+            );
         } else {
             return null;
         }

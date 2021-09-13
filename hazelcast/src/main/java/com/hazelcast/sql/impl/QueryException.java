@@ -28,12 +28,24 @@ import java.util.UUID;
 public final class QueryException extends HazelcastException implements WrappableException<QueryException> {
 
     private final int code;
+    private final String suggestion;
     private final UUID originatingMemberId;
 
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
+        this(code, message, cause, null, originatingMemberId);
+    }
+
+    private QueryException(
+            int code,
+            String message,
+            Throwable cause,
+            String suggestion,
+            UUID originatingMemberId
+    ) {
         super(message, cause);
 
         this.code = code;
+        this.suggestion = suggestion;
         this.originatingMemberId = originatingMemberId;
     }
 
@@ -42,7 +54,7 @@ public final class QueryException extends HazelcastException implements Wrappabl
     }
 
     public static QueryException error(String message, Throwable cause) {
-        return error(SqlErrorCode.GENERIC, message, cause, null);
+        return error(SqlErrorCode.GENERIC, message, cause);
     }
 
     public static QueryException error(int code, String message) {
@@ -51,6 +63,10 @@ public final class QueryException extends HazelcastException implements Wrappabl
 
     public static QueryException error(int code, String message, Throwable cause) {
         return new QueryException(code, message, cause, null);
+    }
+
+    public static QueryException error(int code, String message, Throwable cause, String suggestion) {
+        return new QueryException(code, message, cause, suggestion, null);
     }
 
     public static QueryException error(int code, String message, UUID originatingMemberId) {
@@ -94,6 +110,13 @@ public final class QueryException extends HazelcastException implements Wrappabl
     }
 
     /**
+     * @return Suggested SQL statement to remediate experienced error.
+     */
+    public String getSuggestion() {
+        return suggestion;
+    }
+
+    /**
      * Get originator of the exception.
      *
      * @return ID of the member where the exception occurred or {@code null} if the exception was raised on a local member
@@ -105,6 +128,6 @@ public final class QueryException extends HazelcastException implements Wrappabl
 
     @Override
     public QueryException wrap() {
-        return new QueryException(code, getMessage(), this, originatingMemberId);
+        return new QueryException(code, getMessage(), this, suggestion, originatingMemberId);
     }
 }

@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
 import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryConverter;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -30,6 +29,8 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchema;
 import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.jdbc.HazelcastRootCalciteSchema;
@@ -92,24 +93,26 @@ public final class OptimizerContext {
             SqlCatalog schema,
             List<List<String>> searchPaths,
             List<Object> arguments,
-            int memberCount
+            int memberCount,
+            MappingResolver mappingResolver
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
-        return create(rootSchema, searchPaths, arguments, memberCount);
+        return create(rootSchema, searchPaths, arguments, memberCount, mappingResolver);
     }
 
     public static OptimizerContext create(
             HazelcastSchema rootSchema,
             List<List<String>> schemaPaths,
             List<Object> arguments,
-            int memberCount
+            int memberCount,
+            MappingResolver mappingResolver
     ) {
         DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
 
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, mappingResolver);
         VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
 
