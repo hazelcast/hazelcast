@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -78,7 +77,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicReference<CompletableFuture<Void>> shutdownFuture = new AtomicReference<>();
     private final JetConfig jetConfig;
 
-    private HazelcastInstance hazelcastInstance;
     private JetService jet;
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
@@ -101,12 +99,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public void init(NodeEngine engine, Properties hzProperties) {
         this.nodeEngine = (NodeEngineImpl) engine;
 
-        this.hazelcastInstance = engine.getHazelcastInstance();
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
-                nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
+                nodeEngine, jetConfig.getCooperativeThreadCount(), nodeEngine.getProperties()
         );
-        jobRepository = new JobRepository(hazelcastInstance);
+        jobRepository = new JobRepository(engine.getHazelcastInstance());
 
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
@@ -115,7 +112,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
                 nodeEngine.getLocalMember()));
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
-        networking = new Networking(engine, jobExecutionService, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
+        networking = new Networking(engine, jobExecutionService, jetConfig.getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
@@ -126,13 +123,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + jetConfig.getInstanceConfig().getCooperativeThreadCount());
+                + jetConfig.getCooperativeThreadCount());
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
         JetConfig jetConfig = config.getJetConfig();
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                .setBackupCount(jetConfig.getBackupCount())
                 // we query creationTime of resources maps
                 .setStatisticsEnabled(true);
 

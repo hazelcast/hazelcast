@@ -130,7 +130,6 @@ import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
@@ -1517,12 +1516,12 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(jetConfig.isEnabled());
         assertTrue(jetConfig.isResourceUploadEnabled());
 
-        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
-        assertEquals(4, instanceConfig.getCooperativeThreadCount());
-        assertEquals(2, instanceConfig.getBackupCount());
-        assertEquals(200, instanceConfig.getFlowControlPeriodMs());
-        assertEquals(20000, instanceConfig.getScaleUpDelayMillis());
-        assertFalse(instanceConfig.isLosslessRestartEnabled());
+        assertEquals(4, jetConfig.getCooperativeThreadCount());
+        assertEquals(2, jetConfig.getBackupCount());
+        assertEquals(200, jetConfig.getFlowControlPeriodMs());
+        assertEquals(20000, jetConfig.getScaleUpDelayMillis());
+        assertEquals(1000000, jetConfig.getMaxProcessorAccumulatedRecords());
+        assertFalse(jetConfig.isLosslessRestartEnabled());
 
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         assertEquals(2048, edgeConfig.getQueueSize());

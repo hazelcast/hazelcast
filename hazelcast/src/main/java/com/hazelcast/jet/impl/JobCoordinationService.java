@@ -238,7 +238,7 @@ public class JobCoordinationService {
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+                    int coopThreadCount = config.getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                         @Override public int defaultLocalParallelism() {
                             return coopThreadCount;
@@ -310,7 +310,7 @@ public class JobCoordinationService {
         if (jobDefinition instanceof DAG) {
             dag = (DAG) jobDefinition;
         } else {
-            int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+            int coopThreadCount = config.getCooperativeThreadCount();
             dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                 @Override public int defaultLocalParallelism() {
                     return coopThreadCount;
@@ -878,7 +878,7 @@ public class JobCoordinationService {
         }
 
         updateQuorumValues();
-        scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
+        scheduleScaleUp(config.getScaleUpDelayMillis());
     }
 
     void onMemberRemoved(UUID uuid) {
@@ -1059,7 +1059,7 @@ public class JobCoordinationService {
     }
 
     private String dagToJson(DAG dag) {
-        int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+        int coopThreadCount = config.getCooperativeThreadCount();
         return dag.toJson(coopThreadCount).toString();
     }
 

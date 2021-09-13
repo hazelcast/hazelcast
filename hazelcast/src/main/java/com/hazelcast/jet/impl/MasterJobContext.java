@@ -164,8 +164,7 @@ public class MasterJobContext {
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
         this.logger = logger;
-        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig()
-              .getInstanceConfig().getCooperativeThreadCount();
+        this.defaultParallelism = mc.getJetServiceBackend().getJetConfig().getCooperativeThreadCount();
         this.defaultQueueSize = mc.getJetServiceBackend().getJetConfig()
                 .getDefaultEdgeConfig().getQueueSize();
     }
