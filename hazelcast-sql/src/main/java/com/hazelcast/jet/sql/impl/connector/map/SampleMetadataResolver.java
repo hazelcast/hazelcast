@@ -86,6 +86,9 @@ final class SampleMetadataResolver {
                 return resolvePortable(classDefinition, key);
             } else if (target instanceof PortableGenericRecord) {
                 return resolvePortable(((PortableGenericRecord) target).getClassDefinition(), key);
+            } else if (ss.isCompactSerializable(target)) {
+                InternalGenericRecord record = ss.readAsInternalGenericRecord(ss.toData(target));
+                return resolveCompact(((CompactGenericRecord) record).getSchema(), key);
             } else if (target instanceof CompactGenericRecord) {
                 return resolveCompact(((CompactGenericRecord) target).getSchema(), key);
             } else if (target instanceof HazelcastJsonValue) {
