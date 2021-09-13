@@ -3371,8 +3371,7 @@
                       },
                       "required": [
                         "path",
-                        "password",
-                        "current-key-alias"
+                        "password"
                       ]
                     }
                   }
@@ -3544,8 +3543,7 @@
                       },
                       "required": [
                         "path",
-                        "password",
-                        "current-key-alias"
+                        "password"
                       ]
                     }
                   }
