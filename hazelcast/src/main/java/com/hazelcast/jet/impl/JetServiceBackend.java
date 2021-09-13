@@ -82,6 +82,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
+    private JobClassLoaderService jobClassLoaderService;
     private JobExecutionService jobExecutionService;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
@@ -105,8 +106,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         );
         jobRepository = new JobRepository(engine.getHazelcastInstance());
 
-        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
+        jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
@@ -199,6 +201,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.reset();
     }
 
+    // Overridden in EE with EnterpriseJobCoordinationService
     JobCoordinationService createJobCoordinationService() {
         return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
@@ -237,6 +240,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return jobCoordinationService;
     }
 
+    public JobClassLoaderService getJobClassLoaderService() {
+        return jobClassLoaderService;
+    }
+
     public JobExecutionService getJobExecutionService() {
         return jobExecutionService;
     }
@@ -257,10 +264,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
 
         throw new JobNotFoundException(jobId);
-    }
-
-    public ClassLoader getClassLoader(long jobId) {
-        return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
     public void handlePacket(Packet packet) {

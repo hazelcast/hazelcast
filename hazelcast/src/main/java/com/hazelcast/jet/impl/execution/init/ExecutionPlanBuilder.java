@@ -28,7 +28,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.Contexts.MetaSupplierCtx;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -100,8 +100,8 @@ public final class ExecutionPlanBuilder {
             ILogger logger = prefixedLogger(nodeEngine.getLogger(metaSupplier.getClass()), prefix);
 
             JetServiceBackend jetBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-            JobExecutionService jobExecutionService = jetBackend.getJobExecutionService();
-            ClassLoader processorClassLoader = jobExecutionService.getClassLoader(jobConfig, jobId);
+            JobClassLoaderService jobClassLoaderService = jetBackend.getJobClassLoaderService();
+            ClassLoader processorClassLoader = jobClassLoaderService.getClassLoader(jobId);
             try {
                 doWithClassLoader(processorClassLoader, () ->
                         metaSupplier.init(new MetaSupplierCtx(nodeEngine, jobId, executionId,

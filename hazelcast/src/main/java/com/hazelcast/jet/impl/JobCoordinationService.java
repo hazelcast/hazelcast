@@ -106,6 +106,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
@@ -1048,13 +1049,13 @@ public class JobCoordinationService {
     }
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
-        ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        JobExecutionService jetExecutionService = jetServiceBackend.getJobExecutionService();
+        JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
+        ClassLoader classLoader = jobClassLoaderService.getOrCreateClassLoader(jobConfig, jobId, COORDINATOR);
         try {
-            jetExecutionService.prepareProcessorClassLoaders(jobId, jobConfig);
+            jobClassLoaderService.prepareProcessorClassLoaders(jobId);
             return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
         } finally {
-            jetExecutionService.clearProcessorClassLoaders();
+            jobClassLoaderService.clearProcessorClassLoaders();
         }
     }
 
