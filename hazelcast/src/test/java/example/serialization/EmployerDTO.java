@@ -107,13 +107,13 @@ public class EmployerDTO {
 
     @Override
     public String toString() {
-        return "EmployerDTO{" +
-                "name='" + name + '\'' +
-                ", zcode=" + zcode +
-                ", hiringStatus=" + hiringStatus +
-                ", ids=" + Arrays.toString(ids) +
-                ", singleEmployee=" + singleEmployee +
-                ", otherEmployees=" + Arrays.toString(otherEmployees) +
-                '}';
+        return "EmployerDTO{"
+                +"name='" + name + '\''
+                + ", zcode=" + zcode
+                + ", hiringStatus=" + hiringStatus
+                + ", ids=" + Arrays.toString(ids)
+                + ", singleEmployee=" + singleEmployee
+                + ", otherEmployees=" + Arrays.toString(otherEmployees)
+                + '}';
     }
 }
