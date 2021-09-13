@@ -85,7 +85,7 @@ public class SerializingGenericRecordCloner implements GenericRecordBuilder {
                     writer.write();
                 } else {
                     // Field is not overwritten. Write the field from the generic record.
-                    FieldID fieldID = field.getFieldID();
+                    FieldID fieldID = field.getType();
                     fieldOperations(fieldID).writeFieldFromRecordToWriter(cw, genericRecord, fieldName);
                 }
             }

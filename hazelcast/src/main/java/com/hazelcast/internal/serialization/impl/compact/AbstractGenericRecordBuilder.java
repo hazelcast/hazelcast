@@ -223,9 +223,9 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + "' for " + schema);
         }
-        if (!fd.getFieldID().equals(fieldID)) {
+        if (!fd.getType().equals(fieldID)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName
-                    + "' for " + schema + ", expected : " + fd.getFieldID() + ", given : " + fieldID);
+                    + "' for " + schema + ", expected : " + fd.getType() + ", given : " + fieldID);
         }
     }
 

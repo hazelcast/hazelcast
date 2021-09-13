@@ -140,7 +140,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
-            FieldID fieldID = fieldDescriptor.getFieldID();
+            FieldID fieldID = fieldDescriptor.getType();
             fieldOperations(fieldID).writeFieldFromRecordToWriter(writer, record, fieldName);
         }
         writer.end();

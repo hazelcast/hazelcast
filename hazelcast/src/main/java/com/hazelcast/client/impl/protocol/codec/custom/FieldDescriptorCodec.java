@@ -36,7 +36,7 @@ public final class FieldDescriptorCodec {
         clientMessage.add(BEGIN_FRAME.copy());
 
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
-        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getFieldID());
+        encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, fieldDescriptor.getType());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, fieldDescriptor.getFieldName());

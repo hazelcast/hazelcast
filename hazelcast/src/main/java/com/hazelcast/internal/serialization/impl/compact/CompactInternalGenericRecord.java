@@ -164,7 +164,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nonnull
     public FieldID getFieldID(@Nonnull String fieldName) {
-        return schema.getField(fieldName).getFieldID();
+        return schema.getField(fieldName).getType();
     }
 
     @Override
@@ -192,7 +192,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (field == null) {
             return false;
         }
-        return field.getFieldID().equals(type);
+        return field.getType().equals(type);
     }
 
     @Override
@@ -499,7 +499,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
-        if (fd.getFieldID() != fieldID) {
+        if (fd.getType() != fieldID) {
             throw new HazelcastSerializationException("Not a '" + fieldID + "' field: " + fieldName);
         }
         return fd;

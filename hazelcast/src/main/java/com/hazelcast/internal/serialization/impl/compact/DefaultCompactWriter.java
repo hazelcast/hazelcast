@@ -449,7 +449,7 @@ public class DefaultCompactWriter implements CompactWriter {
         if (field == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
-        if (!field.getFieldID().equals(fieldID)) {
+        if (!field.getType().equals(fieldID)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName + " for " + schema);
         }
         return field;

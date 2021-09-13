@@ -50,7 +50,7 @@ public class FieldDescriptor {
         this.bitOffset = bitOffset;
     }
 
-    public FieldID getFieldID() {
+    public FieldID getType() {
         return fieldID;
     }
 

@@ -61,7 +61,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nonnull
     @Override
     public FieldID getFieldID(@Nonnull String fieldName) {
-        return schema.getField(fieldName).getFieldID();
+        return schema.getField(fieldName).getType();
     }
 
     @Override
@@ -244,9 +244,9 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
-        if (!fd.getFieldID().equals(fieldID)) {
+        if (!fd.getType().equals(fieldID)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName + " for " + schema
-                    + ", expected : " + fd.getFieldID() + ", given : " + fieldID);
+                    + ", expected : " + fd.getType() + ", given : " + fieldID);
         }
     }
 

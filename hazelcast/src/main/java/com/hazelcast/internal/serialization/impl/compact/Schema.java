@@ -61,7 +61,7 @@ public class Schema implements IdentifiedDataSerializable {
         List<FieldDescriptor> variableSizeFields = new ArrayList<>();
 
         for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
-            FieldID fieldID = descriptor.getFieldID();
+            FieldID fieldID = descriptor.getType();
             if (fieldOperations(fieldID).typeSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
             } else {
@@ -74,13 +74,13 @@ public class Schema implements IdentifiedDataSerializable {
         }
 
         fixedSizeFields.sort(Comparator.comparingInt(
-                d -> fieldOperations(((FieldDescriptor) d).getFieldID()).typeSizeInBytes()).reversed()
+                d -> fieldOperations(((FieldDescriptor) d).getType()).typeSizeInBytes()).reversed()
         );
 
         int offset = 0;
         for (FieldDescriptor descriptor : fixedSizeFields) {
             descriptor.setOffset(offset);
-            offset += fieldOperations(descriptor.getFieldID()).typeSizeInBytes();
+            offset += fieldOperations(descriptor.getType()).typeSizeInBytes();
         }
 
         int bitOffset = 0;
@@ -167,7 +167,7 @@ public class Schema implements IdentifiedDataSerializable {
         Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
-            out.writeByte(descriptor.getFieldID().ordinal());
+            out.writeByte(descriptor.getType().ordinal());
         }
     }
 
