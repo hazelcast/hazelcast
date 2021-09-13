@@ -43,5 +43,4 @@ final class JarScanner {
     private static Predicate<Path> byFilename(String filename) {
         return path -> path.getFileName().toString().equals(filename);
     }
-
 }
