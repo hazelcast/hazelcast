@@ -2457,6 +2457,14 @@ hazelcast:
           actions:
             - create
             - destroy
+      ring-buffer:
+        - name: "*"
+          actions:
+            - all
+      connector:
+        - name: "*"
+          actions:
+            - all
     client-block-unmapped-actions: true
     security-interceptors:
       - com.your-package.YourSecurityInterceptorImplementation
