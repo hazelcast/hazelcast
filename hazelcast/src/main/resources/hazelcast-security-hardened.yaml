@@ -230,7 +230,7 @@ hazelcast:
     # map the client protocol authentication to one of the defined realms
     client-authentication:
       realm: simpleRealm-clients
-    # Assing permissions to role names (principals) and remote addresses (endpoints).
+    # Assign permissions to role names (principals) and remote addresses (endpoints).
     # Follow the least privilege principle.
     client-permissions:
       # local clients with "admin" role assigned have full access to all operations

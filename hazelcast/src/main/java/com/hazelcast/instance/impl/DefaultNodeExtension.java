@@ -296,7 +296,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         boolean jetEnabled = config.getJetConfig().isEnabled();
         addFeatureInfo(sb, "Jet disabled", !jetEnabled);
         if (jetEnabled) {
-            addFeatureInfo(sb, "Jet resource upload diabled", !config.getJetConfig().isResourceUploadEnabled());
+            addFeatureInfo(sb, "Jet resource upload disabled", !config.getJetConfig().isResourceUploadEnabled());
         }
         addFeatureInfo(sb, "User code deployment disallowed", !config.getUserCodeDeploymentConfig().isEnabled());
         addFeatureInfo(sb, "Scripting in Management Center disabled", !config.getManagementCenterConfig().isScriptingEnabled());
