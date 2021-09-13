@@ -103,6 +103,9 @@ public class ClusterStateChangeTest extends JetTestSupport {
         assertTrue("ProcessorMetaSupplier should get closed", MockPMS.closeCalled.get());
         assertEquals("ProcessorSupplier should get closed on each member", NODE_COUNT, MockPS.closeCount.get());
         assertEquals("Job status", NOT_RUNNING, job.getStatus());
+
+        // Change back to active, so we can stop jobs and check for leaking resources
+        cluster.changeClusterState(ACTIVE);
     }
 
     @Test
