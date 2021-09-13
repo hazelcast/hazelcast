@@ -108,7 +108,7 @@ public class EmployerDTO {
     @Override
     public String toString() {
         return "EmployerDTO{"
-                +"name='" + name + '\''
+                + "name='" + name + '\''
                 + ", zcode=" + zcode
                 + ", hiringStatus=" + hiringStatus
                 + ", ids=" + Arrays.toString(ids)
