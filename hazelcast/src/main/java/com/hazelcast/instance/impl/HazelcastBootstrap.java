@@ -140,6 +140,7 @@ public final class HazelcastBootstrap {
                 new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName)
         );
         try (JarFile jarFile = new JarFile(jar)) {
+            checkHazelcastCodebasePresence(jarFile);
             if (StringUtil.isNullOrEmpty(mainClass)) {
                 if (jarFile.getManifest() == null) {
                     error("No manifest file in " + jar + ". You can use the -c option to provide the main class.");
@@ -179,6 +180,15 @@ public final class HazelcastBootstrap {
                 }
             }
             HazelcastBootstrap.supplier = null;
+        }
+    }
+
+    private static void checkHazelcastCodebasePresence(JarFile jarFile) {
+        List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
+        if (!classFiles.isEmpty()) {
+            System.err.format("WARNING: Hazelcast code detected in the jar: %s. "
+                            + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
+                    String.join(", ", classFiles));
         }
     }
 
