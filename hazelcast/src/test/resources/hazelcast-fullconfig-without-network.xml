@@ -969,14 +969,15 @@
         <recently-active-split-brain-protection heartbeat-tolerance-millis="60000"/>
     </split-brain-protection>
 
-    <hot-restart-persistence enabled="false">
+    <persistence enabled="false">
         <backup-dir>backup-dir</backup-dir>
         <base-dir>base-dir</base-dir>
         <cluster-data-recovery-policy>FULL_RECOVERY_ONLY</cluster-data-recovery-policy>
         <data-load-timeout-seconds>42</data-load-timeout-seconds>
         <parallelism>3</parallelism>
         <validation-timeout-seconds>10</validation-timeout-seconds>
-    </hot-restart-persistence>
+        <rebalance-delay-seconds>240</rebalance-delay-seconds>
+    </persistence>
 
     <lite-member enabled="true"/>
 

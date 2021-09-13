@@ -943,7 +943,8 @@
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
-                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
+                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE"
+                                        rebalance-delay-seconds="240">
                 <hz:base-dir>/mnt/persistence/</hz:base-dir>
                 <hz:backup-dir>/mnt/persistence-backup/</hz:backup-dir>
                 <hz:encryption-at-rest enabled="true">

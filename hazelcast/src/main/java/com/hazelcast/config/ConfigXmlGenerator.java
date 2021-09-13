@@ -1491,7 +1491,8 @@ public class ConfigXmlGenerator {
                 .node("validation-timeout-seconds", prCfg.getValidationTimeoutSeconds())
                 .node("data-load-timeout-seconds", prCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", prCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData());
+                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData())
+                .node("rebalance-delay-seconds", prCfg.getRebalanceDelaySeconds());
 
         encryptionAtRestXmlGenerator(gen, prCfg.getEncryptionAtRestConfig());
         gen.close();

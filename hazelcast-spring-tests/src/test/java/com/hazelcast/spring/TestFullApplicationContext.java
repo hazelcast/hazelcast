@@ -1342,6 +1342,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(sslConfig.isEnabled());
         assertEquals(sslContextFactory, sslConfig.getFactoryImplementation());
         assertEquals(60, vaultConfig.getPollingInterval());
+        assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Test

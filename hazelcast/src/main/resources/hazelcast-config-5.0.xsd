@@ -4046,6 +4046,33 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="rebalance-delay-seconds" type="xs:nonNegativeInteger" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Time (in seconds) to wait before triggering automatic partition rebalancing
+                        after a member leaves the cluster unexpectedly. Unexpectedly in this context
+                        means that a member leaves the cluster by means other than graceful shutdown:
+                        programmatic termination (eg LifecycleService.terminate()), a
+                        process crash or network partition.
+                        Default is 0, which means rebalancing is triggered immediately.
+                        Setting this to a higher value will allow some time for members that are gone
+                        to rejoin the cluster. The benefit is that partition rebalancing in this
+                        case will be avoided, saving the burden of migrating partition data over
+                        the network.
+                        Do not use this option if your cluster also stores in-memory data. This option
+                        stops the cluster from migrating in-memory data. As a result any data that is
+                        not persisted will be lost if the member restarts within the configured delay,
+                        including backups.
+                        While members are gone, operations on partitions for which the owner is missing
+                        may fail immediately or will be retried until the member rejoins or operation
+                        timeout is exceeded.
+                        Notice that this delay only applies when cluster members leave the cluster;
+                        when the cluster is being scaled up and members are being added, partition
+                        rebalancing will be triggered immediately (subject to limitations imposed
+                        by the current cluster state).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
