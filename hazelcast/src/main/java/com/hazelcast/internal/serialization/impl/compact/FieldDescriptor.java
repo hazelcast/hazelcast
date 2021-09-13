@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldID;
 
 import javax.annotation.Nonnull;
 
@@ -28,14 +28,14 @@ import javax.annotation.Nonnull;
 public class FieldDescriptor {
 
     private final String fieldName;
-    private final FieldType type;
+    private final FieldID fieldID;
     private int index = -1;
     private int offset = -1;
     private byte bitOffset = -1;
 
-    public FieldDescriptor(@Nonnull String fieldName, @Nonnull FieldType type) {
+    public FieldDescriptor(@Nonnull String fieldName, @Nonnull FieldID fieldID) {
         this.fieldName = fieldName;
-        this.type = type;
+        this.fieldID = fieldID;
     }
 
     public void setIndex(int index) {
@@ -50,8 +50,8 @@ public class FieldDescriptor {
         this.bitOffset = bitOffset;
     }
 
-    public FieldType getType() {
-        return type;
+    public FieldID getFieldID() {
+        return fieldID;
     }
 
     public String getFieldName() {
@@ -95,13 +95,13 @@ public class FieldDescriptor {
         if (!fieldName.equals(that.fieldName)) {
             return false;
         }
-        return type == that.type;
+        return fieldID == that.fieldID;
     }
 
     @Override
     public int hashCode() {
         int result = fieldName.hashCode();
-        result = 31 * result + type.hashCode();
+        result = 31 * result + fieldID.hashCode();
         return result;
     }
 
@@ -109,7 +109,7 @@ public class FieldDescriptor {
     public String toString() {
         return "FieldDefinitionImpl{"
                 + "fieldName='" + fieldName + '\''
-                + ", type=" + type
+                + ", type=" + fieldID
                 + ", index=" + index
                 + ", offset=" + offset
                 + ", bitOffset=" + bitOffset

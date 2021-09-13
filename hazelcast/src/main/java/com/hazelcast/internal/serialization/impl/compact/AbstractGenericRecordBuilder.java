@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldID;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -39,193 +39,193 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
     @Nonnull
     @Override
     public GenericRecordBuilder setInt(@Nonnull String fieldName, int value) {
-        return write(fieldName, value, FieldType.INT);
+        return write(fieldName, value, FieldID.INT);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
-        return write(fieldName, value, FieldType.LONG);
+        return write(fieldName, value, FieldID.LONG);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setString(@Nonnull String fieldName, String value) {
-        return write(fieldName, value, FieldType.UTF);
+        return write(fieldName, value, FieldID.STRING);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setBoolean(@Nonnull String fieldName, boolean value) {
-        return write(fieldName, value, FieldType.BOOLEAN);
+        return write(fieldName, value, FieldID.BOOLEAN);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
-        return write(fieldName, value, FieldType.BYTE);
+        return write(fieldName, value, FieldID.BYTE);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
-        return write(fieldName, value, FieldType.CHAR);
+        return write(fieldName, value, FieldID.CHAR);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDouble(@Nonnull String fieldName, double value) {
-        return write(fieldName, value, FieldType.DOUBLE);
+        return write(fieldName, value, FieldID.DOUBLE);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setFloat(@Nonnull String fieldName, float value) {
-        return write(fieldName, value, FieldType.FLOAT);
+        return write(fieldName, value, FieldID.FLOAT);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
-        return write(fieldName, value, FieldType.SHORT);
+        return write(fieldName, value, FieldID.SHORT);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord value) {
-        return write(fieldName, value, FieldType.COMPOSED);
+        return write(fieldName, value, FieldID.COMPACT);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value) {
-        return write(fieldName, value, FieldType.DECIMAL);
+        return write(fieldName, value, FieldID.DECIMAL);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value) {
-        return write(fieldName, value, FieldType.TIME);
+        return write(fieldName, value, FieldID.TIME);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value) {
-        return write(fieldName, value, FieldType.DATE);
+        return write(fieldName, value, FieldID.DATE);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value) {
-        return write(fieldName, value, FieldType.TIMESTAMP);
+        return write(fieldName, value, FieldID.TIMESTAMP);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE);
+        return write(fieldName, value, FieldID.TIMESTAMP_WITH_TIMEZONE);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setGenericRecordArray(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        return write(fieldName, value, FieldType.COMPOSED_ARRAY);
+        return write(fieldName, value, FieldID.COMPACT_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setByteArray(@Nonnull String fieldName, byte[] value) {
-        return write(fieldName, value, FieldType.BYTE_ARRAY);
+        return write(fieldName, value, FieldID.BYTE_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
-        return write(fieldName, value, FieldType.BOOLEAN_ARRAY);
+        return write(fieldName, value, FieldID.BOOLEAN_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setCharArray(@Nonnull String fieldName, char[] value) {
-        return write(fieldName, value, FieldType.CHAR_ARRAY);
+        return write(fieldName, value, FieldID.CHAR_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setIntArray(@Nonnull String fieldName, int[] value) {
-        return write(fieldName, value, FieldType.INT_ARRAY);
+        return write(fieldName, value, FieldID.INT_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
-        return write(fieldName, value, FieldType.LONG_ARRAY);
+        return write(fieldName, value, FieldID.LONG_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, double[] value) {
-        return write(fieldName, value, FieldType.DOUBLE_ARRAY);
+        return write(fieldName, value, FieldID.DOUBLE_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setFloatArray(@Nonnull String fieldName, float[] value) {
-        return write(fieldName, value, FieldType.FLOAT_ARRAY);
+        return write(fieldName, value, FieldID.FLOAT_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
-        return write(fieldName, value, FieldType.SHORT_ARRAY);
+        return write(fieldName, value, FieldID.SHORT_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setStringArray(@Nonnull String fieldName, String[] value) {
-        return write(fieldName, value, FieldType.UTF_ARRAY);
+        return write(fieldName, value, FieldID.STRING_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDecimalArray(@Nonnull String fieldName, BigDecimal[] value) {
-        return write(fieldName, value, FieldType.DECIMAL_ARRAY);
+        return write(fieldName, value, FieldID.DECIMAL_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTimeArray(@Nonnull String fieldName, LocalTime[] value) {
-        return write(fieldName, value, FieldType.TIME_ARRAY);
+        return write(fieldName, value, FieldID.TIME_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setDateArray(@Nonnull String fieldName, LocalDate[] value) {
-        return write(fieldName, value, FieldType.DATE_ARRAY);
+        return write(fieldName, value, FieldID.DATE_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTimestampArray(@Nonnull String fieldName, LocalDateTime[] value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_ARRAY);
+        return write(fieldName, value, FieldID.TIMESTAMP_ARRAY);
     }
 
     @Nonnull
     @Override
     public GenericRecordBuilder setTimestampWithTimezoneArray(@Nonnull String fieldName, OffsetDateTime[] value) {
-        return write(fieldName, value, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY);
+        return write(fieldName, value, FieldID.TIMESTAMP_WITH_TIMEZONE_ARRAY);
     }
 
-    protected abstract GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldType fieldType);
+    protected abstract GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldID fieldID);
 
-    public static void checkTypeWithSchema(Schema schema, @Nonnull String fieldName, FieldType fieldType) {
+    public static void checkTypeWithSchema(Schema schema, @Nonnull String fieldName, FieldID fieldID) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + "' for " + schema);
         }
-        if (!fd.getType().equals(fieldType)) {
+        if (!fd.getFieldID().equals(fieldID)) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName
-                    + "' for " + schema + ", expected : " + fd.getType() + ", given : " + fieldType);
+                    + "' for " + schema + ", expected : " + fd.getFieldID() + ", given : " + fieldID);
         }
     }
 

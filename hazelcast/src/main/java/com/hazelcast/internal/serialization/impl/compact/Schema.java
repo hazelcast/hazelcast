@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldID;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
@@ -61,11 +61,11 @@ public class Schema implements IdentifiedDataSerializable {
         List<FieldDescriptor> variableSizeFields = new ArrayList<>();
 
         for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
-            FieldType fieldType = descriptor.getType();
-            if (fieldOperations(fieldType).typeSizeInBytes() == VARIABLE_SIZE) {
+            FieldID fieldID = descriptor.getFieldID();
+            if (fieldOperations(fieldID).typeSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
             } else {
-                if (FieldType.BOOLEAN.equals(fieldType)) {
+                if (FieldID.BOOLEAN.equals(fieldID)) {
                     booleanFields.add(descriptor);
                 } else {
                     fixedSizeFields.add(descriptor);
@@ -74,13 +74,13 @@ public class Schema implements IdentifiedDataSerializable {
         }
 
         fixedSizeFields.sort(Comparator.comparingInt(
-                d -> fieldOperations(((FieldDescriptor) d).getType()).typeSizeInBytes()).reversed()
+                d -> fieldOperations(((FieldDescriptor) d).getFieldID()).typeSizeInBytes()).reversed()
         );
 
         int offset = 0;
         for (FieldDescriptor descriptor : fixedSizeFields) {
             descriptor.setOffset(offset);
-            offset += fieldOperations(descriptor.getType()).typeSizeInBytes();
+            offset += fieldOperations(descriptor.getFieldID()).typeSizeInBytes();
         }
 
         int bitOffset = 0;
@@ -167,7 +167,7 @@ public class Schema implements IdentifiedDataSerializable {
         Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
-            out.writeByte(descriptor.getType().getId());
+            out.writeByte(descriptor.getFieldID().ordinal());
         }
     }
 
@@ -179,8 +179,8 @@ public class Schema implements IdentifiedDataSerializable {
         for (int i = 0; i < fieldDefinitionsSize; i++) {
             String fieldName = in.readString();
             byte type = in.readByte();
-            FieldType fieldType = FieldType.get(type);
-            FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldType);
+            FieldID fieldID = FieldID.values()[type];
+            FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldID);
             fieldDefinitionMap.put(fieldName, descriptor);
         }
         init();

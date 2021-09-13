@@ -23,6 +23,7 @@ import com.hazelcast.internal.nio.PortableUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldID;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -106,8 +107,8 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     @Override
     @Nonnull
-    public FieldType getFieldType(@Nonnull String fieldName) {
-        return cd.getFieldType(fieldName);
+    public FieldID getFieldID(@Nonnull String fieldName) {
+        return FieldTypeToFieldID.toFieldID(cd.getFieldType(fieldName));
     }
 
     @Override

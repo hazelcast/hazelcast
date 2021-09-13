@@ -51,7 +51,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * On the last two methods listed above reflection is not utilized instead given serializer is used to
  * serialize/deserialize users objects.
  *
- * @since Hazelcast 5.0 as BETA. The final version will not be backward comppatible with the Beta.
+ * @since Hazelcast 5.0 as BETA. The final version will not be backward compatible with the Beta.
  * Do not use BETA version in production
  */
 @Beta

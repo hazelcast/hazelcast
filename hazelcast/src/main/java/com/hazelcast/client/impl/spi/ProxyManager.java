@@ -220,7 +220,7 @@ public final class ProxyManager {
         return getOrCreateProxyInternal(service, id, true);
     }
 
-    public ClientProxy getOrCreateLocalProxy(@Nonnull String service,
+    public ClientProxy  getOrCreateLocalProxy(@Nonnull String service,
                                              @Nonnull String id) {
         return getOrCreateProxyInternal(service, id, false);
     }

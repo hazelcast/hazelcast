@@ -124,7 +124,7 @@ public interface GenericRecord {
      * @throws IllegalArgumentException if the field name does not exist in the class definition
      */
     @Nonnull
-    FieldType getFieldType(@Nonnull String fieldName);
+    FieldID getFieldID(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field

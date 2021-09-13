@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.internal.json.JsonEscape;
+import com.hazelcast.internal.serialization.impl.FieldOperations;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
@@ -48,12 +49,12 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             return false;
         }
         for (String fieldName : thatFieldNames) {
-            FieldType thatFieldType = that.getFieldType(fieldName);
-            FieldType thisFieldType = getFieldType(fieldName);
+            FieldID thatFieldType = that.getFieldID(fieldName);
+            FieldID thisFieldType = getFieldID(fieldName);
             if (!thatFieldType.equals(thisFieldType)) {
                 return false;
             }
-            if (thatFieldType.isArrayType()) {
+            if (FieldOperations.isArrayType(thatFieldType)) {
                 if (!Objects.deepEquals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }
@@ -70,14 +71,14 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         int result = Objects.hash(getClassIdentifier());
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
-            FieldType fieldType = getFieldType(fieldName);
+            FieldID fieldType = getFieldID(fieldName);
             result = 31 * result + fieldOperations(fieldType).hashCode(this, fieldName);
         }
         return result;
     }
 
     public final <T> T readAny(@Nonnull String fieldName) {
-        FieldType type = getFieldType(fieldName);
+        FieldID type = getFieldID(fieldName);
         return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
     }
 
@@ -95,7 +96,7 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             i++;
             JsonEscape.writeEscaped(stringBuilder, fieldName);
             stringBuilder.append(": ");
-            FieldType fieldType = getFieldType(fieldName);
+            FieldID fieldType = getFieldID(fieldName);
             fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
             if (size != i) {
                 stringBuilder.append(", ");

@@ -26,7 +26,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldID;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -140,8 +140,8 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Collection<FieldDescriptor> fields = schema.getFields();
         for (FieldDescriptor fieldDescriptor : fields) {
             String fieldName = fieldDescriptor.getFieldName();
-            FieldType fieldType = fieldDescriptor.getType();
-            fieldOperations(fieldType).writeFieldFromRecordToWriter(writer, record, fieldName);
+            FieldID fieldID = fieldDescriptor.getFieldID();
+            fieldOperations(fieldID).writeFieldFromRecordToWriter(writer, record, fieldName);
         }
         writer.end();
     }

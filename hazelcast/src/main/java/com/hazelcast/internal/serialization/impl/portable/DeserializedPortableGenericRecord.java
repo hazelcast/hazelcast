@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldID;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
@@ -85,8 +86,8 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Override
     @Nonnull
-    public FieldType getFieldType(@Nonnull String fieldName) {
-        return classDefinition.getFieldType(fieldName);
+    public FieldID getFieldID(@Nonnull String fieldName) {
+        return FieldTypeToFieldID.toFieldID(classDefinition.getFieldType(fieldName));
     }
 
     @Override
