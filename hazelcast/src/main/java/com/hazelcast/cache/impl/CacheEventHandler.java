@@ -129,8 +129,8 @@ public class CacheEventHandler {
         }
     }
 
-    public void resetPartitionMetaData(String name, int partitionId) {
-        invalidator.resetPartitionMetaData(name, partitionId);
+    public void forceIncrementSequence(String name, int partitionId) {
+        invalidator.forceIncrementSequence(name, partitionId);
     }
 
     public void destroy(String name, UUID sourceUuid) {
