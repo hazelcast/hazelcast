@@ -281,14 +281,6 @@
                                     <pattern>net.minidev</pattern>
                                     <shadedPattern>${relocation.root}.net.minidev</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>org.ow2.asm</pattern>
-                                    <shadedPattern>${relocation.root}.org.ow2.asm</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.objectweb.asm</pattern>
-                                    <shadedPattern>${relocation.root}.org.objectweb.asm</shadedPattern>
-                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
