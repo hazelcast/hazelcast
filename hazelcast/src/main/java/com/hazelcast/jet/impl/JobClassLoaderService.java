@@ -36,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static java.util.Collections.unmodifiableMap;
 
 public class JobClassLoaderService {
@@ -63,6 +66,10 @@ public class JobClassLoaderService {
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
         this.jobRepository = jobRepository;
+    }
+
+    public Map<Long, JobClassLoaders> getClassLoaders() {
+        return Collections.unmodifiableMap(classLoaders);
     }
 
     /**
@@ -183,28 +190,31 @@ public class JobClassLoaderService {
     }
 
     /**
-     * Try to remove and close/shutdown job classloader and any processor classloaders for given job
-     *
-     * If there are some
+     * Try to remove and close/shutdown job classloader and any processor
+     * classloaders for given job
+     * <p>
+     * We keep track of phases where the classloader is used and remove
+     * the classloader only if there are no more phases left.
      */
     public void tryRemoveClassloadersForJob(long jobId, JobPhase phase) {
-        logger.fine("Try remove classloaders for job " + idToString(jobId) + ", phase " + phase);
+        logFinest(logger, "Try remove classloaders for jobId=%s, phase=%s", idToString(jobId), phase);
         classLoaders.compute(jobId, (k, jobClassLoaders) -> {
             if (jobClassLoaders == null) {
-                logger.fine("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
+                logger.warning("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
                 return null;
             }
 
             int phaseCount = jobClassLoaders.removePhase(phase);
             if (phaseCount == 0) {
-                logger.fine("JobClassLoaders phaseCount = 0, removing classloaders for jobId=" + idToString(jobId));
+                logFinest(logger, "JobClassLoaders phaseCount = 0, removing classloaders for jobId=%s",
+                        idToString(jobId));
                 Map<String, ClassLoader> processorCls = jobClassLoaders.processorCls();
                 if (processorCls != null) {
                     for (ClassLoader cl : processorCls.values()) {
                         try {
                             ((ChildFirstClassLoader) cl).close();
                         } catch (IOException e) {
-                            logger.fine("Exception when closing processor classloader", e);
+                            logger.warning("Exception when closing processor classloader", e);
                         }
                     }
                 }
@@ -212,12 +222,12 @@ public class JobClassLoaderService {
                 JetDelegatingClassLoader jobClassLoader = jobClassLoaders.jobClassLoader();
                 jobClassLoader.shutdown();
 
-                logger.fine("Finish JobClassLoaders phaseCount = 0," +
-                        " removing classloaders for jobId=" + idToString(jobId));
+                logFine(logger, "Finish JobClassLoaders phaseCount = 0," +
+                        " removing classloaders for jobId=%s", idToString(jobId));
                 // Removes the item from the map
                 return null;
             } else {
-                logger.fine("JobClassLoaders refCount > 0, NOT removing classloaders for jobId=" + idToString(jobId));
+                logFinest(logger, "JobClassLoaders refCount > 0, NOT removing classloaders for jobId=%s", idToString(jobId));
                 return jobClassLoaders;
             }
         });
@@ -303,9 +313,11 @@ public class JobClassLoaderService {
 
         @Override
         public String toString() {
-            return "JobClassLoaders{" +
-                    "phases=" + phases +
-                    '}';
+            synchronized (this) {
+                return "JobClassLoaders{" +
+                        "phases=" + phases +
+                        '}';
+            }
         }
     }
 }

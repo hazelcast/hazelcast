@@ -61,17 +61,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
-import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
-import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
-import static com.hazelcast.jet.impl.util.ReflectionUtils.readFieldOrNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -128,10 +124,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 JetService jet = instance.getJet();
                 List<Job> jobs = jet.getJobs();
                 for (Job job : jobs) {
-                    if (job.getStatus() == RUNNING || job.getStatus() == STARTING) {
-                        job.cancel();
-                        assertJobStatusEventually(job, FAILED); // Failed = cancelled
-                    }
+                    ditchJob(job, instances.toArray(new HazelcastInstance[instances.size()]));
                 }
 
                 JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
@@ -139,18 +132,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                         .<JetServiceBackend>getService(SERVICE_NAME)
                         .getJobClassLoaderService();
 
-                ConcurrentHashMap<Long, ?> classLoaders = readFieldOrNull(jobClassLoaderService, "classLoaders");
+                Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
                 // The classloader cleanup is done asynchronously in some cases, wait up to 10s
-                for (int i = 0; i < 100; i++) {
-                    if (classLoaders.isEmpty()) {
-                        break;
-                    }
+                for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
                     sleepMillis(100);
                 }
-                if (!classLoaders.isEmpty()) {
-                    for (Entry<Long, ?> entry : classLoaders.entrySet()) {
-                        leakedClassloaders.put(entry.getKey(), entry.toString());
-                    }
+                for (Entry<Long, ?> entry : classLoaders.entrySet()) {
+                    leakedClassloaders.put(entry.getKey(), entry.toString());
                 }
             }
         }

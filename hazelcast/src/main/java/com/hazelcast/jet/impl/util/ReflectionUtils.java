@@ -79,22 +79,6 @@ public final class ReflectionUtils {
     }
 
     /**
-     * Returns value of private field. In case of any exception it returns null.
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T readFieldOrNull(Object object, String fieldName) {
-        try {
-            Field field = object.getClass().getDeclaredField(fieldName);
-            if (!field.isAccessible()) {
-                field.setAccessible(true);
-            }
-            return (T) field.get(object);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            return null;
-        }
-    }
-
-    /**
      * Reads a value of a static field. In case of any exceptions it returns
      * null.
      */

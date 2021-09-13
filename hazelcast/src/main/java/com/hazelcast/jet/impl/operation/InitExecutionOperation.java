@@ -144,9 +144,8 @@ public class InitExecutionOperation extends AsyncJobOperation {
             JobConfig jobConfig = service.getJobConfig(jobId());
             JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
 
+            ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
             try {
-                ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
-
                 jobClassloaderService.prepareProcessorClassLoaders(jobId());
                 return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
             } finally {
