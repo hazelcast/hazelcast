@@ -82,7 +82,7 @@ import static org.apache.calcite.sql.SqlKind.VALUES;
 public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final String OBJECT_NOT_FOUND = ResourceUtil.key(Static.RESOURCE.objectNotFound(""));
-    private static final String OBJECT_NOT_FOUND_WITHING = ResourceUtil.key(Static.RESOURCE.objectNotFoundWithin("", ""));
+    private static final String OBJECT_NOT_FOUND_WITHIN = ResourceUtil.key(Static.RESOURCE.objectNotFoundWithin("", ""));
 
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
@@ -532,7 +532,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         assert node != null;
 
         CalciteContextException exception = SqlUtil.newContextException(node.getParserPosition(), e);
-        if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHING.equals(ResourceUtil.key(e))) {
+        if (OBJECT_NOT_FOUND.equals(ResourceUtil.key(e)) || OBJECT_NOT_FOUND_WITHIN.equals(ResourceUtil.key(e))) {
             Object[] arguments = ResourceUtil.args(e);
             String identifier = (arguments != null && arguments.length > 0) ? String.valueOf(arguments[0]) : null;
             Mapping mapping = identifier != null ? mappingResolver.resolve(identifier) : null;
