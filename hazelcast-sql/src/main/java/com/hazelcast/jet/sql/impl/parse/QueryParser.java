@@ -55,6 +55,8 @@ public class QueryParser {
     public QueryParseResult parse(String sql) {
         try {
             return parse0(sql);
+        } catch (QueryException e) {
+            throw e;
         } catch (Exception e) {
             String message;
             // Check particular type of exception which causes typical long multiline error messages.

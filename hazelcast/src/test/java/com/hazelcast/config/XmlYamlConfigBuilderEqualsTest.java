@@ -65,6 +65,11 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSecurityHardenedExample() {
+        assertXmlYamlFileEquals("hazelcast-security-hardened");
+    }
+
+    @Test
     public void testFullExample() throws IOException {
         String fullExampleXml = readResourceToString("hazelcast-full-example.xml");
         String fullExampleYaml = readResourceToString("hazelcast-full-example.yaml");

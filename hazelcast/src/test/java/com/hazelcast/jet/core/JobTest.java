@@ -89,7 +89,7 @@ public class JobTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
+        config.getJetConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         initializeWithClient(NODE_COUNT, config, null);
     }
 

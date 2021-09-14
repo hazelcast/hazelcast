@@ -33,6 +33,7 @@ import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
+import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.opt.JetConventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
@@ -73,6 +74,7 @@ import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.MappingResolver;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
@@ -90,6 +92,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 
+import javax.annotation.Nullable;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
@@ -163,6 +166,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private final NodeEngine nodeEngine;
 
+    private final MappingResolver mappingResolver;
     private final List<TableResolver> tableResolvers;
     private final JetPlanExecutor planExecutor;
 
@@ -170,6 +174,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     public CalciteSqlOptimizer(NodeEngine nodeEngine, QueryResultRegistry resultRegistry) {
         this.nodeEngine = nodeEngine;
+
+        this.mappingResolver = new MetadataResolver(nodeEngine);
 
         MappingCatalog mappingCatalog = mappingCatalog(nodeEngine);
         this.tableResolvers = singletonList(mappingCatalog);
@@ -182,6 +188,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         MappingStorage mappingStorage = new MappingStorage(nodeEngine);
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         return new MappingCatalog(nodeEngine, mappingStorage, connectorCache);
+    }
+
+    @Nullable
+    @Override
+    public String mappingDdl(String name) {
+        Mapping mapping = mappingResolver.resolve(name);
+        return mapping != null ? SqlCreateMapping.unparse(mapping) : null;
     }
 
     @Override
@@ -198,7 +211,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),
-                memberCount
+                memberCount,
+                mappingResolver
         );
 
         // 2. Parse SQL string and validate it.

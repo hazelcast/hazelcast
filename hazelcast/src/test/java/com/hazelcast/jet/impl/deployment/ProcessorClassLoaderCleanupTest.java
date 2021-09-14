@@ -26,7 +26,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -96,9 +96,9 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
 
         JetServiceBackend jetServiceBackend =
                 ((HazelcastInstanceProxy) member).getOriginal().node.getNodeEngine().getService(JetServiceBackend.SERVICE_NAME);
-        JobExecutionService jobExecutionService = jetServiceBackend.getJobExecutionService();
+        JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
 
-        ChildFirstClassLoader classLoader = (ChildFirstClassLoader) jobExecutionService.getProcessorClassLoader(job.getId(), source.name());
+        ChildFirstClassLoader classLoader = (ChildFirstClassLoader) jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name());
 
         job.suspend();
         assertJobStatusEventually(job, JobStatus.SUSPENDED);
@@ -107,9 +107,9 @@ public class ProcessorClassLoaderCleanupTest extends JetTestSupport {
                 .describedAs("classloader hasn't been closed")
                 .isTrue();
 
-        assertThatThrownBy(() -> jobExecutionService.getProcessorClassLoader(job.getId(), source.name()))
+        assertThatThrownBy(() -> jobClassLoaderService.getProcessorClassLoader(job.getId(), source.name()))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessageContaining("Processor classloader for jobId=" + Util.idToString(job.getId())
+                .hasMessageContaining("JobClassLoaders for jobId=" + Util.idToString(job.getId())
                         + " requested, but it does not exists");
     }
 }

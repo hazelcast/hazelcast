@@ -46,7 +46,17 @@ public class RestApiFilter implements TextProtocolFilter {
         RestEndpointGroup restEndpointGroup = getEndpointGroup(commandLine);
         if (restEndpointGroup != null) {
             if (!restApiConfig.isGroupEnabled(restEndpointGroup)) {
-                connection.close("REST endpoint group is not enabled - " + restEndpointGroup, null);
+                String name = restEndpointGroup.name();
+                connection.close("REST endpoint group is not enabled - " + restEndpointGroup
+                        + ". To enable it, please do one of the following:\n"
+                        + "- Change member config using JAVA API: "
+                        + " config.getNetworkConfig().getRestApiConfig().enableGroups(RestEndpointGroup." + name + ");\n"
+                        + "- Change XML/YAML configuration property: "
+                        + "hazelcast.network.rest-api.endpoint-group " + name + " with `enabled` set to true\n"
+                        + "- Add system property: "
+                        + "-Dhz.network.rest-api.endpoint-groups." + name.toLowerCase() + ".enabled=true\n"
+                        + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS." + name + ".ENABLED=true",
+                        null);
             }
         } else if (!commandLine.isEmpty()) {
             connection.close("Unsupported command received on REST API handler.", null);
@@ -72,8 +82,8 @@ public class RestApiFilter implements TextProtocolFilter {
         return requestUri != null ? getHttpApiEndpointGroup(operation, requestUri) : null;
     }
 
-    @SuppressWarnings({ "checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity",
-            "checkstyle:booleanexpressioncomplexity" })
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity",
+            "checkstyle:booleanexpressioncomplexity"})
     private RestEndpointGroup getHttpApiEndpointGroup(String operation, String requestUri) {
         if (requestUri.startsWith(HttpCommandProcessor.URI_MAPS)
                 || requestUri.startsWith(HttpCommandProcessor.URI_QUEUES)) {

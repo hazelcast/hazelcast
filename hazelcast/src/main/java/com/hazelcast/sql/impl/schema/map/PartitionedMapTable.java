@@ -16,7 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.map;
 
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -29,8 +28,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
-
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 
 public class PartitionedMapTable extends AbstractMapTable {
 
@@ -65,13 +62,6 @@ public class PartitionedMapTable extends AbstractMapTable {
 
         this.indexes = indexes;
         this.hd = hd;
-    }
-
-    public PartitionedMapTable(String name, QueryException exception) {
-        super(SCHEMA_NAME_PARTITIONED, name, exception);
-
-        this.indexes = null;
-        this.hd = false;
     }
 
     @Override

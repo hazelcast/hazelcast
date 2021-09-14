@@ -34,9 +34,11 @@ public final class SqlClientUtils {
         HazelcastSqlException sqlException = QueryUtils.toPublicException(exception, localMemberId);
 
         return new SqlError(
-            sqlException.getCode(),
-            sqlException.getMessage(),
-            sqlException.getOriginatingMemberId()
+                sqlException.getCode(),
+                sqlException.getMessage(),
+                sqlException.getOriginatingMemberId(),
+                sqlException.getSuggestion() != null,
+                sqlException.getSuggestion()
         );
     }
 }

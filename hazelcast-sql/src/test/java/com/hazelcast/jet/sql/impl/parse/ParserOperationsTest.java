@@ -194,7 +194,8 @@ public class ParserOperationsTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1
+                1,
+                name -> null
         );
     }
 

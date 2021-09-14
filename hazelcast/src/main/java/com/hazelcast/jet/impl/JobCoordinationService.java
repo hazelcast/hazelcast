@@ -106,6 +106,7 @@ import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
@@ -238,7 +239,7 @@ public class JobCoordinationService {
                 DAG dag;
                 Data serializedDag;
                 if (jobDefinition instanceof PipelineImpl) {
-                    int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+                    int coopThreadCount = config.getCooperativeThreadCount();
                     dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                         @Override public int defaultLocalParallelism() {
                             return coopThreadCount;
@@ -310,7 +311,7 @@ public class JobCoordinationService {
         if (jobDefinition instanceof DAG) {
             dag = (DAG) jobDefinition;
         } else {
-            int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+            int coopThreadCount = config.getCooperativeThreadCount();
             dag = ((PipelineImpl) jobDefinition).toDag(new Context() {
                 @Override public int defaultLocalParallelism() {
                     return coopThreadCount;
@@ -878,7 +879,7 @@ public class JobCoordinationService {
         }
 
         updateQuorumValues();
-        scheduleScaleUp(config.getInstanceConfig().getScaleUpDelayMillis());
+        scheduleScaleUp(config.getScaleUpDelayMillis());
     }
 
     void onMemberRemoved(UUID uuid) {
@@ -1048,18 +1049,18 @@ public class JobCoordinationService {
     }
 
     private Object deserializeJobDefinition(long jobId, JobConfig jobConfig, Data jobDefinitionData) {
-        ClassLoader classLoader = jetServiceBackend.getJobExecutionService().getClassLoader(jobConfig, jobId);
-        JobExecutionService jetExecutionService = jetServiceBackend.getJobExecutionService();
+        JobClassLoaderService jobClassLoaderService = jetServiceBackend.getJobClassLoaderService();
+        ClassLoader classLoader = jobClassLoaderService.getOrCreateClassLoader(jobConfig, jobId, COORDINATOR);
         try {
-            jetExecutionService.prepareProcessorClassLoaders(jobId, jobConfig);
+            jobClassLoaderService.prepareProcessorClassLoaders(jobId);
             return deserializeWithCustomClassLoader(nodeEngine().getSerializationService(), classLoader, jobDefinitionData);
         } finally {
-            jetExecutionService.clearProcessorClassLoaders();
+            jobClassLoaderService.clearProcessorClassLoaders();
         }
     }
 
     private String dagToJson(DAG dag) {
-        int coopThreadCount = config.getInstanceConfig().getCooperativeThreadCount();
+        int coopThreadCount = config.getCooperativeThreadCount();
         return dag.toJson(coopThreadCount).toString();
     }
 

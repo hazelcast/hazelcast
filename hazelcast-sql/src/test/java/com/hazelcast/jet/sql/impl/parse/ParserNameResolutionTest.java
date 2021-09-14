@@ -100,22 +100,22 @@ public class ParserNameResolutionTest extends SqlTestSupport {
         checkFailure(errorColumnNotFound(BAD_FIELD), BAD_FIELD, SCHEMA_1, TABLE_1);
 
         // Wrong table
-        checkFailure(errorObjectNotFound(BAD_TABLE), BAD_FIELD, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFound(BAD_TABLE), BAD_FIELD, BAD_TABLE);
 
         // Wrong table in existing schema
-        checkFailure(errorObjectNotFoundWithin(BAD_TABLE, CATALOG, SCHEMA_1), BAD_FIELD, SCHEMA_1, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFoundWithin(BAD_TABLE, CATALOG, SCHEMA_1), BAD_FIELD, SCHEMA_1, BAD_TABLE);
 
         // Wrong table in existing schema/catalog
-        checkFailure(errorObjectNotFoundWithin(BAD_TABLE, CATALOG, SCHEMA_1), BAD_FIELD, CATALOG, SCHEMA_1, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFoundWithin(BAD_TABLE, CATALOG, SCHEMA_1), BAD_FIELD, CATALOG, SCHEMA_1, BAD_TABLE);
 
         // Wrong schema
-        checkFailure(errorObjectNotFound(BAD_SCHEMA), BAD_FIELD, BAD_SCHEMA, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFound(BAD_SCHEMA), BAD_FIELD, BAD_SCHEMA, BAD_TABLE);
 
         // Wrong schema in existing catalog
-        checkFailure(errorObjectNotFoundWithin(BAD_SCHEMA, CATALOG), BAD_FIELD, CATALOG, BAD_SCHEMA, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFoundWithin(BAD_SCHEMA, CATALOG), BAD_FIELD, CATALOG, BAD_SCHEMA, BAD_TABLE);
 
         // Wrong catalog
-        checkFailure(errorObjectNotFound(BAD_CATALOG), BAD_FIELD, BAD_CATALOG, BAD_SCHEMA, BAD_TABLE);
+        checkFailure(SqlErrorCode.OBJECT_NOT_FOUND, errorObjectNotFound(BAD_CATALOG), BAD_FIELD, BAD_CATALOG, BAD_SCHEMA, BAD_TABLE);
     }
 
     private static void checkSuccess(String fieldName, String tableFqn, String... tableComponents) {
@@ -140,12 +140,16 @@ public class ParserNameResolutionTest extends SqlTestSupport {
     }
 
     private static void checkFailure(String errorMessage, String fieldName, String... tableComponents) {
+        checkFailure(SqlErrorCode.PARSING, errorMessage, fieldName, tableComponents);
+    }
+
+    private static void checkFailure(int errorCode, String errorMessage, String fieldName, String... tableComponents) {
         try {
             context.parse(composeSelect(fieldName, tableComponents));
 
             fail();
         } catch (QueryException e) {
-            assertEquals(SqlErrorCode.PARSING, e.getCode());
+            assertEquals(errorCode, e.getCode());
 
             Throwable cause = e.getCause();
             assertTrue(cause.getMessage(), cause.getMessage().endsWith(errorMessage));
@@ -220,7 +224,8 @@ public class ParserNameResolutionTest extends SqlTestSupport {
                 new SqlCatalog(tableResolvers),
                 searchPaths,
                 emptyList(),
-                1
+                1,
+                name -> null
         );
     }
 

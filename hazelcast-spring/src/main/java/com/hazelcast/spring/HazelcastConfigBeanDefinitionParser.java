@@ -133,6 +133,8 @@ import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.spring.config.ConfigFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -192,6 +194,8 @@ import static org.springframework.util.Assert.isTrue;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:executablestatementcount", "checkstyle:cyclomaticcomplexity",
         "WeakerAccess"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
+
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastConfigBeanDefinitionParser.class);
 
     public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
@@ -2188,14 +2192,19 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleJet(Node node) {
             BeanDefinitionBuilder jetConfigBuilder = createBeanBuilder(JetConfig.class);
-            fillAttributeValues(node, jetConfigBuilder);
+            fillValues(node, jetConfigBuilder, "instance", "edgeDefaults");
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("instance".equals(nodeName)) {
-                    BeanDefinitionBuilder instanceConfigBuilder = createBeanBuilder(InstanceConfig.class);
-                    fillValues(child, instanceConfigBuilder);
-                    jetConfigBuilder.addPropertyValue("instanceConfig",
-                            instanceConfigBuilder.getBeanDefinition());
+                    if (jetConfigContainsInstanceConfigFields(node)) {
+                        LOGGER.warning("<instance> tag will be ignored "
+                                + "since <jet> tag already contains the instance fields.");
+                    } else {
+                        BeanDefinitionBuilder instanceConfigBuilder = createBeanBuilder(InstanceConfig.class);
+                        fillValues(child, instanceConfigBuilder);
+                        jetConfigBuilder.addPropertyValue("instanceConfig",
+                                instanceConfigBuilder.getBeanDefinition());
+                    }
                 } else if ("edge-defaults".equals(nodeName)) {
                     BeanDefinitionBuilder edgeConfigBuilder = createBeanBuilder(EdgeConfig.class);
                     fillValues(child, edgeConfigBuilder);
@@ -2204,6 +2213,22 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             configBuilder.addPropertyValue("jetConfig", jetConfigBuilder.getBeanDefinition());
+        }
+
+        @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+        private boolean jetConfigContainsInstanceConfigFields(Node node) {
+            for (Node child : childElements(node)) {
+                String nodeName = cleanNodeName(child);
+                if ("cooperative-thread-count".equals(nodeName)
+                        || "flow-control-period".equals(nodeName)
+                        || "backup-count".equals(nodeName)
+                        || "scale-up-delay-millis".equals(nodeName)
+                        || "lossless-restart-enabled".equals(nodeName)
+                        || "max-processor-accumulated-records".equals(nodeName)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

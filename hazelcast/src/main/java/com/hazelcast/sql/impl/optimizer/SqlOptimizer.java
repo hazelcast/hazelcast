@@ -18,12 +18,18 @@ package com.hazelcast.sql.impl.optimizer;
 
 import com.hazelcast.sql.impl.schema.TableResolver;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
  * Optimizer responsible for conversion of SQL string to executable plan.
  */
 public interface SqlOptimizer {
+
+    @Nullable
+    default String mappingDdl(String name) {
+        return null;
+    }
 
     List<TableResolver> tableResolvers();
 

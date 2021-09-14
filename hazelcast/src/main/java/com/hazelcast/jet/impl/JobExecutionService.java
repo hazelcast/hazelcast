@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -33,15 +32,10 @@ import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.metrics.impl.MetricsCompressor;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Util;
-import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
-import com.hazelcast.jet.impl.deployment.ChildFirstClassLoader;
-import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -58,16 +52,8 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
-import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -83,15 +69,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -121,19 +106,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final TaskletExecutionService taskletExecutionService;
-    private final JobRepository jobRepository;
+    private final JobClassLoaderService jobClassloaderService;
 
     private final Set<Long> executionContextJobIds = newSetFromMap(new ConcurrentHashMap<>());
 
     // key: executionId
     private final ConcurrentMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
-
-    // The type of classLoaders field is CHM and not ConcurrentMap because we
-    // rely on specific semantics of computeIfAbsent. ConcurrentMap.computeIfAbsent
-    // does not guarantee at most one computation per key.
-    // key: jobId
-    private final ConcurrentHashMap<Long, JetDelegatingClassLoader> classLoaders = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, Map<String, ClassLoader>> processorCls = new ConcurrentHashMap<>();
 
     @Probe(name = MetricNames.JOB_EXECUTIONS_STARTED)
     private final Counter executionStarted = MwCounter.newMwCounter();
@@ -145,11 +123,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private final ScheduledFuture<?> lightExecutionsCheckerFuture;
 
     JobExecutionService(NodeEngineImpl nodeEngine, TaskletExecutionService taskletExecutionService,
-                        JobRepository jobRepository) {
+                        JobClassLoaderService jobClassloaderService) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.taskletExecutionService = taskletExecutionService;
-        this.jobRepository = jobRepository;
+        this.jobClassloaderService = jobClassloaderService;
 
         newLightJobExecutionContextFunction = execId -> new ExecutionContext(nodeEngine, execId, execId, true);
 
@@ -169,77 +147,6 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                 .findAny()
                                 .map(ExecutionContext::executionId)
                                 .orElse(null);
-    }
-
-    public ClassLoader getClassLoader(JobConfig config, long jobId) {
-        JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
-        return classLoaders.computeIfAbsent(jobId,
-                k -> AccessController.doPrivileged(
-                        (PrivilegedAction<JetDelegatingClassLoader>) () -> {
-                            ClassLoader parent = parentClassLoader(config);
-                            if (!jetConfig.isResourceUploadEnabled()) {
-                                return new JetDelegatingClassLoader(parent);
-                            }
-                            return new JetClassLoader(nodeEngine, parent, config.getName(), jobId, jobRepository);
-                        }));
-    }
-
-    private ClassLoader parentClassLoader(JobConfig config) {
-        // config can be null for light jobs initialized after receiving a packet, but before the
-        // InitExecutionOperation was received. We can ignore the classLoaderFactory, because
-        // it's not supported anyway for light jobs.
-        return config != null && config.getClassLoaderFactory() != null
-                ? config.getClassLoaderFactory().getJobClassLoader()
-                : nodeEngine.getConfigClassLoader();
-    }
-
-    /**
-     * Prepare processor classloaders for given job for current thread
-     *
-     * @param jobId id of the job
-     * @param jobConfig jobConfig for current job
-     */
-    public void prepareProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        ProcessorClassLoaderTLHolder.putAll(getProcessorClassLoaders(jobId, jobConfig));
-    }
-
-    public void clearProcessorClassLoaders() {
-        ProcessorClassLoaderTLHolder.remove();
-    }
-
-    public ClassLoader getProcessorClassLoader(long jobId, String name) {
-        Map<String, ClassLoader> processorClsForJob = this.processorCls.get(jobId);
-        if (processorClsForJob != null) {
-            return processorClsForJob.get(name);
-        } else {
-            throw new HazelcastException("Processor classloader for jobId=" + Util.idToString(jobId)
-                    + " requested, but it does not exists");
-        }
-    }
-
-    public Map<String, ClassLoader> getProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        return processorCls.computeIfAbsent(jobId, key -> createProcessorClassLoaders(jobId, jobConfig));
-    }
-
-    private Map<String, ClassLoader> createProcessorClassLoaders(long jobId, JobConfig jobConfig) {
-        String customLibDir = nodeEngine.getProperties().getString(ClusterProperty.PROCESSOR_CUSTOM_LIB_DIR);
-        Map<String, ClassLoader> classLoaderMap = new HashMap<>();
-        ClassLoader parent = getClassLoader(jobConfig, jobId);
-        for (Entry<String, List<String>> entry : jobConfig.getCustomClassPaths().entrySet()) {
-            List<URL> list = entry.getValue().stream()
-                    .map(jar -> {
-                        try {
-                            Path path = Paths.get(customLibDir, jar);
-                            return path.toUri().toURL();
-                        } catch (MalformedURLException e) {
-                            throw new JetException(e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-            URL[] urls = list.toArray(new URL[]{});
-            classLoaderMap.put(entry.getKey(), new ChildFirstClassLoader(urls, parent));
-        }
-        return unmodifiableMap(classLoaderMap);
     }
 
     public ExecutionContext getExecutionContext(long executionId) {
@@ -338,8 +245,11 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
         try {
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
-            doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
+            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+            doWithClassLoader(
+                    jobCl,
+                    () -> execCtx.initialize(coordinator, addresses, plan)
+            );
         } catch (Throwable e) {
             completeExecution(execCtx, new CancellationException());
             throw e;
@@ -389,12 +299,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
 
         try {
-            prepareProcessorClassLoaders(jobId, plan.getJobConfig());
+            jobClassloaderService.prepareProcessorClassLoaders(jobId);
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-            ClassLoader jobCl = getClassLoader(plan.getJobConfig(), jobId);
+            ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
             doWithClassLoader(jobCl, () -> execCtx.initialize(coordinator, addresses, plan));
         } finally {
-            clearProcessorClassLoaders();
+            jobClassloaderService.clearProcessorClassLoaders();
         }
 
 
@@ -523,35 +433,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     public void completeExecution(@Nonnull ExecutionContext executionContext, Throwable error) {
         executionContexts.remove(executionContext.executionId());
-        JetDelegatingClassLoader jobClassLoader = classLoaders.get(executionContext.jobId());
+        JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
         try {
             doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            // If this is the coordinator we need to keep the classloader around for ProcesorMetaSupplier#close
-            if (!nodeEngine.getLocalMember().getAddress().equals(executionContext.coordinator())) {
-                removeClassloadersForJob(executionContext.jobId());
-            }
+            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
             executionCompleted.inc();
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
-        }
-    }
-
-    public void removeClassloadersForJob(long jobId) {
-        Map<String, ClassLoader> cls = processorCls.remove(jobId);
-        if (cls != null) {
-            for (ClassLoader cl : cls.values()) {
-                try {
-                    ((ChildFirstClassLoader) cl).close();
-                } catch (IOException e) {
-                    logger.fine("Exception when closing processor classloader", e);
-                }
-            }
-        }
-        // the class loader might not have been initialized if the job failed before that
-        JetDelegatingClassLoader jobClassLoader = classLoaders.remove(jobId);
-        if (jobClassLoader != null) {
-            jobClassLoader.shutdown();
         }
     }
 

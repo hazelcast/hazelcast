@@ -185,14 +185,7 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
             if (!emitFromTraverser(traverser)) {
                 return false;
             }
-            if (!complete) {
-                try {
-                    Thread.sleep(Long.MAX_VALUE);
-                } catch (InterruptedException e) {
-                    // proceed to returning true
-                }
-            }
-            return true;
+            return complete;
         }
     }
 

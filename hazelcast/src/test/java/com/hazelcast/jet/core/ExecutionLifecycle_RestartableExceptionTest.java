@@ -85,7 +85,7 @@ public class ExecutionLifecycle_RestartableExceptionTest extends SimpleTestInClu
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig();
-        config.getJetConfig().getInstanceConfig().setCooperativeThreadCount(2);
+        config.getJetConfig().setCooperativeThreadCount(2);
         initialize(MEMBER_COUNT, config);
     }
 

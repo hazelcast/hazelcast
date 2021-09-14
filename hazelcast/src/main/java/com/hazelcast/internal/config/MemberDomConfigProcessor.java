@@ -2989,15 +2989,55 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 jetConfig.setResourceUploadEnabled(resourceUploadEnabled);
             }
         }
-
+        // if JetConfig contains InstanceConfig(deprecated) fields
+        // <instance> tag will be ignored.
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
-            if (matches("instance", nodeName)) {
-                handleInstance(jetConfig, child);
+            if (matches("cooperative-thread-count", nodeName)) {
+                jetConfig.setCooperativeThreadCount(
+                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+            } else if (matches("flow-control-period", nodeName)) {
+                jetConfig.setFlowControlPeriodMs(
+                        getIntegerValue("flow-control-period", getTextContent(child)));
+            } else if (matches("backup-count", nodeName)) {
+                jetConfig.setBackupCount(
+                        getIntegerValue("backup-count", getTextContent(child)));
+            } else if (matches("scale-up-delay-millis", nodeName)) {
+                jetConfig.setScaleUpDelayMillis(
+                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+            } else if (matches("lossless-restart-enabled", nodeName)) {
+                jetConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
+            } else if (matches("max-processor-accumulated-records", nodeName)) {
+                jetConfig.setMaxProcessorAccumulatedRecords(
+                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
             } else if (matches("edge-defaults", nodeName)) {
                 handleEdgeDefaults(jetConfig, child);
+            } else if (matches("instance", nodeName)) {
+                if (jetConfigContainsInstanceConfigFields(node)) {
+                    LOGGER.warning("<instance> tag will be ignored "
+                            + "since <jet> tag already contains the instance fields.");
+                } else {
+                    LOGGER.warning("<instance> tag is deprecated, use <jet> tag directly for configuration.");
+                    handleInstance(jetConfig, child);
+                }
             }
         }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private boolean jetConfigContainsInstanceConfigFields(Node node) {
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("cooperative-thread-count".equals(nodeName)
+                    || "flow-control-period".equals(nodeName)
+                    || "backup-count".equals(nodeName)
+                    || "scale-up-delay-millis".equals(nodeName)
+                    || "lossless-restart-enabled".equals(nodeName)
+                    || "max-processor-accumulated-records".equals(nodeName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void handleInstance(JetConfig jetConfig, Node node) {
@@ -3006,21 +3046,21 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("cooperative-thread-count", nodeName)) {
                 instanceConfig.setCooperativeThreadCount(
-                        getIntegerValue("cooperative-thread-count", getTextContent(child)));
+                                getIntegerValue("cooperative-thread-count", getTextContent(child)));
             } else if (matches("flow-control-period", nodeName)) {
                 instanceConfig.setFlowControlPeriodMs(
-                        getIntegerValue("flow-control-period", getTextContent(child)));
+                                getIntegerValue("flow-control-period", getTextContent(child)));
             } else if (matches("backup-count", nodeName)) {
                 instanceConfig.setBackupCount(
-                        getIntegerValue("backup-count", getTextContent(child)));
+                                getIntegerValue("backup-count", getTextContent(child)));
             } else if (matches("scale-up-delay-millis", nodeName)) {
                 instanceConfig.setScaleUpDelayMillis(
-                        getLongValue("scale-up-delay-millis", getTextContent(child)));
+                                getLongValue("scale-up-delay-millis", getTextContent(child)));
             } else if (matches("lossless-restart-enabled", nodeName)) {
                 instanceConfig.setLosslessRestartEnabled(getBooleanValue(getTextContent(child)));
             } else if (matches("max-processor-accumulated-records", nodeName)) {
                 instanceConfig.setMaxProcessorAccumulatedRecords(
-                        getLongValue("max-processor-accumulated-records", getTextContent(child)));
+                                getLongValue("max-processor-accumulated-records", getTextContent(child)));
             }
         }
     }
