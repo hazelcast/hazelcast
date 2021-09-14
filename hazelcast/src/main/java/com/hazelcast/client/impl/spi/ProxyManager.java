@@ -154,6 +154,27 @@ public final class ProxyManager {
         }
 
         readProxyDescriptors();
+
+        this.addDistributedObjectListener(new CleanupDistObjListener(this));
+    }
+
+    public static class CleanupDistObjListener implements DistributedObjectListener {
+
+        private final ProxyManager proxyManager;
+
+        public CleanupDistObjListener(ProxyManager proxyManager){
+            this.proxyManager = proxyManager;
+        }
+
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            // no op
+        }
+
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+            proxyManager.destroyProxyLocally(event.getServiceName(), (String) event.getObjectName());
+        }
     }
 
     private void readProxyDescriptors() {
