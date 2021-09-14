@@ -30,6 +30,7 @@
 
     <modules>
         <module>hazelcast</module>
+        <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
@@ -140,6 +141,7 @@
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.15.3</testcontainers.version>
         <zookeeper.version>3.5.8</zookeeper.version>
+        <archunit.version>0.21.0</archunit.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
@@ -1506,6 +1508,11 @@
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
