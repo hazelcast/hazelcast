@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -108,7 +109,6 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MIGRATION
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_PREFIX;
 import static com.hazelcast.internal.metrics.ProbeUnit.BOOLEAN;
 import static com.hazelcast.internal.partition.IPartitionService.SERVICE_NAME;
-import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.ASYNC_EXECUTOR;
 
 /**
@@ -184,8 +184,10 @@ public class MigrationManager {
                 executionService, migrationPauseDelayMs, 2 * migrationPauseDelayMs, this::resumeMigration);
         this.memberHeartbeatTimeoutMillis = properties.getMillis(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS);
         nodeEngine.getMetricsRegistry().registerStaticMetrics(stats, PARTITIONS_PREFIX);
-        this.autoRebalanceDelaySeconds = node.getConfig().getPersistenceConfig().getRebalanceDelaySeconds();
-        checkNotNegative(autoRebalanceDelaySeconds, "Rebalance delay must be not negative");
+        this.autoRebalanceDelaySeconds =
+                node.getConfig().getPersistenceConfig().isEnabled()
+                ? node.getConfig().getPersistenceConfig().getRebalanceDelaySeconds()
+                : PersistenceConfig.DEFAULT_REBALANCE_DELAY;
         this.asyncExecutor = node.getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
     }
 
