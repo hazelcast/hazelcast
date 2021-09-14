@@ -85,6 +85,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger.merge;
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
@@ -123,6 +124,8 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public DynamicConfigurationAwareConfig(Config staticConfig, HazelcastProperties properties) {
         assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
+        merge(staticConfig.getHotRestartPersistenceConfig(), staticConfig.getPersistenceConfig());
+
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
         this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
