@@ -642,28 +642,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.partition.max.parallel.replications", PARTITION_MAX_PARALLEL_MIGRATIONS);
 
     /**
-     * Time (in seconds) to wait before triggering automatic partition rebalancing
-     * after a member leaves the cluster unexpectedly. Unexpectedly in this context
-     * means that a member leaves the cluster by means other than graceful shutdown:
-     * programmatic termination (eg {@link LifecycleService#terminate()}), a
-     * process crash or network partition.
-     * Default is 0, which means rebalancing is triggered immediately.
-     *
-     * Setting this to a higher value will allow some time for members that are gone
-     * to rejoin the cluster. The benefit is that partition rebalancing in this
-     * case will be avoided, saving the burden of migrating partition data over
-     * the network. While members are gone, operations on partitions
-     * for which the owner is missing may fail immediately or will be retried until
-     * the member rejoins or operation timeout is exceeded.
-     * Notice that this delay only applies when cluster members leave the cluster;
-     * when the cluster is being scaled up and members are being added, partition
-     * rebalancing will be triggered immediately (subject to limitations imposed
-     * by current {@link com.hazelcast.cluster.ClusterState}).
-     */
-    public static final HazelcastProperty PARTITION_REBALANCE_AFTER_MEMBER_LEFT_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.partition.rebalance.after.member.left.delay.seconds", 0, SECONDS);
-
-    /**
      * Class name implementing {@link com.hazelcast.partition.PartitioningStrategy}, which
      * defines key to partition mapping.
      */
