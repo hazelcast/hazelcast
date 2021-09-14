@@ -859,6 +859,11 @@ hazelcast:
         - name: "*"
           actions:
             - all
+      sql:
+        - name: "*"
+          actions:
+            - all
+
     client-block-unmapped-actions: true
 
   member-attributes:

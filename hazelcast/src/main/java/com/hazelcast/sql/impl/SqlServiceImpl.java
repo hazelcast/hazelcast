@@ -286,6 +286,10 @@ public class SqlServiceImpl implements SqlService {
         return QueryUtils.prepareSearchPaths(currentSearchPaths, optimizer.tableResolvers());
     }
 
+    public String mappingDdl(String name) {
+        return optimizer.mappingDdl(name);
+    }
+
     /**
      * Create either normal or not-implemented optimizer instance.
      *

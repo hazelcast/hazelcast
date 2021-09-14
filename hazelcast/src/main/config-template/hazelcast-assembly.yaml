@@ -16,8 +16,7 @@
 # to hazelcast-default-assembly.xml.
 #
 # This file differs from hazelcast-default.yaml in some settings
-# and it is used by the scripts in the ZIP/TAR distributions,
-# which are the basis for other distributions like docker & package managers.
+# and it is used by the scripts in the @FILTER_DISTRO_NAME@ distribution.
 #
 # To learn how to configure Hazelcast, please see the Reference Manual
 # at https://docs.hazelcast.com/
@@ -26,6 +25,8 @@ hazelcast:
   # same cluster name configured and a client connecting to this cluster
   # must use it as well.
   cluster-name: dev
+  properties:
+    hazelcast.socket.bind.any: @FILTER_BIND_ANY@
   network:
     # The preferred port number where the Hazelcast instance will listen. The
     # convention is to use 5701 and it is the default both here and in
@@ -52,7 +53,7 @@ hazelcast:
     # mechanism, so make sure to enable only one.
     join:
       auto-detection:
-        enabled: true
+        enabled: @FILTER_BIND_ANY@
       # Enables discovering nodes by using IP multicast. This is the
       # simplest technique, but in a cloud setting the network usually doesn't
       # allow multicast.
@@ -63,8 +64,7 @@ hazelcast:
       # This technique doesn't attempt any auto-discovery, you directly list all
       # the candidate IPs to check.
       tcp-ip:
-        enabled: false
-        interface: 127.0.0.1
+        enabled: @FILTER_LOOPBACK_INTERFACE@
         member-list:
           - 127.0.0.1
       # Specifies whether the member use the AWS API to get a list of candidate
@@ -98,9 +98,9 @@ hazelcast:
     # Which network interface to listen on. With "enabled" set to false
     # Hazelcast will listen on all available interfaces.
     interfaces:
-      enabled: false
+      enabled: @FILTER_LOOPBACK_INTERFACE@
       interfaces:
-        - 10.10.1.*
+        - 127.0.0.1
     # Lets you configure SSL using the SSL context factory. This feature is
     # available only in Hazelcast Enterprise. To be able to use it, encryption
     # should NOT be enabled and you should first implement your
@@ -108,45 +108,6 @@ hazelcast:
     # SSL properties. By default, it is disabled.
     ssl:
       enabled: false
-    # Lets you add custom hooks to join and perform connection procedures (like
-    # a custom authentication negotiation protocol, etc.). This feature is
-    # available only in Hazelcast Enterprise. To be able to use it, you should
-    # first implement the MemberSocketInterceptor (for members joining to a
-    # cluster) or SocketInterceptor (for clients connecting to a member) class.
-    # Its configuration contains the class you implemented and socket
-    # interceptor properties. By default, it is disabled. The following is an
-    # example:
-    # <socket-interceptor enabled="true">
-    #     <class-name>
-    #         com.hazelcast.examples.MySocketInterceptor
-    #     </class-name>
-    #     <properties>
-    #         <property name="property1">value1</property>
-    #         <property name="property2">value2</property>
-    #     </properties>
-    # </socket-interceptor>
-    socket-interceptor:
-      enabled: false
-    # Lets you encrypt the entire socket level communication among all
-    # Hazelcast members. This feature is available only in Hazelcast
-    # Enterprise. Its configuration contains the encryption properties and the
-    # same configuration must be placed to all members. By default, it is
-    # disabled.
-    symmetric-encryption:
-      enabled: false
-      #   encryption algorithm such as
-      #   DES/ECB/PKCS5Padding,
-      #   PBEWithMD5AndDES,
-      #   AES/CBC/PKCS5Padding,
-      #   Blowfish,
-      #   DESede
-      algorithm: PBEWithMD5AndDES
-      # salt value to use when generating the secret key
-      salt: thesalt
-      # pass phrase to use when generating the secret key
-      password: thepass
-      # iteration count to use when generating the secret key
-      iteration-count: 19
     failure-detector:
       icmp:
         enabled: false
@@ -789,40 +750,39 @@ hazelcast:
     # Specifies whether if the jet is enabled or not in this member
     enabled: true
     # Specifies whether uploading resources when submitting the job is enabled or not
-    resource-upload-enabled: false
-    instance:
-      # period between flow control packets in milliseconds
-      flow-control-period: 100
-      # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
-      backup-count: 1
-      # the delay after which auto-scaled jobs will restart if a new member is added to the
-      # cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled
-      scale-up-delay-millis: 10000
-      # Sets whether lossless job restart is enabled for the node. With
-      # lossless restart you can restart the whole cluster without losing the
-      # jobs and their state. The feature is implemented on top of the Hot
-      # Restart feature of Hazelcast IMDG which persists the data to disk.
-      lossless-restart-enabled: false
-      # Sets the maximum number of records that can be accumulated by any single
-      # Processor instance.
-      #
-      # Operations like grouping, sorting or joining require certain amount of
-      # records to be accumulated before they can proceed. You can set this option
-      # to reduce the probability of OutOfMemoryError.
-      #
-      # This option applies to each Processor instance separately, hence the
-      # effective limit of records accumulated by each cluster member is influenced
-      # by the vertex's localParallelism and the number of jobs in the cluster.
-      #
-      # Currently, maxProcessorAccumulatedRecords limits:
-      #    - number of items sorted by the sort operation
-      #    - number of distinct keys accumulated by aggregation operations
-      #    - number of entries in the hash-join lookup tables
-      #    - number of entries in stateful transforms
-      #    - number of distinct items in distinct operation
-      #
-      # Note: the limit does not apply to streaming aggregations.
-      max-processor-accumulated-records: 9223372036854775807
+    resource-upload-enabled: true
+    # period between flow control packets in milliseconds
+    flow-control-period: 100
+    # number of backup copies to configure for Hazelcast IMaps used internally in a Jet job
+    backup-count: 1
+    # the delay after which auto-scaled jobs will restart if a new member is added to the
+    # cluster. The default is 10 seconds. Has no effect on jobs with auto scaling disabled
+    scale-up-delay-millis: 10000
+    # Sets whether lossless job restart is enabled for the node. With
+    # lossless restart you can restart the whole cluster without losing the
+    # jobs and their state. The feature is implemented on top of the Hot
+    # Restart feature of Hazelcast IMDG which persists the data to disk.
+    lossless-restart-enabled: false
+    # Sets the maximum number of records that can be accumulated by any single
+    # Processor instance.
+    #
+    # Operations like grouping, sorting or joining require certain amount of
+    # records to be accumulated before they can proceed. You can set this option
+    # to reduce the probability of OutOfMemoryError.
+    #
+    # This option applies to each Processor instance separately, hence the
+    # effective limit of records accumulated by each cluster member is influenced
+    # by the vertex's localParallelism and the number of jobs in the cluster.
+    #
+    # Currently, maxProcessorAccumulatedRecords limits:
+    #    - number of items sorted by the sort operation
+    #    - number of distinct keys accumulated by aggregation operations
+    #    - number of entries in the hash-join lookup tables
+    #    - number of entries in stateful transforms
+    #    - number of distinct items in distinct operation
+    #
+    # Note: the limit does not apply to streaming aggregations.
+    max-processor-accumulated-records: 9223372036854775807
 
     edge-defaults:
       # capacity of the concurrent SPSC queue between each two processors

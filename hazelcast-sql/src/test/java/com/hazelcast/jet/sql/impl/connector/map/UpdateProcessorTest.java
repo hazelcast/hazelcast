@@ -40,8 +40,8 @@ import java.util.Map;
 
 import static com.hazelcast.jet.TestContextSupport.adaptSupplier;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
@@ -107,7 +107,7 @@ public class UpdateProcessorTest extends SqlTestSupport {
 
     private static PartitionedMapTable partitionedTable(QueryDataType valueType) {
         return new PartitionedMapTable(
-                SCHEMA_NAME_PARTITIONED,
+                SCHEMA_NAME_PUBLIC,
                 MAP_NAME,
                 MAP_NAME,
                 asList(

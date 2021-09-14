@@ -229,7 +229,7 @@ public final class TestSources {
         private long sequence;
 
         private ItemStreamSource(int itemsPerSecond, GeneratorFunction<? extends T> generator) {
-            this.periodNanos = TimeUnit.SECONDS.toNanos(1) / itemsPerSecond;
+            this.periodNanos = Math.max(TimeUnit.SECONDS.toNanos(1) / itemsPerSecond, 1);
             this.generator = generator;
         }
 

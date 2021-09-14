@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -47,6 +48,24 @@ public final class Records {
                                     ExpiryMetadata expiryMetadata) throws IOException {
         byte matchingDataRecordId = in.readByte();
         return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
+    }
+
+    public static void writeExpiry(ObjectDataOutput out, ExpiryMetadata expiryMetadata) throws IOException {
+        boolean hasExpiry = expiryMetadata.hasExpiry();
+        out.writeBoolean(hasExpiry);
+        if (hasExpiry) {
+            expiryMetadata.write(out);
+        }
+    }
+
+    public static ExpiryMetadata readExpiry(ObjectDataInput in) throws IOException {
+        ExpiryMetadata expiryMetadata = ExpiryMetadata.NULL;
+        boolean hasExpiry = in.readBoolean();
+        if (hasExpiry) {
+            expiryMetadata = new ExpiryMetadataImpl();
+            expiryMetadata.read(in);
+        }
+        return expiryMetadata;
     }
 
     /**

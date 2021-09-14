@@ -899,6 +899,11 @@
                             <hz:action>all</hz:action>
                         </hz:actions>
                     </hz:connector-permission>
+                    <hz:sql-permission name="*">
+                        <hz:actions>
+                            <hz:action>all</hz:action>
+                        </hz:actions>
+                    </hz:sql-permission>
                 </hz:client-permissions>
                 <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
@@ -1031,14 +1036,12 @@
             </hz:sql>
 
             <hz:jet enabled="true" resource-upload-enabled="true">
-                <hz:instance>
-                    <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
-                    <hz:backup-count>2</hz:backup-count>
-                    <hz:flow-control-period>200</hz:flow-control-period>
-                    <hz:scale-up-delay-millis>20000</hz:scale-up-delay-millis>
-                    <hz:lossless-restart-enabled>false</hz:lossless-restart-enabled>
-                    <hz:max-processor-accumulated-records>1000000</hz:max-processor-accumulated-records>
-                </hz:instance>
+                <hz:cooperative-thread-count>4</hz:cooperative-thread-count>
+                <hz:backup-count>2</hz:backup-count>
+                <hz:flow-control-period>200</hz:flow-control-period>
+                <hz:scale-up-delay-millis>20000</hz:scale-up-delay-millis>
+                <hz:lossless-restart-enabled>false</hz:lossless-restart-enabled>
+                <hz:max-processor-accumulated-records>1000000</hz:max-processor-accumulated-records>
                 <hz:edge-defaults>
                     <hz:queue-size>2048</hz:queue-size>
                     <hz:packet-size-limit>15000</hz:packet-size-limit>

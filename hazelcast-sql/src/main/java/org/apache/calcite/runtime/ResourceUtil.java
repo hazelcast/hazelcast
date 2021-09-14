@@ -14,7 +14,21 @@
  * limitations under the License.
  */
 
+package org.apache.calcite.runtime;
+
 /**
- * Contains Calcite-related classes.
+ * A class that enables access to protected {@link Resources} members.
  */
-package org.apache.calcite.plan.volcano;
+public final class ResourceUtil {
+
+    private ResourceUtil() {
+    }
+
+    public static String key(Resources.Element element) {
+        return element.key;
+    }
+
+    public static Object[] args(Resources.Inst instance) {
+        return instance.args;
+    }
+}

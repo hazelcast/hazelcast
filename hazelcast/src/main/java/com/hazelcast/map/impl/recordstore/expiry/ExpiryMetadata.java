@@ -16,6 +16,13 @@
 
 package com.hazelcast.map.impl.recordstore.expiry;
 
+import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.version.Version;
+
+import java.io.IOException;
+
 import static com.hazelcast.map.impl.record.Record.EPOCH_TIME;
 import static com.hazelcast.map.impl.record.Record.UNSET;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -25,6 +32,11 @@ public interface ExpiryMetadata {
 
     @SuppressWarnings("checkstyle:anoninnerlength")
     ExpiryMetadata NULL = new ExpiryMetadata() {
+        @Override
+        public boolean hasExpiry() {
+            return false;
+        }
+
         @Override
         public long getTtl() {
             return Long.MAX_VALUE;
@@ -84,8 +96,31 @@ public interface ExpiryMetadata {
         public ExpiryMetadata setRawExpirationTime(int expirationTime) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public long getLastUpdateTime() {
+            return 0;
+        }
+
+        @Override
+        public int getRawLastUpdateTime() {
+            return 0;
+        }
+
+        @Override
+        public ExpiryMetadata setLastUpdateTime(long lastUpdateTime) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExpiryMetadata setRawLastUpdateTime(int lastUpdateTime) {
+            throw new UnsupportedOperationException();
+        }
     };
 
+    default boolean hasExpiry() {
+        return true;
+    }
 
     long getTtl();
 
@@ -110,6 +145,36 @@ public interface ExpiryMetadata {
     ExpiryMetadata setExpirationTime(long expirationTime);
 
     ExpiryMetadata setRawExpirationTime(int expirationTime);
+
+    long getLastUpdateTime();
+
+    int getRawLastUpdateTime();
+
+    ExpiryMetadata setLastUpdateTime(long lastUpdateTime);
+
+    ExpiryMetadata setRawLastUpdateTime(int lastUpdateTime);
+
+    default void write(ObjectDataOutput out) throws IOException {
+        out.writeInt(getRawTtl());
+        out.writeInt(getRawMaxIdle());
+        out.writeInt(getRawExpirationTime());
+        // RU_COMPAT_4_2
+        Version version = out.getVersion();
+        if (version.isGreaterOrEqual(Versions.V5_0)) {
+            out.writeInt(getRawLastUpdateTime());
+        }
+    }
+
+    default void read(ObjectDataInput in) throws IOException {
+        setRawTtl(in.readInt());
+        setRawMaxIdle(in.readInt());
+        setRawExpirationTime(in.readInt());
+        // RU_COMPAT_4_2
+        Version version = in.getVersion();
+        if (version.isGreaterOrEqual(Versions.V5_0)) {
+            setRawLastUpdateTime(in.readInt());
+        }
+    }
 
     default int stripBaseTime(long value) {
         int diff = UNSET;

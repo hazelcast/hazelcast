@@ -24,23 +24,24 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     private int ttl;
     private int maxIdle;
-    // RU_COMPAT_4_1
-    // No need to set default value of
-    // expirationTime to UNSET after version 4.2
-    private volatile int expirationTime = UNSET;
+    private int lastUpdateTime;
+    private volatile int expirationTime;
 
     public ExpiryMetadataImpl() {
     }
 
-    public ExpiryMetadataImpl(long ttl, long maxIdle, long expirationTime) {
+    public ExpiryMetadataImpl(long ttl, long maxIdle,
+                              long expirationTime, long lastUpdateTime) {
         setTtl(ttl);
         setMaxIdle(maxIdle);
         setExpirationTime(expirationTime);
+        setLastUpdateTime(lastUpdateTime);
     }
 
     @Override
     public long getTtl() {
-        return ttl == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
+        return ttl == Integer.MAX_VALUE
+                ? Long.MAX_VALUE : SECONDS.toMillis(ttl);
     }
 
     @Override
@@ -55,7 +56,8 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
             ttlSeconds = 1;
         }
 
-        this.ttl = ttlSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) ttlSeconds;
+        this.ttl = ttlSeconds > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) ttlSeconds;
         return this;
     }
 
@@ -67,7 +69,8 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
 
     @Override
     public long getMaxIdle() {
-        return maxIdle == Integer.MAX_VALUE ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
+        return maxIdle == Integer.MAX_VALUE
+                ? Long.MAX_VALUE : SECONDS.toMillis(maxIdle);
     }
 
     @Override
@@ -81,7 +84,8 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
         if (maxIdleSeconds == 0 && maxIdle != 0) {
             maxIdleSeconds = 1;
         }
-        this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) maxIdleSeconds;
+        this.maxIdle = maxIdleSeconds > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE : (int) maxIdleSeconds;
         return this;
     }
 
@@ -124,11 +128,44 @@ public class ExpiryMetadataImpl implements ExpiryMetadata {
     }
 
     @Override
+    public long getLastUpdateTime() {
+        if (lastUpdateTime == UNSET) {
+            return 0L;
+        }
+
+        if (lastUpdateTime == Integer.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+
+        return recomputeWithBaseTime(lastUpdateTime);
+    }
+
+    @Override
+    public int getRawLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    @Override
+    public ExpiryMetadata setLastUpdateTime(long lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime == Long.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : stripBaseTime(lastUpdateTime);
+        return this;
+    }
+
+    @Override
+    public ExpiryMetadata setRawLastUpdateTime(int lastUpdateTime) {
+        this.lastUpdateTime = lastUpdateTime;
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "ExpiryMetadataImpl{"
                 + "ttl=" + getTtl()
                 + ", maxIdle=" + getMaxIdle()
                 + ", expirationTime=" + getExpirationTime()
+                + ", lastUpdateTime=" + getLastUpdateTime()
                 + '}';
     }
 }

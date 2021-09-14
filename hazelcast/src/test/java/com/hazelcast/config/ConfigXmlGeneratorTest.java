@@ -2151,8 +2151,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setEnabled(false).setResourceUploadEnabled(true);
-        jetConfig.getInstanceConfig()
-                .setLosslessRestartEnabled(true)
+        jetConfig.setLosslessRestartEnabled(true)
                 .setScaleUpDelayMillis(123)
                 .setBackupCount(2)
                 .setFlowControlPeriodMs(123)

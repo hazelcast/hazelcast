@@ -108,6 +108,7 @@ public abstract class SqlErrorAbstractTest extends SqlTestSupport {
         instance1 = newHazelcastInstance(true);
         client = newClient();
 
+        createMapping(instance1, MAP_NAME, long.class, long.class);
         IMap<Long, Long> map = instance1.getMap(MAP_NAME);
         map.put(1L, 1L);
 

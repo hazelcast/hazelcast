@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.partition;
 
 /**
- * Local map statistics related to partition data replication.
+ * Local statistics related to partition data replication.
  * <p>
  * Partition data are replicated across members either because
  * a new member becomes owner of a partition replica (usually the
@@ -32,25 +32,25 @@ public interface LocalReplicationStats {
 
     /**
      * @return count of differential partition replications
-     *         originating from this member.
+     * originating from this member.
      */
     long getDifferentialPartitionReplicationCount();
 
     /**
      * @return count of full partition replications
-     *         originating from this member.
+     * originating from this member.
      */
     long getFullPartitionReplicationCount();
 
     /**
      * @return count of records replicated due to differential
-     *         partition replications originating from this member.
+     * partition replications originating from this member.
      */
     long getDifferentialReplicationRecordCount();
 
     /**
      * @return count of records replicated due to full
-     *         partition replications originating from this member.
+     * partition replications originating from this member.
      */
     long getFullReplicationRecordCount();
 

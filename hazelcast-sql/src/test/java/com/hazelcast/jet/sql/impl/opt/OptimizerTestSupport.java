@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.sql.impl.QueryUtils.SCHEMA_NAME_PARTITIONED;
+import static com.hazelcast.jet.sql.impl.schema.MappingCatalog.SCHEMA_NAME_PUBLIC;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
@@ -101,7 +101,8 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 HazelcastSchemaUtils.createCatalog(schema),
                 QueryUtils.prepareSearchPaths(null, null),
                 emptyList(),
-                1
+                1,
+                name -> null
         );
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
@@ -124,7 +125,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
             long rowCount
     ) {
         PartitionedMapTable table = new PartitionedMapTable(
-                SCHEMA_NAME_PARTITIONED,
+                SCHEMA_NAME_PUBLIC,
                 name,
                 name,
                 fields,

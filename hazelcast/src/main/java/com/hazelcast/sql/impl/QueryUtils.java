@@ -44,7 +44,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public final class QueryUtils {
 
     public static final String CATALOG = "hazelcast";
-    public static final String SCHEMA_NAME_PARTITIONED = "partitioned";
 
     public static final String WORKER_TYPE_STATE_CHECKER = "query-state-checker";
 
@@ -70,9 +69,9 @@ public final class QueryUtils {
                 originatingMemberId = localMemberId;
             }
 
-            return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e);
+            return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e, e0.getSuggestion());
         } else {
-            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e);
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e, null);
         }
     }
 
@@ -115,7 +114,7 @@ public final class QueryUtils {
                     throw QueryException.error(
                         SqlErrorCode.PARTITION_DISTRIBUTION,
                         "Partition is not assigned to any member: " + part.getPartitionId()
-                    ).markInvalidate();
+                    );
                 } else {
                     continue;
                 }

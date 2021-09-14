@@ -91,9 +91,7 @@ public class InstanceConfig {
 
 ```xml
   <jet>
-    <instance>
-      <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
-    </instance>
+    <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
   </jet>
 ```
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.client;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -26,11 +27,24 @@ public class SqlError {
     private final int code;
     private final String message;
     private final UUID originatingMemberId;
+    private final boolean suggestionExists;
+    private final String suggestion;
 
     public SqlError(int code, String message, UUID originatingMemberId) {
+        this(code, message, originatingMemberId, false, null);
+    }
+
+    public SqlError(
+            int code,
+            String message,
+            UUID originatingMemberId,
+            boolean suggestionExists, String suggestion
+    ) {
         this.code = code;
         this.message = message;
         this.originatingMemberId = originatingMemberId;
+        this.suggestionExists = suggestionExists;
+        this.suggestion = suggestion;
     }
 
     public int getCode() {
@@ -43,6 +57,10 @@ public class SqlError {
 
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
+    }
+
+    public String getSuggestion() {
+        return suggestion;
     }
 
     @Override
@@ -65,7 +83,11 @@ public class SqlError {
             return false;
         }
 
-        return originatingMemberId.equals(sqlError.originatingMemberId);
+        if (!originatingMemberId.equals(sqlError.originatingMemberId)) {
+            return false;
+        }
+
+        return !suggestionExists || !sqlError.suggestionExists || Objects.equals(suggestion, sqlError.suggestion);
     }
 
     @Override
@@ -74,6 +96,7 @@ public class SqlError {
 
         result = 31 * result + message.hashCode();
         result = 31 * result + originatingMemberId.hashCode();
+        result = 31 * result + Objects.hashCode(suggestion);
 
         return result;
     }

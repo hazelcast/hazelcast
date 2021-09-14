@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -27,6 +28,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.operationservice.BackupOperation;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -87,14 +89,27 @@ public class PutBackupOperation
 
         IOUtil.writeData(out, dataKey);
         Records.writeRecord(out, record, dataValue, expiryMetadata);
+        // RU_COMPAT_4_2
+        Version version = out.getVersion();
+        if (version.isGreaterOrEqual(Versions.V5_0)) {
+            Records.writeExpiry(out, expiryMetadata);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        // RU_COMPAT_4_2
+        Version version = in.getVersion();
+        boolean isV5 = version.isGreaterOrEqual(Versions.V5_0);
 
         dataKey = IOUtil.readData(in);
-        expiryMetadata = new ExpiryMetadataImpl();
+        if (!isV5) {
+            expiryMetadata = new ExpiryMetadataImpl();
+        }
         record = Records.readRecord(in, expiryMetadata);
+        if (isV5) {
+            expiryMetadata = Records.readExpiry(in);
+        }
     }
 }

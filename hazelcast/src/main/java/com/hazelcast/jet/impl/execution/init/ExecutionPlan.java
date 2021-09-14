@@ -31,8 +31,9 @@ import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobExecutionService;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -131,7 +132,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private transient PartitionArrangement ptionArrgmt;
 
     private transient NodeEngineImpl nodeEngine;
-    private transient JobExecutionService jobExecutionService;
+    private transient JobClassLoaderService jobClassLoaderService;
     private transient long executionId;
 
     // list of unique remote members
@@ -166,8 +167,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            ConcurrentHashMap<String, File> tempDirectories,
                            InternalSerializationService jobSerializationService) {
         this.nodeEngine = nodeEngine;
-        this.jobExecutionService =
-                ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobExecutionService();
+        this.jobClassLoaderService =
+                ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME)).getJobClassLoaderService();
         this.executionId = executionId;
         initProcSuppliers(jobId, tempDirectories, jobSerializationService);
         initDag(jobSerializationService);
@@ -175,11 +176,15 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.ptionArrgmt = new PartitionArrangement(partitionAssignment, nodeEngine.getThisAddress());
         Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(vertices);
         for (Address destAddr : remoteMembers.get()) {
-            memberConnections.put(destAddr, getMemberConnection(nodeEngine, destAddr));
+            Connection conn = getMemberConnection(nodeEngine, destAddr);
+            if (conn == null) {
+                throw new TopologyChangedException("no connection to job participant: " + destAddr);
+            }
+            memberConnections.put(destAddr, conn);
         }
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
-                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             Collection<? extends Processor> processors = doWithClassLoader(
                     processorClassLoader,
                     () -> createProcessors(vertex, vertex.localParallelism())
@@ -325,7 +330,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                    InternalSerializationService jobSerializationService) {
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
-                    jobExecutionService.getProcessorClassLoader(jobId, vertex.name());
+                    jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
             String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
             ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
@@ -640,7 +645,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                            ReceiverTasklet receiverTasklet = new ReceiverTasklet(
                                    collector, jobSerializationService,
                                    edge.getConfig().getReceiveWindowMultiplier(),
-                                   getJetConfig().getInstanceConfig().getFlowControlPeriodMs(),
+                                   getJetConfig().getFlowControlPeriodMs(),
                                    nodeEngine.getLoggingService(), addr, edge.destOrdinal(), edge.destVertex().name(),
                                    memberConnections.get(addr), jobPrefix);
                            addrToTasklet.put(addr, receiverTasklet);

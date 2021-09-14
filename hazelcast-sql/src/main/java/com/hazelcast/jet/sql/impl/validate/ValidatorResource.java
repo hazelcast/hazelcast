@@ -51,4 +51,9 @@ public interface ValidatorResource {
 
     @BaseMessage("Sorting is not supported for a streaming query")
     ExInst<SqlValidatorException> streamingSortingNotSupported();
+
+    static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
+        return originalMessage + " If you want to use the IMap named '" + identifier + "', execute this command first: "
+                + suggestion;
+    }
 }
