@@ -1647,6 +1647,44 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapWithoutMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithoutMerkleTreeConfig");
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithEnabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithDisabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testMapNearCacheConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
                 .setName("nearCache")
@@ -2251,6 +2289,34 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("test").getMerkleTreeConfig();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCacheWithoutMerkleTreeConfig() {
+        Config cfg = new Config();
+        MerkleTreeConfig actual = cfg.getCacheConfig("testCacheWithoutMerkleTreeConfig")
+                .getMerkleTreeConfig();
+
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+                .getCacheConfig("testCacheWithoutMerkleTreeConfig").getMerkleTreeConfig();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCacheWithDisabledMerkleTreeConfig() {
+        MerkleTreeConfig actual = new MerkleTreeConfig()
+                .setEnabled(false)
+                .setDepth(13);
+
+        Config cfg = new Config();
+        cfg.getCacheConfig("testCacheWithDisabledMerkleTreeConfig")
+           .setMerkleTreeConfig(actual);
+
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+                .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
     }
