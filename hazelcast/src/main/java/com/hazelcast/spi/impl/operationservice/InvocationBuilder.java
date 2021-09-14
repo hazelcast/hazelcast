@@ -59,6 +59,11 @@ public abstract class InvocationBuilder {
      */
     public static final boolean DEFAULT_DESERIALIZE_RESULT = true;
 
+    /**
+     * Default type of action - false mean non-async action by default.
+     */
+    public static final boolean DEFAULT_ASYNC = false;
+
     protected final String serviceName;
     protected final Operation op;
     protected final int partitionId;
@@ -71,7 +76,7 @@ public abstract class InvocationBuilder {
     protected long tryPauseMillis = DEFAULT_TRY_PAUSE_MILLIS;
     protected boolean resultDeserialized = DEFAULT_DESERIALIZE_RESULT;
     protected boolean failOnIndeterminateOperationState;
-    protected boolean async = false;
+    protected boolean async = DEFAULT_ASYNC;
     protected ServerConnectionManager connectionManager;
 
     /**
