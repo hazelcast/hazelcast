@@ -22,7 +22,6 @@ import com.hazelcast.collection.ISet;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
