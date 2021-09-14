@@ -35,6 +35,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
@@ -123,6 +124,9 @@ public class ConfigXmlGenerator {
 
         StringBuilder xml = new StringBuilder();
         XmlGenerator gen = new XmlGenerator(xml);
+
+        PersistenceAndHotRestartPersistenceMerger.merge(config.getHotRestartPersistenceConfig(),
+                config.getPersistenceConfig());
 
         xml.append("<hazelcast ")
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")

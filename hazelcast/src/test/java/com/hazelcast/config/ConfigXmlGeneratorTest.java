@@ -91,6 +91,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -397,6 +398,25 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartConfig_equalsToPersistenceConfig() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                .setClusterDataRecoveryPolicy(FULL_RECOVERY_ONLY)
+                .setValidationTimeoutSeconds(100)
+                .setDataLoadTimeoutSeconds(130)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
+                .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
+                .setParallelism(5).setAutoRemoveStaleData(false);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg, false);
+
+        assertEquals(cfg.getHotRestartPersistenceConfig(), actualConfig.getHotRestartPersistenceConfig());
+        assertEquals(cfg.getPersistenceConfig(), actualConfig.getPersistenceConfig());
     }
 
     private void configurePersistence(Config cfg) {
