@@ -80,7 +80,7 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
         int messageType = parameters.getMessageType();
 
         if (SqlClientService.isSqlMessage(messageType)) {
-            // Special error message for the SQL beta service that do not maintain compatibility between versions.
+            // Special error message for the SQL service that do not maintain compatibility between versions.
             String memberVersion = nodeEngine.getVersion().toString();
             String clientVersion = endpoint.getClientVersion();
 

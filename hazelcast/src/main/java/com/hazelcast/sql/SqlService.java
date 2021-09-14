@@ -50,7 +50,7 @@ import java.util.List;
  * <ul>
  *     <li>java
  *     <li>portable
- *     <li>json
+ *     <li>json-flat
  * </ul>
  * <p>
  * <h3>Java Serialization</h3>
@@ -72,7 +72,7 @@ import java.util.List;
  * populate column list. If the {@code ClassDefinition} with the given IDs is not known to the cluster it will be
  * created based on the column list.
  * <p>
- * <h3>JSON Serialization</h3>
+ * <h3>JSON Flat Serialization</h3>
  * The value will be stored as {@code HazelcastJsonValue}. Hazelcast can't automatically determine the column list for
  * this format, you must explicitly specify it.
  * <p>
@@ -96,7 +96,7 @@ import java.util.List;
  * and <em>valueFormat</em>:
  * <ul>
  *     <li>java
- *     <li>json
+ *     <li>json-flat
  *     <li>avro
  * </ul>
  * <p>
@@ -112,7 +112,7 @@ import java.util.List;
  * The <em>format</em> option is mandatory. Possible values for <em>format</em>:
  * <ul>
  *     <li>csv
- *     <li>json
+ *     <li>json-flat
  *     <li>avro
  *     <li>parquet
  * </ul>
