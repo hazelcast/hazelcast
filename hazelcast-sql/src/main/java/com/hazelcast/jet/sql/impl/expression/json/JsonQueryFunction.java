@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.expression.json;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -42,7 +42,7 @@ import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
-    private static final ObjectMapper SERIALIZER = new ObjectMapper();
+    private static final Gson SERIALIZER = new Gson();
     private SqlJsonQueryWrapperBehavior wrapperBehavior;
     private SqlJsonQueryEmptyOrErrorBehavior onEmpty;
     private SqlJsonQueryEmptyOrErrorBehavior onError;
@@ -158,8 +158,8 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
     private String serialize(Object value) {
         try {
-            return SERIALIZER.writeValueAsString(value);
-        } catch (JsonProcessingException exception) {
+            return SERIALIZER.toJson(value);
+        } catch (JsonParseException exception) {
             throw QueryException.error("Failed to serialize JSON_QUERY result: ", exception);
         }
     }

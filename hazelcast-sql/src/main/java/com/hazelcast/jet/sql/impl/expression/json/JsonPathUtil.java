@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.expression.json;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
-import com.jayway.jsonpath.spi.json.JacksonJsonProvider;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 
 public final class JsonPathUtil {
     private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
-            .jsonProvider(new JacksonJsonProvider())
+            .jsonProvider(new GsonJsonProvider())
             .build());
     private JsonPathUtil() { }
 
