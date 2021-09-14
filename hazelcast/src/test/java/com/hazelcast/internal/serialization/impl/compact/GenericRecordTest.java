@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -88,11 +89,15 @@ public class GenericRecordTest {
 
         return GenericRecordBuilder.compact("main")
                 .setByte("b", mainDTO.b)
+                .setUnsignedByte("ub", mainDTO.ub)
                 .setBoolean("bool", mainDTO.bool)
                 .setChar("c", mainDTO.c)
                 .setShort("s", mainDTO.s)
+                .setUnsignedShort("us", mainDTO.us)
                 .setInt("i", mainDTO.i)
+                .setUnsignedInt("ui", mainDTO.ui)
                 .setLong("l", mainDTO.l)
+                .setUnsignedLong("ul", mainDTO.ul)
                 .setFloat("f", mainDTO.f)
                 .setDouble("d", mainDTO.d)
                 .setString("str", mainDTO.str)
@@ -110,8 +115,12 @@ public class GenericRecordTest {
         NamedDTO[] nn = new NamedDTO[2];
         nn[0] = new NamedDTO("name", 123);
         nn[1] = new NamedDTO("name", 123);
-        InnerDTO inner = new InnerDTO(new byte[]{0, 1, 2}, new char[]{'c', 'h', 'a', 'r'},
-                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+        InnerDTO inner = new InnerDTO(new byte[]{0, 1, 2}, new int[]{128, 129, 170}, new char[]{'c', 'h', 'a', 'r'},
+                new short[]{3, 4, 5}, new int[]{Short.MAX_VALUE + 1, Short.MAX_VALUE + 2, Short.MAX_VALUE + 3},
+                new int[]{9, 8, 7, 6},
+                new long[]{(long) Integer.MAX_VALUE + 1, (long) Integer.MAX_VALUE + 2, (long) Integer.MAX_VALUE + 3},
+                new long[]{0, 1, 5, 7, 9, 11},
+                new BigInteger[]{new BigInteger("9223372036854775808"), new BigInteger("9223372036854775809")},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn,
                 new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
                 new LocalTime[]{LocalTime.now(), LocalTime.now()},
@@ -119,7 +128,8 @@ public class GenericRecordTest {
                 new LocalDateTime[]{LocalDateTime.now()},
                 new OffsetDateTime[]{OffsetDateTime.now()});
 
-        return new MainDTO((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
+        return new MainDTO((byte) 113, 180, true, 'x', (short) -500, Short.MAX_VALUE + 10, 56789,
+                (long) Integer.MAX_VALUE + 20, -50992225L, new BigInteger("9223372036854775808"), 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now());
     }
@@ -128,7 +138,7 @@ public class GenericRecordTest {
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
+        compactSerializationConfig.setEnabled(true).register(MainDTO.class, "MainDTO", new MainDTO.MainDTOSerializer());
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))

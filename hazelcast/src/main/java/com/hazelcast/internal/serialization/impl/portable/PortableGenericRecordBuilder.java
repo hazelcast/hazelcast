@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -100,6 +101,54 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
     @Override
     public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
         return set(fieldName, value, FieldType.BYTE);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedByte(@Nonnull String fieldName, int value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedInt(@Nonnull String fieldName, long value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLong(@Nonnull String fieldName, BigInteger value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShort(@Nonnull String fieldName, int value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] value) {
+        return null;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] value) {
+        throw new UnsupportedOperationException();
     }
 
     @Nonnull

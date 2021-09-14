@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -104,6 +105,10 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
     }
 
     @Override
+    public void writeUnsignedByteArray(int[] bytes) throws IOException {
+    }
+
+    @Override
     public void writeBooleanArray(boolean[] booleans) throws IOException {
     }
 
@@ -116,7 +121,15 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
     }
 
     @Override
+    public void writeUnsignedIntArray(long[] ints) throws IOException {
+    }
+
+    @Override
     public void writeLongArray(long[] longs) throws IOException {
+    }
+
+    @Override
+    public void writeUnsignedLongArray(BigInteger[] longs) throws IOException {
     }
 
     @Override
@@ -129,6 +142,10 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput
 
     @Override
     public void writeShortArray(short[] values) throws IOException {
+    }
+
+    @Override
+    public void writeUnsignedShortArray(int[] values) throws IOException {
     }
 
     @Override

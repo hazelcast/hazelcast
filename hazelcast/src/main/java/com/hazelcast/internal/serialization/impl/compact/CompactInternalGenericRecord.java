@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -51,7 +52,9 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
@@ -65,11 +68,17 @@ import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.INT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
@@ -187,6 +196,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+    @Override
+    public int getUnsignedByte(@Nonnull String fieldName) {
+        try {
+            return in.readUnsignedByte(readFixedSizePosition(fieldName, UNSIGNED_BYTE));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
     boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldType type) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
@@ -205,6 +223,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    public int getUnsignedShort(@Nonnull String fieldName) {
+        try {
+            return in.readUnsignedShort(readFixedSizePosition(fieldName, UNSIGNED_SHORT));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
     public int getInt(@Nonnull String fieldName) {
         try {
             return in.readInt(readFixedSizePosition(fieldName, INT));
@@ -214,9 +241,27 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    public long getUnsignedInt(@Nonnull String fieldName) {
+        try {
+            return in.readUnsignedInt(readFixedSizePosition(fieldName, UNSIGNED_INT));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
     public long getLong(@Nonnull String fieldName) {
         try {
             return in.readLong(readFixedSizePosition(fieldName, LONG));
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public BigInteger getUnsignedLong(@Nonnull String fieldName) {
+        try {
+            return in.readUnsignedLong(readFixedSizePosition(fieldName, UNSIGNED_LONG));
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -362,6 +407,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableLength(fieldName, BYTE_ARRAY, ObjectDataInput::readByteArray);
     }
 
+    @Nullable
+    @Override
+    public int[] getUnsignedByteArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, UNSIGNED_BYTE_ARRAY, ObjectDataInput::readUnsignedByteArray);
+    }
+
     @Override
     public boolean[] getBooleanArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, BOOLEAN_ARRAY, CompactInternalGenericRecord::readBooleanBits);
@@ -377,9 +428,21 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableLength(fieldName, INT_ARRAY, ObjectDataInput::readIntArray);
     }
 
+    @Nullable
+    @Override
+    public long[] getUnsignedIntArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, UNSIGNED_INT_ARRAY, ObjectDataInput::readUnsignedIntArray);
+    }
+
     @Override
     public long[] getLongArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, LONG_ARRAY, ObjectDataInput::readLongArray);
+    }
+
+    @Nullable
+    @Override
+    public BigInteger[] getUnsignedLongArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, UNSIGNED_LONG_ARRAY, ObjectDataInput::readUnsignedLongArray);
     }
 
     @Override
@@ -395,6 +458,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public short[] getShortArray(@Nonnull String fieldName) {
         return getVariableLength(fieldName, SHORT_ARRAY, ObjectDataInput::readShortArray);
+    }
+
+    @Nullable
+    @Override
+    public int[] getUnsignedShortArray(@Nonnull String fieldName) {
+        return getVariableLength(fieldName, UNSIGNED_SHORT_ARRAY, ObjectDataInput::readUnsignedShortArray);
     }
 
     @Override
@@ -535,6 +604,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getFixedSizeFieldFromArray(fieldName, BYTE_ARRAY, ObjectDataInput::readByte, index);
     }
 
+    public Integer getUnsignedByteFromArray(@Nonnull String fieldName, int index) {
+        return getFixedSizeFieldFromArray(fieldName, UNSIGNED_BYTE_ARRAY, ObjectDataInput::readUnsignedByte, index);
+    }
+
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
         int position = readVariableSizeFieldPosition(fieldName, BOOLEAN_ARRAY);
         if (position == NULL_OFFSET) {
@@ -564,8 +637,20 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getFixedSizeFieldFromArray(fieldName, INT_ARRAY, ObjectDataInput::readInt, index);
     }
 
+    @Nullable
+    @Override
+    public Long getUnsignedIntFromArray(@Nonnull String fieldName, int index) {
+        return getFixedSizeFieldFromArray(fieldName, UNSIGNED_INT_ARRAY, ObjectDataInput::readUnsignedInt, index);
+    }
+
     public Long getLongFromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, LONG_ARRAY, ObjectDataInput::readLong, index);
+    }
+
+    @Nullable
+    @Override
+    public BigInteger getUnsignedLongFromArray(@Nonnull String fieldName, int index) {
+        return getFixedSizeFieldFromArray(fieldName, UNSIGNED_LONG_ARRAY, ObjectDataInput::readUnsignedLong, index);
     }
 
     public Double getDoubleFromArray(@Nonnull String fieldName, int index) {
@@ -578,6 +663,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     public Short getShortFromArray(@Nonnull String fieldName, int index) {
         return getFixedSizeFieldFromArray(fieldName, SHORT_ARRAY, ObjectDataInput::readShort, index);
+    }
+
+    @Nullable
+    @Override
+    public Integer getUnsignedShortFromArray(@Nonnull String fieldName, int index) {
+        return getFixedSizeFieldFromArray(fieldName, UNSIGNED_SHORT_ARRAY, ObjectDataInput::readUnsignedShort, index);
     }
 
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldType fieldType,

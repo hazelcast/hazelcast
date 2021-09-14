@@ -24,7 +24,9 @@ import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -85,11 +87,27 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
         return this;
     }
 
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedInt(@Nonnull String fieldName, long value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedInt(fieldName, value);
+        return this;
+    }
+
     @Override
     @Nonnull
     public GenericRecordBuilder setLong(@Nonnull String fieldName, long value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeLong(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLong(@Nonnull String fieldName, BigInteger value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedLong(fieldName, value);
         return this;
     }
 
@@ -114,6 +132,14 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     public GenericRecordBuilder setByte(@Nonnull String fieldName, byte value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeByte(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedByte(@Nonnull String fieldName, int value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedByte(fieldName, value);
         return this;
     }
 
@@ -146,6 +172,14 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeShort(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShort(@Nonnull String fieldName, int value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedShort(fieldName, value);
         return this;
     }
 
@@ -213,6 +247,14 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
         return this;
     }
 
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedByteArray(fieldName, value);
+        return this;
+    }
+
     @Override
     @Nonnull
     public GenericRecordBuilder setBooleanArray(@Nonnull String fieldName, boolean[] value) {
@@ -237,11 +279,27 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
         return this;
     }
 
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedIntArray(fieldName, value);
+        return this;
+    }
+
     @Override
     @Nonnull
     public GenericRecordBuilder setLongArray(@Nonnull String fieldName, long[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeLongArray(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedLongArray(fieldName, value);
         return this;
     }
 
@@ -266,6 +324,14 @@ public class SerializingGenericRecordBuilder implements GenericRecordBuilder {
     public GenericRecordBuilder setShortArray(@Nonnull String fieldName, short[] value) {
         checkIfAlreadyWritten(fieldName);
         defaultCompactWriter.writeShortArray(fieldName, value);
+        return this;
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] value) {
+        checkIfAlreadyWritten(fieldName);
+        defaultCompactWriter.writeUnsignedShortArray(fieldName, value);
         return this;
     }
 

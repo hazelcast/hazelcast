@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -86,6 +87,11 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     }
 
     @Override
+    public int getUnsignedByte(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_BYTE);
+    }
+
+    @Override
     public char getChar(@Nonnull String fieldName) {
         return get(fieldName, FieldType.CHAR);
     }
@@ -106,14 +112,27 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     }
 
     @Override
+    public long getUnsignedInt(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_INT);
+    }
+
+    @Override
     public long getLong(@Nonnull String fieldName) {
         return get(fieldName, FieldType.LONG);
     }
 
     @Override
+    public BigInteger getUnsignedLong(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_LONG);    }
+
+    @Override
     public short getShort(@Nonnull String fieldName) {
         return get(fieldName, FieldType.SHORT);
     }
+
+    @Override
+    public int getUnsignedShort(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_SHORT);    }
 
     @Override
     @Nullable
@@ -168,6 +187,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return get(fieldName, FieldType.BYTE_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public int[] getUnsignedByteArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_BYTE_ARRAY);
+    }
+
     @Override
     public char[] getCharArray(@Nonnull String fieldName) {
         return get(fieldName, FieldType.CHAR_ARRAY);
@@ -188,14 +213,30 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return get(fieldName, FieldType.INT_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public long[] getUnsignedIntArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_INT_ARRAY);    }
+
     @Override
     public long[] getLongArray(@Nonnull String fieldName) {
         return get(fieldName, FieldType.LONG_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public BigInteger[] getUnsignedLongArray(@Nonnull String fieldName) {
+        return get(fieldName, FieldType.UNSIGNED_LONG_ARRAY);    }
+
     @Override
     public short[] getShortArray(@Nonnull String fieldName) {
         return get(fieldName, FieldType.SHORT_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public int[] getUnsignedShortArray(@Nonnull String fieldName) {
+        return new int[0];
     }
 
     @Override

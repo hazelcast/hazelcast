@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import javax.annotation.Nullable;
 import java.io.DataInput;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 
 /**
@@ -34,6 +35,20 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     String readUTF() throws IOException;
 
     /**
+     *
+     * @return the unsigned integer value
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    long readUnsignedInt() throws IOException;
+
+    /**
+     *
+     * @return the unsigned long value
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    BigInteger readUnsignedLong() throws IOException;
+
+    /**
      * @return the string read
      * @throws IOException if it reaches end of file before finish reading
      */
@@ -46,6 +61,13 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      */
     @Nullable
     byte[] readByteArray() throws IOException;
+
+    /**
+     * @return the unsigned byte array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    @Nullable
+    int[] readUnsignedByteArray() throws IOException;
 
     /**
      * @return the boolean array read
@@ -69,11 +91,25 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
     int[] readIntArray() throws IOException;
 
     /**
+     * @return unsigned int array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    @Nullable
+    long[] readUnsignedIntArray() throws IOException;
+
+    /**
      * @return long array read
      * @throws IOException if it reaches end of file before finish reading
      */
     @Nullable
     long[] readLongArray() throws IOException;
+
+    /**
+     * @return long array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    @Nullable
+    BigInteger[] readUnsignedLongArray() throws IOException;
 
     /**
      * @return double array read
@@ -95,6 +131,13 @@ public interface ObjectDataInput extends DataInput, VersionAware, WanProtocolVer
      */
     @Nullable
     short[] readShortArray() throws IOException;
+
+    /**
+     * @return short array read
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    @Nullable
+    int[] readUnsignedShortArray() throws IOException;
 
     /**
      * @return String array read

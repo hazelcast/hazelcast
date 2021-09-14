@@ -21,6 +21,7 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -43,12 +44,28 @@ public interface CompactWriter {
     void writeInt(@Nonnull String fieldName, int value);
 
     /**
+     * Writes a 32-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @param value value to be written.
+     */
+    void writeUnsignedInt(@Nonnull String fieldName, long value);
+
+    /**
      * Writes a 64-bit two's complement signed integer.
      *
      * @param fieldName name of the field.
      * @param value value to be written.
      */
     void writeLong(@Nonnull String fieldName, long value);
+
+    /**
+     * Writes a 64-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @param value value to be written.
+     */
+    void writeUnsignedLong(@Nonnull String fieldName, BigInteger value);
 
     /**
      * Writes an UTF-8 encoded string.
@@ -73,6 +90,14 @@ public interface CompactWriter {
      * @param value value to be written.
      */
     void writeByte(@Nonnull String fieldName, byte value);
+
+    /**
+     * Writes an 8-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @param value value to be written.
+     */
+    void writeUnsignedByte(@Nonnull String fieldName, int value);
 
     /**
      * Writes a 16-bit unsigned integer.
@@ -105,6 +130,14 @@ public interface CompactWriter {
      * @param value value to be written.
      */
     void writeShort(@Nonnull String fieldName, short value);
+
+    /**
+     * Writes a 16-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @param value value to be written.
+     */
+    void writeUnsignedShort(@Nonnull String fieldName, int value);
 
     /**
      * Writes an arbitrary precision and scale floating point number.
@@ -163,6 +196,14 @@ public interface CompactWriter {
     void writeByteArray(@Nonnull String fieldName, @Nullable byte[] values);
 
     /**
+     * Writes an array of 8-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @param values values to be written.
+     */
+    void writeUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] values);
+
+    /**
      * Writes an array of booleans.
      *
      * @param fieldName name of the field.
@@ -187,12 +228,28 @@ public interface CompactWriter {
     void writeIntArray(@Nonnull String fieldName, @Nullable int[] values);
 
     /**
+     * Writes an array of 32-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @param values values to be written.
+     */
+    void writeUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] values);
+
+    /**
      * Writes an array of 64-bit two's complement signed integers.
      *
      * @param fieldName name of the field.
      * @param values values to be written.
      */
     void writeLongArray(@Nonnull String fieldName, @Nullable long[] values);
+
+    /**
+     * Writes an array of 64-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @param values values to be written.
+     */
+    void writeUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] values);
 
     /**
      * Writes an array of 64-bit IEEE 754 floating point numbers.
@@ -217,6 +274,14 @@ public interface CompactWriter {
      * @param values values to be written.
      */
     void writeShortArray(@Nonnull String fieldName, @Nullable short[] values);
+
+    /**
+     * Writes an array of unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @param values values to be written.
+     */
+    void writeUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] values);
 
     /**
      * Writes an array of UTF-8 encoded strings.

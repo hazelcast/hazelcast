@@ -22,6 +22,7 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -53,6 +54,17 @@ public interface CompactReader {
     byte readByte(@Nonnull String fieldName);
 
     /**
+     * Reads an unsigned byte.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    int readUnsignedByte(@Nonnull String fieldName);
+
+    /**
      * Reads an 8-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName name of the field.
@@ -62,6 +74,17 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     byte readByte(@Nonnull String fieldName, byte defaultValue);
+
+    /**
+     * Reads an unsigned integer or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    int readUnsignedByte(@Nonnull String fieldName, int defaultValue);
 
     /**
      * Reads a 16-bit two's complement signed integer.
@@ -75,6 +98,17 @@ public interface CompactReader {
     short readShort(@Nonnull String fieldName);
 
     /**
+     * Reads a 16-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    int readUnsignedShort(@Nonnull String fieldName);
+
+    /**
      * Reads a 16-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName name of the field.
@@ -84,6 +118,17 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     short readShort(@Nonnull String fieldName, short defaultValue);
+
+    /**
+     * Reads a 16-bit unsigned integer or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    int readUnsignedShort(@Nonnull String fieldName, int defaultValue);
 
     /**
      * Reads a 32-bit two's complement signed integer.
@@ -97,6 +142,17 @@ public interface CompactReader {
     int readInt(@Nonnull String fieldName);
 
     /**
+     * Reads a 32-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    long readUnsignedInt(@Nonnull String fieldName);
+
+    /**
      * Reads a 32-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName name of the field.
@@ -106,6 +162,17 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     int readInt(@Nonnull String fieldName, int defaultValue);
+
+    /**
+     * Reads a 32-bit unsigned integer or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    long readUnsignedInt(@Nonnull String fieldName, long defaultValue);
 
     /**
      * Reads a 64-bit two's complement signed integer.
@@ -119,6 +186,17 @@ public interface CompactReader {
     long readLong(@Nonnull String fieldName);
 
     /**
+     * Reads a 64-bit unsigned integer.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    BigInteger readUnsignedLong(@Nonnull String fieldName);
+
+    /**
      * Reads a 64-bit two's complement signed integer or returns the default value.
      *
      * @param fieldName name of the field.
@@ -128,6 +206,17 @@ public interface CompactReader {
      * @return the value or the default value of the field.
      */
     long readLong(@Nonnull String fieldName, long defaultValue);
+
+    /**
+     * Reads a 64-bit unsigned integer or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    BigInteger readUnsignedLong(@Nonnull String fieldName, BigInteger defaultValue);
 
     /**
      * Reads a 32-bit IEEE 754 floating point number.
@@ -415,6 +504,18 @@ public interface CompactReader {
     byte[] readByteArray(@Nonnull String fieldName);
 
     /**
+     * Reads an array of 8-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    int[] readUnsignedByteArray(@Nonnull String fieldName);
+
+    /**
      * Reads an array of 8-bit two's complement signed integers
      * or returns the default value.
      *
@@ -426,6 +527,19 @@ public interface CompactReader {
      */
     @Nullable
     byte[] readByteArray(@Nonnull String fieldName, @Nullable byte[] defaultValue);
+
+    /**
+     * Reads an array of 8-bit unsigned integers
+     * or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    @Nullable
+    int[] readUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
 
     /**
      * Reads an array of booleans.
@@ -488,6 +602,18 @@ public interface CompactReader {
     int[] readIntArray(@Nonnull String fieldName);
 
     /**
+     * Reads an array of 32-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    long[] readUnsignedIntArray(@Nonnull String fieldName);
+
+    /**
      * Reads an array of 32-bit two's complement signed integers
      * or returns the default value.
      *
@@ -499,6 +625,19 @@ public interface CompactReader {
      */
     @Nullable
     int[] readIntArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
+
+    /**
+     * Reads an array of 32-bit unsigned integers
+     * or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    @Nullable
+    long[] readUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] defaultValue);
 
     /**
      * Reads an array of 64-bit two's complement signed integers.
@@ -513,6 +652,18 @@ public interface CompactReader {
     long[] readLongArray(@Nonnull String fieldName);
 
     /**
+     * Reads an array of 64-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    BigInteger[] readUnsignedLongArray(@Nonnull String fieldName);
+
+    /**
      * Reads an array of 64-bit two's complement signed integers
      * or returns the default value.
      *
@@ -524,6 +675,19 @@ public interface CompactReader {
      */
     @Nullable
     long[] readLongArray(@Nonnull String fieldName, @Nullable long[] defaultValue);
+
+    /**
+     * Reads an array of 64-bit unsigned integers
+     * or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    @Nullable
+    BigInteger[] readLongArray(@Nonnull String fieldName, @Nullable BigInteger[] defaultValue);
 
     /**
      * Reads an array of 64-bit IEEE 754 floating point numbers.
@@ -588,6 +752,18 @@ public interface CompactReader {
     short[] readShortArray(@Nonnull String fieldName);
 
     /**
+     * Reads an array of 16-bit unsigned integers.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in the schema
+     *                                         or the type of the field does not match
+     *                                         with the one defined in the schema.
+     */
+    @Nullable
+    int[] readUnsignedShortArray(@Nonnull String fieldName);
+
+    /**
      * Reads an array of 16-bit two's complement signed integers
      * or returns the default value.
      *
@@ -599,6 +775,19 @@ public interface CompactReader {
      */
     @Nullable
     short[] readShortArray(@Nonnull String fieldName, @Nullable short[] defaultValue);
+
+    /**
+     * Reads an array of 16-bit unsigned integers
+     * or returns the default value.
+     *
+     * @param fieldName name of the field.
+     * @param defaultValue default value to return if the field with the given name
+     *                     does not exist in the schema or the type of the field does
+     *                     not match with the one defined in the schema.
+     * @return the value or the default value of the field.
+     */
+    @Nullable
+    int[] readUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] defaultValue);
 
     /**
      * Reads an array of UTF-8 encoded strings.

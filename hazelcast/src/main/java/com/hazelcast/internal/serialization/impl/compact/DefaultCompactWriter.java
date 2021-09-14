@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -40,7 +41,9 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHO
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
@@ -54,11 +57,17 @@ import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.INT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
@@ -159,10 +168,30 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedInt(@Nonnull String fieldName, long value) {
+        int position = getFixedSizeFieldPosition(fieldName, UNSIGNED_INT);
+        try {
+            out.writeInt(position, (int) value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
     public void writeLong(@Nonnull String fieldName, long value) {
         int position = getFixedSizeFieldPosition(fieldName, LONG);
         try {
             out.writeLong(position, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public void writeUnsignedLong(@Nonnull String fieldName, BigInteger value) {
+        int position = getFixedSizeFieldPosition(fieldName, UNSIGNED_LONG);
+        try {
+            out.writeLong(position, value.longValue());
         } catch (IOException e) {
             throw illegalStateException(e);
         }
@@ -188,6 +217,16 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeByte(@Nonnull String fieldName, byte value) {
         int position = getFixedSizeFieldPosition(fieldName, BYTE);
+        try {
+            out.writeByte(position, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public void writeUnsignedByte(@Nonnull String fieldName, int value) {
+        int position = getFixedSizeFieldPosition(fieldName, UNSIGNED_BYTE);
         try {
             out.writeByte(position, value);
         } catch (IOException e) {
@@ -228,6 +267,16 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeShort(@Nonnull String fieldName, short value) {
         int position = getFixedSizeFieldPosition(fieldName, SHORT);
+        try {
+            out.writeShort(position, value);
+        } catch (IOException e) {
+            throw illegalStateException(e);
+        }
+    }
+
+    @Override
+    public void writeUnsignedShort(@Nonnull String fieldName, int value) {
+        int position = getFixedSizeFieldPosition(fieldName, UNSIGNED_SHORT);
         try {
             out.writeShort(position, value);
         } catch (IOException e) {
@@ -327,6 +376,11 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] values) {
+        writeVariableSizeField(fieldName, UNSIGNED_BYTE_ARRAY, values, ObjectDataOutput::writeUnsignedByteArray);
+    }
+
+    @Override
     public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] values) {
         writeVariableSizeField(fieldName, BOOLEAN_ARRAY, values, DefaultCompactWriter::writeBooleanBits);
     }
@@ -342,8 +396,18 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] values) {
+        writeVariableSizeField(fieldName, UNSIGNED_INT_ARRAY, values, ObjectDataOutput::writeUnsignedIntArray);
+    }
+
+    @Override
     public void writeLongArray(@Nonnull String fieldName, @Nullable long[] values) {
         writeVariableSizeField(fieldName, LONG_ARRAY, values, ObjectDataOutput::writeLongArray);
+    }
+
+    @Override
+    public void writeUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] values) {
+        writeVariableSizeField(fieldName, UNSIGNED_LONG_ARRAY, values, ObjectDataOutput::writeUnsignedLongArray);
     }
 
     @Override
@@ -359,6 +423,11 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeShortArray(@Nonnull String fieldName, @Nullable short[] values) {
         writeVariableSizeField(fieldName, SHORT_ARRAY, values, ObjectDataOutput::writeShortArray);
+    }
+
+    @Override
+    public void writeUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] values) {
+        writeVariableSizeField(fieldName, UNSIGNED_SHORT_ARRAY, values, ObjectDataOutput::writeUnsignedShortArray);
     }
 
     @Override

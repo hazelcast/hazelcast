@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -842,6 +843,194 @@ public enum FieldOperations {
         public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
             GenericRecord[] objects = record.getGenericRecordArray(fieldName);
             writeArrayJsonFormatted(stringBuilder, objects, StringBuilder::append);
+        }
+    }),
+    UNSIGNED_BYTE(new FieldTypeBasedOperations() {
+        @Override
+        public Integer readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedByte(fieldName);
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeUnsignedByte(fieldName, genericRecord.getUnsignedByte(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Byte.BYTES;
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(record.getUnsignedByte(fieldName));
+        }
+    }),
+    UNSIGNED_SHORT(new FieldTypeBasedOperations() {
+        @Override
+        public Integer readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedShort(fieldName);
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeUnsignedShort(fieldName, genericRecord.getShort(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Short.BYTES;
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(record.getUnsignedShort(fieldName));
+        }
+    }),
+    UNSIGNED_INT(new FieldTypeBasedOperations() {
+        @Override
+        public Long readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedInt(fieldName);
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeUnsignedInt(fieldName, genericRecord.getInt(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Integer.BYTES;
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(record.getUnsignedInt(fieldName));
+        }
+    }),
+    UNSIGNED_LONG(new FieldTypeBasedOperations() {
+        @Override
+        public BigInteger readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedLong(fieldName);
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+            writer.writeUnsignedLong(fieldName, genericRecord.getUnsignedLong(fieldName));
+        }
+
+        @Override
+        public int typeSizeInBytes() {
+            return Long.BYTES;
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(record.getUnsignedLong(fieldName).longValue());
+        }
+    }),
+    UNSIGNED_BYTE_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedByteArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getUnsignedByteFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getUnsignedByteArray(fieldName));
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeUnsignedByteArray(fieldName, record.getUnsignedByteArray(fieldName));
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(Arrays.toString(record.getUnsignedByteArray(fieldName)));
+        }
+    }),
+    UNSIGNED_SHORT_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedShortArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getUnsignedShortFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getUnsignedShortArray(fieldName));
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeUnsignedShortArray(fieldName, record.getUnsignedShortArray(fieldName));
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(Arrays.toString(record.getUnsignedShortArray(fieldName)));
+        }
+    }),
+    UNSIGNED_INT_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedIntArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getUnsignedIntFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getUnsignedIntArray(fieldName));
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeUnsignedIntArray(fieldName, record.getUnsignedIntArray(fieldName));
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(Arrays.toString(record.getUnsignedIntArray(fieldName)));
+        }
+    }),
+    UNSIGNED_LONG_ARRAY(new FieldTypeBasedOperations() {
+        @Override
+        public Object readObject(GenericRecord genericRecord, String fieldName) {
+            return genericRecord.getUnsignedLongArray(fieldName);
+        }
+
+        @Override
+        public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+            return record.getUnsignedLongFromArray(fieldName, index);
+        }
+
+        @Override
+        public int hashCode(GenericRecord record, String fieldName) {
+            return Arrays.hashCode(record.getUnsignedLongArray(fieldName));
+        }
+
+        @Override
+        public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+            writer.writeUnsignedLongArray(fieldName, record.getUnsignedLongArray(fieldName));
+        }
+
+        @Override
+        public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+            stringBuilder.append(Arrays.toString(record.getUnsignedLongArray(fieldName)));
         }
     });
 

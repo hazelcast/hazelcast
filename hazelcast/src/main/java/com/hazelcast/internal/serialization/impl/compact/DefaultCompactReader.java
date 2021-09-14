@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,7 +31,9 @@ import java.time.OffsetDateTime;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldType.BOOLEAN_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.BYTE;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE;
 import static com.hazelcast.nio.serialization.FieldType.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_BYTE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.CHAR;
 import static com.hazelcast.nio.serialization.FieldType.CHAR_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.COMPOSED;
@@ -44,11 +47,17 @@ import static com.hazelcast.nio.serialization.FieldType.DOUBLE_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT;
 import static com.hazelcast.nio.serialization.FieldType.FLOAT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.INT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT;
 import static com.hazelcast.nio.serialization.FieldType.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_INT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.LONG;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG;
 import static com.hazelcast.nio.serialization.FieldType.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_LONG_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.SHORT;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT;
 import static com.hazelcast.nio.serialization.FieldType.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldType.UNSIGNED_SHORT_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.TIME;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_ARRAY;
@@ -74,8 +83,18 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    public int readUnsignedByte(@Nonnull String fieldName) {
+        return getUnsignedByte(fieldName);
+    }
+
+    @Override
     public byte readByte(@Nonnull String fieldName, byte defaultValue) {
         return isFieldExists(fieldName, BYTE) ? getByte(fieldName) : defaultValue;
+    }
+
+    @Override
+    public int readUnsignedByte(@Nonnull String fieldName, int defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_BYTE) ? getUnsignedByte(fieldName) : defaultValue;
     }
 
     @Override
@@ -84,8 +103,18 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    public int readUnsignedShort(@Nonnull String fieldName) {
+        return getUnsignedShort(fieldName);
+    }
+
+    @Override
     public short readShort(@Nonnull String fieldName, short defaultValue) {
         return isFieldExists(fieldName, SHORT) ? readShort(fieldName) : defaultValue;
+    }
+
+    @Override
+    public int readUnsignedShort(@Nonnull String fieldName, int defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_SHORT) ? readUnsignedShort(fieldName) : defaultValue;
     }
 
     @Override
@@ -94,8 +123,18 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    public long readUnsignedInt(@Nonnull String fieldName) {
+        return getUnsignedInt(fieldName);
+    }
+
+    @Override
     public int readInt(@Nonnull String fieldName, int defaultValue) {
         return isFieldExists(fieldName, INT) ? getInt(fieldName) : defaultValue;
+    }
+
+    @Override
+    public long readUnsignedInt(@Nonnull String fieldName, long defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_INT) ? getUnsignedInt(fieldName) : defaultValue;
     }
 
     @Override
@@ -104,8 +143,18 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     }
 
     @Override
+    public BigInteger readUnsignedLong(@Nonnull String fieldName) {
+        return getUnsignedLong(fieldName);
+    }
+
+    @Override
     public long readLong(@Nonnull String fieldName, long defaultValue) {
         return isFieldExists(fieldName, LONG) ? getLong(fieldName) : defaultValue;
+    }
+
+    @Override
+    public BigInteger readUnsignedLong(@Nonnull String fieldName, BigInteger defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_LONG) ? getUnsignedLong(fieldName) : defaultValue;
     }
 
     @Override
@@ -231,9 +280,21 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         return getByteArray(fieldName);
     }
 
+    @Nullable
+    @Override
+    public int[] readUnsignedByteArray(@Nonnull String fieldName) {
+        return getUnsignedByteArray(fieldName);
+    }
+
     @Override
     public byte[] readByteArray(@Nonnull String fieldName, byte[] defaultValue) {
         return isFieldExists(fieldName, BYTE_ARRAY) ? getByteArray(fieldName) : defaultValue;
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_BYTE_ARRAY) ? getUnsignedByteArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -261,9 +322,21 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         return getIntArray(fieldName);
     }
 
+    @Nullable
+    @Override
+    public long[] readUnsignedIntArray(@Nonnull String fieldName) {
+        return getUnsignedIntArray(fieldName);
+    }
+
     @Override
     public int[] readIntArray(@Nonnull String fieldName, int[] defaultValue) {
         return isFieldExists(fieldName, INT_ARRAY) ? getIntArray(fieldName) : defaultValue;
+    }
+
+    @Nullable
+    @Override
+    public long[] readUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_INT_ARRAY) ? getUnsignedIntArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -271,9 +344,21 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         return getLongArray(fieldName);
     }
 
+    @Nullable
+    @Override
+    public BigInteger[] readUnsignedLongArray(@Nonnull String fieldName) {
+        return getUnsignedLongArray(fieldName);
+    }
+
     @Override
     public long[] readLongArray(@Nonnull String fieldName, long[] defaultValue) {
         return isFieldExists(fieldName, LONG_ARRAY) ? getLongArray(fieldName) : defaultValue;
+    }
+
+    @Nullable
+    @Override
+    public BigInteger[] readLongArray(@Nonnull String fieldName, @Nullable BigInteger[] defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_LONG_ARRAY) ? getUnsignedLongArray(fieldName) : defaultValue;
     }
 
     @Override
@@ -301,9 +386,21 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         return getShortArray(fieldName);
     }
 
+    @Nullable
+    @Override
+    public int[] readUnsignedShortArray(@Nonnull String fieldName) {
+        return getUnsignedShortArray(fieldName);
+    }
+
     @Override
     public short[] readShortArray(@Nonnull String fieldName, short[] defaultValue) {
         return isFieldExists(fieldName, SHORT_ARRAY) ? getShortArray(fieldName) : defaultValue;
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] defaultValue) {
+        return isFieldExists(fieldName, UNSIGNED_SHORT_ARRAY) ? getUnsignedShortArray(fieldName) : defaultValue;
     }
 
     @Override

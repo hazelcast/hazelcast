@@ -27,6 +27,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -100,6 +101,11 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     }
 
     @Override
+    public int getUnsignedByte(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public char getChar(@Nonnull String fieldName) {
         return get(fieldName, FieldType.CHAR);
     }
@@ -120,13 +126,28 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     }
 
     @Override
+    public long getUnsignedInt(@Nonnull String fieldName) {
+        return 0;
+    }
+
+    @Override
     public long getLong(@Nonnull String fieldName) {
         return get(fieldName, FieldType.LONG);
     }
 
     @Override
+    public BigInteger getUnsignedLong(@Nonnull String fieldName) {
+        return null;
+    }
+
+    @Override
     public short getShort(@Nonnull String fieldName) {
         return get(fieldName, FieldType.SHORT);
+    }
+
+    @Override
+    public int getUnsignedShort(@Nonnull String fieldName) {
+        return 0;
     }
 
     @Override
@@ -177,6 +198,12 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
         return get(fieldName, FieldType.BYTE_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public int[] getUnsignedByteArray(@Nonnull String fieldName) {
+        return new int[0];
+    }
+
     @Override
     @Nullable
     public char[] getCharArray(@Nonnull String fieldName) {
@@ -201,16 +228,34 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
         return get(fieldName, FieldType.INT_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public long[] getUnsignedIntArray(@Nonnull String fieldName) {
+        return new long[0];
+    }
+
     @Override
     @Nullable
     public long[] getLongArray(@Nonnull String fieldName) {
         return get(fieldName, FieldType.LONG_ARRAY);
     }
 
+    @Nullable
+    @Override
+    public BigInteger[] getUnsignedLongArray(@Nonnull String fieldName) {
+        return new BigInteger[0];
+    }
+
     @Override
     @Nullable
     public short[] getShortArray(@Nonnull String fieldName) {
         return get(fieldName, FieldType.SHORT_ARRAY);
+    }
+
+    @Nullable
+    @Override
+    public int[] getUnsignedShortArray(@Nonnull String fieldName) {
+        return new int[0];
     }
 
     @Override
@@ -276,6 +321,16 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nullable
     @Override
+    public Integer getUnsignedByteFromArray(@Nonnull String fieldName, int index) {
+        int[] array = getUnsignedByteArray(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
     public Character getCharFromArray(@Nonnull String fieldName, int index) {
         char[] array = getCharArray(fieldName);
         if (array == null || array.length <= index) {
@@ -316,6 +371,16 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nullable
     @Override
+    public Long getUnsignedIntFromArray(@Nonnull String fieldName, int index) {
+        long[] array = getUnsignedIntArray(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
     public Long getLongFromArray(@Nonnull String fieldName, int index) {
         long[] array = getLongArray(fieldName);
         if (array == null || array.length <= index) {
@@ -326,8 +391,28 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
 
     @Nullable
     @Override
+    public BigInteger getUnsignedLongFromArray(@Nonnull String fieldName, int index) {
+        BigInteger[] array = getUnsignedLongArray(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
     public Short getShortFromArray(@Nonnull String fieldName, int index) {
         short[] array = getShortArray(fieldName);
+        if (array == null || array.length <= index) {
+            return null;
+        }
+        return array[index];
+    }
+
+    @Nullable
+    @Override
+    public Integer getUnsignedShortFromArray(@Nonnull String fieldName, int index) {
+        int[] array = getUnsignedShortArray(fieldName);
         if (array == null || array.length <= index) {
             return null;
         }

@@ -17,6 +17,7 @@
 package example.serialization;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,10 +27,14 @@ import java.util.Arrays;
 public class InnerDTO {
 
     public byte[] bb;
+    public int[] ubb;
     public char[] cc;
     public short[] ss;
+    public int[] uss;
     public int[] ii;
+    public long[] uii;
     public long[] ll;
+    public BigInteger[] ull;
     public float[] ff;
     public double[] dd;
     public NamedDTO[] nn;
@@ -43,14 +48,19 @@ public class InnerDTO {
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public InnerDTO(byte[] bb, char[] cc, short[] ss, int[] ii, long[] ll, float[] ff, double[] dd, NamedDTO[] nn,
-                    BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
-                    LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes) {
+    public InnerDTO(byte[] bb, int[] ubb, char[] cc, short[] ss, int[] uss, int[] ii, long[] uii, long[] ll,
+                    BigInteger[] ull, float[] ff, double[] dd, NamedDTO[] nn, BigDecimal[] bigDecimals,
+                    LocalTime[] localTimes, LocalDate[] localDates, LocalDateTime[] localDateTimes,
+                    OffsetDateTime[] offsetDateTimes) {
         this.bb = bb;
+        this.ubb = ubb;
         this.cc = cc;
         this.ss = ss;
+        this.uss = uss;
         this.ii = ii;
+        this.uii = uii;
         this.ll = ll;
+        this.ull = ull;
         this.ff = ff;
         this.dd = dd;
         this.nn = nn;
@@ -69,29 +79,31 @@ public class InnerDTO {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        InnerDTO that = (InnerDTO) o;
-        return Arrays.equals(bb, that.bb)
-                && Arrays.equals(cc, that.cc)
-                && Arrays.equals(ss, that.ss)
-                && Arrays.equals(ii, that.ii)
-                && Arrays.equals(ll, that.ll)
-                && Arrays.equals(ff, that.ff)
-                && Arrays.equals(dd, that.dd)
-                && Arrays.equals(nn, that.nn)
-                && Arrays.equals(bigDecimals, that.bigDecimals)
-                && Arrays.equals(localTimes, that.localTimes)
-                && Arrays.equals(localDates, that.localDates)
-                && Arrays.equals(localDateTimes, that.localDateTimes)
-                && Arrays.equals(offsetDateTimes, that.offsetDateTimes);
+        InnerDTO innerDTO = (InnerDTO) o;
+        return Arrays.equals(bb, innerDTO.bb) && Arrays.equals(ubb, innerDTO.ubb)
+                && Arrays.equals(cc, innerDTO.cc) && Arrays.equals(ss, innerDTO.ss)
+                && Arrays.equals(uss, innerDTO.uss) && Arrays.equals(ii, innerDTO.ii)
+                && Arrays.equals(uii, innerDTO.uii) && Arrays.equals(ll, innerDTO.ll)
+                && Arrays.equals(ull, innerDTO.ull) && Arrays.equals(ff, innerDTO.ff)
+                && Arrays.equals(dd, innerDTO.dd) && Arrays.equals(nn, innerDTO.nn)
+                && Arrays.equals(bigDecimals, innerDTO.bigDecimals)
+                && Arrays.equals(localTimes, innerDTO.localTimes)
+                && Arrays.equals(localDates, innerDTO.localDates)
+                && Arrays.equals(localDateTimes, innerDTO.localDateTimes)
+                && Arrays.equals(offsetDateTimes, innerDTO.offsetDateTimes);
     }
 
     @Override
     public int hashCode() {
         int result = Arrays.hashCode(bb);
+        result = 31 * result + Arrays.hashCode(ubb);
         result = 31 * result + Arrays.hashCode(cc);
         result = 31 * result + Arrays.hashCode(ss);
+        result = 31 * result + Arrays.hashCode(uss);
         result = 31 * result + Arrays.hashCode(ii);
+        result = 31 * result + Arrays.hashCode(uii);
         result = 31 * result + Arrays.hashCode(ll);
+        result = 31 * result + Arrays.hashCode(ull);
         result = 31 * result + Arrays.hashCode(ff);
         result = 31 * result + Arrays.hashCode(dd);
         result = 31 * result + Arrays.hashCode(nn);
@@ -105,12 +117,16 @@ public class InnerDTO {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("InnerPortable{");
+        final StringBuilder sb = new StringBuilder("InnerDTO{");
         sb.append("bb=").append(Arrays.toString(bb));
+        sb.append(", ubb=").append(Arrays.toString(ubb));
         sb.append(", cc=").append(Arrays.toString(cc));
         sb.append(", ss=").append(Arrays.toString(ss));
+        sb.append(", uss=").append(Arrays.toString(uss));
         sb.append(", ii=").append(Arrays.toString(ii));
+        sb.append(", uii=").append(Arrays.toString(uii));
         sb.append(", ll=").append(Arrays.toString(ll));
+        sb.append(", ull=").append(Arrays.toString(ull));
         sb.append(", ff=").append(Arrays.toString(ff));
         sb.append(", dd=").append(Arrays.toString(dd));
         sb.append(", nn=").append(Arrays.toString(nn));

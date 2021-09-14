@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.collection.ArrayUtils;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
@@ -291,6 +292,15 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    public void writeUnsignedByteArray(int[] bytes) throws IOException {
+        int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (int value : bytes) {
+            write((byte) value);
+        }
+    }
+
+    @Override
     public void writeBooleanArray(boolean[] booleans) throws IOException {
         int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
         writeInt(len);
@@ -324,6 +334,15 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
     }
 
     @Override
+    public void writeUnsignedIntArray(long[] ints) throws IOException {
+        int len = ints != null ? ints.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (long i : ints) {
+            writeInt((int) i);
+        }
+    }
+
+    @Override
     public void writeLongArray(long[] longs) throws IOException {
         int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
         writeInt(len);
@@ -331,6 +350,15 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
             for (long l : longs) {
                 writeLong(l);
             }
+        }
+    }
+
+    @Override
+    public void writeUnsignedLongArray(BigInteger[] longs) throws IOException {
+        int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (BigInteger l : longs) {
+            writeLong(l.longValue());
         }
     }
 
@@ -364,6 +392,15 @@ public class ByteArrayObjectDataOutput extends VersionedObjectDataOutput impleme
             for (short s : shorts) {
                 writeShort(s);
             }
+        }
+    }
+
+    @Override
+    public void writeUnsignedShortArray(int[] values) throws IOException {
+        int len = values != null ? values.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (int s : values) {
+            writeShort((short) s);
         }
     }
 

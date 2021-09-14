@@ -34,6 +34,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -129,6 +130,11 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
+    public int getUnsignedByte(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public char getChar(@Nonnull String fieldName) {
         try {
             return in.readChar(readPosition(fieldName, FieldType.CHAR));
@@ -165,6 +171,11 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
+    public long getUnsignedInt(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long getLong(@Nonnull String fieldName) {
         try {
             return in.readLong(readPosition(fieldName, FieldType.LONG));
@@ -174,12 +185,22 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
     }
 
     @Override
+    public BigInteger getUnsignedLong(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public short getShort(@Nonnull String fieldName) {
         try {
             return in.readShort(readPosition(fieldName, FieldType.SHORT));
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
+    }
+
+    @Override
+    public int getUnsignedShort(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -283,6 +304,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
 
     }
 
+    @Nullable
+    @Override
+    public int[] getUnsignedByteArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public char[] getCharArray(@Nonnull String fieldName) {
         int currentPos = in.position();
@@ -351,6 +378,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         }
     }
 
+    @Nullable
+    @Override
+    public long[] getUnsignedIntArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public long[] getLongArray(@Nonnull String fieldName) {
         int currentPos = in.position();
@@ -368,6 +401,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         }
     }
 
+    @Nullable
+    @Override
+    public BigInteger[] getUnsignedLongArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public short[] getShortArray(@Nonnull String fieldName) {
         int currentPos = in.position();
@@ -383,6 +422,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         } finally {
             in.position(currentPos);
         }
+    }
+
+    @Nullable
+    @Override
+    public int[] getUnsignedShortArray(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -637,6 +682,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         }
     }
 
+    @Nullable
+    @Override
+    public Integer getUnsignedByteFromArray(@Nonnull String fieldName, int index) {
+        return null;
+    }
+
     @SuppressFBWarnings({"NP_BOOLEAN_RETURN_NULL"})
     @Override
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
@@ -703,6 +754,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         }
     }
 
+    @Nullable
+    @Override
+    public Long getUnsignedIntFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public Long getLongFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.LONG_ARRAY);
@@ -716,6 +773,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         }
     }
 
+    @Nullable
+    @Override
+    public BigInteger getUnsignedLongFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public Short getShortFromArray(@Nonnull String fieldName, int index) {
         int position = readPosition(fieldName, FieldType.SHORT_ARRAY);
@@ -727,6 +790,12 @@ public class PortableInternalGenericRecord extends PortableGenericRecord {
         } catch (IOException e) {
             throw newIllegalStateException(e);
         }
+    }
+
+    @Nullable
+    @Override
+    public Integer getUnsignedShortFromArray(@Nonnull String fieldName, int index) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

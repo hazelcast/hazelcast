@@ -21,8 +21,10 @@ import com.hazelcast.spi.impl.SerializationServiceSupport;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 
+@SuppressWarnings("checkstyle:MethodCount")
 public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataReader, SerializationServiceSupport {
 
     int UTF_BUFFER_SIZE = 1024;
@@ -35,15 +37,29 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataR
 
     int readInt(int position, ByteOrder byteOrder) throws IOException;
 
+    long readUnsignedInt(int position) throws IOException;
+
+    long readUnsignedInt(ByteOrder byteOrder) throws IOException;
+
+    long readUnsignedInt(int position, ByteOrder byteOrder) throws IOException;
+
     long readLong(int position) throws IOException;
 
     long readLong(ByteOrder byteOrder) throws IOException;
 
     long readLong(int position, ByteOrder byteOrder) throws IOException;
 
+    BigInteger readUnsignedLong(int position) throws IOException;
+
+    BigInteger readUnsignedLong(ByteOrder byteOrder) throws IOException;
+
+    BigInteger readUnsignedLong(int position, ByteOrder byteOrder) throws IOException;
+
     boolean readBoolean(int position) throws IOException;
 
     byte readByte(int position) throws IOException;
+
+    int readUnsignedByte(int position) throws IOException;
 
     char readChar(int position) throws IOException;
 
@@ -64,6 +80,12 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable, DataR
     short readShort(ByteOrder byteOrder) throws IOException;
 
     short readShort(int position, ByteOrder byteOrder) throws IOException;
+
+    int readUnsignedShort(int position) throws IOException;
+
+    int readUnsignedShort(ByteOrder byteOrder) throws IOException;
+
+    int readUnsignedShort(int position, ByteOrder byteOrder) throws IOException;
 
     int position();
 

@@ -19,6 +19,7 @@ package com.hazelcast.nio;
 import javax.annotation.Nullable;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 
 /**
@@ -45,6 +46,12 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
     void writeByteArray(@Nullable byte[] bytes) throws IOException;
 
     /**
+     * @param bytes unsigned byte array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeUnsignedByteArray(@Nullable int[] bytes) throws IOException;
+
+    /**
      * @param booleans boolean array to be written
      * @throws IOException in case of any exceptional case
      */
@@ -63,10 +70,26 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
     void writeIntArray(@Nullable int[] ints) throws IOException;
 
     /**
+     * @param ints unsigned int array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeUnsignedIntArray(@Nullable long[] ints) throws IOException;
+
+    /**
      * @param longs long array to be written
      * @throws IOException in case of any exceptional case
      */
     void writeLongArray(@Nullable long[] longs) throws IOException;
+
+    /**
+     * @param values double array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    /**
+     * @param longs unsigned long array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeUnsignedLongArray(@Nullable BigInteger[] longs) throws IOException;
 
     /**
      * @param values double array to be written
@@ -85,6 +108,12 @@ public interface ObjectDataOutput extends DataOutput, VersionAware, WanProtocolV
      * @throws IOException in case of any exceptional case
      */
     void writeShortArray(@Nullable short[] values) throws IOException;
+
+    /**
+     * @param values unsigned short array to be written
+     * @throws IOException in case of any exceptional case
+     */
+    void writeUnsignedShortArray(@Nullable int[] values) throws IOException;
 
     /**
      * @param values String array to be written

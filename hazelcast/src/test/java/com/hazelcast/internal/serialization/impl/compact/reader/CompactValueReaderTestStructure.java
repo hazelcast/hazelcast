@@ -17,6 +17,12 @@
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
 
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
@@ -34,11 +40,15 @@ public class CompactValueReaderTestStructure {
 
     public enum PrimitiveFields {
         Byte("byte_"),
+        UnsignedByte("unsignedByte_"),
         Boolean("boolean_"),
         Char("char_"),
         Short("short_"),
+        UnsignedShort("unsignedShort_"),
         Int("int_"),
+        UnsignedInt("unsignedInt_"),
         Long("long_"),
+        UnsignedLong("unsignedLong_"),
         Float("float_"),
         Double("double_"),
         UTF("string_"),
@@ -49,11 +59,15 @@ public class CompactValueReaderTestStructure {
         OffsetDateTime("offsetDateTime_"),
 
         ByteArray("bytes"),
+        UnsignedByteArray("unsignedBytes"),
         BooleanArray("booleans"),
         CharArray("chars"),
         ShortArray("shorts"),
+        UnsignedShortArray("unsignedShorts"),
         IntArray("ints"),
+        UnsignedIntArray("unsignedInts"),
         LongArray("longs"),
+        UnsignedLongArray("unsignedLongs"),
         FloatArray("floats"),
         DoubleArray("doubles"),
         UTFArray("strings"),
@@ -70,13 +84,14 @@ public class CompactValueReaderTestStructure {
         final String field;
 
         static List<PrimitiveFields> getPrimitives() {
-            return asList(Byte, Boolean, Char, Short, Int, Long, Float, Double, UTF, BigDecimal, LocalTime,
-                    LocalDate, LocalDateTime, OffsetDateTime);
+            return asList(Byte, UnsignedByte, Boolean, Char, Short, UnsignedShort, Int, UnsignedInt, Long, UnsignedLong,
+                    Float, Double, UTF, BigDecimal, LocalTime, LocalDate, LocalDateTime, OffsetDateTime);
         }
 
         static List<PrimitiveFields> getPrimitiveArrays() {
-            return asList(ByteArray, BooleanArray, CharArray, ShortArray, IntArray, LongArray, FloatArray, DoubleArray, UTFArray,
-                     BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray);
+            return asList(ByteArray, UnsignedByteArray, BooleanArray, CharArray, ShortArray, UnsignedShortArray,
+                    IntArray, UnsignedIntArray, LongArray, UnsignedLongArray, FloatArray, DoubleArray, UTFArray,
+                    BigDecimalArray, LocalTimeArray, LocalDateArray, LocalDateTimeArray, OffsetDateTimeArray);
         }
 
     }
@@ -84,9 +99,13 @@ public class CompactValueReaderTestStructure {
     public static class PrimitiveObject {
 
         byte byte_;
+        int unsignedByte_;
         short short_;
+        int unsignedShort_;
         int int_;
+        long unsignedInt_;
         long long_;
+        BigInteger unsignedLong_;
         float float_;
         double double_;
         boolean boolean_;
@@ -99,9 +118,13 @@ public class CompactValueReaderTestStructure {
         OffsetDateTime offsetDateTime_;
 
         byte[] bytes;
+        int[] unsignedBytes;
         short[] shorts;
+        int[] unsignedShorts;
         int[] ints;
+        long[] unsignedInts;
         long[] longs;
+        BigInteger[] unsignedLongs;
         float[] floats;
         double[] doubles;
         boolean[] booleans;
@@ -117,15 +140,108 @@ public class CompactValueReaderTestStructure {
             FULL, NONE, NULL
         }
 
+        public static class PrimitiveObjectSerializer implements CompactSerializer<PrimitiveObject> {
+            @NotNull
+            @Override
+            public PrimitiveObject read(@NotNull CompactReader in) throws IOException {
+                PrimitiveObject o = new PrimitiveObject();
+                o.byte_ = in.readByte(PrimitiveFields.Byte.field);
+                o.unsignedByte_ = in.readUnsignedByte(PrimitiveFields.UnsignedByte.field);
+                o.short_ = in.readShort(PrimitiveFields.Short.field);
+                o.unsignedShort_ = in.readUnsignedShort(PrimitiveFields.UnsignedShort.field);
+                o.int_ = in.readInt(PrimitiveFields.Int.field);
+                o.unsignedInt_ = in.readUnsignedInt(PrimitiveFields.UnsignedInt.field);
+                o.long_ = in.readLong(PrimitiveFields.Long.field);
+                o.unsignedLong_ = in.readUnsignedLong(PrimitiveFields.UnsignedLong.field);
+                o.float_ = in.readFloat(PrimitiveFields.Float.field);
+                o.double_ = in.readDouble(PrimitiveFields.Double.field);
+                o.boolean_ = in.readBoolean(PrimitiveFields.Boolean.field);
+                o.char_ = in.readChar(PrimitiveFields.Char.field);
+                o.string_ = in.readString(PrimitiveFields.UTF.field);
+                o.bigDecimal_ = in.readDecimal(PrimitiveFields.BigDecimal.field);
+                o.localDate_ = in.readDate(PrimitiveFields.LocalDate.field);
+                o.localTime_ = in.readTime(PrimitiveFields.LocalTime.field);
+                o.localDateTime_ = in.readTimestamp(PrimitiveFields.LocalDateTime.field);
+                o.offsetDateTime_ = in.readTimestampWithTimezone(PrimitiveFields.OffsetDateTime.field);
+
+                o.bytes = in.readByteArray(PrimitiveFields.ByteArray.field);
+                o.unsignedBytes = in.readUnsignedByteArray(PrimitiveFields.UnsignedByteArray.field);
+                o.shorts = in.readShortArray(PrimitiveFields.ShortArray.field);
+                o.unsignedShorts = in.readUnsignedShortArray(PrimitiveFields.UnsignedShortArray.field);
+                o.ints = in.readIntArray(PrimitiveFields.IntArray.field);
+                o.unsignedInts = in.readUnsignedIntArray(PrimitiveFields.UnsignedIntArray.field);
+                o.longs = in.readLongArray(PrimitiveFields.LongArray.field);
+                o.unsignedLongs = in.readUnsignedLongArray(PrimitiveFields.UnsignedLongArray.field);
+                o.floats = in.readFloatArray(PrimitiveFields.FloatArray.field);
+                o.doubles = in.readDoubleArray(PrimitiveFields.DoubleArray.field);
+                o.booleans = in.readBooleanArray(PrimitiveFields.BooleanArray.field);
+                o.chars = in.readCharArray(PrimitiveFields.CharArray.field);
+                o.strings = in.readStringArray(PrimitiveFields.UTFArray.field);
+                o.bigDecimals = in.readDecimalArray(PrimitiveFields.BigDecimalArray.field);
+                o.localDates = in.readDateArray(PrimitiveFields.LocalDateArray.field);
+                o.localTimes = in.readTimeArray(PrimitiveFields.LocalTimeArray.field);
+                o.localDateTimes = in.readTimestampArray(PrimitiveFields.LocalDateTimeArray.field);
+                o.offsetDateTimes = in.readTimestampWithTimezoneArray(PrimitiveFields.OffsetDateTimeArray.field);
+
+                return o;
+            }
+
+            @Override
+            public void write(@NotNull CompactWriter out, @NotNull CompactValueReaderTestStructure.PrimitiveObject o) throws IOException {
+                out.writeByte(PrimitiveFields.Byte.field, o.byte_);
+                out.writeUnsignedByte(PrimitiveFields.UnsignedByte.field, o.unsignedByte_);
+                out.writeChar(PrimitiveFields.Char.field, o.char_);
+                out.writeString(PrimitiveFields.UTF.field, o.string_);
+                out.writeDecimal(PrimitiveFields.BigDecimal.field, o.bigDecimal_);
+                out.writeBoolean(PrimitiveFields.Boolean.field, o.boolean_);
+                out.writeShort(PrimitiveFields.Short.field, o.short_);
+                out.writeUnsignedShort(PrimitiveFields.UnsignedShort.field, o.unsignedShort_);
+                out.writeInt(PrimitiveFields.Int.field, o.int_);
+                out.writeUnsignedInt(PrimitiveFields.UnsignedInt.field, o.unsignedInt_);
+                out.writeLong(PrimitiveFields.Long.field, o.long_);
+                out.writeUnsignedLong(PrimitiveFields.UnsignedLong.field, o.unsignedLong_);
+                out.writeFloat(PrimitiveFields.Float.field, o.float_);
+                out.writeDouble(PrimitiveFields.Double.field, o.double_);
+                out.writeDate(PrimitiveFields.LocalDate.field, o.localDate_);
+                out.writeTime(PrimitiveFields.LocalTime.field, o.localTime_);
+                out.writeTimestamp(PrimitiveFields.LocalDateTime.field, o.localDateTime_);
+                out.writeTimestampWithTimezone(PrimitiveFields.OffsetDateTime.field, o.offsetDateTime_);
+
+                out.writeByteArray(PrimitiveFields.ByteArray.field, o.bytes);
+                out.writeUnsignedByteArray(PrimitiveFields.UnsignedByteArray.field, o.unsignedBytes);
+                out.writeCharArray(PrimitiveFields.CharArray.field, o.chars);
+                out.writeStringArray(PrimitiveFields.UTFArray.field, o.strings);
+                out.writeDecimalArray(PrimitiveFields.BigDecimalArray.field, o.bigDecimals);
+                out.writeBooleanArray(PrimitiveFields.BooleanArray.field, o.booleans);
+                out.writeShortArray(PrimitiveFields.ShortArray.field, o.shorts);
+                out.writeUnsignedShortArray(PrimitiveFields.UnsignedShortArray.field, o.unsignedShorts);
+                out.writeIntArray(PrimitiveFields.IntArray.field, o.ints);
+                out.writeUnsignedIntArray(PrimitiveFields.UnsignedIntArray.field, o.unsignedInts);
+                out.writeLongArray(PrimitiveFields.LongArray.field, o.longs);
+                out.writeUnsignedLongArray(PrimitiveFields.UnsignedLongArray.field, o.unsignedLongs);
+                out.writeFloatArray(PrimitiveFields.FloatArray.field, o.floats);
+                out.writeDoubleArray(PrimitiveFields.DoubleArray.field, o.doubles);
+                out.writeDateArray(PrimitiveFields.LocalDateArray.field, o.localDates);
+                out.writeTimeArray(PrimitiveFields.LocalTimeArray.field, o.localTimes);
+                out.writeTimestampArray(PrimitiveFields.LocalDateTimeArray.field, o.localDateTimes);
+                out.writeTimestampWithTimezoneArray(PrimitiveFields.OffsetDateTimeArray.field, o.offsetDateTimes);
+            }
+        }
+
         int getSeed() {
             return byte_ - 10;
         }
 
         PrimitiveObject(int seed, Init init) {
+            int positiveSeed = Math.abs(seed);
             byte_ = (byte) (seed + 10);
+            unsignedByte_ = positiveSeed + 11;
             short_ = (short) (seed + 20);
+            unsignedShort_ = positiveSeed + 20;
             int_ = seed + 30;
+            unsignedInt_ = positiveSeed + 30;
             long_ = seed + 40;
+            unsignedLong_ = BigInteger.valueOf(positiveSeed + 40);
             float_ = seed + 50.01f;
             double_ = seed + 60.01d;
             boolean_ = seed % 2 == 0;
@@ -138,9 +254,14 @@ public class CompactValueReaderTestStructure {
             Random rnd = new Random(seed);
             if (init == Init.FULL) {
                 bytes = new byte[]{(byte) (seed + 11), (byte) (seed + 12), (byte) (seed + 13)};
+                unsignedBytes = new int[]{positiveSeed + 11, positiveSeed + 12, positiveSeed + 13};
                 shorts = new short[]{(short) (seed + 21), (short) (seed + 22), (short) (seed + 23)};
+                unsignedShorts = new int[]{positiveSeed + 14, positiveSeed + 15, positiveSeed + 16};
                 ints = new int[]{seed + 31, seed + 32, seed + 33};
+                unsignedInts = new long[]{positiveSeed + 34, positiveSeed + 35, positiveSeed + 36};
                 longs = new long[]{seed + 41, seed + 42, seed + 43};
+                unsignedLongs = new BigInteger[]{BigInteger.valueOf(positiveSeed + 37),
+                        BigInteger.valueOf(positiveSeed + 38), BigInteger.valueOf(positiveSeed + 39)};
                 floats = new float[]{seed + 51.01f, seed + 52.01f, seed + 53.01f};
                 doubles = new double[]{seed + 61.01f, seed + 62.01f, seed + 63.01f};
                 booleans = new boolean[]{seed % 2 == 0, seed % 2 == 1, seed % 2 == 0};
@@ -169,9 +290,13 @@ public class CompactValueReaderTestStructure {
                         OffsetDateTime.of(localDates[2], localTimes[2], ZoneOffset.ofHours(seed % 18))};
             } else if (init == Init.NONE) {
                 bytes = new byte[]{};
+                unsignedBytes = new int[]{};
                 shorts = new short[]{};
+                unsignedShorts = new int[]{};
                 ints = new int[]{};
+                unsignedInts = new long[]{};
                 longs = new long[]{};
+                unsignedLongs = new BigInteger[]{};
                 floats = new float[]{};
                 doubles = new double[]{};
                 booleans = new boolean[]{};
@@ -230,16 +355,24 @@ public class CompactValueReaderTestStructure {
             switch (primitiveFields) {
                 case Byte:
                     return byte_;
+                case UnsignedByte:
+                    return unsignedByte_;
                 case Boolean:
                     return boolean_;
                 case Char:
                     return char_;
                 case Short:
                     return short_;
+                case UnsignedShort:
+                    return unsignedShort_;
                 case Int:
                     return int_;
+                case UnsignedInt:
+                    return unsignedInt_;
                 case Long:
                     return long_;
+                case UnsignedLong:
+                    return unsignedLong_;
                 case Float:
                     return float_;
                 case Double:
@@ -264,60 +397,57 @@ public class CompactValueReaderTestStructure {
         Object getPrimitiveArray(PrimitiveFields primitiveFields) {
             switch (primitiveFields) {
                 case Byte:
-                    return bytes;
-                case Boolean:
-                    return booleans;
-                case Char:
-                    return chars;
-                case Short:
-                    return shorts;
-                case Int:
-                    return ints;
-                case Long:
-                    return longs;
-                case Float:
-                    return floats;
-                case Double:
-                    return doubles;
-                case UTF:
-                    return strings;
-                case BigDecimal:
-                    return bigDecimals;
-                case LocalTime:
-                    return localTimes;
-                case LocalDate:
-                    return localDates;
-                case LocalDateTime:
-                    return localDateTimes;
-                case OffsetDateTime:
-                    return offsetDateTimes;
-                //
                 case ByteArray:
                     return bytes;
+                case UnsignedByte:
+                case UnsignedByteArray:
+                    return unsignedBytes;
+                case Boolean:
                 case BooleanArray:
                     return booleans;
+                case Char:
                 case CharArray:
                     return chars;
+                case Short:
                 case ShortArray:
                     return shorts;
+                case UnsignedShort:
+                case UnsignedShortArray:
+                    return unsignedShorts;
+                case Int:
                 case IntArray:
                     return ints;
+                case UnsignedInt:
+                case UnsignedIntArray:
+                    return unsignedInts;
+                case Long:
                 case LongArray:
                     return longs;
+                case UnsignedLong:
+                case UnsignedLongArray:
+                    return unsignedLongs;
+                case Float:
                 case FloatArray:
                     return floats;
+                case Double:
                 case DoubleArray:
                     return doubles;
+                case UTF:
                 case UTFArray:
                     return strings;
+                case BigDecimal:
                 case BigDecimalArray:
                     return bigDecimals;
+                case LocalTime:
                 case LocalTimeArray:
                     return localTimes;
+                case LocalDate:
                 case LocalDateArray:
                     return localDates;
+                case LocalDateTime:
                 case LocalDateTimeArray:
                     return localDateTimes;
+                case OffsetDateTime:
                 case OffsetDateTimeArray:
                     return offsetDateTimes;
                 default:
@@ -327,8 +457,6 @@ public class CompactValueReaderTestStructure {
     }
 
     static class GroupObject {
-
-
         PrimitiveObject object;
         PrimitiveObject[] objects;
 

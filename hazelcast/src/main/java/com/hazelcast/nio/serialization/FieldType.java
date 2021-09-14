@@ -76,7 +76,71 @@ public enum FieldType {
      * Since 5.0 as Beta
      */
     @Beta
-    COMPOSED_ARRAY(31, MAX_VALUE);
+    COMPOSED_ARRAY(31, MAX_VALUE),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned byte in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_BYTE(32, BYTE_SIZE_IN_BYTES),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned short in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_SHORT(33, SHORT_SIZE_IN_BYTES),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned integer in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_INT(34, INT_SIZE_IN_BYTES),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned long in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_LONG(35, LONG_SIZE_IN_BYTES),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned byte array in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_BYTE_ARRAY(36, MAX_VALUE),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned short array in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_SHORT_ARRAY(37, MAX_VALUE),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned integer array in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_INT_ARRAY(38, MAX_VALUE),
+
+    /**
+     * Related to Compact format
+     * {@link com.hazelcast.config.CompactSerializationConfig}
+     * This type represents the unsigned byte in Compact Format
+     * Since 5.0 as Beta
+     */
+    UNSIGNED_LONG_ARRAY(39, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;
@@ -101,6 +165,9 @@ public enum FieldType {
         if (type < DECIMAL.type) {
             return type >= PORTABLE_ARRAY.type;
         }
+        if (type <= UNSIGNED_LONG_ARRAY.type && type >= UNSIGNED_BYTE_ARRAY.type) {
+            return true;
+        }
         return type % 2 != 0;
     }
 
@@ -108,6 +175,12 @@ public enum FieldType {
         byte id = getId();
         if (type < DECIMAL.type) {
             return get((byte) (id % TYPES_COUNT));
+        }
+        if (id >= UNSIGNED_BYTE.type && id <= UNSIGNED_LONG.type) {
+            return this;
+        }
+        if (id >= UNSIGNED_BYTE_ARRAY.type && id <= UNSIGNED_LONG_ARRAY.type) {
+            return get((byte) (id - (UNSIGNED_LONG_ARRAY.type - UNSIGNED_BYTE_ARRAY.type + 1)));
         }
         if (id % 2 == 0) {
             return get(id);

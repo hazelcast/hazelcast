@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -55,6 +56,15 @@ public interface InternalGenericRecord extends GenericRecord {
      */
     @Nullable
     Byte getByteFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getUnsignedByteFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field
@@ -99,6 +109,15 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
+    Long getUnsignedIntFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
     Long getLongFromArray(@Nonnull String fieldName, int index);
 
     /**
@@ -108,7 +127,25 @@ public interface InternalGenericRecord extends GenericRecord {
      *                                         the type of the field does not match the one in the class definition.
      */
     @Nullable
+    BigInteger getUnsignedLongFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
     Short getShortFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition.
+     */
+    @Nullable
+    Integer getUnsignedShortFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field

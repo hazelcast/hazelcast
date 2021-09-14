@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -68,6 +69,12 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
 
     @Nonnull
     @Override
+    public GenericRecordBuilder setUnsignedByte(@Nonnull String fieldName, int value) {
+        return write(fieldName, value, FieldType.UNSIGNED_BYTE);
+    }
+
+    @Nonnull
+    @Override
     public GenericRecordBuilder setChar(@Nonnull String fieldName, char value) {
         return write(fieldName, value, FieldType.CHAR);
     }
@@ -84,10 +91,52 @@ abstract class AbstractGenericRecordBuilder implements GenericRecordBuilder {
         return write(fieldName, value, FieldType.FLOAT);
     }
 
-    @Nonnull
+        @Nonnull
     @Override
     public GenericRecordBuilder setShort(@Nonnull String fieldName, short value) {
         return write(fieldName, value, FieldType.SHORT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedInt(@Nonnull String fieldName, long value) {
+        return write(fieldName, value, FieldType.UNSIGNED_INT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLong(@Nonnull String fieldName, BigInteger value) {
+        return write(fieldName, value, FieldType.UNSIGNED_LONG);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShort(@Nonnull String fieldName, int value) {
+        return write(fieldName, value, FieldType.UNSIGNED_SHORT);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] value) {
+        return write(fieldName, value, FieldType.UNSIGNED_BYTE_ARRAY);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] value) {
+        return write(fieldName, value, FieldType.UNSIGNED_INT_ARRAY);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] value) {
+        return write(fieldName, value, FieldType.UNSIGNED_LONG_ARRAY);
+    }
+
+    @Nonnull
+    @Override
+    public GenericRecordBuilder setUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] value) {
+        return write(fieldName, value, FieldType.UNSIGNED_SHORT_ARRAY);
     }
 
     @Nonnull

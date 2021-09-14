@@ -23,6 +23,7 @@ import com.hazelcast.spi.annotation.Beta;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -112,6 +113,25 @@ interface GenericRecordBuilder {
      * Otherwise, it is illegal to set to the same field twice.
      *
      * @param fieldName name of the field as it is defined in its class definition.
+     *                  It should be composed of only alpha-numeric characters.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord. The value should be in the unsigned byte range[0-255],
+     *                  otherwise throws {@link HazelcastSerializationException}.
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using or the value range is not in
+     *                                         unsigned byte range[0-255]
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setUnsignedByte(@Nonnull String fieldName, int value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
      *                  See {@link ClassDefinition} for {@link Portable}
      * @param value     to set to GenericRecord
      * @return itself for chaining
@@ -185,6 +205,22 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
+    GenericRecordBuilder setUnsignedInt(@Nonnull String fieldName, long value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
     GenericRecordBuilder setLong(@Nonnull String fieldName, long value);
 
     /**
@@ -201,7 +237,39 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
+    GenericRecordBuilder setUnsignedLong(@Nonnull String fieldName, BigInteger value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
     GenericRecordBuilder setShort(@Nonnull String fieldName, short value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setUnsignedShort(@Nonnull String fieldName, int value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
@@ -369,6 +437,22 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
+    GenericRecordBuilder setUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
     GenericRecordBuilder setCharArray(@Nonnull String fieldName, @Nullable char[] value);
 
     /**
@@ -417,6 +501,22 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
+    GenericRecordBuilder setUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
     GenericRecordBuilder setDoubleArray(@Nonnull String fieldName, @Nullable double[] value);
 
     /**
@@ -449,7 +549,39 @@ interface GenericRecordBuilder {
      *                                         {@link GenericRecord#cloneWithBuilder()}.
      */
     @Nonnull
+    GenericRecordBuilder setUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
     GenericRecordBuilder setShortArray(@Nonnull String fieldName, @Nullable short[] value);
+
+    /**
+     * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.
+     * Otherwise, it is illegal to set to the same field twice.
+     *
+     * @param fieldName name of the field as it is defined in its class definition.
+     *                  See {@link ClassDefinition} for {@link Portable}
+     * @param value     to set to GenericRecord
+     * @return itself for chaining
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition or
+     *                                         the type of the field does not match the one in the class definition or
+     *                                         Same field is trying to be set without using
+     *                                         {@link GenericRecord#cloneWithBuilder()}.
+     */
+    @Nonnull
+    GenericRecordBuilder setUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] value);
 
     /**
      * It is legal to set the field again only when Builder is created with {@link GenericRecord#cloneWithBuilder()}.

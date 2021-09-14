@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -62,8 +63,18 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedInt(@Nonnull String fieldName, long value) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_INT));
+    }
+
+    @Override
     public void writeLong(@Nonnull String fieldName, long value) {
         addField(new FieldDescriptor(fieldName, FieldType.LONG));
+    }
+
+    @Override
+    public void writeUnsignedLong(@Nonnull String fieldName, BigInteger value) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_LONG));
     }
 
     @Override
@@ -79,6 +90,11 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeByte(@Nonnull String fieldName, byte value) {
         addField(new FieldDescriptor(fieldName, FieldType.BYTE));
+    }
+
+    @Override
+    public void writeUnsignedByte(@Nonnull String fieldName, int value) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_BYTE));
     }
 
     @Override
@@ -99,6 +115,11 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeShort(@Nonnull String fieldName, short value) {
         addField(new FieldDescriptor(fieldName, FieldType.SHORT));
+    }
+
+    @Override
+    public void writeUnsignedShort(@Nonnull String fieldName, int value) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_SHORT));
     }
 
     @Override
@@ -137,6 +158,11 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedByteArray(@Nonnull String fieldName, @Nullable int[] values) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_BYTE_ARRAY));
+    }
+
+    @Override
     public void writeBooleanArray(@Nonnull String fieldName, @Nullable boolean[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.BOOLEAN_ARRAY));
     }
@@ -152,8 +178,18 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
+    public void writeUnsignedIntArray(@Nonnull String fieldName, @Nullable long[] values) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_INT_ARRAY));
+    }
+
+    @Override
     public void writeLongArray(@Nonnull String fieldName, @Nullable long[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.LONG_ARRAY));
+    }
+
+    @Override
+    public void writeUnsignedLongArray(@Nonnull String fieldName, @Nullable BigInteger[] values) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_LONG_ARRAY));
     }
 
     @Override
@@ -169,6 +205,11 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeShortArray(@Nonnull String fieldName, @Nullable short[] values) {
         addField(new FieldDescriptor(fieldName, FieldType.SHORT_ARRAY));
+    }
+
+    @Override
+    public void writeUnsignedShortArray(@Nonnull String fieldName, @Nullable int[] values) {
+        addField(new FieldDescriptor(fieldName, FieldType.UNSIGNED_SHORT_ARRAY));
     }
 
     @Override

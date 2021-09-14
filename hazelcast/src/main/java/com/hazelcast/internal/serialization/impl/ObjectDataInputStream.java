@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
@@ -125,9 +126,21 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
     }
 
     @Override
+    public long readUnsignedInt() throws IOException {
+        final int v = readInt();
+        return Integer.toUnsignedLong(v);
+    }
+
+    @Override
     public long readLong() throws IOException {
         final long v = dataInput.readLong();
         return bigEndian() ? v : Long.reverseBytes(v);
+    }
+
+    @Override
+    public BigInteger readUnsignedLong() throws IOException {
+        final long v = readLong();
+        return BigInteger.valueOf(v);
     }
 
     @Override
@@ -160,6 +173,23 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
             return b;
         }
         return new byte[0];
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedByteArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = Byte.toUnsignedInt(readByte());
+            }
+            return values;
+        }
+        return new int[0];
     }
 
     @Override
@@ -210,6 +240,12 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
         return new int[0];
     }
 
+    @Nullable
+    @Override
+    public long[] readUnsignedIntArray() throws IOException {
+        return new long[0];
+    }
+
     @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
@@ -224,6 +260,23 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
             return values;
         }
         return new long[0];
+    }
+
+    @Nullable
+    @Override
+    public BigInteger[] readUnsignedLongArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            BigInteger[] values = new BigInteger[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readUnsignedLong();
+            }
+            return values;
+        }
+        return new BigInteger[0];
     }
 
     @Override
@@ -272,6 +325,12 @@ public class ObjectDataInputStream extends VersionedObjectDataInput
             return values;
         }
         return new short[0];
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedShortArray() throws IOException {
+        return new int[0];
     }
 
     @Override

@@ -22,9 +22,11 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.collection.ArrayUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
@@ -173,6 +175,15 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return (byte) (ch);
     }
 
+    @Override
+    public final int readUnsignedByte(int position) throws EOFException {
+        final int ch = read(position);
+        if (ch < 0) {
+            throw new EOFException();
+        }
+        return ch;
+    }
+
     /**
      * See the general contract of the {@code readChar} method of {@code DataInput}.
      * <p>
@@ -289,6 +300,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return i;
     }
 
+    @Override
+    public long readUnsignedInt() throws IOException {
+        final int i = readInt(pos);
+        pos += INT_SIZE_IN_BYTES;
+        return Integer.toUnsignedLong(i);
+    }
+
     public int readInt(int position) throws EOFException {
         checkAvailable(position, INT_SIZE_IN_BYTES);
         return Bits.readInt(data, position, bigEndian);
@@ -305,6 +323,21 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     public int readInt(int position, ByteOrder byteOrder) throws EOFException {
         checkAvailable(position, INT_SIZE_IN_BYTES);
         return Bits.readInt(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
+    @Override
+    public long readUnsignedInt(int position) throws IOException {
+        return readInt(position) & 0xFFFFFFFFL;
+    }
+
+    @Override
+    public long readUnsignedInt(ByteOrder byteOrder) throws IOException {
+        return readInt(byteOrder) & 0xFFFFFFFFL;
+    }
+
+    @Override
+    public long readUnsignedInt(int position, ByteOrder byteOrder) throws IOException {
+        return readInt(position, byteOrder) & 0xFFFFFFFFL;
     }
 
     @Override
@@ -329,6 +362,13 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return l;
     }
 
+    @Override
+    public BigInteger readUnsignedLong() throws IOException {
+        final long l = readLong(pos);
+        pos += LONG_SIZE_IN_BYTES;
+        return BigInteger.valueOf(l);
+    }
+
     public long readLong(int position) throws EOFException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
         return Bits.readLong(data, position, bigEndian);
@@ -345,6 +385,44 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     public long readLong(int position, ByteOrder byteOrder) throws EOFException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
         return Bits.readLong(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
+    }
+
+    @Override
+    public BigInteger readUnsignedLong(int position) throws IOException {
+        long l = readLong(position);
+        return toPositiveBigInteger(l);
+    }
+
+    @Nonnull
+    private BigInteger toPositiveBigInteger(long l) {
+        byte[] bytes = toByteArray(l);
+        return new BigInteger(1, bytes);
+    }
+
+    /**
+     *
+     * @param value the long whose bytes are needed
+     * @return The bytes of the long number in Big-Endian representation
+     */
+    private byte[] toByteArray(long value) {
+        byte[] result = new byte[8];
+        for (int i = 7; i >= 0; i--) {
+            result[i] = (byte) (value & 0xffL);
+            value >>= 8;
+        }
+        return result;
+    }
+
+    @Override
+    public BigInteger readUnsignedLong(ByteOrder byteOrder) throws IOException {
+        long l = readLong(byteOrder);
+        return toPositiveBigInteger(l);
+    }
+
+    @Override
+    public BigInteger readUnsignedLong(int position, ByteOrder byteOrder) throws IOException {
+        long l = readLong(position, byteOrder);
+        return toPositiveBigInteger(l);
     }
 
     /**
@@ -384,6 +462,21 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
     }
 
     @Override
+    public int readUnsignedShort(int position) throws IOException {
+        return readShort(position) & 0xFFFF;
+    }
+
+    @Override
+    public int readUnsignedShort(ByteOrder byteOrder) throws IOException {
+        return readShort(byteOrder) & 0xFFFF;
+    }
+
+    @Override
+    public int readUnsignedShort(int position, ByteOrder byteOrder) throws IOException {
+        return readShort(position, byteOrder) & 0xFFFF;
+    }
+
+    @Override
     @Nullable
     public byte[] readByteArray() throws IOException {
         int len = readInt();
@@ -396,6 +489,23 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return b;
         }
         return EMPTY_BYTE_ARRAY;
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedByteArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = Byte.toUnsignedInt(readByte());
+            }
+            return values;
+        }
+        return new int[0];
     }
 
     @Override
@@ -449,6 +559,23 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return new int[0];
     }
 
+    @Nullable
+    @Override
+    public long[] readUnsignedIntArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = Integer.toUnsignedLong(readInt());
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
     @Override
     @Nullable
     public long[] readLongArray() throws EOFException {
@@ -464,6 +591,24 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return values;
         }
         return new long[0];
+    }
+
+    @Nullable
+    @Override
+    public BigInteger[] readUnsignedLongArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            BigInteger[] values = new BigInteger[len];
+            for (int i = 0; i < len; i++) {
+                long l = readLong();
+                values[i] = BigInteger.valueOf(l);
+            }
+            return values;
+        }
+        return new BigInteger[0];
     }
 
     @Override
@@ -515,6 +660,23 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
             return values;
         }
         return new short[0];
+    }
+
+    @Nullable
+    @Override
+    public int[] readUnsignedShortArray() throws IOException {
+        int len = readInt();
+        if (len == NULL_ARRAY_LENGTH) {
+            return null;
+        }
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = Short.toUnsignedInt(readShort());
+            }
+            return values;
+        }
+        return new int[0];
     }
 
     @Override

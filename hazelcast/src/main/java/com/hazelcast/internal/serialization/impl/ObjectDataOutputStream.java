@@ -28,6 +28,7 @@ import java.io.Closeable;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 
@@ -145,6 +146,15 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
     }
 
     @Override
+    public void writeUnsignedByteArray(int[] bytes) throws IOException {
+        int len = (bytes != null) ? bytes.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (int i : bytes) {
+            writeByte((byte) i);
+        }
+    }
+
+    @Override
     public void writeBooleanArray(boolean[] booleans) throws IOException {
         int len = booleans != null ? booleans.length : NULL_ARRAY_LENGTH;
         writeInt(len);
@@ -179,6 +189,15 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
     }
 
     @Override
+    public void writeUnsignedIntArray(long[] ints) throws IOException {
+        int len = ints != null ? ints.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (long i : ints) {
+            writeInt((int) i);
+        }
+    }
+
+    @Override
     public void writeLongArray(long[] longs) throws IOException {
         int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
         writeInt(len);
@@ -186,6 +205,15 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
             for (long l : longs) {
                 writeLong(l);
             }
+        }
+    }
+
+    @Override
+    public void writeUnsignedLongArray(BigInteger[] longs) throws IOException {
+        int len = longs != null ? longs.length : NULL_ARRAY_LENGTH;
+        writeInt(len);
+        for (BigInteger l : longs) {
+            writeLong(l.longValue());
         }
     }
 
@@ -220,6 +248,11 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput
                 writeShort(s);
             }
         }
+    }
+
+    @Override
+    public void writeUnsignedShortArray(int[] values) throws IOException {
+
     }
 
     @Override

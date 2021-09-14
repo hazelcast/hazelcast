@@ -66,7 +66,7 @@ import static org.junit.Assert.assertThat;
  * Each test execution runs one read operation on the reader.
  * <p>
  * The rationale behind these tests is to cover all possible combinations of reads using nested paths and quantifiers
- * (number or any) with all possible object types. It's impossible to do it manually, since there's 20 supported
+ * (number or any) with all possible object types. It's impossible to do it manually, since there's more than 20 supported
  * types and a read method for each one of them.
  * <p>
  * Each test case is documented, plus each test outputs it's scenario in a readable way, so you it's easy to follow
@@ -135,7 +135,10 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
 
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
+        serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true)
+                .register(CompactValueReaderTestStructure.PrimitiveObject.class,
+                        "CompactValueReaderTestStructure",
+                        new CompactValueReaderTestStructure.PrimitiveObject.PrimitiveObjectSerializer()));
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setConfig(serializationConfig)
                 .setSchemaService(schemaService).build();
