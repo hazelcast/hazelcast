@@ -167,7 +167,7 @@ hazelcast:
           enabled: false
         WAN:
           enabled: false
-        HOT_RESTART:
+        PERSISTENCE:
           enabled: false
         CP:
           enabled: false

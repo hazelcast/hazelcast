@@ -598,6 +598,7 @@
               "CLUSTER_READ",
               "CLUSTER_WRITE",
               "HEALTH_CHECK",
+              "PERSISTENCE",
               "HOT_RESTART",
               "WAN",
               "DATA",

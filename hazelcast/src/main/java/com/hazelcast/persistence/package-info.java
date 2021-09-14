@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.monitor;
-
-import com.hazelcast.json.internal.JsonSerializable;
-import com.hazelcast.persistence.BackupTaskStatus;
-
 /**
- * Hot Restart statistics to be used by {@link MemberState} implementations.
+ * <p>This package contains Persistence classes needed for open source Hazelcast code<br>
+ *
+ * @since 5.0
  */
-public interface HotRestartState extends JsonSerializable {
-
-    /**
-     * Returns the local hot restart backup task status (not the cluster backup status).
-     */
-    BackupTaskStatus getBackupTaskStatus();
-
-    boolean isHotBackupEnabled();
-
-    String getBackupDirectory();
-}
+package com.hazelcast.persistence;

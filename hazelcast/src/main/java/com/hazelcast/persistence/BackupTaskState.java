@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;
 
 /**
- * The state of the hot restart backup task
+ * The state of the persistence backup task
  */
 public enum BackupTaskState {
     /** No backup task has yet been run */

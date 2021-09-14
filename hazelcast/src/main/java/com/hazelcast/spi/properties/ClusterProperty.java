@@ -26,6 +26,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IndeterminateOperationStateException;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.EndpointQualifier;
@@ -1532,16 +1533,6 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty SHUTDOWNHOOK_POLICY
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
-
-    /**
-     * Since 4.2, there is no effect of setting this property.
-     * HD Memory is automatically aligned for hot restart
-     * starting from that version.
-     * @deprecated since 4.2
-     */
-    @Deprecated
-    public static final HazelcastProperty HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE
-            = new HazelcastProperty("hazelcast.hotrestart.free.native.memory.percentage", 15);
 
     /**
      * Name of logging framework type to send logging events.
