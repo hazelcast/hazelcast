@@ -20,16 +20,17 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.util.ConstantFunctionEx;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
 
 public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
+    private static final long serialVersionUID = 1L;
 
     private final ToLongFunctionEx<? super T> timestampFn;
     private final SupplierEx<? extends S> createFn;

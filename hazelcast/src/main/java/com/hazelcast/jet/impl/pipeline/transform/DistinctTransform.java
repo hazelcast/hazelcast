@@ -35,6 +35,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 import static com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService;
 
 public class DistinctTransform<T, K> extends AbstractTransform {
+    private static final long serialVersionUID = 1L;
 
     private final FunctionEx<? super T, ? extends K> keyFn;
 

@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 
@@ -28,6 +28,8 @@ import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 
 public class PeekTransform<T> extends AbstractTransform {
+    private static final long serialVersionUID = 1L;
+
     @Nonnull
     public final PredicateEx<? super T> shouldLogFn;
     @Nonnull
