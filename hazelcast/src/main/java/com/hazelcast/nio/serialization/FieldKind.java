@@ -19,17 +19,17 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * FieldID for Compact {@link com.hazelcast.config.CompactSerializationConfig} and {@link Portable} formats.
- * It is designed to be used with {@link GenericRecord#getFieldID(String)} API.
+ * FieldKind for Compact {@link com.hazelcast.config.CompactSerializationConfig} and {@link Portable} formats.
+ * It is designed to be used with {@link GenericRecord#getFieldKind(String)} API.
  * <p>
- * Note that actual id's in {@link FieldType} and {@link FieldID} are not matching.
+ * Note that actual id's in {@link FieldType} and {@link FieldKind} are not matching.
  * {@link FieldType} is the old API for Portable only and only meant to be used with
  * {@link ClassDefinition#getFieldType(String)} API.
  *
  * @since Hazelcast 5.0 as BETA. The final version will not be backward compatible with the Beta.
  */
 @Beta
-public enum FieldID {
+public enum FieldKind {
 
     BOOLEAN,
     BOOLEAN_ARRAY,

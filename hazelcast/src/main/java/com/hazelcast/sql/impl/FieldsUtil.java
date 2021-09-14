@@ -17,9 +17,9 @@
 package com.hazelcast.sql.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldID;
+import com.hazelcast.internal.serialization.impl.portable.FieldTypeToFieldKind;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
@@ -162,7 +162,7 @@ public final class FieldsUtil {
         for (String name : clazz.getFieldNames()) {
             FieldType portableType = clazz.getFieldType(name);
 
-            QueryDataType type = resolveType(FieldTypeToFieldID.toFieldID(portableType));
+            QueryDataType type = resolveType(FieldTypeToFieldKind.toFieldKind(portableType));
 
             fields.putIfAbsent(name, type);
         }
@@ -180,7 +180,7 @@ public final class FieldsUtil {
 
         // Add regular fields.
         for (String name : schema.getFieldNames()) {
-            FieldID compactType = schema.getField(name).getType();
+            FieldKind compactType = schema.getField(name).getKind();
             QueryDataType type = resolveType(compactType);
             fields.putIfAbsent(name, type);
         }
@@ -190,7 +190,7 @@ public final class FieldsUtil {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldID type) {
+    private static QueryDataType resolveType(@Nonnull FieldKind type) {
         switch (type) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;

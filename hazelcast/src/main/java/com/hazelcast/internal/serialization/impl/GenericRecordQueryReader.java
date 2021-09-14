@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
@@ -242,7 +242,7 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldID id = record.getFieldID(path);
+        FieldKind id = record.getFieldKind(path);
         return fieldOperations(id).readIndexed(record, path, index);
     }
 
@@ -250,7 +250,7 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldID id = record.getFieldID(path);
+        FieldKind id = record.getFieldKind(path);
         return fieldOperations(id).readObject(record, path);
     }
 

@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.util.ExceptionUtil;
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -39,36 +39,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.nio.serialization.FieldID.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldID.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.BYTE;
-import static com.hazelcast.nio.serialization.FieldID.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.CHAR;
-import static com.hazelcast.nio.serialization.FieldID.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.COMPACT;
-import static com.hazelcast.nio.serialization.FieldID.COMPACT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DATE;
-import static com.hazelcast.nio.serialization.FieldID.DATE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldID.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldID.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.FLOAT;
-import static com.hazelcast.nio.serialization.FieldID.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.INT;
-import static com.hazelcast.nio.serialization.FieldID.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.LONG;
-import static com.hazelcast.nio.serialization.FieldID.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.SHORT;
-import static com.hazelcast.nio.serialization.FieldID.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.STRING;
-import static com.hazelcast.nio.serialization.FieldID.STRING_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIME;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.INT;
+import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
+import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -173,9 +173,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
         return fields;
     }
 
-    private boolean fieldExists(Schema schema, String name, FieldID fieldID) {
+    private boolean fieldExists(Schema schema, String name, FieldKind fieldKind) {
         FieldDescriptor fieldDescriptor = schema.getField(name);
-        return fieldDescriptor != null && fieldDescriptor.getType().equals(fieldID);
+        return fieldDescriptor != null && fieldDescriptor.getKind().equals(fieldKind);
     }
 
     private void createFastReadWriteCaches(Class clazz) throws IOException {

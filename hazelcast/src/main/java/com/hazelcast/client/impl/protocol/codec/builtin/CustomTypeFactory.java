@@ -37,8 +37,7 @@ import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.nio.serialization.FieldID;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
@@ -226,7 +225,7 @@ public final class CustomTypeFactory {
     }
 
     public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
-        FieldID fieldType = FieldID.values()[type];
+        FieldKind fieldType = FieldKind.values()[type];
         return new FieldDescriptor(fieldName, fieldType);
     }
 

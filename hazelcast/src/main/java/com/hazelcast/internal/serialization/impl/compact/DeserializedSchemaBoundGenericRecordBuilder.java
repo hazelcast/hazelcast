@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -52,8 +52,8 @@ class DeserializedSchemaBoundGenericRecordBuilder extends AbstractGenericRecordB
     }
 
     @Override
-    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldID fieldID) {
-        checkTypeWithSchema(schema, fieldName, fieldID);
+    protected GenericRecordBuilder write(@Nonnull String fieldName, Object value, FieldKind fieldKind) {
+        checkTypeWithSchema(schema, fieldName, fieldKind);
         if (objects.putIfAbsent(fieldName, value) != null) {
             throw new HazelcastSerializationException("Field can only be written once");
         }

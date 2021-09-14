@@ -21,7 +21,7 @@ import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -48,36 +48,36 @@ import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.NUL
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
-import static com.hazelcast.nio.serialization.FieldID.BOOLEAN;
-import static com.hazelcast.nio.serialization.FieldID.BOOLEAN_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.BYTE;
-import static com.hazelcast.nio.serialization.FieldID.BYTE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.CHAR;
-import static com.hazelcast.nio.serialization.FieldID.CHAR_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.COMPACT;
-import static com.hazelcast.nio.serialization.FieldID.COMPACT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DATE;
-import static com.hazelcast.nio.serialization.FieldID.DATE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DECIMAL;
-import static com.hazelcast.nio.serialization.FieldID.DECIMAL_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.DOUBLE;
-import static com.hazelcast.nio.serialization.FieldID.DOUBLE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.FLOAT;
-import static com.hazelcast.nio.serialization.FieldID.FLOAT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.INT;
-import static com.hazelcast.nio.serialization.FieldID.INT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.LONG;
-import static com.hazelcast.nio.serialization.FieldID.LONG_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.SHORT;
-import static com.hazelcast.nio.serialization.FieldID.SHORT_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.STRING;
-import static com.hazelcast.nio.serialization.FieldID.STRING_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIME;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldID.TIMESTAMP_WITH_TIMEZONE_ARRAY;
-import static com.hazelcast.nio.serialization.FieldID.TIME_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE;
+import static com.hazelcast.nio.serialization.FieldKind.BYTE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR;
+import static com.hazelcast.nio.serialization.FieldKind.CHAR_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DATE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE;
+import static com.hazelcast.nio.serialization.FieldKind.DOUBLE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.INT;
+import static com.hazelcast.nio.serialization.FieldKind.INT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.LONG;
+import static com.hazelcast.nio.serialization.FieldKind.LONG_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT;
+import static com.hazelcast.nio.serialization.FieldKind.SHORT_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
+import static com.hazelcast.nio.serialization.FieldKind.STRING_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+import static com.hazelcast.nio.serialization.FieldKind.TIME_ARRAY;
 
 /**
  * A base class that has the capability of representing Compact serialized
@@ -163,8 +163,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     @Nonnull
-    public FieldID getFieldID(@Nonnull String fieldName) {
-        return schema.getField(fieldName).getType();
+    public FieldKind getFieldKind(@Nonnull String fieldName) {
+        return schema.getField(fieldName).getKind();
     }
 
     @Override
@@ -187,12 +187,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldID type) {
+    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind type) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
             return false;
         }
-        return field.getType().equals(type);
+        return field.getKind().equals(type);
     }
 
     @Override
@@ -268,11 +268,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableLength(fieldName, STRING, BufferObjectDataInput::readString);
     }
 
-    private <T> T getVariableLength(@Nonnull String fieldName, FieldID fieldID,
+    private <T> T getVariableLength(@Nonnull String fieldName, FieldKind fieldKind,
                                     Reader<T> reader) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldID);
+            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
             if (pos == NULL_OFFSET) {
                 return null;
             }
@@ -445,12 +445,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         R read(BufferObjectDataInput t) throws IOException;
     }
 
-    private <T> T[] getVariableSizeArray(@Nonnull String fieldName, FieldID fieldID,
+    private <T> T[] getVariableSizeArray(@Nonnull String fieldName, FieldKind fieldKind,
                                          Function<Integer, T[]> constructor,
                                          Reader<T> reader) {
         int currentPos = in.position();
         try {
-            int position = readVariableSizeFieldPosition(fieldName, fieldID);
+            int position = readVariableSizeFieldPosition(fieldName, fieldKind);
             if (position == NULL_ARRAY_LENGTH) {
                 return null;
             }
@@ -487,27 +487,27 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    private int readFixedSizePosition(@Nonnull String fieldName, FieldID fieldID) {
-        FieldDescriptor fd = getFieldDefinition(fieldName, fieldID);
+    private int readFixedSizePosition(@Nonnull String fieldName, FieldKind fieldKind) {
+        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
         int primitiveOffset = fd.getOffset();
         return primitiveOffset + dataStartPosition;
     }
 
     @Nonnull
-    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldID fieldID) {
+    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldKind fieldKind) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
         }
-        if (fd.getType() != fieldID) {
-            throw new HazelcastSerializationException("Not a '" + fieldID + "' field: " + fieldName);
+        if (fd.getKind() != fieldKind) {
+            throw new HazelcastSerializationException("Not a '" + fieldKind + "' field: " + fieldName);
         }
         return fd;
     }
 
-    private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldID fieldID) {
+    private int readVariableSizeFieldPosition(@Nonnull String fieldName, FieldKind fieldKind) {
         try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, fieldID);
+            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
             int index = fd.getIndex();
             int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
             return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
@@ -580,11 +580,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getFixedSizeFieldFromArray(fieldName, SHORT_ARRAY, ObjectDataInput::readShort, index);
     }
 
-    private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldID fieldID,
+    private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                              Reader<T> reader, int index) {
         checkNotNegative(index, "Array indexes can not be negative");
 
-        int position = readVariableSizeFieldPosition(fieldName, fieldID);
+        int position = readVariableSizeFieldPosition(fieldName, fieldKind);
         if (position == NULL_OFFSET) {
             return null;
         }
@@ -593,7 +593,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         int currentPos = in.position();
         try {
-            FieldID singleType = FieldOperations.getSingleType(fieldID);
+            FieldKind singleType = FieldOperations.getSingleType(fieldKind);
             int typeSize = FieldOperations.fieldOperations(singleType).typeSizeInBytes();
             in.position(INT_SIZE_IN_BYTES + position + index * typeSize);
             return reader.read(in);
@@ -646,11 +646,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 in -> serializer.read(in, schemaIncludedInBinary), index);
     }
 
-    private <T> T getVarSizeFromArray(@Nonnull String fieldName, FieldID fieldID,
+    private <T> T getVarSizeFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                       Reader<T> reader, int index) {
         int currentPos = in.position();
         try {
-            int pos = readVariableSizeFieldPosition(fieldName, fieldID);
+            int pos = readVariableSizeFieldPosition(fieldName, fieldKind);
 
             if (pos == NULL_OFFSET) {
                 return null;

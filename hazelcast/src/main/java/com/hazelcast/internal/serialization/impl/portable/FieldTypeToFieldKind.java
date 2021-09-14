@@ -16,83 +16,83 @@
 
 package com.hazelcast.internal.serialization.impl.portable;
 
-import com.hazelcast.nio.serialization.FieldID;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.FieldType;
 
 import javax.annotation.Nonnull;
 
 /**
- * Utility class to convert field type to field ID.
+ * Utility class to convert FieldType to FieldKind.
  */
 @SuppressWarnings({"checkstyle:ReturnCount", "MethodLength", "CyclomaticComplexity"})
-public final class FieldTypeToFieldID {
+public final class FieldTypeToFieldKind {
 
-    private FieldTypeToFieldID() {
+    private FieldTypeToFieldKind() {
     }
 
     @Nonnull
-    public static FieldID toFieldID(@Nonnull FieldType fieldType) {
+    public static FieldKind toFieldKind(@Nonnull FieldType fieldType) {
         switch (fieldType) {
             case PORTABLE:
-                return FieldID.PORTABLE;
+                return FieldKind.PORTABLE;
             case BYTE:
-                return FieldID.BYTE;
+                return FieldKind.BYTE;
             case BOOLEAN:
-                return FieldID.BOOLEAN;
+                return FieldKind.BOOLEAN;
             case CHAR:
-                return FieldID.CHAR;
+                return FieldKind.CHAR;
             case SHORT:
-                return FieldID.SHORT;
+                return FieldKind.SHORT;
             case INT:
-                return FieldID.INT;
+                return FieldKind.INT;
             case LONG:
-                return FieldID.LONG;
+                return FieldKind.LONG;
             case FLOAT:
-                return FieldID.FLOAT;
+                return FieldKind.FLOAT;
             case DOUBLE:
-                return FieldID.DOUBLE;
+                return FieldKind.DOUBLE;
             case UTF:
-                return FieldID.STRING;
+                return FieldKind.STRING;
             case PORTABLE_ARRAY:
-                return FieldID.PORTABLE_ARRAY;
+                return FieldKind.PORTABLE_ARRAY;
             case BYTE_ARRAY:
-                return FieldID.BYTE_ARRAY;
+                return FieldKind.BYTE_ARRAY;
             case BOOLEAN_ARRAY:
-                return FieldID.BOOLEAN_ARRAY;
+                return FieldKind.BOOLEAN_ARRAY;
             case CHAR_ARRAY:
-                return FieldID.CHAR_ARRAY;
+                return FieldKind.CHAR_ARRAY;
             case SHORT_ARRAY:
-                return FieldID.SHORT_ARRAY;
+                return FieldKind.SHORT_ARRAY;
             case INT_ARRAY:
-                return FieldID.INT_ARRAY;
+                return FieldKind.INT_ARRAY;
             case LONG_ARRAY:
-                return FieldID.LONG_ARRAY;
+                return FieldKind.LONG_ARRAY;
             case FLOAT_ARRAY:
-                return FieldID.FLOAT_ARRAY;
+                return FieldKind.FLOAT_ARRAY;
             case DOUBLE_ARRAY:
-                return FieldID.DOUBLE_ARRAY;
+                return FieldKind.DOUBLE_ARRAY;
             case UTF_ARRAY:
-                return FieldID.STRING_ARRAY;
+                return FieldKind.STRING_ARRAY;
             case DECIMAL:
-                return FieldID.DECIMAL;
+                return FieldKind.DECIMAL;
             case DECIMAL_ARRAY:
-                return FieldID.DECIMAL_ARRAY;
+                return FieldKind.DECIMAL_ARRAY;
             case TIME:
-                return FieldID.TIME;
+                return FieldKind.TIME;
             case TIME_ARRAY:
-                return FieldID.TIME_ARRAY;
+                return FieldKind.TIME_ARRAY;
             case DATE:
-                return FieldID.DATE;
+                return FieldKind.DATE;
             case DATE_ARRAY:
-                return FieldID.DATE_ARRAY;
+                return FieldKind.DATE_ARRAY;
             case TIMESTAMP:
-                return FieldID.TIMESTAMP;
+                return FieldKind.TIMESTAMP;
             case TIMESTAMP_ARRAY:
-                return FieldID.TIMESTAMP_ARRAY;
+                return FieldKind.TIMESTAMP_ARRAY;
             case TIMESTAMP_WITH_TIMEZONE:
-                return FieldID.TIMESTAMP_WITH_TIMEZONE;
+                return FieldKind.TIMESTAMP_WITH_TIMEZONE;
             case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return FieldID.TIMESTAMP_WITH_TIMEZONE_ARRAY;
+                return FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
             default:
                 //This statement will never be called.
                 throw new IllegalStateException("There is no corresponding field id for given field type : " + fieldType);

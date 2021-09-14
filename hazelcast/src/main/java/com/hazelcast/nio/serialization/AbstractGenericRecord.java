@@ -49,8 +49,8 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             return false;
         }
         for (String fieldName : thatFieldNames) {
-            FieldID thatFieldType = that.getFieldID(fieldName);
-            FieldID thisFieldType = getFieldID(fieldName);
+            FieldKind thatFieldType = that.getFieldKind(fieldName);
+            FieldKind thisFieldType = getFieldKind(fieldName);
             if (!thatFieldType.equals(thisFieldType)) {
                 return false;
             }
@@ -71,14 +71,14 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         int result = Objects.hash(getClassIdentifier());
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
-            FieldID fieldType = getFieldID(fieldName);
+            FieldKind fieldType = getFieldKind(fieldName);
             result = 31 * result + fieldOperations(fieldType).hashCode(this, fieldName);
         }
         return result;
     }
 
     public final <T> T readAny(@Nonnull String fieldName) {
-        FieldID type = getFieldID(fieldName);
+        FieldKind type = getFieldKind(fieldName);
         return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
     }
 
@@ -96,7 +96,7 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             i++;
             JsonEscape.writeEscaped(stringBuilder, fieldName);
             stringBuilder.append(": ");
-            FieldID fieldType = getFieldID(fieldName);
+            FieldKind fieldType = getFieldKind(fieldName);
             fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
             if (size != i) {
                 stringBuilder.append(", ");
