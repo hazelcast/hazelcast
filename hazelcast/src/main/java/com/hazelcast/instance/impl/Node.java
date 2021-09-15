@@ -16,6 +16,45 @@
 
 package com.hazelcast.instance.impl;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
+import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.instance.impl.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
+import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
+import static com.hazelcast.internal.config.ConfigValidator.warnForUsageOfDeprecatedSymmetricEncryption;
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
+import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
+import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_ENABLE_DETAILS;
+import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
+import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SERVER_BIND_ANY;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
+
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+
 import com.hazelcast.client.ClientListener;
 import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
@@ -25,14 +64,21 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipListener;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.EncryptionAtRestConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
+import com.hazelcast.config.PersistenceConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
+import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
@@ -98,46 +144,11 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.instance.impl.NodeShutdownHelper.shutdownNodeByFiringEvents;
-import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.allUsePublicAddress;
-import static com.hazelcast.internal.config.ConfigValidator.checkAdvancedNetworkConfig;
-import static com.hazelcast.internal.config.ConfigValidator.warnForUsageOfDeprecatedSymmetricEncryption;
-import static com.hazelcast.internal.util.EmptyStatement.ignore;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.internal.util.ThreadUtil.createThreadName;
-import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
-import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_ENABLE_DETAILS;
-import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
-import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
-import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
-import static java.lang.Thread.currentThread;
-import static java.security.AccessController.doPrivileged;
-
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
 public class Node {
+
+    protected static final String SECURITY_BANNER_CATEGORY = "com.hazelcast.system.security";
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
@@ -162,6 +173,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
+    private final ILogger securityLogger;
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;
@@ -233,6 +245,7 @@ public class Node {
             loggingService.setThisMember(localMember);
             tmpLogger = loggingService.getLogger(Node.class.getName());
             logger = tmpLogger;
+            securityLogger = loggingService.getLogger(SECURITY_BANNER_CATEGORY);
 
             nodeExtension.printNodeInfo();
             nodeExtension.beforeStart();
@@ -259,6 +272,7 @@ public class Node {
             boolean isAutoDetectionEnabled = joinConfig.isAutoDetectionEnabled();
             discoveryService = createDiscoveryService(discoveryConfig, aliasedDiscoveryConfigs, isAutoDetectionEnabled,
                     localMember);
+            printSecurityInfo();
             clusterService = new ClusterServiceImpl(this, localMember);
             partitionService = new InternalPartitionServiceImpl(this);
             textCommandService = nodeExtension.createTextCommandService();
@@ -911,4 +925,103 @@ public class Node {
         Address masterAddress = clusterService.getMasterAddress();
         return server.doAddressesMatch(masterAddress, address);
     }
+
+    public void printSecurityInfo() {
+        securityLogger.info(String.format(
+                "Enable DEBUG/FINE log level for log category %1$s "
+                        + " or use -D%1$s system property to see 🔒 security recommendations and the status of current config.",
+                SECURITY_BANNER_CATEGORY));
+        boolean showInfoSecurityBanner = System.getProperty(SECURITY_BANNER_CATEGORY) != null;
+        if ((showInfoSecurityBanner && securityLogger.isInfoEnabled()) || securityLogger.isFineEnabled()) {
+            printSecurityFeaturesInfo(getConfig(), showInfoSecurityBanner ? Level.INFO : Level.FINE);
+        }
+    }
+
+    @SuppressWarnings({ "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength" })
+    private void printSecurityFeaturesInfo(Config config, Level logLevel) {
+        StringBuilder sb = new StringBuilder("\n🔒Security recommendations and their status:");
+        addSecurityFeatureCheck(sb, "Use a custom cluster name", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
+        boolean isMulticastJoin = shouldUseMulticastJoiner(getActiveMemberNetworkConfig(config).getJoin());
+        addSecurityFeatureCheck(sb, "Disable member multicast discovery/join method", !isMulticastJoin);
+
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        addSecurityFeatureCheck(sb, "Use advanced networking, separate client and member sockets",
+                advancedNetworkConfig.isEnabled());
+        boolean bindAny = getProperties().getBoolean(SOCKET_SERVER_BIND_ANY);
+        addSecurityFeatureCheck(sb,
+                "Bind Server sockets to a single network interface (disable " + SOCKET_SERVER_BIND_ANY.getName() + ")",
+                !bindAny);
+        StringBuilder tlsSb = new StringBuilder();
+        boolean tlsUsed = true;
+        if (advancedNetworkConfig.isEnabled()) {
+            for (Map.Entry<EndpointQualifier, EndpointConfig> e : advancedNetworkConfig.getEndpointConfigs().entrySet()) {
+                tlsUsed = addAdvNetworkTlsInfo(tlsSb, e.getKey(), e.getValue().getSSLConfig()) && tlsUsed;
+            }
+        } else {
+            SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
+            tlsUsed = addSecurityFeatureCheck(tlsSb, "Use TLS communication protection (Enterprise)",
+                    sslConfig != null && sslConfig.isEnabled());
+        }
+        boolean jetEnabled = config.getJetConfig().isEnabled();
+        if (jetEnabled) {
+            boolean trustedEnv = tlsUsed || !bindAny;
+            addSecurityFeatureCheck(sb, "Use Jet in trusted environments only (single network interface and/or TLS enabled)",
+                    trustedEnv);
+            if (config.getJetConfig().isResourceUploadEnabled()) {
+                addSecurityFeatureInfo(sb, "Jet resource upload is enabled. Any uploaded code can be executed within "
+                        + "the Hazelcast. Use this in trusted environments only.");
+            }
+        } else {
+            addSecurityFeatureInfo(sb, "Jet is disabled");
+        }
+        if (config.getUserCodeDeploymentConfig().isEnabled()) {
+            addSecurityFeatureInfo(sb, "User code deployment is enabled. Any uploaded code can be executed within "
+                    + "the Hazelcast. Use this in trusted environments only.");
+        }
+        addSecurityFeatureCheck(sb, "Disable scripting in the Management Center",
+                !config.getManagementCenterConfig().isScriptingEnabled());
+        SecurityConfig securityConfig = config.getSecurityConfig();
+        boolean securityEnabled = securityConfig != null && securityConfig.isEnabled();
+
+        addSecurityFeatureCheck(sb, "Enable Security (Enterprise)", securityEnabled);
+        if (securityEnabled) {
+            checkAuthnConfigured(sb, securityConfig, "member-authentication", securityConfig.getMemberRealm());
+            checkAuthnConfigured(sb, securityConfig, "client-authentication", securityConfig.getClientRealm());
+        }
+        // TLS here
+        sb.append(tlsSb.toString());
+        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
+        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
+            EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
+            addSecurityFeatureCheck(sb, "Enable encryption-at-rest in the Persistence config (Enterprise)",
+                    encryptionAtRestConfig != null && encryptionAtRestConfig.isEnabled());
+        }
+        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
+        addSecurityFeatureCheck(sb, "Enable auditlog (Enterprise)", auditlogConfig != null && auditlogConfig.isEnabled());
+
+        sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find why and how to configure"
+                + " these security related settings.\n");
+        securityLogger.log(logLevel, sb.toString());
+    }
+
+    private void checkAuthnConfigured(StringBuilder sb, SecurityConfig securityConfig, String authName, String realmName) {
+        RealmConfig rc = securityConfig.getRealmConfig(realmName);
+        addSecurityFeatureCheck(sb, "Configure " + authName + " explicitly (Enterprise)",
+                rc != null && rc.isAuthenticationConfigured());
+    }
+
+    private boolean addAdvNetworkTlsInfo(StringBuilder sb, EndpointQualifier endpoint, SSLConfig sslConfig) {
+        return addSecurityFeatureCheck(sb, "Use TLS in the " + endpoint.toMetricsPrefixString() + " endpoint (Enterprise)",
+                sslConfig != null && sslConfig.isEnabled());
+    }
+
+    private boolean addSecurityFeatureCheck(StringBuilder sb, String feature, boolean enabled) {
+        sb.append("\n  ").append(enabled ? "✅ " : "⚠️ ").append(feature);
+        return enabled;
+    }
+
+    private void addSecurityFeatureInfo(StringBuilder sb, String feature) {
+        sb.append("\n  ℹ️ ").append(feature);
+    }
+
 }

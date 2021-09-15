@@ -123,7 +123,6 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
@@ -136,12 +135,9 @@ import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrac
 import static com.hazelcast.jet.impl.util.Util.JET_IS_DISABLED_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
-import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SERVER_BIND_ANY;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
-    protected static final String SECURITY_BANNER_CATEGORY = "com.hazelcast.system.security";
-
     private static final String PLATFORM_LOGO
             = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
             + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
@@ -166,7 +162,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
         this.logoLogger = node.getLogger("com.hazelcast.system.logo");
-        this.securityLogger = node.getLogger(SECURITY_BANNER_CATEGORY);
+        this.securityLogger = node.getLogger("com.hazelcast.system.security");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
@@ -235,14 +231,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         printBannersBeforeNodeInfo();
         String build = constructBuildString(buildInfo);
         printNodeInfoInternal(buildInfo, build);
-        securityLogger.info(String.format(
-                "Enable DEBUG/FINE log level for log category %1$s "
-                        + " or use -D%1$s system property to see 🔒 security recommendations and the status of current config.",
-                SECURITY_BANNER_CATEGORY));
-        boolean showInfoSecurityBanner = System.getProperty(SECURITY_BANNER_CATEGORY) != null;
-        if ((showInfoSecurityBanner && securityLogger.isInfoEnabled()) || securityLogger.isFineEnabled()) {
-            printSecurityFeaturesInfo(node.getConfig(), showInfoSecurityBanner ? Level.INFO : Level.FINE);
-        }
+        printSecurityFeaturesInfo(node.getConfig());
     }
 
     @Override
@@ -294,91 +283,63 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
-    @SuppressWarnings({ "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength" })
-    private void printSecurityFeaturesInfo(Config config, Level logLevel) {
-        StringBuilder sb = new StringBuilder("\n🔒Security recommendations and their status:");
-        addSecurityFeatureCheck(sb, "Use a custom cluster name", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
+    private void printSecurityFeaturesInfo(Config config) {
+        StringBuilder sb = new StringBuilder("\n🔒Status of security related features:");
+        addFeatureInfo(sb, "Custom cluster name used", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
         boolean isMulticastJoin = node.shouldUseMulticastJoiner(getActiveMemberNetworkConfig(config).getJoin());
-        addSecurityFeatureCheck(sb, "Disable member multicast discovery/join method", !isMulticastJoin);
-
+        addFeatureInfo(sb, "Member multicast discovery/join method disabled", !isMulticastJoin);
+        addFeatureInfo(sb, "Advanced networking used - Sockets separated", config.getAdvancedNetworkConfig().isEnabled());
         AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        addSecurityFeatureCheck(sb, "Use advanced networking, separate client and member sockets",
-                advancedNetworkConfig.isEnabled());
-        boolean bindAny = node.getProperties().getBoolean(SOCKET_SERVER_BIND_ANY);
-        addSecurityFeatureCheck(sb,
-                "Bind Server sockets to a single network interface (disable " + SOCKET_SERVER_BIND_ANY.getName() + ")",
-                !bindAny);
-        StringBuilder tlsSb = new StringBuilder();
-        boolean tlsUsed = true;
-        if (advancedNetworkConfig.isEnabled()) {
-            for (Map.Entry<EndpointQualifier, EndpointConfig> e : advancedNetworkConfig.getEndpointConfigs().entrySet()) {
-                tlsUsed = addAdvNetworkTlsInfo(tlsSb, e.getKey(), e.getValue().getSSLConfig()) && tlsUsed;
-            }
-        } else {
-            SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
-            tlsUsed = addSecurityFeatureCheck(tlsSb, "Use TLS communication protection (Enterprise)",
-                    sslConfig != null && sslConfig.isEnabled());
-        }
+        addFeatureInfo(sb, "Server sockets bound to a single network interface",
+                !node.getProperties().getBoolean(ClusterProperty.SOCKET_SERVER_BIND_ANY));
+        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
         boolean jetEnabled = config.getJetConfig().isEnabled();
+        addFeatureInfo(sb, "Jet disabled", !jetEnabled);
         if (jetEnabled) {
-            boolean trustedEnv = tlsUsed || !bindAny;
-            addSecurityFeatureCheck(sb, "Use Jet in trusted environments only (single network interface and/or TLS enabled)",
-                    trustedEnv);
-            if (config.getJetConfig().isResourceUploadEnabled()) {
-                addSecurityFeatureInfo(sb, "Jet resource upload is enabled. Any uploaded code can be executed within "
-                        + "the Hazelcast. Use this in trusted environments only.");
-            }
-        } else {
-            addSecurityFeatureInfo(sb, "Jet is disabled");
+            addFeatureInfo(sb, "Jet resource upload disabled", !config.getJetConfig().isResourceUploadEnabled());
         }
-        if (config.getUserCodeDeploymentConfig().isEnabled()) {
-            addSecurityFeatureInfo(sb, "User code deployment is enabled. Any uploaded code can be executed within "
-                    + "the Hazelcast. Use this in trusted environments only.");
-        }
-        addSecurityFeatureCheck(sb, "Disable scripting in the Management Center",
-                !config.getManagementCenterConfig().isScriptingEnabled());
+        addFeatureInfo(sb, "User code deployment disallowed", !config.getUserCodeDeploymentConfig().isEnabled());
+        addFeatureInfo(sb, "Scripting in Management Center disabled", !config.getManagementCenterConfig().isScriptingEnabled());
         SecurityConfig securityConfig = config.getSecurityConfig();
         boolean securityEnabled = securityConfig != null && securityConfig.isEnabled();
-
-        addSecurityFeatureCheck(sb, "Enable Security (Enterprise)", securityEnabled);
+        addFeatureInfo(sb, "Security enabled (Enterprise)", securityEnabled);
         if (securityEnabled) {
             checkAuthnConfigured(sb, securityConfig, "member-authentication", securityConfig.getMemberRealm());
             checkAuthnConfigured(sb, securityConfig, "client-authentication", securityConfig.getClientRealm());
         }
-        // TLS here
-        sb.append(tlsSb.toString());
+        if (advancedNetworkConfig.isEnabled()) {
+            for (Map.Entry<EndpointQualifier, EndpointConfig> e : advancedNetworkConfig.getEndpointConfigs().entrySet()) {
+                addAdvNetworkTlsInfo(sb, e.getKey(), e.getValue().getSSLConfig());
+            }
+        } else {
+            SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
+            addFeatureInfo(sb, "TLS - communication protection (Enterprise)", sslConfig != null && sslConfig.isEnabled());
+        }
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
         if (persistenceConfig != null && persistenceConfig.isEnabled()) {
             EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
-            addSecurityFeatureCheck(sb, "Enable encryption-at-rest in the Persistence config (Enterprise)",
+            addFeatureInfo(sb, "Encryption-at-rest in Persistence config enabled (Enterprise)",
                     encryptionAtRestConfig != null && encryptionAtRestConfig.isEnabled());
         }
-        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
-        addSecurityFeatureCheck(sb, "Enable auditlog (Enterprise)", auditlogConfig != null && auditlogConfig.isEnabled());
+        addFeatureInfo(sb, "Auditlog enabled (Enterprise)", auditlogConfig != null && auditlogConfig.isEnabled());
 
-        sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find why and how to configure"
-                + " these security related settings.\n");
-        securityLogger.log(logLevel, sb.toString());
+        sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find how to configure"
+                + " these security related settings.");
+        securityLogger.info(sb.toString());
     }
 
     private void checkAuthnConfigured(StringBuilder sb, SecurityConfig securityConfig, String authName, String realmName) {
         RealmConfig rc = securityConfig.getRealmConfig(realmName);
-        addSecurityFeatureCheck(sb, "Configure " + authName + " explicitly (Enterprise)",
-                rc != null && rc.isAuthenticationConfigured());
+        addFeatureInfo(sb, authName + " explicitly configured (Enterprise)", rc != null && rc.isAuthenticationConfigured());
     }
 
-    private boolean addAdvNetworkTlsInfo(StringBuilder sb, EndpointQualifier endpoint, SSLConfig sslConfig) {
-        return addSecurityFeatureCheck(sb, "Use TLS in the " + endpoint.toMetricsPrefixString() + " endpoint (Enterprise)",
+    private void addAdvNetworkTlsInfo(StringBuilder sb, EndpointQualifier endpoint, SSLConfig sslConfig) {
+        addFeatureInfo(sb, "TLS in endpoint " + endpoint.toMetricsPrefixString() + " (Enterprise)",
                 sslConfig != null && sslConfig.isEnabled());
     }
 
-    private boolean addSecurityFeatureCheck(StringBuilder sb, String feature, boolean enabled) {
-        sb.append("\n  ").append(enabled ? "✅ " : "⚠️ ").append(feature);
-        return enabled;
-    }
-
-    private void addSecurityFeatureInfo(StringBuilder sb, String feature) {
-        sb.append("\n  ℹ️ ").append(feature);
+    private void addFeatureInfo(StringBuilder sb, String feature, boolean enabled) {
+        sb.append("\n  ").append(enabled ? "✅ " : "❌ ").append(feature);
     }
 
     protected String getEditionString() {

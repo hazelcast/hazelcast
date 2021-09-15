@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance.impl;
 
-import static com.hazelcast.instance.impl.DefaultNodeExtension.SECURITY_BANNER_CATEGORY;
+import static com.hazelcast.instance.impl.Node.SECURITY_BANNER_CATEGORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
