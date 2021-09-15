@@ -64,8 +64,8 @@ public class SqlClientService implements SqlService {
 
     /**
      * The field to indicate whether a query should update phone home statistics or not.
-     * For example, the queries issued from MC client will not update the statistics because
-     * they cause a significant distortion.
+     * For example, the queries issued from the MC client will not update the statistics
+     * because they cause a significant distortion.
      */
     private final boolean skipUpdateStatistics;
 
