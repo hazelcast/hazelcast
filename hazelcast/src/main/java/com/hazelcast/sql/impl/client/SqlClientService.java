@@ -52,12 +52,6 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
  */
 public class SqlClientService implements SqlService {
 
-    private static final int SERVICE_ID_MASK = 0x00FF0000;
-    private static final int SERVICE_ID_SHIFT = 16;
-
-    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
-    private static final int SQL_SERVICE_ID = 33;
-
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
@@ -289,11 +283,5 @@ public class SqlClientService implements SqlService {
         }
 
         return QueryUtils.toPublicException(cause, getClientId());
-    }
-
-    public static boolean isSqlMessage(int messageType) {
-        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
-
-        return serviceId == SQL_SERVICE_ID;
     }
 }
