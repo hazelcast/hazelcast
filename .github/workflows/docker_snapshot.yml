@@ -57,7 +57,7 @@ jobs:
         run: |
           mvn -f hazelcast/pom.xml -B \
             -Dmaven.site.skip=true -Dmaven.javadoc.skip=true \
-            -Dcheckstyle.skip -Dspotbugs.skip clean install -DskipTests
+            -Dcheckstyle.skip clean install -DskipTests
           rm hazelcast/hazelcast/target/*-sources.jar \
             hazelcast/hazelcast/target/*-tests.jar || true
           cp hazelcast/hazelcast/target/hazelcast-*.jar hazelcast.jar
@@ -75,7 +75,7 @@ jobs:
         run: |
           mvn -f hazelcast-enterprise/pom.xml -B -Dmaven.test.skip=true \
             -Dmaven.site.skip=true -Dmaven.javadoc.skip=true \
-            -Dcheckstyle.skip -Dspotbugs.skip clean install -DskipTests
+            -Dcheckstyle.skip clean install -DskipTests
           rm hazelcast-enterprise/hazelcast-enterprise/target/*-sources.jar \
             hazelcast-enterprise/hazelcast-enterprise/target/*-tests.jar || true
           cp hazelcast-enterprise/hazelcast-enterprise/target/hazelcast-enterprise-*.jar hazelcast-enterprise.jar
