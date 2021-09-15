@@ -160,7 +160,8 @@ public class SqlClientExecuteCloseRaceTest extends SqlTestSupport {
                 1,
                 null,
                 SqlExpectedResultType.ANY.getId(),
-                queryId
+                queryId,
+                false
         );
 
         return clientService.invokeOnConnection(connection, executeRequest);

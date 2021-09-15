@@ -58,7 +58,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
 
         SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
-        return sqlService.execute(query, sqlSecurityContext, parameters.queryId);
+        boolean skipUpdateStatistics = parameters.isSkipUpdateStatisticsExists && parameters.skipUpdateStatistics;
+        return sqlService.execute(query, sqlSecurityContext, parameters.queryId, skipUpdateStatistics);
     }
 
     @Override
