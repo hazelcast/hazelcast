@@ -52,6 +52,8 @@ Hazelcast repository continues its development as with a next major version.
   and `ParallelJVMTest` `@Category` accordingly
 - IMDG's `smallInstanceConfig()` for tests sets the
   `com.hazelcast.jet.config.InstanceConfig#setCooperativeThreadCount` to 2
+- Jet cooperative threads are suspended if no jobs are running.
+- One can disable Jet code upload for security reasons.
 
 ## Checkstyle
 
