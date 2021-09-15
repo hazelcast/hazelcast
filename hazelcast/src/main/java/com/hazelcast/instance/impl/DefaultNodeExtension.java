@@ -123,6 +123,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
@@ -139,6 +140,8 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SERVER_BIND_AN
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
+    protected static final String SECURITY_BANNER_CATEGORY = "com.hazelcast.system.security";
+
     private static final String PLATFORM_LOGO
             = "\t+       +  o    o     o     o---o o----o o      o---o     o     o----o o--o--o\n"
             + "\t+ +   + +  |    |    / \\       /  |      |     /         / \\    |         |   \n"
@@ -163,7 +166,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
         this.logoLogger = node.getLogger("com.hazelcast.system.logo");
-        this.securityLogger = node.getLogger("com.hazelcast.system.security");
+        this.securityLogger = node.getLogger(SECURITY_BANNER_CATEGORY);
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
@@ -232,10 +235,13 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         printBannersBeforeNodeInfo();
         String build = constructBuildString(buildInfo);
         printNodeInfoInternal(buildInfo, build);
-        securityLogger.info("Enable DEBUG/FINE log level for log category com.hazelcast.system.security "
-                + "to see 🔒 security remmendations and the status of current config.");
-        if (securityLogger.isFineEnabled()) {
-            printSecurityFeaturesInfo(node.getConfig());
+        securityLogger.info(String.format(
+                "Enable DEBUG/FINE log level for log category %1$s "
+                        + " or use -D%1$s system property to see 🔒 security recommendations and the status of current config.",
+                SECURITY_BANNER_CATEGORY));
+        boolean showInfoSecurityBanner = System.getProperty(SECURITY_BANNER_CATEGORY) != null;
+        if ((showInfoSecurityBanner && securityLogger.isInfoEnabled()) || securityLogger.isFineEnabled()) {
+            printSecurityFeaturesInfo(node.getConfig(), showInfoSecurityBanner ? Level.INFO : Level.FINE);
         }
     }
 
@@ -288,8 +294,8 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private void printSecurityFeaturesInfo(Config config) {
+    @SuppressWarnings({ "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength" })
+    private void printSecurityFeaturesInfo(Config config, Level logLevel) {
         StringBuilder sb = new StringBuilder("\n🔒Security recommendations and their status:");
         addSecurityFeatureCheck(sb, "Use a custom cluster name", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
         boolean isMulticastJoin = node.shouldUseMulticastJoiner(getActiveMemberNetworkConfig(config).getJoin());
@@ -318,11 +324,17 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
             boolean trustedEnv = tlsUsed || !bindAny;
             addSecurityFeatureCheck(sb, "Use Jet in trusted environments only (single network interface and/or TLS enabled)",
                     trustedEnv);
-            addSecurityFeatureCheck(sb, "Disable Jet resource upload", !config.getJetConfig().isResourceUploadEnabled());
+            if (config.getJetConfig().isResourceUploadEnabled()) {
+                addSecurityFeatureInfo(sb, "Jet resource upload is enabled. Any uploaded code can be executed within "
+                        + "the Hazelcast. Use this in trusted environments only.");
+            }
         } else {
             addSecurityFeatureInfo(sb, "Jet is disabled");
         }
-        addSecurityFeatureCheck(sb, "Disable user code deployment", !config.getUserCodeDeploymentConfig().isEnabled());
+        if (config.getUserCodeDeploymentConfig().isEnabled()) {
+            addSecurityFeatureInfo(sb, "User code deployment is enabled. Any uploaded code can be executed within "
+                    + "the Hazelcast. Use this in trusted environments only.");
+        }
         addSecurityFeatureCheck(sb, "Disable scripting in the Management Center",
                 !config.getManagementCenterConfig().isScriptingEnabled());
         SecurityConfig securityConfig = config.getSecurityConfig();
@@ -346,7 +358,7 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
 
         sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find why and how to configure"
                 + " these security related settings.\n");
-        securityLogger.fine(sb.toString());
+        securityLogger.log(logLevel, sb.toString());
     }
 
     private void checkAuthnConfigured(StringBuilder sb, SecurityConfig securityConfig, String authName, String realmName) {
