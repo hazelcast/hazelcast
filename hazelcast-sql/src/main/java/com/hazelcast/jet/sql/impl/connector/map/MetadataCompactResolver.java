@@ -47,7 +47,6 @@ import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.m
 
 final class MetadataCompactResolver implements KvMetadataResolver {
 
-
     static final MetadataCompactResolver INSTANCE = new MetadataCompactResolver();
 
     private MetadataCompactResolver() {
