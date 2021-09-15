@@ -22,21 +22,16 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClusterViewListenerService;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EncryptionAtRestConfig;
-import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceMode;
 import com.hazelcast.config.InstanceTrackingConfig.InstanceProductName;
 import com.hazelcast.config.PersistenceConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
-import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
@@ -150,7 +145,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
     protected final Node node;
     protected final ILogger logger;
     protected final ILogger logoLogger;
-    protected final ILogger securityLogger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
     protected PhoneHome phoneHome;
@@ -162,7 +156,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         this.node = node;
         this.logger = node.getLogger(NodeExtension.class);
         this.logoLogger = node.getLogger("com.hazelcast.system.logo");
-        this.securityLogger = node.getLogger("com.hazelcast.system.security");
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
         checkPersistenceAllowed();
@@ -231,7 +224,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
         printBannersBeforeNodeInfo();
         String build = constructBuildString(buildInfo);
         printNodeInfoInternal(buildInfo, build);
-        printSecurityFeaturesInfo(node.getConfig());
     }
 
     @Override
@@ -281,65 +273,6 @@ public class DefaultNodeExtension implements NodeExtension, JetPacketConsumer {
                 + " (" + build + ") starting at " + node.getThisAddress());
         systemLogger.info("Cluster name: " + node.getConfig().getClusterName());
         systemLogger.fine("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
-    }
-
-    private void printSecurityFeaturesInfo(Config config) {
-        StringBuilder sb = new StringBuilder("\n🔒Status of security related features:");
-        addFeatureInfo(sb, "Custom cluster name used", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
-        boolean isMulticastJoin = node.shouldUseMulticastJoiner(getActiveMemberNetworkConfig(config).getJoin());
-        addFeatureInfo(sb, "Member multicast discovery/join method disabled", !isMulticastJoin);
-        addFeatureInfo(sb, "Advanced networking used - Sockets separated", config.getAdvancedNetworkConfig().isEnabled());
-        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
-        addFeatureInfo(sb, "Server sockets bound to a single network interface",
-                !node.getProperties().getBoolean(ClusterProperty.SOCKET_SERVER_BIND_ANY));
-        AuditlogConfig auditlogConfig = config.getAuditlogConfig();
-        boolean jetEnabled = config.getJetConfig().isEnabled();
-        addFeatureInfo(sb, "Jet disabled", !jetEnabled);
-        if (jetEnabled) {
-            addFeatureInfo(sb, "Jet resource upload disabled", !config.getJetConfig().isResourceUploadEnabled());
-        }
-        addFeatureInfo(sb, "User code deployment disallowed", !config.getUserCodeDeploymentConfig().isEnabled());
-        addFeatureInfo(sb, "Scripting in Management Center disabled", !config.getManagementCenterConfig().isScriptingEnabled());
-        SecurityConfig securityConfig = config.getSecurityConfig();
-        boolean securityEnabled = securityConfig != null && securityConfig.isEnabled();
-        addFeatureInfo(sb, "Security enabled (Enterprise)", securityEnabled);
-        if (securityEnabled) {
-            checkAuthnConfigured(sb, securityConfig, "member-authentication", securityConfig.getMemberRealm());
-            checkAuthnConfigured(sb, securityConfig, "client-authentication", securityConfig.getClientRealm());
-        }
-        if (advancedNetworkConfig.isEnabled()) {
-            for (Map.Entry<EndpointQualifier, EndpointConfig> e : advancedNetworkConfig.getEndpointConfigs().entrySet()) {
-                addAdvNetworkTlsInfo(sb, e.getKey(), e.getValue().getSSLConfig());
-            }
-        } else {
-            SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
-            addFeatureInfo(sb, "TLS - communication protection (Enterprise)", sslConfig != null && sslConfig.isEnabled());
-        }
-        PersistenceConfig persistenceConfig = config.getPersistenceConfig();
-        if (persistenceConfig != null && persistenceConfig.isEnabled()) {
-            EncryptionAtRestConfig encryptionAtRestConfig = persistenceConfig.getEncryptionAtRestConfig();
-            addFeatureInfo(sb, "Encryption-at-rest in Persistence config enabled (Enterprise)",
-                    encryptionAtRestConfig != null && encryptionAtRestConfig.isEnabled());
-        }
-        addFeatureInfo(sb, "Auditlog enabled (Enterprise)", auditlogConfig != null && auditlogConfig.isEnabled());
-
-        sb.append("\nCheck the hazelcast-security-hardened.xml/yaml example config file to find how to configure"
-                + " these security related settings.");
-        securityLogger.info(sb.toString());
-    }
-
-    private void checkAuthnConfigured(StringBuilder sb, SecurityConfig securityConfig, String authName, String realmName) {
-        RealmConfig rc = securityConfig.getRealmConfig(realmName);
-        addFeatureInfo(sb, authName + " explicitly configured (Enterprise)", rc != null && rc.isAuthenticationConfigured());
-    }
-
-    private void addAdvNetworkTlsInfo(StringBuilder sb, EndpointQualifier endpoint, SSLConfig sslConfig) {
-        addFeatureInfo(sb, "TLS in endpoint " + endpoint.toMetricsPrefixString() + " (Enterprise)",
-                sslConfig != null && sslConfig.isEnabled());
-    }
-
-    private void addFeatureInfo(StringBuilder sb, String feature, boolean enabled) {
-        sb.append("\n  ").append(enabled ? "✅ " : "❌ ").append(feature);
     }
 
     protected String getEditionString() {
