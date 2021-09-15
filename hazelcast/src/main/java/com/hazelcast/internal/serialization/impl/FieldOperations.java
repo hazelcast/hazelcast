@@ -36,10 +36,10 @@ import java.util.function.BiConsumer;
 @SuppressWarnings({"checkstyle:AnonInnerLength", "checkstyle:ExecutableStatementCount"})
 public final class FieldOperations {
 
-    private static final FieldTypeBasedOperations[] ALL = new FieldTypeBasedOperations[FieldKind.values().length];
+    private static final FieldKindBasedOperations[] ALL = new FieldKindBasedOperations[FieldKind.values().length];
 
     static {
-        ALL[FieldKind.BOOLEAN.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.BOOLEAN.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Boolean readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getBoolean(fieldName);
@@ -51,7 +51,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 //Boolean is actually 1 bit. To make it look like smaller than Byte we use 0.
                 return 0;
             }
@@ -61,7 +61,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getBoolean(fieldName));
             }
         };
-        ALL[FieldKind.BOOLEAN_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.BOOLEAN_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getBooleanArray(fieldName);
@@ -87,7 +87,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getBooleanArray(fieldName)));
             }
         };
-        ALL[FieldKind.BYTE.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.BYTE.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Byte readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getByte(fieldName);
@@ -99,7 +99,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Byte.BYTES;
             }
 
@@ -108,7 +108,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getByte(fieldName));
             }
         };
-        ALL[FieldKind.BYTE_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.BYTE_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getByteArray(fieldName);
@@ -134,7 +134,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getByteArray(fieldName)));
             }
         };
-        ALL[FieldKind.CHAR.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.CHAR.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Character readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getChar(fieldName);
@@ -146,7 +146,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Character.BYTES;
             }
 
@@ -155,7 +155,7 @@ public final class FieldOperations {
                 JsonEscape.writeEscaped(stringBuilder, record.getChar(fieldName));
             }
         };
-        ALL[FieldKind.CHAR_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.CHAR_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getCharArray(fieldName);
@@ -197,7 +197,7 @@ public final class FieldOperations {
             }
 
         };
-        ALL[FieldKind.SHORT.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.SHORT.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Short readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getShort(fieldName);
@@ -209,7 +209,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Short.BYTES;
             }
 
@@ -218,7 +218,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getShort(fieldName));
             }
         };
-        ALL[FieldKind.SHORT_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.SHORT_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getShortArray(fieldName);
@@ -244,7 +244,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getShortArray(fieldName)));
             }
         };
-        ALL[FieldKind.INT.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.INT.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Integer readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getInt(fieldName);
@@ -256,7 +256,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Integer.BYTES;
             }
 
@@ -265,7 +265,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getInt(fieldName));
             }
         };
-        ALL[FieldKind.INT_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.INT_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getIntArray(fieldName);
@@ -291,7 +291,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getIntArray(fieldName)));
             }
         };
-        ALL[FieldKind.LONG.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.LONG.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Long readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getLong(fieldName);
@@ -303,7 +303,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Long.BYTES;
             }
 
@@ -312,7 +312,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getLong(fieldName));
             }
         };
-        ALL[FieldKind.LONG_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.LONG_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getLongArray(fieldName);
@@ -338,7 +338,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getLongArray(fieldName)));
             }
         };
-        ALL[FieldKind.FLOAT.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.FLOAT.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Float readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getFloat(fieldName);
@@ -350,7 +350,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Float.BYTES;
             }
 
@@ -359,7 +359,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getFloat(fieldName));
             }
         };
-        ALL[FieldKind.FLOAT_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.FLOAT_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getFloatArray(fieldName);
@@ -385,7 +385,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getFloatArray(fieldName)));
             }
         };
-        ALL[FieldKind.DOUBLE.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DOUBLE.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Double readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDouble(fieldName);
@@ -397,7 +397,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Double.BYTES;
             }
 
@@ -406,7 +406,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getDouble(fieldName));
             }
         };
-        ALL[FieldKind.DOUBLE_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DOUBLE_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDoubleArray(fieldName);
@@ -432,7 +432,7 @@ public final class FieldOperations {
                 stringBuilder.append(Arrays.toString(record.getDoubleArray(fieldName)));
             }
         };
-        ALL[FieldKind.STRING.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.STRING.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getString(fieldName);
@@ -453,7 +453,7 @@ public final class FieldOperations {
                 JsonEscape.writeEscaped(stringBuilder, value);
             }
         };
-        ALL[FieldKind.STRING_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.STRING_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getStringArray(fieldName);
@@ -480,7 +480,7 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, objects, JsonEscape::writeEscaped);
             }
         };
-        ALL[FieldKind.DECIMAL.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DECIMAL.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDecimal(fieldName);
@@ -496,7 +496,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getDecimal(fieldName));
             }
         };
-        ALL[FieldKind.DECIMAL_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DECIMAL_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDecimalArray(fieldName);
@@ -523,7 +523,7 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, objects, StringBuilder::append);
             }
         };
-        ALL[FieldKind.TIME.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIME.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTime(fieldName);
@@ -535,7 +535,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Byte.BYTES * 3 + Integer.BYTES;
             }
 
@@ -549,7 +549,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIME_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIME_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimeArray(fieldName);
@@ -577,7 +577,7 @@ public final class FieldOperations {
                         (builder, o) -> builder.append("\"").append(o).append("\""));
             }
         };
-        ALL[FieldKind.DATE.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DATE.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDate(fieldName);
@@ -589,7 +589,7 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
+            public int kindSizeInBytes() {
                 return Integer.BYTES + Byte.BYTES * 2;
             }
 
@@ -603,7 +603,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.DATE_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.DATE_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getDateArray(fieldName);
@@ -632,7 +632,7 @@ public final class FieldOperations {
 
             }
         };
-        ALL[FieldKind.TIMESTAMP.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIMESTAMP.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestamp(fieldName);
@@ -644,8 +644,8 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
-                return ALL[FieldKind.DATE.ordinal()].typeSizeInBytes() + ALL[FieldKind.TIME.ordinal()].typeSizeInBytes();
+            public int kindSizeInBytes() {
+                return ALL[FieldKind.DATE.ordinal()].kindSizeInBytes() + ALL[FieldKind.TIME.ordinal()].kindSizeInBytes();
             }
 
             @Override
@@ -658,7 +658,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIMESTAMP_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIMESTAMP_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestampArray(fieldName);
@@ -686,7 +686,7 @@ public final class FieldOperations {
                         (builder, o) -> builder.append("\"").append(o).append("\""));
             }
         };
-        ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestampWithTimezone(fieldName);
@@ -698,8 +698,8 @@ public final class FieldOperations {
             }
 
             @Override
-            public int typeSizeInBytes() {
-                return ALL[FieldKind.TIMESTAMP.ordinal()].typeSizeInBytes() + Integer.BYTES;
+            public int kindSizeInBytes() {
+                return ALL[FieldKind.TIMESTAMP.ordinal()].kindSizeInBytes() + Integer.BYTES;
             }
 
             @Override
@@ -712,7 +712,7 @@ public final class FieldOperations {
                 stringBuilder.append('"').append(value).append('"');
             }
         };
-        ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return genericRecord.getTimestampWithTimezoneArray(fieldName);
@@ -740,7 +740,7 @@ public final class FieldOperations {
                         (builder, o) -> builder.append("\"").append(o).append("\""));
             }
         };
-        ALL[FieldKind.COMPACT.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.COMPACT.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getObject(fieldName);
@@ -761,7 +761,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getGenericRecord(fieldName));
             }
         };
-        ALL[FieldKind.COMPACT_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.COMPACT_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getObjectArray(fieldName, Object.class);
@@ -793,7 +793,7 @@ public final class FieldOperations {
                 writeArrayJsonFormatted(stringBuilder, objects, StringBuilder::append);
             }
         };
-        ALL[FieldKind.PORTABLE.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.PORTABLE.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getObject(fieldName);
@@ -814,7 +814,7 @@ public final class FieldOperations {
                 stringBuilder.append(record.getGenericRecord(fieldName));
             }
         };
-        ALL[FieldKind.PORTABLE_ARRAY.ordinal()] = new FieldTypeBasedOperations() {
+        ALL[FieldKind.PORTABLE_ARRAY.ordinal()] = new FieldKindBasedOperations() {
             @Override
             public Object readObject(GenericRecord genericRecord, String fieldName) {
                 return ((InternalGenericRecord) genericRecord).getObjectArray(fieldName, Object.class);
@@ -852,7 +852,7 @@ public final class FieldOperations {
 
     }
 
-    public static FieldTypeBasedOperations fieldOperations(FieldKind fieldKind) {
+    public static FieldKindBasedOperations fieldOperations(FieldKind fieldKind) {
         return ALL[fieldKind.getId()];
     }
 

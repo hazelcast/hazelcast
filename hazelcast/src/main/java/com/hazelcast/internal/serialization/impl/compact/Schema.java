@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
-import static com.hazelcast.internal.serialization.impl.FieldTypeBasedOperations.VARIABLE_SIZE;
+import static com.hazelcast.internal.serialization.impl.FieldKindBasedOperations.VARIABLE_SIZE;
 
 /**
  * Represents the schema of a class.
@@ -62,7 +62,7 @@ public class Schema implements IdentifiedDataSerializable {
 
         for (FieldDescriptor descriptor : fieldDefinitionMap.values()) {
             FieldKind fieldKind = descriptor.getKind();
-            if (fieldOperations(fieldKind).typeSizeInBytes() == VARIABLE_SIZE) {
+            if (fieldOperations(fieldKind).kindSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
             } else {
                 if (FieldKind.BOOLEAN.equals(fieldKind)) {
@@ -74,13 +74,13 @@ public class Schema implements IdentifiedDataSerializable {
         }
 
         fixedSizeFields.sort(Comparator.comparingInt(
-                d -> fieldOperations(((FieldDescriptor) d).getKind()).typeSizeInBytes()).reversed()
+                d -> fieldOperations(((FieldDescriptor) d).getKind()).kindSizeInBytes()).reversed()
         );
 
         int offset = 0;
         for (FieldDescriptor descriptor : fixedSizeFields) {
             descriptor.setOffset(offset);
-            offset += fieldOperations(descriptor.getKind()).typeSizeInBytes();
+            offset += fieldOperations(descriptor.getKind()).kindSizeInBytes();
         }
 
         int bitOffset = 0;
