@@ -217,9 +217,6 @@ public class ExpirySystem {
             return;
         }
 
-        checkIfTtlGreaterThanMaxIdle(recordStore.getName(),
-                lastUpdateTime, maxIdle, ttl);
-
         expiryMetadata.setExpirationTime(
                 nextExpirationTime(ttl, maxIdle, now, lastUpdateTime));
     }
