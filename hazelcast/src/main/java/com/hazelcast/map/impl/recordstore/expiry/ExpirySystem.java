@@ -139,10 +139,15 @@ public class ExpirySystem {
         return new ExpiryMetadataImpl(ttlMillis, maxIdleMillis, expirationTime, lastUpdateTime);
     }
 
-    public final void addKeyIfExpirable(Data key, long ttl, long maxIdle,
-                                        long expiryTime, long now, long lastUpdateTime) {
-        // No expiry time exists, this is update or first
-        // put of the key hence we need to calculate it.
+    /**
+     * Add expirable key to this expiry system.
+     */
+    public final void add(Data key, long ttl, long maxIdle,
+                          long expiryTime, long now, long lastUpdateTime) {
+        // If expiry-time <= 0, no expiry-time exists, this is update
+        // or first put of the key hence we need to calculate it.
+        // If expiry-time > 0, this means we have a previously
+        // calculated expiry-time, we see this case in data replications.
         if (expiryTime <= 0) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             ttl = pickTTLMillis(mapConfig, ttl);
@@ -150,8 +155,6 @@ public class ExpirySystem {
             expiryTime = nextExpirationTime(ttl, maxIdle, now, lastUpdateTime);
         }
 
-        // We have a previously calculated expiry
-        // time, we see this during replications.
         storeExpiryMetadata(key, ttl, maxIdle, expiryTime, lastUpdateTime);
     }
 
@@ -160,9 +163,7 @@ public class ExpirySystem {
         // If expirationTime is long max, this
         // means key is no longer expirable.
         if (expirationTime == Long.MAX_VALUE) {
-            if (!isEmpty()) {
-                callRemove(key, expireTimeByKey);
-            }
+            removeKeyFromExpirySystem(key);
             return;
         }
 
@@ -224,7 +225,6 @@ public class ExpirySystem {
     }
 
     public final void removeKeyFromExpirySystem(Data key) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return;
         }
@@ -255,6 +255,10 @@ public class ExpirySystem {
         if (ttl <= maxIdle) {
             return;
         }
+
+        // RU_COMPAT_4_2
+        lastUpdateTime = isClusterVersionLessThanV5()
+                ? lastUpdateTime : expiryMetadata.getLastUpdateTime();
 
         expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
                 maxIdle, now, lastUpdateTime));

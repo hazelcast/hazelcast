@@ -179,11 +179,11 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+            getExpirySystem().add(key, mergingEntry.getTtl(),
                     maxIdle, mergingEntry.getExpirationTime(), now, mergingEntry.getLastUpdateTime());
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+            getExpirySystem().add(key, mergingEntry.getTtl(),
                     expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
                     now, mergingEntry.getLastUpdateTime());
         }
