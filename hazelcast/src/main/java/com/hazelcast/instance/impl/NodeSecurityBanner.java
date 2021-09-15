@@ -16,6 +16,8 @@
 
 package com.hazelcast.instance.impl;
 
+import static com.hazelcast.spi.properties.ClusterProperty.LOG_EMOJI_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SECURITY_RECOMMENDATIONS;
 import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_SERVER_BIND_ANY;
 
 import java.util.Map;
@@ -45,29 +47,30 @@ class NodeSecurityBanner {
     private final HazelcastProperties properties;
     private final boolean multicastUsed;
     private final ILogger securityLogger;
+    private final boolean showEmoji;
 
-    NodeSecurityBanner(Config config, HazelcastProperties properties, boolean multicastUsed,
-            LoggingService loggingService) {
+    NodeSecurityBanner(Config config, HazelcastProperties properties, boolean multicastUsed, LoggingService loggingService) {
         this.config = config;
         this.properties = properties;
         this.multicastUsed = multicastUsed;
         this.securityLogger = loggingService.getLogger(SECURITY_BANNER_CATEGORY);
+        this.showEmoji = properties.getBoolean(LOG_EMOJI_ENABLED);
     }
 
     public void printSecurityInfo() {
-        securityLogger.info(String.format(
-                "Enable DEBUG/FINE log level for log category %1$s "
-                        + " or use -D%1$s system property to see 🔒 security recommendations and the status of current config.",
-                SECURITY_BANNER_CATEGORY));
-        boolean showInfoSecurityBanner = System.getProperty(SECURITY_BANNER_CATEGORY) != null;
+        boolean showInfoSecurityBanner = properties.getString(SECURITY_RECOMMENDATIONS) != null;
         if ((showInfoSecurityBanner && securityLogger.isInfoEnabled()) || securityLogger.isFineEnabled()) {
             printSecurityFeaturesInfo(config, showInfoSecurityBanner ? Level.INFO : Level.FINE);
+        } else {
+            securityLogger.info(String.format("Enable DEBUG/FINE log level for log category %s "
+                    + " or use -D%s system property to see %ssecurity recommendations and the status of current config.",
+                    SECURITY_BANNER_CATEGORY, SECURITY_RECOMMENDATIONS.getName(), getLockEmo()));
         }
     }
 
     @SuppressWarnings({ "checkstyle:CyclomaticComplexity", "checkstyle:MethodLength" })
     private void printSecurityFeaturesInfo(Config config, Level logLevel) {
-        StringBuilder sb = new StringBuilder("\n🔒Security recommendations and their status:");
+        StringBuilder sb = new StringBuilder("\n").append(getLockEmo()).append("Security recommendations and their status:");
         addSecurityFeatureCheck(sb, "Use a custom cluster name", !Config.DEFAULT_CLUSTER_NAME.equals(config.getClusterName()));
         addSecurityFeatureCheck(sb, "Disable member multicast discovery/join method", !multicastUsed);
 
@@ -141,12 +144,28 @@ class NodeSecurityBanner {
     }
 
     private boolean addSecurityFeatureCheck(StringBuilder sb, String feature, boolean enabled) {
-        sb.append("\n  ").append(enabled ? "✅ " : "⚠️ ").append(feature);
+        sb.append("\n  ").append(enabled ? getCheckEmo() : getWarningEmo()).append(feature);
         return enabled;
     }
 
     private void addSecurityFeatureInfo(StringBuilder sb, String feature) {
-        sb.append("\n  ℹ️ ").append(feature);
+        sb.append("\n  ").append(getInfoEmo()).append(feature);
+    }
+
+    private String getLockEmo() {
+        return showEmoji ? "🔒 " : "";
+    }
+
+    private String getInfoEmo() {
+        return showEmoji ? "ℹ️ " : "(i) ";
+    }
+
+    private String getWarningEmo() {
+        return showEmoji ? "⚠️ " : "[ ] ";
+    }
+
+    private String getCheckEmo() {
+        return showEmoji ? "✅ " : "[X] ";
     }
 
 }

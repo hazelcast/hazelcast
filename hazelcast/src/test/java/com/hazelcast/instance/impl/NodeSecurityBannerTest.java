@@ -17,6 +17,8 @@
 package com.hazelcast.instance.impl;
 
 import static com.hazelcast.instance.impl.NodeSecurityBanner.SECURITY_BANNER_CATEGORY;
+import static com.hazelcast.spi.properties.ClusterProperty.LOG_EMOJI_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.SECURITY_RECOMMENDATIONS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,8 +50,17 @@ import com.hazelcast.test.annotation.QuickTest;
 @Category({ QuickTest.class, ParallelJVMTest.class })
 public class NodeSecurityBannerTest extends HazelcastTestSupport {
 
+    private static final String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
+    private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
+
     @Rule
-    public OverridePropertyRule sysPropSecurityBanner = OverridePropertyRule.set(SECURITY_BANNER_CATEGORY, null);
+    public OverridePropertyRule sysPropSecurityBanner = OverridePropertyRule.clear(SECURITY_RECOMMENDATIONS.getName());
+    @Rule
+    public OverridePropertyRule sysPropEmoji = OverridePropertyRule.clear(LOG_EMOJI_ENABLED.getName());
+    @Rule
+    public OverridePropertyRule disableTestLogger = OverridePropertyRule.clear(LOGGING_CLASS_PROP_NAME);
+    @Rule
+    public OverridePropertyRule setLog4j2Logger = OverridePropertyRule.set(LOGGING_TYPE_PROP_NAME, "log4j2");
 
     private LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
 
@@ -63,41 +74,50 @@ public class NodeSecurityBannerTest extends HazelcastTestSupport {
         context.setConfigLocation(getClass().getClassLoader().getResource("log4j2-debug.xml").toURI());
         TestAppender appender = configureTestAppender();
         createHazelcastInstance();
-        assertEquals(2, appender.events.size());
-        assertEquals(Level.INFO, appender.events.get(0).getLevel());
-        LogEvent secondLog = appender.events.get(1);
-        assertEquals(Level.DEBUG, secondLog.getLevel());
-        assertRecommendationContent(secondLog);
+        assertEquals(1, appender.events.size());
+        LogEvent logEvent = appender.events.get(0);
+        assertEquals(Level.DEBUG, logEvent.getLevel());
+        assertRecommendationContent(logEvent);
     }
 
     @Test
     public void testSystemProperty() throws Exception {
         sysPropSecurityBanner.setOrClearProperty("");
+        sysPropEmoji.setOrClearProperty("false");
         TestAppender appender = configureTestAppender();
         createHazelcastInstance();
-        assertEquals(2, appender.events.size());
-        assertEquals(Level.INFO, appender.events.get(0).getLevel());
-        LogEvent secondLog = appender.events.get(1);
-        assertEquals(Level.INFO, secondLog.getLevel());
-        assertRecommendationContent(secondLog);
+        assertEquals(1, appender.events.size());
+        LogEvent logEvent = appender.events.get(0);
+        assertEquals(Level.INFO, logEvent.getLevel());
+        assertRecommendationsWithoutEmo(logEvent);
     }
 
     @Test
     public void testDefault() throws Exception {
-        Configuration configuration = context.getConfiguration();
-        TestAppender appender = new TestAppender();
-        appender.start();
-        configuration.addAppender(appender);
-        configuration.getRootLogger().addAppender(appender, null, null);
+        TestAppender appender = configureTestAppender();
         createHazelcastInstance();
         assertEquals(1, appender.events.size());
-        assertEquals(Level.INFO, appender.events.get(0).getLevel());
+        LogEvent logEvent = appender.events.get(0);
+        assertEquals(Level.INFO, logEvent.getLevel());
+        assertHintsToDisplayBanner(logEvent);
     }
 
     private void assertRecommendationContent(LogEvent logEvent) {
-        String secondMsg = logEvent.getMessage().getFormattedMessage();
-        assertTrue(secondMsg.contains("⚠️ Use a custom cluster name"));
-        assertTrue(secondMsg.contains("✅ Disable member multicast"));
+        String msg = logEvent.getMessage().getFormattedMessage();
+        assertTrue(msg.contains("⚠️ Use a custom cluster name"));
+        assertTrue(msg.contains("✅ Disable member multicast"));
+    }
+
+    private void assertRecommendationsWithoutEmo(LogEvent logEvent) {
+        String msg = logEvent.getMessage().getFormattedMessage();
+        assertTrue(msg.contains("[ ] Use a custom cluster name"));
+        assertTrue(msg.contains("[X] Disable member multicast"));
+    }
+
+    private void assertHintsToDisplayBanner(LogEvent logEvent) {
+        String msg = logEvent.getMessage().getFormattedMessage();
+        assertTrue(msg.contains(SECURITY_BANNER_CATEGORY));
+        assertTrue(msg.contains("-D" + SECURITY_RECOMMENDATIONS));
     }
 
     private TestAppender configureTestAppender() {
