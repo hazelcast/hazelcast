@@ -256,12 +256,12 @@ public class ConfigTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetConfigPropertyNameNull(){
+    public void testSetConfigPropertyNameNull() {
         config.setProperty(null, "test");
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetConfigPropertyValueNull(){
+    public void testSetConfigPropertyValueNull() {
         config.setProperty("test", null);
     }
 
