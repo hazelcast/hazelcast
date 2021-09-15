@@ -61,12 +61,18 @@ public class SqlClientService implements SqlService {
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
-    private final String connectionType;
+
+    /**
+     * The field to indicate whether a query should update phone home statistics or not.
+     * For example, the queries issued from MC client will not update the statistics because
+     * they cause a significant distortion.
+     */
+    private final boolean skipUpdateStatistics;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
-        this.connectionType = client.getConnectionManager().getConnectionType();
+        this.skipUpdateStatistics = skipUpdateStatistics();
     }
 
     @Nonnull
@@ -92,7 +98,7 @@ public class SqlClientService implements SqlService {
                 statement.getSchema(),
                 statement.getExpectedResultType().getId(),
                 id,
-                skipUpdateStatistics()
+                skipUpdateStatistics
             );
 
             SqlClientResult res = new SqlClientResult(
@@ -114,6 +120,7 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean skipUpdateStatistics() {
+        String connectionType = client.getConnectionManager().getConnectionType();
         return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
