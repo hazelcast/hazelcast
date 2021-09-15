@@ -101,6 +101,7 @@ public class InitialShardIterators implements IdentifiedDataSerializable, Serial
     }
 
     private static final class Specification implements Serializable {
+
         private static final long serialVersionUID = 1L;
 
         private final Pattern pattern;

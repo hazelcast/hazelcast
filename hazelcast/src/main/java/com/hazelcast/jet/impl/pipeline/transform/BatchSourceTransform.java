@@ -31,6 +31,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 
 public class BatchSourceTransform<T> extends AbstractTransform implements BatchSource<T> {
+
     private static final long serialVersionUID = 1L;
 
     @Nonnull

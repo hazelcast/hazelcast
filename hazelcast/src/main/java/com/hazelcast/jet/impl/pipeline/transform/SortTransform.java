@@ -36,6 +36,7 @@ import static com.hazelcast.jet.core.processor.Processors.sortP;
 
 
 public class SortTransform<T> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     private static final String COLLECT_STAGE_SUFFIX = "-collect";

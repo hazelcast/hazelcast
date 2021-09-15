@@ -49,6 +49,7 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 import static java.util.Collections.nCopies;
 
 public class WindowGroupTransform<K, R> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("rawtypes")

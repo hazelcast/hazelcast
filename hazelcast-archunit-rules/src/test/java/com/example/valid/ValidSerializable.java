@@ -19,5 +19,6 @@ package com.example.valid;
 import java.io.Serializable;
 
 public class ValidSerializable implements Serializable {
+
     private static final long serialVersionUID = 1L;
 }

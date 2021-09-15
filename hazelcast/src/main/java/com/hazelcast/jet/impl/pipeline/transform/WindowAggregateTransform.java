@@ -48,7 +48,9 @@ import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST
 import static java.util.Collections.nCopies;
 
 public class WindowAggregateTransform<A, R> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
+
     private static final int MAX_WATERMARK_STRIDE = 100;
     private static final int MIN_WMS_PER_SESSION = 100;
     @SuppressWarnings("rawtypes")

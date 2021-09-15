@@ -30,6 +30,7 @@ public class HashRange implements Serializable {
     public static final BigInteger MIN_VALUE = ZERO;
     public static final BigInteger MAX_VALUE = valueOf(2).pow(128);
     public static final HashRange DOMAIN = new HashRange(MIN_VALUE, MAX_VALUE);
+
     private static final long serialVersionUID = 1L;
 
     private final BigInteger minInclusive;

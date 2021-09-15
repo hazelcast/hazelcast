@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.core.processor.Processors.flatMapStatefulP;
 
 public class GlobalFlatMapStatefulTransform<T, S, R> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     private final ToLongFunctionEx<? super T> timestampFn;

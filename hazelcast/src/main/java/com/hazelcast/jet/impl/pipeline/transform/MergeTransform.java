@@ -29,6 +29,7 @@ import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static java.util.Arrays.asList;
 
 public class MergeTransform<T> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     public MergeTransform(@Nonnull Transform upstream1, @Nonnull Transform upstream2) {

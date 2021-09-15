@@ -37,6 +37,7 @@ import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 
 public class GroupTransform<K, A, R, OUT> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     @Nonnull

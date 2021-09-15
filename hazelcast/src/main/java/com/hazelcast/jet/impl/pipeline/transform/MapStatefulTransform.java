@@ -31,6 +31,7 @@ import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.mapStatefulP;
 
 public class MapStatefulTransform<T, K, S, R> extends StatefulKeyedTransformBase<T, K, S> {
+
     private static final long serialVersionUID = 1L;
 
     private final TriFunction<? super S, ? super K, ? super T, ? extends R> statefulMapFn;

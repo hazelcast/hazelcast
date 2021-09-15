@@ -41,6 +41,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static java.util.Collections.emptyList;
 
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
+
     private static final long serialVersionUID = 1L;
 
     public FunctionEx<? super EventTimePolicy<? super T>, ? extends ProcessorMetaSupplier> metaSupplierFn;

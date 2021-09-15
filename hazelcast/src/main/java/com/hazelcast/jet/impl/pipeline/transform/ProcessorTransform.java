@@ -42,6 +42,7 @@ import static com.hazelcast.jet.core.processor.Processors.mapUsingServiceP;
 
 public class ProcessorTransform extends AbstractTransform {
     public static final int NON_COOPERATIVE_DEFAULT_LOCAL_PARALLELISM = 2;
+
     private static final long serialVersionUID = 1L;
 
     final ProcessorMetaSupplier processorSupplier;

@@ -29,6 +29,7 @@ import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.core.processor.Processors.flatMapP;
 
 public class FlatMapTransform<T, R> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     @Nonnull

@@ -36,6 +36,7 @@ import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 
 public final class PartitionedProcessorTransform<T, K> extends ProcessorTransform {
+
     private static final long serialVersionUID = 1L;
 
     private final FunctionEx<? super T, ? extends K> partitionKeyFn;

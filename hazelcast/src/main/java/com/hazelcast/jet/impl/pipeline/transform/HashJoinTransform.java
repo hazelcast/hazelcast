@@ -42,6 +42,7 @@ import static com.hazelcast.jet.impl.util.Util.toList;
 
 @SuppressWarnings("rawtypes")
 public class HashJoinTransform<T0, R> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     @Nonnull

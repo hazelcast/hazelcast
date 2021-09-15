@@ -36,6 +36,7 @@ import static com.hazelcast.jet.core.processor.Processors.combineP;
 
 public class AggregateTransform<A, R> extends AbstractTransform {
     public static final String FIRST_STAGE_VERTEX_NAME_SUFFIX = "-prepare";
+
     private static final long serialVersionUID = 1L;
 
     @Nonnull

@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 
 public class AwsConfig implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     @Nullable

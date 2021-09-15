@@ -32,6 +32,7 @@ import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.TOTAL_PARALLELISM_ON
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 
 public class SinkTransform<T> extends AbstractTransform {
+
     private static final long serialVersionUID = 1L;
 
     private static final int[] EMPTY_ORDINALS = new int[0];

@@ -24,7 +24,7 @@ import org.junit.Test;
 import static com.tngtech.archunit.core.importer.ImportOption.Predefined.DO_NOT_INCLUDE_JARS;
 import static com.tngtech.archunit.core.importer.ImportOption.Predefined.DO_NOT_INCLUDE_TESTS;
 
-public class SerializableTest {
+public class KinesisSerializableTest {
 
     @Test
     public void serializable_classes_should_have_valid_serialVersionUID() {
