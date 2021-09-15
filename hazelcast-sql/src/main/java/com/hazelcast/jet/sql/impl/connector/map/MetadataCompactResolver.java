@@ -76,7 +76,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             throw QueryException.error("Unable to resolve table metadata. Missing ['typeName'] option");
         }
 
-        return extractFields(userFields, isKey).entrySet().stream()
+        Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
+        return fields.entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
                     if (path.getPath() == null) {
@@ -161,7 +162,7 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             case TIMESTAMP_WITH_TIME_ZONE:
                 return FieldType.TIMESTAMP_WITH_TIMEZONE;
             default:
-                throw QueryException.error("Compact format does not allow " + type + " data type");
+                throw new IllegalStateException("Compact format does not allow " + type + " data type");
         }
     }
 }

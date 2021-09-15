@@ -32,13 +32,16 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
@@ -83,6 +86,56 @@ public class MetadataCompactResolverTest {
 
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss))
                 .hasMessageContaining("Column list is required for Compact format");
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_ObjectIsForbiddenForCompact(boolean key, String prefix) {
+        InternalSerializationService ss = createSerializationService();
+
+        Map<String, String> options =
+                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
+
+        List<MappingField> fields = asList(field("object", QueryDataType.OBJECT, prefix + ".object"));
+
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(Collectors.toList()))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Cannot derive Compact type for '" + QueryDataTypeFamily.OBJECT + "'");
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_resolveFieldsWithoutClassDefinition(boolean key, String prefix) {
+        InternalSerializationService ss = createSerializationService();
+        Map<String, String> options =
+                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
+
+        List<MappingField> fields = asList(
+                field("string", QueryDataType.VARCHAR, prefix + ".string"),
+                field("character", QueryDataType.VARCHAR_CHARACTER, prefix + ".character"),
+                field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
+                field("byte", QueryDataType.TINYINT, prefix + ".byte"),
+                field("short", QueryDataType.SMALLINT, prefix + ".short"),
+                field("int", QueryDataType.INT, prefix + ".int"),
+                field("long", QueryDataType.BIGINT, prefix + ".long"),
+                field("float", QueryDataType.REAL, prefix + ".float"),
+                field("double", QueryDataType.DOUBLE, prefix + ".double"),
+                field("decimal", QueryDataType.DECIMAL, prefix + ".decimal"),
+                field("time", QueryDataType.TIME, prefix + ".time"),
+                field("date", QueryDataType.DATE, prefix + ".date"),
+                field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
+        );
+
+        Stream<MappingField> resolvedFields = MetadataCompactResolver.INSTANCE.resolveAndValidateFields(key, fields, options, ss);
+
+        assertThat(resolvedFields).containsExactlyElementsOf(fields);
     }
 
     @Test
