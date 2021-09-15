@@ -22,6 +22,8 @@ import com.hazelcast.connector.map.Hz3MapAdapter;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -40,6 +42,7 @@ import static com.hazelcast.connector.Hz3Enrichment.hz3ReplicatedMapServiceFacto
 import static com.hazelcast.connector.Hz3Enrichment.mapUsingIMap;
 import static com.hazelcast.connector.Hz3Enrichment.mapUsingIMapAsync;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class Hz3EnrichmentTest extends BaseHz3Test {
 
@@ -124,5 +127,31 @@ public class Hz3EnrichmentTest extends BaseHz3Test {
         JobConfig config = getJobConfig(mapStage.name());
         hz.getJet().newJob(p, config).join();
         assertThat(results).containsOnly("a", "b");
+    }
+
+    @Test
+    public void when_enrichFromInstanceDown_then_shouldThrowJetException() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IList<String> results = hz.getList("result-list");
+        Pipeline p = Pipeline.create();
+
+        ServiceFactory<Hz3MapAdapter, AsyncMap<Integer, String>> hz3MapSF =
+                hz3MapServiceFactory("test-map", HZ3_DOWN_CLIENT_CONFIG);
+
+        BiFunctionEx<? super Map<Integer, String>, ? super Integer, String> mapFn =
+                mapUsingIMap(FunctionEx.identity(), (Integer i, String s) -> s);
+        BatchStage<String> mapStage = p.readFrom(TestSources.items(1, 2, 3))
+                                       .mapUsingService(
+                                               hz3MapSF,
+                                               mapFn
+                                       );
+        mapStage.writeTo(Sinks.list(results));
+
+        JobConfig config = getJobConfig(mapStage.name());
+        Job job = hz.getJet().newJob(p, config);
+
+        assertThatThrownBy(() -> job.join())
+                .hasStackTraceContaining(JetException.class.getName())
+                .hasStackTraceContaining("Unable to connect to any cluster");
     }
 }

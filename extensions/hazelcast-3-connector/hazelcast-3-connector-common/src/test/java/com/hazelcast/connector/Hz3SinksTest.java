@@ -17,6 +17,8 @@
 package com.hazelcast.connector;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -28,6 +30,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.entry;
 
 public class Hz3SinksTest extends BaseHz3Test {
@@ -54,5 +57,26 @@ public class Hz3SinksTest extends BaseHz3Test {
                 entry(1, "a"),
                 entry(2, "b")
         );
+    }
+
+    @Test
+    public void when_writeToInstanceDown_then_shouldThrowJetException() {
+        HazelcastInstance hz = createHazelcastInstance();
+
+        Pipeline p = Pipeline.create();
+        BatchSource<SimpleEntry<Integer, String>> source = TestSources.items(
+                new SimpleEntry<>(1, "a"),
+                new SimpleEntry<>(2, "b")
+        );
+        Sink<Map.Entry<Integer, String>> sink = Hz3Sinks.map("test-map", HZ3_DOWN_CLIENT_CONFIG);
+        p.readFrom(source)
+         .writeTo(sink);
+
+        JobConfig config = getJobConfig(sink.name());
+        Job job = hz.getJet().newJob(p, config);
+
+        assertThatThrownBy(() -> job.join())
+                .hasStackTraceContaining(JetException.class.getName())
+                .hasStackTraceContaining("Unable to connect to any cluster");
     }
 }

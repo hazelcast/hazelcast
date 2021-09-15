@@ -213,7 +213,9 @@ final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends AbstractP
 
         @Override
         public void close(Throwable error) {
-            hz3MapAdapter.shutdown();
+            if (hz3MapAdapter != null) {
+                hz3MapAdapter.shutdown();
+            }
         }
 
         @Override
