@@ -59,22 +59,6 @@ public class MetadataCompactResolverTest {
 
     @Test
     @Parameters({
-            "true, __key",
-            "false, this"
-    })
-    public void test_resolveFields(boolean key, String prefix) {
-        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
-                key,
-                singletonList(field("field", QueryDataType.INT, prefix + ".field")),
-                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "fieldName"),
-                createSerializationService()
-        );
-
-        assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
-    }
-
-    @Test
-    @Parameters({
             "true",
             "false"
     })
@@ -93,7 +77,7 @@ public class MetadataCompactResolverTest {
             "true, __key",
             "false, this"
     })
-    public void test_ObjectIsForbiddenForCompact(boolean key, String prefix) {
+    public void test_objectIsForbiddenForCompact(boolean key, String prefix) {
         InternalSerializationService ss = createSerializationService();
 
         Map<String, String> options =
@@ -111,7 +95,7 @@ public class MetadataCompactResolverTest {
             "true, __key",
             "false, this"
     })
-    public void test_resolveFieldsWithoutClassDefinition(boolean key, String prefix) {
+    public void test_resolveFields(boolean key, String prefix) {
         InternalSerializationService ss = createSerializationService();
         Map<String, String> options =
                 ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
