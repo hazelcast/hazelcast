@@ -969,7 +969,7 @@ public class Node {
                     trustedEnv);
             if (config.getJetConfig().isResourceUploadEnabled()) {
                 addSecurityFeatureInfo(sb, "Jet resource upload is enabled. Any uploaded code can be executed within "
-                        + "the Hazelcast. Use this in trusted environments only.");
+                        + "Hazelcast. Use this in trusted environments only.");
             }
         }
         if (config.getUserCodeDeploymentConfig().isEnabled()) {
