@@ -187,12 +187,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
-    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind type) {
+    boolean isFieldExists(@Nonnull String fieldName, @Nonnull FieldKind kind) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
             return false;
         }
-        return field.getKind().equals(type);
+        return field.getKind() == kind;
     }
 
     @Override

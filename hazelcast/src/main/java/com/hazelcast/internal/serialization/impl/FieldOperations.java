@@ -853,7 +853,7 @@ public final class FieldOperations {
     }
 
     public static FieldTypeBasedOperations fieldOperations(FieldKind fieldKind) {
-        return ALL[fieldKind.ordinal()];
+        return ALL[fieldKind.getId()];
     }
 
     /**
@@ -884,11 +884,11 @@ public final class FieldOperations {
     }
 
     public static boolean isArrayType(FieldKind fieldKind) {
-        return fieldKind.ordinal() % 2 != 0;
+        return fieldKind.getId() % 2 != 0;
     }
 
     public static FieldKind getSingleType(FieldKind fieldKind) {
         assert isArrayType(fieldKind);
-        return FieldKind.values()[fieldKind.ordinal() - 1];
+        return FieldKind.values()[fieldKind.getId() - 1];
     }
 }

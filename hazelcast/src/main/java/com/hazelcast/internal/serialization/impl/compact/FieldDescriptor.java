@@ -107,9 +107,9 @@ public class FieldDescriptor {
 
     @Override
     public String toString() {
-        return "FieldDefinitionImpl{"
-                + "fieldName='" + fieldName + '\''
-                + ", type=" + fieldKind
+        return "FieldDescriptor{"
+                + "name='" + fieldName + '\''
+                + ", kind=" + fieldKind
                 + ", index=" + index
                 + ", offset=" + offset
                 + ", bitOffset=" + bitOffset

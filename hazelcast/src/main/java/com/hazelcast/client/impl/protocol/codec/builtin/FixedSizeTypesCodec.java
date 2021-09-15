@@ -83,7 +83,7 @@ public final class FixedSizeTypesCodec {
     }
 
     public static void encodeInt(byte[] buffer, int pos, FieldKind fieldKind) {
-        encodeInt(buffer, pos, fieldKind.ordinal());
+        encodeInt(buffer, pos, fieldKind.getId());
     }
 
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {

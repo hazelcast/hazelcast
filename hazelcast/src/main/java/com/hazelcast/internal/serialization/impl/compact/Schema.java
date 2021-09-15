@@ -167,7 +167,7 @@ public class Schema implements IdentifiedDataSerializable {
         Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
-            out.writeByte(descriptor.getKind().ordinal());
+            out.writeByte(descriptor.getKind().getId());
         }
     }
 
@@ -177,11 +177,11 @@ public class Schema implements IdentifiedDataSerializable {
         int fieldDefinitionsSize = in.readInt();
         fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
         for (int i = 0; i < fieldDefinitionsSize; i++) {
-            String fieldName = in.readString();
+            String name = in.readString();
             byte type = in.readByte();
-            FieldKind fieldKind = FieldKind.values()[type];
-            FieldDescriptor descriptor = new FieldDescriptor(fieldName, fieldKind);
-            fieldDefinitionMap.put(fieldName, descriptor);
+            FieldKind kind = FieldKind.get(type);
+            FieldDescriptor descriptor = new FieldDescriptor(name, kind);
+            fieldDefinitionMap.put(name, descriptor);
         }
         init();
     }

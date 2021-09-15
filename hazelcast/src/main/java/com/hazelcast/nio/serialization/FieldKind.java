@@ -31,36 +31,51 @@ import com.hazelcast.spi.annotation.Beta;
 @Beta
 public enum FieldKind {
 
-    BOOLEAN,
-    BOOLEAN_ARRAY,
-    BYTE,
-    BYTE_ARRAY,
-    CHAR,
-    CHAR_ARRAY,
-    SHORT,
-    SHORT_ARRAY,
-    INT,
-    INT_ARRAY,
-    LONG,
-    LONG_ARRAY,
-    FLOAT,
-    FLOAT_ARRAY,
-    DOUBLE,
-    DOUBLE_ARRAY,
-    STRING,
-    STRING_ARRAY,
-    DECIMAL,
-    DECIMAL_ARRAY,
-    TIME,
-    TIME_ARRAY,
-    DATE,
-    DATE_ARRAY,
-    TIMESTAMP,
-    TIMESTAMP_ARRAY,
-    TIMESTAMP_WITH_TIMEZONE,
-    TIMESTAMP_WITH_TIMEZONE_ARRAY,
-    COMPACT,
-    COMPACT_ARRAY,
-    PORTABLE,
-    PORTABLE_ARRAY;
+    BOOLEAN(0),
+    BOOLEAN_ARRAY(1),
+    BYTE(2),
+    BYTE_ARRAY(3),
+    CHAR(4),
+    CHAR_ARRAY(5),
+    SHORT(6),
+    SHORT_ARRAY(7),
+    INT(8),
+    INT_ARRAY(9),
+    LONG(10),
+    LONG_ARRAY(11),
+    FLOAT(12),
+    FLOAT_ARRAY(13),
+    DOUBLE(14),
+    DOUBLE_ARRAY(15),
+    STRING(16),
+    STRING_ARRAY(17),
+    DECIMAL(18),
+    DECIMAL_ARRAY(19),
+    TIME(20),
+    TIME_ARRAY(21),
+    DATE(22),
+    DATE_ARRAY(23),
+    TIMESTAMP(24),
+    TIMESTAMP_ARRAY(25),
+    TIMESTAMP_WITH_TIMEZONE(26),
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(27),
+    COMPACT(28),
+    COMPACT_ARRAY(29),
+    PORTABLE(30),
+    PORTABLE_ARRAY(31);
+
+    private static final FieldKind[] ALL = FieldKind.values();
+    private final int id;
+
+    FieldKind(int id) {
+        this.id = id;
+    }
+
+    public static FieldKind get(int type) {
+        return ALL[type];
+    }
+
+    public int getId() {
+        return id;
+    }
 }

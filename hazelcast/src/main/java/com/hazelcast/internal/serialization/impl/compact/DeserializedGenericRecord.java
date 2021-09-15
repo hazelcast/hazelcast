@@ -234,19 +234,19 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return get(fieldName, FieldKind.COMPACT_ARRAY);
     }
 
-    private <T> T get(@Nonnull String fieldName, FieldKind fieldKind) {
+    private <T> T get(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
         check(fieldName, fieldKind);
         return (T) objects.get(fieldName);
     }
 
-    private void check(@Nonnull String fieldName, FieldKind fieldKind) {
+    private void check(@Nonnull String fieldName, @Nonnull FieldKind kind) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
-        if (!fd.getKind().equals(fieldKind)) {
-            throw new HazelcastSerializationException("Invalid field type: '" + fieldName + " for " + schema
-                    + ", expected : " + fd.getKind() + ", given : " + fieldKind);
+        if (fd.getKind() != kind) {
+            throw new HazelcastSerializationException("Invalid field kind: '" + fieldName + " for " + schema
+                    + ", expected : " + fd.getKind() + ", given : " + kind);
         }
     }
 

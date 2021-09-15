@@ -439,17 +439,17 @@ public class DefaultCompactWriter implements CompactWriter {
         fieldOffsets[index] = fieldPosition;
     }
 
-    private int getFixedSizeFieldPosition(@Nonnull String fieldName, FieldKind fieldKind) {
+    private int getFixedSizeFieldPosition(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
         FieldDescriptor fieldDefinition = checkFieldDefinition(fieldName, fieldKind);
         return fieldDefinition.getOffset() + dataStartPosition;
     }
 
-    protected FieldDescriptor checkFieldDefinition(@Nonnull String fieldName, FieldKind fieldKind) {
+    protected FieldDescriptor checkFieldDefinition(@Nonnull String fieldName, @Nonnull FieldKind kind) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
             throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
-        if (!field.getKind().equals(fieldKind)) {
+        if (field.getKind() != kind) {
             throw new HazelcastSerializationException("Invalid field type: '" + fieldName + " for " + schema);
         }
         return field;

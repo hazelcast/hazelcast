@@ -225,8 +225,8 @@ public final class CustomTypeFactory {
     }
 
     public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
-        FieldKind fieldType = FieldKind.values()[type];
-        return new FieldDescriptor(fieldName, fieldType);
+        FieldKind fieldKind = FieldKind.get(type);
+        return new FieldDescriptor(fieldName, fieldKind);
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {

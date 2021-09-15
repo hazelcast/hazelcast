@@ -49,12 +49,12 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             return false;
         }
         for (String fieldName : thatFieldNames) {
-            FieldKind thatFieldType = that.getFieldKind(fieldName);
-            FieldKind thisFieldType = getFieldKind(fieldName);
-            if (!thatFieldType.equals(thisFieldType)) {
+            FieldKind thatKind = that.getFieldKind(fieldName);
+            FieldKind thisKind = getFieldKind(fieldName);
+            if (!thatKind.equals(thisKind)) {
                 return false;
             }
-            if (FieldOperations.isArrayType(thatFieldType)) {
+            if (FieldOperations.isArrayType(thatKind)) {
                 if (!Objects.deepEquals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }

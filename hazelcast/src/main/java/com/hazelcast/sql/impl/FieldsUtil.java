@@ -190,8 +190,8 @@ public final class FieldsUtil {
 
     @SuppressWarnings({"checkstyle:ReturnCount", "checkstyle:cyclomaticcomplexity"})
     @Nonnull
-    private static QueryDataType resolveType(@Nonnull FieldKind type) {
-        switch (type) {
+    private static QueryDataType resolveType(@Nonnull FieldKind kind) {
+        switch (kind) {
             case BOOLEAN:
                 return QueryDataType.BOOLEAN;
 

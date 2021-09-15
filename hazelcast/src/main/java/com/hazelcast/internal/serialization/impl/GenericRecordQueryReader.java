@@ -242,16 +242,16 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldKind id = record.getFieldKind(path);
-        return fieldOperations(id).readIndexed(record, path, index);
+        FieldKind kind = record.getFieldKind(path);
+        return fieldOperations(kind).readIndexed(record, path, index);
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldKind id = record.getFieldKind(path);
-        return fieldOperations(id).readObject(record, path);
+        FieldKind kind = record.getFieldKind(path);
+        return fieldOperations(kind).readObject(record, path);
     }
 
 }
