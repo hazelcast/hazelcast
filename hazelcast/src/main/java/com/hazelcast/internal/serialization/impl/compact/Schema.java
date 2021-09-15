@@ -31,8 +31,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.internal.serialization.impl.FieldKindBasedOperations.VARIABLE_SIZE;
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 
 /**
  * Represents the schema of a class.
@@ -167,7 +167,7 @@ public class Schema implements IdentifiedDataSerializable {
         Collection<FieldDescriptor> fields = fieldDefinitionMap.values();
         for (FieldDescriptor descriptor : fields) {
             out.writeString(descriptor.getFieldName());
-            out.writeByte(descriptor.getKind().getId());
+            out.writeInt(descriptor.getKind().getId());
         }
     }
 
@@ -178,8 +178,7 @@ public class Schema implements IdentifiedDataSerializable {
         fieldDefinitionMap = new TreeMap<>(Comparator.naturalOrder());
         for (int i = 0; i < fieldDefinitionsSize; i++) {
             String name = in.readString();
-            byte type = in.readByte();
-            FieldKind kind = FieldKind.get(type);
+            FieldKind kind = FieldKind.get(in.readInt());
             FieldDescriptor descriptor = new FieldDescriptor(name, kind);
             fieldDefinitionMap.put(name, descriptor);
         }

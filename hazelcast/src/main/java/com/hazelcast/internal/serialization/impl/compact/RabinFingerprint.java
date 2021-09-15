@@ -51,7 +51,7 @@ public final class RabinFingerprint {
         fingerPrint = fingerprint64(fingerPrint, schema.getFieldCount());
         for (FieldDescriptor descriptor : schema.getFields()) {
             fingerPrint = fingerprint64(fingerPrint, descriptor.getFieldName());
-            fingerPrint = fingerprint64(fingerPrint, (byte) descriptor.getKind().getId());
+            fingerPrint = fingerprint64(fingerPrint, descriptor.getKind().getId());
         }
         return fingerPrint;
     }
