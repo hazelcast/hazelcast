@@ -7509,6 +7509,8 @@ public class MemberCompatibilityNullTest_2_3 {
         assertTrue(isEqual(null, parameters.schema));
         assertTrue(isEqual(aByte, parameters.expectedResultType));
         assertTrue(isEqual(anSqlQueryId, parameters.queryId));
+        assertTrue(parameters.isSkipUpdateStatisticsExists);
+        assertTrue(isEqual(aBoolean, parameters.skipUpdateStatistics));
     }
 
     @Test

@@ -771,8 +771,8 @@
           Operations which changes cluster or node state or their configurations.
         * HEALTH_CHECK - disabled
           Group of endpoints for HTTP health checking.
-        * HOT_RESTART - disabled
-          Group of HTTP REST APIs related to Hot Restart feature.
+        * PERSISTENCE - disabled
+          Group of HTTP REST APIs related to Persistence feature.
         * WAN - disabled
           Group of HTTP REST APIs related to WAN Replication feature.
         * DATA - disabled
@@ -782,7 +782,7 @@
             <endpoint-group name="CLUSTER_READ" enabled="true"/>
             <endpoint-group name="CLUSTER_WRITE" enabled="false"/>
             <endpoint-group name="HEALTH_CHECK" enabled="false"/>
-            <endpoint-group name="HOT_RESTART" enabled="false"/>
+            <endpoint-group name="PERSISTENCE" enabled="false"/>
             <endpoint-group name="WAN" enabled="false"/>
             <endpoint-group name="DATA" enabled="false"/>
             <endpoint-group name="CP" enabled="false"/>
@@ -3072,8 +3072,8 @@
                   Operations which changes cluster or node state or their configurations.
                 * HEALTH_CHECK - disabled
                   Group of endpoints for HTTP health checking.
-                * HOT_RESTART - disabled
-                  Group of HTTP REST APIs related to Hot Restart feature.
+                * PERSISTENCE - disabled
+                  Group of HTTP REST APIs related to Persistence feature.
                 * WAN - disabled
                   Group of HTTP REST APIs related to WAN Replication feature.
                 * DATA - disabled
@@ -3663,12 +3663,12 @@
             restart you can restart the whole cluster without losing the jobs and
             their state. The feature is implemented on top of the Hot Restart
             feature of Hazelcast which persists the data to disk. If enabled, you
-            have to also configure Hot Restart.
-            Note: the snapshots exported using `Job#exportSnapshot` will also have
-            Hot Restart storage enabled.
-            Feature is disabled by default. If you enable this option in open-source,
-            the member will fail to start, you need Enterprise to run it and obtain a
-            license from Hazelcast.
+            have to also enable/configure Hazelcast Persistence.
+            Note: the snapshots exported using `Job#exportSnapshot` will also be
+            saved to the persistent storage.
+            This Lossless restart feature is disabled by default. If you enable this
+            option in open-source, the member will fail to start, you need Enterprise
+            to run it and obtain a license from Hazelcast.
         * <max-processor-accumulated-records>:
             Sets the maximum number of records that can be accumulated by any single
             processor instance.
@@ -3743,8 +3743,8 @@
         <scale-up-delay-millis>10000</scale-up-delay-millis>
         <!-- Sets whether lossless job restart is enabled for the node. With
              lossless restart you can restart the whole cluster without losing the
-             jobs and their state. The feature is implemented on top of the Hot
-             Restart feature of Hazelcast IMDG which persists the data to disk. -->
+             jobs and their state. The feature is implemented on top of the Persistence
+             feature of Hazelcast which persists the data to disk. -->
         <lossless-restart-enabled>false</lossless-restart-enabled>
         <max-processor-accumulated-records>1000000000</max-processor-accumulated-records>
         <edge-defaults>

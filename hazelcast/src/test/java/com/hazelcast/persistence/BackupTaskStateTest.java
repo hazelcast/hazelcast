@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class BackupTaskStateTest {
 
     @Test
-    public void testBackupState() throws Exception {
+    public void testBackupState() {
         assertFalse(BackupTaskState.NO_TASK.isDone());
         assertFalse(BackupTaskState.NOT_STARTED.isDone());
         assertFalse(BackupTaskState.IN_PROGRESS.isDone());

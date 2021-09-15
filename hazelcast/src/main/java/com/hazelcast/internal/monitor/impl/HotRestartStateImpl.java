@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.monitor.HotRestartState;
+import com.hazelcast.persistence.BackupTaskState;
+import com.hazelcast.persistence.BackupTaskStatus;
 
 import static com.hazelcast.internal.util.JsonUtil.getBoolean;
 import static com.hazelcast.internal.util.JsonUtil.getInt;

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.hotrestart;
+package com.hazelcast.persistence;
 
 /**
- * The status of the hot restart backup task, including progress and state.
+ * The status of the persistence backup task, including progress and state.
  */
 public class BackupTaskStatus {
 

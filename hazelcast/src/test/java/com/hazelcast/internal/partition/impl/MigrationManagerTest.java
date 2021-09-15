@@ -253,5 +253,7 @@ public class MigrationManagerTest {
 
         clusterService = mock(ClusterServiceImpl.class);
         when(node.getClusterService()).thenReturn(clusterService);
+
+        when(node.getConfig()).thenReturn(new Config());
     }
 }

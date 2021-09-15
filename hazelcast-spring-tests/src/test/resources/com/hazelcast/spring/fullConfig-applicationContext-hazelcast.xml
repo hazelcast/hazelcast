@@ -208,7 +208,7 @@
                     <hz:endpoint-group name="CLUSTER_READ" enabled="true"/>
                     <hz:endpoint-group name="CLUSTER_WRITE" enabled="true"/>
                     <hz:endpoint-group name="HEALTH_CHECK" enabled="true"/>
-                    <hz:endpoint-group name="HOT_RESTART" enabled="true"/>
+                    <hz:endpoint-group name="PERSISTENCE" enabled="true"/>
                     <hz:endpoint-group name="WAN" enabled="true"/>
                     <hz:endpoint-group name="DATA" enabled="true"/>
                     <hz:endpoint-group name="CP" enabled="true"/>
@@ -943,7 +943,8 @@
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"
                                         auto-remove-stale-data="false"
-                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE">
+                                        cluster-data-recovery-policy="PARTIAL_RECOVERY_MOST_COMPLETE"
+                                        rebalance-delay-seconds="240">
                 <hz:base-dir>/mnt/persistence/</hz:base-dir>
                 <hz:backup-dir>/mnt/persistence-backup/</hz:backup-dir>
                 <hz:encryption-at-rest enabled="true">

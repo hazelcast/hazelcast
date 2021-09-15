@@ -3024,6 +3024,7 @@ public class YamlConfigBuilderTest
         int parallelism = 3;
         int validationTimeout = 13131;
         int dataLoadTimeout = 45454;
+        int rebalanceDelaySeconds = 240;
         PersistenceClusterDataRecoveryPolicy policy = PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
         String yaml = ""
                 + "hazelcast:\n"
@@ -3034,7 +3035,8 @@ public class YamlConfigBuilderTest
                 + "    parallelism: " + parallelism + "\n"
                 + "    validation-timeout-seconds: " + validationTimeout + "\n"
                 + "    data-load-timeout-seconds: " + dataLoadTimeout + "\n"
-                + "    cluster-data-recovery-policy: " + policy + "\n";
+                + "    cluster-data-recovery-policy: " + policy + "\n"
+                + "    rebalance-delay-seconds: " + rebalanceDelaySeconds + "\n";
 
         Config config = new InMemoryYamlConfig(yaml);
         PersistenceConfig persistenceConfig = config.getPersistenceConfig();
@@ -3046,6 +3048,7 @@ public class YamlConfigBuilderTest
         assertEquals(validationTimeout, persistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
+        assertEquals(rebalanceDelaySeconds, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Override

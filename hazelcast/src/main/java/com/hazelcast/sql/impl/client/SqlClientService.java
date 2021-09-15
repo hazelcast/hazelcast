@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -52,18 +53,20 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
  */
 public class SqlClientService implements SqlService {
 
-    private static final int SERVICE_ID_MASK = 0x00FF0000;
-    private static final int SERVICE_ID_SHIFT = 16;
-
-    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
-    private static final int SQL_SERVICE_ID = 33;
-
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
+
+    /**
+     * The field to indicate whether a query should update phone home statistics or not.
+     * For example, the queries issued from the MC client will not update the statistics
+     * because they cause a significant distortion.
+     */
+    private final boolean skipUpdateStatistics;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
+        this.skipUpdateStatistics = skipUpdateStatistics();
     }
 
     @Nonnull
@@ -88,7 +91,8 @@ public class SqlClientService implements SqlService {
                 statement.getCursorBufferSize(),
                 statement.getSchema(),
                 statement.getExpectedResultType().getId(),
-                id
+                id,
+                skipUpdateStatistics
             );
 
             SqlClientResult res = new SqlClientResult(
@@ -107,6 +111,11 @@ public class SqlClientService implements SqlService {
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
+    }
+
+    private boolean skipUpdateStatistics() {
+        String connectionType = client.getConnectionManager().getConnectionType();
+        return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
     private void handleExecuteResponse(
@@ -289,11 +298,5 @@ public class SqlClientService implements SqlService {
         }
 
         return QueryUtils.toPublicException(cause, getClientId());
-    }
-
-    public static boolean isSqlMessage(int messageType) {
-        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
-
-        return serviceId == SQL_SERVICE_ID;
     }
 }

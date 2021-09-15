@@ -337,7 +337,9 @@ public interface NodeExtension {
      */
     boolean registerListener(Object listener);
 
-    /** Returns the public hot restart service */
+    /**
+     * Returns the public hot restart service
+     */
     HotRestartService getHotRestartService();
 
     /** Returns the internal hot restart service */

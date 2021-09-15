@@ -48,13 +48,23 @@ public final class ExpirationTimeSetter {
     }
 
     /**
+     * @param time value of ttl or maxIdle
+     * @return {@code true} if time parameter is
+     * between zero and long-max, this means ttl/maxIdle
+     * value is configured otherwise {@code false}
+     */
+    public static boolean isTtlOrMaxIdleConfigured(long time) {
+        return time > 0 && time < Long.MAX_VALUE;
+    }
+
+    /**
      * Decides if TTL millis should to be set on record.
      *
-     * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param mapConfig          used to get configured TTL
+     * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @return TTL value in millis to set to record
      */
-    public static long pickTTLMillis(long operationTTLMillis, MapConfig mapConfig) {
+    public static long pickTTLMillis(MapConfig mapConfig, long operationTTLMillis) {
         if (operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() == 0) {
             return Long.MAX_VALUE;
         }
@@ -73,7 +83,7 @@ public final class ExpirationTimeSetter {
         }
     }
 
-    public static long pickMaxIdleMillis(long operationMaxIdleMillis, MapConfig mapConfig) {
+    public static long pickMaxIdleMillis(MapConfig mapConfig, long operationMaxIdleMillis) {
         if (operationMaxIdleMillis < 0 && mapConfig.getMaxIdleSeconds() == 0) {
             return Long.MAX_VALUE;
         }

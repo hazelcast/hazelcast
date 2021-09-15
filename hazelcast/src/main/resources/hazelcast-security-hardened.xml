@@ -193,7 +193,7 @@
                 <endpoint-group name="CLUSTER_READ" enabled="false" />
                 <endpoint-group name="CLUSTER_WRITE" enabled="false" />
                 <endpoint-group name="HEALTH_CHECK" enabled="true" />
-                <endpoint-group name="HOT_RESTART" enabled="false" />
+                <endpoint-group name="PERSISTENCE" enabled="false" />
                 <endpoint-group name="WAN" enabled="false" />
                 <endpoint-group name="DATA" enabled="false" />
                 <endpoint-group name="CP" enabled="false" />

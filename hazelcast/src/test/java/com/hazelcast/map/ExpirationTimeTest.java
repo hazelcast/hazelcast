@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +50,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -580,6 +582,23 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
                 + " lastAccessTimeAfter:%d", lastAccessTimeBefore, lastAccessTimeAfter);
 
         assertTrue(msg, lastAccessTimeAfter > lastAccessTimeBefore);
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void get_after_multiple_put_with_ttl_shifts_expiration_time() {
+        IMap<Integer, Integer> map = createMap();
+
+        map.put(1, 1, 30, SECONDS);
+        sleepSeconds(10);
+        map.put(1, 1, 5, SECONDS, 2, SECONDS);
+
+        map.get(1);
+        Integer value = map.get(1);
+
+        if (value == null) {
+            fail("Expect second get is non-null");
+        }
     }
 
     protected InMemoryFormat inMemoryFormat() {

@@ -76,4 +76,6 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * </ol>
      */
     ClientConnection getConnectionForSql();
+
+    String getConnectionType();
 }

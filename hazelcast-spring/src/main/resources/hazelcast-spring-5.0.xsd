@@ -2760,7 +2760,21 @@
             <xs:enumeration value="CLUSTER_READ"/>
             <xs:enumeration value="CLUSTER_WRITE"/>
             <xs:enumeration value="HEALTH_CHECK"/>
-            <xs:enumeration value="HOT_RESTART"/>
+            <xs:enumeration value="PERSISTENCE"/>
+            <xs:enumeration value="HOT_RESTART">
+                <xs:annotation>
+                    <xs:documentation>
+                        DEPRECATED. Please use PERSISTENCE endpoint group instead.
+                        Note: We define PERSISTENCE and HOT_RESTART endpoint group
+                        names as alias of each other and these names actually refer to
+                        the same endpoint group. We're using PERSISTENCE as canonical name
+                        for this group while listing enabled endpoint groups. If this
+                        group enabled by using any of these name, Hazelcast will activate
+                        this PERSISTENCE endpoint group. HOT_RESTART endpoint group name
+                        will be removed in a future release.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
             <xs:enumeration value="WAN"/>
             <xs:enumeration value="DATA"/>
             <xs:enumeration value="MEMCACHE"/>
@@ -4577,6 +4591,33 @@
                     When auto-removal of stale Persistence data is enabled, while restarting that member,
                     Persistence data is automatically removed and it joins the cluster as a completely new member.
                     Otherwise, Persistence data should be removed manually.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="rebalance-delay-seconds" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    Time (in seconds) to wait before triggering automatic partition rebalancing
+                    after a member leaves the cluster unexpectedly. Unexpectedly in this context
+                    means that a member leaves the cluster by means other than graceful shutdown:
+                    programmatic termination (eg LifecycleService.terminate()), a
+                    process crash or network partition.
+                    Default is 0, which means rebalancing is triggered immediately.
+                    Setting this to a higher value will allow some time for members that are gone
+                    to rejoin the cluster. The benefit is that partition rebalancing in this
+                    case will be avoided, saving the burden of migrating partition data over
+                    the network.
+                    Do not use this option if your cluster also stores in-memory data. This option
+                    stops the cluster from migrating in-memory data. As a result any data that is
+                    not persisted will be lost if the member restarts within the configured delay,
+                    including backups.
+                    While members are gone, operations on partitions for which the owner is missing
+                    may fail immediately or will be retried until the member rejoins or operation
+                    timeout is exceeded.
+                    Notice that this delay only applies when cluster members leave the cluster;
+                    when the cluster is being scaled up and members are being added, partition
+                    rebalancing will be triggered immediately (subject to limitations imposed
+                    by the current cluster state).
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

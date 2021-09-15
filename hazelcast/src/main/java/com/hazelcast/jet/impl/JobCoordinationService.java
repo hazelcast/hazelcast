@@ -290,6 +290,9 @@ public class JobCoordinationService {
                 jobRepository.putNewJobRecord(jobRecord);
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
+                jetServiceBackend.getJobClassLoaderService()
+                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+
                 res.completeExceptionally(e);
                 throw e;
             } finally {

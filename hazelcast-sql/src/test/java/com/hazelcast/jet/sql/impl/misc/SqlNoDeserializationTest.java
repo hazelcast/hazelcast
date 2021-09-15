@@ -148,8 +148,8 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
                 pageSize,
                 null,
                 SqlExpectedResultType.ROWS.getId(),
-                queryId
-
+                queryId,
+                false
         );
 
         SqlExecuteCodec.ResponseParameters executeResponse = SqlExecuteCodec.decodeResponse(

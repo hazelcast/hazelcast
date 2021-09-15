@@ -33,9 +33,13 @@ import com.hazelcast.wan.impl.AddWanConfigResult;
 import com.hazelcast.wan.impl.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.hazelcast.cp.CPGroup.METADATA_CP_GROUP_NAME;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_200;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_400;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.RES_403;
 import static com.hazelcast.internal.ascii.rest.HttpCommandProcessor.ResponseType.FAIL;
@@ -74,10 +78,14 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 return;
             } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
                 handleForceStart(command);
+            } else if (uri.startsWith(URI_PERSISTENCE_BACKUP_INTERRUPT_CLUSTER_URL)) {
+                handleBackupInterrupt(command, false);
             } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
-                handleHotRestartBackupInterrupt(command);
+                handleBackupInterrupt(command, true);
+            } else if (uri.startsWith(URI_PERSISTENCE_BACKUP_CLUSTER_URL)) {
+                handleBackup(command, false);
             } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
-                handleHotRestartBackup(command);
+                handleBackup(command, true);
             } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
                 handlePartialStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
@@ -179,16 +187,35 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         prepareResponse(cmd, response(success ? SUCCESS : FAIL));
     }
 
-    private void handleHotRestartBackup(HttpPostCommand cmd) throws Throwable {
+    private void handleBackup(HttpPostCommand cmd, boolean deprecated) throws Throwable {
         decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().backup();
-        prepareResponse(cmd, response(SUCCESS));
+        if (deprecated) {
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Type", "application/json");
+            headers.put("Deprecation", "true");
+            headers.put("Warning", "299 - \"Deprecated API\". Please use /hazelcast/rest/management/cluster/backup"
+                    + " instead. This API will be removed in future releases.");
+            cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
+        } else {
+            prepareResponse(cmd, response(SUCCESS));
+        }
     }
 
-    private void handleHotRestartBackupInterrupt(HttpPostCommand cmd) throws Throwable {
+    private void handleBackupInterrupt(HttpPostCommand cmd, boolean deprecated) throws Throwable {
         decodeParamsAndAuthenticate(cmd, 2);
         getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
-        prepareResponse(cmd, response(SUCCESS));
+        if (deprecated) {
+            Map<String, Object> headers = new HashMap<>();
+            headers.put("Content-Type", CONTENT_TYPE_JSON);
+            headers.put("Deprecation", "true");
+            headers.put("Warning", "299 - \"Deprecated API\". Please use"
+                    + " /hazelcast/rest/management/cluster/backupInterrupt instead. This API will be removed"
+                    + " in future releases.");
+            cmd.setResponseWithHeaders(RES_200, headers, stringToBytes(response(SUCCESS).toString()));
+        } else {
+            prepareResponse(cmd, response(SUCCESS));
+        }
     }
 
     private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {

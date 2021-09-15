@@ -168,7 +168,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public void accessRecord(Data dataKey, Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
-        expirySystem.extendExpiryTime(dataKey, now);
+        expirySystem.extendExpiryTime(dataKey, now, record.getLastUpdateTime());
     }
 
     protected void mergeRecordExpiration(Data key, Record record,
@@ -179,11 +179,11 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+            getExpirySystem().add(key, mergingEntry.getTtl(),
                     maxIdle, mergingEntry.getExpirationTime(), now, mergingEntry.getLastUpdateTime());
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
+            getExpirySystem().add(key, mergingEntry.getTtl(),
                     expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
                     now, mergingEntry.getLastUpdateTime());
         }

@@ -3025,6 +3025,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
                 + "    <auto-remove-stale-data>false</auto-remove-stale-data>"
+                + "    <rebalance-delay-seconds>240</rebalance-delay-seconds>"
                 + "</persistence>\n"
                 + HAZELCAST_END_TAG;
 
@@ -3039,6 +3040,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(dataLoadTimeout, persistenceConfig.getDataLoadTimeoutSeconds());
         assertEquals(policy, persistenceConfig.getClusterDataRecoveryPolicy());
         assertFalse(persistenceConfig.isAutoRemoveStaleData());
+        assertEquals(240, persistenceConfig.getRebalanceDelaySeconds());
     }
 
     @Override

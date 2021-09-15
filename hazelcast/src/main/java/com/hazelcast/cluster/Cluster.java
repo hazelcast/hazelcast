@@ -18,6 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -215,12 +216,21 @@ public interface Cluster {
     Version getClusterVersion();
 
     /**
-     * Returns the Hot Restart service for interacting with Hot Restart.
-     *
-     * @return the hot restart service
-     * @throws UnsupportedOperationException if the hot restart service is not supported on this instance (e.g. on client)
+     * @deprecated since 5.0
+     * Use {@link Cluster#getPersistenceService()} instead.
      */
+    @Deprecated
     HotRestartService getHotRestartService();
+
+    /**
+     * Returns the public persistence service for interacting with Persistence
+     *
+     * @return the persistence service
+     * @throws UnsupportedOperationException if the persistence service is not
+     * supported on this instance (e.g. on client)
+     * @since 5.0
+     */
+    PersistenceService getPersistenceService();
 
     /**
      * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,
