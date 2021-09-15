@@ -84,8 +84,8 @@ public final class Hz3Sinks {
      */
     @Beta
     @Nonnull
-    public static <K, V> Sink<Map.Entry<K, V>> map(@Nonnull String mapName, @Nonnull String clientXml) {
-        return map(mapName, Map.Entry::getKey, Map.Entry::getValue, clientXml);
+    public static <K, V> Sink<Map.Entry<K, V>> remoteMap(@Nonnull String mapName, @Nonnull String clientXml) {
+        return remoteMap(mapName, Map.Entry::getKey, Map.Entry::getValue, clientXml);
     }
 
     /**
@@ -105,13 +105,13 @@ public final class Hz3Sinks {
      */
     @Beta
     @Nonnull
-    public static <T, K, V> Sink<T> map(
+    public static <T, K, V> Sink<T> remoteMap(
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,
             @Nonnull String clientXml) {
         return new SinkImpl<>("mapSink(" + mapName + ')',
-                writeMapP(mapName, toKeyFn, toValueFn, clientXml), toKeyFn);
+                writeRemoteMapP(mapName, toKeyFn, toValueFn, clientXml), toKeyFn);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class Hz3Sinks {
      * {@link Sinks#map(String, FunctionEx, FunctionEx)}.
      */
     @Nonnull
-    static <T, K, V> ProcessorMetaSupplier writeMapP(
+    static <T, K, V> ProcessorMetaSupplier writeRemoteMapP(
             @Nonnull String mapName,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn,

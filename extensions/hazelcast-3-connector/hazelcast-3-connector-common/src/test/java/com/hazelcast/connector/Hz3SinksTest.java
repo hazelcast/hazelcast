@@ -44,7 +44,7 @@ public class Hz3SinksTest extends BaseHz3Test {
                 new SimpleEntry<>(1, "a"),
                 new SimpleEntry<>(2, "b")
         );
-        Sink<Map.Entry<Integer, String>> sink = Hz3Sinks.map("test-map", HZ3_CLIENT_CONFIG);
+        Sink<Map.Entry<Integer, String>> sink = Hz3Sinks.remoteMap("test-map", HZ3_CLIENT_CONFIG);
         p.readFrom(source)
                 .writeTo(sink);
 
@@ -68,7 +68,7 @@ public class Hz3SinksTest extends BaseHz3Test {
                 new SimpleEntry<>(1, "a"),
                 new SimpleEntry<>(2, "b")
         );
-        Sink<Map.Entry<Integer, String>> sink = Hz3Sinks.map("test-map", HZ3_DOWN_CLIENT_CONFIG);
+        Sink<Map.Entry<Integer, String>> sink = Hz3Sinks.remoteMap("test-map", HZ3_DOWN_CLIENT_CONFIG);
         p.readFrom(source)
          .writeTo(sink);
 
