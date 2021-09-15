@@ -1443,6 +1443,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     private void testEntryProcessorWithPredicate_updatesLastAccessTime(boolean accessExpected) {
         Config config = withoutNetworkJoin(smallInstanceConfig());
+        config.getMetricsConfig().setEnabled(false);
         config.getMapConfig(MAP_NAME)
                 .setTimeToLiveSeconds(60)
                 .setMaxIdleSeconds(30);
