@@ -242,7 +242,7 @@ public class ExpirySystem {
         }
 
         expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
-                maxIdle, now, expiryMetadata.getLastUpdateTime()));
+                maxIdle, now, lastUpdateTime));
     }
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
