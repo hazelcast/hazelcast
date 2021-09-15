@@ -21,8 +21,11 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -46,6 +49,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
 public class MetadataCompactResolverTest {
@@ -116,7 +120,7 @@ public class MetadataCompactResolverTest {
                 options,
                 ss
         )).isInstanceOf(QueryException.class)
-          .hasMessageMatching("Duplicate external name: (__key|this).field");
+                .hasMessageMatching("Duplicate external name: (__key|this).field");
     }
 
     @Test
@@ -168,8 +172,21 @@ public class MetadataCompactResolverTest {
                 new MapTableField(prefix, QueryDataType.OBJECT, true, QueryPath.create(prefix))
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
-        assertThat(metadata.getUpsertTargetDescriptor())
-                .isEqualToComparingFieldByField(new CompactUpsertTargetDescriptor("test"));
+        SchemaWriter schemaWriter = new SchemaWriter("test");
+        schemaWriter.addField(new FieldDescriptor("boolean", FieldType.BOOLEAN));
+        schemaWriter.addField(new FieldDescriptor("byte", FieldType.BYTE));
+        schemaWriter.addField(new FieldDescriptor("short", FieldType.SHORT));
+        schemaWriter.addField(new FieldDescriptor("int", FieldType.INT));
+        schemaWriter.addField(new FieldDescriptor("long", FieldType.LONG));
+        schemaWriter.addField(new FieldDescriptor("float", FieldType.FLOAT));
+        schemaWriter.addField(new FieldDescriptor("double", FieldType.DOUBLE));
+        schemaWriter.addField(new FieldDescriptor("decimal", FieldType.DECIMAL));
+        schemaWriter.addField(new FieldDescriptor("string", FieldType.UTF));
+        schemaWriter.addField(new FieldDescriptor("time", FieldType.TIME));
+        schemaWriter.addField(new FieldDescriptor("date", FieldType.DATE));
+        schemaWriter.addField(new FieldDescriptor("timestamp", FieldType.TIMESTAMP));
+        schemaWriter.addField(new FieldDescriptor("timestampTz", FieldType.TIMESTAMP_WITH_TIMEZONE));
+        assertEquals(metadata.getUpsertTargetDescriptor(), new CompactUpsertTargetDescriptor(schemaWriter.build()));
     }
 
     private static InternalSerializationService createSerializationService() {
