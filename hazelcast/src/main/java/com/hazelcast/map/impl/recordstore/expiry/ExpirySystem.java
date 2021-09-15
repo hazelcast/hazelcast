@@ -167,7 +167,8 @@ public class ExpirySystem {
         } else {
             expiryMetadata.setTtl(ttlMillis)
                     .setMaxIdle(maxIdleMillis)
-                    .setExpirationTime(expirationTime);
+                    .setExpirationTime(expirationTime)
+                    .setLastUpdateTime(lastUpdateTime);
         }
 
         mapServiceContext.getExpirationManager().scheduleExpirationTask();
@@ -200,14 +201,22 @@ public class ExpirySystem {
         }
 
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
-        if (expiryMetadata == null
-                || expiryMetadata.getMaxIdle() == Long.MAX_VALUE) {
+        if (expiryMetadata == null) {
             return;
         }
 
-        long expirationTime = nextExpirationTime(expiryMetadata.getTtl(),
-                expiryMetadata.getMaxIdle(), now, expiryMetadata.getLastUpdateTime());
-        expiryMetadata.setExpirationTime(expirationTime);
+        long maxIdle = expiryMetadata.getMaxIdle();
+        if (maxIdle == Long.MAX_VALUE) {
+            return;
+        }
+
+        long ttl = expiryMetadata.getTtl();
+        if (ttl <= maxIdle) {
+            return;
+        }
+
+        expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
+                maxIdle, now, expiryMetadata.getLastUpdateTime()));
     }
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
