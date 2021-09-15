@@ -46,7 +46,7 @@ import com.hazelcast.test.annotation.QuickTest;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class, ParallelJVMTest.class })
-public class NodeExtensionSecurityBannerTest extends HazelcastTestSupport {
+public class NodeSecurityBannerTest extends HazelcastTestSupport {
 
     @Rule
     public OverridePropertyRule sysPropSecurityBanner = OverridePropertyRule.set(SECURITY_BANNER_CATEGORY, null);
