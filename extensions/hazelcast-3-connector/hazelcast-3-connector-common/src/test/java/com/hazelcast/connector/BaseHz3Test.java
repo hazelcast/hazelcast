@@ -68,6 +68,21 @@ public class BaseHz3Test extends HazelcastTestSupport {
             + "    </network>\n"
             + "</hazelcast-client>\n";
 
+    // Client configuration with port where there is no Hz 3 instance running
+    protected static final String HZ3_DOWN_CLIENT_CONFIG =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+            + "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\"\n"
+            + "                  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+            + "                  xsi:schemaLocation=\"http://www.hazelcast.com/schema/client-config\n"
+            + "                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-3.12.xsd\">\n"
+            + "\n"
+            + "    <network>\n"
+            + "        <cluster-members>\n"
+            + "            <address>127.0.0.1:42000</address>\n"
+            + "        </cluster-members>\n"
+            + "    </network>\n"
+            + "</hazelcast-client>\n";
+
     protected HazelcastInstance hz3;
     protected Path customLibDir;
 
