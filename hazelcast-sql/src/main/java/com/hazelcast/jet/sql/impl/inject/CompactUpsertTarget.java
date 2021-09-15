@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
@@ -35,51 +37,59 @@ import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL
 @NotThreadSafe
 class CompactUpsertTarget implements UpsertTarget {
 
-    private final String typeName;
+    private final Schema schema;
 
     private GenericRecordBuilder builder;
 
-    CompactUpsertTarget(@Nonnull String typeName) {
-        this.typeName = typeName;
+    CompactUpsertTarget(@Nonnull Schema schema) {
+        this.schema = schema;
     }
 
     @Override
     @SuppressWarnings("checkstyle:ReturnCount")
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
+    public UpsertInjector createInjector(@Nullable String path, QueryDataType queryDataType) {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
-        switch (type.getTypeFamily()) {
-            case VARCHAR:
+        boolean hasField = schema.hasField(path);
+        if (!hasField) {
+            return value -> {
+                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+            };
+        }
+
+        FieldType type = schema.getField(path).getType();
+        switch (type) {
+            case UTF:
                 return value -> builder.setString(path, (String) value);
             case BOOLEAN:
                 return value -> {
                     ensureNotNull(value);
                     builder.setBoolean(path, (Boolean) value);
                 };
-            case TINYINT:
+            case BYTE:
                 return value -> {
                     ensureNotNull(value);
                     builder.setByte(path, (Byte) value);
                 };
-            case SMALLINT:
+            case SHORT:
                 return value -> {
                     ensureNotNull(value);
                     builder.setShort(path, (Short) value);
                 };
-            case INTEGER:
+            case INT:
                 return value -> {
                     ensureNotNull(value);
                     builder.setInt(path, (Integer) value);
                 };
-            case BIGINT:
+            case LONG:
                 return value -> {
                     ensureNotNull(value);
                     builder.setLong(path, (Long) value);
                 };
             case DECIMAL:
                 return value -> builder.setDecimal(path, (BigDecimal) value);
-            case REAL:
+            case FLOAT:
                 return value -> {
                     ensureNotNull(value);
                     builder.setFloat(path, (Float) value);
@@ -104,84 +114,19 @@ class CompactUpsertTarget implements UpsertTarget {
                     ensureNotNull(value);
                     builder.setTimestamp(path, (LocalDateTime) value);
                 };
-            case TIMESTAMP_WITH_TIME_ZONE:
+            case TIMESTAMP_WITH_TIMEZONE:
                 return value -> {
                     ensureNotNull(value);
                     builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
                 };
-            case OBJECT:
-                return value -> {
-                    if (value instanceof Boolean) {
-                        builder.setBoolean(path, (boolean) value);
-                    } else if (value instanceof Byte) {
-                        builder.setByte(path, (byte) value);
-                    } else if (value instanceof Short) {
-                        builder.setShort(path, (short) value);
-                    } else if (value instanceof Character) {
-                        builder.setChar(path, (char) value);
-                    } else if (value instanceof Integer) {
-                        builder.setInt(path, (int) value);
-                    } else if (value instanceof Long) {
-                        builder.setLong(path, (long) value);
-                    } else if (value instanceof Float) {
-                        builder.setFloat(path, (float) value);
-                    } else if (value instanceof Double) {
-                        builder.setDouble(path, (double) value);
-                    } else if (value instanceof BigDecimal) {
-                        builder.setDecimal(path, (BigDecimal) value);
-                    } else if (value instanceof String) {
-                        builder.setString(path, (String) value);
-                    } else if (value instanceof LocalTime) {
-                        builder.setTime(path, (LocalTime) value);
-                    } else if (value instanceof LocalDate) {
-                        builder.setDate(path, (LocalDate) value);
-                    } else if (value instanceof LocalDateTime) {
-                        builder.setTimestamp(path, (LocalDateTime) value);
-                    } else if (value instanceof OffsetDateTime) {
-                        builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
-                    } else if (value instanceof boolean[]) {
-                        builder.setBooleanArray(path, (boolean[]) value);
-                    } else if (value instanceof byte[]) {
-                        builder.setByteArray(path, (byte[]) value);
-                    } else if (value instanceof short[]) {
-                        builder.setShortArray(path, (short[]) value);
-                    } else if (value instanceof char[]) {
-                        builder.setCharArray(path, (char[]) value);
-                    } else if (value instanceof int[]) {
-                        builder.setIntArray(path, (int[]) value);
-                    } else if (value instanceof long[]) {
-                        builder.setLongArray(path, (long[]) value);
-                    } else if (value instanceof float[]) {
-                        builder.setFloatArray(path, (float[]) value);
-                    } else if (value instanceof double[]) {
-                        builder.setDoubleArray(path, (double[]) value);
-                    } else if (value instanceof BigDecimal[]) {
-                        builder.setDecimalArray(path, (BigDecimal[]) value);
-                    } else if (value instanceof String[]) {
-                        builder.setStringArray(path, (String[]) value);
-                    } else if (value instanceof LocalTime[]) {
-                        builder.setTimeArray(path, (LocalTime[]) value);
-                    } else if (value instanceof LocalDate[]) {
-                        builder.setDateArray(path, (LocalDate[]) value);
-                    } else if (value instanceof LocalDateTime[]) {
-                        builder.setTimestampArray(path, (LocalDateTime[]) value);
-                    } else if (value instanceof OffsetDateTime[]) {
-                        builder.setTimestampWithTimezoneArray(path, (OffsetDateTime[]) value);
-                    } else if (value instanceof GenericRecord[]) {
-                        builder.setGenericRecordArray(path, (GenericRecord[]) value);
-                    } else {
-                        builder.setGenericRecord(path, (GenericRecord) value);
-                    }
-
-                };
             default:
-                throw QueryException.error(type + " type is not supported by Compact format!");
+                throw QueryException.error(type + " type is not supported in SQL with Compact format!");
         }
     }
 
     @Override
     public void init() {
-        this.builder = GenericRecordBuilder.compact(typeName);
+        this.builder = GenericRecordBuilder.compact(schema.getTypeName());
     }
 
     @Override
