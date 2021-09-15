@@ -389,6 +389,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
                 .setValidationTimeoutSeconds(100)
                 .setDataLoadTimeoutSeconds(130)
+                .setRebalanceDelaySeconds(240)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5).setAutoRemoveStaleData(false);

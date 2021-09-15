@@ -908,7 +908,7 @@ hazelcast:
       recently-active-split-brain-protection:
         heartbeat-tolerance-millis: 60000
 
-  hot-restart-persistence:
+  persistence:
     enabled: false
     backup-dir: backup-dir
     base-dir: base-dir
@@ -916,6 +916,7 @@ hazelcast:
     data-load-timeout-seconds: 42
     parallelism: 3
     validation-timeout-seconds: 10
+    rebalance-delay-seconds: 240
 
   lite-member:
     enabled: true

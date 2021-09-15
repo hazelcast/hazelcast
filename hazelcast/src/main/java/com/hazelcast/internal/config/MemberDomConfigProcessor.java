@@ -448,6 +448,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         String parallelismName = "parallelism";
         String validationTimeoutName = "validation-timeout-seconds";
         String dataLoadTimeoutName = "data-load-timeout-seconds";
+        String rebalanceDelaySecondsName = "rebalance-delay-seconds";
 
         for (Node n : childElements(prRoot)) {
             String name = cleanNodeName(n);
@@ -469,6 +470,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                             PersistenceClusterDataRecoveryPolicy.valueOf(upperCaseInternal(getTextContent(n))));
                 } else if (matches("auto-remove-stale-data", name)) {
                     prConfig.setAutoRemoveStaleData(getBooleanValue(getTextContent(n)));
+                } else if (matches("rebalance-delay-seconds", name)) {
+                    prConfig.setRebalanceDelaySeconds(getIntegerValue(rebalanceDelaySecondsName, getTextContent(n)));
                 }
             }
         }
