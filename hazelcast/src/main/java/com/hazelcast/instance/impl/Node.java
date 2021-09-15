@@ -974,7 +974,7 @@ public class Node {
         }
         if (config.getUserCodeDeploymentConfig().isEnabled()) {
             addSecurityFeatureInfo(sb, "User code deployment is enabled. Any uploaded code can be executed within "
-                    + "the Hazelcast. Use this in trusted environments only.");
+                    + "Hazelcast. Use this in trusted environments only.");
         }
         addSecurityFeatureCheck(sb, "Disable scripting in the Management Center",
                 !config.getManagementCenterConfig().isScriptingEnabled());
