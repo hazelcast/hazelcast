@@ -268,9 +268,9 @@ public abstract class MapOperation extends AbstractNamedOperation
 
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(name)) {
                 invalidator.invalidateAllKeys(name, getCallerUuid());
+            } else {
+                invalidator.forceIncrementSequence(name, getPartitionId());
             }
-
-            invalidator.resetPartitionMetaData(name, getPartitionId());
         }
     }
 

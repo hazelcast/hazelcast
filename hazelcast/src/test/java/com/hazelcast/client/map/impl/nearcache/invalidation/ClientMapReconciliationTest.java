@@ -46,15 +46,24 @@ import static com.hazelcast.spi.properties.ClusterProperty.MAP_INVALIDATION_MESS
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapReconciliationTest extends HazelcastTestSupport {
 
-    private static final String MAP_NAME = "ClientMapReconciliationTest";
+    private static final String MAP_1_NAME = "ClientMapReconciliationTest-map-1";
+    private static final String MAP_2_NAME = "ClientMapReconciliationTest-map-2";
+    private static final String MAP_3_NAME = "ClientMapReconciliationTest-map-3";
+
     private static final int RECONCILIATION_INTERVAL_SECS = 3;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     private ClientConfig clientConfig;
 
-    private IMap<Integer, Integer> serverMap;
-    private IMap<Integer, Integer> clientMap;
+    // servers
+    private IMap<Integer, Integer> serverMap1;
+    private IMap<Integer, Integer> serverMap2;
+    private IMap<Integer, Integer> serverMap3;
+    // clients
+    private IMap<Integer, Integer> clientMap1;
+    private IMap<Integer, Integer> clientMap2;
+    private IMap<Integer, Integer> clientMap3;
 
     @Before
     public void setUp() {
@@ -62,7 +71,7 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE));
 
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(MAP_NAME)
+        NearCacheConfig nearCacheConfig = new NearCacheConfig("*")
                 .setInvalidateOnChange(true);
 
         clientConfig = new ClientConfig()
@@ -72,9 +81,9 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastInstance server = factory.newHazelcastInstance(config);
-        serverMap = server.getMap(MAP_NAME);
-
-        clientMap = createMapFromNewClient();
+        serverMap1 = server.getMap(MAP_1_NAME);
+        serverMap2 = server.getMap(MAP_2_NAME);
+        serverMap3 = server.getMap(MAP_3_NAME);
     }
 
     @After
@@ -86,20 +95,22 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
     public void test_reconciliation_does_not_cause_premature_removal() {
         int total = 100;
         for (int i = 0; i < total; i++) {
-            serverMap.put(i, i);
+            serverMap1.put(i, i);
         }
+
+        clientMap1 = createMapFromNewClient(MAP_1_NAME);
 
         for (int i = 0; i < total; i++) {
-            clientMap.get(i);
+            clientMap1.get(i);
         }
 
-        IMap mapFromNewClient = createMapFromNewClient();
+        IMap mapFromNewClient = createMapFromNewClient(MAP_1_NAME);
         for (int i = 0; i < total; i++) {
             mapFromNewClient.get(i);
         }
 
         NearCacheStats nearCacheStats = mapFromNewClient.getLocalMapStats().getNearCacheStats();
-        assertStats(nearCacheStats, total, 0, total);
+        assertStats(MAP_1_NAME, nearCacheStats, total, 0, total);
 
         sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
 
@@ -107,12 +118,58 @@ public class ClientMapReconciliationTest extends HazelcastTestSupport {
             mapFromNewClient.get(i);
         }
 
-        assertStats(nearCacheStats, total, total, total);
+        assertStats(MAP_1_NAME, nearCacheStats, total, total, total);
     }
 
-    private IMap<Integer, Integer> createMapFromNewClient() {
+    @Test
+    public void test_reconciliation_does_not_cause_premature_removal_on_other_maps_after_map_clear() {
+        int total = 91;
+        for (int i = 0; i < total; i++) {
+            serverMap1.put(i, i);
+            serverMap2.put(i, i);
+            serverMap3.put(i, i);
+        }
+
+        clientMap1 = createMapFromNewClient(MAP_1_NAME);
+        clientMap2 = createMapFromNewClient(MAP_2_NAME);
+        clientMap3 = createMapFromNewClient(MAP_3_NAME);
+
+        for (int i = 0; i < total; i++) {
+            clientMap1.get(i);
+            clientMap2.get(i);
+            clientMap3.get(i);
+        }
+
+        assertStats(MAP_1_NAME, clientMap1.getLocalMapStats().getNearCacheStats(), total, 0, total);
+        assertStats(MAP_2_NAME, clientMap2.getLocalMapStats().getNearCacheStats(), total, 0, total);
+        assertStats(MAP_3_NAME, clientMap3.getLocalMapStats().getNearCacheStats(), total, 0, total);
+
+        // Call map.clear on 1st map
+        clientMap1.clear();
+
+        // Sleep a little, hence we can see effect of reconciliation-task.
+        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
+
+        // Do subsequent gets on maps.
+        // Except for 1st map, other maps should
+        // return responses from their near-cache.
+        for (int i = 0; i < total; i++) {
+            clientMap1.get(i);
+            clientMap2.get(i);
+            clientMap3.get(i);
+        }
+
+        // clientMap1 caches null values so, at
+        // here, it's near cache should not be empty
+        // despite we cleared its backing map before.
+        assertStats(MAP_1_NAME, clientMap1.getLocalMapStats().getNearCacheStats(), total, 0, 2 * total);
+        assertStats(MAP_2_NAME, clientMap2.getLocalMapStats().getNearCacheStats(), total, total, total);
+        assertStats(MAP_3_NAME, clientMap3.getLocalMapStats().getNearCacheStats(), total, total, total);
+    }
+
+    private IMap<Integer, Integer> createMapFromNewClient(String mapName) {
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        IMap<Integer, Integer> map = client.getMap(MAP_NAME);
+        IMap<Integer, Integer> map = client.getMap(mapName);
 
         assertInstanceOf(NearCachedClientMapProxy.class, map);
 
