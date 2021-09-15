@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
@@ -46,7 +47,7 @@ class CompactUpsertTarget implements UpsertTarget {
 
     @Override
     @SuppressWarnings("checkstyle:ReturnCount")
-    public UpsertInjector createInjector(@Nullable String path, QueryDataType type) {
+    public UpsertInjector createInjector(@Nullable String path, QueryDataType queryDataType) {
         if (path == null) {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
@@ -57,7 +58,8 @@ class CompactUpsertTarget implements UpsertTarget {
             };
         }
 
-        switch (schema.getField(path).getType()) {
+        FieldType type = schema.getField(path).getType();
+        switch (type) {
             case UTF:
                 return value -> builder.setString(path, (String) value);
             case BOOLEAN:
