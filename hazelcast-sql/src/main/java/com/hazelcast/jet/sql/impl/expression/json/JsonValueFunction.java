@@ -21,7 +21,6 @@ import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.query.impl.Numbers;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -34,8 +33,6 @@ import org.apache.calcite.sql.SqlJsonValueEmptyOrErrorBehavior;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
@@ -130,7 +127,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     private T execute(final String json, final String path) {
         final Object result = JsonPathUtil.read(json, path);
-        if (result instanceof Map || result instanceof List) {
+        if (JsonPathUtil.isArrayOrObject(result)) {
             throw QueryException.error("Result of JSON_VALUE can not be array or object.");
         }
         return (T) convertResultType(result);
@@ -138,15 +135,11 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     @SuppressWarnings("checkstyle:ReturnCount")
     private Object convertResultType(final Object result) {
-        if (!(result instanceof Number)) {
+        if (!(result instanceof Number) || resultType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             return result;
         }
 
         final Number number = (Number) result;
-
-        if (resultType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            return convertNumberType(number);
-        }
 
         switch (this.resultType.getTypeFamily().getPublicType()) {
             case TINYINT:
@@ -165,23 +158,6 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 return BigDecimal.valueOf(number.doubleValue());
             default:
                 return result;
-        }
-    }
-
-    private Object convertNumberType(final Number number) {
-        if (!Numbers.isLongRepresentable(number.getClass())) {
-            return number;
-        }
-
-        final long value = number.longValue();
-        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-            return number.byteValue();
-        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-            return number.shortValue();
-        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-            return number.intValue();
-        } else {
-            return value;
         }
     }
 

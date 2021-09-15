@@ -62,15 +62,15 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         assertRowsWithType("SELECT JSON_VALUE(this, '$.longField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, (byte) 4));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 5.0));
+                singletonList(SqlColumnType.OBJECT), rows(1, 5.0f));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.stringField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, "6"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.charField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, "7"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.floatField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 8.0));
+                singletonList(SqlColumnType.OBJECT), rows(1, 8.0f));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.doubleField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 9.0));
+                singletonList(SqlColumnType.OBJECT), rows(1, 9.0f));
     }
 
     @Test

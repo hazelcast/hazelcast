@@ -23,7 +23,8 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 public final class HazelcastJsonType extends RelDataTypeImpl {
     public static final HazelcastJsonType TYPE_NULLABLE = new HazelcastJsonType(true);
-    public static final HazelcastJsonType FAMILY = TYPE_NULLABLE;
+    public static final HazelcastJsonType TYPE = new HazelcastJsonType(false);
+    public static final HazelcastJsonType FAMILY = TYPE;
 
     private final boolean nullable;
 
@@ -33,8 +34,9 @@ public final class HazelcastJsonType extends RelDataTypeImpl {
     }
 
     public static RelDataType create(boolean nullable) {
-        // TODO: actual nullability
-        return TYPE_NULLABLE;
+        return nullable
+                ? TYPE_NULLABLE
+                : TYPE;
     }
 
     @Override

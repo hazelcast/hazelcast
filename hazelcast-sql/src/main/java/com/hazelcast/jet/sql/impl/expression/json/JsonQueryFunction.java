@@ -34,11 +34,10 @@ import org.apache.calcite.sql.SqlJsonQueryWrapperBehavior;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.jet.sql.impl.expression.json.JsonPathUtil.isArrayOrObject;
 
 @SuppressWarnings("checkstyle:MagicNumber")
 public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implements IdentifiedDataSerializable {
@@ -100,7 +99,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         try {
             return wrap(execute(json, path, wrapperBehavior));
         } catch (Exception exception) {
-            return onErrorResponse(onError, exception);
+             return onErrorResponse(onError, exception);
         }
     }
 
@@ -162,10 +161,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
         } catch (JsonParseException exception) {
             throw QueryException.error("Failed to serialize JSON_QUERY result: ", exception);
         }
-    }
-
-    private boolean isArrayOrObject(Object value) {
-        return value instanceof Map || value instanceof List;
     }
 
     @Override

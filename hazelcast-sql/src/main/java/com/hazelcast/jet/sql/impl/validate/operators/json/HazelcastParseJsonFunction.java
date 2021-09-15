@@ -33,7 +33,7 @@ public class HazelcastParseJsonFunction extends HazelcastFunction {
         super(
                 "PARSE_JSON",
                 SqlKind.OTHER_FUNCTION,
-                opBinding -> HazelcastJsonType.create(true),
+                opBinding -> HazelcastJsonType.create(false),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.VARCHAR),
                 SqlFunctionCategory.SYSTEM
         );
