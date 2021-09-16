@@ -440,7 +440,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
 
-        client.onClusterChange();
+        client.beforeClusterChange();
 
         nextContext.start();
 
@@ -917,7 +917,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterRestart();
+                if (!failoverConfigProvided) {
+                    //in the failover client, there is no restart.
+                    //A cluster id change should always be handled as cluster change.
+                    // Note that at this point client.beforeClusterChange()
+                    // is already called to clear local state in the failover client.
+                    client.afterClusterRestart();
+                }
             }
             checkClientState(connection, switchingToNextCluster);
 

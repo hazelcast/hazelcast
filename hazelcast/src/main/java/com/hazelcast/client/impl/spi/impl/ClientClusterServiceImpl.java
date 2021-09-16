@@ -215,7 +215,8 @@ public class ClientClusterServiceImpl
             }
             MemberListSnapshot clusterViewSnapshot = memberListSnapshot.get();
             // This check is necessary so that when handling auth response, it will not
-            // intervene with client failover logic
+            // intervene with client failover logic.
+            // EMPTY_SNAPSHOT is set only on #reset
             if (clusterViewSnapshot != EMPTY_SNAPSHOT) {
                 memberListSnapshot.set(new MemberListSnapshot(0, clusterViewSnapshot.members));
             }
@@ -224,6 +225,7 @@ public class ClientClusterServiceImpl
 
     /**
      * Clears the member list and fires member removed event for members in the list.
+     * This is called onClusterRestart which is detected via change of the cluster id.
      */
     public void clearMemberList() {
         List<MembershipEvent> events = null;
@@ -246,6 +248,10 @@ public class ClientClusterServiceImpl
         }
     }
 
+    /**
+     * This is called only on cluster change when the failover(blue/green) client is used.
+     * Here we set EMPTY_SNAPSHOT to memberListSnapshot so that a subsequent connection
+     */
     public void reset() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {

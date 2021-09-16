@@ -834,7 +834,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onClusterChange() {
+    /**
+     * This is called only on cluster change when the failover(blue/green) client is used.
+     */
+    public void beforeClusterChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
@@ -849,7 +852,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterRestart() {
+    /**
+     * Called when a cluster id change without failover client is used.
+     */
+    public void afterClusterRestart() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
