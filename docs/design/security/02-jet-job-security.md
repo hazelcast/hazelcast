@@ -198,7 +198,10 @@ submit phase of the job.
 
 You can find these functions in `SecuredFunctions` utility class.
 Any lambda we provide in the distribution which accesses a restricted
-data-structure should implement this interface.
+data-structure should implement this interface. Permissions returned
+from this function should not be a field of an object which serialized
+and sent to the server. Instead, it should be hardcoded so that it
+cannot be manipulated using reflections.
 
 ### Internal Jet Data Structures
 
