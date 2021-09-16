@@ -48,6 +48,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
     public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
     public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE);
+    public static final TypedOperandChecker JSON_NULLABLE = new TypedOperandChecker(HazelcastJsonType.TYPE_NULLABLE);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;
@@ -70,8 +71,8 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
 
     @Override
     protected boolean matchesTargetType(RelDataType operandType) {
-        if (type != null) {
-            return type.getFamily().equals(operandType.getFamily());
+        if (type != null && type.getSqlTypeName().equals(SqlTypeName.OTHER)) {
+            return type.equals(operandType);
         } else {
             return operandType.getSqlTypeName() == targetTypeName;
         }

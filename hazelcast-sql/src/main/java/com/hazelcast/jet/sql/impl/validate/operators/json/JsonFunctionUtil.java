@@ -32,7 +32,11 @@ public final class JsonFunctionUtil {
         }
 
         if (operandType.getSqlTypeName().equals(SqlTypeName.OTHER)) {
-            return TypedOperandChecker.JSON.check(callBinding, throwOnFailure, operandIndex);
+            boolean isJson = TypedOperandChecker.JSON.check(callBinding, false, operandIndex) ||
+                    TypedOperandChecker.JSON_NULLABLE.check(callBinding, false, operandIndex);
+            if (isJson) {
+                return true;
+            }
         }
 
         if (throwOnFailure) {
