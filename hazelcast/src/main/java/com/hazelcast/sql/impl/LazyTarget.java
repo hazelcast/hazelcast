@@ -50,7 +50,7 @@ public class LazyTarget implements IdentifiedDataSerializable {
 
     public Object deserialize(InternalSerializationService serializationService) {
         try {
-            if (serialized == null) {
+            if (serialized == null && deserialized == null) {
                 return null;
             }
             if (deserialized == null) {
