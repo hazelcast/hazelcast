@@ -17,9 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -27,6 +31,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,11 +75,16 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             throw QueryException.error("Unable to resolve table metadata. Missing ['typeName'] option");
         }
 
-        return extractFields(userFields, isKey).entrySet().stream()
+        Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
+        return fields.entrySet().stream()
                 .map(entry -> {
                     QueryPath path = entry.getKey();
                     if (path.getPath() == null) {
                         throw QueryException.error("Cannot use the '" + path + "' field with Compact serialization");
+                    }
+                    QueryDataType type = entry.getValue().type();
+                    if (type == QueryDataType.OBJECT) {
+                        throw QueryException.error("Cannot derive Compact type for '" + type.getTypeFamily() + "'");
                     }
                     return entry.getValue();
                 });
@@ -102,10 +112,56 @@ final class MetadataCompactResolver implements KvMetadataResolver {
         }
         maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
+        Schema schema = resolveSchema(typeName, fieldsByPath);
+
         return new KvMetadata(
                 fields,
                 GenericQueryTargetDescriptor.DEFAULT,
-                new CompactUpsertTargetDescriptor(typeName)
+                new CompactUpsertTargetDescriptor(schema)
         );
+    }
+
+    private Schema resolveSchema(String typeName, Map<QueryPath, MappingField> fields) {
+        SchemaWriter schemaWriter = new SchemaWriter(typeName);
+        for (Entry<QueryPath, MappingField> entry : fields.entrySet()) {
+            String name = entry.getKey().getPath();
+            QueryDataType type = entry.getValue().type();
+            schemaWriter.addField(new FieldDescriptor(name, resolveToCompactType(type.getTypeFamily())));
+        }
+        return schemaWriter.build();
+    }
+
+    @SuppressWarnings("checkstyle:ReturnCount")
+    private static FieldType resolveToCompactType(QueryDataTypeFamily type) {
+        switch (type) {
+            case BOOLEAN:
+                return FieldType.BOOLEAN;
+            case TINYINT:
+                return FieldType.BYTE;
+            case SMALLINT:
+                return FieldType.SHORT;
+            case INTEGER:
+                return FieldType.INT;
+            case BIGINT:
+                return FieldType.LONG;
+            case REAL:
+                return FieldType.FLOAT;
+            case DOUBLE:
+                return FieldType.DOUBLE;
+            case DECIMAL:
+                return FieldType.DECIMAL;
+            case VARCHAR:
+                return FieldType.UTF;
+            case TIME:
+                return FieldType.TIME;
+            case DATE:
+                return FieldType.DATE;
+            case TIMESTAMP:
+                return FieldType.TIMESTAMP;
+            case TIMESTAMP_WITH_TIME_ZONE:
+                return FieldType.TIMESTAMP_WITH_TIMEZONE;
+            default:
+                throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
+        }
     }
 }

@@ -167,6 +167,86 @@ obtain the PMSs and from them the required permissions. For each
 permission we ask the security context if the endpoint has the required
 permissions.
 
+### SecuredFunction
+
+There are some lambdas on the classpath which can be used to gain
+access to data-structures. For example:
+
+```java
+context -> context.hazelcastInstance().getMap(name);
+```
+
+We've introduced below interface which returns a list of permissions
+required to execute the function.
+```java
+@PrivateApi
+public interface SecuredFunction {
+
+    /**
+     * @return the list of permissions required to run this function
+     */
+    @Nullable
+    default List<Permission> permissions() {
+        return null;
+    }
+}
+```
+
+These permissions are checked at the initialization phase of the job,
+the permissions of the `ProcessorMetaSupplier` are checked at the
+submit phase of the job.
+
+You can find these functions in `SecuredFunctions` utility class.
+Any lambda we provide in the distribution which accesses a restricted
+data-structure should implement this interface. Permissions returned
+from this function should not be a field of an object which serialized
+and sent to the server. Instead, it should be hardcoded so that it
+cannot be manipulated using reflections.
+
+### Internal Jet Data Structures
+
+Jet uses some internal data structures, `FlakeIdGenerator` for creating
+job ids and `IMap` for resources and snapshots. We implicitly configure
+permissions for these data structures if user has relevant permissions.
+
+- If user has `submit` action, we add `FlakeIdGenerator` permission with
+the name `__jet.ids`. 
+ 
+- If user has `add-resources` action, we add `IMap` permission with the
+name `__jet.resources*`.
+
+- If user has `export-snapshot` action, we add `IMap` permission with
+the name `__jet.exportedSnapshot*`.
+
+### Observable
+
+`Observable` uses ring-buffer under the hood by adding a prefix to the
+defined name, `__jet.observables.`. We strip this prefix when checking
+for the permission so that user can define a ring-buffer permission
+with the same name as observable. For example, in order to user an
+observable with the name `foo`, user should have below permission:
+
+```xml
+<ring-buffer-permission name="foo">
+    <actions>
+        <action>all</action>
+    </actions>
+</ring-buffer-permission>
+```
+
+There is also an option to create an observable without a name, which
+in fact creates a random name for the observable. If user wants to use
+this API in a secured environment, the user should configure the
+ring-buffer permission with a wildcard.
+
+```xml
+<ring-buffer-permission name="*">
+    <actions>
+        <action>all</action>
+    </actions>
+</ring-buffer-permission>
+```
+
 ### Add Resources Permission
 
 Jet jobs, by design, upload the custom code written by the user to the

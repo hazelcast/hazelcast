@@ -140,6 +140,11 @@
             <destName>hazelcast-security-hardened.yaml</destName>
             <outputDirectory>config/examples</outputDirectory>
         </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.xml</source>
+            <destName>hazelcast-security-hardened.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
     </files>
 
     <fileSets>

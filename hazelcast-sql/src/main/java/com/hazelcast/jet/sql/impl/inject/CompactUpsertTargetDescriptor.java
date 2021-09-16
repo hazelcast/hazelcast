@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -26,29 +27,29 @@ import java.util.Objects;
 
 public class CompactUpsertTargetDescriptor implements UpsertTargetDescriptor {
 
-    private String typeName;
+    private Schema schema;
 
     @SuppressWarnings("unused")
     private CompactUpsertTargetDescriptor() {
     }
 
-    public CompactUpsertTargetDescriptor(@Nonnull String typeName) {
-        this.typeName = typeName;
+    public CompactUpsertTargetDescriptor(@Nonnull Schema schema) {
+        this.schema = schema;
     }
 
     @Override
     public UpsertTarget create(InternalSerializationService serializationService) {
-        return new CompactUpsertTarget(typeName);
+        return new CompactUpsertTarget(schema);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(typeName);
+        out.writeObject(schema);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.typeName = in.readString();
+        this.schema = in.readObject();
     }
 
     @Override
@@ -60,11 +61,18 @@ public class CompactUpsertTargetDescriptor implements UpsertTargetDescriptor {
             return false;
         }
         CompactUpsertTargetDescriptor that = (CompactUpsertTargetDescriptor) o;
-        return Objects.equals(typeName, that.typeName);
+        return Objects.equals(schema, that.schema);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName);
+        return Objects.hash(schema);
+    }
+
+    @Override
+    public String toString() {
+        return "CompactUpsertTargetDescriptor{"
+                + "+ schema=" + schema
+                + '}';
     }
 }

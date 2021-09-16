@@ -21,21 +21,27 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
+import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_COMPACT_TYPE_NAME;
@@ -46,25 +52,10 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
 public class MetadataCompactResolverTest {
-
-    @Test
-    @Parameters({
-            "true, __key",
-            "false, this"
-    })
-    public void test_resolveFields(boolean key, String prefix) {
-        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(
-                key,
-                singletonList(field("field", QueryDataType.INT, prefix + ".field")),
-                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "fieldName"),
-                createSerializationService()
-        );
-
-        assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
-    }
 
     @Test
     @Parameters({
@@ -79,6 +70,56 @@ public class MetadataCompactResolverTest {
 
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss))
                 .hasMessageContaining("Column list is required for Compact format");
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_objectIsForbiddenForCompact(boolean key, String prefix) {
+        InternalSerializationService ss = createSerializationService();
+
+        Map<String, String> options =
+                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
+
+        List<MappingField> fields = asList(field("object", QueryDataType.OBJECT, prefix + ".object"));
+
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(Collectors.toList()))
+                .isInstanceOf(QueryException.class)
+                .hasMessageContaining("Cannot derive Compact type for '" + QueryDataTypeFamily.OBJECT + "'");
+    }
+
+    @Test
+    @Parameters({
+            "true, __key",
+            "false, this"
+    })
+    public void test_resolveFields(boolean key, String prefix) {
+        InternalSerializationService ss = createSerializationService();
+        Map<String, String> options =
+                ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
+
+        List<MappingField> fields = asList(
+                field("string", QueryDataType.VARCHAR, prefix + ".string"),
+                field("character", QueryDataType.VARCHAR_CHARACTER, prefix + ".character"),
+                field("boolean", QueryDataType.BOOLEAN, prefix + ".boolean"),
+                field("byte", QueryDataType.TINYINT, prefix + ".byte"),
+                field("short", QueryDataType.SMALLINT, prefix + ".short"),
+                field("int", QueryDataType.INT, prefix + ".int"),
+                field("long", QueryDataType.BIGINT, prefix + ".long"),
+                field("float", QueryDataType.REAL, prefix + ".float"),
+                field("double", QueryDataType.DOUBLE, prefix + ".double"),
+                field("decimal", QueryDataType.DECIMAL, prefix + ".decimal"),
+                field("time", QueryDataType.TIME, prefix + ".time"),
+                field("date", QueryDataType.DATE, prefix + ".date"),
+                field("timestamp", QueryDataType.TIMESTAMP, prefix + ".timestamp"),
+                field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
+        );
+
+        Stream<MappingField> resolvedFields = MetadataCompactResolver.INSTANCE.resolveAndValidateFields(key, fields, options, ss);
+
+        assertThat(resolvedFields).containsExactlyElementsOf(fields);
     }
 
     @Test
@@ -116,7 +157,7 @@ public class MetadataCompactResolverTest {
                 options,
                 ss
         )).isInstanceOf(QueryException.class)
-          .hasMessageMatching("Duplicate external name: (__key|this).field");
+                .hasMessageMatching("Duplicate external name: (__key|this).field");
     }
 
     @Test
@@ -168,8 +209,21 @@ public class MetadataCompactResolverTest {
                 new MapTableField(prefix, QueryDataType.OBJECT, true, QueryPath.create(prefix))
         );
         assertThat(metadata.getQueryTargetDescriptor()).isEqualTo(GenericQueryTargetDescriptor.DEFAULT);
-        assertThat(metadata.getUpsertTargetDescriptor())
-                .isEqualToComparingFieldByField(new CompactUpsertTargetDescriptor("test"));
+        SchemaWriter schemaWriter = new SchemaWriter("test");
+        schemaWriter.addField(new FieldDescriptor("boolean", FieldType.BOOLEAN));
+        schemaWriter.addField(new FieldDescriptor("byte", FieldType.BYTE));
+        schemaWriter.addField(new FieldDescriptor("short", FieldType.SHORT));
+        schemaWriter.addField(new FieldDescriptor("int", FieldType.INT));
+        schemaWriter.addField(new FieldDescriptor("long", FieldType.LONG));
+        schemaWriter.addField(new FieldDescriptor("float", FieldType.FLOAT));
+        schemaWriter.addField(new FieldDescriptor("double", FieldType.DOUBLE));
+        schemaWriter.addField(new FieldDescriptor("decimal", FieldType.DECIMAL));
+        schemaWriter.addField(new FieldDescriptor("string", FieldType.UTF));
+        schemaWriter.addField(new FieldDescriptor("time", FieldType.TIME));
+        schemaWriter.addField(new FieldDescriptor("date", FieldType.DATE));
+        schemaWriter.addField(new FieldDescriptor("timestamp", FieldType.TIMESTAMP));
+        schemaWriter.addField(new FieldDescriptor("timestampTz", FieldType.TIMESTAMP_WITH_TIMEZONE));
+        assertEquals(metadata.getUpsertTargetDescriptor(), new CompactUpsertTargetDescriptor(schemaWriter.build()));
     }
 
     private static InternalSerializationService createSerializationService() {

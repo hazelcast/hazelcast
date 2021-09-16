@@ -173,16 +173,6 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
     }
 
-    KvMetadata resolveMetadata(
-            boolean isKey,
-            List<MappingField> resolvedFields,
-            @Nonnull ClassDefinition clazz
-    ) {
-        Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
-
-        return resolveMetadata(isKey, resolvedFields, fieldsByPath, clazz);
-    }
-
     private static KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,

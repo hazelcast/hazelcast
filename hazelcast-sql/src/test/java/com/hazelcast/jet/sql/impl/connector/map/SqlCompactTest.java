@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
-import com.google.common.collect.Iterators;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
@@ -33,7 +32,6 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.junit.BeforeClass;
@@ -129,7 +127,7 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ")"
         ).updateCount();
 
-        sqlService.execute("SINK INTO " + name + " VALUES (1, null)");
+        sqlService.execute("SINK INTO " + name + " VALUES (1, null)").updateCount();
 
         Entry<Data, Data> entry = randomEntryFrom(name);
 
@@ -147,38 +145,11 @@ public class SqlCompactTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_insertingNestedCompact() {
+    public void test_objectIsNotSupported() {
         String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
-                + "key_id INT EXTERNAL NAME \"__key.id\""
-                + ", nested OBJECT "
-                + ") "
-                + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                + "OPTIONS ("
-                + '\'' + OPTION_KEY_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_KEY_COMPACT_TYPE_NAME + "'='" + PERSON_ID_TYPE_NAME + '\''
-                + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
-                + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
-                + ")"
-        ).updateCount();
-
-        GenericRecord record = GenericRecordBuilder.compact(PERSON_TYPE_NAME)
-                .setString("name", "John").build();
-        sqlService.execute("SINK INTO " + name + " VALUES (1, ?)",
-                record).updateCount();
-
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                singletonList(new Row(1, record))
-        );
-    }
-
-    @Test
-    public void test_selectNestedCompact() {
-        String name = randomName();
-        sqlService.execute("CREATE MAPPING " + name + " ("
+        assertThatThrownBy(() -> sqlService.execute("CREATE MAPPING " + name + " ("
                 + "key_id INT "
-                + ", nested OBJECT "
+                + ", object OBJECT "
                 + ") "
                 + "TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
@@ -187,18 +158,7 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + COMPACT_FORMAT + '\''
                 + ", '" + OPTION_VALUE_COMPACT_TYPE_NAME + "'='" + PERSON_TYPE_NAME + '\''
                 + ")"
-        ).updateCount();
-
-        GenericRecord nestedRecord = GenericRecordBuilder.compact(PERSON_TYPE_NAME)
-                .setString("name", "John").build();
-        GenericRecord parentRecord = GenericRecordBuilder.compact("parent")
-                .setGenericRecord("nested", nestedRecord).build();
-        client().getMap(name).put(1, parentRecord);
-
-        SqlResult result = sqlService.execute("SELECT * FROM " + name);
-        SqlRow row = Iterators.getOnlyElement(result.iterator());
-        Object nested = row.getObject("nested");
-        assertEquals(nestedRecord, nested);
+        ).updateCount()).hasMessageContaining("Cannot derive Compact type for 'OBJECT'");
     }
 
     @Test
@@ -380,7 +340,6 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ", \"date\" DATE "
                 + ", \"timestamp\" TIMESTAMP "
                 + ", timestampTz TIMESTAMP WITH TIME ZONE "
-                + ", \"object\" OBJECT "
                 + " ) TYPE " + IMapSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ("
                 + '\'' + OPTION_KEY_FORMAT + "'='" + COMPACT_FORMAT + '\''
@@ -390,7 +349,9 @@ public class SqlCompactTest extends SqlTestSupport {
                 + ")"
         );
 
-        sqlService.execute("SINK INTO " + to + " SELECT 13, 'a', f.* " + " FROM " + from + " f");
+        sqlService.execute("SINK INTO " + to + " SELECT 13, 'a', string, \"boolean\", byte, short, \"int\", long, "
+                + "\"float\", \"double\", \"decimal\", \"time\", \"date\", \"timestamp\", timestampTz "
+                + " FROM " + from + " f");
 
         InternalGenericRecord valueRecord = serializationService
                 .readAsInternalGenericRecord(randomEntryFrom(to).getValue());
@@ -410,7 +371,6 @@ public class SqlCompactTest extends SqlTestSupport {
                 .isEqualTo(LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000));
         assertThat(valueRecord.getTimestampWithTimezone("timestampTz"))
                 .isEqualTo(OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC));
-        assertThat(valueRecord.getGenericRecord("object")).isNull();
 
         assertRowsAnyOrder(
                 "SELECT * FROM " + to,
@@ -429,8 +389,7 @@ public class SqlCompactTest extends SqlTestSupport {
                         LocalTime.of(12, 23, 34),
                         LocalDate.of(2020, 4, 15),
                         LocalDateTime.of(2020, 4, 15, 12, 23, 34, 1_000_000),
-                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC),
-                        null
+                        OffsetDateTime.of(2020, 4, 15, 12, 23, 34, 200_000_000, UTC)
                 ))
         );
     }
