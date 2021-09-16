@@ -111,11 +111,6 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         return getPlane(streamId).getConnection(address);
     }
 
-    public Set<Address> getKnownAliases(TcpServerConnection connection) {
-        Plane plane = planes[connection.getPlaneIndex()];
-        return plane.getAddresses(connection);
-    }
-
     @Override
     public ServerConnection getOrConnect(Address address, int streamId) {
         return getOrConnect(address, false, streamId);
@@ -128,7 +123,7 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
         if (connection == null && server.isLive()) {
             if (plane.addConnectionInProgress(address)) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet in progress");
+                    logger.fine("Connection to: " + address + " streamId:" + streamId + " is not yet progress");
                 }
                 connector.asyncConnect(address, silent, plane.index);
             } else {

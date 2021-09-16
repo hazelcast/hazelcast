@@ -217,7 +217,6 @@ public class MemberHandshakeHandlerTest {
 
         Packet packet = new Packet(serializationService.toBytes(handshake));
         TcpServerConnection connection = new TcpServerConnection(connectionManager, mock(ConnectionLifecycleListener.class), 1, channel);
-        connection.setRemoteAddress(new Address(CLIENT_SOCKET_ADDRESS));
         if (connectionType != null) {
             connection.setConnectionType(connectionType);
         }

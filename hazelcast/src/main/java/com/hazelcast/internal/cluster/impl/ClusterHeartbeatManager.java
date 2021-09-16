@@ -61,7 +61,6 @@ import static com.hazelcast.internal.metrics.ProbeUnit.MS;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
 import static java.lang.String.format;
-import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -346,8 +345,8 @@ public class ClusterHeartbeatManager {
                 if (membershipManager.validateMembersViewMetadata(receiverMVMetadata)) {
                     logger.fine("Sending latest member list to " + senderMVMetadata.getMemberAddress()
                             + " and " + receiverMVMetadata.getMemberAddress() + " after heartbeat complaint.");
-                    membershipManager.sendMemberListToMember(singletonList(senderMVMetadata.getMemberAddress()));
-                    membershipManager.sendMemberListToMember(singletonList(receiverMVMetadata.getMemberAddress()));
+                    membershipManager.sendMemberListToMember(senderMVMetadata.getMemberAddress());
+                    membershipManager.sendMemberListToMember(receiverMVMetadata.getMemberAddress());
                 } else {
                     logger.fine("Complainer " + receiverMVMetadata.getMemberAddress() + " will explicitly suspect from "
                             + node.getThisAddress() + " and " + senderMVMetadata.getMemberAddress());

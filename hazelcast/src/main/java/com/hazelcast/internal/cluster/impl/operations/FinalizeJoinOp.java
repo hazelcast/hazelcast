@@ -39,7 +39,6 @@ import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.internal.cluster.Versions.V5_0;
@@ -87,8 +86,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware, Vers
     @Override
     public void run() throws Exception {
         ClusterServiceImpl clusterService = getService();
-        List<Address> callerAddresses = getAllKnownAliases(getConnectionEndpointOrThisAddress());
-
+        Address callerAddress = getConnectionEndpointOrThisAddress();
         UUID callerUuid = getCallerUuid();
         UUID targetUuid = getTargetUuid();
 
@@ -101,8 +99,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware, Vers
             // notify hot restart before setting initial cluster state
             hrService.setRejoiningActiveCluster(deferPartitionProcessing);
         }
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddresses, callerUuid, targetUuid, clusterId,
-                clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
+                clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
             return;

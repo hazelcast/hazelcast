@@ -16,18 +16,17 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.auditlog.AuditlogTypeIds;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.auditlog.AuditlogTypeIds;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.List;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SPLIT_BRAIN_HANDLER_EXECUTOR_NAME;
 
@@ -44,16 +43,16 @@ public class MergeClustersOp extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        final List<Address> callerAliases = getAllKnownAliases(getCallerAddress());
+        final Address caller = getCallerAddress();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
         final ClusterServiceImpl clusterService = node.getClusterService();
         final Address masterAddress = clusterService.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
 
-        boolean local = callerAliases.isEmpty();
-        if (!local && callerAliases.stream().noneMatch(masterAddress::equals)) {
-            logger.warning("Ignoring merge instruction sent from non-master endpoint: " + callerAliases.get(0));
+        boolean local = caller == null;
+        if (!local && !caller.equals(masterAddress)) {
+            logger.warning("Ignoring merge instruction sent from non-master endpoint: " + caller);
             return;
         }
 

@@ -24,8 +24,6 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 
-import java.util.List;
-
 public class ShutdownResponseOperation extends AbstractPartitionOperation implements MigrationCycleOperation {
 
     public ShutdownResponseOperation() {
@@ -35,21 +33,21 @@ public class ShutdownResponseOperation extends AbstractPartitionOperation implem
     public void run() {
         InternalPartitionServiceImpl partitionService = getService();
         ILogger logger = getLogger();
-        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
+        Address caller = getCallerAddress();
 
         NodeEngine nodeEngine = getNodeEngine();
         if (nodeEngine.isRunning()) {
-            logger.severe("Received a shutdown response from " + getCallerAddress() + ", but this node is not shutting down!");
+            logger.severe("Received a shutdown response from " + caller + ", but this node is not shutting down!");
             return;
         }
 
-        if (partitionService.isMemberMaster(callerAddresses)) {
+        if (partitionService.isMemberMaster(caller)) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Received shutdown response from " + getCallerAddress());
+                logger.finest("Received shutdown response from " + caller);
             }
             partitionService.onShutdownResponse();
         } else {
-            logger.warning("Received shutdown response from " + getCallerAddress() + " but it's not the known master");
+            logger.warning("Received shutdown response from " + caller + " but it's not the known master");
         }
     }
 

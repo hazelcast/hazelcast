@@ -386,7 +386,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         resetPacketFiltersFrom(hz1);
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(hz1);
-        clusterService.getMembershipManager().sendMemberListToMember(singletonList(getAddress(hz2)));
+        clusterService.getMembershipManager().sendMemberListToMember(getAddress(hz2));
 
         assertClusterSizeEventually(3, hz2);
 
