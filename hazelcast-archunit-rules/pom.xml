@@ -32,7 +32,6 @@
     <properties>
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
     </properties>
 
     <dependencies>

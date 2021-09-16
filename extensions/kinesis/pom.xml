@@ -32,10 +32,6 @@
         <version>5.0-SNAPSHOT</version>
     </parent>
 
-    <properties>
-        <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
-    </properties>
-
     <build>
         <plugins>
             <plugin>
