@@ -1728,6 +1728,22 @@ public final class ClusterProperty {
     public static final HazelcastProperty PROCESSOR_CUSTOM_LIB_DIR
             = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
 
+    /**
+     * Controls whether cluster emojis can be used in log messages. This is just a hint for components calling the logging.
+     *
+     * @since 5.0
+     */
+    public static final HazelcastProperty LOG_EMOJI_ENABLED = new HazelcastProperty("hazelcast.logging.emoji.enabled", true);
+
+    /**
+     * When set to any not-{@code null} value, security recommendations are logged on INFO level during the node start. The
+     * default value is {@code null}.
+     *
+     * @since 5.0
+     */
+    public static final HazelcastProperty SECURITY_RECOMMENDATIONS = new HazelcastProperty(
+            "hazelcast.security.recommendations");
+
     private ClusterProperty() {
     }
 }
