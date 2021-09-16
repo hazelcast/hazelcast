@@ -526,13 +526,13 @@ public class Config {
      * @param name  property name
      * @param value value of the property
      * @return this config instance
+     * @throws IllegalArgumentException if either {@code name} or {@code value} is {@code null}
      * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
      * Hazelcast System Properties</a>
      */
-    public Config setProperty(String name, String value) {
-        if (isNullOrEmptyAfterTrim(name) || isNullOrEmptyAfterTrim(value)) {
-            throw new IllegalArgumentException("Name and value must be not null.");
-        }
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
+        isNotNull(name, "name");
+        isNotNull(name, "value");
         properties.put(name, value);
         return this;
     }
