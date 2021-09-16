@@ -1761,8 +1761,7 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.jet.custom.lib.dir", "custom-lib");
 
     /**
-     * Controls whether cluster emojis can be used in log messages. This is a hint flag, implementation details on services
-     * calling the logging. The default value is {@code true}.
+     * Controls whether cluster emojis can be used in log messages. This is just a hint for components calling the logging.
      *
      * @since 5.0
      */
