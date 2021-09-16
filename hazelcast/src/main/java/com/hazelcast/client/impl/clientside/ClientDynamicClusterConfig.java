@@ -83,6 +83,7 @@ import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ServicesConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -134,6 +135,9 @@ public class ClientDynamicClusterConfig extends Config {
         Data partitioningStrategy = mapConfig.getPartitioningStrategyConfig() == null
                 ? null : serializationService.toData(mapConfig.getPartitioningStrategyConfig().getPartitioningStrategy());
 
+        DataPersistenceAndHotRestartMerger
+                .merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
+
         ClientMessage request = DynamicConfigAddMapConfigCodec.encodeRequest(mapConfig.getName(),
                 mapConfig.getBackupCount(), mapConfig.getAsyncBackupCount(), mapConfig.getTimeToLiveSeconds(),
                 mapConfig.getMaxIdleSeconds(), EvictionConfigHolder.of(mapConfig.getEvictionConfig(), serializationService),
@@ -155,6 +159,9 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
         List<ListenerConfigHolder> partitionLostListenerConfigs =
                 adaptListenerConfigs(cacheConfig.getPartitionLostListenerConfigs());
+
+        DataPersistenceAndHotRestartMerger
+                .merge(cacheConfig.getHotRestartConfig(), cacheConfig.getDataPersistenceConfig());
 
         ClientMessage request = DynamicConfigAddCacheConfigCodec.encodeRequest(cacheConfig.getName(), cacheConfig.getKeyType(),
                 cacheConfig.getValueType(), cacheConfig.isStatisticsEnabled(), cacheConfig.isManagementEnabled(),

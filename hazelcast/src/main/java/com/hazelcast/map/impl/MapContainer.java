@@ -77,6 +77,7 @@ import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.ge
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static com.hazelcast.spi.properties.ClusterProperty.MAP_EVICTION_BATCH_SIZE;
+import static java.lang.Boolean.TRUE;
 import static java.lang.System.getProperty;
 
 /**
@@ -270,7 +271,7 @@ public class MapContainer {
         String wanReplicationRefName = wanReplicationRef.getName();
 
         Config config = nodeEngine.getConfig();
-        if (!mapConfig.getMerkleTreeConfig().isEnabled()
+        if (!TRUE.equals(mapConfig.getMerkleTreeConfig().getEnabled())
                 && hasPublisherWithMerkleTreeSync(config, wanReplicationRefName)) {
             throw new InvalidConfigurationException(
                     "Map " + name + " has disabled merkle trees but the WAN replication scheme "

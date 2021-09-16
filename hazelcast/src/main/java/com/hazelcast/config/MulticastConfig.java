@@ -254,7 +254,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
     /**
      * Returns if explicit loopback mode configuration was requested (by {@link #setLoopbackModeEnabled(Boolean)}).
      *
-     * @return {@code TRUE} if the the loopback mode should be enabled, {@code FALSE} disabled, {@code null} when
+     * @return {@code TRUE} if the loopback mode should be enabled, {@code FALSE} disabled, {@code null} when
      * it's left up to platform to decide.
      */
     public Boolean getLoopbackModeEnabled() {
