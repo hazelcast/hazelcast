@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.properties.ClusterProperty.BIND_SPOOFING_CHECKS;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 
 /**
@@ -44,6 +45,7 @@ public final class TcpServerControl {
     private final TcpServerConnectionManager connectionManager;
     private final ServerContext serverContext;
     private final ILogger logger;
+    private final boolean spoofingChecks;
     private final boolean unifiedEndpointManager;
     private final Set<ProtocolType> supportedProtocolTypes;
     private final int expectedPlaneCount;
@@ -55,6 +57,7 @@ public final class TcpServerControl {
         this.connectionManager = connectionManager;
         this.serverContext = serverContext;
         this.logger = logger;
+        this.spoofingChecks = serverContext.properties().getBoolean(BIND_SPOOFING_CHECKS);
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
         this.expectedPlaneCount = serverContext.properties().getInteger(CHANNEL_COUNT);
@@ -136,7 +139,7 @@ public final class TcpServerControl {
      * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
      *                             will be registered. These are the public addresses configured on the remote.
      */
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
     private synchronized void process0(TcpServerConnection connection,
                                        Address remoteEndpoint,
@@ -152,20 +155,13 @@ public final class TcpServerControl {
         }
         if (remoteEndpoint == null) {
             if (remoteAddressAliases == null) {
-                // let it fail if no remoteEndpoint and no aliases are defined
                 throw new IllegalStateException("Remote endpoint and remote address aliases cannot be both null");
             } else {
+                // let it fail if no remoteEndpoint and no aliases are defined
                 remoteEndpoint = remoteAddressAliases.iterator().next();
             }
         }
         connection.setRemoteAddress(remoteEndpoint);
-        Address thisAddress = serverContext.getThisAddress();
-        if (thisAddress.equals(remoteEndpoint) || isAddressAlias(thisAddress, remoteAddressAliases)) {
-            String msg = "New join request has been received from " + remoteEndpoint + " which is address of this node!";
-            connection.close(msg, null);
-            throw new IllegalStateException(msg);
-        }
-
         serverContext.onSuccessfulConnection(remoteEndpoint);
         if (handshake.isReply()) {
             new SendMemberHandshakeTask(logger, serverContext, connection, remoteEndpoint, false,
@@ -191,13 +187,6 @@ public final class TcpServerControl {
                 connectionManager.planes[handshake.getPlaneIndex()].putConnectionIfAbsent(remoteAddressAlias, connection);
             }
         }
-    }
-
-    private boolean isAddressAlias(Address thisAddress, Collection<Address> remoteAddressAliases) {
-        if (remoteAddressAliases == null) {
-            return false;
-        }
-        return remoteAddressAliases.stream().anyMatch(a -> a.equals(thisAddress));
     }
 
     private boolean checkAlreadyConnected(TcpServerConnection connection, Address remoteEndPoint, int planeIndex) {

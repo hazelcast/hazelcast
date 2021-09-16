@@ -368,24 +368,4 @@ public class TcpServerConnectionManager extends TcpServerConnectionManagerBase
             context.collect(rootDescriptor.copy(), TCP_METRIC_TEXT_COUNT, MANDATORY, COUNT, textCount);
         }
     }
-
-    @Override
-    public boolean doAddressesMatch(Address expandAndCheckAddress, Address expectedAdddress) {
-        if (expandAndCheckAddress == null || expectedAdddress == null) {
-            return false;
-        }
-        TcpServerConnection connection = null;
-        for (Plane plane : planes) {
-            connection = plane.getConnection(expandAndCheckAddress);
-            if (connection != null) {
-                break;
-            }
-        }
-        if (connection == null) {
-            return super.doAddressesMatch(expandAndCheckAddress, expectedAdddress);
-        }
-        Set<Address> expandedAddresses = getKnownAliases(connection);
-        return expandedAddresses.stream().anyMatch(a -> a.equals(expectedAdddress));
-    }
-
 }
