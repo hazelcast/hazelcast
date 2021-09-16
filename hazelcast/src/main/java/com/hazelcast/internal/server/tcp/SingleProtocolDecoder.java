@@ -107,11 +107,11 @@ public class SingleProtocolDecoder
                 // Set up the next encoder in the pipeline if in server mode
                 // This replaces SignalProtocolEncoder with next one in the pipeline
                 encoder.setupNextEncoder();
+            }
 
-                // Signal the member protocol encoder only if it's needed
-                if (shouldSignalMemberProtocolEncoder) {
-                    ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalProtocolLoaded();
-                }
+            // Signal the member protocol encoder only if it's needed
+            if (shouldSignalMemberProtocolEncoder) {
+                ((MemberProtocolEncoder) encoder.getFirstOutboundHandler()).signalEncoderCanReplace();
             }
 
             return CLEAN;
