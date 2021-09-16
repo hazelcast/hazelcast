@@ -144,6 +144,8 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T> {
 
+        private static final long serialVersionUID = 1L;
+
         private static final ILogger LOGGER = Logger.getLogger(MetaSupplier.class);
 
         private final int localParallelism;

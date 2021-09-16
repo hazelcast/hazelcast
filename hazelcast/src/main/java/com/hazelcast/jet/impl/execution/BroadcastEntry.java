@@ -26,6 +26,9 @@ import java.util.Map.Entry;
  * @param <V> type of value
  */
 public final class BroadcastEntry<K, V> extends SimpleImmutableEntry<K, V> implements BroadcastItem {
+
+    private static final long serialVersionUID = 1L;
+
     public BroadcastEntry(K key, V value) {
         super(key, value);
     }

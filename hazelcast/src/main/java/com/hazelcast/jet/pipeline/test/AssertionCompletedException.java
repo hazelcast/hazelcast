@@ -29,6 +29,8 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 @EvolvingApi
 public final class AssertionCompletedException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Creates the exception
      */
