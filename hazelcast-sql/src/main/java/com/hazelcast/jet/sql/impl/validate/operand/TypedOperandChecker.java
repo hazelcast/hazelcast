@@ -47,7 +47,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     public static final TypedOperandChecker TIMESTAMP_WITH_LOCAL_TIME_ZONE =
             new TypedOperandChecker(SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_ZONE);
     public static final TypedOperandChecker SYMBOL = new TypedOperandChecker(SqlTypeName.SYMBOL);
-    public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE_NULLABLE);
+    public static final TypedOperandChecker JSON = new TypedOperandChecker(HazelcastJsonType.TYPE);
 
     private final SqlTypeName targetTypeName;
     private final RelDataType type;
@@ -71,7 +71,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     @Override
     protected boolean matchesTargetType(RelDataType operandType) {
         if (type != null) {
-            return type.equals(operandType);
+            return type.getFamily().equals(operandType.getFamily());
         } else {
             return operandType.getSqlTypeName() == targetTypeName;
         }
@@ -95,7 +95,7 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
             int operandIndex
     ) {
         QueryDataType targetType0 = getTargetHazelcastType();
-        QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType.getSqlTypeName());
+        QueryDataType operandType0 = HazelcastTypeUtils.toHazelcastType(operandType);
 
         // Coerce only numeric or temporal types.
         boolean canCoerce = isTemporalType(operandType) && isTemporalType(targetTypeName)
@@ -135,6 +135,8 @@ public final class TypedOperandChecker extends AbstractOperandChecker {
     }
 
     private QueryDataType getTargetHazelcastType() {
-        return HazelcastTypeUtils.toHazelcastType(targetTypeName);
+        return type != null
+                ? HazelcastTypeUtils.toHazelcastType(type)
+                : HazelcastTypeUtils.toHazelcastType(targetTypeName);
     }
 }
