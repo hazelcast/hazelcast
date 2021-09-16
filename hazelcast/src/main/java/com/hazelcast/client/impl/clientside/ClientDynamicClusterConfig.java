@@ -390,7 +390,7 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
-    public Config setProperty(String name, String value) {
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

@@ -160,7 +160,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Config setProperty(String name, String value) {
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
         return staticConfig.setProperty(name, value);
     }
 
