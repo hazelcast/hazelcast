@@ -95,7 +95,7 @@ public final class FieldTypeToFieldKind {
                 return FieldKind.TIMESTAMP_WITH_TIMEZONE_ARRAY;
             default:
                 //This statement will never be called.
-                throw new IllegalStateException("There is no corresponding field id for given field type : " + fieldType);
+                throw new IllegalStateException("There is no corresponding field kind for given field type : " + fieldType);
         }
     }
 }

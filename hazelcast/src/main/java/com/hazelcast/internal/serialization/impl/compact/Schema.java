@@ -65,7 +65,7 @@ public class Schema implements IdentifiedDataSerializable {
             if (fieldOperations(fieldKind).kindSizeInBytes() == VARIABLE_SIZE) {
                 variableSizeFields.add(descriptor);
             } else {
-                if (FieldKind.BOOLEAN.equals(fieldKind)) {
+                if (FieldKind.BOOLEAN == fieldKind) {
                     booleanFields.add(descriptor);
                 } else {
                     fixedSizeFields.add(descriptor);

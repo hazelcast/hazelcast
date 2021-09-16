@@ -883,12 +883,12 @@ public final class FieldOperations {
         stringBuilder.append("]");
     }
 
-    public static boolean isArrayType(FieldKind fieldKind) {
+    public static boolean isArrayKind(FieldKind fieldKind) {
         return fieldKind.getId() % 2 != 0;
     }
 
-    public static FieldKind getSingleType(FieldKind fieldKind) {
-        assert isArrayType(fieldKind);
+    public static FieldKind getSingleKind(FieldKind fieldKind) {
+        assert isArrayKind(fieldKind);
         return FieldKind.values()[fieldKind.getId() - 1];
     }
 }

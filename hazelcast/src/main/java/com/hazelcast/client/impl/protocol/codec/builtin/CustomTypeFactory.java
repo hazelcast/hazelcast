@@ -224,8 +224,8 @@ public final class CustomTypeFactory {
         return new SqlColumnMetadata(name, sqlColumnType, true);
     }
 
-    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int type) {
-        FieldKind fieldKind = FieldKind.get(type);
+    public static FieldDescriptor createFieldDescriptor(@Nonnull String fieldName, int id) {
+        FieldKind fieldKind = FieldKind.get(id);
         return new FieldDescriptor(fieldName, fieldKind);
     }
 

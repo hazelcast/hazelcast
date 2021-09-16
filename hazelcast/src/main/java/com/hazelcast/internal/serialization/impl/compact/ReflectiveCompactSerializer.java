@@ -175,7 +175,7 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
     private boolean fieldExists(Schema schema, String name, FieldKind fieldKind) {
         FieldDescriptor fieldDescriptor = schema.getField(name);
-        return fieldDescriptor != null && fieldDescriptor.getKind().equals(fieldKind);
+        return fieldDescriptor != null && fieldDescriptor.getKind() == fieldKind;
     }
 
     private void createFastReadWriteCaches(Class clazz) throws IOException {

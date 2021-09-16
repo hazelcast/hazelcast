@@ -593,7 +593,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
         int currentPos = in.position();
         try {
-            FieldKind singleKind = FieldOperations.getSingleType(fieldKind);
+            FieldKind singleKind = FieldOperations.getSingleKind(fieldKind);
             int kindSize = FieldOperations.fieldOperations(singleKind).kindSizeInBytes();
             in.position(INT_SIZE_IN_BYTES + position + index * kindSize);
             return reader.read(in);

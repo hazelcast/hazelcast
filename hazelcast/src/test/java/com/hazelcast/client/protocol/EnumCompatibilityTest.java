@@ -167,7 +167,7 @@ public class EnumCompatibilityTest {
         mappings.put(FieldKind.COMPACT_ARRAY, 29);
         mappings.put(FieldKind.PORTABLE, 30);
         mappings.put(FieldKind.PORTABLE_ARRAY, 31);
-        verifyCompatibility(FieldKind.values(), (Enum::ordinal), mappings);
+        verifyCompatibility(FieldKind.values(), FieldKind::getId, mappings);
     }
 
     @Test

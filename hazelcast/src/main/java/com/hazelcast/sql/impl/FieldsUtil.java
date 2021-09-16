@@ -180,8 +180,8 @@ public final class FieldsUtil {
 
         // Add regular fields.
         for (String name : schema.getFieldNames()) {
-            FieldKind compactType = schema.getField(name).getKind();
-            QueryDataType type = resolveType(compactType);
+            FieldKind compactKind = schema.getField(name).getKind();
+            QueryDataType type = resolveType(compactKind);
             fields.putIfAbsent(name, type);
         }
 

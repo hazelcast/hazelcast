@@ -51,10 +51,10 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         for (String fieldName : thatFieldNames) {
             FieldKind thatKind = that.getFieldKind(fieldName);
             FieldKind thisKind = getFieldKind(fieldName);
-            if (!thatKind.equals(thisKind)) {
+            if (thatKind != thisKind) {
                 return false;
             }
-            if (FieldOperations.isArrayType(thatKind)) {
+            if (FieldOperations.isArrayKind(thatKind)) {
                 if (!Objects.deepEquals(readAny(fieldName), that.readAny(fieldName))) {
                     return false;
                 }
@@ -78,8 +78,8 @@ public abstract class AbstractGenericRecord implements GenericRecord {
     }
 
     public final <T> T readAny(@Nonnull String fieldName) {
-        FieldKind type = getFieldKind(fieldName);
-        return (T) fieldOperations(type).readGenericRecordOrPrimitive(this, fieldName);
+        FieldKind kind = getFieldKind(fieldName);
+        return (T) fieldOperations(kind).readGenericRecordOrPrimitive(this, fieldName);
     }
 
     /**
@@ -96,8 +96,8 @@ public abstract class AbstractGenericRecord implements GenericRecord {
             i++;
             JsonEscape.writeEscaped(stringBuilder, fieldName);
             stringBuilder.append(": ");
-            FieldKind fieldType = getFieldKind(fieldName);
-            fieldOperations(fieldType).writeJsonFormattedField(stringBuilder, this, fieldName);
+            FieldKind fieldKind = getFieldKind(fieldName);
+            fieldOperations(fieldKind).writeJsonFormattedField(stringBuilder, this, fieldName);
             if (size != i) {
                 stringBuilder.append(", ");
             }
