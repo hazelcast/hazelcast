@@ -532,7 +532,7 @@ public class Config {
      */
     public Config setProperty(@Nonnull String name, @Nonnull String value) {
         isNotNull(name, "name");
-        isNotNull(name, "value");
+        isNotNull(value, "value");
         properties.put(name, value);
         return this;
     }
