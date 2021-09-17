@@ -52,6 +52,7 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -137,7 +138,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             storesByMapName.put(mapName, recordStore);
             statsByMapName.put(mapName,
                     mapContainer.getMapServiceContext().getLocalMapStatsProvider()
-                                .getLocalMapStatsImpl(mapName).getReplicationStats());
+                            .getLocalMapStatsImpl(mapName).getReplicationStats());
 
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
@@ -387,8 +388,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         recordStore.forEach((dataKey, record) -> {
             try {
                 IOUtil.writeData(out, dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()),
-                        recordStore.getExpirySystem().getExpiredMetadata(dataKey));
+                ExpiryMetadata expiryMetadata = recordStore.getExpirySystem()
+                        .getExpiredMetadata(dataKey);
+                Records.writeRecord(out, record, ss.toData(record.getValue()), expiryMetadata);
+                // RU_COMPAT_4_2
+                Version version = out.getVersion();
+                if (version.isGreaterOrEqual(Versions.V5_0)) {
+                    Records.writeExpiry(out, expiryMetadata);
+                }
             } catch (IOException e) {
                 throw ExceptionUtil.rethrow(e);
             }
@@ -398,7 +405,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     protected static SerializationService getSerializationService(MapContainer mapContainer) {
         return mapContainer.getMapServiceContext()
-                           .getNodeEngine().getSerializationService();
+                .getNodeEngine().getSerializationService();
     }
 
     @Override
@@ -445,9 +452,19 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         int numOfRecords = in.readInt();
         List keyRecord = new ArrayList<>(numOfRecords * 3);
         for (int j = 0; j < numOfRecords; j++) {
+            // RU_COMPAT_4_2
+            Version version = in.getVersion();
+            boolean isV5 = version.isGreaterOrEqual(Versions.V5_0);
+
             Data dataKey = IOUtil.readData(in);
-            ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
+            ExpiryMetadata expiryMetadata = null;
+            if (!isV5) {
+                expiryMetadata = new ExpiryMetadataImpl();
+            }
             Record record = Records.readRecord(in, expiryMetadata);
+            if (isV5) {
+                expiryMetadata = Records.readExpiry(in);
+            }
 
             keyRecord.add(dataKey);
             keyRecord.add(record);
@@ -492,6 +509,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     private interface ReplicatedRecordProcessor {
         void processRecord(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
-              boolean indexesMustBePopulated, long now);
+                           boolean indexesMustBePopulated, long now);
     }
 }

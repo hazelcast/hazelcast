@@ -34,6 +34,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -638,6 +639,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
+    @Beta
     public JobConfig addCustomClasspath(@Nonnull String name, @Nonnull String path) {
         List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
         classpathItems.add(path);
@@ -660,6 +662,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      * @return {@code this} instance for fluent API
      */
     @Nonnull
+    @Beta
     public JobConfig addCustomClasspaths(@Nonnull String name, @Nonnull List<String> paths) {
         List<String> classpathItems = customClassPaths.computeIfAbsent(name, (k) -> new ArrayList<>());
         classpathItems.addAll(paths);

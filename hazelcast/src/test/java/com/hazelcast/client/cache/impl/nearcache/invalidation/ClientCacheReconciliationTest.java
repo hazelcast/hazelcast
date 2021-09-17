@@ -57,7 +57,10 @@ import static java.lang.Integer.MAX_VALUE;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientCacheReconciliationTest extends HazelcastTestSupport {
 
-    private static final String CACHE_NAME = "ClientCacheReconciliationTest";
+    private static final String CACHE_1_NAME = "1_ClientCacheReconciliationTest-1";
+    private static final String CACHE_2_NAME = "2_ClientCacheReconciliationTest-2";
+    private static final String CACHE_3_NAME = "3_ClientCacheReconciliationTest-3";
+
     private static final int RECONCILIATION_INTERVAL_SECS = 3;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -65,8 +68,14 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
     private CacheConfig<Integer, Integer> cacheConfig;
     private ClientConfig clientConfig;
 
-    private Cache<Integer, Integer> serverCache;
-    private Cache<Integer, Integer> clientCache;
+    // servers
+    private Cache<Integer, Integer> serverCache1;
+    private Cache<Integer, Integer> serverCache2;
+    private Cache<Integer, Integer> serverCache3;
+    // clients
+    private Cache<Integer, Integer> clientCache1;
+    private Cache<Integer, Integer> clientCache2;
+    private Cache<Integer, Integer> clientCache3;
 
     @Before
     public void setUp() {
@@ -77,7 +86,7 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
         cacheConfig = new CacheConfig<Integer, Integer>()
                 .setEvictionConfig(evictionConfig);
 
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(CACHE_NAME)
+        NearCacheConfig nearCacheConfig = new NearCacheConfig("*")
                 .setInvalidateOnChange(true);
 
         clientConfig = new ClientConfig()
@@ -95,9 +104,9 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
         CachingProvider provider = createServerCachingProvider(server);
         CacheManager serverCacheManager = provider.getCacheManager();
 
-        serverCache = serverCacheManager.createCache(CACHE_NAME, cacheConfig);
-
-        clientCache = createCacheFromNewClient();
+        serverCache1 = serverCacheManager.createCache(CACHE_1_NAME, cacheConfig);
+        serverCache2 = serverCacheManager.createCache(CACHE_2_NAME, cacheConfig);
+        serverCache3 = serverCacheManager.createCache(CACHE_3_NAME, cacheConfig);
     }
 
     @After
@@ -109,36 +118,82 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
     public void test_reconciliation_does_not_cause_premature_removal() {
         int total = 100;
         for (int i = 0; i < total; i++) {
-            serverCache.put(i, i);
+            serverCache1.put(i, i);
         }
+
+        clientCache1 = createCacheFromNewClient(CACHE_1_NAME);
 
         for (int i = 0; i < total; i++) {
-            clientCache.get(i);
+            clientCache1.get(i);
         }
 
-        Cache<Integer, Integer> cacheFromNewClient = createCacheFromNewClient();
-        for (int i = 0; i < total; i++) {
-            cacheFromNewClient.get(i);
-        }
-
-        NearCacheStats nearCacheStats = ((ICache) cacheFromNewClient).getLocalCacheStatistics().getNearCacheStatistics();
-        assertStats(nearCacheStats, total, 0, total);
+        NearCacheStats nearCacheStats = getNearCacheStatisticsOf(clientCache1);
+        assertStats(CACHE_1_NAME, nearCacheStats, total, 0, total);
 
         sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
 
         for (int i = 0; i < total; i++) {
-            cacheFromNewClient.get(i);
+            clientCache1.get(i);
         }
 
-        assertStats(nearCacheStats, total, total, total);
+        assertStats(CACHE_1_NAME, nearCacheStats, total, total, total);
     }
 
-    private Cache<Integer, Integer> createCacheFromNewClient() {
+    private static NearCacheStats getNearCacheStatisticsOf(Cache cache) {
+        return ((ICache) cache).getLocalCacheStatistics().getNearCacheStatistics();
+    }
+
+    @Test
+    public void test_reconciliation_does_not_cause_premature_removal_on_other_caches_after_cache_clear() {
+        int total = 91;
+        for (int i = 0; i < total; i++) {
+            serverCache1.put(i, i);
+            serverCache2.put(i, i);
+            serverCache3.put(i, i);
+        }
+
+        clientCache1 = createCacheFromNewClient(CACHE_1_NAME);
+        clientCache2 = createCacheFromNewClient(CACHE_2_NAME);
+        clientCache3 = createCacheFromNewClient(CACHE_3_NAME);
+
+        for (int i = 0; i < total; i++) {
+            clientCache1.get(i);
+            clientCache2.get(i);
+            clientCache3.get(i);
+        }
+
+        assertStats(CACHE_1_NAME, getNearCacheStatisticsOf(clientCache1), total, 0, total);
+        assertStats(CACHE_2_NAME, getNearCacheStatisticsOf(clientCache2), total, 0, total);
+        assertStats(CACHE_3_NAME, getNearCacheStatisticsOf(clientCache3), total, 0, total);
+
+        // Call map.clear on 1st map
+        clientCache1.clear();
+
+        // Sleep a little, hence we can see effect of reconciliation-task.
+        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
+
+        // Do subsequent gets on maps.
+        // Except for 1st map, other maps should
+        // return responses from their near-cache.
+        for (int i = 0; i < total; i++) {
+            clientCache1.get(i);
+            clientCache2.get(i);
+            clientCache3.get(i);
+        }
+
+        // clientCache1 doesn't cache null values so, at
+        // here, it's near cache should be empty for clientCache1.
+        assertStats(CACHE_1_NAME, getNearCacheStatisticsOf(clientCache1), 0, 0, 2 * total);
+        assertStats(CACHE_2_NAME, getNearCacheStatisticsOf(clientCache2), total, total, total);
+        assertStats(CACHE_3_NAME, getNearCacheStatisticsOf(clientCache3), total, total, total);
+    }
+
+    private Cache<Integer, Integer> createCacheFromNewClient(String cacheName) {
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
         CachingProvider clientCachingProvider = createClientCachingProvider(client);
 
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
-        Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
+        Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         assertInstanceOf(NearCachedClientCacheProxy.class, cache);
 

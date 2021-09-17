@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import java.io.File;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
@@ -61,6 +62,10 @@ public class PersistenceConfig {
      * single GC thread.
      */
     public static final int DEFAULT_PARALLELISM = 1;
+    /**
+     *
+     */
+    public static final int DEFAULT_REBALANCE_DELAY = 0;
 
     private boolean enabled;
     private File baseDir = new File(PERSISTENCE_BASE_DIR_DEFAULT);
@@ -72,6 +77,7 @@ public class PersistenceConfig {
             = PersistenceClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
     private boolean autoRemoveStaleData = true;
     private EncryptionAtRestConfig encryptionAtRestConfig = new EncryptionAtRestConfig();
+    private int rebalanceDelaySeconds = DEFAULT_REBALANCE_DELAY;
 
     /**
      * Returns whether persistence enabled on this member.
@@ -259,6 +265,51 @@ public class PersistenceConfig {
         return encryptionAtRestConfig;
     }
 
+    /**
+     * Get the configured rebalance delay in seconds.
+     *
+     * @return  the configured rebalance delay in seconds.
+     * @see     #setRebalanceDelaySeconds(int)
+     * @since   5.0
+     */
+    public int getRebalanceDelaySeconds() {
+        return rebalanceDelaySeconds;
+    }
+
+    /**
+     * Set the rebalance delay in seconds. This is the time
+     * to wait before triggering automatic partition rebalancing
+     * after a member leaves the cluster unexpectedly. Unexpectedly in this context
+     * means that a member leaves the cluster by means other than graceful shutdown:
+     * programmatic termination (eg {@code LifecycleService.terminate()}), a
+     * process crash or network partition.
+     * Default is 0, which means rebalancing is triggered immediately.
+     * Setting this to a higher value will allow some time for members that are gone
+     * to rejoin the cluster. The benefit is that partition rebalancing in this
+     * case will be avoided, saving the burden of migrating partition data over
+     * the network.
+     * Do not use this option if your cluster also stores in-memory data. This option
+     * stops the cluster from migrating in-memory data. As a result any data that is
+     * not persisted will be lost if the member restarts within the configured delay,
+     * including backups.
+     * While members are gone, operations on partitions for which the owner is missing
+     * may fail immediately or will be retried until the member rejoins or operation
+     * timeout is exceeded.
+     * Notice that this delay only applies when cluster members leave the cluster;
+     * when the cluster is being scaled up and members are being added, partition
+     * rebalancing will be triggered immediately (subject to limitations imposed
+     * by the current cluster state).
+     *
+     * @param rebalanceDelaySeconds the desired non-negative rebalance delay in seconds.
+     * @return  PersistenceConfig
+     * @since   5.0
+     */
+    public PersistenceConfig setRebalanceDelaySeconds(int rebalanceDelaySeconds) {
+        checkNotNegative(rebalanceDelaySeconds, "Rebalance delay cannot be negative.");
+        this.rebalanceDelaySeconds = rebalanceDelaySeconds;
+        return this;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:npathcomplexity")
     public final boolean equals(Object o) {
@@ -280,6 +331,9 @@ public class PersistenceConfig {
             return false;
         }
         if (dataLoadTimeoutSeconds != that.dataLoadTimeoutSeconds) {
+            return false;
+        }
+        if (rebalanceDelaySeconds != that.rebalanceDelaySeconds) {
             return false;
         }
         if (autoRemoveStaleData != that.autoRemoveStaleData) {
@@ -306,6 +360,7 @@ public class PersistenceConfig {
         result = 31 * result + parallelism;
         result = 31 * result + validationTimeoutSeconds;
         result = 31 * result + dataLoadTimeoutSeconds;
+        result = 31 * result + rebalanceDelaySeconds;
         result = 31 * result + (clusterDataRecoveryPolicy != null ? clusterDataRecoveryPolicy.hashCode() : 0);
         result = 31 * result + (autoRemoveStaleData ? 1 : 0);
         return result;
@@ -320,6 +375,7 @@ public class PersistenceConfig {
                 + ", parallelism=" + parallelism
                 + ", validationTimeoutSeconds=" + validationTimeoutSeconds
                 + ", dataLoadTimeoutSeconds=" + dataLoadTimeoutSeconds
+                + ", rebalanceDelaySeconds=" + dataLoadTimeoutSeconds
                 + ", clusterDataRecoveryPolicy=" + clusterDataRecoveryPolicy
                 + ", autoRemoveStaleData=" + autoRemoveStaleData
                 + ", encryptionAtRestConfig=" + encryptionAtRestConfig

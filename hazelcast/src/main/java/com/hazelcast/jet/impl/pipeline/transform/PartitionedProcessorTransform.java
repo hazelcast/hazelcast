@@ -23,9 +23,9 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.pipeline.ServiceFactory;
 
 import javax.annotation.Nonnull;
@@ -36,6 +36,8 @@ import static com.hazelcast.jet.core.processor.Processors.filterUsingServiceP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapUsingServiceP;
 
 public final class PartitionedProcessorTransform<T, K> extends ProcessorTransform {
+
+    private static final long serialVersionUID = 1L;
 
     private final FunctionEx<? super T, ? extends K> partitionKeyFn;
 

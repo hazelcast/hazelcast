@@ -530,6 +530,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    @Override
     public void checkInvocationAllowed() throws IOException {
         ClientState state = this.clientState;
         if (state == ClientState.INITIALIZED_ON_CLUSTER && activeConnections.size() > 0) {

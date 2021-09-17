@@ -159,9 +159,21 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public SqlResult execute(@Nonnull SqlStatement statement, SqlSecurityContext securityContext, QueryId queryId) {
+        return execute(statement, securityContext, queryId, false);
+    }
+
+    public SqlResult execute(
+            @Nonnull SqlStatement statement,
+            SqlSecurityContext securityContext,
+            QueryId queryId,
+            boolean skipStats
+    ) {
         Preconditions.checkNotNull(statement, "Query cannot be null");
 
-        sqlQueriesSubmitted.inc();
+        if (!skipStats) {
+            sqlQueriesSubmitted.inc();
+        }
+
         try {
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V5_0)) {
                 throw QueryException.error("SQL queries cannot be executed until the cluster fully updates to 5.0");
@@ -284,6 +296,10 @@ public class SqlServiceImpl implements SqlService {
         }
 
         return QueryUtils.prepareSearchPaths(currentSearchPaths, optimizer.tableResolvers());
+    }
+
+    public String mappingDdl(String name) {
+        return optimizer.mappingDdl(name);
     }
 
     /**

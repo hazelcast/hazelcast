@@ -338,6 +338,9 @@ public abstract class XaSinkProcessorBase implements Processor {
     }
 
     private static final class BetterXAException extends XAException {
+
+        private static final long serialVersionUID = 1L;
+
         private BetterXAException(String message, int errorCode, Throwable cause) {
             super(message);
             initCause(cause);

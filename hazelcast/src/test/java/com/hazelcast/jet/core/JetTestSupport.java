@@ -24,10 +24,13 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionService;
 import com.hazelcast.jet.impl.JobRepository;
@@ -52,7 +55,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +67,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -87,10 +96,53 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     @After
     public void shutdownFactory() throws Exception {
         if (instanceFactory != null) {
+            Map<Long, String> leakedClassloaders = shutdownJobsAndGetLeakedClassLoaders();
+
             SUPPORT_LOGGER.info("Terminating instanceFactory in JetTestSupport.@After");
             spawn(() -> instanceFactory.terminateAll())
                     .get(1, TimeUnit.MINUTES);
+
+            if (!leakedClassloaders.isEmpty()) {
+                String ids = leakedClassloaders
+                        .entrySet().stream()
+                        .map(entry -> idToString(entry.getKey()) + "[" + entry.getValue() + "]")
+                        .collect(joining(", "));
+                fail("There are one or more leaked job classloaders. " +
+                        "This is a bug, but it is not necessarily related to this test. " +
+                        "The classloader was leaked for the following jobIds: " + ids);
+            }
         }
+    }
+
+    @Nonnull
+    private Map<Long, String> shutdownJobsAndGetLeakedClassLoaders() {
+        Map<Long, String> leakedClassloaders = new HashMap<>();
+        Collection<HazelcastInstance> instances = instanceFactory.getAllHazelcastInstances();
+        for (HazelcastInstance instance : instances) {
+            if (instance.getConfig().getJetConfig().isEnabled()) {
+                // Some tests leave jobs running, which keeps job classloader, shut down all running/starting jobs
+                JetService jet = instance.getJet();
+                List<Job> jobs = jet.getJobs();
+                for (Job job : jobs) {
+                    ditchJob(job, instances.toArray(new HazelcastInstance[instances.size()]));
+                }
+
+                JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
+                        .getNodeEngine()
+                        .<JetServiceBackend>getService(SERVICE_NAME)
+                        .getJobClassLoaderService();
+
+                Map<Long, ?> classLoaders = jobClassLoaderService.getClassLoaders();
+                // The classloader cleanup is done asynchronously in some cases, wait up to 10s
+                for (int i = 0; i < 100 && !classLoaders.isEmpty(); i++) {
+                    sleepMillis(100);
+                }
+                for (Entry<Long, ?> entry : classLoaders.entrySet()) {
+                    leakedClassloaders.put(entry.getKey(), entry.toString());
+                }
+            }
+        }
+        return leakedClassloaders;
     }
 
     protected HazelcastInstance createHazelcastClient() {
@@ -248,7 +300,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     public static JetServiceBackend getJetServiceBackend(HazelcastInstance instance) {
-        return getNodeEngineImpl(instance).getService(JetServiceBackend.SERVICE_NAME);
+        return getNodeEngineImpl(instance).getService(SERVICE_NAME);
     }
 
     public static Address getAddress(HazelcastInstance instance) {

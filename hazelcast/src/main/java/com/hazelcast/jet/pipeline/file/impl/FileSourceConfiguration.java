@@ -34,6 +34,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class FileSourceConfiguration<T> implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final String path;
     private final String glob;
     private final FileFormat<T> format;

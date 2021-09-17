@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.sql.impl.client.SqlClientService;
 
 import java.security.Permission;
 
@@ -78,17 +77,6 @@ public class NoSuchMessageTask extends AbstractMessageTask<ClientMessage> {
 
     private String createMessage() {
         int messageType = parameters.getMessageType();
-
-        if (SqlClientService.isSqlMessage(messageType)) {
-            // Special error message for the SQL beta service that do not maintain compatibility between versions.
-            String memberVersion = nodeEngine.getVersion().toString();
-            String clientVersion = endpoint.getClientVersion();
-
-            return "Cannot process SQL client operation due to version mismatch "
-                + "(please ensure that the client and the member have the same version) "
-                + "[memberVersion=" + memberVersion + ", clientVersion=" + clientVersion + ']';
-        }
-
         return "Unrecognized client message received with type: 0x" + Integer.toHexString(messageType);
     }
 }

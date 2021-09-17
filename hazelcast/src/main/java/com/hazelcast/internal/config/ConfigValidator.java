@@ -24,7 +24,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -53,7 +52,6 @@ import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -84,7 +82,6 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePo
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergeTypeProviderHasRequiredTypes;
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.spi.properties.ClusterProperty.HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
 import static java.lang.String.format;
 
 /**
@@ -135,7 +132,6 @@ public final class ConfigValidator {
 
         if (getBuildInfo().isEnterprise()) {
             checkMapNativeConfig(mapConfig, nativeMemoryConfig);
-            warnForDeprecatedHotRestartProp(mapConfig, properties, logger);
         }
 
         checkMapEvictionConfig(mapConfig.getEvictionConfig());
@@ -224,20 +220,6 @@ public final class ConfigValidator {
             throw new InvalidConfigurationException("Maximum size policy " + maxSizePolicy
                     + " cannot be used with NATIVE in memory format backed Map."
                     + " Supported maximum size policies are: " + MAP_SUPPORTED_NATIVE_MAX_SIZE_POLICIES);
-        }
-    }
-
-    private static void warnForDeprecatedHotRestartProp(MapConfig mapConfig,
-                                                        HazelcastProperties properties, ILogger logger) {
-        HotRestartConfig hotRestartConfig = mapConfig.getHotRestartConfig();
-        if (hotRestartConfig == null || !hotRestartConfig.isEnabled()) {
-            return;
-        }
-        HazelcastProperty prop = HOT_RESTART_FREE_NATIVE_MEMORY_PERCENTAGE;
-        int hotRestartMinFreeNativeMemoryPercentage = properties.getInteger(prop);
-        if (hotRestartMinFreeNativeMemoryPercentage != Integer.parseInt(prop.getDefaultValue())) {
-            logger.warning(format("%s was deprecated in version 4.2. By starting from "
-                    + "that version setting it has no effect.", prop.getName()));
         }
     }
 

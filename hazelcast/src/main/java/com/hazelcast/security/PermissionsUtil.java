@@ -84,8 +84,12 @@ public final class PermissionsUtil {
             List<Permission> permissions = function.permissions();
             SecurityContext securityContext = metaSupplierCtx.nodeEngine().getNode().securityContext;
             Subject subject = metaSupplierCtx.subject();
-            if (securityContext != null && permissions != null && subject != null) {
-                permissions.forEach(permission -> securityContext.checkPermission(subject, permission));
+            if (securityContext != null && permissions != null && !permissions.isEmpty() && subject != null) {
+                permissions.forEach(permission -> {
+                    if (permission != null) {
+                        securityContext.checkPermission(subject, permission);
+                    }
+                });
             }
         }
     }

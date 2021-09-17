@@ -53,7 +53,9 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -124,9 +126,11 @@ public class ManualRestartTest extends JetTestSupport {
         assertJobStatusEventually(job, STARTING);
 
         // Then, the job cannot restart
-        exception.expect(IllegalStateException.class);
-        exception.expectMessage("Cannot RESTART");
-        job.restart();
+        assertThatThrownBy(() -> job.restart())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContainingAll("Cannot RESTART");
+
+        resetPacketFiltersFrom(instances[0]);
     }
 
     @Test

@@ -439,6 +439,28 @@ public final class SerializationUtil {
         return true;
     }
 
+    public static void writeNullableBoolean(ObjectDataOutput out, Boolean b) throws IOException {
+        if (b == null) {
+            out.writeByte(Byte.MAX_VALUE);
+        } else {
+            out.writeByte(b ? 1 : 0);
+        }
+    }
+
+    public static Boolean readNullableBoolean(ObjectDataInput in) throws IOException {
+        byte b = in.readByte();
+        switch (b) {
+            case Byte.MAX_VALUE:
+                return null;
+            case 0:
+                return Boolean.FALSE;
+            case 1:
+                return Boolean.TRUE;
+            default:
+                throw new IllegalStateException("Unexpected value " + b + " while reading nullable boolean.");
+        }
+    }
+
     private static class NullOutputStream extends OutputStream {
         @Override
         public void write(int b) {

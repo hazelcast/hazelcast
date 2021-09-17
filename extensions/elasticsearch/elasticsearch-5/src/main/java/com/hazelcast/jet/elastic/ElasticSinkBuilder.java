@@ -62,6 +62,8 @@ import static java.util.Objects.requireNonNull;
  */
 public final class ElasticSinkBuilder<T> implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private static final String DEFAULT_NAME = "elasticSink";
     private static final int DEFAULT_LOCAL_PARALLELISM = 2;
     private static final int DEFAULT_RETRIES = 5;

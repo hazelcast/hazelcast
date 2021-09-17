@@ -23,7 +23,7 @@ import java.util.List;
  * Generic interface that resolves tables belonging to a particular backend.
  * <p>
  * At the moment the interface does exactly what we need - provides tables and registers default search paths.
- * In future, if we have more objects to expose, it might be expanded or reworked completely.
+ * In the future, if we have more objects to expose, it might be expanded or reworked completely.
  */
 public interface TableResolver {
     /**

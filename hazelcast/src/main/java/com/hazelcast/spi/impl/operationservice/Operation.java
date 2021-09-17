@@ -20,8 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.server.ServerConnection;
-import com.hazelcast.internal.server.tcp.TcpServerConnection;
-import com.hazelcast.internal.server.tcp.TcpServerConnectionManager;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -38,15 +36,10 @@ import com.hazelcast.spi.tenantcontrol.Tenantable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -428,55 +421,8 @@ public abstract class Operation implements DataSerializable, Tenantable {
         return this;
     }
 
-    public final List<Address> getAllKnownAliases(Address caller) {
-        if (caller == null) {
-            return Collections.emptyList();
-        }
-
-        if (connection instanceof TcpServerConnection) {
-            TcpServerConnection tcpServerConnection = (TcpServerConnection) connection;
-            TcpServerConnectionManager tcpServerConnectionManager = tcpServerConnection.getConnectionManager();
-            Set<Address> aliases = tcpServerConnectionManager.getKnownAliases(tcpServerConnection);
-            if (aliases.size() == 1 && aliases.iterator().next().equals(caller)) {
-                //optimization to avoid full blown array list creation
-                return Collections.singletonList(caller);
-            }
-
-            List<Address> addresses = new ArrayList<>();
-            addresses.add(caller);
-            addresses.addAll(aliases.stream().filter(a -> !a.equals(caller)).collect(Collectors.toSet()));
-            return addresses;
-        }
-
-        return Collections.singletonList(caller);
-    }
-
-    /**
-     * Returns {@code true} if the caller is the master node.
-     */
-    public final boolean isCallerMaster() {
-        return isAddressMatch(getNodeEngine().getClusterService().getMasterAddress(), callerAddress);
-    }
-
-    /**
-     * Returns {@code true} if given addresses matches - i.e. they are equal or aliases of the same member.
-     * @param expectedAdddress
-     * @param expandAndCheckAddress
-     */
-    public final boolean isAddressMatch(Address expectedAdddress, Address expandAndCheckAddress) {
-        if (expectedAdddress == null || expandAndCheckAddress == null) {
-            return false;
-        }
-        List<Address> expandedAddresses = getAllKnownAliases(expandAndCheckAddress);
-        return expandedAddresses.stream().anyMatch(a -> a.equals(expectedAdddress));
-    }
-
     public final Address getCallerAddress() {
         return callerAddress;
-    }
-
-    public final List<Address> getCallerAddresses() {
-        return getAllKnownAliases(callerAddress);
     }
 
     // Accessed using OperationAccessor

@@ -91,6 +91,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType.ACCESSED;
 import static com.hazelcast.config.ConfigCompatibilityChecker.checkEndpointConfigCompatible;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static com.hazelcast.instance.ProtocolType.MEMBER;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -389,6 +390,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setClusterDataRecoveryPolicy(PersistenceClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
                 .setValidationTimeoutSeconds(100)
                 .setDataLoadTimeoutSeconds(130)
+                .setRebalanceDelaySeconds(240)
                 .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
                 .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5).setAutoRemoveStaleData(false);
@@ -396,6 +398,25 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         PersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg, false).getPersistenceConfig();
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testHotRestartConfig_equalsToPersistenceConfig() {
+        Config cfg = new Config();
+
+        HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
+        expectedConfig.setEnabled(true)
+                .setClusterDataRecoveryPolicy(FULL_RECOVERY_ONLY)
+                .setValidationTimeoutSeconds(100)
+                .setDataLoadTimeoutSeconds(130)
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
+                .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
+                .setParallelism(5).setAutoRemoveStaleData(false);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(cfg, false);
+
+        assertEquals(cfg.getHotRestartPersistenceConfig(), actualConfig.getHotRestartPersistenceConfig());
+        assertEquals(cfg.getPersistenceConfig(), actualConfig.getPersistenceConfig());
     }
 
     private void configurePersistence(Config cfg) {
@@ -1626,6 +1647,44 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapWithoutMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithoutMerkleTreeConfig");
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithoutMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithEnabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(true).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithDisabledMerkleTreeConfig() {
+        MapConfig expectedConfig = new MapConfig()
+                .setName("testMapWithEnabledMerkleTreeConfig");
+        expectedConfig.getMerkleTreeConfig().setEnabled(false).setDepth(13);
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        MapConfig actualConfig = xmlConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testMapNearCacheConfig() {
         NearCacheConfig expectedConfig = new NearCacheConfig()
                 .setName("nearCache")
@@ -1991,8 +2050,36 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testExplicitlyAssignedGroupsRestApiConfig() {
         RestApiConfig restApiConfig = new RestApiConfig();
         restApiConfig.setEnabled(true);
-        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK, RestEndpointGroup.HOT_RESTART,
-                RestEndpointGroup.WAN);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.HOT_RESTART, RestEndpointGroup.WAN);
+        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
+                new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testExplicitlyAssignedGroupsRestApiConfig_whenPersistenceEnabled() {
+        RestApiConfig restApiConfig = new RestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.PERSISTENCE, RestEndpointGroup.WAN);
+        restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
+        Config config = new Config();
+        config.getNetworkConfig().setRestApiConfig(restApiConfig);
+        RestApiConfig generatedConfig = getNewConfigViaXMLGenerator(config).getNetworkConfig().getRestApiConfig();
+        assertTrue(generatedConfig.toString() + " should be compatible with " + restApiConfig.toString(),
+                new ConfigCompatibilityChecker.RestApiConfigChecker().check(restApiConfig, generatedConfig));
+    }
+
+    @Test
+    public void testExplicitlyAssignedGroupsRestApiConfig_whenBothHotRestartAndPersistenceEnabled() {
+        RestApiConfig restApiConfig = new RestApiConfig();
+        restApiConfig.setEnabled(true);
+        restApiConfig.enableGroups(RestEndpointGroup.CLUSTER_READ, RestEndpointGroup.HEALTH_CHECK,
+                RestEndpointGroup.HOT_RESTART, RestEndpointGroup.PERSISTENCE, RestEndpointGroup.WAN);
         restApiConfig.disableGroups(RestEndpointGroup.CLUSTER_WRITE, RestEndpointGroup.DATA);
         Config config = new Config();
         config.getNetworkConfig().setRestApiConfig(restApiConfig);
@@ -2151,8 +2238,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setEnabled(false).setResourceUploadEnabled(true);
-        jetConfig.getInstanceConfig()
-                .setLosslessRestartEnabled(true)
+        jetConfig.setLosslessRestartEnabled(true)
                 .setScaleUpDelayMillis(123)
                 .setBackupCount(2)
                 .setFlowControlPeriodMs(123)
@@ -2203,6 +2289,34 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
                 .getCacheConfig("test").getMerkleTreeConfig();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCacheWithoutMerkleTreeConfig() {
+        Config cfg = new Config();
+        MerkleTreeConfig actual = cfg.getCacheConfig("testCacheWithoutMerkleTreeConfig")
+                .getMerkleTreeConfig();
+
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+                .getCacheConfig("testCacheWithoutMerkleTreeConfig").getMerkleTreeConfig();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testCacheWithDisabledMerkleTreeConfig() {
+        MerkleTreeConfig actual = new MerkleTreeConfig()
+                .setEnabled(false)
+                .setDepth(13);
+
+        Config cfg = new Config();
+        cfg.getCacheConfig("testCacheWithDisabledMerkleTreeConfig")
+           .setMerkleTreeConfig(actual);
+
+        MerkleTreeConfig expected = getNewConfigViaXMLGenerator(cfg)
+                .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
     }

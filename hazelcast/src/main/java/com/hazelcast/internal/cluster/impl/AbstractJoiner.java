@@ -16,26 +16,26 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.cluster.Member;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
-import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.util.Clock;
-import com.hazelcast.internal.util.FutureUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.cluster.Address;
+import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.internal.util.Clock;
+import com.hazelcast.internal.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,8 +50,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
-import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.internal.util.FutureUtil.waitWithDeadline;
 import static java.lang.Thread.currentThread;
 
 public abstract class AbstractJoiner
@@ -111,10 +111,8 @@ public abstract class AbstractJoiner
 
     @Override
     public void blacklist(Address address, boolean permanent) {
-        Boolean prev = blacklistedAddresses.putIfAbsent(address, permanent);
-        if (prev == null) {
-            logger.info(address + " is " + (permanent ? "permanently " : "") + "added to the blacklist.");
-        }
+        logger.info(address + " is added to the blacklist.");
+        blacklistedAddresses.putIfAbsent(address, permanent);
     }
 
     @Override

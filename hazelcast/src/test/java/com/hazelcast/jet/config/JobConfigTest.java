@@ -106,7 +106,7 @@ public class JobConfigTest extends JetTestSupport {
     public void when_losslessRestartEnabled_then_openSourceMemberDoesNotStart() {
         // When
         Config config = new Config();
-        config.getJetConfig().setEnabled(true).getInstanceConfig().setLosslessRestartEnabled(true);
+        config.getJetConfig().setEnabled(true).setLosslessRestartEnabled(true);
 
         // Then
         exception.expect(IllegalStateException.class);

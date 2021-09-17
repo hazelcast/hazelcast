@@ -104,9 +104,12 @@ public final class CustomTypeFactory {
         return config;
     }
 
-    public static MerkleTreeConfig createMerkleTreeConfig(boolean enabled, int depth) {
+    public static MerkleTreeConfig createMerkleTreeConfig(boolean enabled, int depth,
+                                                          boolean isEnabledSetExists, boolean isEnabledSet) {
         MerkleTreeConfig config = new MerkleTreeConfig();
-        config.setEnabled(enabled);
+        if (!isEnabledSetExists || isEnabledSet) {
+            config.setEnabled(enabled);
+        }
         config.setDepth(depth);
         return config;
     }

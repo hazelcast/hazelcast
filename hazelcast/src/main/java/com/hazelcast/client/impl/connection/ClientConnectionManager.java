@@ -82,4 +82,6 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      * @param ignoredMembers Members in the given collection will not be considered.
      */
     ClientConnection getConnectionForSql(@Nonnull Collection<UUID> ignoredMembers);
+
+    String getConnectionType();
 }

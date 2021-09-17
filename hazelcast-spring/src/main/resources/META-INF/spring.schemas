@@ -7,4 +7,6 @@ https\://www.hazelcast.com/schema/spring/hazelcast-spring-4.2.xsd=hazelcast-spri
 http\://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd=hazelcast-spring-5.0.xsd
 https\://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd=hazelcast-spring-5.0.xsd
 http\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-5.0.xsd
-https\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-5.0.xsd
+https\://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd=hazelcast-spring-5.1.xsd
+http\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-5.1.xsd
+https\://www.hazelcast.com/schema/spring/hazelcast-spring.xsd=hazelcast-spring-5.1.xsd

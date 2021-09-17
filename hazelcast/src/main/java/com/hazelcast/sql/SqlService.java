@@ -16,10 +16,6 @@
 
 package com.hazelcast.sql;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.annotation.Beta;
-
 import javax.annotation.Nonnull;
 import java.util.List;
 
@@ -27,73 +23,29 @@ import java.util.List;
  * A service to execute SQL statements.
  * <p>
  * In order to use the service, Jet engine must be enabled - SQL statements are executed as
- * Jet jobs. On members, the {@code hazelcast-sql.jar} must be on the member's classpaths,
- * otherwise an exception will be thrown; on client, it is not necessary.
+ * Jet jobs. On members, the {@code hazelcast-sql.jar} must be on the classpath, otherwise
+ * an exception will be thrown; on client, it is not necessary.
  * <p>
- * The text below summarizes features supported by the SQL engine.
- *
  * <h1>Overview</h1>
- * Hazelcast is able to execute distributed SQL queries over the following entities:
+ * Hazelcast is currently able to execute distributed SQL queries using the following connectors:
  * <ul>
  *     <li>IMap
+ *     <li>Kafka
+ *     <li>Files
  * </ul>
- * When an SQL statement is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module, that is based
- * on <a href="https://calcite.apache.org">Apache Calcite</a>. During optimization a statement is converted
- * into a directed acyclic graph (DAG) that is sent to cluster members for execution.
- * Results are sent back to the originating member asynchronously and returned to the user via {@link SqlResult}.
- *
- * <h1>Querying an IMap</h1>
- * Every IMap instance is exposed as a table with the same name in the {@code partitioned} schema. The {@code partitioned}
- * schema is included into a default search path, therefore an IMap could be referenced in an SQL statement with or without the
- * schema name.
- * <h2>Column resolution</h2>
- * Before you can access an IMap, a <em>mapping</em> has to be created first. See the reference manual
- * for the CREATE MAPPING command.
+ * When an SQL statement is submitted to a member, it is parsed and optimized by the {@code hazelcast-sql} module,
+ * that is based on <a href="https://calcite.apache.org">Apache Calcite</a>. During optimization a statement is
+ * converted into a directed acyclic graph (DAG) that is sent to cluster members for execution. Results are sent
+ * back to the originating member asynchronously and returned to the user via {@link SqlResult}.
  * <p>
- * Columns are extracted from objects as follows:
- * <ul>
- *     <li>For non-Portable objects, public getters and fields are used to populate the column list. For getters, the first
- *     letter is converted to lower case. A getter takes precedence over a field in case of naming conflict
- *     <li>For {@link Portable} objects, field names used in the {@link Portable#writePortable(PortableWriter)} method
- *     are used to populate the column list
- * </ul>
- * The whole key and value objects could be accessed through a special fields {@code __key} and {@code this}, respectively. If
- * key (value) object has fields, then the whole key (value) field is exposed as a normal field. Otherwise the field is hidden.
- * Hidden fields can be accessed directly, but are not returned by {@code SELECT * FROM ...} queries.
+ * SQL statements are not atomic. <em>INSERT</em>/<em>SINK</em> can fail and commit part of the data.
  * <p>
- * If the member that initiates a query doesn't have local entries for the given IMap, the query fails.
- * <p>
- * Consider the following key/value model:
- * <pre>
- *     class PersonKey {
- *         private long personId;
- *         private long deptId;
- *
- *         public long getPersonId() { ... }
- *         public long getDepartmentId() { ... }
- *     }
- *
- *     class Person {
- *         public String name;
- *     }
- * </pre>
- * This model will be resolved to the following table columns:
- * <ul>
- *     <li>personId BIGINT
- *     <li>departmentId BIGINT
- *     <li>name VARCHAR
- *     <li>__key OBJECT (hidden)
- *     <li>this OBJECT (hidden)
- * </ul>
- * <h2>Consistency</h2>
- * Results returned from IMap query are weakly consistent:
- * <ul>
- *     <li>If an entry was not updated during iteration, it is guaranteed to be returned exactly once
- *     <li>If an entry was modified during iteration, it might be returned zero, one or several times
- * </ul>
  * <h1>Usage</h1>
- * When a query is executed, an {@link SqlResult} is returned. You may get row iterator from the result. The result must be closed
- * at the end. The code snippet below demonstrates a typical usage pattern:
+ * Before you can access any object using SQL, a <em>mapping</em> has to be created. See the reference manual for the
+ * <em>CREATE MAPPING</em> command.
+ * <p>
+ * When a query is executed, an {@link SqlResult} is returned. You may get row iterator from the result. The result must
+ * be closed at the end. The code snippet below demonstrates a typical usage pattern:
  * <pre>
  *     HazelcastInstance instance = ...;
  *
@@ -106,7 +58,6 @@ import java.util.List;
  *     }
  * </pre>
  */
-@Beta
 public interface SqlService {
     /**
      * Convenient method to execute a distributed query with the given

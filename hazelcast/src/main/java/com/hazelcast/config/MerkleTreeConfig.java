@@ -20,9 +20,15 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.IOException;
+import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_0;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableBoolean;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableBoolean;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
@@ -52,7 +58,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @since 3.11
  */
-public class MerkleTreeConfig implements IdentifiedDataSerializable {
+public class MerkleTreeConfig implements IdentifiedDataSerializable, Versioned {
     /**
      * Minimal depth of the merkle tree.
      */
@@ -66,7 +72,7 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
      */
     private static final int DEFAULT_DEPTH = 10;
 
-    private boolean enabled;
+    private Boolean enabled;
     private int depth = DEFAULT_DEPTH;
 
     public MerkleTreeConfig() {
@@ -122,9 +128,32 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
      * Returns if the merkle tree is enabled.
      *
      * @return {@code true} if the merkle tree is enabled, {@code false} otherwise
+     * @deprecated use {@link #getEnabled()} instead.
      */
+    @Deprecated
     public boolean isEnabled() {
+        return Boolean.TRUE.equals(enabled);
+    }
+
+    /**
+     * Returns if the merkle tree is enabled.
+     *
+     * @return {@code TRUE} if the merkle tree is enabled, {@code FALSE} if disabled
+     *          or {@code null} if user did not explicitly configure Merkle trees,
+     *          so it may or may not be enabled by Hazelcast.
+     */
+    public Boolean getEnabled() {
         return enabled;
+    }
+
+    /**
+     * Method introduced for client protocol compatibility.
+     *
+     * @return whether {@code enabled} field is set or not.
+     */
+    @PrivateApi
+    public boolean isEnabledSet() {
+        return enabled != null;
     }
 
     /**
@@ -150,13 +179,22 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(enabled);
+        // RU_COMPAT_4_2
+        if (out.getVersion().isGreaterOrEqual(V5_0)) {
+            writeNullableBoolean(out, enabled);
+        } else {
+            out.writeBoolean(isEnabled());
+        }
         out.writeInt(depth);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        enabled = in.readBoolean();
+        if (in.getVersion().isGreaterOrEqual(V5_0)) {
+            enabled = readNullableBoolean(in);
+        } else {
+            enabled = in.readBoolean();
+        }
         depth = in.readInt();
     }
 
@@ -171,7 +209,7 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
 
         MerkleTreeConfig that = (MerkleTreeConfig) o;
 
-        if (enabled != that.enabled) {
+        if (!Objects.equals(enabled, that.enabled)) {
             return false;
         }
         return depth == that.depth;
@@ -180,7 +218,7 @@ public class MerkleTreeConfig implements IdentifiedDataSerializable {
 
     @Override
     public final int hashCode() {
-        int result = (enabled ? 1 : 0);
+        int result = Objects.hashCode(enabled);
         result = 31 * result + depth;
         return result;
     }

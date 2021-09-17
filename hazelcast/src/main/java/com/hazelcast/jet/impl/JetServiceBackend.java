@@ -86,6 +86,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
     private JobCoordinationService jobCoordinationService;
+    private JobClassLoaderService jobClassLoaderService;
     private JobExecutionService jobExecutionService;
 
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
@@ -105,18 +106,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
         this.jet = new JetInstanceImpl(nodeEngine.getNode().hazelcastInstance, jetConfig);
         taskletExecutionService = new TaskletExecutionService(
-                nodeEngine, jetConfig.getInstanceConfig().getCooperativeThreadCount(), nodeEngine.getProperties()
+                nodeEngine, jetConfig.getCooperativeThreadCount(), nodeEngine.getProperties()
         );
         jobRepository = new JobRepository(engine.getHazelcastInstance());
 
-        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobRepository);
         jobCoordinationService = createJobCoordinationService();
+        jobClassLoaderService = new JobClassLoaderService(nodeEngine, jobRepository);
+        jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService, jobClassLoaderService);
 
         MetricsService metricsService = nodeEngine.getService(MetricsService.SERVICE_NAME);
         metricsService.registerPublisher(nodeEngine -> new JobMetricsPublisher(jobExecutionService,
                 nodeEngine.getLocalMember()));
         nodeEngine.getMetricsRegistry().registerDynamicMetricsProvider(jobExecutionService);
-        networking = new Networking(engine, jobExecutionService, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
+        networking = new Networking(engine, jobExecutionService, jetConfig.getFlowControlPeriodMs());
 
         ClientEngine clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
         ClientExceptionFactory clientExceptionFactory = clientEngine.getExceptionFactory();
@@ -127,13 +129,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + jetConfig.getInstanceConfig().getCooperativeThreadCount());
+                + jetConfig.getCooperativeThreadCount());
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
         JetConfig jetConfig = config.getJetConfig();
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
-                .setBackupCount(jetConfig.getInstanceConfig().getBackupCount())
+                .setBackupCount(jetConfig.getBackupCount())
                 // we query creationTime of resources maps
                 .setStatisticsEnabled(true);
 
@@ -205,6 +207,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.reset();
     }
 
+    // Overridden in EE with EnterpriseJobCoordinationService
     JobCoordinationService createJobCoordinationService() {
         return new JobCoordinationService(nodeEngine, this, jetConfig, jobRepository);
     }
@@ -243,6 +246,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return jobCoordinationService;
     }
 
+    public JobClassLoaderService getJobClassLoaderService() {
+        return jobClassLoaderService;
+    }
+
     public JobExecutionService getJobExecutionService() {
         return jobExecutionService;
     }
@@ -263,10 +270,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
 
         throw new JobNotFoundException(jobId);
-    }
-
-    public ClassLoader getClassLoader(long jobId) {
-        return getJobExecutionService().getClassLoader(getJobConfig(jobId), jobId);
     }
 
     public void handlePacket(Packet packet) {

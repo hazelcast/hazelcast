@@ -56,6 +56,9 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.checkS
  */
 @SerializableByConvention
 public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private final FunctionEx<? super T0, ? extends K> leftKeyFn;
     private final FunctionEx<? super T1, ? extends K> rightKeyFn;
     private final FunctionEx<? super T1, ? extends T1_OUT> rightProjectFn;

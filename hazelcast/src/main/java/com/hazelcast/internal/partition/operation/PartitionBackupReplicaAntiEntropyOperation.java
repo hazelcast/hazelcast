@@ -79,8 +79,7 @@ public final class PartitionBackupReplicaAntiEntropyOperation
         }
 
         Address ownerAddress = partition.getOwnerOrNull();
-        if (ownerAddress != null
-                && getAllKnownAliases(getCallerAddress()).stream().noneMatch(ownerAddress::equals)) {
+        if (!getCallerAddress().equals(ownerAddress)) {
             logger.fine("Anti-entropy operation for partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
                     + " is received from " + getCallerAddress() + ", but it's not the known primary replica owner: "
                     + ownerAddress);

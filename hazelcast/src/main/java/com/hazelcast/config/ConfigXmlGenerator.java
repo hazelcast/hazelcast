@@ -35,10 +35,10 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.jet.config.EdgeConfig;
-import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -64,6 +64,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 import static com.hazelcast.internal.util.StringUtil.formatXml;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.internal.util.StringUtil.isNullOrEmptyAfterTrim;
+import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 
 /**
@@ -123,6 +124,9 @@ public class ConfigXmlGenerator {
 
         StringBuilder xml = new StringBuilder();
         XmlGenerator gen = new XmlGenerator(xml);
+
+        PersistenceAndHotRestartPersistenceMerger.merge(config.getHotRestartPersistenceConfig(),
+                config.getPersistenceConfig());
 
         xml.append("<hazelcast ")
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
@@ -986,9 +990,11 @@ public class ConfigXmlGenerator {
                     .node("metadata-policy", m.getMetadataPolicy());
 
             evictionConfigXmlGenerator(gen, m.getEvictionConfig());
-            appendMerkleTreeConfig(gen, m.getMerkleTreeConfig());
+            if (m.getMerkleTreeConfig().getEnabled() != null) {
+                appendMerkleTreeConfig(gen, m.getMerkleTreeConfig());
+            }
             appendEventJournalConfig(gen, m.getEventJournalConfig());
-            appendHotRestartConfig(gen, m.getHotRestartConfig());
+            appendDataPersistenceConfig(gen, m.getDataPersistenceConfig());
             mapStoreConfigXmlGenerator(gen, m);
             mapNearCacheConfigXmlGenerator(gen, m.getNearCacheConfig());
             wanReplicationConfigXmlGenerator(gen, m.getWanReplicationRef());
@@ -1003,14 +1009,8 @@ public class ConfigXmlGenerator {
     }
 
     private static void appendMerkleTreeConfig(XmlGenerator gen, MerkleTreeConfig c) {
-        gen.open("merkle-tree", "enabled", c.isEnabled())
+        gen.open("merkle-tree", "enabled", TRUE.equals(c.getEnabled()))
                 .node("depth", c.getDepth())
-                .close();
-    }
-
-    private static void appendHotRestartConfig(XmlGenerator gen, HotRestartConfig m) {
-        gen.open("hot-restart", "enabled", m != null && m.isEnabled())
-                .node("fsync", m != null && m.isFsync())
                 .close();
     }
 
@@ -1070,8 +1070,10 @@ public class ConfigXmlGenerator {
 
             gen.node("merge-policy", c.getMergePolicyConfig().getPolicy());
             appendEventJournalConfig(gen, c.getEventJournalConfig());
-            appendHotRestartConfig(gen, c.getHotRestartConfig());
-            appendMerkleTreeConfig(gen, c.getMerkleTreeConfig());
+            appendDataPersistenceConfig(gen, c.getDataPersistenceConfig());
+            if (c.getMerkleTreeConfig().getEnabled() != null) {
+                appendMerkleTreeConfig(gen, c.getMerkleTreeConfig());
+            }
 
             gen.node("disable-per-entry-invalidation-events", c.isDisablePerEntryInvalidationEvents())
                     .close();
@@ -1491,7 +1493,8 @@ public class ConfigXmlGenerator {
                 .node("validation-timeout-seconds", prCfg.getValidationTimeoutSeconds())
                 .node("data-load-timeout-seconds", prCfg.getDataLoadTimeoutSeconds())
                 .node("cluster-data-recovery-policy", prCfg.getClusterDataRecoveryPolicy())
-                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData());
+                .node("auto-remove-stale-data", prCfg.isAutoRemoveStaleData())
+                .node("rebalance-delay-seconds", prCfg.getRebalanceDelaySeconds());
 
         encryptionAtRestXmlGenerator(gen, prCfg.getEncryptionAtRestConfig());
         gen.close();
@@ -1661,17 +1664,14 @@ public class ConfigXmlGenerator {
 
     private static void jetConfig(XmlGenerator gen, Config config) {
         JetConfig jetConfig = config.getJetConfig();
-        InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
         gen.open("jet", "enabled", jetConfig.isEnabled(), "resource-upload-enabled", jetConfig.isResourceUploadEnabled())
-                .open("instance")
-                    .node("cooperative-thread-count", instanceConfig.getCooperativeThreadCount())
-                    .node("flow-control-period", instanceConfig.getFlowControlPeriodMs())
-                    .node("backup-count", instanceConfig.getBackupCount())
-                    .node("scale-up-delay-millis", instanceConfig.getScaleUpDelayMillis())
-                    .node("lossless-restart-enabled", instanceConfig.isLosslessRestartEnabled())
-                    .node("max-processor-accumulated-records", instanceConfig.getMaxProcessorAccumulatedRecords())
-                .close()
+                .node("cooperative-thread-count", jetConfig.getCooperativeThreadCount())
+                .node("flow-control-period", jetConfig.getFlowControlPeriodMs())
+                .node("backup-count", jetConfig.getBackupCount())
+                .node("scale-up-delay-millis", jetConfig.getScaleUpDelayMillis())
+                .node("lossless-restart-enabled", jetConfig.isLosslessRestartEnabled())
+                .node("max-processor-accumulated-records", jetConfig.getMaxProcessorAccumulatedRecords())
                 .open("edge-defaults")
                     .node("queue-size", edgeConfig.getQueueSize())
                     .node("packet-size-limit", edgeConfig.getPacketSizeLimit())

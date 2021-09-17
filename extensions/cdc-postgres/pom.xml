@@ -29,12 +29,11 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
     </parent>
 
     <properties>
         <debezium.version>1.2.5.Final</debezium.version>
-        <log4j2.slf4j.binding.version>2.13.2</log4j2.slf4j.binding.version>
 
         <!-- needed for CheckStyle -->
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>

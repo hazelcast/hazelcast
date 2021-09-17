@@ -16,14 +16,13 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.List;
 
 /** Operation sent by any node to set the master address on the receiver */
 public class MasterResponseOp extends AbstractClusterOperation {
@@ -40,8 +39,7 @@ public class MasterResponseOp extends AbstractClusterOperation {
     @Override
     public void run() {
         ClusterServiceImpl clusterService = getService();
-        List<Address> callerAddresses = getAllKnownAliases(getCallerAddress());
-        clusterService.getClusterJoinManager().handleMasterResponse(masterAddress, callerAddresses);
+        clusterService.getClusterJoinManager().handleMasterResponse(masterAddress, getCallerAddress());
     }
 
     public Address getMasterAddress() {
