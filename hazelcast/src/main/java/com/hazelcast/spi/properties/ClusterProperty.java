@@ -68,16 +68,6 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.network.stats.refresh.interval.seconds", 3, SECONDS);
 
     /**
-     * Controls whether we apply more strict checks upon BIND requests towards
-     * a cluster member.
-     * The checks mainly validate the remote BIND request against the remote
-     * address as found in the socket. By default they are disabled, to avoid
-     * connectivity issues when deployed under NAT'ed infrastructure.
-     */
-    public static final HazelcastProperty BIND_SPOOFING_CHECKS =
-            new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
-
-    /**
      * Number of parallel connection between members.
      * <p>
      * There is no point in having more connections than IO threads.
