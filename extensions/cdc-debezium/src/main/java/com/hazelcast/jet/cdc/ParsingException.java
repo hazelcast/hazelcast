@@ -26,8 +26,11 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 @EvolvingApi
 public class ParsingException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Constructs a new exception with the specified detail message.
+     *
      * @param message the detail message.
      */
     public ParsingException(String message) {

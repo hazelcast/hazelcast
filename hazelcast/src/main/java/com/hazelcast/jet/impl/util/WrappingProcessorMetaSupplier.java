@@ -34,6 +34,9 @@ import java.util.function.Function;
  * {@code wrapperSupplier}.
  */
 public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplier {
+
+    private static final long serialVersionUID = 1L;
+
     private ProcessorMetaSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;
 

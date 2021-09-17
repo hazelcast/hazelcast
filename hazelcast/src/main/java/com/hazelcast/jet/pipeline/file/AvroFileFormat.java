@@ -34,6 +34,8 @@ public class AvroFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_AVRO = "avro";
 
+    private static final long serialVersionUID = 1L;
+
     private Class<T> reflectClass;
 
     /**

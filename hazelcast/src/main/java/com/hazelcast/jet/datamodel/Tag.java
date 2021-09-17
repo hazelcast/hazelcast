@@ -35,6 +35,9 @@ import java.io.Serializable;
  */
 @SerializableByConvention
 public final class Tag<T> implements Comparable<Tag<?>>, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private static final Tag TAG_0 = new Tag(0);
     private static final Tag TAG_1 = new Tag(1);
     private static final Tag TAG_2 = new Tag(2);

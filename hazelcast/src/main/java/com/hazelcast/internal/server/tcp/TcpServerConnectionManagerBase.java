@@ -34,8 +34,6 @@ import com.hazelcast.internal.util.executor.StripedRunnable;
 import com.hazelcast.logging.ILogger;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
@@ -46,7 +44,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACCEPTED_SOCKET_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_ENDPOINT_MANAGER_ACTIVE_COUNT;
@@ -106,7 +103,7 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         this.planeCount = serverContext.properties().getInteger(CHANNEL_COUNT);
         this.planes = new Plane[planeCount];
         for (int planeIndex = 0; planeIndex < planes.length; planeIndex++) {
-            planes[planeIndex] = new Plane(planeIndex, logger);
+            planes[planeIndex] = new Plane(planeIndex);
         }
     }
 
@@ -127,11 +124,8 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
         private final ConcurrentHashMap<Address, TcpServerConnection> connectionMap = new ConcurrentHashMap<>(100);
         private final Set<Address> connectionsInProgress = newSetFromMap(new ConcurrentHashMap<>());
 
-        private final ILogger logger;
-
-        Plane(int index, ILogger logger) {
+        Plane(int index) {
             this.index = index;
-            this.logger = logger;
         }
 
         TcpServerConnection getConnection(Address address) {
@@ -140,26 +134,10 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
 
         void putConnection(Address address, TcpServerConnection connection) {
             connectionMap.put(address, connection);
-            putResolved(address, connection);
         }
 
         void putConnectionIfAbsent(Address address, TcpServerConnection connection) {
-            Connection previousConnection = connectionMap.putIfAbsent(address, connection);
-            if (previousConnection == null) {
-                putResolved(address, connection);
-            }
-        }
-
-        private void putResolved(Address address, TcpServerConnection connection) {
-            try {
-                InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
-                String hostString = inetSocketAddress.getHostString();
-                if (hostString != null) {
-                    connectionMap.put(new Address(inetSocketAddress), connection);
-                }
-            } catch (UnknownHostException e) {
-                logger.warning("Hostname resolution failed, ignoring: " + e.getMessage());
-            }
+            connectionMap.putIfAbsent(address, connection);
         }
 
         void removeConnection(TcpServerConnection connection) {
@@ -173,13 +151,6 @@ abstract class TcpServerConnectionManagerBase implements ServerConnectionManager
                     connections.remove();
                 }
             }
-        }
-
-        public Set<Address> getAddresses(TcpServerConnection connection) {
-            return connectionMap.entrySet().stream()
-                    .filter(e -> e.getValue().equals(connection))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toSet());
         }
 
         public boolean removeConnectionsWithId(int id) {

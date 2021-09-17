@@ -42,6 +42,8 @@ import com.hazelcast.jet.core.ProcessorSupplier;
  */
 public class RestartableException extends JetException {
 
+    private static final long serialVersionUID = 1L;
+
     public RestartableException() {
     }
 
