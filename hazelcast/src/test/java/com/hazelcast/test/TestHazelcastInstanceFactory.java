@@ -42,10 +42,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -65,6 +70,8 @@ import static java.util.stream.Collectors.toList;
 public class TestHazelcastInstanceFactory {
     private static final int DEFAULT_INITIAL_PORT = NetworkConfig.DEFAULT_PORT;
     private static final int MAX_PORT_NUMBER = (1 << 16) - 1;
+    private static final ExecutorService executorService = Executors.newCachedThreadPool();
+
 
     protected final TestNodeRegistry registry;
 
@@ -256,11 +263,23 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
-        HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
-        for (int i = 0; i < nodeCount; i++) {
-            instances[i] = newHazelcastInstance(config);
+        Callable<HazelcastInstance> hazelcastInstanceCallable = () -> newHazelcastInstance(config);
+        List<Callable<HazelcastInstance>> callables = IntStream.range(0, nodeCount)
+                .mapToObj(__ -> hazelcastInstanceCallable).collect(toList());
+        try {
+            List<Future<HazelcastInstance>> futures = executorService.invokeAll(callables);
+            return futures.stream().map(this::getHazelcastInstance).toArray(HazelcastInstance[]::new);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        return instances;
+    }
+
+    private HazelcastInstance getHazelcastInstance(Future<HazelcastInstance> f) {
+        try {
+            return f.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public HazelcastInstance[] newInstances(Config config) {
