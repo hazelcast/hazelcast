@@ -205,7 +205,10 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         checkValues(sqlQuery("IN (cast(1.0 as REAL), cast(2.3 as DOUBLE))"), SqlColumnType.VARCHAR, new String[]{"1"});
         putAll("2021-01-02T00:00:00+01:00", "2021-01-02T01:03:04+01:00");
         checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH TIME ZONE))"),
-                SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+01:00"});
+                SqlColumnType.VARCHAR, new String[0]);
+        putAll("2021-01-02T00:00:00+02:00", "2021-01-02T01:03:04+01:00");
+        checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH TIME ZONE))"),
+                SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+02:00"});
 
         // this is a bug in Calcite that when an integer is followed by temporal type,
         // it will try to coerce all right-hand values to temporal,

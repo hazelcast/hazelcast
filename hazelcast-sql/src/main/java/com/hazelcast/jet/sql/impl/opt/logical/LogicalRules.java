@@ -16,16 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import org.apache.calcite.rel.rules.FilterAggregateTransposeRule;
-import org.apache.calcite.rel.rules.FilterJoinRule.FilterIntoJoinRule;
-import org.apache.calcite.rel.rules.FilterMergeRule;
-import org.apache.calcite.rel.rules.FilterProjectTransposeRule;
-import org.apache.calcite.rel.rules.JoinProjectTransposeRule;
-import org.apache.calcite.rel.rules.ProjectFilterTransposeRule;
-import org.apache.calcite.rel.rules.ProjectMergeRule;
-import org.apache.calcite.rel.rules.ProjectRemoveRule;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
-import org.apache.calcite.rel.rules.ReduceExpressionsRule;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -38,18 +30,18 @@ public final class LogicalRules {
         return RuleSets.ofList(
                 // Filter rules
                 FilterLogicalRule.INSTANCE,
-                FilterMergeRule.INSTANCE,
-                FilterProjectTransposeRule.INSTANCE,
+                CoreRules.FILTER_MERGE,
+                CoreRules.FILTER_PROJECT_TRANSPOSE,
                 FilterIntoScanLogicalRule.INSTANCE,
-                FilterAggregateTransposeRule.INSTANCE,
-                FilterIntoJoinRule.FILTER_ON_JOIN,
-                ReduceExpressionsRule.FILTER_INSTANCE,
+                CoreRules.FILTER_AGGREGATE_TRANSPOSE,
+                CoreRules.FILTER_INTO_JOIN,
+                CoreRules.FILTER_REDUCE_EXPRESSIONS,
 
                 // Project rules
                 ProjectLogicalRule.INSTANCE,
-                ProjectMergeRule.INSTANCE,
-                ProjectRemoveRule.INSTANCE,
-                ProjectFilterTransposeRule.INSTANCE,
+                CoreRules.PROJECT_MERGE,
+                CoreRules.PROJECT_REMOVE,
+                CoreRules.PROJECT_FILTER_TRANSPOSE,
                 ProjectIntoScanLogicalRule.INSTANCE,
 
                 // Scan rules
@@ -65,8 +57,8 @@ public final class LogicalRules {
 
                 // Join rules
                 JoinLogicalRule.INSTANCE,
-                JoinProjectTransposeRule.RIGHT_PROJECT_INCLUDE_OUTER,
-                ReduceExpressionsRule.JOIN_INSTANCE,
+                CoreRules.JOIN_PROJECT_RIGHT_TRANSPOSE_INCLUDE_OUTER,
+                CoreRules.JOIN_REDUCE_EXPRESSIONS,
 
                 // Union rules
                 UnionLogicalRule.INSTANCE,

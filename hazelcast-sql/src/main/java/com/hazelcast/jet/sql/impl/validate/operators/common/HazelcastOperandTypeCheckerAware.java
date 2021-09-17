@@ -42,6 +42,7 @@ import java.util.Arrays;
  * {@link HazelcastBinaryOperator}, {@link HazelcastSpecialOperator}.
  */
 public interface HazelcastOperandTypeCheckerAware {
+
     default HazelcastCallBinding prepareBinding(SqlCallBinding binding) {
         SqlOperator operator = binding.getOperator();
 
@@ -50,6 +51,10 @@ public interface HazelcastOperandTypeCheckerAware {
         // Resolve unknown types if needed.
         SqlOperandTypeInference operandTypeInference = operator.getOperandTypeInference();
 
+        return prepareBinding(binding, operandTypeInference);
+    }
+
+    default HazelcastCallBinding prepareBinding(SqlCallBinding binding, SqlOperandTypeInference operandTypeInference) {
         HazelcastSqlValidator validator = (HazelcastSqlValidator) binding.getValidator();
 
         boolean resolveOperands = false;

@@ -35,9 +35,6 @@ public final class SqlStatement {
     /** Value for the timeout that is not set. */
     public static final long TIMEOUT_NOT_SET = -1;
 
-    /** Value for the timeout that is disabled. */
-    public static final long TIMEOUT_DISABLED = 0;
-
     /** Default timeout. */
     public static final long DEFAULT_TIMEOUT = TIMEOUT_NOT_SET;
 

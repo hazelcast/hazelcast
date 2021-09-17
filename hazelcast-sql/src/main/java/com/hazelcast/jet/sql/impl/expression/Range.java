@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-package org.apache.calcite.runtime;
+package com.hazelcast.jet.sql.impl.expression;
 
-import javax.annotation.Nullable;
+import com.google.common.collect.RangeSet;
+import com.hazelcast.sql.impl.expression.Searchable;
 
-/**
- * A class that enables access to protected {@link Resources} members.
- */
-public final class ResourceUtil {
+import java.io.Serializable;
 
-    private ResourceUtil() {
+@SuppressWarnings("UnstableApiUsage")
+public class Range<C extends Comparable<C>> implements Searchable<C>, Serializable {
+
+    private final RangeSet<C> set;
+
+    public Range(RangeSet<C> set) {
+        this.set = set;
     }
 
-    public static String key(Resources.Element element) {
-        return element.key;
-    }
-
-    @Nullable
-    public static Object[] args(Resources.Inst instance) {
-        return instance.args;
+    @Override
+    public boolean contains(C value) {
+        return set.contains(value);
     }
 }

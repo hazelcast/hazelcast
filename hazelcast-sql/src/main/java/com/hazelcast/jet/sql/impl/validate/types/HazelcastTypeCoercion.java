@@ -17,10 +17,10 @@
 package com.hazelcast.jet.sql.impl.validate.types;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
@@ -38,6 +38,7 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.type.SqlTypeFamily;
 import org.apache.calcite.sql.type.SqlTypeUtil;
+import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
@@ -54,8 +55,9 @@ import static org.apache.calcite.util.Static.RESOURCE;
  * and assigning more precise types comparing to the standard Calcite coercion.
  */
 public final class HazelcastTypeCoercion extends TypeCoercionImpl {
-    public HazelcastTypeCoercion(HazelcastSqlValidator validator) {
-        super(HazelcastTypeFactory.INSTANCE, validator);
+
+    public HazelcastTypeCoercion(RelDataTypeFactory typeFactory, SqlValidator validator) {
+        super(typeFactory, validator);
     }
 
     @Override

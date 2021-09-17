@@ -216,7 +216,7 @@ public class SqlSeriesGeneratorTest extends SqlTestSupport {
         createMapping("m", int.class, int.class);
         instance().getMap("m").put(42, 43);
         assertThatThrownBy(() -> sqlService.execute("SELECT GENERATE_SERIES(null, null) FROM m"))
-                .hasMessage("unexpected SQL type: ROW");
+                .hasMessage("Cannot call table function here: 'GENERATE_SERIES'");
     }
 
     @Test

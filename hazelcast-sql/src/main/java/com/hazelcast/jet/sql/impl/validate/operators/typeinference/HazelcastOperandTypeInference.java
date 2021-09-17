@@ -27,8 +27,10 @@ import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.createNullableType;
@@ -53,6 +55,7 @@ public class HazelcastOperandTypeInference implements SqlOperandTypeInference {
         SqlCall call = callBinding.getCall();
         if (ValidationUtil.hasAssignment(call)) {
             RelDataTypeFactory typeFactory = callBinding.getTypeFactory();
+            RelDataType[] parameterTypes = new RelDataType[parametersByName.size()];
             for (int i = 0; i < call.operandCount(); i++) {
                 SqlCall assignment = call.operand(i);
                 SqlIdentifier id = assignment.operand(1);
@@ -61,11 +64,13 @@ public class HazelcastOperandTypeInference implements SqlOperandTypeInference {
                 JetTableFunctionParameter parameter = parametersByName.get(name);
                 if (parameter != null) {
                     SqlTypeName parameterType = parameter.type();
-                    operandTypes[i] = toType(parameterType, typeFactory);
+                    parameterTypes[parameter.ordinal()] = toType(parameterType, typeFactory);
                 } else {
                     throw SqlUtil.newContextException(id.getParserPosition(), RESOURCE.unknownArgumentName(name));
                 }
             }
+            //noinspection ResultOfMethodCallIgnored
+            Arrays.stream(parameterTypes).filter(Objects::nonNull).toArray(ignored -> operandTypes);
         } else {
             positionalOperandTypeInference.inferOperandTypes(callBinding, returnType, operandTypes);
         }

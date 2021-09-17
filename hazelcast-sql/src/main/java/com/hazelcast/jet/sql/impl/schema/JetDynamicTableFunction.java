@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.ValidationUtil;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
@@ -38,7 +38,6 @@ import org.apache.calcite.sql.SqlLiteral;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlUtil;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.NlsString;
 
@@ -59,20 +58,18 @@ public abstract class JetDynamicTableFunction extends JetTableFunction {
 
     protected JetDynamicTableFunction(
             String name,
-            List<JetTableFunctionParameter> parameters,
+            JetSqlOperandMetadata operandMetadata,
             Function<List<Object>, Table> tableFn,
-            SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
         super(
                 name,
-                parameters,
-                binding -> inferReturnType(name, parameters, tableFn, binding),
-                operandTypeInference,
+                operandMetadata,
+                binding -> inferReturnType(name, operandMetadata.parameters(), tableFn, binding),
                 connector
         );
 
-        assert parameters.stream()
+        assert operandMetadata.parameters().stream()
                 .map(JetTableFunctionParameter::type)
                 .allMatch(type -> type == VARCHAR || type == MAP);
     }
