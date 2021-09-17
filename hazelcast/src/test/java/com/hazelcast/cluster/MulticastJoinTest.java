@@ -30,6 +30,7 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

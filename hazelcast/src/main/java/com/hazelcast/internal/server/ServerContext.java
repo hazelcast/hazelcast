@@ -35,7 +35,6 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -100,7 +99,7 @@ public interface ServerContext {
 
     int getConnectionMonitorMaxFaults();
 
-    void onDisconnect(List<Address> endpointAliases, Throwable cause);
+    void onDisconnect(Address endpoint, Throwable cause);
 
     void executeAsync(Runnable runnable);
 
