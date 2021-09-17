@@ -150,7 +150,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         }
 
         NearCacheStats nearCacheStats = nearCachedMapFromNewServer.getLocalMapStats().getNearCacheStats();
-        assertStats(nearCacheStats, total, 0, total);
+        assertStats(MAP_NAME, nearCacheStats, total, 0, total);
 
         sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
 
@@ -158,7 +158,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
             nearCachedMapFromNewServer.get(i);
         }
 
-        assertStats(nearCacheStats, total, total, total);
+        assertStats(MAP_NAME, nearCacheStats, total, total, total);
     }
 
     @Override
@@ -176,7 +176,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
     }
 
     private void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
-                                                             final HazelcastInstance server) {
+                                                      final HazelcastInstance server) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -208,10 +208,14 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         return (DefaultNearCache) nearCachedMapFromNewServer.getNearCache().unwrap(DefaultNearCache.class);
     }
 
-    public static void assertStats(NearCacheStats nearCacheStats, int ownedEntryCount, int expectedHits, int expectedMisses) {
-        String msg = "Wrong %s [%s]";
-        assertEquals(format(msg, "ownedEntryCount", nearCacheStats), ownedEntryCount, nearCacheStats.getOwnedEntryCount());
-        assertEquals(format(msg, "expectedHits", nearCacheStats), expectedHits, nearCacheStats.getHits());
-        assertEquals(format(msg, "expectedMisses", nearCacheStats), expectedMisses, nearCacheStats.getMisses());
+    public static void assertStats(String name, NearCacheStats nearCacheStats,
+                                   int ownedEntryCount, int expectedHits, int expectedMisses) {
+        String msg = "NearCache for map `%s`, got wrong %s [%s]";
+        assertEquals(format(msg, name, "ownedEntryCount", nearCacheStats),
+                ownedEntryCount, nearCacheStats.getOwnedEntryCount());
+        assertEquals(format(msg, name, "expectedHits", nearCacheStats),
+                expectedHits, nearCacheStats.getHits());
+        assertEquals(format(msg, name, "expectedMisses", nearCacheStats),
+                expectedMisses, nearCacheStats.getMisses());
     }
 }
