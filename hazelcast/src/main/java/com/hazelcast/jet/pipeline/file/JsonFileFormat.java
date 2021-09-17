@@ -34,6 +34,8 @@ public class JsonFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_JSON = "json";
 
+    private static final long serialVersionUID = 1L;
+
     private Class<T> clazz;
     private boolean multiline = true;
 

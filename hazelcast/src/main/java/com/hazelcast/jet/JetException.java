@@ -25,6 +25,8 @@ import com.hazelcast.core.HazelcastException;
  */
 public class JetException extends HazelcastException {
 
+    private static final long serialVersionUID = 1L;
+
     public JetException() {
     }
 
