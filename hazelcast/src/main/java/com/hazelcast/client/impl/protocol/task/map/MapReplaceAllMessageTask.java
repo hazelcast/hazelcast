@@ -68,7 +68,7 @@ public class MapReplaceAllMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MapReplaceAllCodec.encodeResponse();
-    } //we had get all response method
+    }
 
     @Override
     public Permission getRequiredPermission() {
