@@ -2202,12 +2202,20 @@ public class ClientMapProxy<K, V> extends ClientProxy
     protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
         if (SerializationUtil.isClassStaticAndSerializable(function)) {
             int partitionCount = getContext().getPartitionService().getPartitionCount();
+            List<Future<ClientMessage>> futures = new ArrayList<>(partitionCount);
             Data functionAsData = toData(function);
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
                 ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
-                new ClientInvocation(getClient(), request, getName(), partitionId).invoke();
+                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
             }
-        } else {
+            for (Future<ClientMessage> future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    throw rethrow(e);
+                }
+            }
+            } else {
             IMap.super.replaceAll(function);
         }
     }

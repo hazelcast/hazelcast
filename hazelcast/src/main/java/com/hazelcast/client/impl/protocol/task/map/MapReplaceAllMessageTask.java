@@ -18,29 +18,39 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.map.impl.MapEntryReplacingEntryProcessor;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.ReplaceAllOperation;
-import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.operationservice.OperationFactory;
 
 import java.security.Permission;
+import java.util.Map;
 import java.util.function.BiFunction;
 
 public class MapReplaceAllMessageTask
-        extends AbstractPartitionMessageTask<MapReplaceAllCodec.RequestParameters> {
+        extends AbstractMapAllPartitionsMessageTask<MapReplaceAllCodec.RequestParameters> {
 
     private BiFunction function;
-    private String name;
 
     public MapReplaceAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return new ReplaceAllOperation(name, function);
+    protected OperationFactory createOperationFactory() {
+        MapOperationProvider operationProvider = getOperationProvider(parameters.name);
+        return operationProvider.createPartitionWideEntryWithPredicateOperationFactory(parameters.name,
+           new MapEntryReplacingEntryProcessor(function), Predicates.alwaysTrue());
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return null;
     }
 
     @Override
@@ -52,7 +62,6 @@ public class MapReplaceAllMessageTask
     protected MapReplaceAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         MapReplaceAllCodec.RequestParameters parameters =  MapReplaceAllCodec.decodeRequest(clientMessage);
         function = serializationService.toObject(parameters.function);
-        name = parameters.name;
         return parameters;
     }
 
@@ -63,7 +72,7 @@ public class MapReplaceAllMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_PUT);
     }
 
     @Override
