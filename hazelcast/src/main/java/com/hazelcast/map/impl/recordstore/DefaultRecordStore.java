@@ -1412,25 +1412,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void replaceAll(BiFunction function) {
-        Iterator<Map.Entry<Data, Record>> entryIterator = storage.mutationTolerantIterator();
-        while (entryIterator.hasNext()) {
-            try {
-                Map.Entry<Data, Record> entry = entryIterator.next();
-                Data key = entry.getKey();
-                Record record = entry.getValue();
-                Object keyObj = serializationService.toObject(key);
-                Object valueObj = serializationService.toObject(record.getValue());
-                Object newValue = function.apply(keyObj, valueObj);
-                storage.updateRecordValue(key, record, newValue);
-            } catch (IllegalStateException ise) {
-                // this usually means the entry is no longer in the map.
-                throw new ConcurrentModificationException(ise);
-            }
-        }
-    }
-
-    @Override
     public void clearPartition(boolean onShutdown, boolean onStorageDestroy) {
         clearLockStore();
         mapDataStore.reset();
