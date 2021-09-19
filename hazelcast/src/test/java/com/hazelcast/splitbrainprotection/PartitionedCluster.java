@@ -16,11 +16,11 @@
 
 package com.hazelcast.splitbrainprotection;
 
+import com.hazelcast.cluster.MembershipAdapter;
+import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.cluster.MembershipAdapter;
-import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,6 +34,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.ALL_SYNC;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -112,7 +113,7 @@ public class PartitionedCluster {
     private void createInstances(Config config) {
         if (instance == null) {
             instance = new HazelcastInstance[5];
-            instance = factory.newInstances(config, 5);
+            instance = factory.newInstances(config, 5, ALL_SYNC);
         }
         assertClusterSize(5, instance[0], instance[4]);
         assertClusterSizeEventually(5, instance[1], instance[2], instance[3]);

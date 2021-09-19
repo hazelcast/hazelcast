@@ -54,6 +54,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.ALL_SYNC;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -501,7 +502,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
         // to guarantee instance.shutdown() not to timeout
         config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "99999999999");
 
-        final HazelcastInstance[] instances = factory.newInstances(config, 4);
+        final HazelcastInstance[] instances = factory.newInstances(config, 4, ALL_SYNC);
         assertClusterSizeEventually(4, instances);
         warmUpPartitions(instances);
 

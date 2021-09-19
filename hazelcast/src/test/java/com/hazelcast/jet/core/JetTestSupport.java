@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.rules.Timeout;
@@ -193,6 +194,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
             instanceFactory = new TestHazelcastFactory();
         }
         return instanceFactory.newInstances(config, nodeCount);
+    }
+
+    protected HazelcastInstance[] createHazelcastInstances(Config config, int nodeCount, TestHazelcastInstanceFactory.InstanceCreationMode mode) {
+        if (instanceFactory == null) {
+            instanceFactory = new TestHazelcastFactory();
+        }
+        return instanceFactory.newInstances(config, nodeCount, mode);
     }
 
     protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {

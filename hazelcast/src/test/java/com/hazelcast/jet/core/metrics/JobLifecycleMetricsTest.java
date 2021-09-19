@@ -42,6 +42,7 @@ import static com.hazelcast.jet.core.TestProcessors.MockP;
 import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
 import static com.hazelcast.jet.core.TestProcessors.reset;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.ALL_SYNC;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
 
@@ -61,7 +62,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.setProperty("hazelcast.jmx", "true");
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
-        hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
+        hzInstances = createHazelcastInstances(config, MEMBER_COUNT, ALL_SYNC);
     }
 
     @Test

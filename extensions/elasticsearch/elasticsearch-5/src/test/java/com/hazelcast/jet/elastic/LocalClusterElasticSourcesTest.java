@@ -21,9 +21,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.test.IgnoredForCoverage;
 import org.junit.AfterClass;
+import org.junit.experimental.categories.Category;
 
 import java.util.function.Supplier;
-import org.junit.experimental.categories.Category;
+
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.FIRST_SYNC;
 
 /**
  * Test running 3 local Jet members in a cluster and Elastic in docker
@@ -36,7 +38,7 @@ public class LocalClusterElasticSourcesTest extends CommonElasticSourcesTest {
     // Cluster startup takes >1s, reusing the cluster between tests
     private static Supplier<HazelcastInstance> hzSupplier = Util.memoize(() -> {
         TestHazelcastFactory factory = new TestHazelcastFactory();
-        instances = factory.newInstances(config(), 3);
+        instances = factory.newInstances(config(), 3, FIRST_SYNC);
         return instances[0];
     });
 

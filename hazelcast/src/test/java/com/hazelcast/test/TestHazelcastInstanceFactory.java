@@ -64,6 +64,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.ALL_SYNC;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.FIRST_SYNC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
@@ -269,10 +270,17 @@ public class TestHazelcastInstanceFactory {
     }
 
     public enum InstanceCreationMode {
-        FIRST_SYNC, ALL_ASYNC
+        FIRST_SYNC, ALL_ASYNC, ALL_SYNC
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount, InstanceCreationMode instanceCreationMode) {
+        if (instanceCreationMode == ALL_SYNC) {
+            HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+            for (int i = 0; i < nodeCount; i++) {
+                instances[i] = newHazelcastInstance(config);
+            }
+            return instances;
+        }
         List<HazelcastInstance> instances = new ArrayList<>();
         boolean shouldRunFirstSync = instanceCreationMode == FIRST_SYNC && nodeCount > 0;
         if (shouldRunFirstSync) {
