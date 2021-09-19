@@ -62,6 +62,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.Accessors.getPartitionService;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.FIRST_SYNC;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -87,7 +88,7 @@ public class MigrationCommitServiceTest extends HazelcastTestSupport {
     public void setup() throws Exception {
         blockMigrationStartLatch = new CountDownLatch(1);
         factory = createHazelcastInstanceFactory(NODE_COUNT);
-        instances = factory.newInstances(createConfig(), NODE_COUNT);
+        instances = factory.newInstances(createConfig(), NODE_COUNT, FIRST_SYNC);
         warmUpPartitions(instances);
         waitAllForSafeState(instances);
 

@@ -36,6 +36,7 @@ import com.hazelcast.test.metrics.MetricsRule;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -63,6 +64,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
+import static com.hazelcast.test.TestHazelcastInstanceFactory.InstanceCreationMode.FIRST_SYNC;
 import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.stream.Collectors.toList;
@@ -263,20 +265,39 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config, int nodeCount) {
+        return newInstances(config, nodeCount, InstanceCreationMode.ALL_ASYNC);
+    }
+
+    public enum InstanceCreationMode {
+        FIRST_SYNC, ALL_ASYNC
+    }
+
+    public HazelcastInstance[] newInstances(Config config, int nodeCount, InstanceCreationMode instanceCreationMode) {
+        List<HazelcastInstance> instances = new ArrayList<>();
+        boolean shouldRunFirstSync = instanceCreationMode == FIRST_SYNC && nodeCount > 0;
+        if (shouldRunFirstSync) {
+            instances.add(newHazelcastInstance(config));
+        }
+
         Callable<HazelcastInstance> hazelcastInstanceCallable = () -> newHazelcastInstance(config);
-        List<Callable<HazelcastInstance>> callables = IntStream.range(0, nodeCount)
-                .mapToObj(__ -> hazelcastInstanceCallable).collect(toList());
+        List<Callable<HazelcastInstance>> callables = IntStream.range(0, nodeCount - (shouldRunFirstSync ? 1 : 0))
+                .mapToObj(__ -> hazelcastInstanceCallable)
+                .collect(toList());
         try {
-            List<Future<HazelcastInstance>> futures = executorService.invokeAll(callables);
-            return futures.stream().map(this::getHazelcastInstance).toArray(HazelcastInstance[]::new);
+            List<HazelcastInstance> asyncInstances = executorService.invokeAll(callables).stream()
+                    .map(TestHazelcastInstanceFactory::getHazelcastInstance)
+                    .collect(toList());
+
+            instances.addAll(asyncInstances);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return instances.toArray(new HazelcastInstance[0]);
     }
 
-    private HazelcastInstance getHazelcastInstance(Future<HazelcastInstance> f) {
+    private static HazelcastInstance getHazelcastInstance(Future<HazelcastInstance> futureInstance) {
         try {
-            return f.get();
+            return futureInstance.get();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
