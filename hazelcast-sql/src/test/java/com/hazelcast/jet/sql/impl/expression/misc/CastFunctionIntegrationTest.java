@@ -888,6 +888,13 @@ public class CastFunctionIntegrationTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void testReal_literal() {
+        put(1);
+
+        checkValue0(sql("CAST(1.5 AS REAL)", OBJECT), OBJECT, 1.5F);
+    }
+
+    @Test
     public void testDouble_literal_small() {
         put(1);
 
