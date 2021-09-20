@@ -101,7 +101,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 return CompletableFuture.completedFuture(null);
             }
         } catch (Exception e) {
-            removeClassLoaders(jobId());
+            getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(jobId(), EXECUTION);
             throw e;
         }
     }
@@ -158,12 +158,5 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 jobClassloaderService.clearProcessorClassLoaders();
             }
         }
-    }
-
-    private void removeClassLoaders(long jobId) {
-        getNodeEngine()
-                .<JetServiceBackend>getService(SERVICE_NAME)
-                .getJobClassLoaderService()
-                .tryRemoveClassloadersForJob(jobId, EXECUTION);
     }
 }
