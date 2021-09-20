@@ -232,16 +232,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
             Set<MemberInfo> participants,
             ExecutionPlan plan
     ) {
-        assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
-        verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-        failIfNotRunning();
-
-        ExecutionContext execCtx;
-        synchronized (mutex) {
-            addExecutionContextJobId(jobId, executionId, coordinator);
-            execCtx = executionContexts.computeIfAbsent(executionId,
-                    x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
-        }
+        ExecutionContext execCtx = addExecutionContextLightJob(
+                jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
         try {
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
@@ -284,19 +276,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
-        assertIsMaster(jobId, executionId, coordinator);
-        verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-        failIfNotRunning();
-
-        ExecutionContext execCtx;
-        synchronized (mutex) {
-            addExecutionContextJobId(jobId, executionId, coordinator);
-            execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
-            ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
-            if (oldContext != null) {
-                throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
-            }
-        }
+        ExecutionContext execCtx = addExecutionContext(
+                jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
         try {
             jobClassloaderService.prepareProcessorClassLoaders(jobId);
@@ -335,6 +316,66 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
 
             throw new RetryableHazelcastException();
+        }
+    }
+
+    private ExecutionContext addExecutionContextLightJob(
+            long jobId,
+            long executionId,
+            Address coordinator,
+            int coordinatorMemberListVersion,
+            Set<MemberInfo> participants
+    ) {
+        try {
+            assert executionId == jobId : "executionId(" + idToString(executionId) + ") != jobId(" + idToString(jobId) + ")";
+            verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
+            failIfNotRunning();
+
+            ExecutionContext execCtx;
+            synchronized (mutex) {
+                addExecutionContextJobId(jobId, executionId, coordinator);
+                execCtx = executionContexts.computeIfAbsent(executionId,
+                        x -> new ExecutionContext(nodeEngine, jobId, executionId, true));
+            }
+            return execCtx;
+        } catch (Throwable t) {
+            // The classloader was created in InitExecutionOperation#deserializePlan().
+            // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
+            // to executionContexts, then classloader must be removed in order to not have leaks.
+            jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
+            throw t;
+        }
+    }
+
+
+    private ExecutionContext addExecutionContext(
+            long jobId,
+            long executionId,
+            Address coordinator,
+            int coordinatorMemberListVersion,
+            Set<MemberInfo> participants
+    ) {
+        try {
+            assertIsMaster(jobId, executionId, coordinator);
+            verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
+            failIfNotRunning();
+
+            ExecutionContext execCtx;
+            synchronized (mutex) {
+                addExecutionContextJobId(jobId, executionId, coordinator);
+                execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
+                ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
+                if (oldContext != null) {
+                    throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
+                }
+            }
+            return execCtx;
+        } catch (Throwable t) {
+            // The classloader was created in InitExecutionOperation#deserializePlan().
+            // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
+            // to executionContexts, then classloader must be removed in order to not have leaks.
+            jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
+            throw t;
         }
     }
 

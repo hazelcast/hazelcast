@@ -90,20 +90,13 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
-        try {
-            if (isLightJob) {
-                return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
-                        coordinatorMemberListVersion, participants, plan);
-            } else {
-                service.getJobExecutionService().initExecution(jobId(), executionId, caller,
-                        coordinatorMemberListVersion, participants, plan);
-                return CompletableFuture.completedFuture(null);
-            }
-        } catch (Throwable e) {
-            // The classloader was created in deserializePlan(), if the init execution fails
-            // the cleanup is not guaranteed to run, remove the classloader here
-            service.getJobClassLoaderService().tryRemoveClassloadersForJob(jobId(), EXECUTION);
-            throw e;
+        if (isLightJob) {
+            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
+                    coordinatorMemberListVersion, participants, plan);
+        } else {
+            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+                    coordinatorMemberListVersion, participants, plan);
+            return CompletableFuture.completedFuture(null);
         }
     }
 
