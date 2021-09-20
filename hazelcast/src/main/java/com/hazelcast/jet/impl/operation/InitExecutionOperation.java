@@ -100,8 +100,10 @@ public class InitExecutionOperation extends AsyncJobOperation {
                         coordinatorMemberListVersion, participants, plan);
                 return CompletableFuture.completedFuture(null);
             }
-        } catch (Exception e) {
-            getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(jobId(), EXECUTION);
+        } catch (Throwable e) {
+            // The classloader was created in deserializePlan(), if the init execution fails
+            // the cleanup is not guaranteed to run, remove the classloader here
+            service.getJobClassLoaderService().tryRemoveClassloadersForJob(jobId(), EXECUTION);
             throw e;
         }
     }
