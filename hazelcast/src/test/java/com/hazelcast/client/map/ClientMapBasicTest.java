@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import testsubjects.StaticSerializableBiFunction;
+import testsubjects.StaticSerializableBiFunctionEx;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
@@ -892,6 +893,13 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
         map.replaceAll((k, v) -> v * 10);
         assertEquals((int) map.get("k1"), 10);
         assertEquals((int) map.get("k2"), 20);
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testReplaceAllWithStaticSerializableFunction_whenKeyNull() {
+        IMap<Integer, Integer> map = client.getMap(randomString());
+        map.put(1, 0);
+        map.replaceAll(new StaticSerializableBiFunctionEx());
     }
 
     @Test
