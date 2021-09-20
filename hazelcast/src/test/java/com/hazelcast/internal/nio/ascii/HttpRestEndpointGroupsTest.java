@@ -48,7 +48,7 @@ public class HttpRestEndpointGroupsTest extends RestApiConfigTestBase {
     public void testGroupEnabled() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfigWithEnabledGroups(restEndpointGroup));
         for (TestUrl testUrl : TEST_URLS) {
-            if (restEndpointGroup == testUrl.restEndpointGroup) {
+            if (restEndpointGroup.getCode() == testUrl.restEndpointGroup.getCode()) {
                 assertTextProtocolResponse(hz, testUrl);
             }
         }
@@ -58,7 +58,7 @@ public class HttpRestEndpointGroupsTest extends RestApiConfigTestBase {
     public void testGroupDisabled() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfigWithDisabledGroups(restEndpointGroup));
         for (TestUrl testUrl : TEST_URLS) {
-            if (restEndpointGroup == testUrl.restEndpointGroup) {
+            if (restEndpointGroup.getCode() == testUrl.restEndpointGroup.getCode()) {
                 assertNoTextProtocolResponse(hz, testUrl);
             }
         }
@@ -68,7 +68,7 @@ public class HttpRestEndpointGroupsTest extends RestApiConfigTestBase {
     public void testOthersWhenGroupEnabled() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfigWithEnabledGroups(restEndpointGroup));
         for (TestUrl testUrl : TEST_URLS) {
-            if (restEndpointGroup != testUrl.restEndpointGroup) {
+            if (restEndpointGroup.getCode() != testUrl.restEndpointGroup.getCode()) {
                 assertNoTextProtocolResponse(hz, testUrl);
             }
         }
@@ -78,7 +78,7 @@ public class HttpRestEndpointGroupsTest extends RestApiConfigTestBase {
     public void testOthersWhenGroupDisabled() throws Exception {
         HazelcastInstance hz = factory.newHazelcastInstance(createConfigWithDisabledGroups(restEndpointGroup));
         for (TestUrl testUrl : TEST_URLS) {
-            if (restEndpointGroup != testUrl.restEndpointGroup) {
+            if (restEndpointGroup.getCode() != testUrl.restEndpointGroup.getCode()) {
                 assertTextProtocolResponse(hz, testUrl);
             }
         }
