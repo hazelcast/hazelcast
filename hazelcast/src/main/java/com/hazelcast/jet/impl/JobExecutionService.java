@@ -355,21 +355,18 @@ public class JobExecutionService implements DynamicMetricsProvider {
             int coordinatorMemberListVersion,
             Set<MemberInfo> participants
     ) {
+        ExecutionContext execCtx;
+        ExecutionContext oldContext;
         try {
             assertIsMaster(jobId, executionId, coordinator);
             verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
             failIfNotRunning();
 
-            ExecutionContext execCtx;
             synchronized (mutex) {
                 addExecutionContextJobId(jobId, executionId, coordinator);
                 execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
-                ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
-                if (oldContext != null) {
-                    throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
-                }
+                oldContext = executionContexts.put(executionId, execCtx);
             }
-            return execCtx;
         } catch (Throwable t) {
             // The classloader was created in InitExecutionOperation#deserializePlan().
             // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
@@ -377,6 +374,10 @@ public class JobExecutionService implements DynamicMetricsProvider {
             jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
             throw t;
         }
+        if (oldContext != null) {
+            throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
+        }
+        return execCtx;
     }
 
     private void assertIsMaster(long jobId, long executionId, Address coordinator) {
