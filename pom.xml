@@ -1394,6 +1394,11 @@
                 <artifactId>proto-google-common-protos</artifactId>
                 <version>1.18.1</version>
             </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${mysql.connector.version}</version>
+            </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
