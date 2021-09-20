@@ -209,6 +209,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private ClientQueryCacheContext queryCacheContext;
+    private boolean useDefaultReplaceAllOperation;
 
     public ClientMapProxy(String serviceName, String name, ClientContext context) {
         super(serviceName, name, context);
@@ -2200,22 +2201,28 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     protected void replaceAllInternal(BiFunction<? super K, ? super V, ? extends V> function) {
-        if (SerializationUtil.isClassStaticAndSerializable(function)) {
-            int partitionCount = getContext().getPartitionService().getPartitionCount();
-            List<Future<ClientMessage>> futures = new ArrayList<>(partitionCount);
-            Data functionAsData = toData(function);
-            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
-                futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
-            }
-            for (Future<ClientMessage> future : futures) {
-                try {
-                    future.get();
-                } catch (Exception e) {
-                    throw rethrow(e);
+        if (SerializationUtil.isClassStaticAndSerializable(function) && !useDefaultReplaceAllOperation) {
+            try {
+                int partitionCount = getContext().getPartitionService().getPartitionCount();
+                List<Future<ClientMessage>> futures = new ArrayList<>(partitionCount);
+                Data functionAsData = toData(function);
+                for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                    ClientMessage request = MapReplaceAllCodec.encodeRequest(name, functionAsData);
+                    futures.add(new ClientInvocation(getClient(), request, getName(), partitionId).invoke());
                 }
+                for (Future<ClientMessage> future : futures) {
+                    try {
+                        future.get();
+                    } catch (Exception e) {
+                        throw rethrow(e);
+                    }
+                }
+            } catch (UnsupportedOperationException e) {
+                //handle if the server version is less than client version
+                IMap.super.replaceAll(function);
+                useDefaultReplaceAllOperation = true;
             }
-            } else {
+        } else {
             IMap.super.replaceAll(function);
         }
     }
