@@ -246,6 +246,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
             ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+            // We don't create the CL for light jobs.
+            assert jobClassloaderService.getClassLoader(jobId) == null;
             doWithClassLoader(
                     jobCl,
                     () -> execCtx.initialize(coordinator, addresses, plan)
@@ -284,19 +286,8 @@ public class JobExecutionService implements DynamicMetricsProvider {
             long jobId, long executionId, Address coordinator, int coordinatorMemberListVersion,
             Set<MemberInfo> participants, ExecutionPlan plan
     ) {
-        assertIsMaster(jobId, executionId, coordinator);
-        verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
-        failIfNotRunning();
-
-        ExecutionContext execCtx;
-        synchronized (mutex) {
-            addExecutionContextJobId(jobId, executionId, coordinator);
-            execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
-            ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
-            if (oldContext != null) {
-                throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
-            }
-        }
+        ExecutionContext execCtx = addExecutionContext(
+                jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
         try {
             jobClassloaderService.prepareProcessorClassLoaders(jobId);
@@ -336,6 +327,38 @@ public class JobExecutionService implements DynamicMetricsProvider {
 
             throw new RetryableHazelcastException();
         }
+    }
+
+    private ExecutionContext addExecutionContext(
+            long jobId,
+            long executionId,
+            Address coordinator,
+            int coordinatorMemberListVersion,
+            Set<MemberInfo> participants
+    ) {
+        ExecutionContext execCtx;
+        ExecutionContext oldContext;
+        try {
+            assertIsMaster(jobId, executionId, coordinator);
+            verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
+            failIfNotRunning();
+
+            synchronized (mutex) {
+                addExecutionContextJobId(jobId, executionId, coordinator);
+                execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
+                oldContext = executionContexts.put(executionId, execCtx);
+            }
+        } catch (Throwable t) {
+            // The classloader was created in InitExecutionOperation#deserializePlan().
+            // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
+            // to executionContexts, then classloader must be removed in order to not have leaks.
+            jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
+            throw t;
+        }
+        if (oldContext != null) {
+            throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
+        }
+        return execCtx;
     }
 
     private void assertIsMaster(long jobId, long executionId, Address coordinator) {
@@ -437,7 +460,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
         try {
             doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error));
         } finally {
-            jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+            if (!executionContext.isLightJob()) {
+                jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
+            }
             executionCompleted.inc();
             executionContextJobIds.remove(executionContext.jobId());
             logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
