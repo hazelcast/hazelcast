@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
@@ -90,13 +91,18 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
-        if (isLightJob) {
-            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
-                    coordinatorMemberListVersion, participants, plan);
-        } else {
-            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
-                    coordinatorMemberListVersion, participants, plan);
-            return CompletableFuture.completedFuture(null);
+        try {
+            if (isLightJob) {
+                return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
+                        coordinatorMemberListVersion, participants, plan);
+            } else {
+                service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+                        coordinatorMemberListVersion, participants, plan);
+                return CompletableFuture.completedFuture(null);
+            }
+        } catch (Exception e) {
+            removeClassLoaders(jobId());
+            throw e;
         }
     }
 
@@ -152,5 +158,12 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 jobClassloaderService.clearProcessorClassLoaders();
             }
         }
+    }
+
+    private void removeClassLoaders(long jobId) {
+        getNodeEngine()
+                .<JetServiceBackend>getService(SERVICE_NAME)
+                .getJobClassLoaderService()
+                .tryRemoveClassloadersForJob(jobId, EXECUTION);
     }
 }
