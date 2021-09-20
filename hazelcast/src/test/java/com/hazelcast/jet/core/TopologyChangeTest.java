@@ -28,7 +28,6 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
@@ -68,8 +67,6 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
-import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_EXECUTION_OP;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.START_EXECUTION_OP;
@@ -110,6 +107,8 @@ public class TopologyChangeTest extends JetTestSupport {
     @Parameterized.Parameters(name = "liteMemberFlags({index})")
     public static Collection<boolean[]> parameters() {
         return Arrays.asList(new boolean[][]{
+                {false, false, false},
+                {true, false, false},
                 {false, true, false}
         });
     }
@@ -437,11 +436,11 @@ public class TopologyChangeTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             Arrays.stream(instances)
-                    .filter(instance -> !instance.getCluster().getLocalMember().isLiteMember())
-                    .filter(instance -> instance != instances[2])
-                    .map(JetTestSupport::getJetServiceBackend)
-                    .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
-                    .forEach(Assert::assertNotNull);
+                  .filter(instance -> !instance.getCluster().getLocalMember().isLiteMember())
+                  .filter(instance -> instance != instances[2])
+                  .map(JetTestSupport::getJetServiceBackend)
+                  .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
+                  .forEach(Assert::assertNotNull);
         });
 
         newInstance.getLifecycleService().terminate();
@@ -535,12 +534,6 @@ public class TopologyChangeTest extends JetTestSupport {
             assertInstanceOf(IllegalArgumentException.class, e.getCause());
             assertTrue("Expected: contains 'is not in participants'\nActual: '" + e.getMessage() + "'",
                     e.getMessage().contains("is not in participants"));
-        } finally {
-            JobClassLoaderService jobClassLoaderService = getNode(master)
-                    .getNodeEngine()
-                    .<JetServiceBackend>getService(SERVICE_NAME)
-                    .getJobClassLoaderService();
-            jobClassLoaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
         }
     }
 }
