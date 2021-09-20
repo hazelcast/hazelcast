@@ -359,30 +359,24 @@ public class JobExecutionService implements DynamicMetricsProvider {
             assertIsMaster(jobId, executionId, coordinator);
             verifyClusterInformation(jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
             failIfNotRunning();
+
+            ExecutionContext execCtx;
+            synchronized (mutex) {
+                addExecutionContextJobId(jobId, executionId, coordinator);
+                execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
+                ExecutionContext oldContext = executionContexts.put(executionId, execCtx);
+                if (oldContext != null) {
+                    throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
+                }
+            }
+            return execCtx;
         } catch (Throwable t) {
+            // The classloader was created in InitExecutionOperation#deserializePlan().
+            // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
+            // to executionContexts, then classloader must be removed in order to not have leaks.
             jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
             throw t;
         }
-
-        ExecutionContext execCtx;
-        ExecutionContext oldContext;
-        synchronized (mutex) {
-            try {
-                addExecutionContextJobId(jobId, executionId, coordinator);
-                execCtx = new ExecutionContext(nodeEngine, jobId, executionId, false);
-                oldContext = executionContexts.put(executionId, execCtx);
-            } catch (Throwable t) {
-                // The classloader was created in InitExecutionOperation#deserializePlan().
-                // If the InitExecutionOperation#doRun() fails before ExecutionContext is added
-                // to executionContexts, then classloader must be removed in order to not have leaks.
-                jobClassloaderService.tryRemoveClassloadersForJob(jobId, EXECUTION);
-                throw t;
-            }
-            if (oldContext != null) {
-                throw new RuntimeException("Duplicate ExecutionContext for execution " + Util.idToString(executionId));
-            }
-        }
-        return execCtx;
     }
 
     private void assertIsMaster(long jobId, long executionId, Address coordinator) {
