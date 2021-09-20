@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -200,7 +201,9 @@ public class JobClassLoaderService {
         logFinest(logger, "Try remove classloaders for jobId=%s, phase=%s", idToString(jobId), phase);
         classLoaders.compute(jobId, (k, jobClassLoaders) -> {
             if (jobClassLoaders == null) {
-                logger.warning("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
+                if (!Objects.requireNonNull(nodeEngine.getHazelcastInstance().getJet().getJob(jobId)).isLightJob()) {
+                    logger.warning("JobClassLoaders for jobId=" + idToString(jobId) + " already removed");
+                }
                 return null;
             }
 
