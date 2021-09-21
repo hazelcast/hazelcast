@@ -138,8 +138,8 @@
                 <version>2.4</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
                         <id>javacc</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>javacc</goal>
                         </goals>
