@@ -398,7 +398,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.ANY);
         RexNode defaultValue = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
         // TODO: clean up/simplify implementation
-        for (int i = 2; i < call.operandCount();) {
+        for (int i = 2; i < call.operandCount(); ) {
             if (!(call.operand(i) instanceof SqlLiteral)) {
                 throw QueryException.error(SqlErrorCode.PARSING, "Unsupported JSON_VALUE extended syntax.");
             }
