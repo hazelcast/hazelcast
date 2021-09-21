@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
  */
 // A copy of actual Calcite class patched with https://github.com/apache/calcite/pull/2530
 // TODO: Remove when Calcite is released with the bug fixed
+@SuppressWarnings("all")
 public class ConstantExpression extends Expression {
   public final @Nullable Object value;
 

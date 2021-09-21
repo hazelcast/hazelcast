@@ -457,7 +457,7 @@ public final class RexToExpression {
         return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})
     private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName type) {
         switch (type) {
             case TINYINT:
