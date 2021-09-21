@@ -694,6 +694,35 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_rightJoinOnPrimitiveKey() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT l.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " l ON l.v = m.__key",
+                asList(
+                        new Row(0, null, null),
+                        new Row(null, null, null),
+                        new Row(2, 2, "value-2")
+                )
+        );
+    }
+
+    @Test
     public void test_leftJoinNotOnPrimitiveKey() {
         String leftName = randomName();
         TestBatchSqlConnector.create(
@@ -723,6 +752,35 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_rightJoinNotOnPrimitiveKey() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON r.v = m.this",
+                asList(
+                        new Row(0, null, null),
+                        new Row(null, null, null),
+                        new Row(2, "value-2", 2)
+                )
+        );
+    }
+
+    @Test
     public void test_leftJoinNotOnPrimitiveKey_withAdditionalCondition() {
         String leftName = randomName();
         TestBatchSqlConnector.create(
@@ -743,6 +801,35 @@ public class SqlJoinTest extends SqlTestSupport {
                 "SELECT l.v, m.__key, m.this " +
                         "FROM " + leftName + " l " +
                         "LEFT JOIN " + mapName + " m ON l.v = m.this and m.__key is null",
+                asList(
+                        new Row(0, null, null),
+                        new Row(null, null, null),
+                        new Row(2, null, null)
+                )
+        );
+    }
+
+    @Test
+    public void test_rightJoinNotOnPrimitiveKey_withAdditionalCondition() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON r.v = m.this and m.__key is null",
                 asList(
                         new Row(0, null, null),
                         new Row(null, null, null),
@@ -782,6 +869,36 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_rightJoinNotOnPrimitiveKey_multipleMatches() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 2);
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON r.v = m.this",
+                asList(
+                        new Row(0, null, null),
+                        new Row(null, null, null),
+                        new Row(2, "value-2", 2),
+                        new Row(2, "value-3", 2)
+                )
+        );
+    }
+
+    @Test
     public void test_leftJoinNotOnPrimitiveKey_multipleMatches_additionalCondition() {
         String leftName = randomName();
         TestBatchSqlConnector.create(
@@ -811,6 +928,35 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_rightJoinNotOnPrimitiveKey_multipleMatches_additionalCondition() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 2);
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON r.v = m.this and m.__key='value-3'",
+                asList(
+                        new Row(0, null, null),
+                        new Row(null, null, null),
+                        new Row(2, "value-3", 2)
+                )
+        );
+    }
+
+    @Test
     public void test_leftJoinWithAlwaysTrueCondition() {
         String leftName = randomName();
         TestBatchSqlConnector.create(
@@ -831,6 +977,38 @@ public class SqlJoinTest extends SqlTestSupport {
                 "SELECT l.v, m.__key, m.this " +
                         "FROM " + leftName + " l " +
                         "LEFT JOIN " + mapName + " m ON 1 = 1",
+                asList(
+                        new Row(0, "value-1", 1),
+                        new Row(0, "value-2", 2),
+                        new Row(0, "value-3", 3),
+                        new Row(null, "value-1", 1),
+                        new Row(null, "value-2", 2),
+                        new Row(null, "value-3", 3)
+                )
+        );
+    }
+
+    @Test
+    public void test_rightJoinWithAlwaysTrueCondition() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, String.class, int.class);
+        instance().getMap(mapName).put("value-1", 1);
+        instance().getMap(mapName).put("value-2", 2);
+        instance().getMap(mapName).put("value-3", 3);
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON 1 = 1",
                 asList(
                         new Row(0, "value-1", 1),
                         new Row(0, "value-2", 2),
@@ -875,6 +1053,38 @@ public class SqlJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_rightJoinWithNonEquiJoin() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON m.__key > r.v",
+                asList(
+                        new Row(0, 1, "value-1"),
+                        new Row(0, 2, "value-2"),
+                        new Row(0, 3, "value-3"),
+                        new Row(null, null, null),
+                        new Row(2, 3, "value-3"),
+                        new Row(3, null, null)
+                )
+        );
+    }
+
+    @Test
     public void test_leftJoinWithNonEquiJoin_additionalCondition() {
         String leftName = randomName();
         TestBatchSqlConnector.create(
@@ -895,6 +1105,39 @@ public class SqlJoinTest extends SqlTestSupport {
                 "SELECT l.v, m.__key, m.this " +
                         "FROM " + leftName + " l " +
                         "LEFT JOIN " + mapName + " m ON m.__key > l.v AND m.this IS NOT NULL",
+                asList(
+                        new Row(0, 1, "value-1"),
+                        new Row(0, 2, "value-2"),
+                        new Row(0, 3, "value-3"),
+                        new Row(null, null, null),
+                        new Row(2, 3, "value-3"),
+                        new Row(3, null, null)
+
+                )
+        );
+    }
+
+    @Test
+    public void test_rightJoinWithNonEquiJoin_additionalCondition() {
+        String rightName = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                rightName,
+                singletonList("v"),
+                singletonList(INTEGER),
+                asList(new String[]{"0"}, new String[]{null}, new String[]{"2"}, new String[]{"3"})
+        );
+
+        String mapName = randomName();
+        createMapping(mapName, int.class, String.class);
+        instance().getMap(mapName).put(1, "value-1");
+        instance().getMap(mapName).put(2, "value-2");
+        instance().getMap(mapName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT r.v, m.__key, m.this " +
+                        "FROM " + mapName + " m " +
+                        "RIGHT JOIN " + rightName + " r ON m.__key > r.v AND m.this IS NOT NULL",
                 asList(
                         new Row(0, 1, "value-1"),
                         new Row(0, 2, "value-2"),
