@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +28,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -203,12 +205,19 @@ public class InOperatorIntegrationTest extends ExpressionTestSupport {
         putAll("1", "2");
         checkValues(sqlQuery("IN (1, 194919940239)"), SqlColumnType.VARCHAR, new String[]{"1"});
         checkValues(sqlQuery("IN (cast(1.0 as REAL), cast(2.3 as DOUBLE))"), SqlColumnType.VARCHAR, new String[]{"1"});
-        putAll("2021-01-02T00:00:00+01:00", "2021-01-02T01:03:04+01:00");
+        putAll(
+                LocalDateTime.of(2021, 1, 2, 0, 0, 0)
+                        .atZone(ZoneId.systemDefault())
+                        .toOffsetDateTime()
+                        .toString(),
+                "2021-01-02T01:03:04+01:00"
+        );
         checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH TIME ZONE))"),
                 SqlColumnType.VARCHAR, new String[0]);
-        putAll("2021-01-02T00:00:00+02:00", "2021-01-02T01:03:04+01:00");
+
+        putAll("2021-01-02T00:00:00+12:00", "2021-01-02T01:03:04+01:00");
         checkValues(sqlQuery("NOT IN (CAST('2021-01-02' AS DATE), CAST('2021-01-02T01:03:04+01:00' AS TIMESTAMP WITH TIME ZONE))"),
-                SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+02:00"});
+                SqlColumnType.VARCHAR, new String[]{"2021-01-02T00:00:00+12:00"});
 
         // this is a bug in Calcite that when an integer is followed by temporal type,
         // it will try to coerce all right-hand values to temporal,
