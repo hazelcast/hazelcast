@@ -65,7 +65,7 @@
         <file>
             <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
             <destName>THIRD-PARTY.txt</destName>
-            <outputDirectory>licenses</outputDirectory>
+            <outputDirectory>/</outputDirectory>
         </file>
 
         <!-- Full Example YAML config files -->
@@ -144,6 +144,13 @@
             <source>${configs.from.jar}/hazelcast-security-hardened.xml</source>
             <destName>hazelcast-security-hardened.xml</destName>
             <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- NOTICE file from hazelcast.jar -->
+        <file>
+            <source>${configs.from.jar}/META-INF/NOTICE</source>
+            <destName>NOTICE</destName>
+            <outputDirectory>/</outputDirectory>
         </file>
     </files>
 
