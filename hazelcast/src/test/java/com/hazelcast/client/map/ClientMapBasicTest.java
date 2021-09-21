@@ -896,7 +896,7 @@ public class ClientMapBasicTest extends AbstractClientMapTest {
     }
 
     @Test(expected = ArithmeticException.class)
-    public void testReplaceAllWithStaticSerializableFunction_whenKeyNull() {
+    public void testReplaceAllWithStaticSerializableFunction_ThrowsException() {
         IMap<Integer, Integer> map = client.getMap(randomString());
         map.put(1, 0);
         map.replaceAll(new StaticSerializableBiFunctionEx());
