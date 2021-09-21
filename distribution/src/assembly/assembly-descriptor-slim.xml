@@ -48,7 +48,7 @@
         <file>
             <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
             <destName>THIRD-PARTY.txt</destName>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>licenses</outputDirectory>
         </file>
 
         <!-- Full Example YAML config files -->
