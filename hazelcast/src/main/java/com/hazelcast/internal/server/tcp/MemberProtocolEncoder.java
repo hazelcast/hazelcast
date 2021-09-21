@@ -34,11 +34,7 @@ import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
 
     private final OutboundHandler[] outboundHandlers;
-    /**
-     * mustWriteProtocol is true when the channel is in client mode (-> write member protocol bytes immediately)
-     * or when the protocol bytes have already been received (on the server side of the connection)
-     */
-    private volatile boolean mustWriteProtocol;
+    private volatile boolean encoderCanReplace;
 
     private boolean clusterProtocolBuffered;
 
@@ -57,11 +53,6 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
     @Override
     public void handlerAdded() {
         initDstBuffer(PROTOCOL_LENGTH);
-
-        if (channel.isClientMode()) {
-            // from the clientSide of a connection, we always send the cluster protocol to a fellow member.
-            mustWriteProtocol = true;
-        }
     }
 
     @Override
@@ -69,11 +60,6 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         compactOrClear(dst);
 
         try {
-            if (!mustWriteProtocol) {
-                // deal with spurious calls; the protocol to send isn't known yet.
-                return CLEAN;
-            }
-
             if (!clusterProtocolBuffered) {
                 clusterProtocolBuffered = true;
                 dst.put(stringToBytes(CLUSTER));
@@ -86,10 +72,12 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
                 return DIRTY;
             }
 
-            // replace!
-            ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
-            connection.setConnectionType(ConnectionType.MEMBER);
-            channel.outboundPipeline().replace(this, outboundHandlers);
+            if (encoderCanReplace) {
+                // replace!
+                ServerConnection connection = (TcpServerConnection) channel.attributeMap().get(ServerConnection.class);
+                connection.setConnectionType(ConnectionType.MEMBER);
+                channel.outboundPipeline().replace(this, outboundHandlers);
+            }
 
             return CLEAN;
         } finally {
@@ -97,9 +85,8 @@ public class MemberProtocolEncoder extends OutboundHandler<Void, ByteBuffer> {
         }
     }
 
-    public void signalProtocolLoaded() {
-        assert !channel.isClientMode() : "Signal protocol should only be made on channel in serverMode";
-        mustWriteProtocol = true;
+    public void signalEncoderCanReplace() {
+        encoderCanReplace = true;
         channel.outboundPipeline().wakeup();
     }
 

@@ -36,6 +36,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
  */
 class IndexedInputSplit implements Comparable<IndexedInputSplit>, Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private int index;
     private org.apache.hadoop.mapred.InputSplit oldSplit;
     private org.apache.hadoop.mapreduce.InputSplit newSplit;

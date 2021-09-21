@@ -151,6 +151,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForCluster() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
@@ -160,6 +161,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForClient() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_RCVBUF, clientRcvBuf())
                 // clients dont support direct buffers
@@ -170,6 +172,8 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForText(String protocol, boolean restApi) {
+        protocolEncoder.signalEncoderCanReplace();
+
         ChannelOptions config = channel.options();
 
         config.setOption(SO_RCVBUF, clientRcvBuf());
