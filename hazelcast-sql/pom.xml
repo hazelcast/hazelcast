@@ -304,6 +304,9 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <exclude>**/package-info.java</exclude>
+                                        <!-- TODO: Remove when Calcite is released with the bug fixed -->
+                                        <exclude>org/apache/calcite/linq4j/tree/ConstantExpression.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -382,6 +385,10 @@
             <artifactId>calcite-core</artifactId>
             <version>${calcite.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
