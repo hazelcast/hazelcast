@@ -306,6 +306,10 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         assertJobStatusEventually(job, NOT_RUNNING, 10);
         createHazelcastInstance(createConfig());
         assertTrueAllTheTime(() -> assertStatusNotRunningOrStarting(job.getStatus()), 5);
+
+        // The test ends with a cluster size 2, which is below quorum
+        // Start another instance so the job can restart and be cleaned up correctly
+        createHazelcastInstance(createConfig());
     }
 
     private void assertStatusNotRunningOrStarting(JobStatus status) {
