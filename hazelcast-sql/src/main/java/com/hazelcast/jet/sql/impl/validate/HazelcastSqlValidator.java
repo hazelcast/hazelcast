@@ -225,6 +225,21 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
+        switch (join.getJoinType()) {
+            case LEFT:
+                if (containsStreamingSource(join.getRight())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSideOfLeftJoin());
+                }
+                break;
+            case RIGHT:
+                if (containsStreamingSource(join.getLeft())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSideOfRightJoin());
+                }
+                break;
+            default:
+                break;
+        }
+
         // the right side of a join must not be a subquery or a VALUES clause
         join.getRight().accept(new SqlBasicVisitor<Void>() {
             @Override

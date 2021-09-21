@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
@@ -1148,5 +1149,24 @@ public class SqlJoinTest extends SqlTestSupport {
 
                 )
         );
+    }
+
+    @Test
+    public void test_whenWrongOuterJoinWrongSide_thenExceptionThrown() {
+        String streamName = randomName();
+        TestStreamSqlConnector.create(sqlService, streamName, 0);
+
+        String batchName = randomName();
+        TestBatchSqlConnector.create(sqlService, batchName, 0);
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM " + batchName + " LEFT JOIN " + streamName + " ON true"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Right operand of LEFT JOIN cannot be streaming source");
+
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM " + streamName + " RIGHT JOIN " + batchName + " ON true"))
+                .hasCauseInstanceOf(QueryException.class)
+                .hasMessageContaining("Left operand of RIGHT JOIN cannot be streaming source");
     }
 }

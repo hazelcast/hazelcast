@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -37,16 +38,22 @@ import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static java.lang.String.join;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
+import static java.util.stream.Collectors.joining;
 
 /**
  * A connector for SQL that has a single column `v` of type BIGINT and
@@ -57,6 +64,61 @@ public class TestStreamSqlConnector implements SqlConnector {
     public static final String TYPE_NAME = "TestStream";
 
     private static final List<MappingField> FIELD_LIST = singletonList(new MappingField("v", QueryDataType.BIGINT));
+
+    private static final String OPTION_NAMES = "names";
+    private static final String OPTION_TYPES = "types";
+    private static final String OPTION_VALUES = "values";
+
+    private static final String DELIMITER = ",";
+    private static final String VALUES_DELIMITER = "\n";
+    private static final String NULL = "null";
+
+    /**
+     * Creates a table with single column named "v" with INT type.
+     * The rows contain the sequence {@code 0 .. itemCount}.
+     */
+    public static void create(SqlService sqlService, String tableName, int itemCount) {
+        List<String[]> values = IntStream.range(0, itemCount)
+                .mapToObj(i -> new String[]{String.valueOf(i)})
+                .collect(Collectors.toList());
+        create(sqlService, tableName, singletonList("v"), singletonList(QueryDataTypeFamily.INTEGER), values);
+    }
+
+    public static void create(
+            SqlService sqlService,
+            String tableName,
+            List<String> names,
+            List<QueryDataTypeFamily> types,
+            List<String[]> values
+    ) {
+        if (names.stream().anyMatch(n -> n.contains(DELIMITER) || n.contains("'"))) {
+            throw new IllegalArgumentException("'" + DELIMITER + "' and apostrophe not supported in names");
+        }
+
+        if (types.contains(QueryDataTypeFamily.OBJECT) || types.contains(QueryDataTypeFamily.NULL)) {
+            throw new IllegalArgumentException("NULL and OBJECT type not supported: " + types);
+        }
+
+        if (values.stream().flatMap(Arrays::stream).filter(Objects::nonNull)
+                .anyMatch(n -> n.equals(NULL) || n.contains(VALUES_DELIMITER) || n.contains("'"))
+        ) {
+            throw new IllegalArgumentException("The text '" + NULL + "', the newline character and apostrophe not " +
+                    "supported in values");
+        }
+
+        String namesSerialized = join(DELIMITER, names);
+        String typesSerialized = types.stream().map(QueryDataTypeFamily::name).collect(joining(DELIMITER));
+        String valuesSerialized = values.stream().map(row -> join(DELIMITER, row)).collect(joining(VALUES_DELIMITER));
+
+        String sql = "CREATE MAPPING " + tableName + " TYPE " + TYPE_NAME
+                + " OPTIONS ("
+                + '\'' + OPTION_NAMES + "'='" + namesSerialized + "'"
+                + ", '" + OPTION_TYPES + "'='" + typesSerialized + "'"
+                + ", '" + OPTION_VALUES + "'='" + valuesSerialized + "'"
+                + ")";
+        System.out.println(sql);
+        sqlService.execute(sql).updateCount();
+    }
 
     @Override
     public String typeName() {
