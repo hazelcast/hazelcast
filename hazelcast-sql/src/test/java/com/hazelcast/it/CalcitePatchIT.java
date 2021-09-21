@@ -16,10 +16,11 @@
 
 package com.hazelcast.it;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.SqlResult;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -38,7 +39,13 @@ public class CalcitePatchIT {
 
     @Before
     public void setUp() {
-        instance = Hazelcast.newHazelcastInstance(HazelcastTestSupport.smallInstanceConfig());
+        Config config = new Config()
+                .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
+                .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
+        config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
+        instance = Hazelcast.newHazelcastInstance(config);
     }
 
     @After
