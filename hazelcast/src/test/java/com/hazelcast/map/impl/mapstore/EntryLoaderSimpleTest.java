@@ -104,6 +104,7 @@ public class EntryLoaderSimpleTest extends HazelcastTestSupport {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true).setImplementation(testEntryLoader);
         config.getMapConfig("default")
+                .setPerEntryStatsEnabled(true)
                 .setMapStoreConfig(mapStoreConfig)
                 .setInMemoryFormat(inMemoryFormat);
         return config;

@@ -28,17 +28,33 @@ public final class ExpirationTimeSetter {
     private ExpirationTimeSetter() {
     }
 
-    public static long calculateExpirationTime(long ttlMillis, long maxIdleMillis, long now) {
-        // select most nearest expiration time
-        long expiryTime = Math.min(ttlMillis, maxIdleMillis);
-        if (expiryTime == Long.MAX_VALUE) {
-            return expiryTime;
-        } else {
-            long nextExpiryTime = expiryTime + now;
-            // Due to the overflow possibility, we
-            // check nextExpiryTime against zero.
-            return nextExpiryTime <= 0 ? Long.MAX_VALUE : nextExpiryTime;
-        }
+    public static long nextExpirationTime(long ttlMillis, long maxIdleMillis,
+                                          long now, long lastUpdateTime) {
+        long nextTtlExpirationTime = nextTtlExpirationTime(ttlMillis, lastUpdateTime);
+        long nextMaxIdleExpirationTime = nextMaxIdleExpirationTime(maxIdleMillis, now);
+        return Math.min(nextTtlExpirationTime, nextMaxIdleExpirationTime);
+    }
+
+    private static long nextTtlExpirationTime(long ttlMillis, long lastUpdateTime) {
+        return handleOverflow(ttlMillis + lastUpdateTime);
+    }
+
+    private static long nextMaxIdleExpirationTime(long maxIdleMillis, long now) {
+        return handleOverflow(maxIdleMillis + now);
+    }
+
+    private static long handleOverflow(long time) {
+        return time <= 0 ? Long.MAX_VALUE : time;
+    }
+
+    /**
+     * @param time value of ttl or maxIdle
+     * @return {@code true} if time parameter is
+     * between zero and long-max, this means ttl/maxIdle
+     * value is configured otherwise {@code false}
+     */
+    public static boolean isTtlOrMaxIdleConfigured(long time) {
+        return time > 0 && time < Long.MAX_VALUE;
     }
 
     /**
