@@ -461,11 +461,11 @@ public final class RexToExpression {
     private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName type) {
         switch (type) {
             case TINYINT:
-                return ((BigDecimal) value).byteValue();
+                return ((BigDecimal) value).byteValueExact();
             case SMALLINT:
-                return ((BigDecimal) value).shortValue();
+                return ((BigDecimal) value).shortValueExact();
             case INTEGER:
-                return ((BigDecimal) value).intValue();
+                return ((BigDecimal) value).intValueExact();
             case BIGINT:
                 return ((BigDecimal) value).longValue();
             case REAL:
