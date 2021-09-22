@@ -467,7 +467,7 @@ public final class RexToExpression {
             case INTEGER:
                 return ((BigDecimal) value).intValueExact();
             case BIGINT:
-                return ((BigDecimal) value).longValue();
+                return ((BigDecimal) value).longValueExact();
             case REAL:
             case FLOAT:
                 return ((BigDecimal) value).floatValue();
