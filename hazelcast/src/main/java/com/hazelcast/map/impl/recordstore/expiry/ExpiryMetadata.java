@@ -16,10 +16,8 @@
 
 package com.hazelcast.map.impl.recordstore.expiry;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -158,22 +156,14 @@ public interface ExpiryMetadata {
         out.writeInt(getRawTtl());
         out.writeInt(getRawMaxIdle());
         out.writeInt(getRawExpirationTime());
-        // RU_COMPAT_4_2
-        Version version = out.getVersion();
-        if (version.isGreaterOrEqual(Versions.V5_0)) {
-            out.writeInt(getRawLastUpdateTime());
-        }
+        out.writeInt(getRawLastUpdateTime());
     }
 
     default void read(ObjectDataInput in) throws IOException {
         setRawTtl(in.readInt());
         setRawMaxIdle(in.readInt());
         setRawExpirationTime(in.readInt());
-        // RU_COMPAT_4_2
-        Version version = in.getVersion();
-        if (version.isGreaterOrEqual(Versions.V5_0)) {
-            setRawLastUpdateTime(in.readInt());
-        }
+        setRawLastUpdateTime(in.readInt());
     }
 
     default int stripBaseTime(long value) {
