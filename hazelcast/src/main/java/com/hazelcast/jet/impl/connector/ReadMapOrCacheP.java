@@ -504,9 +504,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         @Nonnull @Override
         public CompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
             boolean isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
-            if (isHD)
+            if (isHD) {
                 return readWithOperationService(partitionId, pointers);
-
+            }
+            
             CompletableFuture<MapEntriesWithCursor> f = new CompletableFuture<>();
             read0(f, partitionId, pointers);
             return f;
