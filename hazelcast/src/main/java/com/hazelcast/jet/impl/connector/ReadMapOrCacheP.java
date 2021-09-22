@@ -485,7 +485,8 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private final MapProxyImpl mapProxyImpl;
         private final MapServiceContext mapServiceContext;
         private final NodeEngineImpl nodeEngine;
-        private final int retryDelay = 100;
+        private static final int RETRY_DELAY = 100;
+        private final boolean isHD;
 
 
         LocalMapReader(@Nonnull HazelcastInstance hzInstance,
@@ -499,15 +500,15 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             nodeEngine = getNodeEngine(hzInstance);
             MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
             mapServiceContext = service.getMapServiceContext();
+            isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
         }
 
         @Nonnull @Override
         public CompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
-            boolean isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
             if (isHD) {
                 return readWithOperationService(partitionId, pointers);
             }
-            
+
             CompletableFuture<MapEntriesWithCursor> f = new CompletableFuture<>();
             read0(f, partitionId, pointers);
             return f;
@@ -516,19 +517,16 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         private void read0(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
             try {
                 boolean isOwned = mapServiceContext.getOrInitCachedMemberPartitions().contains(partitionId);
-                int migrationStamp = mapServiceContext.getService().getMigrationStamp();
+
                 if (isOwned) {
-                    if (!validateMigrationStamp(migrationStamp)) {
-                        scheduleForLater(f, partitionId, pointers);
-                        return;
-                    }
+                    int migrationStamp = mapServiceContext.getService().getMigrationStamp();
 
                     MapEntriesWithCursor result = accessRecordStore(partitionId, pointers);
 
-                    if (!validateMigrationStamp(migrationStamp)) {
-                        scheduleForLater(f, partitionId, pointers);
-                    } else {
+                    if (validateMigrationStamp(migrationStamp)) {
                         f.complete(result);
+                    } else {
+                        scheduleForLater(f, partitionId, pointers);
                     }
                 } else {
                     CompletableFuture<MapEntriesWithCursor> f1 = readWithOperationService(partitionId, pointers);
@@ -546,7 +544,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         private void scheduleForLater(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
-            nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), retryDelay, TimeUnit.MILLISECONDS);
+            nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), RETRY_DELAY, TimeUnit.MILLISECONDS);
         }
 
         private MapEntriesWithCursor accessRecordStore(int partitionId, IterationPointer[] pointers) {
