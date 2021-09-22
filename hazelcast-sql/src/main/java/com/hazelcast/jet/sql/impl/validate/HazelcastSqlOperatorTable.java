@@ -225,6 +225,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
     public static final SqlFunction TO_TIMESTAMP_TZ = HazelcastToTimestampTzFunction.INSTANCE;
     public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
+
     public static final SqlFunction JSON_QUERY = HazelcastJsonQueryFunction.INSTANCE;
     public static final SqlOperator PARSE_JSON = HazelcastParseJsonFunction.INSTANCE;
     public static final SqlOperator JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;

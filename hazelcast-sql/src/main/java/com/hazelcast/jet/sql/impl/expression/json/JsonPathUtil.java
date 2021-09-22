@@ -33,6 +33,7 @@ public final class JsonPathUtil {
     private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
             .jsonProvider(new GsonJsonProvider())
             .build());
+
     private JsonPathUtil() { }
 
     public static Object read(String json, String path) {
