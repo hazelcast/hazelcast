@@ -16,6 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.logging.ILogger;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -24,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CacheContext {
 
+    private final AtomicBoolean implicitMerkleTreeEnableLogged = new AtomicBoolean();
     private final AtomicLong entryCount = new AtomicLong(0L);
     private final AtomicInteger cacheEntryListenerCount = new AtomicInteger(0);
     private final AtomicInteger invalidationListenerCount = new AtomicInteger(0);
@@ -82,6 +86,14 @@ public class CacheContext {
 
     public void resetInvalidationListenerCount() {
         invalidationListenerCount.set(0);
+    }
+
+    void logMerkleTreeImplicitlyEnabled(ILogger logger, String cacheName) {
+        if (implicitMerkleTreeEnableLogged.compareAndSet(false, true)) {
+            logger.info("Enabling MerkleTreeConfig for cache \"" + cacheName + "\","
+                    + " as it enhances member recovery performance. Consider enabling"
+                    + " MerkleTreeConfig explicitly in your configuration.");
+        }
     }
 
     @Override
