@@ -120,7 +120,7 @@ public class ExpirySystem {
         map.clear();
     }
 
-    protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
+    protected final Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
         if (expireTimeByKey != null) {
             return expireTimeByKey;
         }
@@ -236,11 +236,6 @@ public class ExpirySystem {
             return;
         }
 
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (isEmpty()) {
-            return;
-        }
-
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
         if (expiryMetadata == null) {
             return;
@@ -265,7 +260,6 @@ public class ExpirySystem {
     }
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return ExpiryReason.NOT_EXPIRED;
         }
@@ -347,7 +341,6 @@ public class ExpirySystem {
     }
 
     private int findMaxScannableCount(int percentage) {
-        Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
         if (isEmpty()) {
             return 0;
         }
