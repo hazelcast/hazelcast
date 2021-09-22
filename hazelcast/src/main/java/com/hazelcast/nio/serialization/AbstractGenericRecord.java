@@ -71,8 +71,8 @@ public abstract class AbstractGenericRecord implements GenericRecord {
         int result = Objects.hash(getClassIdentifier());
         Set<String> thisFieldNames = getFieldNames();
         for (String fieldName : thisFieldNames) {
-            FieldKind fieldType = getFieldKind(fieldName);
-            result = 31 * result + fieldOperations(fieldType).hashCode(this, fieldName);
+            FieldKind fieldKind = getFieldKind(fieldName);
+            result = 31 * result + fieldOperations(fieldKind).hashCode(this, fieldName);
         }
         return result;
     }
