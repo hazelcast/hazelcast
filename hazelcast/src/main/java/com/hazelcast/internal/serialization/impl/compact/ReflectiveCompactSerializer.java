@@ -69,6 +69,7 @@ import static com.hazelcast.nio.serialization.FieldType.TIMESTAMP_WITH_TIMEZONE_
 import static com.hazelcast.nio.serialization.FieldType.TIME_ARRAY;
 import static com.hazelcast.nio.serialization.FieldType.UTF;
 import static com.hazelcast.nio.serialization.FieldType.UTF_ARRAY;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -135,7 +136,9 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
     public Object read(@Nonnull CompactReader reader) throws IOException {
         // We always fed DefaultCompactReader to this serializer.
         DefaultCompactReader compactReader = (DefaultCompactReader) reader;
-        Class associatedClass = compactReader.getAssociatedClass();
+        Class associatedClass = requireNonNull(compactReader.getAssociatedClass(),
+                "AssociatedClass is required for ReflectiveCompactSerializer");
+
         Object object;
         object = createObject(associatedClass);
         try {
@@ -287,6 +290,18 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                     }
                 };
                 writers[index] = (w, o) -> w.writeTimestampWithTimezone(name, (OffsetDateTime) field.get(o));
+            } else if (type.isEnum()) {
+                readers[index] = (reader, schema, o) -> {
+                    if (fieldExists(schema, name, UTF)) {
+                        String enumName = reader.readString(name);
+                        field.set(o, enumName == null ? null : Enum.valueOf((Class<? extends Enum>) type, enumName));
+                    }
+                };
+                writers[index] = (w, o) -> {
+                    Object rawValue = field.get(o);
+                    String value = rawValue == null ? null : ((Enum) rawValue).name();
+                    w.writeString(name, value);
+                };
             } else if (type.isArray()) {
                 Class<?> componentType = type.getComponentType();
                 if (Byte.TYPE.equals(componentType)) {
@@ -387,6 +402,19 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
                         }
                     };
                     writers[index] = (w, o) -> w.writeTimestampWithTimezoneArray(name, (OffsetDateTime[]) field.get(o));
+                } else if (componentType.isEnum()) {
+                    readers[index] = (reader, schema, o) -> {
+                        if (fieldExists(schema, name, UTF_ARRAY)) {
+                            String[] stringArray = reader.readStringArray(name);
+                            Enum[] enumArray = enumsFromString((Class<? extends Enum>) componentType, stringArray);
+                            field.set(o, enumArray);
+                        }
+                    };
+                    writers[index] = (w, o) -> {
+                        Enum[] values = (Enum[]) field.get(o);
+                        String[] stringArray = enumsAsStrings(values);
+                        w.writeStringArray(name, stringArray);
+                    };
                 } else {
                     readers[index] = (reader, schema, o) -> {
                         if (fieldExists(schema, name, COMPOSED_ARRAY)) {
@@ -408,6 +436,30 @@ public class ReflectiveCompactSerializer implements CompactSerializer<Object> {
 
         writersCache.put(clazz, writers);
         readersCache.put(clazz, readers);
+    }
+
+    private String[] enumsAsStrings(Enum[] values) {
+        String[] stringArray = null;
+        if (values != null) {
+            stringArray = new String[values.length];
+            for (int i = 0; i < values.length; i++) {
+                stringArray[i] = values[i] == null ? null : values[i].name();
+            }
+        }
+        return stringArray;
+    }
+
+    private Enum[] enumsFromString(Class<? extends Enum> componentType, String[] stringArray) {
+        Enum[] enumArray = null;
+        if (stringArray != null) {
+            enumArray = new Enum[stringArray.length];
+            for (int i = 0; i < stringArray.length; i++) {
+                enumArray[i] = stringArray[i] == null
+                    ? null
+                    : Enum.valueOf(componentType, stringArray[i]);
+            }
+        }
+        return enumArray;
     }
 
     interface Reader {

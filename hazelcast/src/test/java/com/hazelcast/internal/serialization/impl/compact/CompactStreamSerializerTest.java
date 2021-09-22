@@ -38,6 +38,7 @@ import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployeeWithSerializerDTO;
 import example.serialization.EmployerDTO;
 import example.serialization.ExternalizableEmployeeDTO;
+import example.serialization.HiringStatus;
 import example.serialization.NodeDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -49,6 +50,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static example.serialization.HiringStatus.HIRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -72,7 +74,7 @@ public class CompactStreamSerializerTest {
         for (int j = 0; j < employeeDTOS.length; j++) {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
-        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
+        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
 
         ArrayList<Object> expected = new ArrayList<>();
         expected.add(node);
@@ -121,7 +123,7 @@ public class CompactStreamSerializerTest {
         for (int j = 0; j < employeeDTOS.length; j++) {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
-        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
+        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
 
         Data data = serializationService.toData(employerDTO);
 
@@ -199,16 +201,18 @@ public class CompactStreamSerializerTest {
                     @Override
                     public EmployerDTO read(@Nonnull CompactReader in) {
                         String name = in.readString("n");
+                        String status = in.readString("hs");
                         int age = in.readInt("a");
                         long[] ids = in.readLongArray("ids");
                         EmployeeDTO s = in.readObject("s");
                         EmployeeDTO[] ss = in.readObjectArray("ss", EmployeeDTO.class);
-                        return new EmployerDTO(name, age, ids, s, ss);
+                        return new EmployerDTO(name, age, status == null ? null : HiringStatus.valueOf(status), ids, s, ss);
                     }
 
                     @Override
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployerDTO object) {
                         out.writeString("n", object.getName());
+                        out.writeString("hs", object.getHiringStatus() == null ? null : object.getHiringStatus().name());
                         out.writeInt("a", object.getZcode());
                         out.writeLongArray("ids", object.getIds());
                         out.writeObject("s", object.getSingleEmployee());
@@ -230,7 +234,7 @@ public class CompactStreamSerializerTest {
         for (int j = 0; j < employeeDTOS.length; j++) {
             employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
         }
-        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
+        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
 
         Data data = serializationService.toData(employerDTO);
 
@@ -390,25 +394,28 @@ public class CompactStreamSerializerTest {
         SchemaWriter writer = new SchemaWriter("className");
 
         ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
-        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, ids, employeeDTO, employeeDTOS);
+        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
         reflectiveCompactSerializer.write(writer, employerDTO);
 
         Schema schema = writer.build();
 
-        assertEquals(schema.getField("zcode").getOffset(), 0);
-        assertEquals(schema.getField("zcode").getIndex(), -1);
+        assertEquals(0, schema.getField("zcode").getOffset());
+        assertEquals(-1, schema.getField("zcode").getIndex());
 
-        assertEquals(schema.getField("ids").getOffset(), -1);
-        assertEquals(schema.getField("ids").getIndex(), 0);
+        assertEquals(-1, schema.getField("hiringStatus").getOffset());
+        assertEquals(0, schema.getField("hiringStatus").getIndex());
 
-        assertEquals(schema.getField("name").getOffset(), -1);
-        assertEquals(schema.getField("name").getIndex(), 1);
+        assertEquals(-1, schema.getField("ids").getOffset());
+        assertEquals(1, schema.getField("ids").getIndex());
 
-        assertEquals(schema.getField("otherEmployees").getOffset(), -1);
-        assertEquals(schema.getField("otherEmployees").getIndex(), 2);
+        assertEquals(-1, schema.getField("name").getOffset());
+        assertEquals(2, schema.getField("name").getIndex());
 
-        assertEquals(schema.getField("singleEmployee").getOffset(), -1);
-        assertEquals(schema.getField("singleEmployee").getIndex(), 3);
+        assertEquals(-1, schema.getField("otherEmployees").getOffset());
+        assertEquals(3, schema.getField("otherEmployees").getIndex());
+
+        assertEquals(-1, schema.getField("singleEmployee").getOffset());
+        assertEquals(4, schema.getField("singleEmployee").getIndex());
     }
 
     @Test
