@@ -39,8 +39,9 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
 
     public static final HazelcastLikeOperator LIKE = new HazelcastLikeOperator("LIKE", SqlKind.LIKE, false);
-    // We can't use SqlKind.LIKE for NOT LIKE because it will be handled in RexSimplify#simplifyLike and NOT operator will be lost.
-    // In _vanilla_ Calcite it is not an issue as NOT LIKE '%' is converted to NOT(LIKE '%') - see StandardConvertletTable
+    // We can't use SqlKind.LIKE for NOT LIKE because it will be handled in RexSimplify#simplifyLike and NOT operator
+    // will be lost. In _vanilla_ Calcite it is not an issue as NOT LIKE '%' is converted to NOT(LIKE '%') - see
+    // StandardConvertletTable.
     public static final HazelcastLikeOperator NOT_LIKE = new HazelcastLikeOperator("NOT LIKE", SqlKind.OTHER, true);
 
     private static final int PRECEDENCE = 32;
