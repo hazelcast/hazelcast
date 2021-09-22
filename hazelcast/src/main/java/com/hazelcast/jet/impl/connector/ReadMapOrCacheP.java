@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.proxy.ClientMapProxy;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
@@ -502,6 +503,10 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         @Nonnull @Override
         public CompletableFuture<MapEntriesWithCursor> readBatch(int partitionId, IterationPointer[] pointers) {
+            boolean isHD = mapProxyImpl.getMapConfig().getInMemoryFormat().equals(InMemoryFormat.NATIVE);
+            if (isHD)
+                return readWithOperationService(partitionId, pointers);
+
             CompletableFuture<MapEntriesWithCursor> f = new CompletableFuture<>();
             read0(f, partitionId, pointers);
             return f;
