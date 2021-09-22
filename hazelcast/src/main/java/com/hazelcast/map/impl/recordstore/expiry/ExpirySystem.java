@@ -159,10 +159,10 @@ public class ExpirySystem {
     }
 
     private void storeExpiryMetadata(Data key, long ttlMillis, long maxIdleMillis,
-                                     long expirationTime, long lastUpdateTime) {
-        // If expirationTime is long max, this
+                                     long expiryTime, long lastUpdateTime) {
+        // If expiryTime is long max, this
         // means key is no longer expirable.
-        if (expirationTime == Long.MAX_VALUE) {
+        if (expiryTime == Long.MAX_VALUE) {
             removeKeyFromExpirySystem(key);
             return;
         }
@@ -174,7 +174,7 @@ public class ExpirySystem {
         }
 
         createOrUpdateExpiryMetadata(key, ttlMillis, maxIdleMillis,
-                expirationTime, lastUpdateTime);
+                expiryTime, lastUpdateTime);
 
         mapServiceContext.getExpirationManager().scheduleExpirationTask();
     }

@@ -32,7 +32,7 @@
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
-        <module>hazelcast-spring-tests</module>
+<!--        <module>hazelcast-spring-tests</module>-->
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
     </modules>
