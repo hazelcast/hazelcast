@@ -45,6 +45,7 @@ import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
 
@@ -104,12 +105,31 @@ public class SqlClientService implements SqlService {
 
             ClientInvocationFuture future = invokeAsync(requestMessage, connection);
 
-            future.whenComplete(withTryCatch(logger,
-                    (message, error) -> handleExecuteResponse(connection, res, message, error))).get();
+            try {
+                future.whenComplete((message, error) ->  {
+                    if (error != null) {
+                        RuntimeException err = rethrow(error, connection);
+                        res.onExecuteError(err);
+                        throw err;
+                    } else {
+                        handleExecuteResponse(res, message);
+                    }
+                }).get();
+            } catch (Exception e) {
+                throw unwrapExecutionException(e);
+            }
 
             return res;
         } catch (Exception e) {
             throw rethrow(e, connection);
+        }
+    }
+
+    private Exception unwrapExecutionException(Exception e) {
+        if (e instanceof ExecutionException && e.getCause() instanceof Exception) {
+            return (Exception) e.getCause();
+        } else {
+            return e;
         }
     }
 
@@ -119,32 +139,22 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
-        ClientConnection connection,
         SqlClientResult res,
-        ClientMessage message,
-        Throwable error
+        ClientMessage message
     ) {
-        if (error != null) {
-            res.onExecuteError(rethrow(error, connection));
-
-            return;
-        }
-
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
-
         HazelcastSqlException responseError = handleResponseError(response.error);
 
         if (responseError != null) {
             res.onExecuteError(responseError);
-
-            return;
+            throw responseError;
+        } else {
+            res.onExecuteResponse(
+                    response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
+                    response.rowPage,
+                    response.updateCount
+            );
         }
-
-        res.onExecuteResponse(
-            response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
-            response.rowPage,
-            response.updateCount
-        );
     }
 
     public void fetchAsync(Connection connection, QueryId queryId, int cursorBufferSize, SqlClientResult res) {
