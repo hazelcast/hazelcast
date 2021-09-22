@@ -41,7 +41,8 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private SqlJsonValueEmptyOrErrorBehavior onEmpty;
     private SqlJsonValueEmptyOrErrorBehavior onError;
 
-    public JsonValueFunction() { }
+    public JsonValueFunction() {
+    }
 
     private JsonValueFunction(
             Expression<?>[] operands,
@@ -58,15 +59,17 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     public static JsonValueFunction<?> create(
             Expression<?> json,
             Expression<?> path,
-            Expression<?> defaultValue,
+            Expression<?> defaultValueOnEmpty,
+            Expression<?> defaultValueOnError,
             QueryDataType resultType,
             SqlJsonValueEmptyOrErrorBehavior onEmpty,
             SqlJsonValueEmptyOrErrorBehavior onError
     ) {
-        final Expression<?>[] operands = new Expression<?>[] {
+        final Expression<?>[] operands = new Expression<?>[]{
                 json,
                 path,
-                defaultValue
+                defaultValueOnEmpty,
+                defaultValueOnError
         };
         return new JsonValueFunction<>(operands, resultType, onEmpty, onError);
     }
@@ -88,20 +91,21 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
                 ? operand0.toString()
                 : (String) operand0;
         final String path = (String) operands[1].eval(row, context);
-        final Object defaultValue = operands[2].eval(row, context);
+        final Object defaultOnEmpty = operands[2].eval(row, context);
+        final Object defaultOnError = operands[3].eval(row, context);
 
         if (isNullOrEmpty(path)) {
-            return onErrorResponse(onError, QueryException.error("JSON_VALUE path expression is empty"), defaultValue);
+            return onErrorResponse(onError, QueryException.error("JSON_VALUE path expression is empty"), defaultOnError);
         }
 
         if (isNullOrEmpty(json)) {
-            return onEmptyResponse(onEmpty, defaultValue);
+            return onEmptyResponse(onEmpty, defaultOnEmpty);
         }
 
         try {
             return execute(json, path);
         } catch (Exception exception) {
-            return onErrorResponse(onError, exception, defaultValue);
+            return onErrorResponse(onError, exception, defaultOnError);
         }
     }
 
@@ -139,26 +143,25 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     @SuppressWarnings("checkstyle:ReturnCount")
     private Object convertResultType(final Object result) {
-        if (!(result instanceof Number) || resultType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            return result;
+        if (resultType.getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)) {
+            return result.toString();
         }
-
-        final Number number = (Number) result;
 
         switch (this.resultType.getTypeFamily().getPublicType()) {
             case TINYINT:
-                return number.byteValue();
+                return ((Number) result).byteValue();
             case SMALLINT:
-                return number.shortValue();
+                return ((Number) result).shortValue();
             case INTEGER:
-                return number.intValue();
+                return ((Number) result).intValue();
             case BIGINT:
-                return number.longValue();
+                return ((Number) result).longValue();
             case REAL:
-                return number.floatValue();
+                return ((Number) result).floatValue();
             case DOUBLE:
-                return number.doubleValue();
+                return ((Number) result).doubleValue();
             case DECIMAL:
+                Number number = ((Number) result);
                 return number instanceof BigDecimal
                         ? (BigDecimal) number
                         : BigDecimal.valueOf(number.doubleValue());

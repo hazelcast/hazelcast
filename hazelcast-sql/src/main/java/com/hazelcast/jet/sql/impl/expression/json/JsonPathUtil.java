@@ -28,9 +28,6 @@ import com.jayway.jsonpath.spi.cache.CacheProvider;
 import com.jayway.jsonpath.spi.cache.LRUCache;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 public final class JsonPathUtil {
     private static final int CACHE_ENTRIES = 1000;
     private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
@@ -55,10 +52,13 @@ public final class JsonPathUtil {
 
         final JsonPrimitive primitive = result.getAsJsonPrimitive();
         if (primitive.isNumber()) {
-            final boolean isFPNumber = primitive.toString().matches(".*[.eE].*");
-            return isFPNumber
-                    ? convertFPNumber(primitive.getAsBigDecimal())
-                    : convertIntegerNumber(primitive.getAsBigInteger());
+            // GSON's getAsNumber returns LazilyParsedNumber, which produces undesirable serialization results
+            // e.g. {"value":3"} instead of plain "3", therefore we need to convert it to plain Number.
+            if (primitive.toString().matches(".*[.eE].*")) {
+                return primitive.getAsBigDecimal();
+            } else {
+                return primitive.getAsLong();
+            }
         } else if (primitive.isBoolean()) {
             return primitive.getAsBoolean();
         } else if (primitive.isString()) {
@@ -78,32 +78,5 @@ public final class JsonPathUtil {
 
     public static boolean isArrayOrObject(Object value) {
         return isArray(value) || isObject(value);
-    }
-
-    private static Object convertFPNumber(BigDecimal number) {
-        final double value = number.doubleValue();
-        if (value > Double.NEGATIVE_INFINITY && value < Double.POSITIVE_INFINITY) {
-            return value;
-        }
-        return number;
-    }
-
-    private static Object convertIntegerNumber(BigInteger number) {
-        final long value;
-        try {
-            value = number.longValueExact();
-        } catch (ArithmeticException ignored) {
-            return number;
-        }
-
-        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-            return number.byteValueExact();
-        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-            return number.shortValueExact();
-        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
-            return number.intValueExact();
-        } else {
-            return value;
-        }
     }
 }

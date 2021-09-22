@@ -390,13 +390,14 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
      * the type has to be instead set as the type of the parent (JSON_VALUE's RexCall), which is
      * then interpreted as the desired type of the expression.
      */
-    private RexNode convertJsonValueCall(SqlCall call, Blackboard blackboard) {
-        RexNode target = blackboard.convertExpression(call.operand(0));
-        RexNode path = blackboard.convertExpression(call.operand(1));
+    private RexNode convertJsonValueCall(SqlCall call, Blackboard bb) {
+        RexNode target = bb.convertExpression(call.operand(0));
+        RexNode path = bb.convertExpression(call.operand(1));
         SqlJsonValueEmptyOrErrorBehavior onError = SqlJsonValueEmptyOrErrorBehavior.NULL;
         SqlJsonValueEmptyOrErrorBehavior onEmpty = SqlJsonValueEmptyOrErrorBehavior.NULL;
-        RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.ANY);
-        RexNode defaultValue = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+        RelDataType returning = validator.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
+        RexNode defaultValueOnError = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
+        RexNode defaultValueOnEmpty = getRexBuilder().makeNullLiteral(typeFactory.createSqlType(SqlTypeName.ANY));
         // TODO: clean up/simplify implementation
         for (int i = 2; i < call.operandCount(); ) {
             if (!(call.operand(i) instanceof SqlLiteral)) {
@@ -419,12 +420,14 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
             if (onTarget.equals(SqlJsonEmptyOrError.EMPTY)) {
                 onEmpty = behavior;
+                if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
+                    defaultValueOnEmpty = bb.convertExpression(call.operand(i + 1));
+                }
             } else if (onTarget.equals(SqlJsonEmptyOrError.ERROR)) {
                 onError = behavior;
-            }
-
-            if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
-                defaultValue = convertLiteral(call.operand(i + 1), typeFactory);
+                if (behavior.equals(SqlJsonValueEmptyOrErrorBehavior.DEFAULT)) {
+                    defaultValueOnError = bb.convertExpression(call.operand(i + 1));
+                }
             }
 
             // DEFAULT is 3-tokens, everything else is 2.
@@ -434,9 +437,10 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         return getRexBuilder().makeCall(returning, HazelcastJsonValueFunction.INSTANCE, asList(
                 target,
                 path,
-                defaultValue,
-                blackboard.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
-                blackboard.convertLiteral(onError.symbol(SqlParserPos.ZERO))
+                defaultValueOnEmpty,
+                defaultValueOnError,
+                bb.convertLiteral(onEmpty.symbol(SqlParserPos.ZERO)),
+                bb.convertLiteral(onError.symbol(SqlParserPos.ZERO))
         ));
     }
 

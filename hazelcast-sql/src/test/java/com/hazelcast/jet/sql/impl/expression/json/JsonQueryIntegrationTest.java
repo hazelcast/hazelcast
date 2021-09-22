@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -98,20 +99,23 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         test.put(2L, new HazelcastJsonValue("[1,2,"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () ->
-                query("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals(new HazelcastJsonValue("[]"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals(new HazelcastJsonValue("{}"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
+                .isInstanceOf(HazelcastSqlException.class)
+                 .hasMessageContaining("Empty JSON object");
 
-        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_QUERY(this, '$' ERROR ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertNull(querySingleValue("SELECT JSON_QUERY(this, '$' NULL ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertEquals(new HazelcastJsonValue("[]"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY ARRAY ON ERROR) AS c1 FROM test WHERE __key = 2"));
         assertEquals(new HazelcastJsonValue("{}"),
                 querySingleValue("SELECT JSON_QUERY(this, '$' EMPTY OBJECT ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertThatThrownBy(() -> query("SELECT JSON_QUERY(this, '$' ERROR ON ERROR) AS c1 FROM test WHERE __key = 2"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSON_QUERY failed");
     }
 
     @Test
@@ -122,8 +126,9 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
                 querySingleValue("SELECT JSON_QUERY(this, '$[0]') FROM test").toString());
         assertEquals("{\"t\":1}",
                 querySingleValue("SELECT JSON_QUERY(this, '$[1]') FROM test").toString());
-        assertThrows(HazelcastSqlException.class,
-                () -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' ERROR ON ERROR) FROM test"));
+        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' ERROR ON ERROR) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSON_QUERY result is not an array or object");
     }
 
     @Test
@@ -137,9 +142,10 @@ public class JsonQueryIntegrationTest extends SqlJsonTestSupport {
         assertEquals("{\"t\":1}",
                 querySingleValue("SELECT JSON_QUERY(this, '$[1]' WITHOUT ARRAY WRAPPER) FROM test")
                         .toString());
-        assertThrows(HazelcastSqlException.class,
-                () -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) "
-                        + "FROM test"));
+        assertThatThrownBy(() -> querySingleValue("SELECT JSON_QUERY(this, '$[2]' WITHOUT ARRAY WRAPPER ERROR ON ERROR) "
+                        + "FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSON_QUERY result is not an array or object");
     }
 
     @Test

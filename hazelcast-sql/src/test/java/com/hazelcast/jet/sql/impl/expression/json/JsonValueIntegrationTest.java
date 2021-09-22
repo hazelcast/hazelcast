@@ -27,17 +27,16 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -51,36 +50,29 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         config.getJetConfig().setEnabled(true);
         initialize(1, config);
     }
-    @Test
-    public void test() {
-
-            final Object read = JsonPath.using(Configuration.builder().jsonProvider(new GsonJsonProvider()).build()).parse("[1e599]")
-                    .read("$[0]");
-            System.out.println(read);
-    }
 
     @Test
     public void when_calledWithBasicSyntax_objectValueIsReturned() {
         initMultiTypeObject();
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
         assertRowsWithType("SELECT JSON_VALUE(this, '$.byteField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, (byte) 1));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "1"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.shortField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, (byte) 2));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "2"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.intField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, (byte) 3));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "3"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.longField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, (byte) 4));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "4"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.stringField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, "6"));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "6"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.charField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, "7"));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "7"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.floatField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 8.0));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "8.0"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.doubleField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 9.0));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "9.0"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, new BigDecimal("1e1000")));
+                singletonList(SqlColumnType.VARCHAR), rows(1, "1E+1000"));
     }
 
     @Test
@@ -110,39 +102,62 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
     @Test
     public void when_extendedSyntaxIsSpecified_queryWorksCorrectly() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
-        test.put(1L, new HazelcastJsonValue(""));
-        test.put(2L, new HazelcastJsonValue("[1,2,"));
+        test.put(1L, json(""));
+        test.put(2L, json("[1,2,"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON EMPTY) AS c1 FROM test WHERE __key = 1"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON EMPTY) AS c1 FROM test WHERE __key = 1"));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON EMPTY) AS c1 FROM test WHERE __key = 1"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSON argument is empty");
 
-        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test WHERE __key = 2"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test WHERE __key = 2"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) AS c1 FROM test WHERE __key = 2"));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test WHERE __key = 2"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("JSON_VALUE failed");
+    }
+
+    @Test
+    public void when_fullExtendedSyntaxIsSpecifiedQueryWorks() {
+        final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
+        test.put(1L, json(""));
+        test.put(2L, json("[1,2,"));
+        test.put(3L, json("[3]"));
+        execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
+
+        assertRowsWithType(
+                "SELECT __key, JSON_VALUE(this, '$[0]' RETURNING BIGINT DEFAULT CAST(1 AS BIGINT) ON EMPTY DEFAULT CAST(2 AS BIGINT) ON ERROR) FROM test",
+                Arrays.asList(SqlColumnType.BIGINT, SqlColumnType.BIGINT),
+                rows(2, 1L, 1L, 2L, 2L, 3L, 3L)
+        );
     }
 
     @Test
     public void when_arrayIsReturned_errorIsThrown() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
-        test.put(1L, new HazelcastJsonValue("[1,2,3]"));
+        test.put(1L, json("[1,2,3]"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
     }
 
     @Test
     public void when_objectIsReturned_errorIsThrown() {
         final IMap<Long, HazelcastJsonValue> test = instance().getMap("test");
-        test.put(1L, new HazelcastJsonValue("{\"test\":1}"));
+        test.put(1L, json("{\"test\":1}"));
         execute("CREATE MAPPING test TYPE IMap OPTIONS ('keyFormat'='bigint', 'valueFormat'='json')");
 
-        assertThrows(HazelcastSqlException.class, () -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"));
         assertNull(querySingleValue("SELECT JSON_VALUE(this, '$' NULL ON ERROR) FROM test"));
         assertEquals((byte) 1, querySingleValue("SELECT JSON_VALUE(this, '$' DEFAULT 1 ON ERROR) FROM test"));
+        assertThatThrownBy(() -> query("SELECT JSON_VALUE(this, '$' ERROR ON ERROR) FROM test"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Result of JSON_VALUE can not be array or object");
     }
 
     private void initMultiTypeObject() {
