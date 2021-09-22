@@ -48,6 +48,7 @@ import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -193,7 +194,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Record putReplicatedRecord(Data dataKey, Record replicatedRecord,
                                       ExpiryMetadata expiryMetadata,
                                       boolean populateIndexes, long now) {
-        Record newRecord = createRecord(replicatedRecord, now);
+        Record newRecord = createRecord(replicatedRecord.getValue(), now);
+        Records.copyMetadataFrom(replicatedRecord, newRecord);
+
         storage.put(dataKey, newRecord);
         expirySystem.add(dataKey, expiryMetadata.getTtl(),
                 expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
@@ -918,7 +921,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   long maxIdle, long expiryTime, long now, UUID transactionId,
                                   EntryEventType entryEventType, boolean store,
                                   boolean backup) {
-        Record record = createRecord(newValue, ttl, maxIdle, now);
+        Record record = createRecord(newValue, now);
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
             putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }

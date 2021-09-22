@@ -286,7 +286,6 @@ public interface RecordStore<R extends Record> {
      * loading from map store and is not intercepted by
      * {@code MapInterceptor}.
      *
-     *
      * @param dataKey                the key to be put
      * @param record                 the value for record store.
      * @param nowInMillis            nowInMillis
@@ -305,22 +304,23 @@ public interface RecordStore<R extends Record> {
      * then that record is updated instead of creating a
      * new one.
      *
-     * @param dataKey                   the key to put or update
-     * @param record                    the value for record store
-     * @param expiryMetadata            metadata relevant for expiry system
-     * @param indexesMustBePopulated    indicates if indexes must be updated
-     * @param now                       current time millis
-     * @return                          record after put or update
+     * @param dataKey                the key to put or update
+     * @param record                 the value for record store
+     * @param expiryMetadata         metadata relevant for expiry system
+     * @param indexesMustBePopulated indicates if indexes must be updated
+     * @param now                    current time millis
+     * @return record after put or update
      */
     default R putOrUpdateReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
-                          boolean indexesMustBePopulated, long now) {
+                                          boolean indexesMustBePopulated, long now) {
         return putReplicatedRecord(dataKey, record, expiryMetadata, indexesMustBePopulated, now);
     }
 
     /**
      * Remove record for given key. Does not load from MapLoader,
      * does not intercept.
-     * @param dataKey   key to remove
+     *
+     * @param dataKey key to remove
      */
     void removeReplicatedRecord(Data dataKey);
 
@@ -509,13 +509,7 @@ public interface RecordStore<R extends Record> {
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
-    R createRecord(Object value, long ttlMillis, long maxIdle, long now);
-
-    /**
-     * Creates a new record from a replicated record
-     * by making memory format related conversions.
-     */
-    R createRecord(R fromRecord, long nowInMillis);
+    R createRecord(Object value, long now);
 
     R loadRecordOrNull(Data key, boolean backup, Address callerAddress);
 
@@ -533,6 +527,7 @@ public interface RecordStore<R extends Record> {
      * Gets metadata store associated with the record store.
      * On the first call it initializes the store so
      * that the Json metadata store is created only when it is needed.
+     *
      * @return the Json metadata store
      */
     JsonMetadataStore getOrCreateMetadataStore();

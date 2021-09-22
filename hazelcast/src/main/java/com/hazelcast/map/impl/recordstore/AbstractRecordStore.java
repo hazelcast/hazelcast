@@ -39,7 +39,6 @@ import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.record.RecordReaderWriter;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.wan.impl.CallerProvenance;
 
@@ -139,30 +138,20 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public Record createRecord(Object value, long ttlMillis, long maxIdle, long now) {
+    public Record createRecord(Object value, long now) {
         Record record = recordFactory.newRecord(value);
         record.setCreationTime(now);
         record.setLastUpdateTime(now);
         if (record.getMatchingRecordReaderWriter()
                 == RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER) {
             // To distinguish last-access-time from creation-time we
-            // set last-access-time for only LRU records. A LRU record
+            // set last-access-time for only LRU records. An LRU record
             // has no creation-time field but last-access-time field.
             record.setLastAccessTime(now);
         }
 
         updateStatsOnPut(false, now);
         return record;
-    }
-
-    @Override
-    public Record createRecord(Record fromRecord, long nowInMillis) {
-        Record newRecord = recordFactory.newRecord(fromRecord == null ? null : fromRecord.getValue());
-        if (fromRecord != null) {
-            Records.copyMetadataFrom(fromRecord, newRecord);
-        }
-        updateStatsOnPut(false, nowInMillis);
-        return newRecord;
     }
 
     public Storage createStorage(RecordFactory recordFactory, InMemoryFormat memoryFormat) {
