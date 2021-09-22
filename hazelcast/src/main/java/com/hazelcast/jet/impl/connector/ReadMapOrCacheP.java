@@ -482,10 +482,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
     static class LocalMapReader
             extends Reader<CompletableFuture<MapEntriesWithCursor>, MapEntriesWithCursor, Entry<Data, Data>> {
 
+        private static final int RETRY_DELAY = 100;
+        
         private final MapProxyImpl mapProxyImpl;
         private final MapServiceContext mapServiceContext;
         private final NodeEngineImpl nodeEngine;
-        private static final int RETRY_DELAY = 100;
         private final boolean isHD;
 
 
