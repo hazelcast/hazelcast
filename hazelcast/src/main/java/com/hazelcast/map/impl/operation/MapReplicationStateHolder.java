@@ -206,7 +206,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                             recordStore::putOrUpdateReplicatedRecord);
                 } else {
                     forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putReplicatedRecord);
+                            recordStore::putOrUpdateReplicatedRecord);
                 }
 
 
