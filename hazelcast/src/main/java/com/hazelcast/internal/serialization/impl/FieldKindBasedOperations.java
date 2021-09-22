@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import java.util.Objects;
 
 /**
- * The purpose is to create on place to add new type to the serialization
+ * The purpose is to create on place to add new kind to the compact serialization
  */
-public interface FieldTypeBasedOperations {
+public interface FieldKindBasedOperations {
 
     int VARIABLE_SIZE = -1;
 
@@ -41,7 +41,7 @@ public interface FieldTypeBasedOperations {
     }
 
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
-        throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array type. It does not support indexed reads.");
+        throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");
     }
 
 
@@ -52,14 +52,14 @@ public interface FieldTypeBasedOperations {
     void writeFieldFromRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
 
     /**
-     * Used to built a json representation of generic record
+     * Used to build a json representation of generic record
      */
     void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName);
 
     /**
-     * @return type size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}
+     * @return kind size on bytes for compact format which is sometimes different than {@link FieldType#getTypeSize()}
      */
-    default int typeSizeInBytes() {
+    default int kindSizeInBytes() {
         return VARIABLE_SIZE;
     }
 }

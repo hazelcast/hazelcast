@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import static com.hazelcast.internal.nio.Bits.BOOLEAN_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
@@ -28,6 +26,9 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static java.lang.Integer.MAX_VALUE;
 
+/**
+ * Field Type for {@link Portable} format to be used with {@link ClassDefinition#getFieldType(String)} API
+ */
 public enum FieldType {
 
     PORTABLE(0, MAX_VALUE),
@@ -60,23 +61,7 @@ public enum FieldType {
     TIMESTAMP(26, TIME.getTypeSize() + DATE.getTypeSize()),
     TIMESTAMP_ARRAY(27, MAX_VALUE),
     TIMESTAMP_WITH_TIMEZONE(28, TIMESTAMP.getTypeSize() + INT_SIZE_IN_BYTES),
-    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE),
-    /**
-     * Related to Compact format
-     * {@link com.hazelcast.config.CompactSerializationConfig}
-     * This type represents a field where it is a user class serialized in Compact Format
-     * Since 5.0 as Beta
-     */
-    @Beta
-    COMPOSED(30, MAX_VALUE),
-    /**
-     * Related to Compact format
-     * {@link com.hazelcast.config.CompactSerializationConfig}
-     * This type represents a field where it is an array of user class and items are serialized in Compact Format
-     * Since 5.0 as Beta
-     */
-    @Beta
-    COMPOSED_ARRAY(31, MAX_VALUE);
+    TIMESTAMP_WITH_TIMEZONE_ARRAY(29, MAX_VALUE);
 
     private static final FieldType[] ALL = FieldType.values();
     private static final int TYPES_COUNT = 10;
