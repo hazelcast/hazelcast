@@ -19,7 +19,7 @@ data: {
     class: "JetSqlParser",
 
     # List of additional classes and packages to import.
-    # Example. "org.apache.calcite.sql.*", "java.util.List".
+    # Example: "org.apache.calcite.sql.*", "java.util.List".
     imports: [
       "com.hazelcast.jet.sql.impl.parse.ParserResource"
       "com.hazelcast.jet.sql.impl.parse.SqlAlterJob"
@@ -41,8 +41,8 @@ data: {
       "org.apache.calcite.sql.SqlDrop"
     ]
 
-    # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is not a reserved
-    # keyword add it to 'nonReservedKeywords' section.
+    # List of new keywords. Example: "DATABASES", "TABLES". If the keyword is
+    # not a reserved keyword, add it to the 'nonReservedKeywords' section.
     keywords: [
       "IF"
       "JOB"
@@ -67,6 +67,8 @@ data: {
       "AFTER"
       "ALWAYS"
       "APPLY"
+      "ARRAY_AGG"
+      "ARRAY_CONCAT_AGG"
       "ASC"
       "ASSERTION"
       "ASSIGNMENT"
@@ -129,6 +131,7 @@ data: {
       "DOMAIN"
       "DOW"
       "DOY"
+      "DOT_FORMAT"
       "DYNAMIC_FUNCTION"
       "DYNAMIC_FUNCTION_CODE"
       "ENCODING"
@@ -151,12 +154,16 @@ data: {
       "GO"
       "GOTO"
       "GRANTED"
+      "GROUP_CONCAT"
       "HIERARCHY"
+      "HOP"
       "HOURS"
       "IGNORE"
+      "ILIKE"
       "IMMEDIATE"
       "IMMEDIATELY"
       "IMPLEMENTATION"
+      "INCLUDE"
       "INCLUDING"
       "INCREMENT"
       "INITIALLY"
@@ -224,6 +231,7 @@ data: {
       "PASSTHROUGH"
       "PAST"
       "PATH"
+      "PIVOT"
       "PLACING"
       "PLAN"
       "PLI"
@@ -245,6 +253,7 @@ data: {
       "RETURNED_OCTET_LENGTH"
       "RETURNED_SQLSTATE"
       "RETURNING"
+      "RLIKE"
       "ROLE"
       "ROUTINE"
       "ROUTINE_CATALOG"
@@ -262,6 +271,7 @@ data: {
       "SECTION"
       "SECURITY"
       "SELF"
+      "SEPARATOR"
       "SEQUENCE"
       "SERIALIZABLE"
       "SERVER"
@@ -324,6 +334,7 @@ data: {
       "SQL_VARCHAR"
       "STATE"
       "STATEMENT"
+      "STRING_AGG"
       "STRUCTURE"
       "STYLE"
       "SUBCLASS_ORIGIN"
@@ -349,6 +360,7 @@ data: {
       "UNCOMMITTED"
       "UNCONDITIONAL"
       "UNDER"
+      "UNPIVOT"
       "UNNAMED"
       "USAGE"
       "USER_DEFINED_TYPE_CATALOG"
@@ -381,23 +393,23 @@ data: {
     ]
 
     # List of non-reserved keywords to add;
-    # items in this list become non-reserved
+    # items in this list become non-reserved.
     nonReservedKeywordsToAdd: [
     ]
 
     # List of non-reserved keywords to remove;
-    # items in this list become reserved
+    # items in this list become reserved.
     nonReservedKeywordsToRemove: [
     ]
 
     # List of additional join types. Each is a method with no arguments.
-    # Example: LeftSemiJoin()
+    # Example: "LeftSemiJoin".
     joinTypes: [
     ]
 
     # List of methods for parsing custom SQL statements.
     # Return type of method implementation should be 'SqlNode'.
-    # Example: SqlShowDatabases(), SqlShowTables().
+    # Example: "SqlShowDatabases()", "SqlShowTables()".
     statementParserMethods: [
       "SqlAlterJob()"
       "SqlExtendedInsert()"
@@ -419,18 +431,19 @@ data: {
 
     # List of methods for parsing builtin function calls.
     # Return type of method implementation should be "SqlNode".
-    # Example: DateFunctionCall().
+    # Example: "DateFunctionCall()".
     builtinFunctionCallMethods: [
     ]
 
     # List of methods for parsing extensions to "ALTER <scope>" calls.
     # Each must accept arguments "(SqlParserPos pos, String scope)".
-    # Example: "SqlUploadJarNode"
+    # Example: "SqlAlterTable".
     alterStatementParserMethods: [
     ]
 
     # List of methods for parsing extensions to "CREATE [OR REPLACE]" calls.
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
+    # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
       "SqlCreateMapping"
       "SqlCreateJob"
@@ -439,17 +452,20 @@ data: {
 
     # List of methods for parsing extensions to "DROP" calls.
     # Each must accept arguments "(SqlParserPos pos)".
+    # Example: "SqlDropSchema".
     dropStatementParserMethods: [
       "SqlDropMapping"
       "SqlDropJob"
       "SqlDropSnapshot"
     ]
 
-    # Binary operators tokens
+    # Binary operators tokens.
+    # Example: "< INFIX_CAST: \"::\" >".
     binaryOperatorsTokens: [
     ]
 
-    # Binary operators initialization
+    # Binary operators initialization.
+    # Example: "InfixCast".
     extraBinaryExpressions: [
     ]
 
@@ -457,6 +473,7 @@ data: {
     # implementations for parsing custom SQL statements, literals or types
     # given as part of "statementParserMethods", "literalParserMethods" or
     # "dataTypeParserMethods".
+    # Example: "parserImpls.ftl".
     implementationFiles: [
       "parserImpls.ftl"
     ]
