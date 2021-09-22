@@ -43,22 +43,26 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
 
     public JsonValueFunction() { }
 
-    private JsonValueFunction(Expression<?>[] operands,
-                              QueryDataType resultType,
-                              SqlJsonValueEmptyOrErrorBehavior onEmpty,
-                              SqlJsonValueEmptyOrErrorBehavior onError) {
+    private JsonValueFunction(
+            Expression<?>[] operands,
+            QueryDataType resultType,
+            SqlJsonValueEmptyOrErrorBehavior onEmpty,
+            SqlJsonValueEmptyOrErrorBehavior onError
+    ) {
 
         super(operands, resultType);
         this.onEmpty = onEmpty;
         this.onError = onError;
     }
 
-    public static JsonValueFunction<?> create(Expression<?> json,
-                                              Expression<?> path,
-                                              Expression<?> defaultValue,
-                                              QueryDataType resultType,
-                                              SqlJsonValueEmptyOrErrorBehavior onEmpty,
-                                              SqlJsonValueEmptyOrErrorBehavior onError) {
+    public static JsonValueFunction<?> create(
+            Expression<?> json,
+            Expression<?> path,
+            Expression<?> defaultValue,
+            QueryDataType resultType,
+            SqlJsonValueEmptyOrErrorBehavior onEmpty,
+            SqlJsonValueEmptyOrErrorBehavior onError
+    ) {
         final Expression<?>[] operands = new Expression<?>[] {
                 json,
                 path,
@@ -104,7 +108,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T onEmptyResponse(SqlJsonValueEmptyOrErrorBehavior onEmpty, Object defaultValue) {
         switch (onEmpty) {
             case ERROR:
-                throw QueryException.error("JSON argument is empty.");
+                throw QueryException.error("JSON argument is empty");
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
@@ -116,7 +120,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T onErrorResponse(SqlJsonValueEmptyOrErrorBehavior onError, Exception exception, Object defaultValue) {
         switch (onError) {
             case ERROR:
-                throw QueryException.error("JSON_VALUE failed: ", exception);
+                throw QueryException.error("JSON_VALUE failed: " + exception, exception);
             case DEFAULT:
                 return (T) defaultValue;
             case NULL:
@@ -128,7 +132,7 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
     private T execute(final String json, final String path) {
         final Object result = JsonPathUtil.read(json, path);
         if (JsonPathUtil.isArrayOrObject(result)) {
-            throw QueryException.error("Result of JSON_VALUE can not be array or object.");
+            throw QueryException.error("Result of JSON_VALUE can not be array or object");
         }
         return (T) convertResultType(result);
     }
@@ -155,7 +159,9 @@ public class JsonValueFunction<T> extends VariExpressionWithType<T> implements I
             case DOUBLE:
                 return number.doubleValue();
             case DECIMAL:
-                return BigDecimal.valueOf(number.doubleValue());
+                return number instanceof BigDecimal
+                        ? (BigDecimal) number
+                        : BigDecimal.valueOf(number.doubleValue());
             default:
                 return result;
         }

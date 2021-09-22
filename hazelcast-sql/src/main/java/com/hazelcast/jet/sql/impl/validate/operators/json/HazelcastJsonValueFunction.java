@@ -54,17 +54,13 @@ public class HazelcastJsonValueFunction extends HazelcastFunction {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.between(2, 8);
+        return SqlOperandCountRanges.from(2);
     }
 
     private static final class JsonValueFunctionReturnTypeInference implements SqlReturnTypeInference {
 
         @Override
         public RelDataType inferReturnType(final SqlOperatorBinding binding) {
-            if (binding.getOperandCount() == 2) {
-                return binding.getTypeFactory().createSqlType(SqlTypeName.ANY);
-            }
-
             for (int i = 2; i < binding.getOperandCount(); i += 2) {
                 if (!binding.getOperandType(i).getSqlTypeName().equals(SqlTypeName.SYMBOL)) {
                     continue;

@@ -24,15 +24,22 @@ import com.hazelcast.query.QueryException;
 import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.ParseContext;
+import com.jayway.jsonpath.spi.cache.CacheProvider;
+import com.jayway.jsonpath.spi.cache.LRUCache;
 import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public final class JsonPathUtil {
+    private static final int CACHE_ENTRIES = 1000;
     private static final ParseContext CONTEXT = JsonPath.using(Configuration.builder()
             .jsonProvider(new GsonJsonProvider())
             .build());
+
+    static {
+        CacheProvider.setCache(new LRUCache(CACHE_ENTRIES));
+    }
 
     private JsonPathUtil() { }
 
@@ -48,7 +55,7 @@ public final class JsonPathUtil {
 
         final JsonPrimitive primitive = result.getAsJsonPrimitive();
         if (primitive.isNumber()) {
-            final boolean isFPNumber = !primitive.toString().matches("([-]?[1-9]+[0-9]*)|([0])");
+            final boolean isFPNumber = primitive.toString().matches(".*[.eE].*");
             return isFPNumber
                     ? convertFPNumber(primitive.getAsBigDecimal())
                     : convertIntegerNumber(primitive.getAsBigInteger());
@@ -75,10 +82,8 @@ public final class JsonPathUtil {
 
     private static Object convertFPNumber(BigDecimal number) {
         final double value = number.doubleValue();
-        if (value >= Float.MIN_VALUE && value <= Float.MAX_VALUE) {
-            return number.floatValue();
-        } else if (value >= Double.MIN_VALUE && value <= Double.MAX_VALUE) {
-            return number.doubleValue();
+        if (value > Double.NEGATIVE_INFINITY && value < Double.POSITIVE_INFINITY) {
+            return value;
         }
         return number;
     }

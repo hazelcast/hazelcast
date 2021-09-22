@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public abstract class SqlJsonTestSupport extends SqlTestSupport {
     protected static final ObjectMapper SERIALIZER = new ObjectMapper();
@@ -49,11 +50,14 @@ public abstract class SqlJsonTestSupport extends SqlTestSupport {
 
     protected Object querySingleValue(final String sql) {
         final Map<String, Object> result = querySingleRow(sql);
+        assertEquals(1, result.size());
         return result.values().iterator().next();
     }
 
     protected Map<String, Object> querySingleRow(final String sql) {
-        return query(sql).get(0);
+        final List<Map<String, Object>> result = query(sql);
+        assertEquals(1, result.size());
+        return result.get(0);
     }
 
     protected List<Map<String, Object>> query(final String sql) {

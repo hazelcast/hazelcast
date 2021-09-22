@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonParseException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -48,10 +47,12 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
     public JsonQueryFunction() { }
 
-    private JsonQueryFunction(Expression<?>[] operands,
-                              SqlJsonQueryWrapperBehavior wrapperBehavior,
-                              SqlJsonQueryEmptyOrErrorBehavior onEmpty,
-                              SqlJsonQueryEmptyOrErrorBehavior onError) {
+    private JsonQueryFunction(
+            Expression<?>[] operands,
+            SqlJsonQueryWrapperBehavior wrapperBehavior,
+            SqlJsonQueryEmptyOrErrorBehavior onEmpty,
+            SqlJsonQueryEmptyOrErrorBehavior onError
+    ) {
         super(operands);
         this.wrapperBehavior = wrapperBehavior;
         this.onEmpty = onEmpty;
@@ -106,7 +107,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private HazelcastJsonValue onErrorResponse(final SqlJsonQueryEmptyOrErrorBehavior onError, final Exception exception) {
         switch (onError) {
             case ERROR:
-                throw QueryException.error("JSON_QUERY failed: ", exception);
+                throw QueryException.error("JSON_QUERY failed: " + exception, exception);
             case EMPTY_ARRAY:
                 return wrap("[]");
             case EMPTY_OBJECT:
@@ -137,7 +138,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
 
     private String execute(final String json, final String path, final SqlJsonQueryWrapperBehavior wrapperBehavior) {
         final Object result = JsonPathUtil.read(json, path);
-        final String serializedResult = serialize(result);
+        final String serializedResult = SERIALIZER.toJson(result);
 
         switch (wrapperBehavior) {
             case WITH_CONDITIONAL_ARRAY:
@@ -152,14 +153,6 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
                     throw QueryException.error("JSON_QUERY result is not an array or object");
                 }
                 return serializedResult;
-        }
-    }
-
-    private String serialize(Object value) {
-        try {
-            return SERIALIZER.toJson(value);
-        } catch (JsonParseException exception) {
-            throw QueryException.error("Failed to serialize JSON_QUERY result: ", exception);
         }
     }
 

@@ -53,6 +53,6 @@ public class HazelcastJsonQueryFunction extends HazelcastFunction {
 
     @Override
     public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.between(2, 5);
+        return SqlOperandCountRanges.of(5);
     }
 }

@@ -27,6 +27,9 @@ import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.spi.json.GsonJsonProvider;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +51,13 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         config.getJetConfig().setEnabled(true);
         initialize(1, config);
     }
+    @Test
+    public void test() {
+
+            final Object read = JsonPath.using(Configuration.builder().jsonProvider(new GsonJsonProvider()).build()).parse("[1e599]")
+                    .read("$[0]");
+            System.out.println(read);
+    }
 
     @Test
     public void when_calledWithBasicSyntax_objectValueIsReturned() {
@@ -61,16 +71,16 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
                 singletonList(SqlColumnType.OBJECT), rows(1, (byte) 3));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.longField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, (byte) 4));
-        assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 5.0f));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.stringField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, "6"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.charField') FROM test" ,
                 singletonList(SqlColumnType.OBJECT), rows(1, "7"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.floatField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 8.0f));
+                singletonList(SqlColumnType.OBJECT), rows(1, 8.0));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.doubleField') FROM test" ,
-                singletonList(SqlColumnType.OBJECT), rows(1, 9.0f));
+                singletonList(SqlColumnType.OBJECT), rows(1, 9.0));
+        assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField') FROM test" ,
+                singletonList(SqlColumnType.OBJECT), rows(1, new BigDecimal("1e1000")));
     }
 
     @Test
@@ -85,8 +95,6 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
                 singletonList(SqlColumnType.INTEGER), rows(1, 3));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.longField' RETURNING BIGINT) FROM test" ,
                 singletonList(SqlColumnType.BIGINT), rows(1, 4L));
-        assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL) FROM test" ,
-                singletonList(SqlColumnType.DECIMAL), rows(1, BigDecimal.valueOf(5.0)));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.stringField' RETURNING VARCHAR) FROM test" ,
                 singletonList(SqlColumnType.VARCHAR), rows(1, "6"));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.charField' RETURNING VARCHAR) FROM test" ,
@@ -95,6 +103,8 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
                 singletonList(SqlColumnType.REAL), rows(1, 8.0f));
         assertRowsWithType("SELECT JSON_VALUE(this, '$.doubleField' RETURNING DOUBLE) FROM test" ,
                 singletonList(SqlColumnType.DOUBLE), rows(1, 9.0));
+        assertRowsWithType("SELECT JSON_VALUE(this, '$.bigDecimalField' RETURNING DECIMAL) FROM test" ,
+                singletonList(SqlColumnType.DECIMAL), rows(1, new BigDecimal("1e1000")));
     }
 
     @Test
@@ -152,10 +162,10 @@ public class JsonValueIntegrationTest extends SqlJsonTestSupport {
         public Short shortField = 2;
         public Integer intField = 3;
         public Long longField = 4L;
-        public BigDecimal bigDecimalField = BigDecimal.valueOf(5.0);
         public String stringField = "6";
         public Character charField = '7';
         public Float floatField = 8.0f;
         public Double doubleField = 9.0;
+        public BigDecimal bigDecimalField = new BigDecimal("1e1000");
     }
 }

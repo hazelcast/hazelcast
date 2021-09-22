@@ -354,7 +354,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return null;
         }
 
-        if (((SqlCall) node).getOperator().getName().equalsIgnoreCase("JSON_VALUE")) {
+        if (((SqlCall) node).getOperator() instanceof HazelcastJsonValueFunction) {
             return convertJsonValueCall((SqlCall) node, blackboard);
         }
 
