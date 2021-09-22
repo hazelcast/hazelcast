@@ -209,13 +209,13 @@ public class MetricsCompressor {
 
     private MetricDescriptor prepareDescriptor(MetricDescriptor descriptor) {
         final ProbeUnit unit = descriptor.unit();
-        if (unit == null || !unit.isNewUnit()) {
-            return descriptor;
-        } else {
+        if (unit != null && unit.isNewUnit()) {
             return descriptor
                     .copy()
                     .withTag("metric-unit", unit.name())
                     .withUnit(null);
+        } else {
+            return descriptor;
         }
     }
 
