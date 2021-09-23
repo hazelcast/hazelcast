@@ -57,7 +57,6 @@ import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,7 +74,6 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 import static com.hazelcast.internal.hotrestart.InternalHotRestartService.PERSISTENCE_ENABLED_ATTRIBUTE;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
-import static java.util.Collections.singletonList;
 
 /**
  * ClusterJoinManager manages member join process.
@@ -519,26 +517,26 @@ public class ClusterJoinManager {
      * Set master address, if required.
      *
      * @param masterAddress address of cluster's master, as provided in {@link MasterResponseOp}
-     * @param callerAddresses all known addresses of node that sent the {@link MasterResponseOp}
+     * @param callerAddress address of node that sent the {@link MasterResponseOp}
      * @see MasterResponseOp
      */
-    public void handleMasterResponse(Address masterAddress, List<Address> callerAddresses) {
+    public void handleMasterResponse(Address masterAddress, Address callerAddress) {
         clusterServiceLock.lock();
         try {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddresses.get(0)));
+                logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
             }
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
                     logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                            masterAddress, callerAddresses.get(0)));
+                            masterAddress, callerAddress));
                 }
                 return;
             }
 
             if (node.getThisAddress().equals(masterAddress)) {
-                logger.warning("Received my address as master address from " + callerAddresses.get(0));
+                logger.warning("Received my address as master address from " + callerAddress);
                 return;
             }
 
@@ -548,7 +546,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            if (callerAddresses.stream().anyMatch(currentMaster::equals)) {
+            if (currentMaster.equals(callerAddress)) {
                 logger.warning(format("Setting master to %s since %s says it is not master anymore", masterAddress,
                         currentMaster));
                 setMasterAndJoin(masterAddress);
@@ -558,13 +556,13 @@ public class ClusterJoinManager {
             Connection conn = node.getServer().getConnectionManager(MEMBER).get(currentMaster);
             if (conn != null && conn.isAlive()) {
                 logger.info(format("Ignoring master response %s from %s since this node has an active master %s",
-                        masterAddress, callerAddresses.get(0), currentMaster));
+                        masterAddress, callerAddress, currentMaster));
                 sendJoinRequest(currentMaster);
             } else {
                 logger.warning(format("Ambiguous master response! Received master response %s from %s. "
                                 + "This node has a master %s, but does not have an active connection to it. "
                                 + "Master field will be unset now.",
-                        masterAddress, callerAddresses.get(0), currentMaster));
+                        masterAddress, callerAddress, currentMaster));
                 clusterService.setMasterAddress(null);
             }
         } finally {
@@ -768,7 +766,7 @@ public class ClusterJoinManager {
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
                 UUID thisUuid = clusterService.getThisUuid();
-                if (!clusterService.updateMembers(newMembersView, singletonList(node.getThisAddress()), thisUuid, thisUuid)) {
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
 

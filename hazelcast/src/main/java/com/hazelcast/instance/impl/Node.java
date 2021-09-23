@@ -908,9 +908,4 @@ public class Node {
         }
         return attributes;
     }
-
-    public boolean isMaster(Address address) {
-        Address masterAddress = clusterService.getMasterAddress();
-        return server.doAddressesMatch(masterAddress, address);
-    }
 }

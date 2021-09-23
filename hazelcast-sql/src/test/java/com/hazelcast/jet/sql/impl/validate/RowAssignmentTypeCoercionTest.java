@@ -153,12 +153,12 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type VARCHAR")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but VARCHAR was found"),
                 TestParams.failingCase(1115, VARCHAR, DECIMAL, "'1.5'", "1.5")
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type VARCHAR")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type VARCHAR")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type VARCHAR")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type VARCHAR")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but VARCHAR was found"),
                 TestParams.failingCase(1116, VARCHAR, DECIMAL, "'foo'", "foo")
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type VARCHAR")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type VARCHAR")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type VARCHAR")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type VARCHAR")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but VARCHAR was found"),
                 TestParams.failingCase(1117, VARCHAR, REAL, "'1.5'", "1.5")
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type VARCHAR")
@@ -229,8 +229,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but BOOLEAN was found"),
                 TestParams.failingCase(1207, BOOLEAN, DECIMAL, "true", true)
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but BOOLEAN was found"),
                 TestParams.failingCase(1208, BOOLEAN, REAL, "true", true)
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '(EXPR\\$\\d|v)' of type BOOLEAN")
@@ -426,12 +426,12 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
                 // DECIMAL
                 TestParams.failingCase(1701, DECIMAL, VARCHAR, "cast(42 as decimal)", new BigDecimal("42"))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DECIMAL\\(38, 38\\)")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DECIMAL\\(38, 38\\)")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DECIMAL\\(76, 38\\)")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type VARCHAR from source field '.+' of type DECIMAL\\(76, 38\\)")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of VARCHAR type, but DECIMAL was found"),
                 TestParams.failingCase(1702, DECIMAL, BOOLEAN, "cast(42 as decimal)", new BigDecimal("42"))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(38, 38\\)")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(38, 38\\)")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(76, 38\\)")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BOOLEAN from source field '.+' of type DECIMAL\\(76, 38\\)")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BOOLEAN type, but DECIMAL was found"),
                 TestParams.passingCase(1703, DECIMAL, TINYINT, "cast(42 as decimal)", new BigDecimal("42"), (byte) 42)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TINYINT type, but DECIMAL was found"),
@@ -471,12 +471,12 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type DECIMAL")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DATE type, but DECIMAL was found"),
                 TestParams.failingCase(1717, DECIMAL, TIMESTAMP, "cast(42 as decimal)", new BigDecimal("42"))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(38, 38\\)")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(38, 38\\)")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(76, 38\\)")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP from source field '.+' of type DECIMAL\\(76, 38\\)")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP type, but DECIMAL was found"),
                 TestParams.failingCase(1718, DECIMAL, TIMESTAMP_WITH_TIME_ZONE, "cast(42 as decimal)", new BigDecimal("42"))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(38, 38\\)")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(38, 38\\)")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(76, 38\\)")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type TIMESTAMP WITH TIME ZONE from source field '.+' of type DECIMAL\\(76, 38\\)")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of TIMESTAMP WITH TIME ZONE type, but DECIMAL was found"),
                 TestParams.passingCase(1719, DECIMAL, OBJECT, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
 
@@ -625,8 +625,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIME")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but TIME was found"),
                 TestParams.failingCase(2007, TIME, DECIMAL, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIME")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIME")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIME")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIME")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but TIME was found"),
                 TestParams.failingCase(2008, TIME, REAL, "cast('1:42:00' as time)", LocalTime.of(1, 42, 0))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIME")
@@ -676,8 +676,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type DATE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DATE was found"),
                 TestParams.failingCase(2107, DATE, DECIMAL, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type DATE")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type DATE")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type DATE")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type DATE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but DATE was found"),
                 TestParams.failingCase(2108, DATE, REAL, "cast('2020-12-30' as date)", LocalDate.of(2020, 12, 30))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type DATE")
@@ -728,8 +728,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but TIMESTAMP was found"),
                 TestParams.failingCase(2207, TIMESTAMP, DECIMAL, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIMESTAMP")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIMESTAMP")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but TIMESTAMP was found"),
                 TestParams.failingCase(2208, TIMESTAMP, REAL, "cast('2020-12-30T01:42:00' as timestamp)", LocalDateTime.of(2020, 12, 30, 1, 42, 0))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP")
@@ -778,8 +778,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field '.+' of type TIMESTAMP WITH TIME ZONE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but TIMESTAMP WITH TIME ZONE was found"),
                 TestParams.failingCase(2307, TIMESTAMP_WITH_TIME_ZONE, DECIMAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field '.+' of type TIMESTAMP WITH TIME ZONE")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but TIMESTAMP WITH TIME ZONE was found"),
                 TestParams.failingCase(2308, TIMESTAMP_WITH_TIME_ZONE, REAL, "cast('2020-12-30T01:42:00-05:00' as timestamp with time zone)", OffsetDateTime.of(2020, 12, 30, 1, 42, 0, 0, ZoneOffset.ofHours(-5)))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field '.+' of type TIMESTAMP WITH TIME ZONE")
@@ -829,8 +829,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type BIGINT from source field 'EXPR\\$\\d' of type OBJECT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but OBJECT was found"),
                 TestParams.failingCase(2407, OBJECT, DECIMAL, "cast(cast(1.5 as decimal) as object)", new Value(42))
-                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$\\d' of type OBJECT")
-                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(38, 38\\) from source field 'EXPR\\$\\d' of type OBJECT")
+                        .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field 'EXPR\\$\\d' of type OBJECT")
+                        .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DECIMAL\\(76, 38\\) from source field 'EXPR\\$\\d' of type OBJECT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but OBJECT was found"),
                 TestParams.failingCase(2408, OBJECT, REAL, "cast(cast(1.5 as real) as object)", new Value(42))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type REAL from source field 'EXPR\\$\\d' of type OBJECT")

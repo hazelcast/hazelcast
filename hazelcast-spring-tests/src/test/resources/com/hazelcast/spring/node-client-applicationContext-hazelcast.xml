@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.0.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -35,7 +35,7 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
-            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -50,7 +50,7 @@
     </hz:hazelcast>
 
     <hz:client id="client">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
@@ -78,7 +78,7 @@
     </hz:client>
 
     <hz:client id="client2">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -104,7 +104,7 @@
     </hz:client>
 
     <hz:client id="client3">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -190,7 +190,7 @@
     </hz:client>
 
     <hz:client id="client4">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -220,7 +220,7 @@
     </hz:client>
 
     <hz:client id="client5">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:connection-strategy>
             <hz:connection-retry>
                 <hz:cluster-connect-timeout-millis>1000</hz:cluster-connect-timeout-millis>
@@ -262,7 +262,7 @@
     </hz:client>
 
     <hz:client id="client6">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -309,7 +309,7 @@
     </hz:client>
 
     <hz:client id="client7-empty-serialization-config">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
@@ -336,7 +336,7 @@
     </hz:client>
 
     <hz:client id="client8">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -354,7 +354,7 @@
     </hz:client>
 
     <hz:client id="client9-user-code-deployment-test">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -380,7 +380,7 @@
     </hz:client>
 
     <hz:client id="client10-flakeIdGenerator">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -398,7 +398,7 @@
     </hz:client>
 
     <hz:client id="client11-icmp-ping">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -423,7 +423,7 @@
     </hz:client>
 
     <hz:client id="client12-hazelcast-cloud">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -444,7 +444,7 @@
     </hz:client>
 
     <hz:client id="client13-exponential-connection-retry">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -470,7 +470,7 @@
     </hz:client>
 
     <hz:client id="client14-reliable-topic">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -492,7 +492,7 @@
     </hz:client>
 
     <hz:client id="client16-name-and-labels">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -512,7 +512,7 @@
     </hz:client>
 
     <hz:client id="client17-backupAckToClient">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -529,7 +529,7 @@
     </hz:client>
 
     <hz:client id="client18-metrics">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -549,7 +549,7 @@
     </hz:client>
 
     <hz:client id="client19-instance-tracking">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -569,7 +569,7 @@
     </hz:client>
 
     <hz:client id="client20-native-memory">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -596,7 +596,7 @@
     </hz:client>
 
     <hz:client id="client21-persistent-memory-system-memory">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -618,7 +618,7 @@
     </hz:client>
 
     <hz:client id="client22-with-overridden-default-serializers">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
         <hz:network>
             <hz:member>127.0.0.1:6150</hz:member>
             <hz:member>127.0.0.1:6151</hz:member>
@@ -657,7 +657,7 @@
 
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyCredentialsFactory" class="com.hazelcast.spring.security.DummyCredentialsFactory">
-        <constructor-arg index="0" value="${cluster.name}"/>
+        <constructor-arg index="0" value="${cluster.name}-node-client"/>
         <constructor-arg index="1" value=""/>
     </bean>
 </beans>

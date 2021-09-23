@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.validate.operators.datetime;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.param.NoOpParameterConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
@@ -49,13 +49,16 @@ public final class HazelcastExtractFunction extends HazelcastFunction {
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         SqlNode sourceOperand = callBinding.operand(1);
 
+        RelDataType fieldType = callBinding.getOperandType(0);
+        RelDataType sourceType = callBinding.getOperandType(1);
+
         if (sourceOperand.getKind() == SqlKind.DYNAMIC_PARAM) {
+            // Set parameter type
+            callBinding.getValidator().setValidatedNodeType(sourceOperand, fieldType);
+
             int parameterIndex = ((SqlDynamicParam) sourceOperand).getIndex();
             callBinding.getValidator().setParameterConverter(parameterIndex, NoOpParameterConverter.INSTANCE);
         }
-
-        RelDataType fieldType = callBinding.getOperandType(0);
-        RelDataType sourceType = callBinding.getOperandType(1);
 
         if (!isFieldValid(fieldType) || !isSourceValid(sourceType)) {
             if (throwOnFailure) {

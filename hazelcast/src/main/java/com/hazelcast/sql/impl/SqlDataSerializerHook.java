@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
+import com.hazelcast.sql.impl.expression.SearchableExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
@@ -58,6 +59,7 @@ import com.hazelcast.sql.impl.expression.predicate.IsNullPredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.NotPredicate;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
+import com.hazelcast.sql.impl.expression.predicate.SearchPredicate;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.sql.impl.expression.string.CharLengthFunction;
 import com.hazelcast.sql.impl.expression.string.ConcatFunction;
@@ -166,7 +168,10 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int MAPPING = 57;
     public static final int MAPPING_FIELD = 58;
 
-    public static final int LEN = MAPPING_FIELD + 1;
+    public static final int EXPRESSION_SEARCHABLE = 59;
+    public static final int EXPRESSION_SEARCH = 60;
+
+    public static final int LEN = EXPRESSION_SEARCH + 1;
 
     @Override
     public int getFactoryId() {
@@ -252,6 +257,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
+        constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
+        constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
 
         return new ArrayDataSerializableFactory(constructors);
     }

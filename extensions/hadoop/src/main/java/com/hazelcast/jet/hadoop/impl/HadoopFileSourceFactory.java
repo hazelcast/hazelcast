@@ -194,6 +194,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class AvroFormatJobConfigurer implements JobConfigurer {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
             AvroFileFormat<T> avroFileFormat = (AvroFileFormat<T>) format;
@@ -225,6 +227,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class RawBytesFormatJobConfigurer implements JobConfigurer {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
             job.setInputFormatClass(WholeFileAsBytesInputFormat.class);
@@ -243,6 +247,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
     }
 
     private static class CsvFormatJobConfigurer implements JobConfigurer {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
@@ -272,6 +278,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class JsonFormatJobConfigurer implements JobConfigurer {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
             JsonFileFormat<T> jsonFileFormat = (JsonFileFormat<T>) format;
@@ -300,6 +308,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
 
     private static class LineTextJobConfigurer implements JobConfigurer {
 
+        private static final long serialVersionUID = 1L;
+
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
             job.setInputFormatClass(TextInputFormat.class);
@@ -318,6 +328,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
     }
 
     private static class ParquetFormatJobConfigurer implements JobConfigurer {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {
@@ -346,6 +358,8 @@ public class HadoopFileSourceFactory implements FileSourceFactory {
     }
 
     private static class TextJobConfigurer implements JobConfigurer {
+
+        private static final long serialVersionUID = 1L;
 
         @Override
         public <T> void configure(Job job, FileFormat<T> format) {

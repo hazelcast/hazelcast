@@ -39,7 +39,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorException;
-import org.apache.calcite.sql.validate.SqlValidatorImpl;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 
 import java.util.ArrayList;
@@ -83,8 +82,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
             // Handle the 'IN (expr, ...)' form.
             List<RelDataType> rightTypeList = new ArrayList<>();
             SqlNodeList nodeList = (SqlNodeList) right;
-            for (int i = 0; i < nodeList.size(); i++) {
-                SqlNode node = nodeList.get(i);
+            for (SqlNode node : nodeList) {
                 if (node instanceof SqlLiteral) {
                     SqlLiteral lit = (SqlLiteral) node;
                     // We are not supporting raw NULL literals within IN right-hand side list.
@@ -108,7 +106,7 @@ public class HazelcastInOperator extends SqlInOperator implements HazelcastOpera
             }
 
             // Record the RHS type for use by SqlToRelConverter.
-            ((SqlValidatorImpl) validator).setValidatedNodeType(nodeList, rightType);
+            validator.setValidatedNodeType(nodeList, rightType);
         } else {
             // We do not support sub-querying for IN operator.
             throw validator.newValidationError(call, HZRESOURCE.noSubQueryAllowed());

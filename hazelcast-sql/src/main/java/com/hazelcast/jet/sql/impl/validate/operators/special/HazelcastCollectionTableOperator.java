@@ -18,9 +18,16 @@ package com.hazelcast.jet.sql.impl.validate.operators.special;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOperator;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.SqlWriter;
+import org.apache.calcite.sql.fun.SqlCollectionTableOperator;
 import org.apache.calcite.sql.type.ReturnTypes;
 
+/**
+ * Hazelcast equivalent of {@link SqlCollectionTableOperator}.
+ */
 public class HazelcastCollectionTableOperator extends HazelcastSpecialOperator {
 
     public static final int PRECEDENCE = 200;
@@ -38,5 +45,10 @@ public class HazelcastCollectionTableOperator extends HazelcastSpecialOperator {
     @Override
     protected boolean checkOperandTypes(HazelcastCallBinding callBinding, boolean throwOnFailure) {
         return true;
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        SqlUtil.unparseFunctionSyntax(this, writer, call, false);
     }
 }

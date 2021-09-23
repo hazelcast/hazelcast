@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -67,7 +67,7 @@
                                     <groupId>com.hazelcast</groupId>
                                     <artifactId>hazelcast</artifactId>
                                     <outputDirectory>${configs.from.jar}</outputDirectory>
-                                    <includes>**/*.xml,**/*.yaml</includes>
+                                    <includes>**/*.xml,**/*.yaml,META-INF/NOTICE</includes>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>

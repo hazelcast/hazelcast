@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Partitioner;
+import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
-import com.hazelcast.jet.impl.pipeline.PipelineImpl.Context;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -32,6 +32,9 @@ import static com.hazelcast.jet.impl.pipeline.SinkImpl.Type.TOTAL_PARALLELISM_ON
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 
 public class SinkTransform<T> extends AbstractTransform {
+
+    private static final long serialVersionUID = 1L;
+
     private static final int[] EMPTY_ORDINALS = new int[0];
 
     private final SinkImpl<T> sink;

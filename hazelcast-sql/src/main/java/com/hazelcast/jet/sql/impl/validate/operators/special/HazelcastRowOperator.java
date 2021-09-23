@@ -19,9 +19,11 @@ package com.hazelcast.jet.sql.impl.validate.operators.special;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOperator;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.SqlUtil;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.fun.SqlRowOperator;
 import org.apache.calcite.sql.type.InferTypes;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
@@ -68,5 +70,10 @@ public class HazelcastRowOperator extends HazelcastSpecialOperator {
     @Override
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.any();
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, SqlCall call, int leftPrec, int rightPrec) {
+        SqlUtil.unparseFunctionSyntax(this, writer, call, false);
     }
 }

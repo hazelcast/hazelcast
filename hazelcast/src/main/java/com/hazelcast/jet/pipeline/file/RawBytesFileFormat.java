@@ -31,6 +31,8 @@ public class RawBytesFileFormat implements FileFormat<byte[]> {
      */
     public static final String FORMAT_BIN = "bin";
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * Create {@link RawBytesFileFormat}. See {@link FileFormat#bytes()} for more
      * details.
@@ -38,7 +40,8 @@ public class RawBytesFileFormat implements FileFormat<byte[]> {
     RawBytesFileFormat() {
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public String format() {
         return FORMAT_BIN;
     }

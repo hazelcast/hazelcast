@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 
 public class SinkImpl<T> implements Sink<T> {
 
+    private static final long serialVersionUID = 1L;
+
     private final String name;
     private final ProcessorMetaSupplier metaSupplier;
     private boolean assignedToStage;
