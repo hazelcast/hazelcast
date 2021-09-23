@@ -521,7 +521,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                 if (isOwned) {
                     int migrationStamp = mapServiceContext.getService().getMigrationStamp();
 
-                    MapEntriesWithCursor result = accessRecordStore(partitionId, pointers);
+                    MapEntriesWithCursor result = readFromRecordStore(partitionId, pointers);
 
                     if (validateMigrationStamp(migrationStamp)) {
                         f.complete(result);
@@ -547,7 +547,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
             nodeEngine.getExecutionService().schedule(() -> read0(f, partitionId, pointers), RETRY_DELAY, TimeUnit.MILLISECONDS);
         }
 
-        private MapEntriesWithCursor accessRecordStore(int partitionId, IterationPointer[] pointers) {
+        private MapEntriesWithCursor readFromRecordStore(int partitionId, IterationPointer[] pointers) {
             PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
             RecordStore recordStore = partitionContainer.getExistingRecordStore(mapProxyImpl.getName());
 
