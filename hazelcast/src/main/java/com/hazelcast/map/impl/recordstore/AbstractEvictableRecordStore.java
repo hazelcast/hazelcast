@@ -75,6 +75,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void evictExpiredEntries(int percentage, long now, boolean backup) {
         expirySystem.evictExpiredEntries(percentage, now, backup);
+        disposeDeferredBlocks();
     }
 
     @Override

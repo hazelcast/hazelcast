@@ -66,7 +66,6 @@ public class MapClearExpiredOperation extends AbstractLocalOperation
         for (RecordStore recordStore : recordStores.values()) {
             if (recordStore.isExpirable()) {
                 recordStore.evictExpiredEntries(expirationPercentage, now, backup);
-                recordStore.disposeDeferredBlocks();
             }
         }
     }
