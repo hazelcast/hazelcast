@@ -627,7 +627,7 @@ public class SqlJoinTest {
                                     "JOIN (SELECT * FROM " + mapName + ") AS m ON l.v = m.__key"
                     ))
                     .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining("Sub-query not supported on the right side of a join");
+                    .hasMessageContaining("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
         }
 
         @Test
@@ -640,7 +640,7 @@ public class SqlJoinTest {
                             "SELECT * FROM " + leftName + " l JOIN (VALUES (1)) AS r (__key) ON l.v = r.__key"
                     ))
                     .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining("VALUES clause not supported on the right side of a join");
+                    .hasMessageContaining("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
         }
     }
 
@@ -940,14 +940,24 @@ public class SqlJoinTest {
         }
 
         @Test
-        public void test_whenWrongOuterJoinWrongSide_thenExceptionThrown() {
+        public void test_whenOuterJoinWrongSide_thenExceptionThrown() {
             String batchName = randomName();
             TestBatchSqlConnector.create(sqlService, batchName, 0);
 
             assertThatThrownBy(() -> sqlService.execute(
                     "SELECT * FROM " + joinClause(batchName, "TABLE(GENERATE_STREAM(1))") + " ON true"))
                     .hasCauseInstanceOf(QueryException.class)
-                    .hasMessageContaining(expectedErrorMessage());
+                    .hasMessageContaining("The right side of a LEFT JOIN or the left side of a RIGHT JOIN cannot be a streaming source");
+
+            assertThatThrownBy(() -> sqlService.execute(
+                    "SELECT * FROM " + joinClause(batchName, "(SELECT * FROM " + batchName + ")") + " ON true"))
+                    .hasCauseInstanceOf(QueryException.class)
+                    .hasMessageContaining("Sub-query not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
+
+            assertThatThrownBy(() -> sqlService.execute(
+                    "SELECT * FROM " + joinClause(batchName, "(VALUES(1,2))") + " ON true"))
+                    .hasCauseInstanceOf(QueryException.class)
+                    .hasMessageContaining("VALUES clause not supported on the right side of a (LEFT) JOIN or the left side of a RIGHT JOIN");
         }
 
         private String joinClause(
@@ -966,11 +976,6 @@ public class SqlJoinTest {
                     rightJoinOperand,
                     rightAlias
             );
-        }
-
-        private String expectedErrorMessage() {
-            String streamingOperand = joinType == OuterJoinType.LEFT ? "Right" : "Left";
-            return String.format("%s operand of %s JOIN cannot be streaming source", streamingOperand, joinType.toString());
         }
     }
 }

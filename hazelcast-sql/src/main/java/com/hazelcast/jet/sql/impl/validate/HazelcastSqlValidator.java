@@ -225,23 +225,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     protected void validateJoin(SqlJoin join, SqlValidatorScope scope) {
         super.validateJoin(join, scope);
 
-        switch (join.getJoinType()) {
-            case LEFT:
-                if (containsStreamingSource(join.getRight())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSideOfLeftJoin());
-                }
-                break;
-            case RIGHT:
-                if (containsStreamingSource(join.getLeft())) {
-                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSideOfRightJoin());
-                }
-                break;
-            default:
-                break;
-        }
-
-        // the right side of a join must not be a subquery or a VALUES clause
-        join.getRight().accept(new SqlBasicVisitor<Void>() {
+        SqlBasicVisitor<Void> joinChecker = new SqlBasicVisitor<Void>() {
             @Override
             public Void visit(SqlCall call) {
                 if (call.getKind() == SqlKind.SELECT) {
@@ -252,7 +236,29 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
                 return call.getOperator().acceptCall(this, call);
             }
-        });
+        };
+
+        switch (join.getJoinType()) {
+            case INNER:
+            case COMMA:
+            case CROSS:
+                join.getRight().accept(joinChecker);
+                break;
+            case LEFT:
+                join.getRight().accept(joinChecker);
+                if (containsStreamingSource(join.getRight())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSide());
+                }
+                break;
+            case RIGHT:
+                join.getLeft().accept(joinChecker);
+                if (containsStreamingSource(join.getLeft())) {
+                    throw newValidationError(join, RESOURCE.streamingSourceInWrongSide());
+                }
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
