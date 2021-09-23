@@ -303,6 +303,7 @@ import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueResetAgeStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
@@ -679,6 +680,7 @@ import com.hazelcast.client.impl.protocol.task.queue.QueuePutMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemainingCapacityMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemoveListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueRemoveMessageTask;
+import com.hazelcast.client.impl.protocol.task.queue.QueueResetAgeStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueSizeMessageTask;
 import com.hazelcast.client.impl.protocol.task.queue.QueueTakeMessageTask;
 import com.hazelcast.client.impl.protocol.task.replicatedmap.ReplicatedMapAddEntryListenerMessageTask;
@@ -1552,6 +1554,8 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new QueueClearMessageTask(cm, node, con));
         factories.put(QueueDrainToMaxSizeCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new QueueDrainMaxSizeMessageTask(cm, node, con));
+        factories.put(QueueResetAgeStatisticsCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new QueueResetAgeStatisticsMessageTask(cm, node, con));
     }
 
     private void initializeCardinalityTaskFactories() {
