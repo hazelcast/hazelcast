@@ -234,10 +234,10 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
         checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [BIGINT, VARCHAR]");
 
         putBiValue(BigDecimal.ONE, "str", ExpressionTypes.BIG_DECIMAL, ExpressionTypes.STRING);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), VARCHAR]");
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(76, 38), VARCHAR]");
 
         putBiValue(BigInteger.ONE, "str", ExpressionTypes.BIG_INTEGER, ExpressionTypes.STRING);
-        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(38, 38), VARCHAR]");
+        checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DECIMAL(76, 38), VARCHAR]");
 
         putBiValue(1.0, "str", ExpressionTypes.DOUBLE, ExpressionTypes.STRING);
         checkFailure0(sql, SqlErrorCode.PARSING, "Cannot infer return type for CASE among [DOUBLE, VARCHAR]");

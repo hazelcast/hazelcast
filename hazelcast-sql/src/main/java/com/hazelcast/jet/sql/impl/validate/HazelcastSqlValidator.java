@@ -86,7 +86,8 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private static final Config CONFIG = Config.DEFAULT
             .withIdentifierExpansion(true)
-            .withSqlConformance(HazelcastSqlConformance.INSTANCE);
+            .withSqlConformance(HazelcastSqlConformance.INSTANCE)
+            .withTypeCoercionFactory(HazelcastTypeCoercion::new);
 
     /** Visitor to rewrite Calcite operators to Hazelcast operators. */
     private final HazelcastSqlOperatorTable.RewriteVisitor rewriteVisitor;
@@ -111,8 +112,6 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
             MappingResolver mappingResolver
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
-
-        setTypeCoercion(new HazelcastTypeCoercion(this));
 
         this.rewriteVisitor = new HazelcastSqlOperatorTable.RewriteVisitor(this);
         this.arguments = arguments;

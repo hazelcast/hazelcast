@@ -35,6 +35,7 @@ import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.Hazelc
  * See {@link HazelcastOperandTypeCheckerAware} for motivation.
  */
 public abstract class HazelcastFunction extends SqlFunction implements HazelcastOperandTypeCheckerAware {
+
     protected HazelcastFunction(
             String name,
             SqlKind kind,

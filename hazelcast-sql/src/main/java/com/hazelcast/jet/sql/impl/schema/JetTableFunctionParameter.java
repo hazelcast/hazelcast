@@ -24,12 +24,20 @@ public class JetTableFunctionParameter {
     private final int ordinal;
     private final String name;
     private final SqlTypeName type;
+    private final boolean optional;
     private final OperandChecker checker;
 
-    public JetTableFunctionParameter(int ordinal, String name, SqlTypeName type, OperandChecker checker) {
+    public JetTableFunctionParameter(
+            int ordinal,
+            String name,
+            SqlTypeName type,
+            boolean optional,
+            OperandChecker checker
+    ) {
         this.ordinal = ordinal;
         this.name = name;
         this.type = type;
+        this.optional = optional;
         this.checker = checker;
     }
 
@@ -43,6 +51,10 @@ public class JetTableFunctionParameter {
 
     public SqlTypeName type() {
         return type;
+    }
+
+    public boolean optional() {
+        return optional;
     }
 
     public OperandChecker checker() {

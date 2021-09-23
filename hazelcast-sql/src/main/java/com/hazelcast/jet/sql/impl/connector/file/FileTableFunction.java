@@ -18,14 +18,13 @@ package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
+import com.hazelcast.jet.sql.impl.schema.JetSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
-import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
-import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import java.util.HashMap;
@@ -45,25 +44,22 @@ public final class FileTableFunction extends JetDynamicTableFunction {
 
     private static final String SCHEMA_NAME_FILES = "files";
     private static final List<JetTableFunctionParameter> PARAMETERS = asList(
-            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
-            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
-            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, TypedOperandChecker.VARCHAR),
-            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, TypedOperandChecker.MAP)
+            new JetTableFunctionParameter(0, OPTION_PATH, SqlTypeName.VARCHAR, false, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(1, OPTION_GLOB, SqlTypeName.VARCHAR, true, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(2, OPTION_SHARED_FILE_SYSTEM, SqlTypeName.VARCHAR, true, TypedOperandChecker.VARCHAR),
+            new JetTableFunctionParameter(3, OPTION_OPTIONS, SqlTypeName.MAP, true, TypedOperandChecker.MAP)
     );
 
     public FileTableFunction(String name, String format) {
         super(
                 name,
-                PARAMETERS,
+                new JetSqlOperandMetadata(
+                        PARAMETERS,
+                        new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(ANY))
+                ),
                 arguments -> toTable(arguments, format),
-                new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(ANY)),
                 FileSqlConnector.INSTANCE
         );
-    }
-
-    @Override
-    public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.between(1, PARAMETERS.size());
     }
 
     private static Table toTable(List<Object> arguments, String format) {

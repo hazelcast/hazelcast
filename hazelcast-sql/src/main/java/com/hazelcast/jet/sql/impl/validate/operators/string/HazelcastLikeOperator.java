@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.validate.operators.string;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.OperandCheckerProgram;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastSpecialOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
@@ -38,17 +38,20 @@ import static org.apache.calcite.sql.type.SqlTypeName.VARCHAR;
 @SuppressWarnings("checkstyle:MagicNumber")
 public final class HazelcastLikeOperator extends HazelcastSpecialOperator {
 
-    public static final HazelcastLikeOperator LIKE = new HazelcastLikeOperator("LIKE", false);
-    public static final HazelcastLikeOperator NOT_LIKE = new HazelcastLikeOperator("NOT LIKE", true);
+    public static final HazelcastLikeOperator LIKE = new HazelcastLikeOperator("LIKE", SqlKind.LIKE, false);
+    // We can't use SqlKind.LIKE for NOT LIKE because it will be handled in RexSimplify#simplifyLike and NOT operator
+    // will be lost. In _vanilla_ Calcite it is not an issue as NOT LIKE '%' is converted to NOT(LIKE '%') - see
+    // StandardConvertletTable.
+    public static final HazelcastLikeOperator NOT_LIKE = new HazelcastLikeOperator("NOT LIKE", SqlKind.OTHER, true);
 
     private static final int PRECEDENCE = 32;
 
     private final boolean negated;
 
-    private HazelcastLikeOperator(String name, boolean negated) {
+    private HazelcastLikeOperator(String name, SqlKind kind, boolean negated) {
         super(
                 name,
-                SqlKind.LIKE,
+                kind,
                 PRECEDENCE,
                 false,
                 ReturnTypes.BOOLEAN_NULLABLE,
