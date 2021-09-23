@@ -98,7 +98,7 @@
         <classgraph.version>4.8.66</classgraph.version>
         <grpc.version>1.34.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.0</hadoop.version>
+        <hadoop.version>3.3.1</hadoop.version>
         <jackson.version>2.12.1</jackson.version>
         <jline.version>3.19.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
@@ -475,7 +475,8 @@
                                 <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
                                 <licenseMerge>
                                     BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
-                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license
+                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
+                                    BSD-3-Clause
                                 </licenseMerge>
                                 <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
                                 <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>
@@ -1350,6 +1351,11 @@
                 <version>${guava.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.8.0</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${commons-codec.version}</version>
@@ -1414,6 +1420,11 @@
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>7.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>4.2.1</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
