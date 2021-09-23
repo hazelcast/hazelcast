@@ -70,7 +70,8 @@ public class ExpirySystem {
     private static final ThreadLocal<List> BATCH_OF_EXPIRED
             = ThreadLocal.withInitial(() -> new ArrayList<>(MAX_SAMPLE_AT_A_TIME << 1));
 
-    private final long expiryDelayMillis;
+    // expire lately on backup replicas
+    private final long backupExpiryDelayMillis;
     private final long expiredKeyScanTimeoutNanos;
     private final boolean canPrimaryDriveExpiration;
     private final ILogger logger;
@@ -93,7 +94,7 @@ public class ExpirySystem {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        this.expiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
+        this.backupExpiryDelayMillis = hazelcastProperties.getMillis(ClusterProperty.MAP_EXPIRY_DELAY_SECONDS);
         this.mapContainer = mapContainer;
         this.mapServiceContext = mapServiceContext;
         this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
@@ -226,9 +227,6 @@ public class ExpirySystem {
     }
 
     public final void removeKeyFromExpirySystem(Data key) {
-        if (isEmpty()) {
-            return;
-        }
         callRemove(key, expireTimeByKey);
     }
 
@@ -269,11 +267,11 @@ public class ExpirySystem {
             return ExpiryReason.NOT_EXPIRED;
         }
 
-        long nextExpirationTime = backup
-                ? expiryMetadata.getExpirationTime() + expiryDelayMillis
+        long expectedExpiryTime = backup
+                ? expiryMetadata.getExpirationTime() + backupExpiryDelayMillis
                 : expiryMetadata.getExpirationTime();
 
-        if (nextExpirationTime > now) {
+        if (expectedExpiryTime > now) {
             return ExpiryReason.NOT_EXPIRED;
         }
 
