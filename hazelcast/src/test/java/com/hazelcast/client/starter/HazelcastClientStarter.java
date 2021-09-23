@@ -24,6 +24,9 @@ import com.hazelcast.test.starter.HazelcastStarter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastStarter.getConfig;
@@ -42,8 +45,14 @@ public class HazelcastClientStarter {
 
     @SuppressWarnings("unchecked")
     public static HazelcastInstance newHazelcastClient(String version, ClientConfig clientConfig, boolean enterprise) {
+        return newHazelcastClient(version, clientConfig, enterprise, Collections.emptyList());
+    }
+
+    @SuppressWarnings("unchecked")
+    public static HazelcastInstance newHazelcastClient(String version, ClientConfig clientConfig, boolean enterprise, List<URL> additionalJars) {
         ClassLoader classLoader = clientConfig == null ? null : clientConfig.getClassLoader();
-        HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise, classLoader);
+        HazelcastAPIDelegatingClassloader classloader = getTargetVersionClassloader(version, enterprise,
+                classLoader, additionalJars);
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
         try {

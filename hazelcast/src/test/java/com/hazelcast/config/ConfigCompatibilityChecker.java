@@ -94,6 +94,8 @@ public class ConfigCompatibilityChecker {
                 new ManagementCenterConfigChecker());
         checkCompatibleConfigs("hot restart", c1.getHotRestartPersistenceConfig(), c2.getHotRestartPersistenceConfig(),
                 new HotRestartConfigChecker());
+        checkCompatibleConfigs("persistence", c1.getPersistenceConfig(), c2.getPersistenceConfig(),
+                new PersistenceConfigChecker());
         checkCompatibleConfigs("CRDT replication", c1.getCRDTReplicationConfig(), c2.getCRDTReplicationConfig(),
                 new CRDTReplicationConfigChecker());
         checkCompatibleConfigs("network", c1.getNetworkConfig(), c2.getNetworkConfig(), new NetworkConfigChecker());
@@ -827,8 +829,7 @@ public class ConfigCompatibilityChecker {
                 return false;
             }
 
-            return c1.getExecutorPoolSize() == c2.getExecutorPoolSize()
-                    && c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
+            return c1.getStatementTimeoutMillis() == c2.getStatementTimeoutMillis();
         }
 
         @Override
@@ -1553,7 +1554,8 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
                     && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
                     && nullSafeEqual(c1.isAllowOverrideDefaultSerializers(), c2.isAllowOverrideDefaultSerializers())
-                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
+                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig())
+                    && nullSafeEqual(c1.getCompactSerializationConfig(), c2.getCompactSerializationConfig());
         }
 
         private static boolean isCompatible(GlobalSerializerConfig c1, GlobalSerializerConfig c2) {
@@ -1812,6 +1814,23 @@ public class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getParallelism(), c2.getParallelism())
                     && nullSafeEqual(c1.getValidationTimeoutSeconds(), c2.getValidationTimeoutSeconds())
                     && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
+                    && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
+                    && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
+        }
+    }
+
+    private static class PersistenceConfigChecker extends ConfigChecker<PersistenceConfig> {
+        @Override
+        boolean check(PersistenceConfig c1, PersistenceConfig c2) {
+            boolean c1Disabled = c1 == null || !c1.isEnabled();
+            boolean c2Disabled = c2 == null || !c2.isEnabled();
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getBaseDir(), c2.getBaseDir())
+                    && nullSafeEqual(c1.getBackupDir(), c2.getBackupDir())
+                    && nullSafeEqual(c1.getParallelism(), c2.getParallelism())
+                    && nullSafeEqual(c1.getValidationTimeoutSeconds(), c2.getValidationTimeoutSeconds())
+                    && nullSafeEqual(c1.getDataLoadTimeoutSeconds(), c2.getDataLoadTimeoutSeconds())
+                    && nullSafeEqual(c1.getRebalanceDelaySeconds(), c2.getRebalanceDelaySeconds())
                     && nullSafeEqual(c1.getClusterDataRecoveryPolicy(), c2.getClusterDataRecoveryPolicy())
                     && nullSafeEqual(c1.getEncryptionAtRestConfig(), c2.getEncryptionAtRestConfig()));
         }

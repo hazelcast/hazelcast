@@ -49,6 +49,9 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class ConfigTest extends HazelcastTestSupport {
 
+    static final String HAZELCAST_START_TAG = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n";
+    static final String HAZELCAST_END_TAG = "</hazelcast>\n";
+
     private Config config;
 
     @Before
@@ -252,18 +255,33 @@ public class ConfigTest extends HazelcastTestSupport {
         assertNull(config.getConfigurationFile());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetConfigPropertyNameNull() {
+        config.setProperty(null, "test");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetConfigPropertyNameEmpty() {
+        config.setProperty(" ", "test");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetConfigPropertyValueNull() {
+        config.setProperty("test", null);
+    }
+
     private static String getSimpleXmlConfigStr(String ...tagAndVal) {
         if (tagAndVal.length == 0 || tagAndVal.length % 2 != 0) {
             throw new IllegalArgumentException("provide one or more tag and value pairs");
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n");
+        sb.append(HAZELCAST_START_TAG);
 
         for (int i = 0; i < tagAndVal.length - 1; i += 2) {
             sb.append("<" + tagAndVal[i] + ">" + tagAndVal[i + 1] + "</" + tagAndVal[i] + ">\n");
         }
-        sb.append("</hazelcast>\n");
+        sb.append(HAZELCAST_END_TAG);
         return sb.toString();
     }
 

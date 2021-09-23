@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.extract.AvroQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.AvroUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -89,7 +89,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
 
             fields.add(new MapTableField(name, type, false, path));
         }
-        maybeAddDefaultField(isKey, resolvedFields, fields);
+        maybeAddDefaultField(isKey, resolvedFields, fields, QueryDataType.OBJECT);
 
         return new KvMetadata(
                 fields,
@@ -161,7 +161,7 @@ public final class KvMetadataAvroResolver implements KvMetadataResolver {
                                    .nullDefault();
                     break;
                 default:
-                    throw QueryException.error("Unknown type: " + type.getTypeFamily());
+                    throw new IllegalArgumentException("Unknown type: " + type.getTypeFamily());
             }
         }
         return schema.endRecord();

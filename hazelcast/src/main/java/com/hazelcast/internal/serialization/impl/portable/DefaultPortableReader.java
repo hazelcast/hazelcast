@@ -265,19 +265,12 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
-    private boolean isNullOrEmpty(int pos) {
-        return pos == -1;
-    }
-
     @Nullable
     private <T> T readPrimitiveArrayField(@Nonnull String fieldName, FieldType fieldType, Reader<ObjectDataInput, T> reader)
             throws IOException {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, fieldType);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             return reader.read(in);
         } finally {
@@ -359,9 +352,6 @@ public class DefaultPortableReader implements PortableReader {
             }
 
             int position = readPosition(fd);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             int len = in.readInt();
             int factoryId = in.readInt();
@@ -405,9 +395,6 @@ public class DefaultPortableReader implements PortableReader {
         int currentPos = in.position();
         try {
             int position = readPosition(fieldName, fieldType);
-            if (isNullOrEmpty(position)) {
-                return null;
-            }
             in.position(position);
             int len = in.readInt();
 

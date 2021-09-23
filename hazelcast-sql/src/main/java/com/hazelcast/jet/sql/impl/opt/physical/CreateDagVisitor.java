@@ -33,10 +33,12 @@ import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -74,7 +76,7 @@ public class CreateDagVisitor {
 
     public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = nodeEngine;
-        this.localMemberAddress = nodeEngine.getLocalMember().getAddress();
+        this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
     }
 
@@ -92,7 +94,8 @@ public class CreateDagVisitor {
                 },
                 ConsumerEx.noop(),
                 0,
-                true)
+                true,
+                null)
         );
     }
 
@@ -137,6 +140,24 @@ public class CreateDagVisitor {
 
         return getJetSqlConnector(table)
                 .fullScanReader(dag, table, rel.filter(parameterMetadata), rel.projection(parameterMetadata));
+    }
+
+    public Vertex onMapIndexScan(IndexScanMapPhysicalRel rel) {
+        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        collectObjectKeys(table);
+
+        return SqlConnectorUtil.<IMapSqlConnector>getJetSqlConnector(table)
+                .indexScanReader(
+                        dag,
+                        localMemberAddress,
+                        table,
+                        rel.getIndex(),
+                        rel.filter(parameterMetadata),
+                        rel.projection(parameterMetadata),
+                        rel.getIndexFilter(),
+                        rel.getComparator(),
+                        rel.isDescending()
+                );
     }
 
     public Vertex onFilter(FilterPhysicalRel rel) {
@@ -284,8 +305,10 @@ public class CreateDagVisitor {
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel) {
-            SortPhysicalRel sortRel = (SortPhysicalRel) input;
+        if (input instanceof SortPhysicalRel || isProjectionWithSort(input)) {
+            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
+                    ? (SortPhysicalRel) input
+                    : (SortPhysicalRel) ((ProjectPhysicalRel) input).getInput();
 
             if (sortRel.fetch == null) {
                 fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
@@ -299,7 +322,7 @@ public class CreateDagVisitor {
                 offset = sortRel.offset(parameterMetadata);
             }
 
-            if (sortRel.collation.getFieldCollations().isEmpty()) {
+            if (!sortRel.requiresSort()) {
                 input = sortRel.getInput();
             }
         } else {
@@ -309,7 +332,7 @@ public class CreateDagVisitor {
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
-                rootResultConsumerSink(rootRel.getInitiatorAddress(), fetch, offset)
+                rootResultConsumerSink(localMemberAddress, fetch, offset)
         );
 
         // We use distribute-to-one edge to send all the items to the initiator member.
@@ -353,7 +376,7 @@ public class CreateDagVisitor {
      * vertices normally connected by an unicast or isolated edge, depending on
      * whether the {@code rel} has collation fields.
      *
-     * @param rel The rel to connect to input
+     * @param rel    The rel to connect to input
      * @param vertex The vertex for {@code rel}
      */
     private void connectInputPreserveCollation(SingleRel rel, Vertex vertex) {
@@ -362,8 +385,7 @@ public class CreateDagVisitor {
                 preserveCollation ? Edge::isolated : null);
 
         if (preserveCollation) {
-            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig()
-                    .getInstanceConfig().getCooperativeThreadCount();
+            int cooperativeThreadCount = nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount();
             int explicitLP = inputVertex.determineLocalParallelism(cooperativeThreadCount);
             // It's not strictly necessary to set the LP to the input, but we do it to ensure that the two
             // vertices indeed have the same LP
@@ -377,5 +399,10 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
+    }
+
+    private boolean isProjectionWithSort(RelNode input) {
+        return input instanceof ProjectPhysicalRel &&
+                ((ProjectPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }

@@ -43,7 +43,6 @@ import static com.hazelcast.jet.core.TestProcessors.MockPMS;
 import static com.hazelcast.jet.core.TestProcessors.MockPS;
 import static com.hazelcast.jet.core.TestProcessors.reset;
 import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -156,11 +155,8 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         job.join();
 
         JobMetricsChecker checker = new JobMetricsChecker(job);
-        long startTime = checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_START_TIME, 1);
-        long completionTime = checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_COMPLETION_TIME, 1);
-
-        assertTrue("startTime=" + startTime + ", completionTime=" + completionTime,
-                startTime <= completionTime);
+        checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_START_TIME, 1);
+        checker.assertRandomMetricValueAtLeast(MetricNames.EXECUTION_COMPLETION_TIME, 1);
     }
 
     private Pipeline batchPipeline() {

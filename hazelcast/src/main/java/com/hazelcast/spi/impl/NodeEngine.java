@@ -51,6 +51,7 @@ import java.util.Collection;
  * the {@link ManagedService} so you can get access to the services within the system.
  */
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface NodeEngine {
 
     OperationService getOperationService();
@@ -64,6 +65,12 @@ public interface NodeEngine {
     EventService getEventService();
 
     SerializationService getSerializationService();
+
+    /**
+     * Gets the compatibility serialization service for (de)serializing objects in a
+     * format conforming with 3.x.
+     */
+    SerializationService getCompatibilitySerializationService();
 
     ProxyService getProxyService();
 

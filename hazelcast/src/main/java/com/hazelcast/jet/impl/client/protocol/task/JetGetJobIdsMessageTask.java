@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -24,10 +25,10 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec;
-import com.hazelcast.jet.impl.client.protocol.codec.JetGetJobIdsCodec.RequestParameters;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -37,11 +38,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toMap;
 
-public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<RequestParameters> {
+public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<JetGetJobIdsCodec.RequestParameters> {
 
     private transient Address masterAddress;
 
@@ -69,7 +69,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
             }
             return singleton(masterMember);
         } else {
-            return nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+            return nodeEngine.getClusterService().getMembers();
         }
     }
 
@@ -96,7 +96,7 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
     }
 
     @Override
-    protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+    protected JetGetJobIdsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return JetGetJobIdsCodec.decodeRequest(clientMessage);
     }
 
@@ -122,11 +122,11 @@ public class JetGetJobIdsMessageTask extends AbstractMultiTargetMessageTask<Requ
 
     @Override
     public String getServiceName() {
-         return JetServiceBackend.SERVICE_NAME;
+        return JetServiceBackend.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new JobPermission(ActionConstants.ACTION_READ);
     }
 }

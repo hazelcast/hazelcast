@@ -140,7 +140,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public boolean isExpired(Data key, long now, boolean backup) {
-         return hasExpired(key, now, backup) != NOT_EXPIRED;
+        return hasExpired(key, now, backup) != NOT_EXPIRED;
     }
 
     @Override
@@ -153,7 +153,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         if (expiryReason == MAX_IDLE_SECONDS) {
-            // only send expired key to backup if
+            // only send expired key to back-up if
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
         }
@@ -179,12 +179,13 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime(), now);
+            getExpirySystem().add(key, mergingEntry.getTtl(),
+                    maxIdle, mergingEntry.getExpirationTime(), now, mergingEntry.getLastUpdateTime());
         } else {
             ExpiryMetadata expiredMetadata = getExpirySystem().getExpiredMetadata(key);
-            getExpirySystem().addKeyIfExpirable(key, mergingEntry.getTtl(),
-                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(), now);
+            getExpirySystem().add(key, mergingEntry.getTtl(),
+                    expiredMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
+                    now, mergingEntry.getLastUpdateTime());
         }
     }
 

@@ -26,6 +26,7 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 
 public class SortPhysicalRel extends Sort implements PhysicalRel {
 
-    private final RelDataType rowType;
+    private final boolean requiresSort;
 
     SortPhysicalRel(
             RelOptCluster cluster,
@@ -45,11 +46,22 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
             RelCollation collation,
             RexNode offset,
             RexNode fetch,
-            RelDataType rowType
+            RelDataType rowType,
+            boolean requiresSort
     ) {
         super(cluster, traits, input, collation, offset, fetch);
-
         this.rowType = rowType;
+
+        this.requiresSort = requiresSort;
+    }
+
+    public boolean requiresSort() {
+        return requiresSort;
+    }
+
+    public List<FieldCollation> getCollations() {
+        return getCollation().getFieldCollations()
+                .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 
     public Expression<?> fetch(QueryParameterMetadata parameterMetadata) {
@@ -75,17 +87,12 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     }
 
     @Override
-    public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType);
+    public final RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw).item("requiresSort", requiresSort);
     }
 
     @Override
-    protected RelDataType deriveRowType() {
-        return rowType;
-    }
-
-    public List<FieldCollation> getCollations() {
-        return getCollation().getFieldCollations()
-                .stream().map(FieldCollation::new).collect(Collectors.toList());
+    public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType, requiresSort);
     }
 }

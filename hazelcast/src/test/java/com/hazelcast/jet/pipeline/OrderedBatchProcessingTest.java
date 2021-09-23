@@ -28,13 +28,13 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.test.Assertions;
 import com.hazelcast.jet.pipeline.test.ParallelBatchP;
 import com.hazelcast.jet.pipeline.test.TestSources;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -49,7 +49,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.function.Functions.wholeItem;
 import static java.util.stream.Collectors.toList;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class OrderedBatchProcessingTest extends JetTestSupport {
 

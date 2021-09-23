@@ -64,6 +64,7 @@
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]impl[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="[\\/]template[\\/]"/>
     <suppress checks="Javadoc(Package|Method|Type|Variable)" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]"/>
+    <suppress checks="Javadoc(Package|Method|Type|Variable)" files="org[\\/]apache[\\/]calcite[\\/]"/>
 
     <!-- Concurrent queue composed of many parts for padding that avoids false sharing -->
     <suppress checks="OuterTypeNumber" files="AbstractConcurrentArrayQueue\.java"/>
@@ -259,7 +260,7 @@
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]MorphingPortableReader"/>
     <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]PortableGenericRecord"/>
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]DeserializedPortableGenericRecord"/>
     <suppress checks="MethodCount"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]portable[\\/]ClassDefinitionWriter"/>
     <suppress checks="ParameterNumber"
@@ -287,6 +288,32 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]LinkedHashMapStreamSerializer"/>
     <suppress checks="IllegalType"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]TreeMapStreamSerializer"/>
+
+    <!-- Serialization Compact Format -->
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]AbstractGenericRecordBuilder"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DeserializedGenericRecord"/>
+    <suppress checks="MethodCount|ExecutableStatementCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]CompactInternalGenericRecord"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordCloner"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SerializingGenericRecordBuilder"/>
+    <suppress checks="MethodLength|CyclomaticComplexity"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]ReflectiveCompactSerializer"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactWriter"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]DefaultCompactReader"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]SchemaWriter"/>
+    <suppress checks="MagicNumber"
+              files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]compact[\\/]RabinFingerprint"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactWriter"/>
+    <suppress checks="MethodCount"
+              files="com[\\/]hazelcast[\\/]nio[\\/]serialization[\\/]compact[\\/]CompactReader"/>
 
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>
@@ -352,7 +379,12 @@
             checks="Javadoc|MagicNumber|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck|IllegalImport|IllegalType"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
-            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity|RegexpSinglelineJava"
+            checks="NPathComplexity|CyclomaticComplexity|BooleanExpressionComplexity"
+            files="[\\/]src[\\/]test[\\/]"/>
+    <!-- Suppress only UUID.randomUUID() rule, not all RegexpSinglelineJava rules -->
+    <suppress
+            checks="RegexpSinglelineJava"
+            id="no-uuid-randomUUID"
             files="[\\/]src[\\/]test[\\/]"/>
     <suppress
             checks="TypeName|MemberName|ConstantName|LocalVariableName|LocalFinalVariableName|MethodName"

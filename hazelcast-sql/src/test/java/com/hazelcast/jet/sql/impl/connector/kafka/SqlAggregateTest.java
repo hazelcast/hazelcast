@@ -28,7 +28,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 
-import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.time.ZoneOffset.UTC;
 import static java.util.Arrays.asList;
@@ -62,8 +61,7 @@ public class SqlAggregateTest extends SqlTestSupport {
                 + "this TIMESTAMP WITH TIME ZONE WATERMARK LAG(INTERVAL '1' SECOND)"
                 + ") TYPE " + KafkaSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + '\'' + OPTION_KEY_FORMAT + "'='int'"
-                + ", '" + OPTION_VALUE_FORMAT + "'='timestamp with time zone'"
+                + '\'' + OPTION_VALUE_FORMAT + "'='timestamp with time zone'"
                 + ", 'value.serializer'='" + OffsetDateTimeSerializer.class.getCanonicalName() + '\''
                 + ", 'value.deserializer'='" + OffsetDateTimeDeserializer.class.getCanonicalName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
@@ -72,15 +70,15 @@ public class SqlAggregateTest extends SqlTestSupport {
         );
 
         sqlService.execute("INSERT INTO " + name + " VALUES "
-                + "(1, CAST('2021-06-02T12:23:34.1Z' AS TIMESTAMP WITH TIME ZONE)) "
-                + ", (2, CAST('2021-06-02T12:23:34.2Z' AS TIMESTAMP WITH TIME ZONE))"
+                + "(CAST('2021-06-02T12:23:34.1Z' AS TIMESTAMP WITH TIME ZONE)) "
+                + ", (CAST('2021-06-02T12:23:34.2Z' AS TIMESTAMP WITH TIME ZONE))"
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + name,
                 asList(
-                        new Row(1, OffsetDateTime.of(2021, 6, 2, 12, 23, 34, 100_000_000, UTC))
-                        , new Row(2, OffsetDateTime.of(2021, 6, 2, 12, 23, 34, 200_000_000, UTC))
+                        new Row(OffsetDateTime.of(2021, 6, 2, 12, 23, 34, 100_000_000, UTC))
+                        , new Row(OffsetDateTime.of(2021, 6, 2, 12, 23, 34, 200_000_000, UTC))
                 )
         );
     }

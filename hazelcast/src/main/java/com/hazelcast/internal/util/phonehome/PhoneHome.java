@@ -20,6 +20,11 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +33,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.phonehome.MetricsCollector.TIMEOUT;
 import static java.lang.System.getenv;
 
 /**
@@ -58,7 +65,8 @@ public class PhoneHome {
         Collections.addAll(metricsCollectorList,
                 new BuildInfoCollector(), new ClusterInfoCollector(), new ClientInfoCollector(),
                 new MapInfoCollector(), new OSInfoCollector(), new DistributedObjectCounterCollector(),
-                new CacheInfoCollector());
+                new CacheInfoCollector(), new JetInfoCollector(), new CPSubsystemInfoCollector(),
+                new SqlInfoCollector());
         Collections.addAll(metricsCollectorList, additionalCollectors);
     }
 
@@ -81,6 +89,37 @@ public class PhoneHome {
         }
     }
 
+    private void postPhoneHomeData(String requestBody) {
+        HttpURLConnection conn = null;
+        OutputStreamWriter writer = null;
+        try {
+            URL url = new URL(basePhoneHomeUrl);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(TIMEOUT);
+            conn.setReadTimeout(TIMEOUT);
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.connect();
+            writer = new OutputStreamWriter(conn.getOutputStream(), StandardCharsets.UTF_8);
+            writer.write(requestBody);
+            writer.flush();
+            conn.getContent();
+        } catch (Exception ignored) {
+            ignore(ignored);
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                    ignore(e);
+                }
+            }
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
+    }
+
     /**
      * Performs a phone request for {@code node} and returns the generated request
      * parameters. If {@code pretend} is {@code true}, only returns the parameters
@@ -92,8 +131,7 @@ public class PhoneHome {
     public Map<String, String> phoneHome(boolean pretend) {
         PhoneHomeParameterCreator parameterCreator = createParameters();
         if (!pretend) {
-            String urlStr = basePhoneHomeUrl + parameterCreator.build();
-            MetricsCollector.fetchWebService(urlStr);
+            postPhoneHomeData(parameterCreator.build());
         }
         return parameterCreator.getParameters();
     }

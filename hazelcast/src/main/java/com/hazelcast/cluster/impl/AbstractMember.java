@@ -230,4 +230,9 @@ public abstract class AbstractMember implements Member {
         Member that = (Member) obj;
         return address.equals(that.getAddress()) && Objects.equals(uuid, that.getUuid());
     }
+
+    // for testing only
+    public void setVersion(MemberVersion version) {
+        this.version = version;
+    }
 }

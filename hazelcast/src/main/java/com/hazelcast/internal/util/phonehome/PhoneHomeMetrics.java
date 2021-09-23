@@ -62,7 +62,13 @@ public enum PhoneHomeMetrics {
     //CLUSTER INFO METRICS
     UUID_OF_CLUSTER("m"),
     CLUSTER_ID("c"),
+    /**
+     * Maintained for backward-compatibility (in PhoneHome reports), but otherwise deprecated, please use
+     * {@link #EXACT_CLUSTER_SIZE} instead.
+     */
+    @Deprecated
     CLUSTER_SIZE("crsz"),
+    EXACT_CLUSTER_SIZE("ecrsz"),
     TIME_TAKEN_TO_CLUSTER_UP("cuptm"),
     UPTIME_OF_RUNTIME_MXBEAN("nuptm"),
     RUNTIME_MXBEAN_VM_NAME("jvmn"),
@@ -127,7 +133,18 @@ public enum PhoneHomeMetrics {
      *   D means it runs in docker but not on kubernetes ,
      *   N means it doesn't run in docker
      */
-    DOCKER("dck");
+    DOCKER("dck"),
+
+    //JET METRICS
+    JET_ENABLED("jet"),
+    JET_RESOURCE_UPLOAD_ENABLED("jetrsup"),
+    JET_JOBS_SUBMITTED("jetjobss"),
+
+    // SQL METRICS
+    SQL_QUERIES_SUBMITTED("sqlqs"),
+
+    //CP SUBSYSTEM METRICS
+    CP_SUBSYSTEM_ENABLED("cp");
 
     private final String query;
 

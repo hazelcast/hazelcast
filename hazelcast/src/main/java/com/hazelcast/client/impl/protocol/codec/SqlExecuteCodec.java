@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("c3c4e935e21343204a66d1bde457d072")
+@Generated("20928326b2c906656a168c5fd8b3ccb9")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -45,7 +45,8 @@ public final class SqlExecuteCodec {
     private static final int REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET = REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET = REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET = REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_UPDATE_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -92,9 +93,20 @@ public final class SqlExecuteCodec {
          * Query ID.
          */
         public com.hazelcast.sql.impl.QueryId queryId;
+
+        /**
+         * Flag to skip updating phone home statistics.
+         */
+        public boolean skipUpdateStatistics;
+
+        /**
+         * True if the skipUpdateStatistics is received from the client, false otherwise.
+         * If this is false, skipUpdateStatistics has the default value for its type.
+         */
+        public boolean isSkipUpdateStatisticsExists;
     }
 
-    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema, byte expectedResultType, com.hazelcast.sql.impl.QueryId queryId) {
+    public static ClientMessage encodeRequest(java.lang.String sql, java.util.Collection<com.hazelcast.internal.serialization.Data> parameters, long timeoutMillis, int cursorBufferSize, @Nullable java.lang.String schema, byte expectedResultType, com.hazelcast.sql.impl.QueryId queryId, boolean skipUpdateStatistics) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Sql.Execute");
@@ -104,6 +116,7 @@ public final class SqlExecuteCodec {
         encodeLong(initialFrame.content, REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET, timeoutMillis);
         encodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET, cursorBufferSize);
         encodeByte(initialFrame.content, REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET, expectedResultType);
+        encodeBoolean(initialFrame.content, REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET, skipUpdateStatistics);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, sql);
         ListMultiFrameCodec.encodeContainsNullable(clientMessage, parameters, DataCodec::encode);
@@ -119,6 +132,12 @@ public final class SqlExecuteCodec {
         request.timeoutMillis = decodeLong(initialFrame.content, REQUEST_TIMEOUT_MILLIS_FIELD_OFFSET);
         request.cursorBufferSize = decodeInt(initialFrame.content, REQUEST_CURSOR_BUFFER_SIZE_FIELD_OFFSET);
         request.expectedResultType = decodeByte(initialFrame.content, REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET);
+        if (initialFrame.content.length >= REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            request.skipUpdateStatistics = decodeBoolean(initialFrame.content, REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET);
+            request.isSkipUpdateStatisticsExists = true;
+        } else {
+            request.isSkipUpdateStatisticsExists = false;
+        }
         request.sql = StringCodec.decode(iterator);
         request.parameters = ListMultiFrameCodec.decodeContainsNullable(iterator, DataCodec::decode);
         request.schema = CodecUtil.decodeNullable(iterator, StringCodec::decode);
@@ -149,6 +168,7 @@ public final class SqlExecuteCodec {
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
     }
+
     public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
@@ -172,5 +192,4 @@ public final class SqlExecuteCodec {
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);
         return response;
     }
-
 }

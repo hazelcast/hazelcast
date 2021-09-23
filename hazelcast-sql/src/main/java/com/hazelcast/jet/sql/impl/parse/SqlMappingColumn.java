@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.parse;
 
-import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
-import com.hazelcast.jet.sql.impl.EventTimePolicySupplier.LagEventTimePolicySupplier;
+import com.hazelcast.sql.impl.schema.EventTimePolicySupplier;
+import com.hazelcast.sql.impl.schema.EventTimePolicySupplier.LagEventTimePolicySupplier;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;

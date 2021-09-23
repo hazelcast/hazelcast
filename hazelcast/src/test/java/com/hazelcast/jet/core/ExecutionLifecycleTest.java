@@ -46,6 +46,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -56,7 +57,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -81,6 +81,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.JobExecutionRecord.NO_SNAPSHOT;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -100,7 +101,7 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
-@RunWith(Parameterized.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
@@ -128,7 +129,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     @Before
     public void before() {
-        parallelism = instance().getConfig().getJetConfig().getInstanceConfig().getCooperativeThreadCount();
+        parallelism = instance().getConfig().getJetConfig().getCooperativeThreadCount();
         TestProcessors.reset(MEMBER_COUNT * parallelism);
     }
 
@@ -452,13 +453,15 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         int memberListVersion = membersView.getVersion();
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend(instance());
-        final Map<MemberInfo, ExecutionPlan> executionPlans =
-                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView, dag, 1, 1,
-                        new JobConfig(), NO_SNAPSHOT, false);
-        ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
         long jobId = 0;
         long executionId = 1;
+        JobConfig jobConfig = new JobConfig();
+        final Map<MemberInfo, ExecutionPlan> executionPlans =
+                ExecutionPlanBuilder.createExecutionPlans(nodeEngineImpl, membersView.getMembers(), dag,
+                        jobId, executionId, jobConfig, NO_SNAPSHOT, false, null);
+        ExecutionPlan executionPlan = executionPlans.get(membersView.getMember(localAddress));
 
+        jetServiceBackend.getJobClassLoaderService().getOrCreateClassLoader(jobConfig, jobId, COORDINATOR);
         Set<MemberInfo> participants = new HashSet<>(membersView.getMembers());
         jetServiceBackend.getJobExecutionService().initExecution(
                 jobId, executionId, localAddress, memberListVersion, participants, executionPlan
@@ -780,7 +783,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertBetween("close count", MockPS.closeCount.get(), minCount, MEMBER_COUNT);
         assertBetween("received close errors", MockPS.receivedCloseErrors.size(), minCount, MEMBER_COUNT);
 
-        for (int i = 0; i < MEMBER_COUNT; i++) {
+        for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
             assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
                     MOCK_ERROR,
                     new CancellationException(),

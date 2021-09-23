@@ -46,7 +46,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.jet.core.JetProperties.JOB_RESULTS_MAX_SIZE;
+import static com.hazelcast.spi.properties.ClusterProperty.JOB_RESULTS_MAX_SIZE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -69,6 +69,7 @@ public class JobRepositoryTest extends JetTestSupport {
     public void setup() {
         Config config = new Config();
         config.setProperty(JOB_RESULTS_MAX_SIZE.getName(), Integer.toString(MAX_JOB_RESULTS_COUNT));
+        config.getJetConfig().setEnabled(true);
 
         instance = createHazelcastInstance(config);
         jobRepository = new JobRepository(instance);
@@ -83,8 +84,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -100,8 +99,6 @@ public class JobRepositoryTest extends JetTestSupport {
         Data dag = createDagData();
         JobRecord jobRecord = createJobRecord(jobId, dag);
         jobRepository.putNewJobRecord(jobRecord);
-        jobRepository.newExecutionId();
-        jobRepository.newExecutionId();
 
         sleepUntilJobExpires();
 
@@ -201,7 +198,7 @@ public class JobRepositoryTest extends JetTestSupport {
         }
 
         jobRepository.cleanup(getNodeEngineImpl(instance));
-        assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size());
+        assertTrueEventually(() -> assertEquals(MAX_JOB_RESULTS_COUNT, jobRepository.getJobResults().size()));
     }
 
     private void cleanup() {
@@ -222,7 +219,8 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private JobRecord createJobRecord(long jobId, Data dag) {
-        return new JobRecord(jobId, dag, "", jobConfig, Collections.emptySet());
+        return new JobRecord(instance.getCluster().getLocalMember().getVersion().asVersion(),
+                jobId, dag, "", jobConfig, Collections.emptySet(), null);
     }
 
     private void sleepUntilJobExpires() {

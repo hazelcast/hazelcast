@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -40,6 +40,7 @@
         <pax.exam.version>2.6.0</pax.exam.version>
         <pax.runner.version>1.8.6</pax.runner.version>
         <javax.inject.version>1</javax.inject.version>
+        <wiremock.version>2.27.2</wiremock.version>
     </properties>
 
     <build>
@@ -113,6 +114,25 @@
             </plugin>
 
             <plugin>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <version>${kotlin.version}</version>
+                <executions>
+                    <execution>
+                        <id>test-compile</id>
+                        <goals>
+                            <goal>test-compile</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
+                            </sourceDirs>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
@@ -146,16 +166,6 @@
                                 <exclude>**/*.serialization.compatibility.binary</exclude>
                             </excludes>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-notice-and-license</id>
-                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -336,6 +346,39 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>copy-and-fill-hazelcast-assembly-xml</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-default-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="true" />
+                                        <filter token="FILTER_BIND_ANY" value="false" />
+                                        <filter token="FILTER_DISTRO_NAME" value="ZIP/TGZ" />
+                                    </filterset>
+                                </copy>
+                                <copy todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/src/main/config-template" casesensitive="yes">
+                                        <include name="hazelcast-assembly.*"/>
+                                    </fileset>
+                                    <globmapper from="hazelcast-assembly.*" to="hazelcast-docker-assembly.*"/>
+                                    <filterset>
+                                        <filter token="FILTER_LOOPBACK_INTERFACE" value="false" />
+                                        <filter token="FILTER_BIND_ANY" value="true" />
+                                        <filter token="FILTER_DISTRO_NAME" value="Docker" />
+                                    </filterset>
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>repack</id>
                         <phase>package</phase>
                         <goals>
@@ -357,7 +400,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>
@@ -377,6 +419,10 @@
                             <outputDirectory>src/main/java</outputDirectory>
                             <overwrite>true</overwrite>
                         </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-notice-and-license</id>
+                        <phase>process-classes</phase>
                     </execution>
                 </executions>
             </plugin>
@@ -455,7 +501,7 @@
         <dependency>
             <groupId>com.github.erosb</groupId>
             <artifactId>everit-json-schema</artifactId>
-            <version>1.12.3</version>
+            <version>1.13.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.google.re2j</groupId>
@@ -491,21 +537,6 @@
         <dependency>
             <groupId>org.jline</groupId>
             <artifactId>jline-reader</artifactId>
-            <version>${jline.version}</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <!-- for windows -->
-        <dependency>
-            <groupId>org.fusesource.jansi</groupId>
-            <artifactId>jansi</artifactId>
-            <version>1.18</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.jline</groupId>
-            <artifactId>jline-terminal-jansi</artifactId>
             <version>${jline.version}</version>
             <scope>provided</scope>
             <optional>true</optional>
@@ -739,6 +770,20 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.tomakehurst</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>${wiremock.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

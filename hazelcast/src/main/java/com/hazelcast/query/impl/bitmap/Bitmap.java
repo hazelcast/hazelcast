@@ -71,7 +71,7 @@ public final class Bitmap<E> {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
             }
-            operationStats.onEntryAdded(null, ZeroCost.ZERO_COST);
+            operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
 
@@ -108,7 +108,7 @@ public final class Bitmap<E> {
                 bitSet = new SparseBitSet();
                 bitSets.put(value, bitSet);
             }
-            operationStats.onEntryAdded(null, ZeroCost.ZERO_COST);
+            operationStats.onEntryAdded(ZeroCost.ZERO_COST);
             bitSet.add(key);
         }
 

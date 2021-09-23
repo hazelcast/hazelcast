@@ -39,8 +39,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.partitiongroup.MemberGroup;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.PARTITIONS_METRIC_PARTITION_REPLICA_STATE_MANAGER_ACTIVE_PARTITION_COUNT;
@@ -74,6 +77,15 @@ public class PartitionStateManager {
     private final PartitionStateGenerator partitionStateGenerator;
     private final MemberGroupFactory memberGroupFactory;
 
+    // snapshot of partition assignments taken on member UUID removal and
+    // before partition rebalancing
+    private final ConcurrentMap<UUID, PartitionTableView> snapshotOnRemove;
+
+    // we keep a cached buffer because stamp calculation can happen many times
+    // during repartitioning and this introduces GC pressure, especially at high
+    // partition counts
+    private final byte[] stampCalculationBuffer;
+
     // updates will be done under lock, but reads will be multithreaded.
     // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
@@ -93,6 +105,7 @@ public class PartitionStateManager {
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
+        this.stampCalculationBuffer = new byte[partitionCount * Integer.BYTES];
 
         PartitionReplicaInterceptor interceptor = new DefaultPartitionReplicaInterceptor(partitionService);
         PartitionReplica localReplica = PartitionReplica.from(node.getLocalMember());
@@ -103,6 +116,7 @@ public class PartitionStateManager {
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig(),
                 node.getDiscoveryService());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
+        snapshotOnRemove = new ConcurrentHashMap<>();
     }
 
     /**
@@ -369,7 +383,7 @@ public class PartitionStateManager {
     }
 
     public void updateStamp() {
-        stateStamp = calculateStamp(partitions);
+        stateStamp = calculateStamp(partitions, () -> stampCalculationBuffer);
         if (logger.isFinestEnabled()) {
             logger.finest("New calculated partition state stamp is: " + stateStamp);
         }
@@ -439,5 +453,18 @@ public class PartitionStateManager {
 
     PartitionTableView getPartitionTable() {
         return new PartitionTableView(getPartitionsCopy(true));
+    }
+
+    void storeSnapshot(UUID crashedMemberUuid) {
+        logger.info("Storing snapshot of partition assignments while removing UUID " + crashedMemberUuid);
+        snapshotOnRemove.put(crashedMemberUuid, getPartitionTable());
+    }
+
+    Collection<PartitionTableView> snapshots() {
+        return Collections.unmodifiableCollection(snapshotOnRemove.values());
+    }
+
+    PartitionTableView getSnapshot(UUID crashedMemberUuid) {
+        return snapshotOnRemove.get(crashedMemberUuid);
     }
 }

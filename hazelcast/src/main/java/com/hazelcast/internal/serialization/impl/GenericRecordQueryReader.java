@@ -18,7 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.query.extractor.ValueCallback;
 import com.hazelcast.query.extractor.ValueCollector;
@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.function.Consumer;
 
+import static com.hazelcast.internal.serialization.impl.FieldOperations.fieldOperations;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractArgumentsFromAttributeName;
 import static com.hazelcast.query.impl.getters.ExtractorHelper.extractAttributeNameNameWithoutArguments;
 
@@ -237,116 +238,20 @@ public final class GenericRecordQueryReader implements ValueReader {
         return multiResult;
     }
 
-    private Object readIndexed(InternalGenericRecord record, String path, int index) throws IOException {
+    private Object readIndexed(InternalGenericRecord record, String path, int index) {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE_ARRAY:
-                return record.getByteFromArray(path, index);
-            case SHORT_ARRAY:
-                return record.getShortFromArray(path, index);
-            case INT_ARRAY:
-                return record.getIntFromArray(path, index);
-            case LONG_ARRAY:
-                return record.getLongFromArray(path, index);
-            case FLOAT_ARRAY:
-                return record.getFloatFromArray(path, index);
-            case DOUBLE_ARRAY:
-                return record.getDoubleFromArray(path, index);
-            case BOOLEAN_ARRAY:
-                return record.getBooleanFromArray(path, index);
-            case CHAR_ARRAY:
-                return record.getCharFromArray(path, index);
-            case UTF_ARRAY:
-                return record.getStringFromArray(path, index);
-            case PORTABLE_ARRAY:
-                return record.getObjectFromArray(path, index);
-            case DECIMAL_ARRAY:
-                return record.getDecimalFromArray(path, index);
-            case TIME_ARRAY:
-                return record.getTimeFromArray(path, index);
-            case DATE_ARRAY:
-                return record.getDateFromArray(path, index);
-            case TIMESTAMP_ARRAY:
-                return record.getTimestampFromArray(path, index);
-            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.getTimestampWithTimezoneFromArray(path, index);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        FieldKind kind = record.getFieldKind(path);
+        return fieldOperations(kind).readIndexed(record, path, index);
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path) throws IOException {
+    private Object readLeaf(InternalGenericRecord record, String path) {
         if (!record.hasField(path)) {
             return null;
         }
-        FieldType type = record.getFieldType(path);
-        switch (type) {
-            case BYTE:
-                return record.getByte(path);
-            case BYTE_ARRAY:
-                return record.getByteArray(path);
-            case SHORT:
-                return record.getShort(path);
-            case SHORT_ARRAY:
-                return record.getShortArray(path);
-            case INT:
-                return record.getInt(path);
-            case INT_ARRAY:
-                return record.getIntArray(path);
-            case LONG:
-                return record.getLong(path);
-            case LONG_ARRAY:
-                return record.getLongArray(path);
-            case FLOAT:
-                return record.getFloat(path);
-            case FLOAT_ARRAY:
-                return record.getFloatArray(path);
-            case DOUBLE:
-                return record.getDouble(path);
-            case DOUBLE_ARRAY:
-                return record.getDoubleArray(path);
-            case BOOLEAN:
-                return record.getBoolean(path);
-            case BOOLEAN_ARRAY:
-                return record.getBooleanArray(path);
-            case CHAR:
-                return record.getChar(path);
-            case CHAR_ARRAY:
-                return record.getCharArray(path);
-            case UTF:
-                return record.getString(path);
-            case UTF_ARRAY:
-                return record.getStringArray(path);
-            case PORTABLE:
-                return record.getObject(path);
-            case PORTABLE_ARRAY:
-                return record.getObjectArray(path);
-            case DECIMAL:
-                return record.getDecimal(path);
-            case DECIMAL_ARRAY:
-                return record.getDecimalArray(path);
-            case TIME:
-                return record.getTime(path);
-            case TIME_ARRAY:
-                return record.getTimeArray(path);
-            case DATE:
-                return record.getDate(path);
-            case DATE_ARRAY:
-                return record.getDateArray(path);
-            case TIMESTAMP:
-                return record.getTimestamp(path);
-            case TIMESTAMP_ARRAY:
-                return record.getTimestampArray(path);
-            case TIMESTAMP_WITH_TIMEZONE:
-                return record.getTimestampWithTimezone(path);
-            case TIMESTAMP_WITH_TIMEZONE_ARRAY:
-                return record.getTimestampWithTimezoneArray(path);
-            default:
-                throw new IllegalArgumentException("Unsupported type " + type);
-        }
+        FieldKind kind = record.getFieldKind(path);
+        return fieldOperations(kind).readObject(record, path);
     }
 
 }

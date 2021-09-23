@@ -76,7 +76,11 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Data toData(Object object);
 
+    Data toDataWithSchema(Object object);
+
     MapContainer getMapContainer(String mapName);
+
+    MapContainer getExistingMapContainer(String mapName);
 
     Map<String, MapContainer> getMapContainers();
 
@@ -203,4 +207,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
 
     Semaphore getNodeWideLoadedKeyLimiter();
+
+    /**
+     * @return {@code true} when Merkle tree maintenance should be enabled for given {@code mapConfig},
+     *          otherwise {@code false}.
+     */
+    default boolean shouldEnableMerkleTree(MapConfig mapConfig, boolean log) {
+        return false;
+    }
 }

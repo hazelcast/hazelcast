@@ -27,7 +27,9 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.services.GracefulShutdownAwareService;
 import com.hazelcast.internal.services.ManagedService;
 
+import javax.annotation.Nullable;
 import java.util.List;
+import java.util.UUID;
 
 public interface InternalPartitionService extends IPartitionService, ManagedService, GracefulShutdownAwareService {
 
@@ -73,11 +75,11 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     void memberAdded(Member member);
 
     /**
-     * Called when a member is removed from the cluster.
-     * Executes maintenance tasks, removes the member from partition table and triggers promotions.
-     * @param member removed member
+     * Called when some members are removed from the cluster.
+     * Executes maintenance tasks, removes the members from the partition table and triggers promotions.
+     * @param members removed members
      */
-    void memberRemoved(Member member);
+    void memberRemoved(Member... members);
 
     InternalPartition[] getInternalPartitions();
 
@@ -133,4 +135,7 @@ public interface InternalPartitionService extends IPartitionService, ManagedServ
     PartitionServiceProxy getPartitionServiceProxy();
 
     PartitionReplicaStateChecker getPartitionReplicaStateChecker();
+
+    @Nullable
+    PartitionTableView getLeftMemberSnapshot(UUID uuid);
 }

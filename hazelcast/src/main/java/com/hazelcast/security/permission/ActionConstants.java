@@ -32,10 +32,12 @@ import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.internal.crdt.pncounter.PNCounterService;
 import com.hazelcast.internal.locksupport.LockSupportService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
+import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
+import com.hazelcast.sql.impl.SqlInternalService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 
@@ -64,6 +66,13 @@ public final class ActionConstants {
     public static final String ACTION_AGGREGATE = "aggregate";
     public static final String ACTION_PROJECTION = "projection";
     public static final String ACTION_USER_CODE_DEPLOY = "deploy";
+
+    public static final String ACTION_SUBMIT = "submit";
+    public static final String ACTION_CANCEL = "cancel";
+    public static final String ACTION_RESTART = "restart";
+    public static final String ACTION_EXPORT_SNAPSHOT = "export-snapshot";
+    public static final String ACTION_ADD_RESOURCES = "add-resources";
+    public static final String ACTION_WRITE = "write";
 
     public static final String LISTENER_INSTANCE = "instance";
     public static final String LISTENER_MEMBER = "member";
@@ -95,6 +104,8 @@ public final class ActionConstants {
                 (name, actions) -> new UserCodeDeploymentPermission(actions));
         PERMISSION_FACTORY_MAP.put(PNCounterService.SERVICE_NAME, PNCounterPermission::new);
         PERMISSION_FACTORY_MAP.put(ReliableTopicService.SERVICE_NAME, ReliableTopicPermission::new);
+        PERMISSION_FACTORY_MAP.put(JetServiceBackend.SERVICE_NAME, (name, actions) -> new JobPermission(actions));
+        PERMISSION_FACTORY_MAP.put(SqlInternalService.SERVICE_NAME, SqlPermission::new);
     }
 
     private ActionConstants() {

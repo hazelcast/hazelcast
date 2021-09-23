@@ -16,19 +16,21 @@
 
 package com.hazelcast.internal.util;
 
+import javax.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.annotation.Nullable;
+import java.util.stream.Collectors;
 
 import static java.lang.Character.isLetter;
 import static java.lang.Character.isLowerCase;
@@ -114,12 +116,35 @@ public final class StringUtil {
      * @param s the string to check.
      * @return true if the string is {@code null} or empty, false otherwise
      */
-
     public static boolean isNullOrEmptyAfterTrim(String s) {
         if (s == null) {
             return true;
         }
         return s.trim().isEmpty();
+    }
+
+    /**
+     * Check if all Strings are not blank
+     * @param values the strings to check
+     * @return true if all the strings are not {@code null} and not blank, false otherwise
+     */
+    public static boolean isAllNullOrEmptyAfterTrim(String... values) {
+        if (values == null) {
+            return false;
+        }
+        return Arrays.stream(values).noneMatch(StringUtil::isNullOrEmptyAfterTrim);
+    }
+
+    /**
+     * Check if any String from the provided Strings
+     * @param values the strings to check
+     * @return true if at least one string of the {@param values} are not {@code null} and not blank
+     */
+    public static boolean isAnyNullOrEmptyAfterTrim(String... values) {
+        if (values == null) {
+            return false;
+        }
+        return Arrays.stream(values).anyMatch(s -> !isNullOrEmptyAfterTrim(s));
     }
 
     /**
@@ -445,6 +470,28 @@ public final class StringUtil {
             startIndex = sb.indexOf(placeholderPrefix, endIndex);
         }
         return sb.toString();
+    }
+
+    /**
+     * Converts the provided collection to string, joined by LINE_SEPARATOR
+     * @param collection collection to convert to string
+     * @return string
+     */
+    public static <T> String toString(Collection<T> collection) {
+        return collection.stream()
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
+    }
+
+    /**
+     * Converts the provided array to string, joined by LINE_SEPARATOR
+     * @param arr array to convert to string
+     * @return string
+     */
+    public static <T> String toString(T[] arr) {
+        return Arrays.stream(arr)
+                .map(Objects::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
     }
 
     /**

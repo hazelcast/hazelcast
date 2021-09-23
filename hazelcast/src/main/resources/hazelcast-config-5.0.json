@@ -1,7 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-06/schema",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "hazelcast": {
       "type": "object",
@@ -106,6 +105,9 @@
         },
         "hot-restart-persistence": {
           "$ref": "#/definitions/HotRestartPersistence"
+        },
+        "persistence": {
+          "$ref": "#/definitions/Persistence"
         },
         "user-code-deployment": {
           "$ref": "#/definitions/UserCodeDeployment"
@@ -596,6 +598,7 @@
               "CLUSTER_READ",
               "CLUSTER_WRITE",
               "HEALTH_CHECK",
+              "PERSISTENCE",
               "HOT_RESTART",
               "WAN",
               "DATA",
@@ -1142,6 +1145,22 @@
             "properties": {
               "enabled": {
                 "description": "Sets whether hot restart is enabled on related data structure.",
+                "type": "boolean",
+                "default": false
+              },
+              "fsync": {
+                "description": "Sets whether disk write should be followed by an fsync() system call.",
+                "type": "boolean",
+                "default": false
+              }
+            }
+          },
+          "data-persistence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "description": "Sets whether persistence is enabled on related data structure.",
                 "type": "boolean",
                 "default": false
               },
@@ -2075,6 +2094,22 @@
               }
             }
           },
+          "data-persistence": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Used to enable Hazelcast's Persistence feature for the cache. It is available only in Hazelcast Enterprise HD. Set its \"enabled\" to true to enable the feature. By default, it is disabled.",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": false
+              },
+              "fsync": {
+                "type": "boolean",
+                "default": false,
+                "description": "Set as true if the writing to disk should be followed by an fsync() system call."
+              }
+            }
+          },
           "event-journal": {
             "type": "object",
             "additionalProperties": false,
@@ -2491,7 +2526,8 @@
                     "jaas",
                     "tls",
                     "ldap",
-                    "kerberos"
+                    "kerberos",
+                    "simple"
                   ]
                 },
                 "maxProperties": 1,
@@ -2603,6 +2639,38 @@
                         "type": "string"
                       }
                     }
+                  },
+                  "simple": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "role-separator": {
+                        "type": "string"
+                      },
+                      "users": {
+                        "type": "array",
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "username": {
+                              "type": "string"
+                            },
+                            "password": {
+                              "type": "string"
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "username", "password"
+                          ]
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -2706,7 +2774,10 @@
               "ring-buffer",
               "reliable-topic",
               "replicatedmap",
-              "management"
+              "management",
+              "job",
+              "connector",
+              "sql"
             ]
           },
           "properties": {
@@ -2724,9 +2795,6 @@
               "$ref": "#/definitions/SecurityPermission"
             },
             "transaction": {
-              "$ref": "#/definitions/SecurityPermission"
-            },
-            "sql": {
               "$ref": "#/definitions/SecurityPermission"
             }
           },
@@ -2779,19 +2847,30 @@
         "all",
         "create",
         "destroy",
-        "put",
-        "add",
+        "modify",
         "read",
         "remove",
         "lock",
-        "intercept",
-        "index",
         "listen",
-        "publish",
-        "modify",
-        "acquire",
         "release",
-        "deploy"
+        "acquire",
+        "put",
+        "add",
+        "index",
+        "intercept",
+        "publish",
+        "aggregate",
+        "projection",
+        "deploy",
+        "submit",
+        "cancel",
+        "restart",
+        "export-snapshot",
+        "add-resources",
+        "write",
+        "instance",
+        "member",
+        "migration"
       ]
     },
     "NativeMemory": {
@@ -3293,8 +3372,7 @@
                       },
                       "required": [
                         "path",
-                        "password",
-                        "current-key-alias"
+                        "password"
                       ]
                     }
                   }
@@ -3364,6 +3442,184 @@
               ]
             }
           }
+        }
+      }
+    },
+    "Persistence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "base-dir": {
+          "type": "string",
+          "description": "Specifies the directory where the Persistence data will be stored. This directory will be created automatically if it does not exist.",
+          "default": "persistence"
+        },
+        "backup-dir": {
+          "type": "string",
+          "description": "Specifies the directory where the Persistence backup data will be stored. If this element is not defined, backup will be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will contain all persistence data. This unique directory is created as a subdirectory of the configured `backup-dir`."
+        },
+        "parallelism": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1,
+          "description": "Level of parallelism in Persistence. There will be this many IO threads, each writing in parallel to its own files. During the restart procedure, this many IO threads will be reading the files and this many Rebuilder threads will be rebuilding the Persistence metadata."
+        },
+        "validation-timeout-seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 120,
+          "description": " Validation timeout for the restart process when validating the cluster members expected to join and the partition table on the whole cluster."
+        },
+        "data-load-timeout-seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 900,
+          "description": "Data load timeout for the restart process. All members in the cluster should finish restoring their local data before this timeout period."
+        },
+        "cluster-data-recovery-policy": {
+          "enum": [
+            "FULL_RECOVERY_ONLY",
+            "PARTIAL_RECOVERY_MOST_RECENT",
+            "PARTIAL_RECOVERY_MOST_COMPLETE"
+          ],
+          "default": "FULL_RECOVERY_ONLY",
+          "description": " Specifies the data recovery policy that will be respected during restart cluster start. Valid values are:\\n FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails. This is the default value.\\n PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails.\\n PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition table version and successfully restored their data. All other members will leave the cluster and force start themselves. If no member restores its data successfully, cluster start fails."
+        },
+        "encryption-at-rest": {
+          "type": "object",
+          "description": "Specifies the (optional) encryption settings for persistence. It has the required attribute \"enabled\" to specify whether encryption is enabled. In addition to that, it specifies the symmetric cipher to use (such as AES/CBC/PKCS5Padding), the encryption salt, the key size for generating encryption keys and, in the \"secure-store\" sub-element, the configuration of the Secure Store that it will be used to retrieve the encryption keys.\\n \"keystore\": Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and (optionally) a polling interval for checking for changes in the KeyStore.\\n \"vault\": Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace, the (optional) <ssl> configuration for HTTPS support, and an (optional) polling interval for checking for changes in Vault.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "algorithm": {
+              "type": "string",
+              "description": "Symmetric encryption algorithm",
+              "default": "AES/CBC/PKCS5Padding"
+            },
+            "salt": {
+              "type": "string",
+              "default": "thesalt"
+            },
+            "key-size": {
+              "type": "integer"
+            },
+            "secure-store": {
+              "type": "object",
+              "oneOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "keystore": {
+                      "description": "Provides integration with Java KeyStore. Specifies the path to the KeyStore file, the KeyStore type (such as PKCS12 or JCEKS), the KeyStore password, an (optional) alias for the current encryption key entry, and (optionally) a polling interval for checking for changes in the KeyStore.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "default": "PKCS12",
+                          "description": "For information about standard keystore types see https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#KeyStore"
+                        },
+                        "password": {
+                          "type": "string",
+                          "description": "The keystore password"
+                        },
+                        "current-key-alias": {
+                          "type": "string"
+                        },
+                        "polling-interval": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "default": 0,
+                          "description": "Interval (in seconds) for polling for changes in the KeyStore. 0 (default) means no polling"
+                        }
+                      },
+                      "required": [
+                        "path",
+                        "password"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "vault": {
+                      "description": "Provides integration with HashiCorp Vault. Specifies the address of the Vault server, the (optional) secrets engine path, the secret path where the encryption key is stored, the access token, the (optional) namespace, the (optional) \"ssl\" configuration for HTTPS support, and an (optional) polling interval for checking for changes in Vault.",
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "address": {
+                          "type": "string"
+                        },
+                        "secret-path": {
+                          "type": "string"
+                        },
+                        "token": {
+                          "type": "string"
+                        },
+                        "polling-interval": {
+                          "type": "integer",
+                          "default": 0,
+                          "description": "Interval (in seconds) for polling for changes to the encryption key. 0 (default) means polling disabled."
+                        },
+                        "ssl": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "enabled": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "factory-class-name": {
+                              "type": "string",
+                              "examples": [
+                                "com.hazelcast.nio.ssl.BasicSSLContextFactory"
+                              ]
+                            },
+                            "properties": {
+                              "type": "object",
+                              "examples": [
+                                {
+                                  "protocol": "TLS",
+                                  "mutualAuthentication": "REQUIRED",
+                                  "keyStore": "/opt/hazelcast.keystore",
+                                  "keyStorePassword": "secret.97531",
+                                  "keyStoreType": "JKS",
+                                  "trustStore": "/opt/hazelcast.truststore",
+                                  "trustStorePassword": "changeit",
+                                  "trustStoreType": "JKS"
+                                }
+                              ]
+                            }
+                          }
+                        }
+                      },
+                      "required": [
+                        "address",
+                        "secret-path",
+                        "token"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "rebalance-delay-seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Time (in seconds) to wait before triggering automatic partition rebalancing after a member leaves the cluster unexpectedly. Unexpectedly in this context means that a member leaves the cluster by means other than graceful shutdown: programmatic termination (eg LifecycleService.terminate()), a process crash or network partition. Default is 0, which means rebalancing is triggered immediately. Setting this to a higher value will allow some time for members that are gone to rejoin the cluster. The benefit is that partition rebalancing in this case will be avoided, saving the burden of migrating partition data over the network. Do not use this option if your cluster also stores in-memory data. This option stops the cluster from migrating in-memory data. As a result any data that is not persisted will be lost if the member restarts within the configured delay, including backups. While members are gone, operations on partitions for which the owner is missing may fail immediately or will be retried until the member rejoins or operation timeout is exceeded. Notice that this delay only applies when cluster members leave the cluster; when the cluster is being scaled up and members are being added, partition rebalancing will be triggered immediately (subject to limitations imposed by the current cluster state)."
         }
       }
     },
@@ -3755,11 +4011,6 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "executor-pool-size": {
-          "type": "integer",
-          "default": -1,
-          "description": "Defines the number of threads responsible for query execution."
-        },
         "statement-timeout-millis": {
           "type": "integer",
           "default": 0,
@@ -3781,10 +4032,7 @@
         "properties": {
           "type": "object"
         }
-      },
-      "required": [
-        "factory-class-name"
-      ]
+      }
     },
     "InstanceTracking": {
       "type": "object",
@@ -3837,7 +4085,7 @@
       "properties": {
         "enabled": {
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "resource-upload-enabled": {
           "type": "boolean",
@@ -3878,7 +4126,37 @@
               "description": "Specifies the maximum number of records that can be accumulated by any single processor instance. Operations like grouping, sorting or joining require certain amount of records to be accumulated before they can proceed. You can set this option to reduce the probability of `OutOfMemoryError`. It applies to each processor instance separately, hence the effective limit of records accumulated by each cluster member is influenced by the vertex's `localParallelism` and the number of jobs in the cluster. Currently, this option limits: number of items sorted by the sort operation, number of distinct keys accumulated by aggregation operations, number of entries in each hash-join lookup table, number of entries in stateful transforms and number of distinct items in distinct operation. The limit does not apply to streaming aggregations."
             }
           },
-          "description": "General configuration options pertaining to a Jet instance."
+          "description": "Deprecated, use `/hazelcast/jet` to configure the fields directly. General configuration options pertaining to a Jet instance."
+        },
+        "cooperative-thread-count": {
+          "type": "integer",
+          "description": "the number of threads each cluster member will use to execute Jet jobs. This refers only to threads executing `cooperative` processors; each `blocking` processor is assigned its own thread. By default it is the same as the number of available processors."
+        },
+        "flow-control-period": {
+          "type": "integer",
+          "default": 100,
+          "description": "While executing a Jet job there is the issue of regulating the rate at which one member of the cluster sends data to another member. The receiver will regularly report to each sender how much more data it is allowed to send over a given DAG edge. This property sets the length (in milliseconds) of the interval between flow-control (\"ack\") packets."
+        },
+        "backup-count": {
+          "type": "integer",
+          "default": 1,
+          "maximum": 6,
+          "description": "Sets the number of backups that Jet will maintain for the job metadata and snapshots. Each backup is on another cluster member; all backup write operations must complete before the overall write operation can complete. The maximum allowed number of backups is 6 and the default is 1. For example, if you set the backup count to 2, Jet will replicate all the job metadata and snapshot data to two other members. If one or two members of the cluster fail, Jet can recover the data from the snapshot and continue executing the job on the remaining members without loss."
+        },
+        "scale-up-delay-millis": {
+          "type": "integer",
+          "default": 10000,
+          "description": "Sets the delay after which auto-scaled jobs will restart if a new member is added to the cluster. Has no effect on jobs with auto scaling disabled."
+        },
+        "lossless-restart-enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Sets whether lossless job restart is enabled for the node. With lossless restart you can restart the whole cluster without losing the jobs and their state. The feature is implemented on top of the Hot Restart feature of Hazelcast which persists the data to disk. If enabled, you have to also configure Hot Restart. Note: the snapshots exported using `Job#exportSnapshot` will also have Hot Restart storage enabled. Feature is disabled by default. If you enable this option in open-source, the member will fail to start, you need Enterprise to run it and obtain a license from Hazelcast."
+        },
+        "max-processor-accumulated-records": {
+          "type": "integer",
+          "default": 9223372036854775807,
+          "description": "Specifies the maximum number of records that can be accumulated by any single processor instance. Operations like grouping, sorting or joining require certain amount of records to be accumulated before they can proceed. You can set this option to reduce the probability of `OutOfMemoryError`. It applies to each processor instance separately, hence the effective limit of records accumulated by each cluster member is influenced by the vertex's `localParallelism` and the number of jobs in the cluster. Currently, this option limits: number of items sorted by the sort operation, number of distinct keys accumulated by aggregation operations, number of entries in each hash-join lookup table, number of entries in stateful transforms and number of distinct items in distinct operation. The limit does not apply to streaming aggregations."
         },
         "edge-defaults": {
           "type": "object",

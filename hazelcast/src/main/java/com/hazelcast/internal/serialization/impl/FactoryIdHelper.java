@@ -146,6 +146,12 @@ public final class FactoryIdHelper {
     public static final String JET_SQL_DS_FACTORY = "hazelcast.serialization.jet.sql";
     public static final int JET_SQL_DS_FACTORY_ID = -41;
 
+    public static final String SCHEMA_DS_FACTORY = "hazelcast.serialization.schema";
+    public static final int SCHEMA_DS_FACTORY_ID = -42;
+
+    public static final String ENTERPRISE_PARTITION_DS_FACTORY = "hazelcast.serialization.ds.enterprise.partition";
+    public static final int ENTERPRISE_PARTITION_DS_FACTORY_ID = -43;
+
     // factory ID 0 is reserved for Cluster objects (Data, Address, Member etc)...
 
     private FactoryIdHelper() {

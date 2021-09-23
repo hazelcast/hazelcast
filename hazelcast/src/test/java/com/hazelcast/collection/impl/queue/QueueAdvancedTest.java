@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
@@ -55,9 +56,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class QueueAdvancedTest extends HazelcastTestSupport {
 
@@ -672,11 +674,20 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
             // intentional termination, we are not testing graceful shutdown.
             unreliableInstance.getLifecycleService().terminate();
 
-            producer.offer("item");
+            boolean itemAdded = producer.offer("item");
+
 
             assertEquals("Failed at step :" + j
-                    + " (0 is first step)", 1, producer.size());
+                            + " (0 is first step) [itemAdded=" + itemAdded
+                            + ", " + getQueueContainer(producer) + "]",
+                    1, producer.size());
         }
+    }
+
+    private static QueueContainer getQueueContainer(IQueue<String> producer) {
+        QueueService queueService = (QueueService) ((QueueProxyImpl) producer).getService();
+        QueueContainer container = queueService.getExistingContainerOrNull(producer.getName());
+        return container;
     }
 
     private HazelcastInstance[] createHazelcastInstances() {
@@ -692,7 +703,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
     protected Config getConfig() {
         Config config = smallInstanceConfig();
         config.getQueueConfig("default")
-              .setPriorityComparatorClassName(comparatorClassName);
+                .setPriorityComparatorClassName(comparatorClassName);
         return config;
     }
 }

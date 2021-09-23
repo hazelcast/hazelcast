@@ -21,6 +21,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -60,7 +62,33 @@ public class JetTest extends JetTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
 
         // Then
-        assertThrows(IllegalArgumentException.class, instance::getJet);
+        assertThrows(JetDisabledException.class, instance::getJet);
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getJetInstanceThrowsException() {
+        // When
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(1))
+                .writeTo(Sinks.noop());
+
+        assertThrows(JetDisabledException.class, () -> client.getJet().newJob(p).join());
+    }
+
+    @Test
+    public void when_jetDisabled_and_usingClient_then_getSummaryListThrowsException() {
+        Config config = smallInstanceConfig();
+        config.getJetConfig().setEnabled(false);
+        createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetClientInstanceImpl jet = (JetClientInstanceImpl) client.getJet();
+
+        assertThrows(JetDisabledException.class, jet::getJobSummaryList);
     }
 
     @Test

@@ -41,44 +41,32 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
 
     @Test
     public void testFullConfigNormalNetwork() {
-        Config xmlConfig = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
-        Config yamlConfig = new ClasspathYamlConfig("hazelcast-fullconfig.yaml");
-
-        sortClientPermissionConfigs(xmlConfig);
-        sortClientPermissionConfigs(yamlConfig);
-
-        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
-        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
-
-        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+        assertXmlYamlFileEquals("hazelcast-fullconfig");
     }
 
     @Test
     public void testFullConfigAdvancedNetwork() {
-        Config xmlConfig = new ClasspathXmlConfig("hazelcast-fullconfig-advanced-network-config.xml");
-        Config yamlConfig = new ClasspathYamlConfig("hazelcast-fullconfig-advanced-network-config.yaml");
-
-        sortClientPermissionConfigs(xmlConfig);
-        sortClientPermissionConfigs(yamlConfig);
-
-        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
-        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
-
-        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+        assertXmlYamlFileEquals("hazelcast-fullconfig-advanced-network-config");
     }
 
     @Test
     public void testDefaultConfig() {
-        Config xmlConfig = new ClasspathXmlConfig("hazelcast-default.xml");
-        Config yamlConfig = new ClasspathYamlConfig("hazelcast-default.yaml");
+        assertXmlYamlFileEquals("hazelcast-default");
+    }
 
-        sortClientPermissionConfigs(xmlConfig);
-        sortClientPermissionConfigs(yamlConfig);
+    @Test
+    public void testDefaultAssemblyConfig() {
+        assertXmlYamlFileEquals("hazelcast-default-assembly");
+    }
 
-        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
-        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+    @Test
+    public void testDockerAssemblyConfig() {
+        assertXmlYamlFileEquals("hazelcast-docker-assembly");
+    }
 
-        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
+    @Test
+    public void testSecurityHardenedExample() {
+        assertXmlYamlFileEquals("hazelcast-security-hardened");
     }
 
     @Test
@@ -157,6 +145,19 @@ public class XmlYamlConfigBuilderEqualsTest extends HazelcastTestSupport {
             }
         }
         return file;
+    }
+
+    private void assertXmlYamlFileEquals(String filenameBase) {
+        Config xmlConfig = new ClasspathXmlConfig(filenameBase + ".xml");
+        Config yamlConfig = new ClasspathYamlConfig(filenameBase + ".yaml");
+
+        sortClientPermissionConfigs(xmlConfig);
+        sortClientPermissionConfigs(yamlConfig);
+
+        String xmlConfigFromXml = new ConfigXmlGenerator(true).generate(xmlConfig);
+        String xmlConfigFromYaml = new ConfigXmlGenerator(true).generate(yamlConfig);
+
+        assertEquals(xmlConfigFromXml, xmlConfigFromYaml);
     }
 
     private void sortClientPermissionConfigs(Config config) {

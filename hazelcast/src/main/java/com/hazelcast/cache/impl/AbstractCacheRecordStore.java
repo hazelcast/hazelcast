@@ -202,6 +202,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         init();
     }
 
+    public SerializationService getSerializationService() {
+        return ss;
+    }
+
     private CacheLoader initCacheLoader() {
         Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
         cacheLoaderFactory = injectDependencies(cacheLoaderFactory);

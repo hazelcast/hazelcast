@@ -44,6 +44,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update() {
+        createMapping("test_map", int.class, int.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
         map.put(2, 2);
@@ -55,6 +56,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_fieldInTheBeginning() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -64,6 +66,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_fieldInBetween() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -73,6 +76,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_fieldInTheEnd() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -82,6 +86,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_mixedOrderOfFields() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -91,6 +96,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_complexExpression() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -100,6 +106,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_selfReferentialCast() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -108,7 +115,31 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
+    public void update_byKeyOrKey() {
+        createMapping("test_map", int.class, int.class);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+
+        checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE __key = 1 OR __key = 3", 0);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 2, 2, 2, 3, 4));
+    }
+
+    @Test
+    public void update_by_keyAndKey() {
+        createMapping("test_map", int.class, int.class);
+        Map<Object, Object> map = instance().getMap("test_map");
+        map.put(1, 1);
+        map.put(2, 2);
+
+        checkUpdateCount("UPDATE test_map SET this = this + 1 WHERE __key = 1 AND __key = 2", 0);
+        assertThat(map).containsExactlyInAnyOrderEntriesOf(ImmutableMap.of(1, 1, 2, 2));
+    }
+
+    @Test
     public void update_dynamicParam() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -118,6 +149,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void updateByNonKeyField() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -126,29 +158,8 @@ public class SqlUpdateTest extends SqlTestSupport {
     }
 
     @Test
-    public void explicitMapping() {
-        execute(
-                "CREATE MAPPING test_map ("
-                        + "field1 INT"
-                        + ", field2 BIGINT"
-                        + ", field3 VARCHAR"
-                        + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
-                        + "OPTIONS ("
-                        + '\'' + OPTION_KEY_FORMAT + "'='int'"
-                        + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + "'"
-                        + ", '" + OPTION_VALUE_CLASS + "'='" + Value.class.getName() + "'"
-                        + ")"
-        );
-
-        Map<Object, Object> map = instance().getMap("test_map");
-        map.put(1, new Value(100, 200L, "300"));
-
-        checkUpdateCount("UPDATE test_map SET field2 = 100 WHERE __key = 1", 0);
-        assertThat(map).containsExactly(entry(1, new Value(100, 100L, "300")));
-    }
-
-    @Test
     public void update_complexKey() {
+        createMapping("test_map", Key.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(new Key(1), new Value(100, 200L, "300"));
 
@@ -158,6 +169,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_basedOnWholeKey() {
+        createMapping("test_map", Key.class, int.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(new Key(1), 1);
 
@@ -167,6 +179,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_basedOnWholeValue() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -176,6 +189,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_all() {
+        createMapping("test_map", int.class, int.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
         map.put(2, 2);
@@ -186,6 +200,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void update_allWithAlwaysTrueCondition() {
+        createMapping("test_map", int.class, int.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, 1);
         map.put(2, 2);
@@ -196,6 +211,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateKey_then_fails() {
+        createMapping("test_map", int.class, int.class);
         instance().getMap("test_map").put(1, 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET __key = 2"))
@@ -204,6 +220,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateKeyField_then_fails() {
+        createMapping("test_map", Key.class, int.class);
         instance().getMap("test_map").put(new Key(1), 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET keyField = 2"))
@@ -212,11 +229,12 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateKeyNotHiddenAndHasFields_then_fails() {
+        createMapping("test_map", Key.class, int.class);
         Map<Key, Integer> map = instance().getMap("test_map");
         map.put(new Key(1), 1);
 
         execute(
-                "CREATE MAPPING test_map ("
+                "CREATE OR REPLACE MAPPING test_map ("
                         + "__key OBJECT"
                         + ", this INT "
                         + ", keyField INT external name \"__key.keyField\""
@@ -234,6 +252,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateThis_then_fails() {
+        createMapping("test_map", int.class, Value.class);
         Map<Object, Object> map = instance().getMap("test_map");
         map.put(1, new Value(100, 200L, "300"));
 
@@ -243,11 +262,12 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateThisNotHiddenAndHasFields_then_fails() {
+        createMapping("test_map", int.class, Value.class);
         Map<Integer, Value> map = instance().getMap("test_map");
         map.put(1, new Value(1, 2L, "3"));
 
         execute(
-                "CREATE MAPPING test_map ("
+                "CREATE OR REPLACE MAPPING test_map ("
                         + "__key INT"
                         + ", this OBJECT "
                         + ", field1 INT"
@@ -265,6 +285,7 @@ public class SqlUpdateTest extends SqlTestSupport {
 
     @Test
     public void when_updateValueToNull_then_fails() {
+        createMapping("test_map", int.class, int.class);
         instance().getMap("test_map").put(1, 1);
 
         assertThatThrownBy(() -> execute("UPDATE test_map SET this = null"))

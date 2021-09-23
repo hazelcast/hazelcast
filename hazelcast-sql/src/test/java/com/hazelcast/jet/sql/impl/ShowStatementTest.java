@@ -95,7 +95,7 @@ public class ShowStatementTest extends SqlTestSupport {
 
     @Test
     public void test_showJobs() {
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
         sqlService.execute("create job testJob as " +
                 "sink into m " +
                 "select v, v from table(generate_stream(1))");
@@ -105,7 +105,7 @@ public class ShowStatementTest extends SqlTestSupport {
     @Test
     public void when_jobCompleted_then_notShown() {
         TestBatchSqlConnector.create(sqlService, "t", 1);
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
         sqlService.execute("create job testJob as " +
                 "sink into m " +
                 "select v, v from t");

@@ -42,7 +42,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * matching to a different partition id shall be ignored. The API implementation using this request may need to send multiple
  * of these request messages for filling a request for a key set if the keys belong to different partitions.
  */
-@Generated("bafbc2c32f9444a57f635b7134c45641")
+@Generated("f07bc3dfb095642d063cf917c918a8b4")
 public final class MapPutAllCodec {
     //hex: 0x012C00
     public static final int REQUEST_MESSAGE_TYPE = 76800;
@@ -117,6 +117,4 @@ public final class MapPutAllCodec {
 
         return clientMessage;
     }
-
-
 }

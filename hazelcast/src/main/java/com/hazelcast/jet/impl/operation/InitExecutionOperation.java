@@ -20,24 +20,26 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.JobClassLoaderService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.operationservice.ExceptionAction;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
-import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
  * Operation sent from master to members to initialize execution of a job.
@@ -52,6 +54,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
 
     private long executionId;
     private int coordinatorMemberListVersion;
+    private Version coordinatorVersion;
     private Set<MemberInfo> participants;
     private Data serializedPlan;
     private boolean isLightJob;
@@ -60,10 +63,12 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
+                                  Version coordinatorVersion,
                                   Set<MemberInfo> participants, Data serializedPlan, boolean isLightJob) {
         super(jobId);
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
+        this.coordinatorVersion = coordinatorVersion;
         this.participants = participants;
         this.serializedPlan = serializedPlan;
         this.isLightJob = isLightJob;
@@ -72,7 +77,14 @@ public class InitExecutionOperation extends AsyncJobOperation {
     @Override
     protected CompletableFuture<?> doRun() {
         ILogger logger = getLogger();
-        JetServiceBackend service = getService();
+        if (!getNodeEngine().getLocalMember().getVersion().asVersion().equals(coordinatorVersion)) {
+            // Operations are sent to targets by Address. It can happen that the coordinator finds members
+            // with the same version, but some member is upgraded before the operation is sent and has
+            // the same address.
+            throw new JetException("Mismatch between coordinator and participant version");
+        }
+
+        JetServiceBackend service = getJetServiceBackend();
         Address caller = getCallerAddress();
         LoggingUtil.logFine(logger, "Initializing execution plan for %s from %s", jobIdAndExecutionId(jobId(), executionId),
                 caller);
@@ -89,11 +101,6 @@ public class InitExecutionOperation extends AsyncJobOperation {
     }
 
     @Override
-    public ExceptionAction onInvocationException(Throwable throwable) {
-        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
-    }
-
-    @Override
     public int getClassId() {
         return JetInitDataSerializerHook.INIT_EXECUTION_OP;
     }
@@ -105,6 +112,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         out.writeLong(executionId);
         out.writeBoolean(isLightJob);
         out.writeInt(coordinatorMemberListVersion);
+        out.writeObject(coordinatorVersion);
         out.writeInt(participants.size());
         for (MemberInfo participant : participants) {
             out.writeObject(participant);
@@ -119,6 +127,7 @@ public class InitExecutionOperation extends AsyncJobOperation {
         executionId = in.readLong();
         isLightJob = in.readBoolean();
         coordinatorMemberListVersion = in.readInt();
+        coordinatorVersion = in.readObject();
         int count = in.readInt();
         participants = new HashSet<>();
         for (int i = 0; i < count; i++) {
@@ -131,9 +140,17 @@ public class InitExecutionOperation extends AsyncJobOperation {
         if (isLightJob) {
             return getNodeEngine().getSerializationService().toObject(planBlob);
         } else {
-            JetServiceBackend service = getService();
-            ClassLoader cl = service.getClassLoader(jobId());
-            return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+            JetServiceBackend service = getJetServiceBackend();
+            JobConfig jobConfig = service.getJobConfig(jobId());
+            JobClassLoaderService jobClassloaderService = service.getJobClassLoaderService();
+
+            ClassLoader cl = jobClassloaderService.getOrCreateClassLoader(jobConfig, jobId(), EXECUTION);
+            try {
+                jobClassloaderService.prepareProcessorClassLoaders(jobId());
+                return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+            } finally {
+                jobClassloaderService.clearProcessorClassLoaders();
+            }
         }
     }
 }

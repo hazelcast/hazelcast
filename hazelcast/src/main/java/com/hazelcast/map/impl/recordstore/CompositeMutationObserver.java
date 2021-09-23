@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -46,8 +46,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onClear();
+            try {
+                mutationObserver.onClear();
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -58,8 +70,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onPutRecord(key, record, oldValue, backup);
+            try {
+                mutationObserver.onPutRecord(key, record, oldValue, backup);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -70,8 +94,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReplicationPutRecord(key, record, populateIndex);
+            try {
+                mutationObserver.onReplicationPutRecord(key, record, populateIndex);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -105,8 +141,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onRemoveRecord(key, record);
+            try {
+                mutationObserver.onRemoveRecord(key, record);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -116,8 +164,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onEvictRecord(key, record);
+            try {
+                mutationObserver.onEvictRecord(key, record);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -127,8 +187,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onLoadRecord(key, record, backup);
+            try {
+                mutationObserver.onLoadRecord(key, record, backup);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -139,8 +211,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onDestroy(isDuringShutdown, internal);
+            try {
+                mutationObserver.onDestroy(isDuringShutdown, internal);
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 
@@ -150,8 +234,20 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
             return;
         }
 
+        Throwable exception = null;
+
         for (MutationObserver<R> mutationObserver : mutationObservers) {
-            mutationObserver.onReset();
+            try {
+                mutationObserver.onReset();
+            } catch (Throwable t) {
+                if (exception == null) {
+                    exception = t;
+                }
+            }
+        }
+
+        if (exception != null) {
+            rethrow(exception);
         }
     }
 }

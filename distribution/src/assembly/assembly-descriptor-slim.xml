@@ -30,10 +30,6 @@
             <includes>
                 <include>com.hazelcast:hazelcast</include>
                 <include>com.hazelcast:hazelcast-sql</include>
-                <include>com.hazelcast:hazelcast-aws</include>
-                <include>com.hazelcast:hazelcast-kubernetes</include>
-                <include>com.hazelcast:hazelcast-gcp</include>
-                <include>com.hazelcast:hazelcast-azure</include>
                 <include>com.hazelcast:hazelcast-hibernate53</include>
                 <include>com.hazelcast:hazelcast-wm</include>
                 <include>io.prometheus.jmx:jmx_prometheus_javaagent</include>
@@ -42,6 +38,7 @@
                 <include>org.slf4j:*</include>
                 <include>info.picocli:picocli</include>
                 <include>org.jline:*</include>
+                <include>org.fusesource.jansi:jansi</include>
             </includes>
             <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
@@ -53,60 +50,93 @@
             <destName>THIRD-PARTY.txt</destName>
             <outputDirectory>licenses</outputDirectory>
         </file>
+
+        <!-- Full Example YAML config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-full-example.yaml</source>
+            <destName>hazelcast-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-full-example.yaml</source>
+            <destName>hazelcast-client-full-example.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Simple XML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-default-assembly.xml</source>
+            <destName>hazelcast.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.xml</source>
+            <destName>hazelcast-docker.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.xml</source>
+            <destName>hazelcast-client.xml</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+
+        <!-- Simple YAML config files -->
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. jet is enabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-default-assembly.yaml</source>
+            <destName>hazelcast.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-docker-assembly.yaml</source>
+            <destName>hazelcast-docker.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <!-- We use a different default file for the assembly
+             because of different settings, e.g. smart routing is disabled -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-default-assembly.yaml</source>
+            <destName>hazelcast-client.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Full Example XML config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-full-example.xml</source>
+            <destName>hazelcast-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-client-full-example.xml</source>
+            <destName>hazelcast-client-full-example.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- Other Example config files -->
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.yaml</source>
+            <destName>hazelcast-security-hardened.yaml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+        <file>
+            <source>${configs.from.jar}/hazelcast-security-hardened.xml</source>
+            <destName>hazelcast-security-hardened.xml</destName>
+            <outputDirectory>config/examples</outputDirectory>
+        </file>
+
+        <!-- NOTICE file from hazelcast.jar -->
+        <file>
+            <source>${configs.from.jar}/META-INF/NOTICE</source>
+            <destName>NOTICE</destName>
+            <outputDirectory>/</outputDirectory>
+        </file>
     </files>
 
-    <!--
-            &lt;!&ndash; Full Example YAML config files &ndash;&gt;
-            <file>
-                <source>${configs.from.jar}/hazelcast-jet-full-example.yaml</source>
-                <destName>hazelcast-jet-full-example.yaml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-full-example.yaml</source>
-                <destName>hazelcast-full-example.yaml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-client-full-example.yaml</source>
-                <destName>hazelcast-client-full-example.yaml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-
-            &lt;!&ndash; Simple XML config files &ndash;&gt;
-            <file>
-                <source>${configs.from.jar}/hazelcast-jet-default.xml</source>
-                <destName>hazelcast-jet.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-jet-member-default.xml</source>
-                <destName>hazelcast.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-jet-client-default.xml</source>
-                <destName>hazelcast-client.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-
-            &lt;!&ndash; Full Example XML config files &ndash;&gt;
-            <file>
-                <source>${configs.from.jar}/hazelcast-jet-full-example.xml</source>
-                <destName>hazelcast-jet-full-example.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-full-example.xml</source>
-                <destName>hazelcast-full-example.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-            <file>
-                <source>${configs.from.jar}/hazelcast-client-full-example.xml</source>
-                <destName>hazelcast-client-full-example.xml</destName>
-                <outputDirectory>config/examples</outputDirectory>
-            </file>
-    -->
     <fileSets>
         <fileSet>
             <directory>src/root</directory>
@@ -125,6 +155,12 @@
             <directory>src/bin-regular</directory>
             <outputDirectory>bin</outputDirectory>
             <filtered>true</filtered>
+        </fileSet>
+        <fileSet> <!-- Create empty directory -->
+            <outputDirectory>bin/user-lib</outputDirectory>
+            <excludes>
+                <exclude>**/*</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>

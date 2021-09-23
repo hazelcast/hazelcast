@@ -35,6 +35,8 @@ public class CsvFileFormat<T> implements FileFormat<T> {
      */
     public static final String FORMAT_CSV = "csv";
 
+    private static final long serialVersionUID = 1L;
+
     private final Class<T> clazz;
     private final List<String> fieldNames;
 

@@ -17,9 +17,8 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
-import org.apache.calcite.sql.type.SqlOperandTypeInference;
+import org.apache.calcite.sql.type.SqlOperandMetadata;
 import org.apache.calcite.sql.type.SqlReturnTypeInference;
 
 import java.util.List;
@@ -31,12 +30,11 @@ public abstract class JetSpecificTableFunction extends JetTableFunction {
 
     protected JetSpecificTableFunction(
             String name,
-            List<JetTableFunctionParameter> parameters,
+            SqlOperandMetadata operandMetadata,
             SqlReturnTypeInference returnTypeInference,
-            SqlOperandTypeInference operandTypeInference,
             SqlConnector connector
     ) {
-        super(name, parameters, returnTypeInference, operandTypeInference, connector);
+        super(name, operandMetadata, returnTypeInference, connector);
     }
 
     public abstract HazelcastTable toTable(List<Expression<?>> argumentExpressions);

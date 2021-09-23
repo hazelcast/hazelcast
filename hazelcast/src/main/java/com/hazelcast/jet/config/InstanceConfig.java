@@ -32,6 +32,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * General configuration options pertaining to a Jet instance.
  *
  * @since Jet 3.0
+ * @deprecated since 5.0, use {@link JetConfig} instead.
  */
 public class InstanceConfig {
 
@@ -219,9 +220,10 @@ public class InstanceConfig {
      *
      * @since 5.0
      */
-    public void setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
+    public InstanceConfig setMaxProcessorAccumulatedRecords(long maxProcessorAccumulatedRecords) {
         checkPositive(maxProcessorAccumulatedRecords, "maxProcessorAccumulatedRecords must be a positive number");
         this.maxProcessorAccumulatedRecords = maxProcessorAccumulatedRecords;
+        return this;
     }
 
     /**
@@ -239,7 +241,7 @@ public class InstanceConfig {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof InstanceConfig)) {
             return false;
         }
 

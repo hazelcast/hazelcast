@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -38,6 +40,7 @@ class JetSqlResultImpl extends AbstractSqlResult {
     private final QueryResultProducer rootResultConsumer;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
+    private final InternalSerializationService serializationService;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -45,12 +48,14 @@ class JetSqlResultImpl extends AbstractSqlResult {
             QueryId queryId,
             QueryResultProducer rootResultConsumer,
             SqlRowMetadata rowMetadata,
-            boolean isInfiniteRows
+            boolean isInfiniteRows,
+            InternalSerializationService serializationService
     ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -92,6 +97,24 @@ class JetSqlResultImpl extends AbstractSqlResult {
         rootResultConsumer.onError(exception);
     }
 
+    @Override
+    public Object deserialize(Object value) {
+        try {
+            return serializationService.toObject(value);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, queryId.getMemberId());
+        }
+    }
+
+    @Override
+    public Object deserialize(LazyTarget value) {
+        try {
+            return value.deserialize(serializationService);
+        } catch (Exception e) {
+            throw QueryUtils.toPublicException(e, queryId.getMemberId());
+        }
+    }
+
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {
 
         private final ResultIterator<Row> delegate;
@@ -121,7 +144,7 @@ class JetSqlResultImpl extends AbstractSqlResult {
         @Override
         public SqlRow next() {
             try {
-                return new SqlRowImpl(getRowMetadata(), delegate.next());
+                return new SqlRowImpl(getRowMetadata(), delegate.next(), JetSqlResultImpl.this);
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {

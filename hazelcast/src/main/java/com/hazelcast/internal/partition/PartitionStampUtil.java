@@ -19,6 +19,9 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.internal.nio.Bits;
 import com.hazelcast.internal.util.HashUtil;
 
+import javax.annotation.Nonnull;
+import java.util.function.Supplier;
+
 /**
  * PartitionStampUtil is a utility class to generate stamp for the partition table.
  */
@@ -35,8 +38,28 @@ public final class PartitionStampUtil {
      * @param partitions partition table
      * @return stamp value
      */
-    public static long calculateStamp(InternalPartition[] partitions) {
-        byte[] bb = new byte[Integer.BYTES * partitions.length];
+    public static long calculateStamp(@Nonnull InternalPartition[] partitions) {
+        return calculateStamp(partitions, () -> new byte[Integer.BYTES * partitions.length]);
+    }
+
+
+    /**
+     * Calculates 64-bit stamp value for the given partitions.
+     * Stamp is calculated by hashing the individual partition versions
+     * using MurmurHash3.
+     *
+     * @param partitions     partition table
+     * @param bufferSupplier supplier for the buffer to use when calculating the stamp. The buffer
+     *                       returned from this supplier should have a size equal to
+     *                       {@code partitions.length} ints.
+     * @return stamp value
+     */
+    public static long calculateStamp(@Nonnull InternalPartition[] partitions,
+                                      @Nonnull Supplier<byte[]> bufferSupplier) {
+        byte[] bb = bufferSupplier.get();
+        assert bb.length == Integer.BYTES * partitions.length
+                : "The supplied buffer should have a size of partitions.length bytes";
+
         for (InternalPartition partition : partitions) {
             Bits.writeIntB(bb, partition.getPartitionId() * Integer.BYTES, partition.version());
         }

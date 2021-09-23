@@ -26,9 +26,11 @@ import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static java.lang.Integer.MAX_VALUE;
 
+/**
+ * Field Type for {@link Portable} format to be used with {@link ClassDefinition#getFieldType(String)} API
+ */
 public enum FieldType {
 
-    // SINGLE-VALUE TYPES
     PORTABLE(0, MAX_VALUE),
     BYTE(1, BYTE_SIZE_IN_BYTES),
     BOOLEAN(2, BOOLEAN_SIZE_IN_BYTES),
@@ -39,8 +41,6 @@ public enum FieldType {
     FLOAT(7, FLOAT_SIZE_IN_BYTES),
     DOUBLE(8, DOUBLE_SIZE_IN_BYTES),
     UTF(9, MAX_VALUE),
-
-    // ARRAY TYPES
     PORTABLE_ARRAY(10, MAX_VALUE),
     BYTE_ARRAY(11, MAX_VALUE),
     BOOLEAN_ARRAY(12, MAX_VALUE),

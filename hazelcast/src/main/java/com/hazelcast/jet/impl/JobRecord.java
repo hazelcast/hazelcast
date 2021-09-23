@@ -21,10 +21,13 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.version.Version;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.util.Set;
 
@@ -38,6 +41,7 @@ import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
  */
 public class JobRecord implements IdentifiedDataSerializable {
 
+    private Version clusterVersion;
     private long jobId;
     private long creationTime;
     private Data dag;
@@ -45,17 +49,25 @@ public class JobRecord implements IdentifiedDataSerializable {
     private String dagJson;
     private JobConfig config;
     private Set<String> ownedObservables;
+    private Subject subject;
 
     public JobRecord() {
     }
 
-    public JobRecord(long jobId, Data dag, String dagJson, JobConfig config, Set<String> ownedObservables) {
+    public JobRecord(Version clusterVersion, long jobId, Data dag, String dagJson, JobConfig config,
+                     Set<String> ownedObservables, Subject subject) {
+        this.clusterVersion = clusterVersion;
         this.jobId = jobId;
         this.creationTime = Clock.currentTimeMillis();
         this.dag = dag;
         this.dagJson = dagJson;
         this.config = config;
         this.ownedObservables = ownedObservables;
+        this.subject = subject;
+    }
+
+    public Version getClusterVersion() {
+        return clusterVersion;
     }
 
     public long getJobId() {
@@ -87,6 +99,10 @@ public class JobRecord implements IdentifiedDataSerializable {
         return ownedObservables;
     }
 
+    public Subject getSubject() {
+        return subject;
+    }
+
     @Override
     public int getFactoryId() {
         return JetInitDataSerializerHook.FACTORY_ID;
@@ -99,22 +115,26 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(clusterVersion);
         out.writeLong(jobId);
         out.writeLong(creationTime);
         IOUtil.writeData(out, dag);
         out.writeUTF(dagJson);
         out.writeObject(config);
         out.writeObject(ownedObservables);
+        ImdgUtil.writeSubject(out, subject);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        clusterVersion = in.readObject();
         jobId = in.readLong();
         creationTime = in.readLong();
         dag = IOUtil.readData(in);
         dagJson = in.readUTF();
         config = in.readObject();
         ownedObservables = in.readObject();
+        subject = ImdgUtil.readSubject(in);
     }
 
     @Override

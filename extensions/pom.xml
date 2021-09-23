@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
     </parent>
 
     <modules>
@@ -42,15 +42,29 @@
         <module>elasticsearch/elasticsearch-5</module>
         <module>elasticsearch/elasticsearch-6</module>
         <module>elasticsearch/elasticsearch-7</module>
-        <module>grpc</module>
         <module>hadoop</module>
         <module>hadoop-dist</module>
+        <module>hazelcast-3-connector</module>
         <module>kafka</module>
         <module>kinesis</module>
-        <module>protobuf</module>
-        <module>python</module>
         <module>s3</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>protoc-supported</id>
+            <activation>
+                <os>
+                    <family>!sunos</family>
+                </os>
+            </activation>
+            <modules>
+                <module>grpc</module>
+                <module>protobuf</module>
+                <module>python</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <properties>
         <argLine> <!-- surefire parameters -->
@@ -67,10 +81,10 @@
         </argLine>
 
         <!-- needed for CheckStyle -->
-        <main.basedir>${maven.multiModuleProjectDirectory}</main.basedir>
-        <checkstyle.headerLocation>${maven.multiModuleProjectDirectory}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
-        <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
-        <checkstyle.supressionsLocation>${maven.multiModuleProjectDirectory}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
+        <main.basedir>${project.basedir}/../..</main.basedir>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
+        <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle_jet.xml</checkstyle.configLocation>
+        <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions_jet.xml</checkstyle.supressionsLocation>
     </properties>
 
     <licenses>
@@ -95,6 +109,12 @@
             <scope>test</scope>
             <version>${project.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast-archunit-rules</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

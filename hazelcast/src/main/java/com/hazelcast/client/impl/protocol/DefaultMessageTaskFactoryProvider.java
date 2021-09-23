@@ -83,12 +83,15 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientFetchSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
@@ -370,6 +373,7 @@ import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
@@ -722,6 +726,9 @@ import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecut
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromTargetMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromTargetMessageTask;
+import com.hazelcast.client.impl.protocol.task.schema.FetchSchemaMessageTask;
+import com.hazelcast.client.impl.protocol.task.schema.SendAllSchemasMessageTask;
+import com.hazelcast.client.impl.protocol.task.schema.SendSchemaMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.set.SetAddMessageTask;
@@ -840,6 +847,7 @@ import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
+import com.hazelcast.sql.impl.client.SqlMappingDdlTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -894,6 +902,7 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         initializeSemaphoreTaskFactories();
         initializeManagementCenterTaskFactories();
         initializeSqlTaskFactories();
+        initializeSchemaFactories();
     }
 
     private void initializeSetTaskFactories() {
@@ -1827,6 +1836,17 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new SqlFetchMessageTask(cm, node, con));
         factories.put(SqlCloseCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlCloseMessageTask(cm, node, con));
+        factories.put(SqlMappingDdlCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SqlMappingDdlTask(cm, node, con));
+    }
+
+    private void initializeSchemaFactories() {
+        factories.put(ClientSendSchemaCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SendSchemaMessageTask(cm, node, con));
+        factories.put(ClientFetchSchemaCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new FetchSchemaMessageTask(cm, node, con));
+        factories.put(ClientSendAllSchemasCodec.REQUEST_MESSAGE_TYPE,
+                (cm, con) -> new SendAllSchemasMessageTask(cm, node, con));
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

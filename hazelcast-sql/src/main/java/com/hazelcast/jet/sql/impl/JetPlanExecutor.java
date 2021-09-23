@@ -17,11 +17,13 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetPlan.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.CreateMappingPlan;
@@ -30,13 +32,20 @@ import com.hazelcast.jet.sql.impl.JetPlan.DmlPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropJobPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapDeletePlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapInsertPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSelectPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapSinkPlan;
+import com.hazelcast.jet.sql.impl.JetPlan.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.JetPlan.SelectPlan;
 import com.hazelcast.jet.sql.impl.JetPlan.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
 import com.hazelcast.jet.sql.impl.schema.MappingCatalog;
+import com.hazelcast.map.impl.EntryRemovingProcessor;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlColumnMetadata;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.ParameterConverter;
@@ -44,43 +53,51 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.sql.impl.SqlResultImpl;
+import com.hazelcast.sql.impl.UpdateSqlResultImpl;
+import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
+import com.hazelcast.sql.impl.state.QueryResultRegistry;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
+import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static java.util.Collections.singletonList;
 
-class JetPlanExecutor {
+public class JetPlanExecutor {
 
     private final MappingCatalog catalog;
     private final HazelcastInstance hazelcastInstance;
-    private final Map<Long, JetQueryResultProducer> resultConsumerRegistry;
+    private final QueryResultRegistry resultRegistry;
 
-    JetPlanExecutor(
+    public JetPlanExecutor(
             MappingCatalog catalog,
             HazelcastInstance hazelcastInstance,
-            Map<Long, JetQueryResultProducer> resultConsumerRegistry
+            QueryResultRegistry resultRegistry
     ) {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
-        this.resultConsumerRegistry = resultConsumerRegistry;
+        this.resultRegistry = resultRegistry;
     }
 
     SqlResult execute(CreateMappingPlan plan) {
         catalog.createMapping(plan.mapping(), plan.replace(), plan.ifNotExists());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropMappingPlan plan) {
         catalog.removeMapping(plan.name(), plan.ifExists());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
@@ -91,7 +108,7 @@ class JetPlanExecutor {
         } else {
             hazelcastInstance.getJet().newJob(plan.getExecutionPlan().getDag(), jobConfig);
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(AlterJobPlan plan) {
@@ -114,7 +131,7 @@ class JetPlanExecutor {
 
             default:
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropJobPlan plan) {
@@ -122,7 +139,7 @@ class JetPlanExecutor {
         boolean jobTerminated = job != null && job.getStatus().isTerminal();
         if (job == null || jobTerminated) {
             if (plan.isIfExists()) {
-                return SqlResultImpl.createUpdateCountResult(0);
+                return UpdateSqlResultImpl.createUpdateCountResult(0);
             }
             if (jobTerminated) {
                 throw QueryException.error("Job already terminated: " + plan.getJobName());
@@ -139,7 +156,7 @@ class JetPlanExecutor {
             job.join();
         } catch (CancellationException ignored) {
         }
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(CreateSnapshotPlan plan) {
@@ -148,24 +165,22 @@ class JetPlanExecutor {
             throw QueryException.error("The job '" + plan.getJobName() + "' doesn't exist");
         }
         job.exportSnapshot(plan.getSnapshotName());
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(DropSnapshotPlan plan) {
         JobStateSnapshot snapshot = hazelcastInstance.getJet().getJobStateSnapshot(plan.getSnapshotName());
         if (snapshot == null) {
             if (plan.isIfExists()) {
-                return SqlResultImpl.createUpdateCountResult(0);
+                return UpdateSqlResultImpl.createUpdateCountResult(0);
             }
             throw QueryException.error("The snapshot doesn't exist: " + plan.getSnapshotName());
         }
         snapshot.destroy();
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     SqlResult execute(ShowStatementPlan plan) {
-        SqlRowMetadata metadata = new SqlRowMetadata(
-                singletonList(new SqlColumnMetadata("name", SqlColumnType.VARCHAR, false)));
         Stream<String> rows;
         if (plan.getShowTarget() == ShowStatementTarget.MAPPINGS) {
             rows = catalog.getMappingNames().stream();
@@ -177,48 +192,139 @@ class JetPlanExecutor {
                     .map(record -> record.getConfig().getName())
                     .filter(Objects::nonNull);
         }
+        SqlRowMetadata metadata = new SqlRowMetadata(singletonList(new SqlColumnMetadata("name", VARCHAR, false)));
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new JetSqlResultImpl(
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new JetStaticQueryResultProducer(rows.sorted().map(name -> new HeapRow(new Object[]{name})).iterator()),
                 metadata,
-                false);
+                false,
+                serializationService
+        );
     }
 
-    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments) {
+    SqlResult execute(SelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        JobConfig jobConfig = new JobConfig()
+                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setTimeoutMillis(timeout);
 
-        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer();
+        JetQueryResultProducer queryResultProducer = new JetQueryResultProducer(!plan.isStreaming());
         AbstractJetInstance<?> jet = (AbstractJetInstance<?>) hazelcastInstance.getJet();
-        Long jobId = jet.newJobId();
-        Object oldValue = resultConsumerRegistry.put(jobId, queryResultProducer);
+        long jobId = jet.newJobId();
+        Object oldValue = resultRegistry.store(jobId, queryResultProducer);
         assert oldValue == null : oldValue;
         try {
             Job job = jet.newLightJob(jobId, plan.getDag(), jobConfig);
             job.getFuture().whenComplete((r, t) -> {
                 if (t != null) {
                     int errorCode = findQueryExceptionCode(t);
-                    queryResultProducer.onError(
-                            QueryException.error(errorCode, "The Jet SQL job failed: " + t.getMessage(), t));
+                    String errorMessage = findQueryExceptionMessage(t);
+                    queryResultProducer.onError(QueryException.error(errorCode, "The Jet SQL job failed: " + errorMessage, t));
                 }
             });
         } catch (Throwable e) {
-            resultConsumerRegistry.remove(jobId);
+            resultRegistry.remove(jobId);
             throw e;
         }
 
-        return new JetSqlResultImpl(queryId, queryResultProducer, plan.getRowMetadata(), plan.isStreaming());
+        return new JetSqlResultImpl(
+                queryId,
+                queryResultProducer,
+                plan.getRowMetadata(),
+                plan.isStreaming(),
+                serializationService
+        );
     }
 
-    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments) {
+    SqlResult execute(DmlPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
-        JobConfig jobConfig = new JobConfig().setArgument(SQL_ARGUMENTS_KEY_NAME, args);
+        JobConfig jobConfig = new JobConfig()
+                .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
+                .setTimeoutMillis(timeout);
 
         Job job = hazelcastInstance.getJet().newLightJob(plan.getDag(), jobConfig);
         job.join();
 
-        return SqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapSelectPlan plan, QueryId queryId, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
+        SimpleExpressionEvalContext evalContext = new SimpleExpressionEvalContext(args, serializationService);
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Object[]> future = hazelcastInstance.getMap(plan.mapName())
+                .getAsync(key)
+                .toCompletableFuture()
+                .thenApply(value -> plan.rowProjectorSupplier()
+                        .get(evalContext, Extractors.newBuilder(serializationService).build())
+                        .project(key, value));
+        Object[] row = await(future, timeout);
+        return new JetSqlResultImpl(
+                queryId,
+                new JetStaticQueryResultProducer(row),
+                plan.rowMetadata(),
+                false,
+                serializationService
+        );
+    }
+
+    SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        List<Entry<Object, Object>> entries = plan.entriesFn().apply(evalContext);
+        if (!entries.isEmpty()) {
+            assert entries.size() == 1;
+            Entry<Object, Object> entry = entries.get(0);
+            CompletableFuture<Object> future = ((MapProxyImpl<Object, Object>) hazelcastInstance.getMap(plan.mapName()))
+                    .putIfAbsentAsync(entry.getKey(), entry.getValue())
+                    .toCompletableFuture();
+            Object previous = await(future, timeout);
+            if (previous != null) {
+                throw QueryException.error("Duplicate key");
+            }
+        }
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Map<Object, Object> entries = plan.entriesFn().apply(evalContext);
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
+                .putAllAsync(entries)
+                .toCompletableFuture();
+        await(future, timeout);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapUpdatePlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Long> future = hazelcastInstance.getMap(plan.mapName())
+                .submitToKey(key, plan.updaterSupplier().get(arguments))
+                .toCompletableFuture();
+        await(future, timeout);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {
+        List<Object> args = prepareArguments(plan.parameterMetadata(), arguments);
+        SimpleExpressionEvalContext evalContext =
+                new SimpleExpressionEvalContext(args, Util.getSerializationService(hazelcastInstance));
+        Object key = plan.keyCondition().eval(EmptyRow.INSTANCE, evalContext);
+        CompletableFuture<Void> future = hazelcastInstance.getMap(plan.mapName())
+                .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
+                .toCompletableFuture();
+        await(future, timeout);
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
@@ -255,5 +361,26 @@ class JetPlanExecutor {
             t = t.getCause();
         }
         return SqlErrorCode.GENERIC;
+    }
+
+    private static String findQueryExceptionMessage(Throwable t) {
+        while (t != null) {
+            if (t.getMessage() != null) {
+                return t.getMessage();
+            }
+            t = t.getCause();
+        }
+        return "";
+    }
+
+    private <T> T await(CompletableFuture<T> future, long timeout) {
+        try {
+            return timeout > 0 ? future.get(timeout, TimeUnit.MILLISECONDS) : future.get();
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            throw QueryException.error("Timeout occurred while executing statement");
+        } catch (InterruptedException | ExecutionException e) {
+            throw QueryException.error(e.getMessage(), e);
+        }
     }
 }

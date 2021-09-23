@@ -105,7 +105,7 @@ public class CacheService extends AbstractCacheService {
         return op.isEmpty() ? null : op;
     }
 
-    private boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
+    protected boolean assertAllKnownNamespaces(Collection<ServiceNamespace> namespaces) {
         for (ServiceNamespace namespace : namespaces) {
             assert isKnownServiceNamespace(namespace) : namespace + " is not a CacheService namespace!";
         }

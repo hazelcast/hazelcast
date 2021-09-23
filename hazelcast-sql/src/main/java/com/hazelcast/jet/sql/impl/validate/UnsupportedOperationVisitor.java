@@ -24,8 +24,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
 import com.hazelcast.jet.sql.impl.parse.SqlOption;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
-import com.hazelcast.sql.impl.calcite.validate.HazelcastSqlOperatorTable;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.runtime.CalciteContextException;
 import org.apache.calcite.runtime.Resources.ExInst;
 import org.apache.calcite.sql.JoinConditionType;
@@ -56,9 +55,6 @@ import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
 
 /**
  * Visitor that throws exceptions for unsupported SQL features.
- * </p>
- * Mostly copy of {@link  com.hazelcast.sql.impl.calcite.parse.UnsupportedOperationVisitor}
- * with Jet specific tweaks/extensions.
  */
 @SuppressWarnings("checkstyle:ExecutableStatementCount")
 public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
@@ -104,7 +100,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.IS_NULL);
         SUPPORTED_KINDS.add(SqlKind.IS_NOT_NULL);
 
-        // Comparisons predicates
+        // Comparison predicates
         SUPPORTED_KINDS.add(SqlKind.EQUALS);
         SUPPORTED_KINDS.add(SqlKind.NOT_EQUALS);
         SUPPORTED_KINDS.add(SqlKind.LESS_THAN);
@@ -145,8 +141,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.ARGUMENT_ASSIGNMENT);
 
         // Ordering
-        SUPPORTED_KINDS.add(SqlKind.NULLS_FIRST);
-        SUPPORTED_KINDS.add(SqlKind.NULLS_LAST);
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
 
         // Supported operators
@@ -186,12 +180,14 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LOWER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.UPPER);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CONCAT_WS);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.SUBSTRING);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.LTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.RTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.BTRIM);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.REPLACE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.POSITION);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.NOT_LIKE);
 
         // Datetime
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
@@ -203,13 +199,13 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
 
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_SERIES);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.GENERATE_STREAM);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
 
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.CSV_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.JSON_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.AVRO_FILE);
-        SUPPORTED_OPERATORS.add(JetSqlOperatorTable.PARQUET_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.CSV_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
     }
 
     // The top level select is used to filter out nested selects with FETCH/OFFSET
@@ -352,6 +348,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
 
             case OTHER:
             case OTHER_FUNCTION:
+            case EXTRACT:
+            case POSITION:
                 processOther(call);
                 break;
 

@@ -22,6 +22,8 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
@@ -34,6 +36,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -85,6 +88,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Math.abs;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -95,6 +99,21 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.IntStream.range;
 
 public final class Util {
+
+    public static final String JET_IS_DISABLED_MESSAGE = "The Jet engine is disabled.\n" +
+            "To enable the Jet engine on the members, please do one of the following:\n" +
+            "  - Change member config using Java API: config.getJetConfig().setEnabled(true);\n" +
+            "  - Change XML/YAML configuration property: Set hazelcast.jet.enabled to true\n" +
+            "  - Add system property: -Dhz.jet.enabled=true\n" +
+            "  - Add environment variable: HZ_JET_ENABLED=true";
+
+    public static final String JET_RESOURCE_UPLOAD_DISABLED_MESSAGE = "A job is trying to upload resources to the " +
+            "cluster, but this feature is disabled. Either remove the resources from the JobConfig object or enable " +
+            "resource upload on the members, using one of the following:\n" +
+            "  - Change member config using Java API: config.getJetConfig().setResourceUploadEnabled(true);\n" +
+            "  - Change XML/YAML configuration property: Set hazelcast.jet.resource-upload-enabled to true\n" +
+            "  - Add system property: -Dhz.jet.resource-upload-enabled=true\n" +
+            "  - Add environment variable: HZ_JET_RESOURCEUPLOADENABLED=true";
 
     private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Pattern TRAILING_NUMBER_PATTERN = Pattern.compile("(.*)-([0-9]+)");
@@ -490,11 +509,32 @@ public final class Util {
     public static void doWithClassLoader(ClassLoader cl, RunnableEx action) {
         Thread currentThread = Thread.currentThread();
         ClassLoader previousCl = currentThread.getContextClassLoader();
-        currentThread.setContextClassLoader(cl);
+        if (cl != null) {
+            currentThread.setContextClassLoader(cl);
+        }
         try {
             action.run();
         } finally {
-            currentThread.setContextClassLoader(previousCl);
+            if (cl != null) {
+                currentThread.setContextClassLoader(previousCl);
+            }
+        }
+    }
+
+    public static <T> T doWithClassLoader(ClassLoader cl, Callable<T> callable) {
+        Thread currentThread = Thread.currentThread();
+        ClassLoader previousCl = currentThread.getContextClassLoader();
+        if (cl != null) {
+            currentThread.setContextClassLoader(cl);
+        }
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw rethrow(e);
+        } finally {
+            if (cl != null) {
+                currentThread.setContextClassLoader(previousCl);
+            }
         }
     }
 
@@ -720,5 +760,16 @@ public final class Util {
     public static <T> Predicate<T> distinctBy(Function<? super T, ?> keyFn) {
         Set<Object> seen = new HashSet<>();
         return t -> seen.add(keyFn.apply(t));
+    }
+
+    public static MembersView getMembersView(NodeEngine nodeEngine) {
+        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        return clusterService.getMembershipManager().getMembersView();
+    }
+
+    public static void checkJetIsEnabled(NodeEngine nodeEngine) {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
+        }
     }
 }

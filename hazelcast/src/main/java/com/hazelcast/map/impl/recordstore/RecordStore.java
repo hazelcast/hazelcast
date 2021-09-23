@@ -282,7 +282,10 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Puts a data key and a record value to record-store.
-     * Used in replication operations.
+     * Used in replication operations: does not attempt
+     * loading from map store and is not intercepted by
+     * {@code MapInterceptor}.
+     *
      *
      * @param dataKey                the key to be put
      * @param record                 the value for record store.
@@ -293,6 +296,33 @@ public interface RecordStore<R extends Record> {
      */
     R putReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
                           boolean indexesMustBePopulated, long now);
+
+    /**
+     * Similarly to {@link #putReplicatedRecord(Data, Record, ExpiryMetadata, boolean, long)},
+     * this method is used in replication operations.
+     * If an existing record is located for the same key
+     * (as defined in {@link Storage#getIfSameKey(Object)}),
+     * then that record is updated instead of creating a
+     * new one.
+     *
+     * @param dataKey                   the key to put or update
+     * @param record                    the value for record store
+     * @param expiryMetadata            metadata relevant for expiry system
+     * @param indexesMustBePopulated    indicates if indexes must be updated
+     * @param now                       current time millis
+     * @return                          record after put or update
+     */
+    default R putOrUpdateReplicatedRecord(Data dataKey, R record, ExpiryMetadata expiryMetadata,
+                          boolean indexesMustBePopulated, long now) {
+        return putReplicatedRecord(dataKey, record, expiryMetadata, indexesMustBePopulated, now);
+    }
+
+    /**
+     * Remove record for given key. Does not load from MapLoader,
+     * does not intercept.
+     * @param dataKey   key to remove
+     */
+    void removeReplicatedRecord(Data dataKey);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 

@@ -27,18 +27,25 @@ import java.nio.ByteOrder;
 final class UnsafeInputOutputFactory implements InputOutputFactory {
 
     @Override
-    public BufferObjectDataInput createInput(Data data, InternalSerializationService service) {
-        return new UnsafeObjectDataInput(data.toByteArray(), HeapData.DATA_OFFSET, service);
+    public BufferObjectDataInput createInput(Data data,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new UnsafeObjectDataInput(data.toByteArray(), HeapData.DATA_OFFSET, service, isCompatibility);
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, InternalSerializationService service) {
-        return new UnsafeObjectDataInput(buffer, service);
+    public BufferObjectDataInput createInput(byte[] buffer,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new UnsafeObjectDataInput(buffer, service, isCompatibility);
     }
 
     @Override
-    public BufferObjectDataInput createInput(byte[] buffer, int offset, InternalSerializationService service) {
-        return new UnsafeObjectDataInput(buffer, offset, service);
+    public BufferObjectDataInput createInput(byte[] buffer,
+                                             int offset,
+                                             InternalSerializationService service,
+                                             boolean isCompatibility) {
+        return new UnsafeObjectDataInput(buffer, offset, service, isCompatibility);
     }
 
     @Override

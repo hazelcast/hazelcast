@@ -41,6 +41,7 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PersistenceConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -84,6 +85,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger.merge;
 import static com.hazelcast.internal.dynamicconfig.AggregatingMap.aggregate;
 import static com.hazelcast.internal.dynamicconfig.search.ConfigSearch.supplierFor;
 import static com.hazelcast.spi.properties.ClusterProperty.SEARCH_DYNAMIC_CONFIG_FIRST;
@@ -122,6 +124,8 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public DynamicConfigurationAwareConfig(Config staticConfig, HazelcastProperties properties) {
         assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
+        merge(staticConfig.getHotRestartPersistenceConfig(), staticConfig.getPersistenceConfig());
+
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
         this.isStaticFirst = !properties.getBoolean(SEARCH_DYNAMIC_CONFIG_FIRST);
@@ -156,7 +160,7 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
-    public Config setProperty(String name, String value) {
+    public Config setProperty(@Nonnull String name, @Nonnull String value) {
         return staticConfig.setProperty(name, value);
     }
 
@@ -959,6 +963,16 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public PersistenceConfig getPersistenceConfig() {
+        return staticConfig.getPersistenceConfig();
+    }
+
+    @Override
+    public Config setPersistenceConfig(PersistenceConfig prConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

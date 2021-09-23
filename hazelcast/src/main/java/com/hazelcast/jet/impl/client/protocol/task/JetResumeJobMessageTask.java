@@ -17,12 +17,15 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.task.BlockingMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.client.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
+
+import javax.annotation.Nullable;
 
 public class JetResumeJobMessageTask
         extends AbstractJetMessageTask<Long, Void> implements BlockingMessageTask {
@@ -44,5 +47,11 @@ public class JetResumeJobMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[]{};
+    }
+
+    @Nullable
+    @Override
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_RESTART};
     }
 }

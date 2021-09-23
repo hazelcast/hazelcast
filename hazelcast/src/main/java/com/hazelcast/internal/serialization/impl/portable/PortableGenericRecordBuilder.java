@@ -69,7 +69,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
                 }
             }
         }
-        return new PortableGenericRecord(classDefinition, objects);
+        return new DeserializedPortableGenericRecord(classDefinition, objects);
     }
 
     @Nonnull

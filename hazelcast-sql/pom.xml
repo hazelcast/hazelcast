@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2019, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright 2021 Hazelcast Inc.
   ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ Licensed under the Hazelcast Community License (the "License");
   ~ you may not use this file except in compliance with the License.
   ~ You may obtain a copy of the License at
   ~
-  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ http://hazelcast.com/hazelcast-community-license
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
@@ -28,7 +28,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>5.0-SNAPSHOT</version>
+        <version>5.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -38,7 +38,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.23.0</calcite.version>
+        <calcite.version>1.27.0</calcite.version>
         <confluent.version>4.1.4</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
     </properties>
@@ -138,8 +138,8 @@
                 <version>2.4</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
                         <id>javacc</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>javacc</goal>
                         </goals>
@@ -208,7 +208,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>false</shadeTestJar>
+                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <!--
                                 Including instead of excluding to workaround maven-shade-plugin issues:
@@ -227,6 +227,7 @@
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
+                                    <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
                                 </includes>
                             </artifactSet>
@@ -250,16 +251,12 @@
                                     </excludes>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.google</pattern>
-                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>com.jayway</pattern>
                                     <shadedPattern>${relocation.root}.com.jayway</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.calcite</pattern>
-                                    <shadedPattern>${relocation.root}.org.apache.calcite</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons</pattern>
@@ -268,6 +265,14 @@
                                 <relocation>
                                     <pattern>org.codehaus</pattern>
                                     <shadedPattern>${relocation.root}.org.codehaus</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>${relocation.root}.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.esri.core.geometry</pattern>
+                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.slf4</pattern>
@@ -299,6 +304,8 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
+                                        <!-- TODO: Remove when Calcite is released with the bug fixed -->
+                                        <exclude>org/apache/calcite/linq4j/tree/ConstantExpression.java</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -312,11 +319,9 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <artifact>com.jayway.jsonpath:json-path</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
-                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
-                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
@@ -326,13 +331,21 @@
                                     </excludes>
                                 </filter>
                                 <filter>
+                                    <artifact>org.codehaus.janino:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/MANIFEST.MF</exclude>
+                                        <!-- Replace with the one from src/main/resources for correct reflection in runtime. -->
+                                        <exclude>org.codehaus.commons.compiler.properties</exclude>
+                                    </excludes>
+                                </filter>
+                                <filter>
                                     <artifact>com.google.guava:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.jayway.jsonpath:json-path</artifact>
+                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -372,12 +385,12 @@
             <version>${calcite.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>commons-io</groupId>
-                    <artifactId>commons-io</artifactId>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.esri.geometry</groupId>
-                    <artifactId>esri-geometry-api</artifactId>
+                    <groupId>commons-io</groupId>
+                    <artifactId>commons-io</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>

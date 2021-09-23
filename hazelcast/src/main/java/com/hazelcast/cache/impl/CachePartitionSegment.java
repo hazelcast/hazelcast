@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Predicate;
 
 /**
  * <p>
@@ -187,13 +188,19 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
     }
 
     public Collection<ServiceNamespace> getAllNamespaces(int replicaIndex) {
+        return getNamespaces(ignored -> true, replicaIndex);
+    }
+
+    public Collection<ServiceNamespace> getNamespaces(Predicate<CacheConfig> predicate, int replicaIndex) {
         if (recordStores.isEmpty()) {
             return Collections.emptyList();
         }
 
         Collection<ServiceNamespace> namespaces = Collections.EMPTY_LIST;
         for (ICacheRecordStore recordStore : recordStores.values()) {
-            if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex) {
+            CacheConfig cacheConfig = recordStore.getConfig();
+            if (recordStore.getConfig().getTotalBackupCount() >= replicaIndex
+                && predicate.test(cacheConfig)) {
                 if (namespaces == Collections.EMPTY_LIST) {
                     namespaces = new LinkedList<>();
                 }

@@ -23,6 +23,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.nio.Bits;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.SqlColumnType;
 
 import java.time.LocalDate;
@@ -79,6 +80,10 @@ public final class FixedSizeTypesCodec {
 
     public static void encodeInt(byte[] buffer, int pos, ProtocolType protocolType) {
         encodeInt(buffer, pos, protocolType.getId());
+    }
+
+    public static void encodeInt(byte[] buffer, int pos, FieldKind fieldKind) {
+        encodeInt(buffer, pos, fieldKind.getId());
     }
 
     public static void encodeInt(byte[] buffer, int pos, TimeUnit timeUnit) {

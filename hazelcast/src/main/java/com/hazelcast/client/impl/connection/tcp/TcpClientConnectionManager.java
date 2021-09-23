@@ -69,6 +69,7 @@ import com.hazelcast.security.PasswordCredentials;
 import com.hazelcast.security.TokenCredentials;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.sql.impl.QueryUtils;
 
 import javax.annotation.Nonnull;
 import java.io.EOFException;
@@ -123,6 +124,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final EndpointQualifier CLIENT_PUBLIC_ENDPOINT_QUALIFIER =
             EndpointQualifier.resolve(ProtocolType.CLIENT, "public");
+    private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
+
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
     private final AtomicBoolean isAlive = new AtomicBoolean();
@@ -181,6 +184,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
          * Invocations are allowed in this state.
          */
         INITIALIZED_ON_CLUSTER,
+
         /**
          * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
          * any connection happened without cluster switch intent are no longer allowed and will be closed.
@@ -524,6 +528,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    @Override
     public void checkInvocationAllowed() throws IOException {
         ClientState state = this.clientState;
         if (state == ClientState.INITIALIZED_ON_CLUSTER && activeConnections.size() > 0) {
@@ -811,29 +820,20 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
     }
 
     @Override
-    public ClientConnection getRandomConnection(boolean dataMember) {
+    public ClientConnection getRandomConnection() {
         // Try getting the connection from the load balancer, if smart routing is enabled
         if (isSmartRoutingEnabled) {
-            ClientConnection connection = getConnectionFromLoadBalancer(dataMember);
+            Member member = loadBalancer.next();
 
+            // Failed to get a member
+            ClientConnection connection = member != null ? activeConnections.get(member.getUuid()) : null;
             if (connection != null) {
                 return connection;
             }
         }
 
-        // Otherwise iterate over connections and return the very first valid
-
+        // Otherwise iterate over connections and return the first one
         for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
-            if (dataMember) {
-                UUID memberId = connectionEntry.getKey();
-
-                Member member = client.getClientClusterService().getMember(memberId);
-
-                if (member == null || member.isLiteMember()) {
-                    continue;
-                }
-            }
-
             return connectionEntry.getValue();
         }
 
@@ -841,25 +841,41 @@ public class TcpClientConnectionManager implements ClientConnectionManager {
         return null;
     }
 
-    private ClientConnection getConnectionFromLoadBalancer(boolean dataMember) {
-        Member member;
-
-        if (dataMember) {
-            if (loadBalancer.canGetNextDataMember()) {
-                member = loadBalancer.nextDataMember();
-            } else {
-                member = null;
+    @Override
+    public ClientConnection getConnectionForSql() {
+        if (isSmartRoutingEnabled) {
+            // There might be a race - the chosen member might be just connected or disconnected - try a
+            // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
+            // we might be lucky...
+            for (int i = 0; i < SQL_CONNECTION_RANDOM_ATTEMPTS; i++) {
+                Member member = QueryUtils.memberOfLargerSameVersionGroup(
+                        client.getClientClusterService().getMemberList(), null);
+                if (member == null) {
+                    break;
+                }
+                ClientConnection connection = activeConnections.get(member.getUuid());
+                if (connection != null) {
+                    return connection;
+                }
             }
-        } else {
-            member = loadBalancer.next();
         }
 
-        // Failed to get member
-        if (member == null) {
-            return null;
+        // Otherwise iterate over connections and return the first one that's not to a lite member
+        ClientConnection firstConnection = null;
+        for (Map.Entry<UUID, TcpClientConnection> connectionEntry : activeConnections.entrySet()) {
+            if (firstConnection == null) {
+                firstConnection = connectionEntry.getValue();
+            }
+            UUID memberId = connectionEntry.getKey();
+            Member member = client.getClientClusterService().getMember(memberId);
+            if (member == null || member.isLiteMember()) {
+                continue;
+            }
+            return connectionEntry.getValue();
         }
 
-        return activeConnections.get(member.getUuid());
+        // Failed to get a connection to a data member
+        return firstConnection;
     }
 
     private ClientAuthenticationCodec.ResponseParameters authenticateOnCluster(TcpClientConnection connection) {

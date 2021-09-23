@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -33,6 +34,7 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
+import com.hazelcast.sql.impl.LazyTarget;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -51,32 +53,26 @@ import static com.hazelcast.internal.util.ExceptionUtil.withTryCatch;
  */
 public class SqlClientService implements SqlService {
 
-    private static final int SERVICE_ID_MASK = 0x00FF0000;
-    private static final int SERVICE_ID_SHIFT = 16;
-
-    /** ID of the SQL beta service. Should match the ID declared in Sql.yaml */
-    private static final int SQL_SERVICE_ID = 33;
-
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
+
+    /**
+     * The field to indicate whether a query should update phone home statistics or not.
+     * For example, the queries issued from the MC client will not update the statistics
+     * because they cause a significant distortion.
+     */
+    private final boolean skipUpdateStatistics;
 
     public SqlClientService(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(getClass());
+        this.skipUpdateStatistics = skipUpdateStatistics();
     }
 
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
-
-        if (connection == null) {
-            throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client is not currently connected to the cluster."
-            ));
-        }
-
+        ClientConnection connection = getQueryConnection();
         QueryId id = QueryId.create(connection.getRemoteUuid());
 
         try {
@@ -94,8 +90,9 @@ public class SqlClientService implements SqlService {
                 statement.getTimeoutMillis(),
                 statement.getCursorBufferSize(),
                 statement.getSchema(),
-                SqlClientUtils.expectedResultTypeToByte(statement.getExpectedResultType()),
-                id
+                statement.getExpectedResultType().getId(),
+                id,
+                skipUpdateStatistics
             );
 
             SqlClientResult res = new SqlClientResult(
@@ -114,6 +111,11 @@ public class SqlClientService implements SqlService {
         } catch (Exception e) {
             throw rethrow(e, connection);
         }
+    }
+
+    private boolean skipUpdateStatistics() {
+        String connectionType = client.getConnectionManager().getConnectionType();
+        return connectionType.equals(ConnectionType.MC_JAVA_CLIENT);
     }
 
     private void handleExecuteResponse(
@@ -192,20 +194,19 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    /**
-     * For testing only.
-     */
-    public ClientConnection getRandomConnection() {
-        ClientConnection connection = client.getConnectionManager().getRandomConnection(true);
+    // public for testing only
+    public ClientConnection getQueryConnection() {
+        try {
+            ClientConnection connection = client.getConnectionManager().getConnectionForSql();
 
-        if (connection == null) {
-            throw rethrow(QueryException.error(
-                SqlErrorCode.CONNECTION_PROBLEM,
-                "Client is not connected to topology"
-            ));
+            if (connection == null) {
+                throw rethrow(QueryException.error(SqlErrorCode.CONNECTION_PROBLEM, "Client is not connected"));
+            }
+
+            return connection;
+        } catch (Exception e) {
+            throw rethrow(e);
         }
-
-        return connection;
     }
 
     /**
@@ -233,9 +234,15 @@ public class SqlClientService implements SqlService {
         try {
             return getSerializationService().toObject(value);
         } catch (Exception e) {
-            throw rethrow(
-                QueryException.error("Failed to deserialize query result value: " + e.getMessage())
-            );
+            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
+        }
+    }
+
+    Object deserializeRowValue(LazyTarget value) {
+        try {
+            return value.deserialize(getSerializationService());
+        } catch (Exception e) {
+            throw rethrow(QueryException.error("Failed to deserialize query result value: " + e.getMessage()));
         }
     }
 
@@ -261,7 +268,13 @@ public class SqlClientService implements SqlService {
 
     private static HazelcastSqlException handleResponseError(SqlError error) {
         if (error != null) {
-            return new HazelcastSqlException(error.getOriginatingMemberId(), error.getCode(), error.getMessage(), null);
+            return new HazelcastSqlException(
+                    error.getOriginatingMemberId(),
+                    error.getCode(),
+                    error.getMessage(),
+                    null,
+                    error.getSuggestion()
+            );
         } else {
             return null;
         }
@@ -285,11 +298,5 @@ public class SqlClientService implements SqlService {
         }
 
         return QueryUtils.toPublicException(cause, getClientId());
-    }
-
-    public static boolean isSqlMessage(int messageType) {
-        int serviceId = (messageType & SERVICE_ID_MASK) >> SERVICE_ID_SHIFT;
-
-        return serviceId == SQL_SERVICE_ID;
     }
 }

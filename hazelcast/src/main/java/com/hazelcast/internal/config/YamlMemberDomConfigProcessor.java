@@ -21,6 +21,7 @@ import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -75,13 +76,12 @@ import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.SemaphoreConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
+import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlNode;
-import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import com.hazelcast.query.impl.IndexUtils;
 import org.w3c.dom.NamedNodeMap;
@@ -89,6 +89,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -98,19 +100,15 @@ import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
 import static com.hazelcast.internal.config.DomConfigHelper.getBooleanValue;
 import static com.hazelcast.internal.config.DomConfigHelper.getIntegerValue;
-import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlMapping;
 import static com.hazelcast.internal.config.yaml.W3cDomUtil.getWrappedYamlSequence;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.internal.util.StringUtil.upperCaseInternal;
 import static com.hazelcast.internal.yaml.YamlUtil.asScalar;
 import static java.lang.Integer.parseInt;
 
-@SuppressWarnings({"checkstyle:methodcount",
-                   "checkstyle:cyclomaticcomplexity",
-                   "checkstyle:classfanoutcomplexity",
-                   "checkstyle:classdataabstractioncoupling"})
+@SuppressWarnings({ "checkstyle:methodcount", "checkstyle:cyclomaticcomplexity", "checkstyle:classfanoutcomplexity",
+        "checkstyle:classdataabstractioncoupling" })
 public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
-
 
     public YamlMemberDomConfigProcessor(boolean domLevel3, Config config) {
         super(domLevel3, config);
@@ -126,7 +124,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         cfg.addSecurityInterceptorConfig(new SecurityInterceptorConfig(className));
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength"})
+    @SuppressWarnings({ "checkstyle:npathcomplexity", "checkstyle:methodlength" })
     protected void handleSecurityPermissions(Node node) {
         String onJoinOp = getAttribute(node, "on-join-operation");
         if (onJoinOp != null) {
@@ -146,8 +144,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 throw new InvalidConfigurationException("Security permission type is not valid " + nodeName);
             }
 
-            if (PermissionConfig.PermissionType.CONFIG == type
-                    || PermissionConfig.PermissionType.ALL == type
+            if (PermissionConfig.PermissionType.CONFIG == type || PermissionConfig.PermissionType.ALL == type
                     || PermissionConfig.PermissionType.TRANSACTION == type) {
                 handleSecurityPermission(child, type);
             } else {
@@ -245,10 +242,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleQueue(Node node) {
         for (Node queueNode : childElements(node)) {
-            QueueConfig queueConfig = ConfigUtils.getByNameOrNew(
-                                config.getQueueConfigs(),
-                                queueNode.getNodeName(),
-                                QueueConfig.class);
+            QueueConfig queueConfig = ConfigUtils.getByNameOrNew(config.getQueueConfigs(), queueNode.getNodeName(),
+                    QueueConfig.class);
             handleQueueNode(queueNode, queueConfig);
         }
     }
@@ -256,10 +251,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleList(Node node) {
         for (Node listNode : childElements(node)) {
-            ListConfig listConfig = ConfigUtils.getByNameOrNew(
-                                config.getListConfigs(),
-                                listNode.getNodeName(),
-                                ListConfig.class);
+            ListConfig listConfig = ConfigUtils.getByNameOrNew(config.getListConfigs(), listNode.getNodeName(),
+                    ListConfig.class);
             handleListNode(listNode, listConfig);
         }
     }
@@ -267,10 +260,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleSet(Node node) {
         for (Node setNode : childElements(node)) {
-            SetConfig setConfig = ConfigUtils.getByNameOrNew(
-                                config.getSetConfigs(),
-                                setNode.getNodeName(),
-                                SetConfig.class);
+            SetConfig setConfig = ConfigUtils.getByNameOrNew(config.getSetConfigs(), setNode.getNodeName(), SetConfig.class);
             handleSetNode(setNode, setConfig);
         }
     }
@@ -297,10 +287,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleRingbuffer(Node node) {
         for (Node rbNode : childElements(node)) {
             handleRingBufferNode(rbNode,
-                    ConfigUtils.getByNameOrNew(
-                            config.getRingbufferConfigs(),
-                            rbNode.getNodeName(),
-                            RingbufferConfig.class));
+                    ConfigUtils.getByNameOrNew(config.getRingbufferConfigs(), rbNode.getNodeName(), RingbufferConfig.class));
         }
     }
 
@@ -308,10 +295,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleMap(Node parentNode) throws Exception {
         for (Node mapNode : childElements(parentNode)) {
             String name = mapNode.getNodeName();
-            MapConfig mapConfig = ConfigUtils.getByNameOrNew(
-                                config.getMapConfigs(),
-                                name,
-                                MapConfig.class);
+            MapConfig mapConfig = ConfigUtils.getByNameOrNew(config.getMapConfigs(), name, MapConfig.class);
             handleMapNode(mapNode, mapConfig);
         }
     }
@@ -320,10 +304,7 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleCache(Node parentNode) throws Exception {
         for (Node cacheNode : childElements(parentNode)) {
             handleCacheNode(cacheNode,
-                            ConfigUtils.getByNameOrNew(
-                                config.getCacheConfigs(),
-                                cacheNode.getNodeName(),
-                                CacheSimpleConfig.class));
+                    ConfigUtils.getByNameOrNew(config.getCacheConfigs(), cacheNode.getNodeName(), CacheSimpleConfig.class));
         }
     }
 
@@ -331,10 +312,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     protected void handleSplitBrainProtection(Node node) {
         for (Node splitBrainProtectionNode : childElements(node)) {
             String name = splitBrainProtectionNode.getNodeName();
-            SplitBrainProtectionConfig splitBrainProtectionConfig = ConfigUtils.getByNameOrNew(
-                                config.getSplitBrainProtectionConfigs(),
-                                name,
-                                SplitBrainProtectionConfig.class);
+            SplitBrainProtectionConfig splitBrainProtectionConfig = ConfigUtils
+                    .getByNameOrNew(config.getSplitBrainProtectionConfigs(), name, SplitBrainProtectionConfig.class);
             handleSplitBrainProtectionNode(splitBrainProtectionNode, splitBrainProtectionConfig, name);
         }
     }
@@ -342,10 +321,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleFlakeIdGenerator(Node node) {
         for (Node genNode : childElements(node)) {
-            FlakeIdGeneratorConfig genConfig = ConfigUtils.getByNameOrNew(
-                                config.getFlakeIdGeneratorConfigs(),
-                                genNode.getNodeName(),
-                                FlakeIdGeneratorConfig.class);
+            FlakeIdGeneratorConfig genConfig = ConfigUtils.getByNameOrNew(config.getFlakeIdGeneratorConfigs(),
+                    genNode.getNodeName(), FlakeIdGeneratorConfig.class);
 
             handleFlakeIdGeneratorNode(genNode, genConfig);
         }
@@ -354,10 +331,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            ExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
-                                config.getExecutorConfigs(),
-                                executorNode.getNodeName(),
-                                ExecutorConfig.class);
+            ExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(config.getExecutorConfigs(), executorNode.getNodeName(),
+                    ExecutorConfig.class);
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -365,10 +340,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleDurableExecutor(Node node) throws Exception {
         for (Node executorNode : childElements(node)) {
-            DurableExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
-                    config.getDurableExecutorConfigs(),
-                    executorNode.getNodeName(),
-                    DurableExecutorConfig.class);
+            DurableExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(config.getDurableExecutorConfigs(),
+                    executorNode.getNodeName(), DurableExecutorConfig.class);
             handleViaReflection(executorNode, config, executorConfig);
         }
     }
@@ -376,10 +349,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleScheduledExecutor(Node node) {
         for (Node executorNode : childElements(node)) {
-            ScheduledExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(
-                                config.getScheduledExecutorConfigs(),
-                                executorNode.getNodeName(),
-                                ScheduledExecutorConfig.class);
+            ScheduledExecutorConfig executorConfig = ConfigUtils.getByNameOrNew(config.getScheduledExecutorConfigs(),
+                    executorNode.getNodeName(), ScheduledExecutorConfig.class);
             handleScheduledExecutorNode(executorNode, executorConfig);
         }
     }
@@ -387,10 +358,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleCardinalityEstimator(Node node) {
         for (Node estimatorNode : childElements(node)) {
-            CardinalityEstimatorConfig estimatorConfig = ConfigUtils.getByNameOrNew(
-                    config.getCardinalityEstimatorConfigs(),
-                    estimatorNode.getNodeName(),
-                    CardinalityEstimatorConfig.class);
+            CardinalityEstimatorConfig estimatorConfig = ConfigUtils.getByNameOrNew(config.getCardinalityEstimatorConfigs(),
+                    estimatorNode.getNodeName(), CardinalityEstimatorConfig.class);
 
             handleCardinalityEstimatorNode(estimatorNode, estimatorConfig);
         }
@@ -399,10 +368,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handlePNCounter(Node node) throws Exception {
         for (Node counterNode : childElements(node)) {
-            PNCounterConfig counterConfig = ConfigUtils.getByNameOrNew(
-                                config.getPNCounterConfigs(),
-                                counterNode.getNodeName(),
-                                PNCounterConfig.class);
+            PNCounterConfig counterConfig = ConfigUtils.getByNameOrNew(config.getPNCounterConfigs(), counterNode.getNodeName(),
+                    PNCounterConfig.class);
 
             handleViaReflection(counterNode, config, counterConfig);
         }
@@ -411,10 +378,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleMultiMap(Node node) {
         for (Node multiMapNode : childElements(node)) {
-            MultiMapConfig multiMapConfig = ConfigUtils.getByNameOrNew(
-                                config.getMultiMapConfigs(),
-                                multiMapNode.getNodeName(),
-                                MultiMapConfig.class);
+            MultiMapConfig multiMapConfig = ConfigUtils.getByNameOrNew(config.getMultiMapConfigs(), multiMapNode.getNodeName(),
+                    MultiMapConfig.class);
             handleMultiMapNode(multiMapNode, multiMapConfig);
         }
     }
@@ -422,10 +387,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleReplicatedMap(Node node) {
         for (Node replicatedMapNode : childElements(node)) {
-            ReplicatedMapConfig replicatedMapConfig = ConfigUtils.getByNameOrNew(
-                                config.getReplicatedMapConfigs(),
-                                replicatedMapNode.getNodeName(),
-                                ReplicatedMapConfig.class);
+            ReplicatedMapConfig replicatedMapConfig = ConfigUtils.getByNameOrNew(config.getReplicatedMapConfigs(),
+                    replicatedMapNode.getNodeName(), ReplicatedMapConfig.class);
             handleReplicatedMapNode(replicatedMapNode, replicatedMapConfig);
         }
     }
@@ -556,10 +519,8 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleItemListeners(Node n, Consumer<ItemListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
-            boolean incValue = getBooleanValue(getTextContent(
-              getNamedItemNode(listenerNode, "include-value")));
-            String listenerClass = getTextContent(
-              getNamedItemNode(listenerNode, "class-name"));
+            boolean incValue = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "include-value")));
+            String listenerClass = getTextContent(getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.accept(new ItemListenerConfig(listenerClass, incValue));
         }
     }
@@ -567,12 +528,9 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
     @Override
     protected void handleEntryListeners(Node n, Consumer<EntryListenerConfig> configAddFunction) {
         for (Node listenerNode : childElements(n)) {
-            boolean incValue = getBooleanValue(getTextContent(
-              getNamedItemNode(listenerNode, "include-value")));
-            boolean local = getBooleanValue(getTextContent(
-              getNamedItemNode(listenerNode, "local")));
-            String listenerClass = getTextContent(
-              getNamedItemNode(listenerNode, "class-name"));
+            boolean incValue = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "include-value")));
+            boolean local = getBooleanValue(getTextContent(getNamedItemNode(listenerNode, "local")));
+            String listenerClass = getTextContent(getNamedItemNode(listenerNode, "class-name"));
             configAddFunction.accept(new EntryListenerConfig(listenerClass, local, incValue));
         }
     }
@@ -595,23 +553,19 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
 
     @Override
     protected void fillProperties(Node node, Map<String, Comparable> properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 
     @Override
     protected void fillProperties(Node node, Properties properties) {
-        YamlMapping propertiesMapping = getWrappedYamlMapping(node);
-        for (YamlNode propNode : propertiesMapping.children()) {
-            YamlScalar propScalar = asScalar(propNode);
-            String key = propScalar.nodeName();
-            String value = propScalar.nodeValue().toString();
-            properties.put(key, value);
+        NodeList childNodes = node.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node childNode = childNodes.item(i);
+            properties.put(childNode.getNodeName(), childNode.getNodeValue());
         }
     }
 
@@ -666,17 +620,43 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
                 fillGlobalSerializer(child, serializationConfig);
             } else if (matches("java-serialization-filter", name)) {
                 fillJavaSerializationFilter(child, serializationConfig);
+            } else if (matches("compact-serialization", name)) {
+                handleCompactSerialization(child, serializationConfig);
             }
         }
         return serializationConfig;
+    }
+
+    @Override
+    protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
+        CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("enabled", name)) {
+                boolean enabled = getBooleanValue(getTextContent(child));
+                compactSerializationConfig.setEnabled(enabled);
+            } else if (matches("registered-classes", name)) {
+                fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    @Override
+    protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String className = getAttribute(child, "class");
+            String typeName = getAttribute(child, "type-name");
+            String serializerClassName = getAttribute(child, "serializer");
+            registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+        }
     }
 
     private void fillGlobalSerializer(Node child, SerializationConfig serializationConfig) {
         GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
         String attrClassName = getAttribute(child, "class-name");
         String attrOverrideJavaSerialization = getAttribute(child, "override-java-serialization");
-        boolean overrideJavaSerialization =
-                attrOverrideJavaSerialization != null && getBooleanValue(attrOverrideJavaSerialization.trim());
+        boolean overrideJavaSerialization = attrOverrideJavaSerialization != null
+                && getBooleanValue(attrOverrideJavaSerialization.trim());
         globalSerializerConfig.setClassName(attrClassName);
         globalSerializerConfig.setOverrideJavaSerialization(overrideJavaSerialization);
         serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
@@ -700,12 +680,10 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             final Node factoryIdNode = getNamedItemNode(child, "factory-id");
             final Node classNameNode = getNamedItemNode(child, "class-name");
             if (factoryIdNode == null) {
-                throw new IllegalArgumentException(
-                        "'factory-id' attribute of 'data-serializable-factory' is required!");
+                throw new IllegalArgumentException("'factory-id' attribute of 'data-serializable-factory' is required!");
             }
             if (classNameNode == null) {
-                throw new IllegalArgumentException(
-                        "'class-name' attribute of 'data-serializable-factory' is required!");
+                throw new IllegalArgumentException("'class-name' attribute of 'data-serializable-factory' is required!");
             }
             int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
             String className = getTextContent(classNameNode);
@@ -907,6 +885,43 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
         TokenEncoding encoding = TokenEncoding.getTokenEncoding(getAttribute(node, "encoding"));
         TokenIdentityConfig tic = new TokenIdentityConfig(encoding, getAttribute(node, "value"));
         realmConfig.setTokenIdentityConfig(tic);
+    }
+
+    @Override
+    protected void handleSimpleAuthentication(RealmConfig realmConfig, Node node) {
+        SimpleAuthenticationConfig simpleCfg = new SimpleAuthenticationConfig();
+        fillClusterLoginConfig(simpleCfg, node);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("users", nodeName)) {
+                addSimpleUsers(simpleCfg, child);
+            } else if (matches("role-separator", nodeName)) {
+                simpleCfg.setRoleSeparator(getTextContent(child));
+            }
+        }
+        realmConfig.setSimpleAuthenticationConfig(simpleCfg);
+    }
+
+    protected void addSimpleUsers(SimpleAuthenticationConfig simpleCfg, Node node) {
+        for (Node child : childElements(node)) {
+            simpleCfg.addUser(
+                    getAttribute(child, "username"),
+                    getAttribute(child, "password"),
+                    getSimpleUserRoles(child));
+        }
+    }
+
+    private String[] getSimpleUserRoles(Node node) {
+        List<String> roles = new ArrayList<>();
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if (matches("roles", nodeName)) {
+                for (Node roleNode : childElements(child)) {
+                    roles.add(getTextContent(roleNode));
+                }
+            }
+        }
+        return roles.toArray(new String[roles.size()]);
     }
 
     @Override

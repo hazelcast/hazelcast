@@ -18,9 +18,9 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.MappingField;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
@@ -36,7 +37,6 @@ import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 
@@ -105,16 +105,14 @@ public class KvMetadataResolvers {
             }
         }
 
-        List<MappingField> keyFields = findMetadataResolver(options, true)
+        Stream<MappingField> keyFields = findMetadataResolver(options, true)
                 .resolveAndValidateFields(true, userFields, options, ss)
-                .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY))
-                .collect(toList());
-        List<MappingField> valueFields = findMetadataResolver(options, false)
+                .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY));
+        Stream<MappingField> valueFields = findMetadataResolver(options, false)
                 .resolveAndValidateFields(false, userFields, options, ss)
-                .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE))
-                .collect(toList());
+                .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
-        Map<String, MappingField> fields = concat(keyFields.stream(), valueFields.stream())
+        Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
 
         if (fields.isEmpty()) {

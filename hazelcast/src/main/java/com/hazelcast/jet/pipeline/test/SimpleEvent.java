@@ -28,6 +28,8 @@ import java.util.Objects;
  */
 public class SimpleEvent implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     private final long timestamp;
     private final long sequence;
 

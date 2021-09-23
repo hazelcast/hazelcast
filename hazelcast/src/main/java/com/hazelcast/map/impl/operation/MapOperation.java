@@ -144,7 +144,7 @@ public abstract class MapOperation extends AbstractNamedOperation
         // Concrete classes can override this method.
     }
 
-    private void assertNativeMapOnPartitionThread() {
+    protected void assertNativeMapOnPartitionThread() {
         if (!ASSERTION_ENABLED) {
             return;
         }
@@ -268,9 +268,9 @@ public abstract class MapOperation extends AbstractNamedOperation
 
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(name)) {
                 invalidator.invalidateAllKeys(name, getCallerUuid());
+            } else {
+                invalidator.forceIncrementSequence(name, getPartitionId());
             }
-
-            invalidator.resetPartitionMetaData(name, getPartitionId());
         }
     }
 

@@ -27,10 +27,11 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
@@ -42,7 +43,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     @Override
     public void beforeRun() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         service.getLiveOperationRegistry().register(this);
     }
 
@@ -73,7 +74,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     private void doSendResponse(Object value) {
         try {
-            final JetServiceBackend service = getService();
+            final JetServiceBackend service = getJetServiceBackend();
             service.getLiveOperationRegistry().deregister(this);
         } finally {
             try {
@@ -96,6 +97,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
     }
 
     protected JetServiceBackend getJetServiceBackend() {
+        checkJetIsEnabled(getNodeEngine());
         assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
         return getService();
     }
@@ -106,7 +108,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isTopologyException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

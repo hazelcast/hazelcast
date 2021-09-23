@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a listener to be notified for the events fired on the underlying map on all nodes.
  */
-@Generated("acb097e93234ffc790edcae388654f89")
+@Generated("64b1a08cca7dede627b1b6f7bd808063")
 public final class ContinuousQueryAddListenerCodec {
     //hex: 0x160400
     public static final int REQUEST_MESSAGE_TYPE = 1442816;
@@ -124,6 +124,7 @@ public final class ContinuousQueryAddListenerCodec {
         QueryCacheEventDataCodec.encode(clientMessage, data);
         return clientMessage;
     }
+
     public static ClientMessage encodeQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[EVENT_QUERY_CACHE_BATCH_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

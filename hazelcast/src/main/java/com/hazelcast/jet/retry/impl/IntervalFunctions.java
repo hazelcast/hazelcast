@@ -67,6 +67,8 @@ public final class IntervalFunctions {
 
     private static class IntervalFunctionImpl implements IntervalFunction {
 
+        private static final long serialVersionUID = 1L;
+
         private final FunctionEx<Integer, Long> fn;
         private final String description;
 

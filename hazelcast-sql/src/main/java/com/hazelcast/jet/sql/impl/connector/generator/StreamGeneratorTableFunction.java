@@ -17,16 +17,15 @@
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
+import com.hazelcast.jet.sql.impl.schema.JetSqlOperandMetadata;
 import com.hazelcast.jet.sql.impl.schema.JetTableFunctionParameter;
-import com.hazelcast.jet.sql.impl.validate.operators.HazelcastOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTableStatistic;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastOperandTypeInference;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.sql.impl.expression.Expression;
-import org.apache.calcite.sql.SqlOperandCountRange;
-import org.apache.calcite.sql.type.SqlOperandCountRanges;
 
 import java.util.List;
 
@@ -39,22 +38,19 @@ public final class StreamGeneratorTableFunction extends JetSpecificTableFunction
     private static final String SCHEMA_NAME_STREAM = "stream";
     private static final String FUNCTION_NAME = "GENERATE_STREAM";
     private static final List<JetTableFunctionParameter> PARAMETERS = singletonList(
-            new JetTableFunctionParameter(0, "rate", INTEGER, TypedOperandChecker.INTEGER)
+            new JetTableFunctionParameter(0, "rate", INTEGER, false, TypedOperandChecker.INTEGER)
     );
 
     public StreamGeneratorTableFunction() {
         super(
                 FUNCTION_NAME,
-                PARAMETERS,
+                new JetSqlOperandMetadata(
+                        PARAMETERS,
+                        new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER))
+                ),
                 binding -> toTable0(emptyList()).getRowType(binding.getTypeFactory()),
-                new HazelcastOperandTypeInference(PARAMETERS, new ReplaceUnknownOperandTypeInference(INTEGER)),
                 StreamSqlConnector.INSTANCE
         );
-    }
-
-    @Override
-    public SqlOperandCountRange getOperandCountRange() {
-        return SqlOperandCountRanges.of(1);
     }
 
     @Override

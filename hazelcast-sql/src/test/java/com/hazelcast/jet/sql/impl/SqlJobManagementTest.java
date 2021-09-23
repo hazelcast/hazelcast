@@ -52,7 +52,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_streamingDmlWithoutCreateJob_then_fail() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         assertThatThrownBy(() -> sqlService.execute("SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))"))
                 .hasMessageContaining("You must use CREATE JOB statement for a streaming DML query");
@@ -102,7 +102,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void testJobSubmitAndCancel() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -113,7 +113,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_duplicateName_then_fails() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -124,7 +124,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_duplicateName_and_ifNotExists_then_secondSubmissionIgnored() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         assertEquals(1, countActiveJobs());
@@ -170,7 +170,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_jobOptions() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob " +
                 "OPTIONS (" +
@@ -199,7 +199,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
     @Test
     public void test_insert() {
         TestBatchSqlConnector.create(sqlService, "src", 3);
-        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+        createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v < 2");
         assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
@@ -212,9 +212,23 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_insertFromValues() {
+        createMapping("dest", Integer.class, String.class);
+
+        sqlService.execute("CREATE JOB testJob AS INSERT INTO dest SELECT * FROM (VALUES (1, '1'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1")
+        );
+    }
+
+    @Test
     public void test_sink() {
         TestBatchSqlConnector.create(sqlService, "src", 3);
-        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+        createMapping("dest", Integer.class, String.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v * 2, 'value-' || v FROM src WHERE v > 0");
         assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
@@ -227,9 +241,23 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_sinkFromValues() {
+        createMapping("dest", Integer.class, String.class);
+
+        sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT * FROM (VALUES (1, '1'), (2, '2'))");
+        assertJobStatusEventually(instance().getJet().getJob("testJob"), COMPLETED);
+
+        assertMapEventually(
+                "dest",
+                "SELECT * FROM dest",
+                createMap(1, "1", 2, "2")
+        );
+    }
+
+    @Test
     public void test_dynamicParameters() {
         TestBatchSqlConnector.create(sqlService, "src", 3);
-        sqlService.execute(javaSerializableMapDdl("dest", Integer.class, String.class));
+        createMapping("dest", Integer.class, String.class);
 
         sqlService.execute(
                 "CREATE JOB testJob AS SINK INTO dest SELECT v * ?, ? || v FROM src WHERE v > ?",
@@ -248,7 +276,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
         HazelcastInstance client = factory().newHazelcastClient();
         SqlService sqlService = client.getSql();
 
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         Job job = instance().getJet().getJob("testJob");
@@ -265,7 +293,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_suspendResume() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -317,7 +345,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_snapshotExportWithoutOrReplace_then_orReplaceRequired() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -334,7 +362,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_snapshotExport_then_failNotEnterprise() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -357,7 +385,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void when_dropJobWithSnapshot_then_failNotEnterprise() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
 
@@ -367,7 +395,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_createDropJobInQuickSuccession() {
-        sqlService.execute(javaSerializableMapDdl("dest", Long.class, Long.class));
+        createMapping("dest", Long.class, Long.class);
 
         for (int i = 0; i < 10; i++) {
             sqlService.execute("CREATE JOB testJob AS SINK INTO dest SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
@@ -377,7 +405,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     @Test
     public void test_planCache() {
-        sqlService.execute(javaSerializableMapDdl("target", Long.class, Long.class));
+        createMapping("target", Long.class, Long.class);
         sqlService.execute("CREATE JOB job AS SINK INTO target SELECT v, v FROM TABLE(GENERATE_STREAM(100))");
         assertThat(planCache(instance()).size()).isEqualTo(1);
 
@@ -387,7 +415,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
 
     private void createCompletedJob() {
         TestBatchSqlConnector.create(sqlService, "t", 1);
-        sqlService.execute(javaSerializableMapDdl("m", Integer.class, Integer.class));
+        createMapping("m", Integer.class, Integer.class);
         sqlService.execute("create job " + COMPLETED_JOB_NAME + " as sink into m select v, v from t");
         Job job = instance().getJet().getJob(COMPLETED_JOB_NAME);
         assertNotNull(job);

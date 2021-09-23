@@ -31,8 +31,8 @@ import com.hazelcast.internal.nio.ascii.MemcacheTextDecoder;
 import com.hazelcast.internal.nio.ascii.RestApiTextDecoder;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 import com.hazelcast.internal.nio.ascii.TextEncoder;
-import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.nio.ByteBuffer;
@@ -56,7 +56,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.SOCKET_RECEIVE_BUFFER
  * A {@link InboundHandler} that reads the protocol bytes
  * {@link Protocols} and based on the protocol it creates the
  * appropriate handlers.
- *
+ * <p>
  * The ProtocolDecoder doesn't forward to the dst; it replaces itself once the
  * protocol bytes are known. So that is why the Void type for dst.
  */
@@ -91,11 +91,11 @@ public class UnifiedProtocolDecoder
             String protocol = loadProtocol();
 
             serverContext.getAuditLogService()
-                .eventBuilder(AuditlogTypeIds.NETWORK_SELECT_PROTOCOL)
-                .message("Protocol bytes received for a connection")
-                .level(Level.DEBUG)
-                .addParameter("protocol", protocol)
-                .log();
+                    .eventBuilder(AuditlogTypeIds.NETWORK_SELECT_PROTOCOL)
+                    .message("Protocol bytes received for a connection")
+                    .level(Level.DEBUG)
+                    .addParameter("protocol", protocol)
+                    .log();
             if (CLUSTER.equals(protocol)) {
                 initChannelForCluster();
             } else if (CLIENT_BINARY.equals(protocol)) {
@@ -103,13 +103,26 @@ public class UnifiedProtocolDecoder
             } else if (RestApiTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 RestApiConfig restApiConfig = serverContext.getRestApiConfig();
                 if (!restApiConfig.isEnabledAndNotEmpty()) {
-                    throw new IllegalStateException("REST API is not enabled.");
+                    throw new IllegalStateException("REST API is not enabled. "
+                            + "To enable REST API, please do one of the following:\n"
+                            + "- Change member config using JAVA API: "
+                            + "config.getNetworkConfig().getRestApiConfig().setEnabled(true);\n"
+                            + "- Change XML/YAML configuration property: hazelcast.network.rest-api.enabled to true\n"
+                            + "- Add system property: -Dhz.network.rest-api.enabled=true\n"
+                            + "- Add environment variable property: HZ_NETWORK_RESTAPI_ENABLED=true");
                 }
                 initChannelForText(protocol, true);
             } else if (MemcacheTextDecoder.TEXT_PARSERS.isCommandPrefix(protocol)) {
                 MemcacheProtocolConfig memcacheProtocolConfig = serverContext.getMemcacheProtocolConfig();
-                if (! memcacheProtocolConfig.isEnabled()) {
-                    throw new IllegalStateException("Memcache text protocol is not enabled.");
+                if (!memcacheProtocolConfig.isEnabled()) {
+                    throw new IllegalStateException("Memcache text protocol is not enabled. "
+                            + "To enable Memcache, please do one of the following:\n"
+                            + "- Change member config using JAVA API: "
+                            + "config.getNetworkConfig().getMemcacheProtocolConfig().setEnabled(true);\n"
+                            + "- Change XML/YAML configuration property: "
+                            + "hazelcast.network.memcache-protocol.enabled to true\n"
+                            + "- Add system property: -Dhz.network.memcache-protocol.enabled=true\n"
+                            + "- Add environment variable property: HZ_NETWORK_MEMCACHEPROTOCOL_ENABLED=true");
                 }
                 // text doesn't have a protocol; anything that isn't cluster/client protocol will be interpreted as txt.
                 initChannelForText(protocol, false);
@@ -138,6 +151,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForCluster() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_SNDBUF, props.getInteger(SOCKET_RECEIVE_BUFFER_SIZE) * KILO_BYTE);
 
@@ -147,6 +161,7 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForClient() {
+        protocolEncoder.signalEncoderCanReplace();
         channel.options()
                 .setOption(SO_RCVBUF, clientRcvBuf())
                 // clients dont support direct buffers
@@ -157,6 +172,8 @@ public class UnifiedProtocolDecoder
     }
 
     private void initChannelForText(String protocol, boolean restApi) {
+        protocolEncoder.signalEncoderCanReplace();
+
         ChannelOptions config = channel.options();
 
         config.setOption(SO_RCVBUF, clientRcvBuf());

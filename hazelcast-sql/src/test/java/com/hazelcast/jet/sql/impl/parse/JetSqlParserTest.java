@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.jet.sql.impl.EventTimePolicySupplier.LagEventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.calcite.parser.JetSqlParser;
+import com.hazelcast.sql.impl.schema.EventTimePolicySupplier.LagEventTimePolicySupplier;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;

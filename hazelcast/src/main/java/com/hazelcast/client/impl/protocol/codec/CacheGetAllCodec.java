@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
  * of external resource.
  */
-@Generated("7a3f80675e02f3f57c139b81b9fd8f5f")
+@Generated("6185a409daf2c3077b7a503fc910b3f2")
 public final class CacheGetAllCodec {
     //hex: 0x130900
     public static final int REQUEST_MESSAGE_TYPE = 1247488;
@@ -116,5 +116,4 @@ public final class CacheGetAllCodec {
         iterator.next();
         return EntryListCodec.decode(iterator, DataCodec::decode, DataCodec::decode);
     }
-
 }

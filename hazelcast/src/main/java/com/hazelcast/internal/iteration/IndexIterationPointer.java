@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.iteration;
 
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,6 +42,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     private byte flags;
     private Comparable<?> from;
     private Comparable<?> to;
+    private Data lastEntryKeyData;
 
     public IndexIterationPointer() {
     }
@@ -47,11 +50,13 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
     private IndexIterationPointer(
             byte flags,
             Comparable<?> from,
-            Comparable<?> to
+            Comparable<?> to,
+            Data lastEntryKeyData
     ) {
         this.flags = flags;
         this.from = from;
         this.to = to;
+        this.lastEntryKeyData = lastEntryKeyData;
     }
 
     public static IndexIterationPointer create(
@@ -59,7 +64,8 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
             boolean fromInclusive,
             Comparable<?> to,
             boolean toInclusive,
-            boolean descending
+            boolean descending,
+            Data lastEntryKey
     ) {
         return new IndexIterationPointer(
                 (byte) ((descending ? FLAG_DESCENDING : 0)
@@ -67,20 +73,30 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                         | (toInclusive ? FLAG_TO_INCLUSIVE : 0)
                         | (from == to ? FLAG_POINT_LOOKUP : 0)),
                 from,
-                to);
+                to,
+                lastEntryKey
+        );
     }
 
-    public static IndexIterationPointer[] createFromIndexFilter(IndexFilter indexFilter, ExpressionEvalContext evalContext) {
+    public static IndexIterationPointer[] createFromIndexFilter(
+            IndexFilter indexFilter,
+            boolean descending,
+            ExpressionEvalContext evalContext
+    ) {
         ArrayList<IndexIterationPointer> result = new ArrayList<>();
-        createFromIndexFilterInt(indexFilter, evalContext, result);
+        createFromIndexFilterInt(indexFilter, descending, evalContext, result);
         return result.toArray(new IndexIterationPointer[0]);
     }
 
     private static void createFromIndexFilterInt(
             IndexFilter indexFilter,
+            boolean descending,
             ExpressionEvalContext evalContext,
             List<IndexIterationPointer> result
     ) {
+        if (indexFilter == null) {
+            result.add(create(null, true, null, true, descending, null));
+        }
         if (indexFilter instanceof IndexRangeFilter) {
             IndexRangeFilter rangeFilter = (IndexRangeFilter) indexFilter;
 
@@ -106,15 +122,15 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
                 to = toValue;
             }
 
-            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), false));
+            result.add(create(from, rangeFilter.isFromInclusive(), to, rangeFilter.isToInclusive(), descending, null));
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
-            result.add(create(value, true, value, true, false));
+            result.add(create(value, true, value, true, descending, null));
         } else if (indexFilter instanceof IndexInFilter) {
             IndexInFilter inFilter = (IndexInFilter) indexFilter;
             for (IndexFilter filter : inFilter.getFilters()) {
-                createFromIndexFilterInt(filter, evalContext, result);
+                createFromIndexFilterInt(filter, descending, evalContext, result);
             }
         }
     }
@@ -139,6 +155,10 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         return (flags & FLAG_DESCENDING) != 0;
     }
 
+    public Data getLastEntryKeyData() {
+        return lastEntryKeyData;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByte(flags);
@@ -146,6 +166,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         if ((flags & FLAG_POINT_LOOKUP) == 0) {
             out.writeObject(to);
         }
+        IOUtil.writeData(out, lastEntryKeyData);
     }
 
     @Override
@@ -157,6 +178,7 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         } else {
             to = from;
         }
+        lastEntryKeyData = IOUtil.readData(in);
     }
 
     @Override

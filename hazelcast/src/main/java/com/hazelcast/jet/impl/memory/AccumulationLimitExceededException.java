@@ -25,6 +25,8 @@ import com.hazelcast.jet.config.InstanceConfig;
  */
 public class AccumulationLimitExceededException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     public AccumulationLimitExceededException() {
         super("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance."
                 + " An OOME might occur when a job accumulates large data sets in one of the processors,"

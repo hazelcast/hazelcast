@@ -44,6 +44,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
@@ -109,6 +110,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final SerializationService serializationService;
+    private final SerializationService compatibilitySerializationService;
     private final LoggingServiceImpl loggingService;
     private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
@@ -134,6 +136,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         try {
             this.serializationService = node.getSerializationService();
+            this.compatibilitySerializationService = node.getCompatibilitySerializationService();
             this.concurrencyDetection = newConcurrencyDetection();
             this.loggingService = node.loggingService;
             this.logger = node.getLogger(NodeEngine.class.getName());
@@ -160,8 +163,7 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    getJetPacketConsumer(node.getNodeExtension()),
-                    sqlService
+                    getJetPacketConsumer(node.getNodeExtension())
             );
             this.splitBrainProtectionService = new SplitBrainProtectionServiceImpl(this);
             this.diagnostics = newDiagnostics();
@@ -173,6 +175,7 @@ public class NodeEngineImpl implements NodeEngine {
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
             serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -308,6 +311,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public SerializationService getSerializationService() {
         return serializationService;
+    }
+
+    @Override
+    public SerializationService getCompatibilitySerializationService() {
+        return compatibilitySerializationService;
     }
 
     @Override

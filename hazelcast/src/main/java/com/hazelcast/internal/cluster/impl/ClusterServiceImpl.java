@@ -47,6 +47,7 @@ import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.persistence.PersistenceService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -820,6 +821,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public HotRestartService getHotRestartService() {
+        return node.getNodeExtension().getHotRestartService();
+    }
+
+    @Override
+    public PersistenceService getPersistenceService() {
         return node.getNodeExtension().getHotRestartService();
     }
 

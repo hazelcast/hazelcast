@@ -31,7 +31,7 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -64,11 +64,11 @@ public abstract class AbstractPartitionPrimaryReplicaAntiEntropyTask
     // works only on primary. backups are retained
     // in PartitionBackupReplicaAntiEntropyTask
     final Collection<ServiceNamespace> retainAndGetNamespaces() {
-        PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, 0);
+        PartitionReplicationEvent event = new PartitionReplicationEvent(null, partitionId, 0);
         Collection<FragmentedMigrationAwareService> services
                 = nodeEngine.getServices(FragmentedMigrationAwareService.class);
 
-        Collection<ServiceNamespace> namespaces = new LinkedList<>();
+        Collection<ServiceNamespace> namespaces = new HashSet<>();
         for (FragmentedMigrationAwareService service : services) {
             Collection<ServiceNamespace> serviceNamespaces = service.getAllServiceNamespaces(event);
             if (serviceNamespaces != null) {

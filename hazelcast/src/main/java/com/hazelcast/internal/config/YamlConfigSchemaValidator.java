@@ -19,20 +19,30 @@ package com.hazelcast.internal.config;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.yaml.YamlMapping;
 import com.hazelcast.internal.yaml.YamlToJsonConverter;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
+import org.everit.json.schema.ObjectSchema;
+import org.everit.json.schema.PrimitiveValidationStrategy;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.Validator;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static java.util.Collections.unmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 public class YamlConfigSchemaValidator {
+
+    private static final HazelcastProperty ROOT_LEVEL_INDENTATION_CHECK_ENABLED
+            = new HazelcastProperty("hazelcast.yaml.config.indentation.check.enabled", "true");
 
     private static final List<String> PERMITTED_ROOT_NODES = unmodifiableList(
             asList("hazelcast", "hazelcast-client", "hazelcast-client-failover"));
@@ -68,18 +78,64 @@ public class YamlConfigSchemaValidator {
         try {
             // this could be expressed in the schema as well, but that would make all the schema validation errors much harder
             // to read, so it is better to implement it here as a semantic check
-            long definedRootNodeCount = PERMITTED_ROOT_NODES.stream()
-                    .filter(rootNodeName -> rootNode.child(rootNodeName) != null)
-                    .count();
-            if (definedRootNodeCount != 1) {
+            List<String> definedRootNodes = PERMITTED_ROOT_NODES.stream()
+                    .filter(rootNodeName -> rootNode != null && rootNode.child(rootNodeName) != null)
+                    .collect(toList());
+            if (definedRootNodes.size() != 1) {
                 throw new SchemaViolationConfigurationException(
                         "exactly one of [hazelcast], [hazelcast-client] and [hazelcast-client-failover] should be present in the"
-                                + " root schema document, " + definedRootNodeCount + " are present",
+                                + " root schema document, " + definedRootNodes.size() + " are present",
                         "#", "#", emptyList());
+            } else if (new HazelcastProperties(System.getProperties()).getBoolean(ROOT_LEVEL_INDENTATION_CHECK_ENABLED)) {
+                validateAdditionalProperties(rootNode, definedRootNodes.get(0));
             }
-            SCHEMA.validate(YamlToJsonConverter.convert(rootNode));
+            Validator.builder()
+                    .primitiveValidationStrategy(PrimitiveValidationStrategy.LENIENT)
+                    .build()
+                    .performValidation(SCHEMA, YamlToJsonConverter.convert(rootNode));
         } catch (ValidationException e) {
             throw wrap(e);
         }
+    }
+
+    private void validateAdditionalProperties(YamlMapping rootNode, String hzConfigRootNodeName) {
+        if (!PERMITTED_ROOT_NODES.contains(hzConfigRootNodeName)) {
+            throw new IllegalArgumentException(hzConfigRootNodeName);
+        }
+        ObjectSchema schema = (ObjectSchema) SCHEMA;
+        Set<String> forbiddenRootPropNames = ((ObjectSchema) schema.getPropertySchemas()
+                .get(hzConfigRootNodeName)).getPropertySchemas().keySet();
+        List<String> misIndentedRootProps = new ArrayList<>();
+        rootNode.children().forEach(yamlNode -> {
+            if (forbiddenRootPropNames.contains(yamlNode.nodeName())) {
+                misIndentedRootProps.add(yamlNode.nodeName());
+            }
+        });
+        if (misIndentedRootProps.isEmpty()) {
+            return;
+        }
+        if (misIndentedRootProps.size() == 1) {
+            String propName = misIndentedRootProps.get(0);
+            throw createExceptionForMisIndentedConfigProp(propName, true);
+        } else {
+            List<SchemaViolationConfigurationException> causes = misIndentedRootProps.stream()
+                    .map(prop -> createExceptionForMisIndentedConfigProp(prop, false))
+                    .collect(toList());
+            throw new SchemaViolationConfigurationException(withNote(causes.size() + " schema violations found"),
+                    "#", "#", causes);
+        }
+    }
+
+    private static String withNote(String originalMessage) {
+        return originalMessage + System.getProperty("line.separator") + "Note: you can disable this validation by passing the "
+                + "-D" + ROOT_LEVEL_INDENTATION_CHECK_ENABLED.getName() + "=false system property";
+    }
+
+    private SchemaViolationConfigurationException createExceptionForMisIndentedConfigProp(String propName, boolean addNote) {
+        String message = "Mis-indented hazelcast configuration property found: [" + propName + "]";
+        if (addNote) {
+            message = withNote(message);
+        }
+        return new SchemaViolationConfigurationException(message, "#", "#", emptyList());
     }
 }

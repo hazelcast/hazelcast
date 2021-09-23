@@ -57,6 +57,7 @@ public class SqlSelectTest extends SqlTestSupport {
     public void test_basicSelect() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 20);
@@ -68,6 +69,7 @@ public class SqlSelectTest extends SqlTestSupport {
     public void test_selectWithEqFilter() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         fillIMapAndGetData(map, 14);
@@ -77,9 +79,23 @@ public class SqlSelectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_selectWithEqFilterAndProject() {
+        HazelcastInstance hazelcastInstance = instance();
+        String name = randomName();
+        createMapping(name, int.class, String.class);
+        IMap<Integer, String> map = hazelcastInstance.getMap(name);
+
+        fillIMapAndGetData(map, 14);
+        List<Row> filteredAndProjectedRows = Collections.singletonList(new Row(10L, "F"));
+
+        assertRowsAnyOrder("SELECT __key * 2, this FROM " + name + " AS I WHERE I.__key = 5", filteredAndProjectedRows);
+    }
+
+    @Test
     public void test_selectWithEvenNumbersFilter() {
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 14);
@@ -95,6 +111,7 @@ public class SqlSelectTest extends SqlTestSupport {
         final int thisProjection = 1;
         HazelcastInstance hazelcastInstance = instance();
         String name = randomName();
+        createMapping(name, int.class, String.class);
         IMap<Integer, String> map = hazelcastInstance.getMap(name);
 
         List<Row> rows = fillIMapAndGetData(map, 20);

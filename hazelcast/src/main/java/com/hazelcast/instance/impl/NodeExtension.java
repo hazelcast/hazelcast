@@ -193,6 +193,14 @@ public interface NodeExtension {
     InternalSerializationService createSerializationService();
 
     /**
+     * Creates and returns a serialization service for (de)serializing objects
+     * compatible with a compatibility (3.x) format.
+     *
+     * @return the compatibility serialization service
+     */
+    InternalSerializationService createCompatibilitySerializationService();
+
+    /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.
      *
      * @return security context
@@ -329,7 +337,9 @@ public interface NodeExtension {
      */
     boolean registerListener(Object listener);
 
-    /** Returns the public hot restart service */
+    /**
+     * Returns the public hot restart service
+     */
     HotRestartService getHotRestartService();
 
     /** Returns the internal hot restart service */

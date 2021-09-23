@@ -28,6 +28,7 @@ import com.hazelcast.jet.pipeline.file.impl.FileProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.file.impl.FileTraverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.security.permission.ConnectorPermission;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -36,6 +37,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Permission;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -46,6 +48,7 @@ import static com.hazelcast.jet.Traversers.traverseIterator;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 
 /**
  * Private API, use {@link SourceProcessors#readFilesP}.
@@ -141,6 +144,8 @@ public final class ReadFilesP<T> extends AbstractProcessor {
 
     private static final class MetaSupplier<T> implements FileProcessorMetaSupplier<T> {
 
+        private static final long serialVersionUID = 1L;
+
         private static final ILogger LOGGER = Logger.getLogger(MetaSupplier.class);
 
         private final int localParallelism;
@@ -181,6 +186,11 @@ public final class ReadFilesP<T> extends AbstractProcessor {
         @Override
         public FileTraverser<T> traverser() {
             return new LocalFileTraverser<>(LOGGER, directory, glob, ignoreFileNotFound, path -> true, readFileFn);
+        }
+
+        @Override
+        public Permission getRequiredPermission() {
+            return ConnectorPermission.file(directory, ACTION_READ);
         }
     }
 

@@ -17,13 +17,16 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
+import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTrait;
+import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.calcite.opt.physical.visitor.RexToExpressionVisitor;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastRelOptTable;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -31,19 +34,28 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
+import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTrait;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexCall;
+import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 
 import javax.annotation.Nonnull;
@@ -131,6 +143,25 @@ public final class OptUtils {
         return LogicalTableScan.create(cluster, relTable, ImmutableList.of());
     }
 
+    public static LogicalTableScan createLogicalScan(
+            TableScan originalScan,
+            HazelcastTable newHazelcastTable
+    ) {
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) originalScan.getTable();
+
+        HazelcastRelOptTable newTable = createRelTable(
+                originalRelTable,
+                newHazelcastTable,
+                originalScan.getCluster().getTypeFactory()
+        );
+
+        return LogicalTableScan.create(
+                originalScan.getCluster(),
+                newTable,
+                originalScan.getHints()
+        );
+    }
+
     public static HazelcastRelOptTable createRelTable(
             List<String> names,
             HazelcastTable hazelcastTable,
@@ -148,29 +179,59 @@ public final class OptUtils {
         return new HazelcastRelOptTable(relTable);
     }
 
-    public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode node) {
-        if (node instanceof RelSubset) {
-            RelSubset subset = (RelSubset) node;
+    public static HazelcastRelOptTable createRelTable(
+            HazelcastRelOptTable originalRelTable,
+            HazelcastTable newHazelcastTable,
+            RelDataTypeFactory typeFactory
+    ) {
+        RelOptTableImpl newTable = RelOptTableImpl.create(
+                originalRelTable.getRelOptSchema(),
+                newHazelcastTable.getRowType(typeFactory),
+                originalRelTable.getDelegate().getQualifiedName(),
+                newHazelcastTable,
+                null
+        );
 
-            Set<RelTraitSet> traitSets = new HashSet<>();
-            Set<RelNode> result = Collections.newSetFromMap(new IdentityHashMap<>());
-            for (RelNode rel : subset.getRelList()) {
-                if (!isPhysical(rel)) {
-                    continue;
-                }
+        return new HazelcastRelOptTable(newTable);
+    }
 
-                if (traitSets.add(rel.getTraitSet())) {
-                    result.add(RelOptRule.convert(node, rel.getTraitSet()));
-                }
+    /**
+     * Get possible physical rels from the given subset.
+     * Every returned input is guaranteed to have a unique trait set.
+     *
+     * @param input Subset.
+     * @return Physical rels.
+     */
+    public static Collection<RelNode> extractPhysicalRelsFromSubset(RelNode input) {
+        Set<RelTraitSet> traitSets = new HashSet<>();
+
+        Set<RelNode> res = Collections.newSetFromMap(new IdentityHashMap<>());
+
+        for (RelNode rel : HazelcastRelSubsetUtil.getSubsets(input)) {
+            if (!isPhysical(rel)) {
+                continue;
             }
-            return result;
-        } else {
-            return Collections.emptyList();
+
+            if (traitSets.add(rel.getTraitSet())) {
+                res.add(rel);
+            }
         }
+
+        return res;
     }
 
     private static boolean isPhysical(RelNode rel) {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(JetConventions.PHYSICAL);
+    }
+
+    public static HazelcastRelOptCluster getCluster(RelNode rel) {
+        assert rel.getCluster() instanceof HazelcastRelOptCluster;
+
+        return (HazelcastRelOptCluster) rel.getCluster();
+    }
+
+    public static DistributionTrait getDistribution(RelNode rel) {
+        return rel.getTraitSet().getTrait(getCluster(rel).getDistributionTraitDef());
     }
 
     /**
@@ -204,18 +265,21 @@ public final class OptUtils {
         throw new RuntimeException("expected rel not found: " + node);
     }
 
+    public static PlanNodeSchema schema(RelDataType rowType) {
+        return new PlanNodeSchema(extractFieldTypes(rowType));
+    }
+
     public static PlanNodeSchema schema(RelOptTable relTable) {
         Table table = relTable.unwrap(HazelcastTable.class).getTarget();
+        return schema(table);
+    }
 
+    public static PlanNodeSchema schema(Table table) {
         List<QueryDataType> fieldTypes = new ArrayList<>();
         for (TableField field : table.getFields()) {
             fieldTypes.add(field.getType());
         }
         return new PlanNodeSchema(fieldTypes);
-    }
-
-    public static PlanNodeSchema schema(RelDataType rowType) {
-        return new PlanNodeSchema(extractFieldTypes(rowType));
     }
 
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
@@ -244,5 +308,89 @@ public final class OptUtils {
     private static List<QueryDataType> extractFieldTypes(RelDataType rowType) {
         return Util.toList(rowType.getFieldList(),
                 f -> HazelcastTypeUtils.toHazelcastType(f.getType().getSqlTypeName()));
+    }
+
+    public static boolean requiresJob(RelNode rel) {
+        return ((HazelcastRelOptCluster) rel.getCluster()).requiresJob();
+    }
+
+    public static boolean hasTableType(RelNode rel, Class<? extends Table> tableClass) {
+        if (rel.getTable() == null) {
+            return false;
+        }
+
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
+        return table != null && tableClass.isAssignableFrom(table.getTarget().getClass());
+    }
+
+    public static HazelcastTable extractHazelcastTable(TableScan rel) {
+        HazelcastTable table = rel.getTable().unwrap(HazelcastTable.class);
+        assert table != null;
+        return table;
+    }
+
+    @SuppressWarnings("checkstyle:AvoidNestedBlocks")
+    public static RexNode extractKeyConstantExpression(RelOptTable relTable, RexBuilder rexBuilder) {
+        HazelcastTable table = relTable.unwrap(HazelcastTable.class);
+
+        RexNode filter = table.getFilter();
+        if (filter == null) {
+            return null;
+        }
+
+        int keyIndex = findKeyIndex(table.getTarget());
+        switch (filter.getKind()) {
+            // WHERE __key = true, calcite simplifies to just `WHERE __key`
+            case INPUT_REF: {
+                return ((RexInputRef) filter).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(true)
+                        : null;
+            }
+            // WHERE __key = false, calcite simplifies to `WHERE NOT __key`
+            case NOT: {
+                RexNode operand = ((RexCall) filter).getOperands().get(0);
+                return operand.getKind() == SqlKind.INPUT_REF && ((RexInputRef) operand).getIndex() == keyIndex
+                        ? rexBuilder.makeLiteral(false)
+                        : null;
+            }
+            // __key = ...
+            case EQUALS: {
+                Tuple2<Integer, RexNode> constantExpressionByIndex = extractConstantExpression((RexCall) filter);
+                //noinspection ConstantConditions
+                return constantExpressionByIndex != null && constantExpressionByIndex.getKey() == keyIndex
+                        ? constantExpressionByIndex.getValue()
+                        : null;
+            }
+            default:
+                return null;
+        }
+    }
+
+    private static int findKeyIndex(Table table) {
+        List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
+        // just single field keys supported at the moment
+        assert primaryKey.size() == 1;
+
+        int keyIndex = table.getFieldIndex(primaryKey.get(0));
+        assert keyIndex > -1;
+
+        return keyIndex;
+    }
+
+    private static Tuple2<Integer, RexNode> extractConstantExpression(RexCall condition) {
+        Tuple2<Integer, RexNode> constantExpression = extractConstantExpression(condition, 0);
+        return constantExpression != null ? constantExpression : extractConstantExpression(condition, 1);
+    }
+
+    private static Tuple2<Integer, RexNode> extractConstantExpression(RexCall condition, int i) {
+        RexNode firstOperand = condition.getOperands().get(i);
+        if (firstOperand.getKind() == SqlKind.INPUT_REF) {
+            int index = ((RexInputRef) firstOperand).getIndex();
+            RexNode secondOperand = condition.getOperands().get(1 - i);
+            if (RexUtil.isConstant(secondOperand)) {
+                return Tuple2.tuple2(index, secondOperand);
+            }
+        }
+        return null;
     }
 }

@@ -36,7 +36,7 @@ import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
 import static com.hazelcast.config.RestEndpointGroup.DATA;
-import static com.hazelcast.config.RestEndpointGroup.HOT_RESTART;
+import static com.hazelcast.config.RestEndpointGroup.PERSISTENCE;
 import static com.hazelcast.internal.config.override.ExternalConfigTestUtils.runWithSystemProperty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -70,6 +70,16 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
         assertEquals(40, config.getScheduledExecutorConfig("default").getCapacity());
         assertEquals(2, config.getQueueConfig("default").getMaxSize());
         assertFalse(config.getNetworkConfig().getJoin().isAutoDetectionEnabled());
+    }
+
+    @Test
+    public void shouldHandleCustomPropertiesConfig() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_PROPERTIES_foo", "bar")
+          .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+
+        assertEquals("bar", config.getProperty("foo"));
     }
 
     @Test
@@ -627,10 +637,37 @@ public class ExternalMemberConfigurationOverrideEnvTest extends HazelcastTestSup
           .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
           .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
           .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
-
         assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
         assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
-        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(HOT_RESTART));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
+    }
+
+    @Test
+    public void shouldHandleRestApiConfig_whenPersistenceEnabled() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+                .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
+                .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_PERSISTENCE_ENABLED", "true")
+                .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
+    }
+
+
+    @Test
+    public void shouldHandleRestApiConfig_when_bothPersistenceAndHotRestartAreEnabled() throws Exception {
+        Config config = new Config();
+
+        withEnvironmentVariable("HZ_NETWORK_RESTAPI_ENABLED", "true")
+                .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_DATA_ENABLED", "true")
+                .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_HOTRESTART_ENABLED", "true")
+                .and("HZ_NETWORK_RESTAPI_ENDPOINTGROUPS_PERSISTENCE_ENABLED", "true")
+                .execute(() -> new ExternalConfigurationOverride().overwriteMemberConfig(config));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().isEnabled());
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(DATA));
+        assertTrue(config.getNetworkConfig().getRestApiConfig().getEnabledGroups().contains(PERSISTENCE));
     }
 
     @Test(expected = InvalidConfigurationException.class)

@@ -27,6 +27,7 @@ import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.BinaryOperatorEx;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.RestartableException;
@@ -36,9 +37,11 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.observer.ObservableImpl;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.security.permission.RingBufferPermission;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.security.Permission;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.AbstractSet;
@@ -51,8 +54,16 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
+import static com.hazelcast.jet.impl.connector.AsyncHazelcastWriterP.MAX_PARALLEL_ASYNC_OPS_DEFAULT;
 import static com.hazelcast.jet.impl.util.ImdgUtil.asXmlString;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.security.PermissionsUtil.cachePutPermission;
+import static com.hazelcast.security.PermissionsUtil.listAddPermission;
+import static com.hazelcast.security.PermissionsUtil.mapPutPermission;
+import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 
 /**
@@ -71,7 +82,9 @@ public final class HazelcastWriters {
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull FunctionEx<? super T, ? extends V> toValueFn
     ) {
-        return preferLocalParallelismOne(new WriteMapP.Supplier<>(asXmlString(clientConfig), name, toKeyFn, toValueFn));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(mapPutPermission(clientXml, name),
+                new WriteMapP.Supplier<>(clientXml, name, toKeyFn, toValueFn));
     }
 
     @Nonnull
@@ -97,7 +110,7 @@ public final class HazelcastWriters {
 
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapSupplier(
-            @Nonnull String mapName,
+            @Nonnull String name,
             @Nullable ClientConfig clientConfig,
             @Nonnull FunctionEx<? super T, ? extends K> toKeyFn,
             @Nonnull BiFunctionEx<? super V, ? super T, ? extends V> updateFn
@@ -105,10 +118,10 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(updateFn, "updateFn");
 
-        return ProcessorMetaSupplier.of(
-                AbstractHazelcastConnectorSupplier.of(
-                        asXmlString(clientConfig),
-                        instance -> new UpdateMapP<>(instance, mapName, toKeyFn, updateFn)));
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateMapProcessorFn(name, clientXml, toKeyFn, updateFn)));
     }
 
     @Nonnull
@@ -121,8 +134,11 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
-                instance -> new UpdateMapWithEntryProcessorP<>(instance, name, toKeyFn, toEntryProcessorFn)));
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateWithEntryProcessorFn(MAX_PARALLEL_ASYNC_OPS_DEFAULT, name, clientXml,
+                                toKeyFn, toEntryProcessorFn)));
     }
 
     @Nonnull
@@ -136,19 +152,25 @@ public final class HazelcastWriters {
         checkSerializable(toKeyFn, "toKeyFn");
         checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
 
-        return ProcessorMetaSupplier.of(AbstractHazelcastConnectorSupplier.of(asXmlString(clientConfig),
-                instance -> new UpdateMapWithEntryProcessorP<>(instance, maxParallelAsyncOps, name, toKeyFn,
-                        toEntryProcessorFn)));
+        String clientXml = asXmlString(clientConfig);
+        return ProcessorMetaSupplier.of(mapUpdatePermission(clientXml, name),
+                AbstractHazelcastConnectorSupplier.ofMap(clientXml,
+                        SecuredFunctions.updateWithEntryProcessorFn(maxParallelAsyncOps, name, clientXml,
+                                toKeyFn, toEntryProcessorFn)));
     }
 
     @Nonnull
     public static ProcessorMetaSupplier writeCacheSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return ProcessorMetaSupplier.of(2, new WriteCachePSupplier<>(clientConfig, name));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(cachePutPermission(clientXml, name),
+                new WriteCachePSupplier<>(clientXml, name));
     }
 
     @Nonnull
     public static ProcessorMetaSupplier writeListSupplier(@Nonnull String name, @Nullable ClientConfig clientConfig) {
-        return preferLocalParallelismOne(new WriteListPSupplier<>(clientConfig, name));
+        String clientXml = asXmlString(clientConfig);
+        return preferLocalParallelismOne(listAddPermission(clientXml, name),
+                new WriteListPSupplier<>(clientXml, name));
     }
 
     public static ProcessorMetaSupplier writeObservableSupplier(@Nonnull String name) {
@@ -168,6 +190,11 @@ public final class HazelcastWriters {
             public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
                 return address -> new WriteObservableP.Supplier(name);
             }
+
+            @Override
+            public Permission getRequiredPermission() {
+                return new RingBufferPermission(name, ACTION_CREATE, ACTION_PUT);
+            }
         };
     }
 
@@ -182,8 +209,8 @@ public final class HazelcastWriters {
 
         private final String name;
 
-        WriteCachePSupplier(@Nullable ClientConfig clientConfig, @Nonnull String name) {
-            super(asXmlString(clientConfig));
+        WriteCachePSupplier(@Nullable String clientXml, @Nonnull String name) {
+            super(clientXml);
             this.name = name;
         }
 
@@ -208,6 +235,11 @@ public final class HazelcastWriters {
 
             return new WriteBufferedP<>(bufferCreator, entryReceiver, bufferFlusher, ConsumerEx.noop());
         }
+
+        @Override
+        public List<Permission> permissions() {
+            return singletonList(cachePutPermission(clientXml, name));
+        }
     }
 
     private static class WriteListPSupplier<T> extends AbstractHazelcastConnectorSupplier {
@@ -216,8 +248,8 @@ public final class HazelcastWriters {
 
         private final String name;
 
-        WriteListPSupplier(@Nullable ClientConfig clientConfig, @Nonnull String name) {
-            super(asXmlString(clientConfig));
+        WriteListPSupplier(@Nullable String clientXml, @Nonnull String name) {
+            super(clientXml);
             this.name = name;
         }
 
@@ -237,6 +269,11 @@ public final class HazelcastWriters {
             };
 
             return new WriteBufferedP<>(bufferCreator, itemReceiver, bufferFlusher, ConsumerEx.noop());
+        }
+
+        @Override
+        public List<Permission> permissions() {
+            return singletonList(listAddPermission(clientXml, name));
         }
     }
 

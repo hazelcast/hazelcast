@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.monitor.impl;
 
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.monitor.HotRestartState;
+import com.hazelcast.persistence.BackupTaskState;
+import com.hazelcast.persistence.BackupTaskStatus;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

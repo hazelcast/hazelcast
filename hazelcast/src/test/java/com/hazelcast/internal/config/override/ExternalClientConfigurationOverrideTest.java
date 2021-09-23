@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.github.stefanbirkner.systemlambda.SystemLambda.withEnvironmentVariable;
+import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -41,5 +42,28 @@ public class ExternalClientConfigurationOverrideTest extends HazelcastTestSuppor
 
         assertEquals("test", config.getInstanceName());
         assertFalse(config.getNetworkConfig().isAutoDetectionEnabled());
+    }
+
+    @Test
+    public void shouldHandleConnectionStrategy() throws Exception {
+        ClientConfig config = new ClientConfig();
+        config.getConnectionStrategyConfig()
+          .setReconnectMode(ASYNC)
+          .setAsyncStart(true);
+
+        withEnvironmentVariable("HZCLIENT_CONNECTIONSTRATEGY_ASYNCSTART", "false")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+
+        assertFalse(config.getConnectionStrategyConfig().isAsyncStart());
+        assertEquals(ASYNC, config.getConnectionStrategyConfig().getReconnectMode());
+    }
+    @Test
+    public void shouldHandleCustomPropertiesConfig() throws Exception {
+        ClientConfig config = new ClientConfig();
+
+        withEnvironmentVariable("HZCLIENT_PROPERTIES_foo", "bar")
+          .execute(() -> new ExternalConfigurationOverride().overwriteClientConfig(config));
+
+        assertEquals("bar", config.getProperty("foo"));
     }
 }

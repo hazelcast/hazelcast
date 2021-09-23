@@ -20,12 +20,12 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.sql.impl.EventTimePolicySupplier;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.schema.MappingField;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.schema.EventTimePolicySupplier;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 
 import javax.annotation.Nonnull;
@@ -109,6 +109,18 @@ public interface SqlConnector {
     String OPTION_VALUE_CLASS_VERSION = "valuePortableClassVersion";
 
     /**
+     * The key Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_KEY_COMPACT_TYPE_NAME = "keyCompactTypeName";
+
+    /**
+     * The value Compact type name, if {@value #OPTION_KEY_FORMAT} is {@value
+     * COMPACT_FORMAT}.
+     */
+    String OPTION_VALUE_COMPACT_TYPE_NAME = "valueCompactTypeName";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
      * for Java serialization.
      */
@@ -121,10 +133,16 @@ public interface SqlConnector {
     String PORTABLE_FORMAT = "portable";
 
     /**
+     * Value for {@value #OPTION_KEY_FORMAT} and {@value #OPTION_VALUE_FORMAT}
+     * for Compact serialization.
+     */
+    String COMPACT_FORMAT = "compact";
+
+    /**
      * Value for {@value #OPTION_KEY_FORMAT}, {@value #OPTION_VALUE_FORMAT}
      * and {@value #OPTION_FORMAT} for JSON serialization.
      */
-    String JSON_FORMAT = "json";
+    String JSON_FLAT_FORMAT = "json-flat";
 
     /**
      * Value for {@value #OPTION_FORMAT} for CSV (comma-separated values)

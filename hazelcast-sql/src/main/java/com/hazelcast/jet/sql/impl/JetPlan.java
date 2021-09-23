@@ -18,25 +18,42 @@ package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
+import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
-import com.hazelcast.jet.sql.impl.schema.Mapping;
+import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanCheckContext;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
+import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
 import java.security.Permission;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
+
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_REMOVE;
 
 abstract class JetPlan extends SqlPlan {
 
@@ -44,7 +61,21 @@ abstract class JetPlan extends SqlPlan {
         super(planKey);
     }
 
-    abstract SqlResult execute(QueryId queryId, List<Object> arguments);
+    protected void checkPermissions(SqlSecurityContext context, DAG dag) {
+        if (!context.isSecurityEnabled()) {
+            return;
+        }
+        for (Vertex vertex : dag) {
+            Permission permission = vertex.getMetaSupplier().getRequiredPermission();
+            if (permission != null) {
+                context.checkPermission(permission);
+            }
+        }
+    }
+
+    @Override
+    public void checkPermissions(SqlSecurityContext context) {
+    }
 
     static class CreateMappingPlan extends JetPlan {
         private final Mapping mapping;
@@ -91,6 +122,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(mapping.name(), ACTION_CREATE));
         }
 
         @Override
@@ -99,8 +131,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE MAPPING", arguments);
+            JetPlan.ensureNoTimeout("CREATE MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -143,6 +176,7 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(name, ACTION_DESTROY));
         }
 
         @Override
@@ -151,8 +185,9 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP MAPPING", arguments);
+            JetPlan.ensureNoTimeout("DROP MAPPING", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -216,7 +251,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            JetPlan.ensureNoTimeout("CREATE JOB", timeout);
             return planExecutor.execute(this, arguments);
         }
     }
@@ -258,17 +294,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("ALTER JOB", arguments);
+            JetPlan.ensureNoTimeout("ALTER JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -317,17 +350,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP JOB", arguments);
+            JetPlan.ensureNoTimeout("DROP JOB", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -369,17 +399,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("CREATE SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("CREATE SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -421,17 +448,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
         public boolean producesRows() {
             return false;
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("DROP SNAPSHOT", arguments);
+            JetPlan.ensureNoTimeout("DROP SNAPSHOT", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -466,17 +490,14 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public void checkPermissions(SqlSecurityContext context) {
-        }
-
-        @Override
         public boolean producesRows() {
             return true;
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             JetPlan.ensureNoArguments("SHOW " + showTarget, arguments);
+            JetPlan.ensureNoTimeout("SHOW " + showTarget, timeout);
             return planExecutor.execute(this);
         }
     }
@@ -539,9 +560,8 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            checkPermissions(context, dag);
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -550,14 +570,8 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
-        }
-    }
-
-    private static void ensureNoArguments(String name, List<Object> arguments) {
-        if (!arguments.isEmpty()) {
-            throw QueryException.error(name + " does not support dynamic parameters");
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
         }
     }
 
@@ -612,9 +626,8 @@ abstract class JetPlan extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            for (Permission permission : permissions) {
-                context.checkPermission(permission);
-            }
+            checkPermissions(context, dag);
+            permissions.forEach(context::checkPermission);
         }
 
         @Override
@@ -623,8 +636,373 @@ abstract class JetPlan extends SqlPlan {
         }
 
         @Override
-        public SqlResult execute(QueryId queryId, List<Object> arguments) {
-            return planExecutor.execute(this, queryId, arguments);
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    static class IMapSelectPlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Expression<?> keyCondition;
+        private final KvRowProjector.Supplier rowProjectorSupplier;
+        private final SqlRowMetadata rowMetadata;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapSelectPlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Expression<?> keyCondition,
+                KvRowProjector.Supplier rowProjectorSupplier,
+                SqlRowMetadata rowMetadata,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.keyCondition = keyCondition;
+            this.rowProjectorSupplier = rowProjectorSupplier;
+            this.rowMetadata = rowMetadata;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Expression<?> keyCondition() {
+            return keyCondition;
+        }
+
+        KvRowProjector.Supplier rowProjectorSupplier() {
+            return rowProjectorSupplier;
+        }
+
+        SqlRowMetadata rowMetadata() {
+            return rowMetadata;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ));
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return true;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, queryId, arguments, timeout);
+        }
+    }
+
+    static class IMapInsertPlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapInsertPlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.entriesFn = entriesFn;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
+            return entriesFn;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT));
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, arguments, timeout);
+        }
+    }
+
+    static class IMapSinkPlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Function<ExpressionEvalContext, Map<Object, Object>> entriesFn;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapSinkPlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Function<ExpressionEvalContext, Map<Object, Object>> entriesFn,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.entriesFn = entriesFn;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Function<ExpressionEvalContext, Map<Object, Object>> entriesFn() {
+            return entriesFn;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_PUT, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, arguments, timeout);
+        }
+    }
+
+    static class IMapUpdatePlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Expression<?> keyCondition;
+        private final UpdatingEntryProcessor.Supplier updaterSupplier;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapUpdatePlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Expression<?> keyCondition,
+                UpdatingEntryProcessor.Supplier updaterSupplier,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.keyCondition = keyCondition;
+            this.updaterSupplier = updaterSupplier;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Expression<?> keyCondition() {
+            return keyCondition;
+        }
+
+        UpdatingEntryProcessor.Supplier updaterSupplier() {
+            return updaterSupplier;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, arguments, timeout);
+        }
+    }
+
+    static class IMapDeletePlan extends JetPlan {
+        private final Set<PlanObjectKey> objectKeys;
+        private final QueryParameterMetadata parameterMetadata;
+        private final String mapName;
+        private final Expression<?> keyCondition;
+        private final JetPlanExecutor planExecutor;
+        private final List<Permission> permissions;
+
+        IMapDeletePlan(
+                PlanKey planKey,
+                PlanObjectKey objectKey,
+                QueryParameterMetadata parameterMetadata,
+                String mapName,
+                Expression<?> keyCondition,
+                JetPlanExecutor planExecutor,
+                List<Permission> permissions
+        ) {
+            super(planKey);
+
+            this.objectKeys = Collections.singleton(objectKey);
+            this.parameterMetadata = parameterMetadata;
+            this.mapName = mapName;
+            this.keyCondition = keyCondition;
+            this.planExecutor = planExecutor;
+            this.permissions = permissions;
+        }
+
+        QueryParameterMetadata parameterMetadata() {
+            return parameterMetadata;
+        }
+
+        String mapName() {
+            return mapName;
+        }
+
+        Expression<?> keyCondition() {
+            return keyCondition;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return true;
+        }
+
+        @Override
+        public boolean isPlanValid(PlanCheckContext context) {
+            return context.isValid(objectKeys);
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            // We are checking ACTION_CREATE and ACTION_READ permissions to align with DmlPlan.
+            context.checkPermission(new MapPermission(mapName, ACTION_CREATE, ACTION_READ, ACTION_PUT, ACTION_REMOVE));
+            permissions.forEach(context::checkPermission);
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            return planExecutor.execute(this, arguments, timeout);
+        }
+    }
+
+    private static void ensureNoArguments(String name, List<Object> arguments) {
+        if (!arguments.isEmpty()) {
+            throw QueryException.error(name + " does not support dynamic parameters");
+        }
+    }
+
+    private static void ensureNoTimeout(String name, long timeout) {
+        if (timeout > 0) {
+            throw QueryException.error(name + " does not support timeout");
         }
     }
 }

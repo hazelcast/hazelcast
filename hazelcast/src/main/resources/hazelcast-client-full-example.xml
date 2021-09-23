@@ -23,15 +23,15 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.0.xsd
-  or the Reference Manual at https://hazelcast.org/documentation/
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd
+  or the Reference Manual at https://docs.hazelcast.com/
 -->
 
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.0.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.

@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.MasterJobContext;
+import com.hazelcast.jet.impl.ProcessorClassLoaderTLHolder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,6 +31,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
 import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 
 public class VertexDef implements IdentifiedDataSerializable {
 
@@ -50,11 +52,11 @@ public class VertexDef implements IdentifiedDataSerializable {
         this.localParallelism = localParallelism;
     }
 
-    String name() {
+    public String name() {
         return name;
     }
 
-    int localParallelism() {
+    public int localParallelism() {
         return localParallelism;
     }
 
@@ -78,7 +80,7 @@ public class VertexDef implements IdentifiedDataSerializable {
         return outboundEdges;
     }
 
-    ProcessorSupplier processorSupplier() {
+    public ProcessorSupplier processorSupplier() {
         return processorSupplier;
     }
 
@@ -145,7 +147,7 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(id);
-        out.writeUTF(name);
+        out.writeString(name);
         writeList(out, inboundEdges);
         writeList(out, outboundEdges);
         CustomClassLoadedObject.write(out, processorSupplier);
@@ -155,10 +157,13 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readInt();
-        name = in.readUTF();
+        name = in.readString();
         inboundEdges = readList(in);
         outboundEdges = readList(in);
-        processorSupplier = CustomClassLoadedObject.read(in);
+        processorSupplier = doWithClassLoader(
+                ProcessorClassLoaderTLHolder.get(name),
+                () -> CustomClassLoadedObject.read(in)
+        );
         localParallelism = in.readInt();
     }
 }

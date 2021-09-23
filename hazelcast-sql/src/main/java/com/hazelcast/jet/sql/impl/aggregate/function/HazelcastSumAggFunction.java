@@ -16,23 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
-import com.hazelcast.sql.impl.calcite.validate.HazelcastCallBinding;
-import com.hazelcast.sql.impl.calcite.validate.operand.TypedOperandChecker;
-import com.hazelcast.sql.impl.calcite.validate.operators.ReplaceUnknownOperandTypeInference;
-import com.hazelcast.sql.impl.calcite.validate.operators.common.HazelcastAggFunction;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeFactory;
-import com.hazelcast.sql.impl.calcite.validate.types.HazelcastTypeUtils;
+import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastAggFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlFunctionCategory;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.ReturnTypes;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Optionality;
 
 import static org.apache.calcite.sql.type.SqlTypeName.BIGINT;
-import static org.apache.calcite.sql.type.SqlTypeName.DECIMAL;
-import static org.apache.calcite.sql.type.SqlTypeName.DOUBLE;
-import static org.apache.calcite.sql.type.SqlTypeName.REAL;
 
 public class HazelcastSumAggFunction extends HazelcastAggFunction {
 
@@ -58,32 +52,6 @@ public class HazelcastSumAggFunction extends HazelcastAggFunction {
                 return false;
             }
         }
-
-        SqlTypeName resultTypeName;
-        switch (operandType.getSqlTypeName()) {
-            case TINYINT:
-            case SMALLINT:
-            case INTEGER:
-                resultTypeName = BIGINT;
-                break;
-            case BIGINT:
-            case DECIMAL:
-                resultTypeName = DECIMAL;
-                break;
-            case REAL:
-                resultTypeName = REAL;
-                break;
-            case DOUBLE:
-                resultTypeName = DOUBLE;
-                break;
-
-            default:
-                throw new UnsupportedOperationException(operandType.getSqlTypeName().toString());
-        }
-
-        RelDataType resultType = HazelcastTypeFactory.INSTANCE.createSqlType(resultTypeName);
-        TypedOperandChecker checker = TypedOperandChecker.forType(resultType);
-        assert checker.isNumeric();
-        return checker.check(binding, throwOnFailure, 0);
+        return true;
     }
 }

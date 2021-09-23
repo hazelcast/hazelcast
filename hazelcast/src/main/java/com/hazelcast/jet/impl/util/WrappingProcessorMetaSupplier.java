@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
+import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -33,6 +34,9 @@ import java.util.function.Function;
  * {@code wrapperSupplier}.
  */
 public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplier {
+
+    private static final long serialVersionUID = 1L;
+
     private ProcessorMetaSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;
 
@@ -67,5 +71,10 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     @Override
     public void close(Throwable error) throws Exception {
         wrapped.close(error);
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return wrapped.getRequiredPermission();
     }
 }

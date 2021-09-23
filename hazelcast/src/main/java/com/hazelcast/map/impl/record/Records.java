@@ -16,24 +16,16 @@
 
 package com.hazelcast.map.impl.record;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadataImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
-import java.util.EnumMap;
-import java.util.Map;
 
 import static com.hazelcast.map.impl.record.Record.NOT_CACHED;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
-import static com.hazelcast.map.impl.record.RecordReaderWriter.SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
 
 /**
@@ -42,47 +34,38 @@ import static com.hazelcast.map.impl.record.RecordReaderWriter.getById;
  */
 public final class Records {
 
-    // RU_COMPAT_4_1
-    /**
-     * Maps RecordReaderWriter objects to their 4.1 equivalents. This is used to
-     * support compatibility between 4.1 and 4.2 during rolling upgrades.
-     */
-    private static final Map<RecordReaderWriter, RecordReaderWriter> RU_COMPAT_MAP = createAndInitRuCompatMap();
-
     private Records() {
     }
 
-    private static EnumMap<RecordReaderWriter, RecordReaderWriter> createAndInitRuCompatMap() {
-        EnumMap<RecordReaderWriter, RecordReaderWriter> ruCompatMap = new EnumMap<>(RecordReaderWriter.class);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(DATA_RECORD_READER_WRITER, DATA_RECORD_READER_WRITER);
-        ruCompatMap.put(DATA_RECORD_WITH_STATS_READER_WRITER, DATA_RECORD_WITH_STATS_READER_WRITER);
-
-        assert ruCompatMap.size() == RecordReaderWriter.values().length
-                : "Missing enum mapping for RU compatibility";
-
-        return ruCompatMap;
-    }
-
     public static void writeRecord(ObjectDataOutput out, Record record,
-                                   Data dataValue, ExpiryMetadata expiryMetadata) throws IOException {
+                                   Data dataValue) throws IOException {
         RecordReaderWriter readerWriter = record.getMatchingRecordReaderWriter();
-        // RU_COMPAT_4_1
-        Version version = out.getVersion();
-        if (version.isUnknownOrLessThan(Versions.V4_2)) {
-            readerWriter = RU_COMPAT_MAP.get(readerWriter);
-        }
-
         out.writeByte(readerWriter.getId());
-        readerWriter.writeRecord(out, record, dataValue, expiryMetadata);
+        readerWriter.writeRecord(out, record, dataValue);
     }
 
-    public static Record readRecord(ObjectDataInput in,
-                                    ExpiryMetadata expiryMetadata) throws IOException {
+    public static Record readRecord(ObjectDataInput in) throws IOException {
         byte matchingDataRecordId = in.readByte();
-        return getById(matchingDataRecordId).readRecord(in, expiryMetadata);
+        return getById(matchingDataRecordId).readRecord(in);
+    }
+
+    public static void writeExpiry(ObjectDataOutput out,
+                                   ExpiryMetadata expiryMetadata) throws IOException {
+        boolean hasExpiry = expiryMetadata.hasExpiry();
+        out.writeBoolean(hasExpiry);
+        if (hasExpiry) {
+            expiryMetadata.write(out);
+        }
+    }
+
+    public static ExpiryMetadata readExpiry(ObjectDataInput in) throws IOException {
+        ExpiryMetadata expiryMetadata = ExpiryMetadata.NULL;
+        boolean hasExpiry = in.readBoolean();
+        if (hasExpiry) {
+            expiryMetadata = new ExpiryMetadataImpl();
+            expiryMetadata.read(in);
+        }
+        return expiryMetadata;
     }
 
     /**
@@ -228,7 +211,11 @@ public final class Records {
         // For HazelcastJsonValue objects, if we pass the instanceof Data check, that
         // means the metadata is created from the Data representation of the object.
         // If we allow using the deserialized values, the metadata might not be safe to use.
-        return value instanceof Data && !((Data) value).isPortable() && !((Data) value).isJson();
+        if (value instanceof Data) {
+            Data data = (Data) value;
+            return !(data.isPortable() || data.isJson() || data.isCompact());
+        }
+        return false;
     }
 
 

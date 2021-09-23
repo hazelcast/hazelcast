@@ -19,10 +19,9 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.JetDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.JetSpecificTableFunction;
-import com.hazelcast.sql.impl.calcite.schema.HazelcastTable;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptRule;
@@ -56,7 +55,7 @@ final class FullFunctionScanLogicalRules {
             JetSpecificTableFunction specificFunction = extractSpecificFunction(scan);
             List<RexNode> operands = ((RexCall) scan.getCall()).getOperands();
             RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(
-                    FailingFieldTypeProvider.INSTANCE,
+                    PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER,
                     ((HazelcastRelOptCluster) scan.getCluster()).getParameterMetadata()
             );
             List<Expression<?>> argumentExpressions = IntStream.range(0, specificFunction.getOperandCountRange().getMax())
@@ -111,15 +110,5 @@ final class FullFunctionScanLogicalRules {
             return null;
         }
         return (JetDynamicTableFunction) call.getOperator();
-    }
-
-    private static final class FailingFieldTypeProvider implements PlanNodeFieldTypeProvider {
-
-        private static final FailingFieldTypeProvider INSTANCE = new FailingFieldTypeProvider();
-
-        @Override
-        public QueryDataType getType(int index) {
-            throw new IllegalStateException("The operation should not be called.");
-        }
     }
 }

@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
@@ -52,7 +52,7 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
 
     @Override
     public void run() {
-        JetServiceBackend service = getService();
+        JetServiceBackend service = getJetServiceBackend();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
         executionService.terminateExecution(jobId(), executionId, callerAddress, mode);
@@ -60,7 +60,7 @@ public class TerminateExecutionOperation extends AbstractJobOperation {
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
-        return isRestartableException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
+        return isTopologyException(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
     }
 
     @Override

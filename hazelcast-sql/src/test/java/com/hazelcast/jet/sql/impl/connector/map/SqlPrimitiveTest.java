@@ -24,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -39,6 +38,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class SqlPrimitiveTest extends SqlTestSupport {
@@ -52,29 +52,9 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_sinkIntoDiscoveredMap() {
-        String name = randomName();
-
-        instance().getMap(name).put(BigInteger.valueOf(1), "Alice");
-
-        assertMapEventually(
-                name,
-                "SINK INTO partitioned." + name + " VALUES (2, 'Bob')",
-                createMap(BigInteger.valueOf(1), "Alice", BigInteger.valueOf(2), "Bob")
-        );
-        assertRowsAnyOrder(
-                "SELECT * FROM " + name,
-                asList(
-                        new Row(BigDecimal.valueOf(1), "Alice"),
-                        new Row(BigDecimal.valueOf(2), "Bob")
-                )
-        );
-    }
-
-    @Test
     public void test_sinkSelect() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         String from = randomName();
         TestBatchSqlConnector.create(sqlService, from, 4);
@@ -96,7 +76,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void test_sinkValues() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         assertMapEventually(
                 name,
@@ -112,7 +92,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void test_sinkWithProject() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         assertMapEventually(
                 name,
@@ -128,7 +108,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void test_sinkWithDynamicParameters() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         assertMapEventually(
                 name,
@@ -145,7 +125,7 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     @Test
     public void test_selectWithDynamicParameters() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         sqlService.execute("SINK INTO " + name + " VALUES (1, '1'), (2, '2')");
 
@@ -296,9 +276,89 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_keyColumnIsNotDeclared_then_itIsHidden() {
+        String name = randomName();
+
+        sqlService.execute("CREATE MAPPING " + name + '('
+                + "this VARCHAR"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES(1, 'Alice')"))
+                .hasMessageContaining("Number of INSERT target columns (1) does not equal number of source items (2)");
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + "(__key, this) VALUES (2, 'Bob')",
+                createMap(2, "Bob")
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row("Bob"))
+        );
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(2, "Bob"))
+        );
+    }
+
+    @Test
+    public void when_valueColumnIsNotDeclared_then_itIsHidden() {
+        String name = randomName();
+
+        sqlService.execute("CREATE MAPPING " + name + '('
+                + "__key INT EXTERNAL NAME __key"
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + '\'' + OPTION_KEY_FORMAT + "'='int'"
+                + ", '" + OPTION_VALUE_FORMAT + "'='varchar'"
+                + ")"
+        );
+
+        assertThatThrownBy(() -> sqlService.execute("SINK INTO " + name + " VALUES(1, 'Alice')"))
+                .hasMessageContaining("Number of INSERT target columns (1) does not equal number of source items (2)");
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + "(__key, this) VALUES (2, 'Bob')",
+                createMap(2, "Bob")
+        );
+
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(2))
+        );
+        assertRowsAnyOrder(
+                "SELECT __key, this FROM " + name,
+                singletonList(new Row(2, "Bob"))
+        );
+    }
+
+    @Test
     public void when_insert() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
+
+        assertMapEventually(
+                name,
+                "INSERT INTO " + name + " (this, __key) VALUES ('1', 1)",
+                createMap(1, "1")
+        );
+        assertRowsAnyOrder(
+                "SELECT * FROM " + name,
+                singletonList(new Row(1, "1"))
+        );
+    }
+
+    @Test
+    public void when_insertMultipleEntries() {
+        String name = randomName();
+        createMapping(name, Integer.class, String.class);
 
         assertMapEventually(
                 name,
@@ -315,9 +375,18 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_insertNoEntries() {
+        String name = randomName();
+        createMapping(name, Integer.class, String.class);
+
+        sqlService.execute("INSERT INTO " + name + " SELECT * FROM (VALUES (1, '1')) AS t(a, b) WHERE a = 0");
+        assertThat(instance().getMap(name).entrySet()).isEmpty();
+    }
+
+    @Test
     public void when_insertAndKeyAlreadyExists_then_fail() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
         sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2')"))
@@ -325,9 +394,19 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     }
 
     @Test
+    public void when_insertMultipleEntriesAndKeyAlreadyExists_then_fail() {
+        String name = randomName();
+        createMapping(name, Integer.class, String.class);
+        sqlService.execute("INSERT INTO " + name + " VALUES (1, '1')");
+
+        assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '2'), (2, '2')"))
+                .hasMessageContaining("Duplicate key");
+    }
+
+    @Test
     public void when_insertDuplicateKey_then_fail() {
         String name = randomName();
-        sqlService.execute(javaSerializableMapDdl(name, Integer.class, String.class));
+        createMapping(name, Integer.class, String.class);
 
         assertThatThrownBy(() -> sqlService.execute("INSERT INTO " + name + " VALUES (1, '1'), (1, '2')"))
                 .hasMessageContaining("Duplicate key");
@@ -337,9 +416,10 @@ public class SqlPrimitiveTest extends SqlTestSupport {
     public void when_typeMismatch_then_fail() {
         String name = randomName();
         instance().getMap(name).put(0, 0);
-        sqlService.execute(javaSerializableMapDdl(name, String.class, String.class));
+        createMapping(name, String.class, String.class);
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> { }))
+        assertThatThrownBy(() -> sqlService.execute("SELECT __key FROM " + name).iterator().forEachRemaining(row -> {
+        }))
                 .hasMessageContaining("Failed to extract map entry key because of type mismatch " +
                         "[expectedClass=java.lang.String, actualClass=java.lang.Integer]");
     }

@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.properties.ClusterProperty.BIND_SPOOFING_CHECKS;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 
 /**
@@ -45,7 +44,6 @@ public final class TcpServerControl {
     private final TcpServerConnectionManager connectionManager;
     private final ServerContext serverContext;
     private final ILogger logger;
-    private final boolean spoofingChecks;
     private final boolean unifiedEndpointManager;
     private final Set<ProtocolType> supportedProtocolTypes;
     private final int expectedPlaneCount;
@@ -57,7 +55,6 @@ public final class TcpServerControl {
         this.connectionManager = connectionManager;
         this.serverContext = serverContext;
         this.logger = logger;
-        this.spoofingChecks = serverContext.properties().getBoolean(BIND_SPOOFING_CHECKS);
         this.supportedProtocolTypes = supportedProtocolTypes;
         this.unifiedEndpointManager = connectionManager.getEndpointQualifier() == null;
         this.expectedPlaneCount = serverContext.properties().getInteger(CHANNEL_COUNT);
