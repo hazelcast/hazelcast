@@ -41,7 +41,7 @@
     <hz:hazelcast id="instance">
         <hz:config>
             <hz:instance-name>named-spring-hz-instance</hz:instance-name>
-            <hz:cluster-name>${cluster.name}</hz:cluster-name>
+            <hz:cluster-name>${cluster.name}-jCacheClientCacheManager</hz:cluster-name>
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -58,7 +58,7 @@
     </hz:hazelcast>
 
     <hz:client id="client" depends-on="instance">
-        <hz:cluster-name>${cluster.name}</hz:cluster-name>
+        <hz:cluster-name>${cluster.name}-jCacheClientCacheManager</hz:cluster-name>
         <hz:properties>
             <hz:property name="hazelcast.client.retry.count">13</hz:property>
         </hz:properties>
