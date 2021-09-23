@@ -89,8 +89,6 @@ public class ClusterJoinManager {
 
     public static final String STALE_JOIN_PREVENTION_DURATION_PROP = "hazelcast.stale.join.prevention.duration.seconds";
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
-    private static final int STALE_JOIN_PREVENTION_DURATION_SECONDS
-            = Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30);
 
     private final ILogger logger;
     private final Node node;
@@ -115,8 +113,8 @@ public class ClusterJoinManager {
     private final ConcurrentMap<UUID, Long> leftMembersUuids = new ConcurrentHashMap<>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
-    private final long staleJoinPreventionDuration;
 
+    private long staleJoinPreventionDurationInMillis;
     private long firstJoinRequest;
     private long timeToStartJoin;
     private volatile boolean joinInProgress;
@@ -133,7 +131,7 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN);
-        staleJoinPreventionDuration = TimeUnit.SECONDS.toMillis(STALE_JOIN_PREVENTION_DURATION_SECONDS);
+        staleJoinPreventionDurationInMillis = TimeUnit.SECONDS.toMillis(Integer.getInteger(STALE_JOIN_PREVENTION_DURATION_PROP, 30));
     }
 
     boolean isJoinInProgress() {
@@ -364,7 +362,7 @@ public class ClusterJoinManager {
 
     private void cleanupRecentlyJoinedMemberUuids() {
         long currentTime = Clock.currentTimeMillis();
-        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDuration);
+        recentlyJoinedMemberUuids.values().removeIf(joinTime -> (currentTime - joinTime) >= staleJoinPreventionDurationInMillis);
     }
 
     private boolean authenticate(JoinRequest joinRequest, Connection connection) {
