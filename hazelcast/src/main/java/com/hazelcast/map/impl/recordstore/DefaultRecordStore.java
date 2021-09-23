@@ -191,21 +191,28 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record putReplicatedRecord(Data dataKey, Record replicatedRecord,
-                                      ExpiryMetadata expiryMetadata,
-                                      boolean populateIndexes, long now) {
-        Record newRecord = createRecord(replicatedRecord.getValue(), now);
-        Records.copyMetadataFrom(replicatedRecord, newRecord);
-
-        storage.put(dataKey, newRecord);
+    public Record putOrUpdateReplicatedRecord(Data dataKey, Record record,
+                                              ExpiryMetadata expiryMetadata,
+                                              boolean indexesMustBePopulated, long now) {
+        Record existingRecord = storage.get(dataKey);
+        if (existingRecord == null) {
+            existingRecord = createRecord(record.getValue(), now);
+            storage.put(dataKey, existingRecord);
+        } else {
+            storage.updateRecordValue(dataKey, existingRecord, record.getValue());
+        }
+        Records.copyMetadataFrom(record, existingRecord);
         expirySystem.add(dataKey, expiryMetadata.getTtl(),
                 expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
                 now, expiryMetadata.getLastUpdateTime());
-        mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
-        updateStatsOnPut(replicatedRecord.getHits(), now);
+        mutationObserver.onReplicationPutRecord(dataKey, existingRecord, indexesMustBePopulated);
 
-        return newRecord;
+        updateStatsOnPut(false, now);
+        updateStatsOnPut(record.getHits(), now);
+
+        return existingRecord;
     }
+
 
     @Override
     public void removeReplicatedRecord(Data dataKey) {
