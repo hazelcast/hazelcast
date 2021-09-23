@@ -22,7 +22,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.monitor.LocalRecordStoreStats;
 import com.hazelcast.internal.monitor.impl.LocalRecordStoreStatsImpl;
-import com.hazelcast.internal.monitor.impl.LocalReplicationStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
@@ -52,18 +51,14 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.MapIndexInfo;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.config.MaxSizePolicy.PER_NODE;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -72,12 +67,11 @@ import static com.hazelcast.internal.util.MapUtil.isNullOrEmpty;
 /**
  * Holder for raw IMap key-value pairs and their metadata.
  */
+// keep this `protected`, extended in another context.
 public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
-
-    protected transient Map<String, LocalReplicationStatsImpl> statsByMapName = new ConcurrentHashMap<>();
 
     // data for each map
     protected transient Map<String, List> data;
@@ -93,12 +87,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     // operations, which meant that the index did not include some data.
     protected transient List<MapIndexInfo> mapIndexInfos;
 
-    // mapName -> null = full sync required
-    // mapName -> int[0] = no difference
-    // mapName -> int[2*n] = mapName -> Merkle tree node order/value pairs
-    protected Map<String, int[]> merkleTreeDiffByMapName = Collections.emptyMap();
-
-    protected MapReplicationOperation operation;
+    private MapReplicationOperation operation;
     private Map<String, LocalRecordStoreStats> recordStoreStatsPerMapName;
 
     /**
@@ -106,10 +95,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
      * unless {@code operation} is set.
      */
     public MapReplicationStateHolder() {
-    }
-
-    public void setMerkleTreeDiffByMapName(Map<String, int[]> merkleTreeDiffByMapName) {
-        this.merkleTreeDiffByMapName = merkleTreeDiffByMapName == null ? Collections.emptyMap() : merkleTreeDiffByMapName;
     }
 
     public void setOperation(MapReplicationOperation operation) {
@@ -136,9 +121,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
             loaded.put(mapName, recordStore.isLoaded());
             storesByMapName.put(mapName, recordStore);
-            statsByMapName.put(mapName,
-                    mapContainer.getMapServiceContext().getLocalMapStatsProvider()
-                            .getLocalMapStatsImpl(mapName).getReplicationStats());
 
             Set<IndexConfig> indexConfigs = new HashSet<>();
             if (mapContainer.isGlobalIndexEnabled()) {
@@ -164,7 +146,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength",
+    @SuppressWarnings({"checkstyle:npathcomplexity",
             "checkstyle:cyclomaticcomplexity", "checkstyle:nestedifdepth"})
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
@@ -174,10 +156,9 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         if (!isNullOrEmpty(data)) {
             for (Map.Entry<String, List> dataEntry : data.entrySet()) {
                 String mapName = dataEntry.getKey();
-                final boolean isDifferentialReplication = merkleTreeDiffByMapName.containsKey(mapName);
                 List keyRecordExpiry = dataEntry.getValue();
                 RecordStore recordStore = operation.getRecordStore(mapName);
-                initializeRecordStore(mapName, recordStore);
+                recordStore.reset();
                 recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
 
                 MapContainer mapContainer = recordStore.getMapContainer();
@@ -196,19 +177,47 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 if (populateIndexes) {
                     // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
                     indexesSnapshot = indexes.getIndexes();
+
                     Indexes.beginPartitionUpdate(indexesSnapshot);
+
                     indexes.clearAll();
                 }
 
-                long nowInMillis = Clock.currentTimeMillis();
-                if (isDifferentialReplication) {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putOrUpdateReplicatedRecord);
-                } else {
-                    forEachReplicatedRecord(keyRecordExpiry, mapContainer, recordStore, populateIndexes, nowInMillis,
-                            recordStore::putOrUpdateReplicatedRecord);
-                }
 
+                long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
+                EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
+                boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
+                        && evictionConfig.getMaxSizePolicy() == PER_NODE;
+
+                long nowInMillis = Clock.currentTimeMillis();
+                for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
+                    Data dataKey = (Data) keyRecordExpiry.get(i);
+                    Record record = (Record) keyRecordExpiry.get(i + 1);
+                    ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
+
+                    if (perNodeEvictionConfigured) {
+                        if (ownedEntryCountOnThisNode >= evictionConfig.getSize()) {
+                            if (operation.getReplicaIndex() == 0) {
+                                recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
+                            }
+                        } else {
+                            recordStore.putOrUpdateReplicatedRecord(dataKey, record,
+                                    expiryMetadata, populateIndexes, nowInMillis);
+                            ownedEntryCountOnThisNode++;
+                        }
+                    } else {
+                        recordStore.putOrUpdateReplicatedRecord(dataKey, record,
+                                expiryMetadata, populateIndexes, nowInMillis);
+                        if (recordStore.shouldEvict()) {
+                            // No need to continue replicating records anymore.
+                            // We are already over eviction threshold, each put record will cause another eviction.
+                            recordStore.evictEntries(dataKey);
+                            break;
+                        }
+                    }
+
+                    recordStore.disposeDeferredBlocks();
+                }
 
                 if (populateIndexes) {
                     Indexes.markPartitionAsIndexed(partitionContainer.getPartitionId(), indexesSnapshot);
@@ -223,49 +232,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             RecordStore recordStore = operation.getRecordStore(mapName);
             recordStore.setStats(stats);
 
-        }
-    }
-
-    private void forEachReplicatedRecord(List keyRecordExpiry,
-                                         MapContainer mapContainer,
-                                         RecordStore recordStore,
-                                         boolean populateIndexes, long nowInMillis,
-                                         ReplicatedRecordProcessor replicatedRecordProcessor) {
-        long ownedEntryCountOnThisNode = entryCountOnThisNode(mapContainer);
-        EvictionConfig evictionConfig = mapContainer.getMapConfig().getEvictionConfig();
-        boolean perNodeEvictionConfigured = mapContainer.getEvictor() != Evictor.NULL_EVICTOR
-                && evictionConfig.getMaxSizePolicy() == PER_NODE;
-        for (int i = 0; i < keyRecordExpiry.size(); i += 3) {
-            Data dataKey = (Data) keyRecordExpiry.get(i);
-            Record record = (Record) keyRecordExpiry.get(i + 1);
-            ExpiryMetadata expiryMetadata = (ExpiryMetadata) keyRecordExpiry.get(i + 2);
-
-            if (perNodeEvictionConfigured) {
-                if (ownedEntryCountOnThisNode >= evictionConfig.getSize()) {
-                    if (operation.getReplicaIndex() == 0) {
-                        recordStore.doPostEvictionOperations(dataKey, record.getValue(), ExpiryReason.NOT_EXPIRED);
-                    }
-                } else {
-                    replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
-                    ownedEntryCountOnThisNode++;
-                }
-            } else {
-                replicatedRecordProcessor.processRecord(dataKey, record, expiryMetadata, populateIndexes, nowInMillis);
-                if (recordStore.shouldEvict()) {
-                    // No need to continue replicating records anymore.
-                    // We are already over eviction threshold, each put record will cause another eviction.
-                    recordStore.evictEntries(dataKey);
-                    break;
-                }
-            }
-
-            recordStore.disposeDeferredBlocks();
-        }
-    }
-
-    protected void initializeRecordStore(String mapName, RecordStore recordStore) {
-        if (!merkleTreeDiffByMapName.containsKey(mapName)) {
-            recordStore.reset();
         }
     }
 
@@ -330,21 +296,29 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-
         out.writeInt(storesByMapName.size());
 
         for (Map.Entry<String, RecordStore<Record>> entry : storesByMapName.entrySet()) {
             String mapName = entry.getKey();
-            RecordStore<Record> recordStore = entry.getValue();
             out.writeString(mapName);
 
-            // RU_COMPAT_42
-            if (out.getVersion().isGreaterOrEqual(Versions.V5_0)) {
-                writeRecordStoreV5(mapName, recordStore, out);
-            } else {
-                writeRecordStoreV42(mapName, recordStore, out);
+            SerializationService ss = getSerializationService(operation.getRecordStore(mapName).getMapContainer());
+            RecordStore<Record> recordStore = entry.getValue();
+            out.writeInt(recordStore.size());
+            // No expiration should be done in forEach, since we have serialized size before.
+            recordStore.forEach((dataKey, record) -> {
+                try {
+                    IOUtil.writeData(out, dataKey);
+                    Records.writeRecord(out, record, ss.toData(record.getValue()),
+                            recordStore.getExpirySystem().getExpiredMetadata(dataKey));
+                } catch (IOException e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }, operation.getReplicaIndex() != 0, true);
+
+            if (out.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                recordStore.getStats().writeData(out);
             }
-            recordStore.getStats().writeData(out);
         }
 
         out.writeInt(loaded.size());
@@ -359,51 +333,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
     }
 
-    private void writeRecordStoreV5(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
-            throws IOException {
-        if (merkleTreeDiffByMapName.containsKey(mapName)) {
-            out.writeBoolean(true);
-            writeDifferentialData(mapName, recordStore, out);
-        } else {
-            out.writeBoolean(false);
-            writeRecordStoreData(recordStore, out);
-        }
-    }
-
-    private void writeRecordStoreV42(String mapName, RecordStore<Record> recordStore, ObjectDataOutput out)
-            throws IOException {
-        writeRecordStoreData(recordStore, out);
-    }
-
-    protected void writeDifferentialData(String mapName,
-                                         RecordStore<Record> recordStore, ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    private void writeRecordStoreData(RecordStore<Record> recordStore, ObjectDataOutput out)
-            throws IOException {
-        SerializationService ss = getSerializationService(recordStore.getMapContainer());
-        out.writeInt(recordStore.size());
-        // No expiration should be done in forEach, since we have serialized size before.
-        recordStore.forEach((dataKey, record) -> {
-            try {
-                IOUtil.writeData(out, dataKey);
-                ExpiryMetadata expiryMetadata = recordStore.getExpirySystem()
-                        .getExpiredMetadata(dataKey);
-                Records.writeRecord(out, record, ss.toData(record.getValue()), expiryMetadata);
-                // RU_COMPAT_4_2
-                Version version = out.getVersion();
-                if (version.isGreaterOrEqual(Versions.V5_0)) {
-                    Records.writeExpiry(out, expiryMetadata);
-                }
-            } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }, operation.getReplicaIndex() != 0, true);
-        statsByMapName.get(recordStore.getName()).incrementFullPartitionReplicationRecordsCount(recordStore.size());
-    }
-
-    protected static SerializationService getSerializationService(MapContainer mapContainer) {
+    private static SerializationService getSerializationService(MapContainer mapContainer) {
         return mapContainer.getMapServiceContext()
                 .getNodeEngine().getSerializationService();
     }
@@ -412,18 +342,27 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         data = createHashMap(size);
-        merkleTreeDiffByMapName = new HashMap<>();
         recordStoreStatsPerMapName = createHashMap(size);
 
         for (int i = 0; i < size; i++) {
-            String mapName = in.readString();
-            boolean differentialReplication = in.getVersion().isGreaterOrEqual(Versions.V5_0) && in.readBoolean();
+            String name = in.readString();
+            int numOfRecords = in.readInt();
+            List keyRecordExpiry = new ArrayList<>(numOfRecords * 3);
+            for (int j = 0; j < numOfRecords; j++) {
+                Data dataKey = IOUtil.readData(in);
+                ExpiryMetadata expiryMetadata = new ExpiryMetadataImpl();
+                Record record = Records.readRecord(in, expiryMetadata);
 
-            if (differentialReplication) {
-                readDifferentialData(mapName, in);
-            } else {
-                readRecordStoreData(mapName, in);
+                keyRecordExpiry.add(dataKey);
+                keyRecordExpiry.add(record);
+                keyRecordExpiry.add(expiryMetadata);
             }
+            if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
+                LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
+                stats.readData(in);
+                recordStoreStatsPerMapName.put(name, stats);
+            }
+            data.put(name, keyRecordExpiry);
         }
 
         int loadedSize = in.readInt();
@@ -438,44 +377,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             MapIndexInfo mapIndexInfo = in.readObject();
             mapIndexInfos.add(mapIndexInfo);
         }
-    }
-
-    protected void readDifferentialData(String mapName, ObjectDataInput in)
-            throws IOException {
-        int[] diffNodeOrder = in.readIntArray();
-        merkleTreeDiffByMapName.put(mapName, diffNodeOrder);
-        readRecordStoreData(mapName, in);
-    }
-
-    protected void readRecordStoreData(String mapName, ObjectDataInput in)
-            throws IOException {
-        int numOfRecords = in.readInt();
-        List keyRecord = new ArrayList<>(numOfRecords * 3);
-        for (int j = 0; j < numOfRecords; j++) {
-            // RU_COMPAT_4_2
-            Version version = in.getVersion();
-            boolean isV5 = version.isGreaterOrEqual(Versions.V5_0);
-
-            Data dataKey = IOUtil.readData(in);
-            ExpiryMetadata expiryMetadata = null;
-            if (!isV5) {
-                expiryMetadata = new ExpiryMetadataImpl();
-            }
-            Record record = Records.readRecord(in, expiryMetadata);
-            if (isV5) {
-                expiryMetadata = Records.readExpiry(in);
-            }
-
-            keyRecord.add(dataKey);
-            keyRecord.add(record);
-            keyRecord.add(expiryMetadata);
-        }
-        if (in.getVersion().isGreaterOrEqual(Versions.V4_2)) {
-            LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-            stats.readData(in);
-            recordStoreStatsPerMapName.put(mapName, stats);
-        }
-        data.put(mapName, keyRecord);
     }
 
     @Override
@@ -505,10 +406,5 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
 
         return true;
-    }
-
-    private interface ReplicatedRecordProcessor {
-        void processRecord(Data dataKey, Record record, ExpiryMetadata expiryMetadata,
-                           boolean indexesMustBePopulated, long now);
     }
 }
