@@ -30,10 +30,9 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ProbeUnitTest {
 
-    // RU_COMPAT_4_1
     // set to the current unit count
     // add "RU_COMPAT_X_Y" when introducing a new unit
-    private static final int HIGHEST_UNIT_ORDINAL_IN_LAST_VERSION = 6;
+    private static final int HIGHEST_UNIT_ORDINAL_IN_LAST_VERSION = 7;
     private static final int UNIT_COUNT_IN_CURRENT_VERSION = 8;
 
     @Test

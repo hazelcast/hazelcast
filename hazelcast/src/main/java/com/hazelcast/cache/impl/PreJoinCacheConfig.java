@@ -18,14 +18,12 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.tenantcontrol.TenantControl;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
@@ -72,22 +70,6 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Versi
             throws IOException {
         setKeyClassName(in.readString());
         setValueClassName(in.readString());
-    }
-
-    @Override
-    protected void writeTenant(ObjectDataOutput out) throws IOException {
-        // RU_COMPAT_4_1
-        if (out.getVersion().isUnknownOrLessThan(Versions.V4_2)) {
-            out.writeObject(TenantControl.NOOP_TENANT_CONTROL);
-        }
-    }
-
-    @Override
-    protected void readTenant(ObjectDataInput in) throws IOException {
-        // RU_COMPAT_4_1
-        if (in.getVersion().isUnknownOrLessThan(Versions.V4_2)) {
-            in.readObject();
-        }
     }
 
     @Override
