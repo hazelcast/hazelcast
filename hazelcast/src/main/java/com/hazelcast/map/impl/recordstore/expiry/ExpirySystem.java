@@ -227,11 +227,22 @@ public class ExpirySystem {
     }
 
     public final void removeKeyFromExpirySystem(Data key) {
+        if (isEmpty()) {
+            return;
+        }
         callRemove(key, expireTimeByKey);
     }
 
     public final void extendExpiryTime(Data dataKey, long now, long lastUpdateTime) {
+        if (isEmpty()) {
+            return;
+        }
+
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (isEmpty()) {
+            return;
+        }
+
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
         if (expiryMetadata == ExpiryMetadata.NULL) {
             return;
@@ -252,6 +263,9 @@ public class ExpirySystem {
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (isEmpty()) {
+            return ExpiryReason.NOT_EXPIRED;
+        }
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(key, expireTimeByKey);
         return hasExpired(expiryMetadata, now, backup);
     }
@@ -332,6 +346,10 @@ public class ExpirySystem {
 
     private int findMaxScannableCount(int percentage) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
+        if (isEmpty()) {
+            return 0;
+        }
+
         int numberOfExpirableKeys = expireTimeByKey.size();
         if (numberOfExpirableKeys <= MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN) {
             return numberOfExpirableKeys;
