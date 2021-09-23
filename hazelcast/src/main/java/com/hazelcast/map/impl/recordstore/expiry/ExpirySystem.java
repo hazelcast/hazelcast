@@ -120,6 +120,7 @@ public class ExpirySystem {
         map.clear();
     }
 
+    @Nonnull
     protected Map<Data, ExpiryMetadata> getOrCreateExpireTimeByKeyMap(boolean createIfAbsent) {
         if (expireTimeByKey != null) {
             return expireTimeByKey;
@@ -232,17 +233,9 @@ public class ExpirySystem {
     }
 
     public final void extendExpiryTime(Data dataKey, long now, long lastUpdateTime) {
-        if (isEmpty()) {
-            return;
-        }
-
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (isEmpty()) {
-            return;
-        }
-
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(dataKey, expireTimeByKey);
-        if (expiryMetadata == null) {
+        if (expiryMetadata == ExpiryMetadata.NULL) {
             return;
         }
 
@@ -266,15 +259,13 @@ public class ExpirySystem {
 
     public final ExpiryReason hasExpired(Data key, long now, boolean backup) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (isEmpty()) {
-            return ExpiryReason.NOT_EXPIRED;
-        }
         ExpiryMetadata expiryMetadata = getExpiryMetadataForExpiryCheck(key, expireTimeByKey);
         return hasExpired(expiryMetadata, now, backup);
     }
 
     private ExpiryReason hasExpired(ExpiryMetadata expiryMetadata, long now, boolean backup) {
-        if (expiryMetadata == null) {
+        if (expiryMetadata == null
+                || expiryMetadata == ExpiryMetadata.NULL) {
             return ExpiryReason.NOT_EXPIRED;
         }
 
@@ -348,10 +339,6 @@ public class ExpirySystem {
 
     private int findMaxScannableCount(int percentage) {
         Map<Data, ExpiryMetadata> expireTimeByKey = getOrCreateExpireTimeByKeyMap(false);
-        if (isEmpty()) {
-            return 0;
-        }
-
         int numberOfExpirableKeys = expireTimeByKey.size();
         if (numberOfExpirableKeys <= MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN) {
             return numberOfExpirableKeys;
@@ -410,9 +397,11 @@ public class ExpirySystem {
     }
 
     // this method is overridden
+    @Nonnull
     protected ExpiryMetadata getExpiryMetadataForExpiryCheck(Data key,
                                                              Map<Data, ExpiryMetadata> expireTimeByKey) {
-        return expireTimeByKey.get(key);
+        ExpiryMetadata expiryMetadata = expireTimeByKey.get(key);
+        return expiryMetadata == null ? ExpiryMetadata.NULL : expiryMetadata;
     }
 
     // this method is overridden
